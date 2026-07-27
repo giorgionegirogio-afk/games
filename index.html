@@ -123,12 +123,11 @@ footer{margin-top:30px;color:var(--grigio);font-size:12px;opacity:.85}
     <p style="margin-top:10px">Al primo tocco Android avverte che il file non arriva dal Play Store: <b>Impostazioni → Consenti da questa origine</b>, poi <b>Installa</b>. Si fa una volta sola. Il certificato è di collaudo, non è ancora un'app pubblicata.</p>
   </div>
 
-  <!-- Gli studi contengono numeri di piano: compaiono solo se i file ci sono
-       davvero. Se pubblichi soltanto i giochi, questa sezione sparisce da sola. -->
-  <div class="studi" id="studi" hidden>
-    <a href="STUDIO-02-classifiche-e-CALCETTO.html">STUDIO 02 — il mercato, le classifiche, la casella vuota</a>
-    <a href="STUDIO 03 — Server a costo zero · CIRCOLO · Timeline CALCETTO.html">STUDIO 03 — architettura, CIRCOLO, quadro legale, piano</a>
-  </div>
+  <!-- Gli studi contengono costi e strategia e non si pubblicano. I loro
+       collegamenti non stanno nemmeno scritti qui: li mette lo script solo
+       quando la pagina e' aperta in locale, cosi' dal sito pubblicato non si
+       vede neanche che esistono. -->
+  <div class="studi" id="studi" hidden></div>
 
   <footer>Prototipi di collaudo. Tutto quello che salvi resta sul tuo telefono.</footer>
 </div>
@@ -170,13 +169,25 @@ footer{margin-top:30px;color:var(--grigio);font-size:12px;opacity:.85}
     });
   }
 
-  /* gli studi si mostrano solo se pubblicati insieme ai giochi */
-  (async function(){
-    if (location.protocol === 'file:') { document.getElementById('studi').hidden = false; return; }
-    try {
-      const r = await fetch('STUDIO-02-classifiche-e-CALCETTO.html', {method:'HEAD'});
-      if (r.ok) document.getElementById('studi').hidden = false;
-    } catch(e){}
+  /* Gli studi si mostrano solo in locale — file aperto dal disco o server di
+     sviluppo. Sul sito pubblicato non si prova nemmeno a cercarli: una
+     richiesta andata a vuoto lascerebbe il nome del file nella console e nel
+     registro del server, cioe' direbbe a chiunque che esistono. */
+  (function(){
+    const locale = location.protocol === 'file:' ||
+                   ['localhost','127.0.0.1','[::1]'].includes(location.hostname);
+    if (!locale) return;
+    const elenco = [
+      ['STUDIO-02-classifiche-e-CALCETTO.html', 'STUDIO 02 — il mercato, le classifiche, la casella vuota'],
+      ['STUDIO 03 — Server a costo zero · CIRCOLO · Timeline CALCETTO.html', 'STUDIO 03 — architettura, CIRCOLO, quadro legale, piano'],
+    ];
+    const box = document.getElementById('studi');
+    for (const [file, titolo] of elenco) {
+      const a = document.createElement('a');
+      a.href = file; a.textContent = titolo;
+      box.appendChild(a);
+    }
+    box.hidden = false;
   })();
 
   /* il prompt d'installazione di Chrome: si cattura e si offre col nostro bottone */
