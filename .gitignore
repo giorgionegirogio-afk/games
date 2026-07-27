@@ -1,8 +1,12 @@
 # Gli studi contengono costi, stime di ricavo e strategia: NON vanno su un
-# repo pubblico. Il lanciatore se ne accorge da solo e non li mostra.
-# Se invece vuoi pubblicarli, commenta le due righe qui sotto.
+# repo pubblico. Se invece vuoi pubblicarli, commenta le tre righe qui sotto.
+# La terza tiene fuori anche i loro NOMI: e' l'unico file in cui sono scritti,
+# e il lanciatore lo carica solo quando e' aperto in locale. Senza di essa il
+# sito pubblicato direbbe a chiunque guardi il sorgente che quei documenti
+# esistono e come si chiamano.
 STUDIO-02-classifiche-e-CALCETTO.html
 STUDIO 03 — Server a costo zero · CIRCOLO · Timeline CALCETTO.html
+studi-locali.js
 
 # La chiave con cui si firmano gli APK NON si pubblica. E' solo di collaudo,
 # ma chi ce l'ha puo' firmare un pacchetto che Android accetta come

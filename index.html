@@ -169,25 +169,18 @@ footer{margin-top:30px;color:var(--grigio);font-size:12px;opacity:.85}
     });
   }
 
-  /* Gli studi si mostrano solo in locale — file aperto dal disco o server di
-     sviluppo. Sul sito pubblicato non si prova nemmeno a cercarli: una
-     richiesta andata a vuoto lascerebbe il nome del file nella console e nel
-     registro del server, cioe' direbbe a chiunque che esistono. */
+  /* Gli studi si aprono solo dalla copia locale, e i loro nomi non compaiono
+     da nessuna parte in questa pagina: stanno in "studi-locali.js", che il
+     .gitignore tiene fuori dal repo. Sul sito pubblicato quel file non viene
+     nemmeno richiesto, quindi non resta traccia nella console ne' nei
+     registri del server che quei documenti esistano. */
   (function(){
     const locale = location.protocol === 'file:' ||
                    ['localhost','127.0.0.1','[::1]'].includes(location.hostname);
     if (!locale) return;
-    const elenco = [
-      ['STUDIO-02-classifiche-e-CALCETTO.html', 'STUDIO 02 — il mercato, le classifiche, la casella vuota'],
-      ['STUDIO 03 — Server a costo zero · CIRCOLO · Timeline CALCETTO.html', 'STUDIO 03 — architettura, CIRCOLO, quadro legale, piano'],
-    ];
-    const box = document.getElementById('studi');
-    for (const [file, titolo] of elenco) {
-      const a = document.createElement('a');
-      a.href = file; a.textContent = titolo;
-      box.appendChild(a);
-    }
-    box.hidden = false;
+    const s = document.createElement('script');
+    s.src = 'studi-locali.js';
+    document.body.appendChild(s);
   })();
 
   /* il prompt d'installazione di Chrome: si cattura e si offre col nostro bottone */
