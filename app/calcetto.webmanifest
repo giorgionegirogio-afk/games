@@ -1,0 +1,21 @@
+{
+  "id": "/calcetto/",
+  "name": "CALCETTO — il gioco",
+  "short_name": "CALCETTO",
+  "description": "La partita di calcetto del dopolavoro, compressa in 90 secondi. Un pollice. Chi legge il tempo dell'altro, segna.",
+  "lang": "it",
+  "dir": "ltr",
+  "start_url": "../CALCETTO-il-gioco.html",
+  "scope": "../",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#0b1f16",
+  "theme_color": "#0b1f16",
+  "categories": ["games", "sports"],
+  "icons": [
+    { "src": "icona-calcetto-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icona-calcetto-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icona-calcetto-mask.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "/circolo/",
+  "name": "CIRCOLO — Scopa e Briscola",
+  "short_name": "CIRCOLO",
+  "description": "Il tavolo del circolo, in tasca: Scopa, Scopone, Briscola e Briscola a coppie, come si giocano dalle tue parti.",
+  "lang": "it",
+  "dir": "ltr",
+  "start_url": "../CIRCOLO-il-gioco.html",
+  "scope": "../",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#1D5537",
+  "theme_color": "#3F2508",
+  "categories": ["games", "board"],
+  "icons": [
+    { "src": "icona-circolo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icona-circolo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icona-circolo-mask.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

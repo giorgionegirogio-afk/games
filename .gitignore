@@ -1,0 +1,24 @@
+# Gli studi contengono costi, stime di ricavo e strategia: NON vanno su un
+# repo pubblico. Il lanciatore se ne accorge da solo e non li mostra.
+# Se invece vuoi pubblicarli, commenta le due righe qui sotto.
+STUDIO-02-classifiche-e-CALCETTO.html
+STUDIO 03 — Server a costo zero · CIRCOLO · Timeline CALCETTO.html
+
+# La chiave con cui si firmano gli APK NON si pubblica. E' solo di collaudo,
+# ma chi ce l'ha puo' firmare un pacchetto che Android accetta come
+# aggiornamento di queste app. Chi clona il repo se ne genera una propria:
+# costruisci.py la crea da solo se non la trova.
+android/chiave.jks
+
+# scarti della costruzione degli APK (si rigenerano con android/costruisci.py)
+android/lavoro_*/
+*.idsig
+
+# impostazioni locali degli strumenti
+.claude/
+
+# roba di sistema e di sviluppo
+.playwright-mcp/
+Thumbs.db
+desktop.ini
+*.log

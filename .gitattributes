@@ -1,0 +1,11 @@
+# Niente conversione dei fine riga, su nessun file.
+# I due giochi finiscono dentro gli APK e android/verifica.py controlla che
+# l'HTML nel pacchetto sia byte per byte identico al sorgente: se git
+# riscrivesse i fine riga fra un sistema e l'altro, quel controllo fallirebbe
+# senza che nessuno abbia toccato niente.
+* -text
+
+# e questi restano binari in ogni caso
+*.apk  binary
+*.png  binary
+*.jks  binary

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>I due giochi — CALCETTO e CIRCOLO</title>
+<meta name="theme-color" content="#0b1f16">
+<link rel="icon" href="app/icona-circolo-192.png">
+<link rel="apple-touch-icon" href="app/icona-circolo-192.png">
+<style>
+:root{
+  --campo:#0b1f16; --campo2:#0e2a1d; --linea:#1e4432;
+  --gesso:#f2f5ef; --grigio:#96ab9e; --fluo:#d8ff3d; --ciano:#39d3e6; --oro:#ffcf3f;
+  --panno:#1D5537; --legno:#6B4220; --crema:#F6ECD2;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+  background:var(--campo);color:var(--gesso);line-height:1.55;
+  background-image:
+    radial-gradient(720px 420px at 50% -8%, rgba(216,255,61,.07), transparent 60%),
+    linear-gradient(rgba(255,255,255,.026) 1px, transparent 1px);
+  background-size:auto,100% 34px;
+  min-height:100dvh;padding:max(22px, env(safe-area-inset-top)) 18px 40px;
+}
+.wrap{max-width:640px;margin:0 auto}
+.kick{font-family:ui-monospace,'Consolas',monospace;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--grigio)}
+h1{font-size:clamp(30px,8vw,46px);line-height:1.02;letter-spacing:-.01em;margin:10px 0 8px;font-weight:900}
+h1 span{color:var(--fluo)}
+.sub{color:var(--grigio);font-size:15px;max-width:520px;margin-bottom:26px}
+.sub b{color:var(--gesso)}
+
+.giochi{display:grid;gap:14px}
+a.gioco{
+  display:block;text-decoration:none;color:inherit;position:relative;overflow:hidden;
+  background:var(--campo2);border:1px solid var(--linea);border-left:5px solid var(--fluo);
+  padding:16px 18px;transition:transform .12s ease, border-color .12s ease, box-shadow .14s ease;
+}
+a.gioco:active{transform:scale(.985)}
+a.gioco:hover{border-color:var(--fluo);box-shadow:0 8px 22px rgba(0,0,0,.35)}
+a.gioco.carte{border-left-color:var(--oro);background:#14301f}
+.riga{display:flex;align-items:center;gap:14px}
+.ico{width:56px;height:56px;flex:none;border-radius:12px;display:block;image-rendering:auto}
+.tit{font-size:21px;font-weight:800;letter-spacing:.02em}
+a.gioco.carte .tit{color:var(--oro)}
+a.gioco:not(.carte) .tit{color:var(--fluo)}
+.desc{color:var(--grigio);font-size:13.5px;margin-top:6px}
+.tag{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag span{font-family:ui-monospace,'Consolas',monospace;font-size:10.5px;letter-spacing:.05em;
+  color:var(--grigio);border:1px solid var(--linea);padding:3px 7px}
+
+.blocco{margin-top:28px;background:var(--campo2);border:1px solid var(--linea);padding:15px 17px}
+.blocco h2{font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--ciano);margin-bottom:8px}
+.blocco p{color:var(--grigio);font-size:13.5px;margin-bottom:8px}
+.blocco p:last-child{margin-bottom:0}
+.blocco b{color:var(--gesso)}
+#stato{font-family:ui-monospace,'Consolas',monospace;font-size:12px;color:var(--grigio)}
+#stato b.ok{color:var(--fluo)}
+#stato b.no{color:var(--oro)}
+button.installa{
+  margin-top:10px;width:100%;font:inherit;font-weight:800;font-size:15px;letter-spacing:.04em;
+  color:var(--campo);background:var(--fluo);border:0;padding:13px;cursor:pointer;
+}
+button.installa[hidden]{display:none}
+.apk{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.apk a{
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  font-family:ui-monospace,'Consolas',monospace;font-size:13px;font-weight:700;
+  color:var(--campo);background:var(--ciano);text-decoration:none;padding:11px 12px;
+}
+.apk a:hover{filter:brightness(1.1)}
+.apk a em{font-style:normal;font-weight:400;font-size:11px;opacity:.7}
+@media (max-width:420px){ .apk{grid-template-columns:1fr} }
+.studi{margin-top:22px;display:grid;gap:8px}
+.studi a{color:var(--ciano);font-size:13.5px;text-decoration:none;border-bottom:1px solid rgba(57,211,230,.3);width:fit-content}
+footer{margin-top:30px;color:var(--grigio);font-size:12px;opacity:.85}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">Dopolavoro FC · prototipi giocabili</div>
+  <h1>DUE GIOCHI,<br><span>ZERO CONNESSIONE.</span></h1>
+  <p class="sub">Si installano sul telefono e funzionano <b>completamente offline</b>: nessun account, nessun server, nessuna pubblicità. Il multigiocatore online non c'è ancora — per adesso si gioca contro il telefono, in due sullo stesso apparecchio, o a distanza con un <b>link di sfida</b>.</p>
+
+  <div class="giochi">
+    <a class="gioco carte" href="CIRCOLO-il-gioco.html">
+      <div class="riga">
+        <img class="ico" src="app/icona-circolo-192.png" alt="" width="56" height="56">
+        <div>
+          <div class="tit">CIRCOLO</div>
+          <div class="desc">Scopa, Scopone, Briscola e Briscola a coppie. Quattro varianti regionali, quattro livelli di avversario, mescolamento verificabile.</div>
+        </div>
+      </div>
+      <div class="tag"><span>1 O 2 GIOCATORI</span><span>TAVOLO A 4</span><span>TORNEO</span><span>SFIDA VIA LINK</span></div>
+    </a>
+
+    <a class="gioco" href="CALCETTO-il-gioco.html">
+      <div class="riga">
+        <img class="ico" src="app/icona-calcetto-192.png" alt="" width="56" height="56">
+        <div>
+          <div class="tit">CALCETTO</div>
+          <div class="desc">Novanta secondi, tre contro tre più portiere. Tiro col timing, scivolata che può costare il cartellino, stagione a campionato.</div>
+        </div>
+      </div>
+      <div class="tag"><span>1 O 2 GIOCATORI</span><span>DA GIRARE IN ORIZZONTALE</span><span>TORNEO E STAGIONE</span></div>
+    </a>
+  </div>
+
+  <div class="blocco">
+    <h2>Installazione sul telefono</h2>
+    <p id="stato">Controllo in corso…</p>
+    <button class="installa" id="btn-installa" hidden>INSTALLA SUL TELEFONO</button>
+    <p id="istruzioni" style="margin-top:10px"></p>
+  </div>
+
+  <div class="blocco">
+    <h2>Oppure l'app vera — Android</h2>
+    <p>Due app installate sul telefono, con la loro icona. <b>Non chiedono nessun permesso</b>: né internet, né posizione, né contatti. Puoi verificarlo tu in <i>Impostazioni → App → Autorizzazioni</i>.</p>
+    <div class="apk">
+      <a href="apk/CIRCOLO.apk" download>CIRCOLO.apk <em>97 kB</em></a>
+      <a href="apk/CALCETTO.apk" download>CALCETTO.apk <em>117 kB</em></a>
+    </div>
+    <p style="margin-top:10px">Al primo tocco Android avverte che il file non arriva dal Play Store: <b>Impostazioni → Consenti da questa origine</b>, poi <b>Installa</b>. Si fa una volta sola. Il certificato è di collaudo, non è ancora un'app pubblicata.</p>
+  </div>
+
+  <!-- Gli studi contengono numeri di piano: compaiono solo se i file ci sono
+       davvero. Se pubblichi soltanto i giochi, questa sezione sparisce da sola. -->
+  <div class="studi" id="studi" hidden>
+    <a href="STUDIO-02-classifiche-e-CALCETTO.html">STUDIO 02 — il mercato, le classifiche, la casella vuota</a>
+    <a href="STUDIO 03 — Server a costo zero · CIRCOLO · Timeline CALCETTO.html">STUDIO 03 — architettura, CIRCOLO, quadro legale, piano</a>
+  </div>
+
+  <footer>Prototipi di collaudo. Tutto quello che salvi resta sul tuo telefono.</footer>
+</div>
+
+<script>
+(function(){
+  const stato = document.getElementById('stato');
+  const istr = document.getElementById('istruzioni');
+  const btn = document.getElementById('btn-installa');
+  const sicuro = location.protocol === 'https:' || ['localhost','127.0.0.1'].includes(location.hostname);
+  const gia = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+  if (gia) {
+    stato.innerHTML = '<b class="ok">Installata.</b> Stai già usando l’app: funziona anche in aereo.';
+  } else if (!sicuro) {
+    stato.innerHTML = '<b class="no">Pagina aperta da file locale.</b>';
+    istr.innerHTML = 'I giochi <b>funzionano lo stesso</b>, anche senza rete. Per averli come icona sulla schermata Home serve però un indirizzo <b>https</b> (per esempio GitHub Pages): vedi <b>COME-INSTALLARE.md</b>.';
+  } else {
+    stato.innerHTML = 'Pronta per l’installazione.';
+    istr.innerHTML = 'Se il pulsante non compare, usa il menu del browser: <b>&#8942; &rarr; Installa app</b> (oppure <b>Aggiungi a schermata Home</b>).';
+  }
+
+  /* registrazione del service worker: solo dove ha senso, e senza mai
+     rompere la pagina se il browser non lo supporta o siamo su file:// */
+  if (sicuro && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(function(reg){
+      if (!gia) stato.innerHTML = '<b class="ok">Pronta e disponibile offline.</b> I giochi sono stati salvati sul dispositivo.';
+      reg.addEventListener('updatefound', function(){
+        const nuovo = reg.installing;
+        if (!nuovo) return;
+        nuovo.addEventListener('statechange', function(){
+          if (nuovo.state === 'installed' && navigator.serviceWorker.controller) {
+            istr.innerHTML = '<b>C’è una versione nuova.</b> Chiudi e riapri l’app per averla.';
+          }
+        });
+      });
+    }).catch(function(){
+      stato.innerHTML = '<b class="no">Offline non attivo</b> (il browser ha rifiutato il service worker), ma i giochi funzionano comunque.';
+    });
+  }
+
+  /* gli studi si mostrano solo se pubblicati insieme ai giochi */
+  (async function(){
+    if (location.protocol === 'file:') { document.getElementById('studi').hidden = false; return; }
+    try {
+      const r = await fetch('STUDIO-02-classifiche-e-CALCETTO.html', {method:'HEAD'});
+      if (r.ok) document.getElementById('studi').hidden = false;
+    } catch(e){}
+  })();
+
+  /* il prompt d'installazione di Chrome: si cattura e si offre col nostro bottone */
+  let promessa = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    promessa = e;
+    btn.hidden = false;
+  });
+  btn.addEventListener('click', async function(){
+    if (!promessa) return;
+    btn.hidden = true;
+    promessa.prompt();
+    try { await promessa.userChoice; } catch(e){}
+    promessa = null;
+  });
+  window.addEventListener('appinstalled', function(){
+    btn.hidden = true;
+    stato.innerHTML = '<b class="ok">Installata.</b> La trovi fra le app del telefono.';
+  });
+})();
+</script>
+</body>
+</html>
