@@ -26,3 +26,21 @@ android/lavoro_*/
 Thumbs.db
 desktop.ini
 *.log
+
+# Le fotografie di controllo prodotte dal banco di prova: si rigenerano in
+# un minuto con strumenti/scatta.js e pesano centinaia di megabyte. Senza
+# queste righe erano finiti dentro git 1350 file per 193 MB.
+foto*/
+confronto*/
+prova*/
+.ripet/
+_crit*/
+*-arrivo/
+*-partenza/
+*-dopo/
+strumenti/verdetto-onda*.json
+strumenti/scene-stabili.json
+
+# gli strumenti girano su playwright, che si installa con "npm install"
+node_modules/
+package-lock.json

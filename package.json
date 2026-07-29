@@ -1,0 +1,24 @@
+{
+  "name": "games",
+  "version": "1.0.0",
+  "description": "Due prototipi giocabili per il telefono, ognuno in **un solo file HTML** che funziona senza rete: nessun account, nessun server, nessuna pubblicità, nessuna libreria da scaricare. Font, carte, suoni e grafica stanno tutti dentro il file.",
+  "main": "studi-locali.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/giorgionegirogio-afk/games.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/giorgionegirogio-afk/games/issues"
+  },
+  "homepage": "https://github.com/giorgionegirogio-afk/games#readme",
+  "dependencies": {
+    "playwright": "^1.62.0"
+  }
+}
