@@ -44,3 +44,9 @@ strumenti/scene-stabili.json
 # gli strumenti girano su playwright, che si installa con "npm install"
 node_modules/
 package-lock.json
+
+# il materiale di riferimento resta in locale: sono immagini altrui,
+# servono a calibrare il giudizio e non vanno ridistribuite
+riferimenti/*/
+strisce/
+filmati/
