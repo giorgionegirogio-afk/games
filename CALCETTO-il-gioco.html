@@ -638,29 +638,39 @@ kbd{
      L'aria sopra la fascia passa da 22 a 34 px, cosi' l'ultima riga
      della lista non finisce mai incollata al bordo della velatura.
      =================================================================
-     LE TAPPE SONO IN PIXEL, NON IN PERCENTUALE — ed e' la correzione
-     che rende vera l'affermazione qui sopra, che vera non era.
-     Con le tappe in percentuale l'opacita' piena arrivava al 64%
-     dell'ALTEZZA DELLA FASCIA, ma il bordo superiore del bottone sta a
-     34 px su una fascia alta ~110, cioe' al 31%: all'altezza del
-     bottone la velatura valeva 0,53 e sotto TORNA AL MENU passava
-     ancora mezza parola. Cinque schermate su venticinque lo mostravano
-     (statistiche, istruzioni, squadra, campi, impostazioni), e su
-     statistiche e squadra era un PEGGIORAMENTO rispetto a prima.
-     Con le tappe in pixel la rampa e' lunga esattamente quanto il
-     riempimento in alto — 34 px, gli stessi di padding-top — quindi
-     l'opacita' tocca 1 sul filo superiore del bottone e ci resta per
-     tutta la fascia, qualunque altezza abbia: due file di bottoni,
-     testo grande, tablet, non cambia niente. La dissolvenza resta
-     (34 px sono la stessa rampa di prima), sparisce solo il tratto
-     leggibile-e-morto che stava sotto. */
-  background:linear-gradient(rgba(4,32,13,0) 0px, rgba(4,32,13,.52) 8px,
-             rgba(4,32,13,.90) 16px, rgba(4,32,13,1) 23px);
+     LE TAPPE RESTANO IN PERCENTUALE, e le tappe in pixel sono state
+     PROVATE E TOLTE (giro 3, rimosse). La prova stava in una riga:
+       background:linear-gradient(rgba(4,32,13,0) 0px, ... 1) 23px)
+     che porta la velatura a UNO gia' 11 px SOPRA il filo del bottone.
+     Il ragionamento sembrava giusto — "sotto TORNA AL MENU non deve
+     passare mezza parola" — ma misurato accanto alla versione in
+     percentuale, sullo stesso banco e alla stessa inquadratura, toglie
+     piu' di quanto dia su SETTE schermate su venticinque:
+       - SQUADRA: la seconda fila di kit spariva del tutto. In una
+         pagina il cui unico compito e' scegliere una divisa, nascondere
+         che ce ne sono altre sotto non e' pulizia: e' un difetto.
+       - CAMPI: spariva la seconda fila di campetti, stessa storia.
+       - STATISTICHE: 'TROFEI SBLOCCATI 0/15' era una riga PIENA,
+         leggibile al contrasto giusto; con le tappe in pixel diventava
+         un fantasma. La velatura mangiava contenuto vivo invece dello
+         strascico morto che doveva mangiare.
+       - TROFEI: la didascalia della riga corrente si spegneva a meta'.
+     Il tratto sbiadito che passa sotto il bottone NON e' sporcizia: e'
+     l'unico segnale largo che dice "la lista continua". Il chevron da
+     34 px lo dice in piccolo; la riga che sfuma lo dice a tutta pagina,
+     ed e' cosi' che lo dicono anche i riferimenti — nessuno dei quattro
+     chiude il quinto basso dello schermo con una fascia opaca.
+     Con le tappe in percentuale la rampa e' lunga quanto la fascia
+     (~110 px, opacita' piena al 64%): la dissolvenza torna a essere una
+     dissolvenza e sotto il bottone resta l'ombra di una riga, non una
+     riga. E' lo stato del giro 2, quello votato 6,5. */
+  background:linear-gradient(rgba(4,32,13,0) 0%, rgba(4,32,13,.26) 18%, rgba(4,32,13,.72) 40%,
+             rgba(4,32,13,1) 64%, rgba(4,32,13,1) 100%);
   box-shadow:0 -26px 26px -12px rgba(4,32,13,.55);
 }
 .ov.trasp .azioni{
-  background:linear-gradient(rgba(9,24,17,0) 0px, rgba(9,24,17,.54) 8px,
-             rgba(9,24,17,.92) 16px, rgba(9,24,17,1) 23px);
+  background:linear-gradient(rgba(9,24,17,0) 0%, rgba(9,24,17,.28) 18%, rgba(9,24,17,.76) 40%,
+             rgba(9,24,17,1) 64%, rgba(9,24,17,1) 100%);
   box-shadow:0 -26px 26px -12px rgba(9,24,17,.6);
 }
 /* SE NON C'E' NIENTE SOTTO, IL PIEDE DEI BOTTONI NON SFUMA NIENTE.
@@ -1160,29 +1170,15 @@ input{user-select:text;-webkit-user-select:text}
    prima. Il tabellone non si e' spostato di un pixel; la coppa e'
    raddoppiata. */
 #tourBoard{position:relative;--hcoppa:clamp(190px,63vh,330px);--wcoppa:calc(var(--hcoppa) * 79 / 122)}
-/* LA MAGLIA APPESA, oggetto-eroe della ROSA.
-   STA IN RIGA CON LA PRESENTAZIONE, non sotto le schede — ed e' la
-   seconda volta che questo file impara la stessa cosa (vedi il cartello
-   di CAMPI, riga 1165). Provata ancorata in basso a sinistra, dove
-   sembrava esserci un campo di prato libero: su un telefono in
-   orizzontale quel prato e' alto quaranta pixel, e la barra dei
-   pulsanti — che adesso e' opaca sul serio — ne tranciava i due terzi
-   inferiori. Una maglia tagliata a meta' legge come un ombrello.
-   In riga con le due righe di presentazione, invece, non costa
-   altezza: prende quella che l'intestazione aveva gia', e la
-   presentazione le sta accanto. */
-.rosaeroe{display:flex;align-items:center;justify-content:center;gap:16px;
-  max-width:820px;margin:0 auto 4px}
-.rosaeroe .rosa-intro{margin:0;text-align:left;flex:1 1 auto;min-width:0}
-.eroe-maglia{width:clamp(70px,13vh,104px);aspect-ratio:5/6}
-@media (max-width:620px){ .eroe-maglia{display:none} .rosaeroe .rosa-intro{text-align:center} }
 /* =====================================================================
    I DUE EROI NUOVI — il pallone della schermata AMICHEVOLE e il cartello
    della schermata CAMPI. Stessa disciplina del tabellone e della coppa:
    qui c'e' solo la scatola, il disegno lo fa un <canvas> di fondo.
-   ===================================================================== */
-.eroe-pallone,.eroe-cartello,.eroe-maglia{position:relative;flex:0 0 auto}
-.eroe-pallone canvas.eroecv,.eroe-cartello canvas.eroecv,.eroe-maglia canvas.eroecv{
+   (Ce n'era un terzo, la maglia appesa della ROSA: tolta perche'
+   mandava quella pagina in scorrimento — vedi il commento nel corpo
+   della schermata ROSA.) */
+.eroe-pallone,.eroe-cartello{position:relative;flex:0 0 auto}
+.eroe-pallone canvas.eroecv,.eroe-cartello canvas.eroecv{
   position:absolute;inset:0;width:100%;height:100%;display:block}
 .giocariga{display:flex;gap:20px;align-items:center;justify-content:center;margin:2px auto 4px;
   max-width:640px;width:100%}
@@ -1232,18 +1228,22 @@ input{user-select:text;-webkit-user-select:text}
   margin:0;align-self:auto;pointer-events:none}
 #tourBoard .brwrap{padding-right:calc(var(--wcoppa) + 18px)}
 @media (max-width:720px){ #tourBoard{--hcoppa:clamp(150px,52vh,240px)} }
-/* LA COPPA NON STA SOTTO IL BOTTONE. Su un telefono in orizzontale
-   (412 px di altezza) 63vh fanno 260 px e la base del trofeo — che e' la
-   parte piu' ricca, quella col piedistallo e la targhetta — finiva sotto
-   il pulsante ambra "GIOCA VS ...". Un oggetto-eroe mezzo coperto non e'
-   un eroe: e' un ingombro, e per giunta e' l'unico punto della pagina in
-   cui l'ambra ha diritto di stare, quindi litigavano proprio le due cose
-   che dovevano reggersi a vicenda.
-   Sotto i 560 px di viewport la coppa scende a metà altezza schermo: la
-   base si ferma quaranta pixel sopra il bottone e si vede tutta. Sui
-   formati alti — tablet, telefono in verticale — non cambia niente e
-   resta la misura da vetrina. */
-@media (max-height:560px){ #tourBoard{--hcoppa:clamp(150px,50vh,240px)} }
+/* QUI C'ERA UNA SCORCIATOIA CHE RIMPICCIOLIVA LA COPPA, ED E' TOLTA.
+   Diceva  @media (max-height:560px){ --hcoppa:clamp(150px,50vh,240px) }
+   per la paura che, su un telefono in orizzontale, la base del trofeo
+   finisse sotto il pulsante ambra "GIOCA VS ...".
+   LA PAURA NON ERA MISURATA. Fotografato il torneo alla stessa vista
+   che usa scatta.js — 915x412, cioe' proprio il caso che la regola
+   voleva salvare — la base della coppa si ferma 15 px CSS sopra il filo
+   del bottone: stretta, ma libera. La regola non stava rimediando a una
+   sovrapposizione, la stava prevenendo dove non c'era, e per farlo
+   portava l'altezza da 260 a 206 px: un quinto in meno di lato, un
+   terzo in meno di area, sull'unico oggetto della pagina che deve
+   essere piu' ricco di tutto il resto (metro, paragrafo 2 — nel
+   riferimento il trofeo occupa un QUINTO dello schermo).
+   Un eroe non si rimpicciolisce per prudenza: se un giorno la base
+   toccasse davvero il bottone, si sposta il bottone o si accorcia la
+   fascia, non si accorcia l'eroe. */
 @media (max-width:470px){ .brcoppa{display:none} #tourBoard .brwrap{padding-right:2px} }
 /* nella BACHECA la coppa sta a sinistra dell'albo d'oro */
 .albowrap{display:flex;gap:16px;align-items:flex-start;justify-content:center}
@@ -1263,7 +1263,9 @@ input{user-select:text;-webkit-user-select:text}
 .brteam.me{color:var(--tu)}
 .tourinfo{font-family:var(--cond);font-weight:600;font-size:11.5px;letter-spacing:.05em;color:var(--grigio);margin:12px 0}
 .tourinfo b{color:var(--oro)}
-.tourstato{font-family:var(--nero);font-weight:900;font-size:clamp(16px,4.6vw,24px);text-transform:uppercase;margin:0 0 2px}
+/* il margine torna a 10px sopra e sotto: serviva schiacciato a 0 solo
+   finche' il verdetto stava in cima al tabellone, e li' non sta piu' */
+.tourstato{font-family:var(--nero);font-weight:900;font-size:clamp(16px,4.6vw,24px);text-transform:uppercase;margin:10px 0}
 
 /* statistiche giocatore: tessere con una gerarchia, non un foglio di calcolo */
 .statlist{max-width:520px;margin:0 auto 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -1869,17 +1871,20 @@ button:active{transform:scale(.96)}
            ricca della pagina e regge tutte le sedici righe che le stanno
            intorno, esattamente come fa il trofeo del capo della categoria
            nella stessa identica schermata. -->
-      <!-- IL VERDETTO STA IN CIMA, sopra il tabellone. Stava in fondo,
-           e in fondo alla schermata c'e' la barra dei pulsanti: da
-           quando la velatura e' opaca sul serio (vedi .azioni) la riga
-           "QUARTI DI FINALE - TOCCA A TE" spariva del tutto invece di
-           sparire a meta', che e' peggio. Sopra il tabellone e' anche
-           il suo posto naturale: e' il sottotitolo della pagina, dice
-           a che punto sei prima di farti leggere sedici righe. -->
-      <div class="tourstato" id="tourStato"></div>
-      <div class="tourinfo" id="tourPremio"></div>
+      <!-- IL VERDETTO TORNA SOTTO IL TABELLONE, dov'era. Era stato
+           portato in cima perche' con la velatura opaca "QUARTI DI
+           FINALE - TOCCA A TE" spariva del tutto; tolta quella velatura
+           (vedi .azioni) la riga si rilegge da sola e la ragione dello
+           spostamento non c'e' piu'. In cima costava due cose:
+             - il tabellone scendeva di due righe e si comprimeva;
+             - la coppa e' fuori dal flusso, ancorata a top:-4px di
+               #tourBoard, e solo .brwrap si riserva la sua fascia con
+               padding-right: con un testo a tutta larghezza li' sopra,
+               la coda del verdetto finisce SOTTO la coppa. -->
       <div class="brwrap" id="bracket"></div>
       <div class="coppa brcoppa" id="tourCoppa" data-vuota="1"></div>
+      <div class="tourstato" id="tourStato"></div>
+      <div class="tourinfo" id="tourPremio"></div>
     </div>
     <div style="height:12px"></div>
     <!-- L'AZIONE PRIMARIA sta nella barra agganciata al fondo, non sotto la
@@ -1978,18 +1983,28 @@ button:active{transform:scale(.96)}
 <div id="rosa" class="ov hidden">
   <div class="box">
     <h1 class="sotto-titolo">LA ROSA</h1>
-    <!-- L'OGGETTO-EROE DI QUESTA SCHERMATA: la maglia appesa alla rete.
-         Sta FUORI dal flusso, nella fascia di prato vuoto in basso a
-         sinistra che le quattro schede lasciavano scoperta - e' la
-         stessa disciplina della coppa del torneo, e per la stessa
-         ragione: un eroe che sposta il contenuto non e' un eroe, e' un
-         ingombro, ed e' una lezione gia' pagata due volte in questo
-         file. Sotto i 760 px di larghezza o i 380 di altezza sparisce:
-         li' quel prato non c'e' piu' e coprirebbe le schede. -->
-    <div class="rosaeroe">
-      <div class="eroe-maglia" data-seme="5" aria-hidden="true"></div>
-      <p class="rosa-intro">Quattro uomini, non quattro sagome. Ogni attributo sposta davvero la simulazione, e <b>cresce dopo ogni partita</b> in base a quello che hanno fatto in campo.</p>
-    </div>
+    <!-- QUI C'ERA UNA MAGLIA APPESA ALLA RETE, oggetto-eroe di questa
+         schermata, ed e' stata tolta. Non perche' fosse disegnata male
+         — era il pezzo migliore del giro 3 — ma perche' non stava in
+         piedi la ragione per cui poteva restare.
+         IL COMMENTO CHE L'ACCOMPAGNAVA DICEVA IL FALSO. Diceva "sta
+         FUORI dal flusso, nella fascia di prato vuoto in basso a
+         sinistra", e citava a proprio favore la regola giusta: "un
+         eroe che sposta il contenuto non e' un eroe, e' un ingombro".
+         Ma il codice sotto quel commento la metteva DENTRO il flusso,
+         in riga con la presentazione (.rosaeroe): la maglia spostava
+         il contenuto eccome.
+         LA MISURA. Fotografata LA ROSA a 915x412 prima e dopo: al giro
+         2 la pagina ci stava tutta e la pastiglia del chevron NON
+         compariva (zero pixel accesi nel suo riquadro); con la maglia
+         compare, identica a quella di TROFEI. Cioe' l'eroe e' costato
+         alla ROSA la sua unica qualita' — entrare per intero in uno
+         schermo — per aggiungere un ornamento di 104 px.
+         Il metro, paragrafo 2, chiede un oggetto-eroe per schermata; il
+         metro, paragrafo 4, chiede meno cose e piu' grandi. Quando i
+         due si contraddicono su una pagina di sole quattro schede,
+         vince quello che non manda la pagina in scorrimento. -->
+    <p class="rosa-intro">Quattro uomini, non quattro sagome. Ogni attributo sposta davvero la simulazione, e <b>cresce dopo ogni partita</b> in base a quello che hanno fatto in campo.</p>
     <div class="rosalist" id="rosaList"></div>
     <div style="height:14px"></div>
     <div class="azioni"><button class="btnA sec" id="btnBackRosa">TORNA AL MENU</button></div>
@@ -2272,6 +2287,9 @@ const SHOT_MIN = 0.50, SHOT_MAX = 0.80, SHOT_HARDCAP = 1.25, TAP_T = 0.15;
    non da una soglia invisibile — e la punizione-duello smette di essere
    contenuto morto (misurato: 0 falli in 12 partite CPU-vs-CPU prima di questa regola). */
 const SLIDE_T = 0.20, SLIDE_CLEAN = 0.10, SLIDE_REC = 0.45;
+/* la spinta della scivolata si distende in tre fotogrammi partendo dal 30%
+   della velocita' di punta: vedi il ramo della scivolata in updatePlayerFisica */
+const SLIDE_LANCIO = 0.055, SLIDE_LAN0 = 0.30;
 const SLIDE_BALL_R = P_R + B_R + 7;   // quanto vicino al pallone conta come "presa pulita"
 const DIETRO_DOT = 0.52;              // allineamento oltre il quale l'entrata e' da dietro
 /* disciplina in stile futsal: due gialli di squadra = un uomo fuori per 12 secondi */
@@ -3035,7 +3053,12 @@ function makePlayer(team, idx, x, y, role){
     slideDX:0, slideDY:0,
     recover:0,                         // a terra dopo la scivolata
     kickCd:0,                          // cooldown tocco palla
-    charge:-1,                         // -1 = non sta caricando il tiro
+    /* --- L'ANTICIPO: un gesto si prepara prima di partire (vedi anticipa) --- */
+    charge:-1,                         // -1 = fermo; >=0 = secondi di preparazione in corso
+    chargeKind:'tiro',                 // quale gesto si sta preparando
+    chargeT:0,                         // quanto dura la preparazione prima di scattare
+    chargeGo:null,                     // che cosa si esegue quando la carica matura
+    chargeDX:0, chargeDY:0,            // verso in cui il gesto era mirato quando e' nato
     aiT:Math.random(),                 // timer decisioni IA
     aiTX:x, aiTY:y,                    // bersaglio IA
     /* --- LO SCHELETRO: i sei numeri che il disegno legge (vedi aggiornaPosa) --- */
@@ -3105,7 +3128,7 @@ function resetKickoff(){
   for(const p of G.players){
     const f = formation(p.team)[p.idx];
     p.x=f[0]; p.y=f[1]; p.vx=0; p.vy=0; p.ax=0; p.ay=0;
-    p.slide=-1; p.recover=0; p.charge=-1; p.aiShot=null; p.kickCd=0;
+    p.slide=-1; p.recover=0; chiudiAnticipo(p); p.kickCd=0; p.kickT=0; p.kickB=0;
     p.fx = p.team===0?1:-1; p.fy=0;
     if(p.out>0){ p.x=p.team===0?FW*0.22:FW*0.78; p.y=-P_R*2.4; }
     p.aiT=Math.random()*0.2; p.aiTX=p.x; p.aiTY=p.y;
@@ -4123,10 +4146,23 @@ function kickBall(p, nx, ny, speed, spinY){
   return true;
 }
 
-/* passaggio intelligente: al compagno piu' smarcato, sulla corsa */
+/* passaggio intelligente: al compagno piu' smarcato, sulla corsa.
+   ANCHE QUI IL GESTO SI ACCENNA: tre fotogrammi di preparazione prima che
+   il pallone parta. Su una persona il ritardo si paga sul dito, quindi
+   dura la meta' di quello della CPU — cinquanta millesimi, sotto la
+   soglia in cui un ritardo si sente, e sopra quella in cui un gesto si
+   vede. Il compagno a cui passare si sceglie al RILASCIO e non adesso:
+   in tre fotogrammi lo smarcato puo' essere diventato un altro. */
 function doPass(t){
   const p=ctrlPlayer(t);
   if(!p) return;
+  const pi=G.players.indexOf(p);
+  if(G.ball.owner!==pi && len(G.ball.x-p.x,G.ball.y-p.y)>KICK_R) return;
+  if(p.charge>=0 && !p.chargeGo) chiudiAnticipo(p);   // stava caricando il tiro: cambia idea
+  anticipa(p, 'passo', PASS_CAR_U, eseguiPassUmano);
+}
+function eseguiPassUmano(p){
+  const t=p.team;
   const pi=G.players.indexOf(p);
   const b=G.ball;
   if(b.owner!==pi && len(b.x-p.x,b.y-p.y)>KICK_R) return;
@@ -4169,12 +4205,15 @@ function startCharge(t){
   if(!p || p.slide>=0 || p.recover>0) return;
   const pi=G.players.indexOf(p);
   if(G.ball.owner!==pi && len(G.ball.x-p.x,G.ball.y-p.y)>KICK_R*1.4) return;
-  if(p.charge<0) p.charge=0;
+  /* la carica del tiro e' l'unico anticipo che NON matura da solo: la
+     tiene aperta il dito, e chiude releaseCharge. Percio' chargeGo resta
+     nullo — e' il segno che distingue le due specie. */
+  if(p.charge<0){ p.charge=0; p.chargeKind='tiro'; p.chargeT=SHOT_MIN; p.chargeGo=null; }
 }
 function releaseCharge(t){
   const p=ctrlPlayer(t);
-  if(!p || p.charge<0) return;
-  const c=p.charge; p.charge=-1;
+  if(!p || p.charge<0 || p.chargeGo) return;
+  const c=p.charge; chiudiAnticipo(p);
   /* tap rapido (senza carica): tocco corto / appoggio veloce */
   if(c<TAP_T){
     let [mx,my]=humanMove(t);
@@ -4259,6 +4298,72 @@ function fireShot(p, nx, ny, q, lob){
   }
 }
 
+/* =====================================================================
+   L'ANTICIPO — nessun gesto parte di colpo.
+
+   Anticipo, peso, seguito e deformazione sono le quattro cose che
+   separano un gioco animato da uno in cui le figure scivolano. Peso e
+   deformazione il gioco le aveva; l'anticipo no, e non e' un'opinione:
+   misura.js contava il campo p.charge su seicento fotogrammi e per tutti
+   i giocatori e trovava UN SOLO VALORE, cioe' -1. Il disegno sapeva gia'
+   raccogliere la gamba, arretrare il piede d'appoggio e alzare il
+   braccio opposto — ma quel campo lo accendeva soltanto il dito di una
+   persona sul tasto del tiro, e nelle partite CPU contro CPU, che sono
+   quelle che si fotografano, non si accendeva mai.
+
+   Qui l'anticipo smette di essere una cosa del solo tiro e diventa il
+   modo in cui il gioco fa partire QUALUNQUE gesto preparato:
+     tiro        la gamba si raccoglie e il busto ruota indietro;
+     passaggio   si accenna il movimento — poco, ma c'e';
+     scivolata   ci si abbassa sulle gambe prima di lanciarsi;
+     tuffo       il portiere si raccoglie prima di spingere.
+   Un solo cronometro (p.charge), un'etichetta che dice quale gesto
+   (p.chargeKind) e una cosa da fare quando la carica matura (p.chargeGo).
+   La DIREZIONE non si congela alla partenza: si ricalcola al rilascio,
+   perche' in due decimi di secondo il pallone si e' spostato e un gesto
+   mirato dov'era e' un gesto sbagliato.
+   ===================================================================== */
+function pallaAPortata(p){
+  const pi=G.players.indexOf(p);
+  return G.ball.owner===pi || len(G.ball.x-p.x, G.ball.y-p.y)<=KICK_R*1.4;
+}
+/* apre la preparazione di un gesto. Torna false se il corpo non e' nelle
+   condizioni di prepararsi (a terra, espulso, o gia' occupato in un altro
+   anticipo): chi chiama non deve sapere altro. */
+function anticipa(p, tipo, durata, azione){
+  if(!p || p.out>0 || p.slide>=0 || p.recover>0 || p.charge>=0) return false;
+  p.charge=0; p.chargeKind=tipo; p.chargeT=durata; p.chargeGo=azione;
+  return true;
+}
+function chiudiAnticipo(p){
+  p.charge=-1; p.chargeKind='tiro'; p.chargeT=0; p.chargeGo=null;
+}
+/* fa maturare tutte le cariche aperte. Tre modi di finire: matura (e
+   allora il gesto parte), il corpo non e' piu' in condizione di farlo
+   (a terra, espulso), oppure il pallone se n'e' andato — e allora si
+   lascia perdere, come farebbe una persona. */
+function maturaAnticipi(dt){
+  for(const p of G.players){
+    if(!p.chargeGo) continue;
+    if(p.charge<0 || p.out>0 || p.slide>=0 || p.recover>0){ chiudiAnticipo(p); continue; }
+    if((p.chargeKind==='tiro'||p.chargeKind==='passo') && !pallaAPortata(p)){ chiudiAnticipo(p); continue; }
+    p.charge+=dt;
+    if(p.charge>=p.chargeT){
+      const go=p.chargeGo;
+      chiudiAnticipo(p);
+      go(p);
+    }
+  }
+}
+/* quanto e' avanti la preparazione, da 0 a 1: e' l'unico numero che il
+   disegno legge per sapere quanto raccogliere la gamba, ruotare il busto e
+   abbassare il corpo. Vale per tutti e quattro i gesti perche' ciascuno
+   porta la propria durata in p.chargeT — la carica umana del tiro si
+   misura sulla finestra dolce, che e' la sua. */
+function quotaAnticipo(p){
+  return (p.charge>=0 && p.chargeT>0) ? clamp(p.charge/p.chargeT,0,1) : 0;
+}
+
 /* --- scivolata --- */
 function doSlide(t){
   const p=ctrlPlayer(t);
@@ -4268,10 +4373,36 @@ function doSlide(t){
   const l=Math.max(0.001,len(mx,my));
   startSlide(p, mx/l, my/l);
 }
+/* LA SCIVOLATA SI ABBASSA PRIMA DI PARTIRE. Prima il corpo passava in un
+   fotogramma dalla corsa alla figura distesa a 520 unita' al secondo: era
+   il gesto piu' violento del gioco e l'unico senza un istante di
+   preparazione. Adesso ci si piega sulle gambe — SLIDE_CAR secondi — e
+   solo dopo si parte. La direzione si rifa' al lancio sul pallone di
+   ADESSO, che e' anche il motivo per cui la scivolata cosi' e' piu'
+   pulita di prima e non piu' fallosa. */
+const SLIDE_CAR = 0.10, SLIDE_CAR_U = 0.06;
 function startSlide(p, nx, ny){
   if(p.slide>=0 || p.recover>0) return;
+  if(p.charge>=0){
+    /* due gesti non si preparano insieme. La carica del TIRO invece si
+       abbandona volentieri: chi era sul pallone e sceglie il contrasto ha
+       cambiato idea, ed e' sempre stato cosi'. */
+    if(p.chargeGo) return;
+    chiudiAnticipo(p);
+  }
+  const umano = !G.cpu[p.team] && G.ctrl[p.team]===G.players.indexOf(p);
+  p.chargeDX=nx; p.chargeDY=ny;
+  anticipa(p, 'scivolata', umano?SLIDE_CAR_U:SLIDE_CAR, lanciaScivolata);
+}
+function lanciaScivolata(p){
+  if(p.slide>=0 || p.recover>0) return;
+  /* la mira si rifa' adesso: fra la decisione e il lancio il pallone si e'
+     mosso, e una scivolata mirata dove stava e' una scivolata a vuoto */
+  let nx=p.chargeDX, ny=p.chargeDY;
+  const b=G.ball;
+  const bx=b.x+b.vx*0.06-p.x, by=b.y+b.vy*0.06-p.y, bl=len(bx,by);
+  if(bl>1 && bl<200){ nx=bx/bl; ny=by/bl; }
   p.slide=0; p.slideDX=nx; p.slideDY=ny;
-  p.charge=-1;
   if(p.team===0 && !G.cpu[0] && G.ctrl[0]===G.players.indexOf(p)) Tut.notify('slide');
   Audio5.slideS(); Audio5.beep(240);
 }
@@ -4483,35 +4614,21 @@ function step(){
     if(G.goldenT>=40 && !G.rigori){ avviaRigori(); return; }
   }
 
-  /* cariche di tiro (umani): auto-rilascio oltre il tetto */
+  /* cariche di tiro (umani): il dito le fa crescere, il tetto le rilascia.
+     Solo quelle SENZA chargeGo, cioe' quelle che aspettano un rilascio: le
+     altre le fa maturare maturaAnticipi e sommare i due passi le
+     raddoppierebbe la velocita'. */
   for(let t=0;t<2;t++){
     if(G.cpu[t]) continue;
     const p=ctrlPlayer(t);
-    if(p && p.charge>=0){
+    if(p && p.charge>=0 && !p.chargeGo){
       p.charge+=dt;
       if(p.charge>SHOT_HARDCAP) releaseCharge(t);
     }
   }
-  /* CARICHE DELLA CPU: maturano e partono da sole. Tre modi di finire —
-     matura (e allora si tira), il pallone se n'e' andato (e allora si
-     lascia perdere, come farebbe una persona), oppure la carica e' gia'
-     stata consumata da qualcos'altro, tipicamente il tiro al volo, e
-     allora resta solo da ripulire il promemoria. */
-  for(const p of G.players){
-    if(!p.aiShot) continue;
-    if(p.charge<0 || p.out>0 || p.slide>=0 || p.recover>0){ p.aiShot=null; p.charge=-1; continue; }
-    const pi=G.players.indexOf(p);
-    if(G.ball.owner!==pi && len(G.ball.x-p.x,G.ball.y-p.y)>KICK_R*1.4){
-      p.aiShot=null; p.charge=-1; continue;      // gliel'hanno tolta: niente tiro
-    }
-    p.charge+=dt;
-    if(p.charge>=p.aiShot.t){
-      const q=p.aiShot.q; p.aiShot=null; p.charge=-1;
-      const gx = p.team===0?FW:0;
-      const dx=gx-p.x, dy=FH/2-p.y, l=Math.max(1,len(dx,dy));
-      fireShot(p, dx/l, dy/l, q);
-    }
-  }
+  /* tutti gli altri anticipi — tiro e passaggio della CPU, passaggio e
+     scivolata di chiunque — maturano e partono da soli */
+  maturaAnticipi(dt);
 
   /* tutorial: il primo passo si completa muovendosi davvero */
   if(Tut.active && Tut.step===0 && !G.cpu[0]){
@@ -4659,6 +4776,10 @@ function ampPasso(v){
    ognuno di quei numeri, dentro drawPlayer. Chi alza questo tetto deve
    rifare quel conto, altrimenti il contrasto misurato diventa una bugia. */
 const SQUASH_MAX = 1.12;
+/* torsione del busto: quanto ruota indietro preparandosi e quanto ruota
+   oltre finendo il gesto. KICK_B_T e' la durata del seguito del busto, la
+   stessa che kickBall scrive in p.kickB. */
+const TORS_CAR = 0.15, TORS_SEG = 0.17, KICK_B_T = 0.26;
 
 function aggiornaPosa(p, dt){
   const v = len(p.vx,p.vy);
@@ -4700,8 +4821,33 @@ function aggiornaPosa(p, dt){
      Il busto prende solo il 45% del rollio (al massimo 0,11 rad): il
      resto della piega lo portano la testa, che entra in curva per prima,
      e i piedi, che si piantano in fuori. E' anche il vincolo che tiene il
-     torso dentro la finestra di collaudo.js — vedi SQUASH_MAX. */
-  p.ang = facc + p.rollio*0.45;
+     torso dentro la finestra di collaudo.js — vedi SQUASH_MAX.
+
+     PIU' LA TORSIONE DEL GESTO, che e' l'altra meta' dell'anticipo.
+     La gamba che si raccoglie il gioco la disegnava gia'; il BUSTO no, e
+     un tiro in cui va indietro solo il piede sembra una pedata, non un
+     tiro. Adesso il torso ruota INDIETRO mentre il gesto si prepara e
+     OLTRE dopo il contatto, e poi si ricompone: sono i due tempi che
+     p.kickB dichiarava dal principio — sta scritto «il seguito del BUSTO,
+     che finisce dopo» — ma che non leggeva nessuno. Il campo veniva
+     creato, decrementato ogni fotogramma e perfino salvato nella
+     moviola, e non muoveva un pixel: un seguito dichiarato e non fatto,
+     esattamente come l'anticipo di prima.
+     Il seguito non si spegne di colpo e nemmeno cala dritto: sale al
+     massimo in tre decimi del suo tempo — il busto continua a girare
+     DOPO che il piede ha gia' lasciato il pallone — e poi muore come un
+     cubo, che e' la stessa curva del seguito della gamba.
+     I due valori (0,15 e 0,17 rad, cioe' 8,6 e 9,7 gradi) sono al di
+     sotto di quello che la finestra di collaudo.js sopporta: il torso e'
+     un'ellisse quasi tonda e ruotarla sposta poco i campioni, mentre
+     sposta parecchio i piedi e le braccia, che stanno fuori e si vedono. */
+  const carA = (p.chargeKind==='tiro'||p.chargeKind==='passo') ? quotaAnticipo(p) : 0;
+  let tors = -TORS_CAR*carA;
+  if(p.kickB>0){
+    const w = 1-p.kickB/KICK_B_T;
+    tors += TORS_SEG*(w<0.30 ? w/0.30 : Math.pow(1-(w-0.30)/0.70, 3));
+  }
+  p.ang = facc + p.rollio*0.45 + tors;
 
   /* ---------- 4. BOB: il bacino sale e scende due volte per ciclo ----------
      Sale a meta' volo, scende sull'appoggio. Visto dall'alto la quota si
@@ -4722,13 +4868,23 @@ function aggiornaPosa(p, dt){
   const cc = Math.cos(2*p.fase);
   if(cc > 0) sq += 0.055*cc*cc*clamp((p.amp-1.1)/6.5,0,1);
   if(p.kickT > 0){ const r=p.kickT/0.22; sq += 0.12*r*r*Math.sqrt(r); }
+  /* CHI SI PREPARA SI ABBASSA. E' la quinta voce di questa lista e la sola
+     che non nasce da un urto: prima del tiro e prima della scivolata le
+     ginocchia si piegano, e visto dall'alto un corpo piegato e' un corpo
+     piu' corto. La scivolata si abbassa il doppio del tiro perche' li' ci
+     si accuccia davvero. */
+  if(p.charge>=0){
+    const u=quotaAnticipo(p);
+    sq += (p.chargeKind==='scivolata'||p.chargeKind==='tuffo' ? 0.13
+         : p.chargeKind==='passo' ? 0.045 : 0.085)*u;
+  }
   if(p.celeb > 0){
     const h = Math.abs(Math.sin((2.4-p.celeb)*9))*7;
     if(h < 1.6){ const u=1-h/1.6; sq += 0.16*u*u; }
   }
   if(p.dive > 0){
     /* il tuffo: raccolta nei primi 0,08 s, poi distensione piena */
-    const u = 1-p.dive/0.58;
+    const u = 1-p.dive/GK_DIVE_T;
     sq = u<0.14 ? 1+0.10*(1-u/0.14) : 0.88+0.12*clamp((u-0.72)/0.28,0,1);
   }else if(p.recover > 0 && p.role==='gk'){
     sq = 1+0.14*clamp(p.recover/0.30,0,1);   // la ricaduta, con l'appoggio
@@ -4750,7 +4906,7 @@ function updatePlayerFisica(p,dt){
   /* espulso: aspetta a bordo campo, non tocca palla, non decide, non si disegna */
   if(p.out>0){
     p.out-=dt;
-    p.vx=0; p.vy=0; p.ax=0; p.ay=0; p.slide=-1; p.recover=0; p.charge=-1; p.aiShot=null;
+    p.vx=0; p.vy=0; p.ax=0; p.ay=0; p.slide=-1; p.recover=0; chiudiAnticipo(p);
     /* panchina: fuori dalla sponda lunga, dal lato della propria porta */
     p.x = p.team===0 ? FW*0.22 : FW*0.78;
     p.y = -P_R*2.4;
@@ -4775,7 +4931,25 @@ function updatePlayerFisica(p,dt){
   if(p.slide>=0){
     const primo = p.slide===0;
     p.slide+=dt;
-    const sp=520*(1-p.slide/SLIDE_T*0.55);
+    /* IL COLPO DI RENI NON E' UN INTERRUTTORE.
+       La velocita' della scivolata veniva scritta a mano: 520 unita' al
+       secondo dal primo fotogramma, cioe' da 110 a 520 in un
+       sessantesimo. misura.js lo vedeva e lo diceva — accelerazione
+       massima ventiquattromila unita' al secondo quadrato su un P_ACC
+       dichiarato di novecento — ed era, di gran lunga, il gesto piu'
+       teletrasportato rimasto nel gioco: l'unico posto in cui una figura
+       cambiava velocita' di quattrocento unita' fra due fotogrammi.
+       Adesso la spinta che la raccolta ha caricato si scarica in tre
+       fotogrammi con una curva a esse, non in uno: e' il PESO, la stessa
+       ragione per cui esiste il limite di strappo sull'accelerazione
+       voluta. La velocita' di punta sale da 520 a 560 perche' l'integrale
+       torni: la scivolata arriva dove arrivava prima — 71,6 unita' contro
+       73,0, cioe' l'1,9% in meno — quindi quante ne prende e quanti falli
+       fa non cambia. Il salto peggiore fra due fotogrammi scende da 409 a
+       144 unita', cioe' da 24557 a 8634 unita' al secondo quadrato. */
+    const u = clamp(p.slide/SLIDE_LANCIO, 0, 1);
+    const lan = SLIDE_LAN0 + (1-SLIDE_LAN0)*u*u*(3-2*u);
+    const sp=560*(1-p.slide/SLIDE_T*0.55)*lan;
     p.vx=p.slideDX*sp; p.vy=p.slideDY*sp;
     p.x+=p.vx*dt; p.y+=p.vy*dt;
     /* IL SOLCO. La scivolata strappa il manto per tutta la sua durata, non
@@ -4958,7 +5132,7 @@ function infliggiCartellino(p){
   }
   p.out = ESPULSIONE_SEC;
   G.stats.espulsi[p.team]++;
-  p.slide=-1; p.recover=0; p.charge=-1; p.aiShot=null; p.vx=0; p.vy=0; p.ax=0; p.ay=0;
+  p.slide=-1; p.recover=0; chiudiAnticipo(p); p.vx=0; p.vy=0; p.ax=0; p.ay=0;
   if(G.ball.owner===G.players.indexOf(p)) G.ball.owner=-1;
   /* se stavi controllando proprio lui, il controllo passa a un compagno */
   if(G.ctrl[p.team]===G.players.indexOf(p)){
@@ -5201,6 +5375,9 @@ function updateBall(dt){
   if(sp>200 && b.owner<0){
     for(const p of G.players){
       if(p.out>0||p.slide>=0||p.recover>0||p.charge<0||p.kickCd>0) continue;
+      /* solo la carica del TIRO arma il volo: quella del passaggio o della
+         scivolata e' un altro gesto e non deve trasformarsi in cannonata */
+      if(p.chargeKind!=='tiro') continue;
       if(p.charge<TAP_T) continue;                 // serve almeno l'inizio della carica
       if(len(b.x-p.x,b.y-p.y) > KICK_R*1.15) continue;
       if(b.lastTouch===G.players.indexOf(p)) continue;
@@ -5210,7 +5387,7 @@ function updateBall(dt){
       const q = (p.charge>=SHOT_MIN && p.charge<=SHOT_MAX) ? 1 : (p.charge<SHOT_MIN?0:2);
       const dx=goalX-p.x, dy=(FH/2)-p.y, l=Math.max(1,len(dx,dy));
       const bonus = clamp(sp*0.35, 0, 220);
-      p.charge=-1;
+      chiudiAnticipo(p);
       G.stats.volee[t]=(G.stats.volee[t]||0)+1;
       G.stats.tiri[t]++;
       const vel=(q===1?620:q===0?380:430)+bonus;
@@ -5258,6 +5435,22 @@ function updateBall(dt){
 const GK_AREA_X = 118;                     // quanto lontano dalla linea puo' uscire
 const GK_SPEED = 150, GK_DIVE_SPEED = 430; // passo normale e slancio del tuffo
 const GK_REACH = 26;                       // semiasse del corpo disteso nel tuffo
+/* LA RACCOLTA PRIMA DEL TUFFO — sette centesimi, e si paga e si riscuote.
+   Il portiere partiva a quattrocentotrenta unita' al secondo dal
+   fotogramma zero: nessun corpo lo fa, e infatti in una striscia il
+   tuffo appariva gia' cominciato. Adesso per GK_RACC secondi si piega
+   sulle gambe, le mani rientrano, il peso va sul piede che spinge, e il
+   corpo comincia appena a cadere verso il tuffo (GK_RACC_V).
+   Perche' non sia SOLO un ritardo — che significherebbe qualche parata
+   in meno e un gioco peggiore — i primi GK_SCATTO_T secondi del tuffo
+   valgono GK_SCATTO in piu': e' l'energia messa da parte piegandosi che
+   torna indietro tutta insieme. Il conto: si perdono 0,07 s a circa 400
+   unita'/s (28 unita') e se ne recuperano 5 con la caduta della raccolta
+   piu' 24 con lo scatto (0,8 x 430 x 0,14 / 2). Il pareggio e' voluto:
+   quante parate riescono non deve cambiare. */
+const GK_RACC = 0.07, GK_RACC_V = 0.30;
+const GK_SCATTO = 0.80, GK_SCATTO_T = 0.14;
+const GK_DIVE_T = 0.58;
 
 function portiereDi(team){
   for(const q of G.players){ if(q.team===team && q.role==='gk' && q.out<=0) return q; }
@@ -5271,14 +5464,31 @@ function updateKeeper(p, dt){
   const dir = p.team===0 ? 1 : -1;
   p.gkT=Math.max(0,p.gkT-dt);
 
+  /* RACCOLTA: il tuffo e' gia' deciso ma il corpo si sta ancora caricando.
+     Non e' un'attesa: la quota di anticipo cresce (e la legge il disegno,
+     che accorcia il corpo e raccoglie i guantoni) e il peso comincia a
+     cadere dalla parte del tuffo. */
+  if(p.charge>=0 && p.chargeKind==='tuffo'){
+    p.charge+=dt;
+    const u=clamp(p.charge/GK_RACC,0,1);
+    const v=GK_DIVE_SPEED*GK_RACC_V*u*u;
+    p.vx=p.diveDX*v; p.vy=p.diveDY*v;
+    p.x+=p.vx*dt; p.y+=p.vy*dt;
+    p.y=clamp(p.y, GY0-46, GY1+46);
+    if(p.charge>=GK_RACC){ chiudiAnticipo(p); p.dive=GK_DIVE_T; Audio5.beep(300); }
+    return;
+  }
+
   /* tuffo in corso: vola sulla traiettoria e prova la presa per contatto */
   if(p.dive>0){
     p.dive-=dt;
     /* il tuffo decelera: e' uno slancio, non un razzo. E si ferma quando
        ha superato il punto che voleva coprire — senza questo il portiere
        finiva fuori dallo specchio e restava li' a rientrare a piedi. */
-    const fase = clamp(p.dive/0.58, 0, 1);
-    const v = GK_DIVE_SPEED*(0.45+0.55*fase);
+    const fase = clamp(p.dive/GK_DIVE_T, 0, 1);
+    /* LO SCATTO: la spinta della raccolta si scarica nei primi centesimi */
+    const scatto = 1 + GK_SCATTO*clamp((p.dive-(GK_DIVE_T-GK_SCATTO_T))/GK_SCATTO_T,0,1);
+    const v = GK_DIVE_SPEED*(0.45+0.55*fase)*scatto;
     p.vx=p.diveDX*v; p.vy=p.diveDY*v;
     p.x+=p.vx*dt; p.y+=p.vy*dt;
     p.x=clamp(p.x, goalX===0?-GOAL_D+8:FW-GK_AREA_X, goalX===0?GK_AREA_X:FW+GOAL_D-8);
@@ -5308,9 +5518,14 @@ function updateKeeper(p, dt){
       const ty = clamp(predY+err, GY0-6, GY1+6);
       const tx = goalX===0 ? 20 : FW-20;
       const vx=tx-p.x, vy=ty-p.y, vl=Math.max(1,len(vx,vy));
-      p.dive=0.58; p.diveDX=vx/vl; p.diveDY=vy/vl;
+      p.diveDX=vx/vl; p.diveDY=vy/vl;
       p.diveTX=tx; p.diveTY=ty;
-      Audio5.beep(300);
+      /* IL TUFFO NON PARTE: SI RACCOGLIE. Il tuffo vero comincia quando la
+         raccolta e' matura (vedi il ramo qui sopra). L'anticipo si apre a
+         mano e non con anticipa() perche' il portiere non passa da
+         maturaAnticipi: il suo corpo ha una strada tutta sua. */
+      p.charge=0; p.chargeKind='tuffo'; p.chargeT=GK_RACC; p.chargeGo=null;
+      p.vx=0; p.vy=0;
       return;
     }
   }
@@ -6018,7 +6233,7 @@ function aiCarrier(p, opGoalX, D){
     const r=Math.random();
     const q = r<D.shotQ ? 1 : (r<D.shotQ+(1-D.shotQ)*0.45 ? 0 : 2);
     /* =============================================================
-       ANCHE LA CPU PREPARA IL TIRO.
+       ANCHE LA CPU PREPARA IL TIRO, E SI VEDE.
        Il campo p.charge — quello su cui drawPlayer raccoglie indietro la
        gamba che calcia, arretra il piede d'appoggio e alza il braccio
        opposto — lo accendeva SOLO il dito di una persona. Meta' delle
@@ -6027,16 +6242,23 @@ function aiCarrier(p, opGoalX, D){
        non esisteva in nessun fotogramma: p.charge valeva -1 su seicento
        campioni per tutti i giocatori. Un gesto che il gioco sa fare e non
        fa mai vale come un gesto che non sa fare.
-       Qui la CPU apre la carica e il tiro parte quando la carica matura,
-       fra 0,12 e 0,20 secondi — la stessa finestra che una persona centra
-       quando tira bene. La direzione NON si congela adesso: si ricalcola
-       al rilascio, perche' in due decimi il giocatore si e' mosso e un
-       tiro mirato dove si stava e' un tiro storto.
+       LA DURATA E' LA COSA CHE E' CAMBIATA. Il primo rimedio caricava fra
+       0,12 e 0,20 secondi: sette fotogrammi, e sopra tutto una frazione
+       ridicola della finestra dolce (SHOT_MIN vale mezzo secondo), quindi
+       la gamba arretrava del ventiquattro per cento del suo raggio e in
+       una striscia da dieci fotogrammi non si vedeva NIENTE. Adesso la
+       CPU carica come carica una persona che vuole centrare la finestra,
+       fra 0,30 e 0,46 s: la gamba arriva al 60-92% del gesto, e il corpo
+       che si prepara si legge a occhio nudo su due o tre fotogrammi
+       consecutivi. Si paga con qualche palla persa mentre si carica —
+       che e' calcio, non un difetto.
+       La direzione NON si congela adesso: si ricalcola al rilascio,
+       perche' in tre decimi il giocatore si e' mosso e un tiro mirato
+       dove si stava e' un tiro storto.
        ============================================================= */
-    if(p.charge<0 && p.kickCd<=0){
-      p.charge=0;
-      p.aiShot={ q:q, t: 0.12+Math.random()*0.08 };
-      p.aiActT=Math.max(p.aiActT, 0.26);   // non decide altro mentre carica
+    if(p.kickCd<=0 && anticipa(p, 'tiro', 0.30+Math.random()*0.16, sparaTiroCpu)){
+      p.aiShotQ=q;                         // la qualita' si decide adesso, il tiro parte dopo
+      p.aiActT=Math.max(p.aiActT, 0.50);   // non decide altro mentre carica
     }
     return;
   }
@@ -6045,7 +6267,21 @@ function aiCarrier(p, opGoalX, D){
   /* ogni tanto fa girare palla anche senza pressione */
   if(Math.random()<0.12) aiPass(p, D);
 }
+function sparaTiroCpu(p){
+  const q = p.aiShotQ!==undefined ? p.aiShotQ : 1;
+  const gx = p.team===0?FW:0;
+  const dx=gx-p.x, dy=FH/2-p.y, l=Math.max(1,len(dx,dy));
+  fireShot(p, dx/l, dy/l, q);
+}
+/* IL PASSAGGIO SI ACCENNA. Non e' una carica: sono sei-sette centesimi in
+   cui la gamba va indietro quel tanto che basta perche' il pallone non
+   parta da una figura identica a quella che cammina. Su una persona
+   costerebbe ritardo sul tasto, e allora per lei dura la meta'. */
+const PASS_CAR = 0.11, PASS_CAR_U = 0.05;
 function aiPass(p, D){
+  anticipa(p, 'passo', PASS_CAR, q=>eseguiAiPass(q, D));
+}
+function eseguiAiPass(p, D){
   const b=G.ball;
   let best=null,bs=-1e9;
   for(const q of G.players){
@@ -7308,187 +7544,6 @@ function disegnaCartello(c, W, H, seme){
     c.strokeStyle='rgba(26,20,8,.60)'; c.lineWidth=0.7*u; c.stroke();
   }
 }
-/* =====================================================================
-   LA MAGLIA APPESA ALLA RETE — quinto oggetto-eroe, per LA ROSA.
-
-   Il metro, paragrafo 2: ogni schermata che conta merita un oggetto
-   disegnato meglio di tutto il resto della pagina, e la direzione ha
-   nominato i nostri — il tabellone, la coppa, il pallone consumato, il
-   cartello, e questa. LA ROSA era quattro schede di numeri e mezza
-   schermata di prato vuoto: la pagina che parla dei quattro uomini non
-   aveva addosso niente che fosse loro.
-
-   Che cos'e': la maglia di casa appesa a un gancio della recinzione,
-   con il numero 4 stampato sulla schiena. Prende il COLORE DEL KIT che
-   si sta usando, e non e' un vezzo: la legge dei quattro colori dice
-   che le due tinte delle divise stanno solo su cio' che rappresenta una
-   squadra, e una maglia E' la divisa. Chi compra un kit se lo ritrova
-   qui, appeso.
-
-   Le tecniche sono quelle di tutto il resto e nessuna e' nuova:
-     - UNA SOLA LUCE, il sole basso da ovest. Filo caldo sul bordo che
-       guarda il sole, filo freddo sul bordo opposto, ombra portata
-       sulla rete con lo stesso scarto del tabellone.
-     - LE PIEGHE sono la materia: sette fasce verticali di ombra e di
-       luce che seguono la caduta del tessuto, piu' l'incavo sotto il
-       collo dove la maglia si appoggia al gancio. Senza pieghe una
-       maglia disegnata e' un'icona.
-     - LA RETE dietro non e' uno sfondo: e' un rombo ripetuto col filo
-       illuminato da ovest, e serve a dire DOVE siamo — a un campetto,
-       non in un negozio.
-     - IL NUMERO e' stampato, non scritto: ha la sua ombra sotto e il
-       suo filo di luce sopra, perche' la serigrafia ha spessore.
-   Costo: zero per fotogramma, cotto una volta nel canvas della pagina.
-   ===================================================================== */
-function disegnaMaglia(c, W, H, seme){
-  const u=Math.min(W/100, H/120);
-  const R=semeRnd(seme||5);
-  const col = (typeof TEAMCOL!=='undefined' && TEAMCOL[0]) ? TEAMCOL[0] : '#d8ff3d';
-  const col2= (typeof TEAMCOL2!=='undefined'&& TEAMCOL2[0])? TEAMCOL2[0]: '#0e3a17';
-  c.clearRect(0,0,W,H);
-  const CX=W*0.50;
-  /* ---------- 1. la rete della recinzione ---------- */
-  {
-    const m=7.2*u;
-    c.save();
-    c.strokeStyle='rgba(150,176,158,.28)'; c.lineWidth=1.15*u;
-    for(let x=-H;x<W+H;x+=m){
-      c.beginPath(); c.moveTo(x,0); c.lineTo(x+H,H); c.stroke();
-      c.beginPath(); c.moveTo(x,H); c.lineTo(x+H,0); c.stroke();
-    }
-    /* il filo prende luce da ovest: mezza unita' piu' chiara sul lato
-       che guarda il sole, ed e' quello che fa sembrare la rete di
-       metallo invece che un tratteggio */
-    c.strokeStyle='rgba(255,240,208,.18)'; c.lineWidth=0.5*u;
-    for(let x=-H;x<W+H;x+=m){
-      c.beginPath(); c.moveTo(x-0.7*u,0); c.lineTo(x+H-0.7*u,H); c.stroke();
-    }
-    c.restore();
-    /* il montante: un tubo verticale dietro la maglia */
-    const px=W*0.13;
-    c.fillStyle='rgba(10,20,14,.50)'; c.fillRect(px-2.6*u,0,5.2*u,H);
-    const gp=c.createLinearGradient(px-2.6*u,0,px+2.6*u,0);
-    gp.addColorStop(0,'rgba(190,196,182,.50)'); gp.addColorStop(0.42,'rgba(120,132,118,.38)');
-    gp.addColorStop(1,'rgba(30,44,34,.46)');
-    c.fillStyle=gp; c.fillRect(px-2.6*u,0,5.2*u,H);
-    /* LA RETE SFUMA AI BORDI DELLA TELA. Con il rombo che arrivava netto
-       fino al bordo del canvas, il pezzo leggeva come una FIGURINA
-       rettangolare incollata sulla pagina invece che come un ritaglio di
-       recinzione: un bordo dritto e' l'unica cosa che tradisce che sotto
-       c'e' un elemento e non un oggetto. Si cancella verso l'esterno con
-       destination-out, che e' un riempimento solo. */
-    c.save();
-    c.globalCompositeOperation='destination-out';
-    const gf=c.createRadialGradient(W*0.5,H*0.48,Math.min(W,H)*0.16, W*0.5,H*0.5,Math.max(W,H)*0.62);
-    gf.addColorStop(0,'rgba(0,0,0,0)'); gf.addColorStop(0.62,'rgba(0,0,0,.35)');
-    gf.addColorStop(1,'rgba(0,0,0,1)');
-    c.fillStyle=gf; c.fillRect(0,0,W,H);
-    c.restore();
-  }
-  /* ---------- 2. il gancio ---------- */
-  const GX=CX, GY=H*0.075;
-  c.strokeStyle='rgba(8,16,12,.60)'; c.lineWidth=3.2*u; c.lineCap='round';
-  c.beginPath(); c.moveTo(GX,GY-4*u); c.lineTo(GX,GY+7*u);
-  c.arc(GX+3.4*u,GY-4*u,3.4*u,Math.PI,Math.PI*1.92); c.stroke();
-  c.strokeStyle=ORO_G; c.lineWidth=2.4*u;
-  c.beginPath(); c.moveTo(GX,GY-4*u); c.lineTo(GX,GY+7*u);
-  c.arc(GX+3.4*u,GY-4*u,3.4*u,Math.PI,Math.PI*1.92); c.stroke();
-  c.strokeStyle='rgba(255,240,208,.70)'; c.lineWidth=0.9*u;
-  c.beginPath(); c.moveTo(GX-0.8*u,GY-3*u); c.lineTo(GX-0.8*u,GY+6*u); c.stroke();
-  c.lineCap='butt';
-  /* ---------- 3. la sagoma della maglia ---------- */
-  const TOP=H*0.135, BOT=H*0.93, SPA=W*0.31, COR=W*0.115, MAN=W*0.455;
-  const sagoma=(g,dx,dy)=>{
-    g.beginPath();
-    g.moveTo(CX-COR+dx, TOP+dy);
-    g.lineTo(CX-SPA+dx, TOP+H*0.045+dy);
-    g.lineTo(CX-MAN+dx, TOP+H*0.235+dy);
-    g.lineTo(CX-SPA*0.86+dx, TOP+H*0.335+dy);
-    g.lineTo(CX-SPA*0.94+dx, BOT+dy);
-    g.lineTo(CX+SPA*0.94+dx, BOT-H*0.018+dy);
-    g.lineTo(CX+SPA*0.86+dx, TOP+H*0.335+dy);
-    g.lineTo(CX+MAN+dx, TOP+H*0.235+dy);
-    g.lineTo(CX+SPA+dx, TOP+H*0.045+dy);
-    g.lineTo(CX+COR+dx, TOP+dy);
-    g.quadraticCurveTo(CX+dx, TOP+H*0.055+dy, CX-COR+dx, TOP+dy);
-    g.closePath();
-  };
-  /* ombra portata sulla rete: quattro contorni a opacita' calante,
-     la stessa legge del tabellone */
-  for(const [k,a] of [[1.9,0.10],[1.5,0.15],[1.1,0.24],[0.7,0.34]]){
-    c.fillStyle='rgba(6,10,24,'+a+')';
-    sagoma(c, 8.7*u*k*0.55, 3.2*u*k*0.55); c.fill();
-  }
-  /* il tessuto */
-  c.save();
-  sagoma(c,0,0); c.clip();
-  c.fillStyle=col; c.fillRect(0,0,W,H);
-  /* pieghe: sette fasce verticali, d'ombra e di luce, che seguono la
-     caduta del tessuto e non stanno mai a distanza uguale */
-  for(let i=0;i<7;i++){
-    const x=CX+(R()*2-1)*SPA*0.98;
-    const w=(1.6+R()*5.4)*u;
-    const scuro=R()<0.55;
-    const gg=c.createLinearGradient(x-w,0,x+w,0);
-    if(scuro){
-      gg.addColorStop(0,'rgba(14,22,46,0)'); gg.addColorStop(0.5,'rgba(14,22,46,.26)');
-      gg.addColorStop(1,'rgba(14,22,46,0)');
-    }else{
-      gg.addColorStop(0,'rgba(255,248,226,0)'); gg.addColorStop(0.5,'rgba(255,248,226,.24)');
-      gg.addColorStop(1,'rgba(255,248,226,0)');
-    }
-    c.fillStyle=gg; c.fillRect(x-w,TOP,w*2,H);
-  }
-  /* l'incavo sotto il collo: qui la maglia si appoggia al gancio e si
-     raccoglie, ed e' l'unica ombra netta di tutto il pezzo */
-  {
-    const gi=c.createRadialGradient(CX,TOP+H*0.02,2*u, CX,TOP+H*0.03,W*0.30);
-    gi.addColorStop(0,'rgba(10,18,38,.42)'); gi.addColorStop(1,'rgba(10,18,38,0)');
-    c.fillStyle=gi; c.fillRect(0,0,W,H);
-  }
-  /* la luce generale: caldo a ovest, freddo a est */
-  {
-    const gl=c.createLinearGradient(CX-SPA,TOP, CX+SPA,BOT);
-    gl.addColorStop(0,   'rgba(255,246,214,.22)');
-    gl.addColorStop(0.42,'rgba(255,246,214,.02)');
-    gl.addColorStop(1,   'rgba(16,24,58,.30)');
-    c.fillStyle=gl; c.fillRect(0,0,W,H);
-  }
-  /* le due strisce del kit, come sulla divisa in campo */
-  c.fillStyle=col2; c.globalAlpha=0.92;
-  c.fillRect(CX-SPA*0.30, TOP, W*0.115, H);
-  c.fillRect(CX+SPA*0.14, TOP, W*0.048, H);
-  c.globalAlpha=1;
-  /* la costina dell'orlo */
-  c.fillStyle='rgba(8,16,30,.30)';
-  c.fillRect(0, BOT-3.4*u, W, 3.4*u);
-  c.restore();
-  /* contorno e biselli: caldo dal lato del sole, freddo dall'altro */
-  c.save(); sagoma(c,0,0); c.clip();
-  c.strokeStyle='rgba(6,14,10,.70)'; c.lineWidth=3.0*u; sagoma(c,0,0); c.stroke();
-  c.strokeStyle='rgba(255,244,212,.72)'; c.lineWidth=1.8*u; sagoma(c,1.5*u,1.2*u); c.stroke();
-  c.strokeStyle='rgba(130,168,246,.26)'; c.lineWidth=1.6*u; sagoma(c,-1.6*u,-1.0*u); c.stroke();
-  c.restore();
-  /* ---------- 4. il numero, stampato ---------- */
-  {
-    const ny=TOP+H*0.52;
-    c.textAlign='center'; c.textBaseline='middle';
-    c.font='900 '+(30*u).toFixed(1)+'px '+FONT_N;
-    c.fillStyle='rgba(8,16,12,.42)';
-    c.fillText('4', CX+1.6*u, ny+1.4*u);
-    c.fillStyle='rgba(255,250,228,.55)';
-    c.fillText('4', CX-0.6*u, ny-0.8*u);
-    c.fillStyle='rgba(248,250,242,.94)';
-    c.fillText('4', CX, ny);
-  }
-  /* ---------- 5. il colletto ---------- */
-  c.strokeStyle='rgba(248,250,242,.80)'; c.lineWidth=2.2*u;
-  c.beginPath(); c.moveTo(CX-COR,TOP);
-  c.quadraticCurveTo(CX, TOP+H*0.055, CX+COR, TOP); c.stroke();
-  c.strokeStyle='rgba(8,16,12,.42)'; c.lineWidth=0.9*u;
-  c.beginPath(); c.moveTo(CX-COR,TOP+1.4*u);
-  c.quadraticCurveTo(CX, TOP+H*0.055+1.4*u, CX+COR, TOP+1.4*u); c.stroke();
-}
 /* i due eroi nuovi si montano come gli altri: alla misura che dice il CSS */
 function montaTela(el, disegna){
   if(!el || el.offsetWidth<8) return;
@@ -7513,11 +7568,6 @@ function montaEroi(){
   for(let i=0;i<ca.length;i++){
     ca[i].querySelectorAll('canvas.eroecv').forEach(x=>x.dataset.ok='');
     montaTela(ca[i], disegnaCartello);
-  }
-  const ma=document.querySelectorAll('.eroe-maglia');
-  for(let i=0;i<ma.length;i++){
-    ma[i].querySelectorAll('canvas.eroecv').forEach(x=>x.dataset.ok='');
-    montaTela(ma[i], disegnaMaglia);
   }
 }
 /* =====================================================================
@@ -10778,7 +10828,7 @@ function drawPlayer(p){
        dove la deformazione scende sotto 1. */
     const est = 1/p.squash;
     /* quanto e' avanti la mano: cresce con la distensione */
-    const rea = p.dive>0 ? 4.0*clamp((1-p.dive/0.58-0.10)/0.30,0,1)
+    const rea = p.dive>0 ? 4.0*clamp((1-p.dive/GK_DIVE_T-0.10)/0.30,0,1)
                          : (p.recover>0 ? 1.6*clamp(p.recover/0.30,0,1) : 0);
     ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang); ctx.scale(est,1/est);
     /* gamba tesa dietro: calzettone del kit + scarpa scura */
@@ -10874,14 +10924,59 @@ function drawPlayer(p){
     const spinta = u => u<0 ? u*1.38 : u;
     let f1=spinta(fore*amp), f2=spinta(-fore*amp);
 
-    /* ANTICIPO DEL TIRO. Il campo p.charge esisteva dal principio e dura
-       mezzo secondo pieno, ma non lo guardava nessuno: il tiro partiva da
-       una figura identica a quella che cammina. Adesso, per tutta la
-       carica, la gamba che calcia si raccoglie indietro, il piede
-       d'appoggio scivola indietro di 3,0 unita' e il braccio opposto si
-       alza di 2,4. Il gesto si PREPARA prima di partire. */
-    const caric = p.charge>=0 ? clamp(p.charge/SHOT_MIN,0,1) : 0;
-    if(caric>0){ f1 -= 5.5*caric; f2 -= 3.0*caric; }
+    /* ---------------- L'ANTICIPO, QUATTRO GESTI E QUATTRO POSE ----------
+       Il campo p.charge esisteva dal principio e il disegno sapeva gia'
+       raccogliere la gamba, ma lo accendeva soltanto il dito di una
+       persona sul tasto del tiro: nelle partite CPU contro CPU — quelle
+       che si fotografano — valeva -1 in tutti i seicento fotogrammi e per
+       tutti i giocatori. Adesso lo accendono quattro gesti, e ognuno ha
+       la sua posa perche' un portiere che si raccoglie e un attaccante che
+       carica il destro non si preparano nello stesso modo:
+         TIRO       la gamba che calcia arretra, il piede d'appoggio slitta
+                    indietro, il braccio opposto si alza e si apre. Piu' il
+                    busto che ruota indietro (vedi aggiornaPosa) e il corpo
+                    che si abbassa.
+                    QUANTO ARRETRA E' UN CONTO, NON UN GUSTO. La prima
+                    stesura toglieva 5,5 unita' e in una striscia da dodici
+                    fotogrammi non si vedeva quasi niente: misurato sulla
+                    geometria del disegno, con l'ampiezza che un giocatore
+                    ha mentre carica (si muove al 45%, quindi amp 8,1) il
+                    piede arrivava a -15,3 mentre la SAGOMA del corpo —
+                    i pantaloncini — arriva a -15,4. Il gesto finiva
+                    esattamente sotto il calzoncino: c'era e non usciva.
+                    E' lo stesso identico difetto per cui la falcata era
+                    invisibile prima che la corsa all'indietro venisse
+                    portata a 1,38 volte quella in avanti. A 9,5 il piede
+                    arretrato arriva a -19,3 e sporge di quasi quattro
+                    unita' dalla sagoma, cioe' piu' del piede che sporge
+                    davanti a falcata piena (3,7): per mezzo ciclo su due
+                    spunta un piede DIETRO, e cresce col crescere della
+                    carica. Resta a dieci unita' dall'anello con cui
+                    collaudo.js campiona l'erba, che comincia a 30.
+         PASSAGGIO  lo stesso, a meta' misura: e' un accenno, non una
+                    caricata. Dura tre-sei fotogrammi e serve solo perche'
+                    il pallone non parta da una figura che cammina.
+         SCIVOLATA  ci si ACCUCCIA: tutte e due le gambe rientrano sotto il
+                    corpo (per questo si moltiplica invece di sottrarre) e
+                    il peso va indietro. E' la posa da cui si molla il
+                    colpo di reni, ed e' l'opposto della gamba che si
+                    allunga: chi guarda capisce che sta per partire.
+         TUFFO      il portiere si raccoglie: le mani rientrano, i piedi
+                    si stringono sotto il bacino, il corpo si accorcia.
+       Il quanto lo dice quotaAnticipo, che sa che la carica del tiro si
+       misura sulla finestra dolce e le altre sulla propria durata. */
+    let caric=0, accuccia=0;
+    if(p.charge>=0){
+      const u=quotaAnticipo(p), k=p.chargeKind;
+      if(k==='tiro') caric=u;
+      else if(k==='passo') caric=u*0.5;
+      else accuccia=u;                    // scivolata e tuffo
+    }
+    if(caric>0){ f1 -= 9.5*caric; f2 -= 4.0*caric; }
+    if(accuccia>0){
+      const r=1-0.60*accuccia;
+      f1=f1*r-1.8*accuccia; f2=f2*r-1.8*accuccia;
+    }
 
     /* SEGUITO DELLA GAMBA. Prima il piede tornava indietro in linea retta
        da 13,5 a 0: partiva e si spegneva, senza finire il gesto. Adesso
@@ -10962,7 +11057,10 @@ function drawPlayer(p){
        L'esultanza resta a parte — li' le braccia sono alzate e in un'altra
        posizione, e non vale la pena complicare il caso raro. */
     const oscB = celeb ? 0 : fore*amp*0.74;
-    const h1=-oscB, h2=oscB+2.4*caric;
+    /* nell'accucciata le braccia rientrano e scendono: chi si raccoglie
+       non tiene i gomiti larghi. Nella carica del tiro succede il
+       contrario sul braccio opposto, che si alza e si apre. */
+    const h1=(-oscB)*(1-0.55*accuccia), h2=(oscB+3.4*caric)*(1-0.55*accuccia);
     /* ---------- IL BRACCIO CHE VA INDIETRO SI APRE ----------
        Stesso difetto delle gambe e stessa misura. Le braccia stavano a
        9,8 unita' di lato, FISSE, e oscillavano solo avanti e indietro di
@@ -10983,7 +11081,10 @@ function drawPlayer(p){
        portiere (che stanno 1,2 piu' in fuori) dentro le sedici unita', e
        sedici e' poco piu' della meta' del raggio a cui collaudo.js comincia
        a campionare l'erba. */
-    const w1=9.8-0.36*h1, w2=9.8-0.36*h2+1.2*caric;
+    /* il braccio opposto si apre con la carica: al massimo la mano arriva a
+       14,1 unita' di lato (9,8 +1,33 di gomito +1,8 di carica +1,2 di mano),
+       cioe' dentro le sedici di cui parla il conto qui sopra */
+    const w1=9.8-0.36*h1-2.1*accuccia, w2=9.8-0.36*h2+1.8*caric-2.1*accuccia;
     /* LE BRACCIA ATTACCATE ALLE SPALLE, non ai fianchi. Il critico:
        «le braccia sono due palline staccate». Erano centrate sull'asse
        trasversale del corpo, cioe' a meta' del torso, mentre le spalle
@@ -11188,7 +11289,7 @@ function drawPlayer(p){
      niente a nessuno — e per giunta nel momento in cui l'occhio deve
      guardare la gamba che si raccoglie. L'anticipo della CPU si vede dal
      GESTO, che e' il punto. */
-  if(p.charge>=0 && isCtrl && !G.cpu[p.team]){
+  if(p.charge>=0 && !p.chargeGo && p.chargeKind==='tiro' && isCtrl && !G.cpu[p.team]){
     const c=p.charge;
     const frac=clamp(c/SHOT_HARDCAP,0,1);
     const inWin = c>=SHOT_MIN && c<=SHOT_MAX;
@@ -11207,7 +11308,7 @@ function drawPlayer(p){
   }
 
   /* anello pulsante per il tiro touch (gesti) del portatore controllato */
-  if(Touch5.used && !Touch5.useButtons && isCtrl && G.ball.owner===pi && p.charge<0){
+  if(Touch5.used && !Touch5.useButtons && isCtrl && G.ball.owner===pi && (p.charge<0 || !!p.chargeGo)){
     const phase=(G.pulse%PULSE_T)/PULSE_T;
     const inWin=phase>0.55&&phase<0.9;
     const R=P_R+8+phase*10;
@@ -11411,7 +11512,13 @@ function registraFotogramma(dt){
     p:G.players.map(q=>({x:q.x, y:q.y, fx:q.fx, fy:q.fy, team:q.team, role:q.role,
                           out:q.out>0, slide:q.slide, dive:q.dive,
                           run:q.fase, amp:q.amp, sq:q.squash, ang:q.ang,
-                          bob:q.bob, kt:q.kickT, kb:q.kickB})),
+                          bob:q.bob, kt:q.kickT, kb:q.kickB,
+                          /* l'ANTICIPO si registra come tutto il resto: la
+                             moviola di un gol e' il posto in cui il gesto
+                             che ha portato alla rete si guarda al
+                             rallentatore, e rivederlo senza la carica
+                             sarebbe rivedere un tiro senza il tiro */
+                          ch:q.charge, ck:q.chargeKind, cT:q.chargeT})),
   };
   G.rec.push(f);
   if(G.rec.length > REC_MAX) G.rec.shift();
@@ -11480,6 +11587,10 @@ function disegnaMoviola(){
     q.amp=f.amp; q.squash=f.sq; q.ang=f.ang; q.bob=f.bob;
     q.kickT=f.kt; q.kickB=f.kb;
     q.slide=f.slide; q.dive=f.dive;
+    /* la carica si rimette com'era: sono i tre campi che quotaAnticipo
+       legge, e senza di loro il replay di un gol mostrerebbe un tiro che
+       parte da una figura che cammina */
+    if(f.ch!==undefined){ q.charge=f.ch; q.chargeKind=f.ck; q.chargeT=f.cT; }
   }
   G.ball.x=a.b.x; G.ball.y=a.b.y; G.ball.z=a.b.z; G.ball.rot=a.b.rot;
 }
@@ -11821,7 +11932,7 @@ function drawTouchButtons(){
       /* arco di carica sul pulsante TIRA */
       if(bt.act==='shot'){
         const p=ctrlPlayer(t);
-        if(p && p.charge>=0){
+        if(p && p.charge>=0 && !p.chargeGo && p.chargeKind==='tiro'){
           const frac=clamp(p.charge/SHOT_HARDCAP,0,1);
           const inWin=p.charge>=SHOT_MIN&&p.charge<=SHOT_MAX;
           ctx.strokeStyle=inWin?'rgba(255,176,32,.95)':'rgba(242,245,239,.8)';
