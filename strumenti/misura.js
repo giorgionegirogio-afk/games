@@ -82,17 +82,35 @@ function verifica(ok, testo, dettaglio) {
 
   console.log(`\n=== MOVIMENTO, ${dati.length} campioni a 60 al secondo ===\n`);
 
-  /* --- 1. esistono i campi dell'animazione? --- */
-  const primo = dati[0].g[0] || {};
-  verifica(primo.fase !== null && primo.fase !== undefined,
-    'i giocatori hanno una fase di animazione (un ciclo di corsa)',
-    primo.fase == null ? "nessun campo di fase: la figura non puo' cambiare posa" : 'campo presente');
-  verifica(primo.schiaccia !== null && primo.schiaccia !== undefined,
-    'i giocatori hanno una deformazione (schiaccia e allunga)',
-    primo.schiaccia == null ? 'nessun campo di deformazione: la figura e\' rigida' : 'campo presente');
-  verifica(primo.carica !== null && primo.carica !== undefined,
-    'esiste una carica prima del calcio (anticipo)',
-    primo.carica == null ? 'nessun campo di carica: il tiro parte senza preparazione' : 'campo presente');
+  /* --- 1. i campi dell'animazione VARIANO davvero? ---
+     Le prime tre misure controllavano solo che il campo ESISTESSE sul
+     primo giocatore al primo fotogramma. Un critico se n'e' accorto e
+     aveva ragione: un campo che c'e' ma resta sempre allo stesso valore
+     non anima niente, e infatti la carica del tiro valeva -1 per tutti i
+     600 fotogrammi mentre la misura diceva "campo presente". Adesso si
+     conta quanti valori distinti assume, su tutti i giocatori e per
+     tutta la durata: e' la differenza fra attestare e misurare. */
+  const distinti = (chiave, scala) => {
+    const v = new Set();
+    for (const d of dati) for (const g of d.g) {
+      const x = g[chiave];
+      if (x != null && isFinite(x)) v.add(Math.round(x * scala));
+    }
+    return v.size;
+  };
+  const nFase = distinti('fase', 20);
+  const nSchiaccia = distinti('schiaccia', 100);
+  const nCarica = distinti('carica', 100);
+
+  verifica(nFase >= 8, `la fase di animazione cambia davvero (${nFase} valori distinti)`,
+    nFase === 0 ? "nessun campo di fase: la figura non puo' cambiare posa"
+      : nFase < 8 ? 'il campo esiste ma resta quasi fermo: non anima niente' : '');
+  verifica(nSchiaccia >= 5, `la deformazione lavora (${nSchiaccia} valori distinti)`,
+    nSchiaccia === 0 ? "nessun campo di deformazione: la figura e' rigida"
+      : nSchiaccia < 5 ? 'il campo esiste ma non varia: nessuno schiacciamento reale' : '');
+  verifica(nCarica >= 3, `la carica prima del calcio varia, cioe' l'anticipo esiste (${nCarica} valori distinti)`,
+    nCarica === 0 ? 'nessun campo di carica: il tiro parte senza preparazione'
+      : nCarica < 3 ? "il campo di carica c'e' ma vale sempre lo stesso numero: e' un anticipo dichiarato, non fatto" : '');
 
   /* --- 2. la velocita' ha una curva o e' a gradini? --- */
   const n = dati[0].g.length;

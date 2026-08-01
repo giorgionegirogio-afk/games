@@ -18,8 +18,16 @@
    lavoro nuovo non lo faccia crescere oltre una percentuale. Il confronto
    fra due misure sullo stesso banco e' onesto anche se il banco e' lento.
 
+   SECONDA AVVERTENZA, segnalata da un critico e vera: senza --freno la
+   CPU NON viene rallentata affatto, e a sessanta fotogrammi al secondo il
+   numero che si legge e' il tetto del vsync, non il costo del gioco. Il
+   confronto relativo resta onesto — stesso tetto prima e dopo — ma per
+   vedere il costo VERO, e quanto margine c'e', va tirato il freno:
+   --freno 2 o 4. Li' il tetto sparisce e si misura il lavoro.
+
    uso:  node strumenti/prestazione.js --fissa     misura e conserva il riferimento
          node strumenti/prestazione.js             confronta con il riferimento
+         node strumenti/prestazione.js --freno 4   il costo vero, senza tetto
          node strumenti/prestazione.js --tolleranza 30
    ===================================================================== */
 const fs = require('fs');
