@@ -141,3 +141,4 @@ tecnicamente la scelta giusta.
 | `prestazione.js` | **regge a CPU rallentata?** Sotto i 16 ms per fotogramma |
 | `collaudo.js` | non si è rotto niente (contrasto, tabellino, portiere) |
 | `senza-rete.js` | non scarica niente da nessuno |
+| `giocata.js` | **com'è toccare la palla?** Gesti touch veri, latenza e risposta in numeri |
