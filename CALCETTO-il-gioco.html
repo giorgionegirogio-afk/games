@@ -1332,6 +1332,14 @@ input{user-select:text;-webkit-user-select:text}
   display:flex;justify-content:center;pointer-events:none;padding:0;
   width:clamp(240px,44vw,380px);
 }
+/* SUI VIEWPORT BASSI (i telefoni 21:9) la fascia dei tabelloni sale fin
+   dentro la fascia bassa: a 6px dal fondo la barra cadeva esattamente
+   sulla riga delle insegne — lo slash e i puntini tagliavano in due
+   'TRASPORTI DINO', il fondo semitrasparente oscurava 'GOMME 2000' e il
+   bottone SALTA copriva il pannello accanto. La barra torna sull'erba,
+   sopra la fascia dei tabelloni: la garanzia dei 56px tiene comunque il
+   pallone lontano dal bordo basso dell'area di gioco. */
+@media (max-height:406px){ #tut{bottom:70px} }
 .pausahide{display:none!important}
 /* la striscia dell'evento e il fumetto abitano la stessa fascia: quando
    passa la striscia il fumetto si fa da parte invece di finirci sopra */
@@ -9378,6 +9386,31 @@ function drawGoals(){
   for(const side of [0,1]){
     const gx = side?FW:0;
     const dir = side?1:-1;
+    /* LA FASCIA DIETRO LA LINEA DI PORTA E' QUASI NERA, e si dipinge QUI
+       perche' la folla si disegna a ogni fotogramma sopra la tessitura:
+       un buio cotto nel campo finirebbe SOTTO gli spettatori, e infatti
+       c'e' finito — le sagome trapassavano lo specchio della porta e il
+       gol non "sfondava" piu'. Due pennellate per lato:
+         · una banda piena dalla riga di porta al fondo della rete, per
+           tutta l'altezza in quadro: e' il fondale che fa staccare la
+           maglia bianca e l'alone della palla;
+         · una velatura che sfuma sulla gradinata: la folla dietro la
+           porta resta leggibile ma in penombra, come sotto una tettoia.
+       Il riflettore del gol si accende DOPO, e' lui che buca il buio.
+       Vale solo per l'inquadratura del gol (e la sua moviola): in gioco
+       e nel menu il bordo campo resta quello di sempre. */
+    if(G.scene==='goal' || G.moviola){
+      const bx = side ? FW : -GOAL_D-6;
+      ctx.fillStyle='rgba(4,10,7,.90)';
+      ctx.fillRect(bx, -170, GOAL_D+6, FH+340);
+      const v0 = side ? FW+GOAL_D+6 : -GOAL_D-6;
+      const v1 = v0 + dir*74;
+      const gv = ctx.createLinearGradient(v0,0,v1,0);
+      gv.addColorStop(0,'rgba(4,10,7,.66)');
+      gv.addColorStop(1,'rgba(4,10,7,.34)');
+      ctx.fillStyle=gv;
+      ctx.fillRect(Math.min(v0,v1), -170, Math.abs(v1-v0), FH+340);
+    }
     const nb=G.netBulge[side];
     /* (1) onda: l'ampiezza cala, la larghezza cresce. A movimento ridotto
        la maglia non oscilla — il sacco pero' resta, perche' dice DOVE e'
@@ -9431,9 +9464,11 @@ function drawGoals(){
         for(let j=0;j<=N;j++){ const y=GY0+GOAL_H*j/N; const x=X(y,k); if(j) ctx.lineTo(x,y); else ctx.moveTo(x,y); }
         ctx.stroke();
       }
-      /* fili orizzontali: arrivano fin dove e' arrivato il fondo */
-      for(let i=0;i<=6;i++){
-        const gy=GY0+GOAL_H*i/6;
+      /* fili orizzontali: arrivano fin dove e' arrivato il fondo. Tredici
+         come a riposo: e' la maglia fitta che si vede nella FOTOGRAFIA
+         del gol, e dimezzarla li' costava meta' della rete. */
+      for(let i=0;i<=12;i++){
+        const gy=GY0+GOAL_H*i/12;
         ctx.beginPath(); ctx.moveTo(gx,gy); ctx.lineTo(X(gy,1),gy); ctx.stroke();
       }
       /* LA LUCE SULLA MAGLIA TESA. Il bordo del sacco e' l'unico pezzo di
@@ -11615,21 +11650,24 @@ function drawMinimappa(){
      vedere e il piu' facile da togliere: su un campo che adesso e' verde
      acceso, un riquadro #06120c con un filo bianco intorno legge come un
      buco nello schermo. La minimappa e' un campo in miniatura: prende il
-     verde del campo al 78% (il fondo resta abbastanza opaco da rendere
-     leggibili i pallini sopra la folla, che era la ragione vera di quel
-     nero) e prende LA STESSA ROTAIA del campo grande — contorno scuro,
-     filo caldo a ovest e in cima, filo freddo a est e in fondo. Sono
-     quattro fillRect da un pixel: costano quanto il bordo di prima e la
-     bussola smette di essere un ritaglio per diventare un oggetto. */
+     verde del campo PIENO e prende LA STESSA ROTAIA del campo grande —
+     contorno scuro, filo caldo a ovest e in cima, filo freddo a est e in
+     fondo. Sono quattro fillRect da un pixel: costano quanto il bordo di
+     prima e la bussola smette di essere un ritaglio per diventare un
+     oggetto.
+     IL FONDO E' OPACO, ED E' UNA LEZIONE PAGATA: con l'inquadratura
+     riaperta il pannello e' finito sopra la folla e i tabelloni, e al 78%
+     di opacita' le sagome degli spettatori trapassavano il verde del
+     radar — chiazze chiare e scure dentro il campo in miniatura, i punti
+     rosa confusi con le teste. Un radar si legge in un colpo d'occhio
+     solo se il suo fondo e' SUO. */
   const THm=FIELDS[clamp(G.fieldIdx|0,0,FIELDS.length-1)].th;
-  ctx.fillStyle='rgba(6,18,10,.42)';
+  ctx.fillStyle='#09140c';
   ctx.fillRect(mx-3,my-3,mw+6,mh+6);           // zoccolo scuro sotto la rotaia
-  ctx.globalAlpha=0.78;
   ctx.fillStyle=THm.g1||'#075c14'; ctx.fillRect(mx,my,mw,mh);
   /* le bande di tosatura, cinque, come sul manto vero */
   ctx.fillStyle=THm.g2||'#0a6c19';
   for(let i=1;i<6;i+=2) ctx.fillRect(mx+mw*i/6,my,mw/6,mh);
-  ctx.globalAlpha=1;
   ctx.fillStyle='rgba(6,14,10,.85)';
   ctx.fillRect(mx-2,my-2,mw+4,1.6); ctx.fillRect(mx-2,my+mh+0.4,mw+4,1.6);
   ctx.fillRect(mx-2,my-2,1.6,mh+4); ctx.fillRect(mx+mw+0.4,my-2,1.6,mh+4);

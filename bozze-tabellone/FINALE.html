@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>FINALE — tabellone segnapunti del campetto</title>
+<style>
+  html,body{margin:0;padding:0;background:#1a1420;}
+  canvas{display:block;}
+</style>
+</head>
+<body>
+<canvas id="scena"></canvas>
+<script>
+'use strict';
+
+/* ================================================================
+   COME INNESTARLA IN CALCETTO-il-gioco.html
+   ----------------------------------------------------------------
+   1. Copiare TUTTA la funzione disegnaTabellone (da qui alla sua
+      graffa di chiusura) nel blocco <script> del gioco, al posto
+      dell'attuale disegno del punteggio/HUD in alto.
+   2. Nel ciclo di disegno di ogni fotogramma, DOPO aver disegnato
+      la recinzione/lo sfondo e PRIMA dei giocatori, chiamare:
+        disegnaTabellone(ctx, x, y, w, h,
+                         { casa: punteggioCasa, ospiti: punteggioOspiti,
+                           minuto: String(minutoPartita) });
+      con (x,y,w,h) il rettangolo della sola tavola (l'alone, l'ombra
+      portata verso est e la lavagnetta del minuto sporgono da soli:
+      lasciarle ~0.5*w di aria ai lati, ~0.3*h sopra, ~0.45*h sotto).
+   3. Costo: la scena completa viene dipinta UNA volta su un canvas
+      fuori schermo e da li' in poi ogni fotogramma e' UN solo
+      drawImage. Il canvas si ridipinge da solo se cambiano w, h o i
+      dati (gol, minuto). Non serve fare altro.
+   4. La funzione e' pura e autonoma: nessuna variabile globale,
+      nessuna dipendenza, casualita' a seme fisso (la materia non
+      "bolle" tra fotogrammi). Funziona anche piccola in un angolo.
+   ================================================================ */
+function disegnaTabellone(ctx, x, y, w, h, dati) {
+
+  /* ---- margini della scena attorno alla tavola (alone, ombra,
+          attacchi, lavagnetta del minuto) ---- */
+  const padX = w * 0.50, padTop = h * 0.32, padBot = h * 0.46;
+
+  /* ---- CACHE FUORI SCHERMO: tutta la parte costosa (venature,
+          vernice, ruggine, edera, cifre sbeccate) vive qui e viene
+          dipinta UNA sola volta; si rifa' solo se cambiano taglia o
+          dati. Ogni fotogramma in partita costa UN drawImage. ---- */
+  const chiave = [Math.round(w), Math.round(h), dati.casa, dati.ospiti, dati.minuto].join('|');
+  let memo = disegnaTabellone._memo;
+  if (!memo || memo.chiave !== chiave) {
+    memo = disegnaTabellone._memo = {
+      chiave: chiave,
+      canvas: dipingiScena(w, h, dati, padX, padTop, padBot)
+    };
+  }
+  ctx.drawImage(memo.canvas,
+                x - padX, y - padTop,
+                w + padX * 2, h + padTop + padBot);
+
+  /* ================================================================
+     Da qui in giu': la pittura vera, eseguita solo nel canvas
+     d'appoggio (mai per fotogramma).
+     ================================================================ */
+  function dipingiScena(w, h, dati, padX, padTop, padBot) {
+    const SS = 2;                       // sovracampionamento: nitida anche su schermi densi
+    const cw = Math.max(1, Math.round((w + padX * 2) * SS));
+    const chh = Math.max(1, Math.round((h + padTop + padBot) * SS));
+    const off = (typeof OffscreenCanvas !== 'undefined')
+      ? new OffscreenCanvas(cw, chh)
+      : (function(){ const c = document.createElement('canvas'); c.width = cw; c.height = chh; return c; })();
+    const ctx = off.getContext('2d');
+    ctx.scale(SS, SS);
+    ctx.translate(padX, padTop);
+    // da qui: spazio locale, faccia della tavola = (0,0)-(w,h)
+
+    /* ---- casualita' deterministica ---- */
+    function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;
+      var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;
+      return((t^t>>>14)>>>0)/4294967296;}}
+    const rng = mulberry32(20250802);
+
+    /* ---- cifre dipinte a mano (scatola unitaria 0..1) ---- */
+    const CIFRE = {
+      '0': [[[0.50,0.06],[0.76,0.16],[0.84,0.50],[0.76,0.84],[0.50,0.95],[0.24,0.83],[0.16,0.50],[0.25,0.16],[0.50,0.06]]],
+      '1': [[[0.30,0.24],[0.55,0.07],[0.55,0.94]]],
+      '2': [[[0.22,0.28],[0.31,0.11],[0.55,0.06],[0.76,0.17],[0.77,0.38],[0.54,0.62],[0.25,0.91]],
+            [[0.25,0.91],[0.80,0.90]]],
+      '3': [[[0.25,0.15],[0.50,0.06],[0.74,0.16],[0.72,0.37],[0.50,0.47]],
+            [[0.50,0.47],[0.78,0.59],[0.73,0.85],[0.46,0.95],[0.22,0.84]]],
+      '4': [[[0.61,0.07],[0.21,0.60],[0.84,0.60]],
+            [[0.66,0.33],[0.66,0.95]]],
+      '5': [[[0.75,0.08],[0.31,0.08],[0.26,0.43],[0.53,0.39],[0.76,0.53],[0.74,0.80],[0.48,0.94],[0.22,0.84]]],
+      '6': [[[0.70,0.09],[0.43,0.15],[0.27,0.44],[0.24,0.72],[0.44,0.93],[0.68,0.86],[0.74,0.62],[0.52,0.50],[0.30,0.58]]],
+      '7': [[[0.22,0.09],[0.80,0.09],[0.45,0.94]],
+            [[0.37,0.52],[0.67,0.52]]],
+      '8': [[[0.50,0.06],[0.70,0.14],[0.71,0.32],[0.50,0.44],[0.30,0.32],[0.31,0.14],[0.50,0.06]],
+            [[0.50,0.44],[0.76,0.56],[0.76,0.82],[0.50,0.95],[0.24,0.82],[0.25,0.56],[0.50,0.44]]],
+      '9': [[[0.31,0.89],[0.58,0.84],[0.74,0.55],[0.76,0.27],[0.56,0.08],[0.32,0.14],[0.26,0.39],[0.48,0.50],[0.70,0.42]]]
+    };
+
+    function tracciaPenn(punti, s, ox, oy, jit) {
+      const p = punti.map(q => [ox + q[0]*s + (rng()*2-1)*jit,
+                                oy + q[1]*s + (rng()*2-1)*jit]);
+      ctx.beginPath();
+      ctx.moveTo(p[0][0], p[0][1]);
+      for (let i = 1; i < p.length - 1; i++) {
+        const mx = (p[i][0]+p[i+1][0])/2, my = (p[i][1]+p[i+1][1])/2;
+        ctx.quadraticCurveTo(p[i][0], p[i][1], mx, my);
+      }
+      ctx.lineTo(p[p.length-1][0], p[p.length-1][1]);
+      ctx.stroke();
+    }
+
+    function cifraDipinta(cx, cy, s, ch, colore, spess, gesso) {
+      const tratti = CIFRE[ch];
+      if (!tratti) return;
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const ox = cx - s/2, oy = cy - s/2;
+      if (gesso) {
+        for (let pass = 0; pass < 3; pass++) {
+          ctx.strokeStyle = colore;
+          ctx.globalAlpha = pass === 0 ? 0.85 : 0.30;
+          ctx.lineWidth = spess * (pass === 0 ? 1 : 0.6);
+          for (const t of tratti) tracciaPenn(t, s, ox, oy, s*0.022);
+        }
+      } else {
+        // vernice: corpo pieno, tratto fermo (tremolio minimo: nitido anche in miniatura)
+        ctx.strokeStyle = colore;
+        ctx.globalAlpha = 1;
+        for (const t of tratti) {
+          ctx.lineWidth = spess * (0.92 + rng()*0.18);
+          tracciaPenn(t, s, ox, oy, s*0.012);
+        }
+        // filo di luce del pennello verso il sole (alto-ovest)
+        ctx.globalAlpha = 0.32;
+        ctx.lineWidth = spess * 0.4;
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.translate(-spess*0.15, -spess*0.15);
+        for (const t of tratti) tracciaPenn(t, s, ox, oy, s*0.012);
+      }
+      ctx.restore();
+    }
+
+    function numeroDipinto(cx, cy, s, testo, colore, spess, gesso) {
+      const passo = s * 0.66;
+      let x0 = cx - (testo.length - 1) * passo / 2;
+      for (const ch of testo) { cifraDipinta(x0, cy, s, ch, colore, spess, gesso); x0 += passo; }
+    }
+
+    /* la vernice bianca delle cifre e' mangiata a chiazze che rivelano
+       la lavagna scura sotto (innesto dalla bozza-materia) */
+    function sbeccaNumero(cx, cy, s, testo, fondo) {
+      const passo = s * 0.66;
+      let x0 = cx - (testo.length - 1) * passo / 2;
+      for (const ch of testo) {
+        const tratti = CIFRE[ch];
+        if (!tratti) { x0 += passo; continue; }
+        const ox = x0 - s/2, oy = cy - s/2;
+        for (const t of tratti) {
+          const n = 1 + Math.floor(rng() * 2);
+          for (let i = 0; i < n; i++) {
+            const j = Math.floor(rng() * (t.length - 1));
+            const tt = rng();
+            const px = ox + (t[j][0] + (t[j+1][0]-t[j][0]) * tt) * s;
+            const py = oy + (t[j][1] + (t[j+1][1]-t[j][1]) * tt) * s;
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(rng() * 6.28);
+            const rr = s * (0.014 + rng() * 0.018);
+            ctx.beginPath();
+            ctx.moveTo(-rr, 0);
+            ctx.lineTo(-rr*0.3, -rr*(0.5 + rng()*0.6));
+            ctx.lineTo(rr*(0.5 + rng()*0.5), -rr*0.3);
+            ctx.lineTo(rr*0.6, rr*(0.4 + rng()*0.6));
+            ctx.lineTo(-rr*0.3, rr*0.6);
+            ctx.closePath();
+            ctx.fillStyle = fondo;
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+        x0 += passo;
+      }
+    }
+
+    /* gocce di smalto che scendono sotto le cifre (innesto dalla bozza-materia) */
+    function colatureNumero(cx, cy, s, testo, colore, maxY) {
+      const passo = s * 0.66;
+      let x0 = cx - (testo.length - 1) * passo / 2;
+      ctx.save();
+      ctx.lineCap = 'round';
+      for (const ch of testo) {
+        const n = 1 + Math.floor(rng() * 2);
+        for (let i = 0; i < n; i++) {
+          const gx = x0 + (rng()*2 - 1) * s * 0.22;
+          const gy = cy + s * (0.34 + rng() * 0.08);
+          const gl = Math.min(s * (0.08 + rng() * 0.14), maxY - gy - s*0.03);
+          if (gl < s * 0.03) continue;
+          ctx.strokeStyle = colore;
+          ctx.globalAlpha = 0.8;
+          ctx.lineWidth = s * (0.018 + rng() * 0.012);
+          ctx.beginPath();
+          ctx.moveTo(gx, gy);
+          ctx.quadraticCurveTo(gx + (rng()*2-1)*s*0.01, gy + gl*0.6, gx + (rng()*2-1)*s*0.012, gy + gl);
+          ctx.stroke();
+          ctx.globalAlpha = 0.85;
+          ctx.beginPath();
+          ctx.arc(gx + (rng()*2-1)*s*0.008, gy + gl, s * (0.014 + rng()*0.008), 0, Math.PI*2);
+          ctx.fillStyle = colore;
+          ctx.fill();
+        }
+        x0 += passo;
+      }
+      ctx.restore();
+    }
+
+    function testoDipinto(cx, cy, size, testo, colore, alfa) {
+      ctx.save();
+      ctx.font = '700 ' + size + 'px "Arial Black", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const larg = [];
+      let tot = 0;
+      for (const ch of testo) { const lw = ctx.measureText(ch).width * 1.06; larg.push(lw); tot += lw; }
+      let x0 = cx - tot/2;
+      for (let i = 0; i < testo.length; i++) {
+        const ch = testo[i];
+        ctx.save();
+        ctx.translate(x0 + larg[i]/2, cy + (rng()*2-1)*size*0.05);
+        ctx.rotate((rng()*2-1)*0.05);
+        // doppia battuta sfalsata: da stencil passato due volte, non da font
+        ctx.globalAlpha = alfa * 0.45;
+        ctx.fillStyle = colore;
+        ctx.fillText(ch, size*0.035, size*0.04);
+        ctx.globalAlpha = alfa * (0.9 + rng()*0.1);
+        ctx.fillText(ch, 0, 0);
+        ctx.restore();
+        x0 += larg[i];
+      }
+      ctx.restore();
+    }
+
+    /* chiazze del colore di fondo che mangiano una scritta: vernice saltata */
+    function tarlaScritta(cx, cy, wZona, hZona, fondo, n) {
+      for (let i = 0; i < n; i++) {
+        ctx.save();
+        ctx.translate(cx + (rng()*2-1)*wZona/2, cy + (rng()*2-1)*hZona/2);
+        ctx.rotate(rng()*6.28);
+        const rr = hZona * (0.05 + rng() * 0.10);
+        ctx.beginPath();
+        ctx.moveTo(-rr, 0);
+        ctx.lineTo(-rr*0.2, -rr*(0.5+rng()*0.6));
+        ctx.lineTo(rr*(0.4+rng()*0.6), -rr*0.3);
+        ctx.lineTo(rr*0.5, rr*(0.3+rng()*0.6));
+        ctx.closePath();
+        ctx.fillStyle = fondo;
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function rrect(x0, y0, w0, h0, r) {
+      ctx.beginPath();
+      ctx.moveTo(x0+r, y0);
+      ctx.arcTo(x0+w0, y0, x0+w0, y0+h0, r);
+      ctx.arcTo(x0+w0, y0+h0, x0, y0+h0, r);
+      ctx.arcTo(x0, y0+h0, x0, y0, r);
+      ctx.arcTo(x0, y0, x0+w0, y0, r);
+      ctx.closePath();
+    }
+
+    function foglia(fx, fy, fs, ang, scuro) {
+      ctx.save();
+      ctx.translate(fx, fy);
+      ctx.rotate(ang);
+      ctx.beginPath();
+      ctx.moveTo(0, fs*0.68);
+      ctx.bezierCurveTo(-fs*0.30, fs*0.28, -fs*0.42, -fs*0.05, -fs*0.30, -fs*0.32);
+      ctx.bezierCurveTo(-fs*0.16, -fs*0.52, fs*0.16, -fs*0.52, fs*0.30, -fs*0.32);
+      ctx.bezierCurveTo( fs*0.42, -fs*0.05,  fs*0.30, fs*0.28, 0, fs*0.68);
+      ctx.closePath();
+      const g = ctx.createLinearGradient(-fs*0.5, 0, fs*0.5, 0);
+      if (scuro) { g.addColorStop(0, '#2e4a22'); g.addColorStop(1, '#1c3015'); }
+      else       { g.addColorStop(0, '#5d7f35'); g.addColorStop(1, '#33511f'); }
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(15,28,10,0.55)';
+      ctx.lineWidth = fs*0.05;
+      ctx.stroke();
+      // il sole basso da ovest accende il fianco sinistro della foglia
+      ctx.beginPath();
+      ctx.moveTo(0, fs*0.62);
+      ctx.bezierCurveTo(-fs*0.28, fs*0.26, -fs*0.38, -fs*0.05, -fs*0.27, -fs*0.30);
+      ctx.strokeStyle = 'rgba(255,200,125,0.4)';
+      ctx.lineWidth = fs*0.07;
+      ctx.stroke();
+      // nervatura centrale e due laterali
+      ctx.strokeStyle = scuro ? 'rgba(120,150,80,0.35)' : 'rgba(200,220,150,0.4)';
+      ctx.lineWidth = fs*0.05;
+      ctx.beginPath();
+      ctx.moveTo(0, fs*0.6); ctx.lineTo(0, -fs*0.42);
+      ctx.moveTo(0, fs*0.1); ctx.lineTo(-fs*0.22, -fs*0.12);
+      ctx.moveTo(0, fs*0.1); ctx.lineTo(fs*0.22, -fs*0.12);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function filoDiFerro(x1, y1, x2, y2) {
+      const dx = x2-x1, dy = y2-y1, L = Math.hypot(dx, dy);
+      const nx = -dy/L, ny = dx/L, onde = Math.max(4, Math.round(L/9));
+      for (let lato = 0; lato < 2; lato++) {
+        ctx.beginPath();
+        for (let i = 0; i <= onde*8; i++) {
+          const t = i/(onde*8);
+          const amp = Math.sin(t*Math.PI*onde + lato*Math.PI) * L*0.012;
+          const px = x1 + dx*t + nx*amp, py = y1 + dy*t + ny*amp;
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.strokeStyle = lato ? 'rgba(96,100,108,0.9)' : 'rgba(208,213,220,0.95)';
+        ctx.lineWidth = lato ? h*0.008 : h*0.011;
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(x2 + w*0.006, y2 - h*0.008, h*0.014, 0.4, Math.PI*2.1);
+      ctx.strokeStyle = 'rgba(165,170,178,0.9)';
+      ctx.lineWidth = h*0.007;
+      ctx.stroke();
+    }
+
+    function catena(x1, y1, x2, y2, maglie) {
+      const dx = (x2-x1)/maglie, dy = (y2-y1)/maglie;
+      for (let i = 0; i < maglie; i++) {
+        const cx = x1 + dx*(i+0.5), cy = y1 + dy*(i+0.5);
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(Math.atan2(dy, dx) + Math.PI/2);
+        ctx.beginPath();
+        if (i % 2 === 0) ctx.ellipse(0, 0, h*0.016, h*0.027, 0, 0, Math.PI*2);
+        else             ctx.ellipse(0, 0, h*0.007, h*0.026, 0, 0, Math.PI*2);
+        ctx.strokeStyle = '#5e3f2b';
+        ctx.lineWidth = h*0.012;
+        ctx.stroke();
+        ctx.beginPath();
+        if (i % 2 === 0) ctx.ellipse(-h*0.004, -h*0.005, h*0.014, h*0.024, 0, -2.4, 0.6);
+        else             ctx.ellipse(-h*0.003, -h*0.004, h*0.006, h*0.023, 0, -2.4, 0.6);
+        ctx.strokeStyle = 'rgba(255,205,150,0.6)';
+        ctx.lineWidth = h*0.005;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function vite(vx, vy, r) {
+      // colatura di ruggine: cono sfumato che si assottiglia scendendo
+      const lung = r * (4 + rng() * 5);
+      const gr = ctx.createLinearGradient(vx, vy, vx, vy + lung);
+      gr.addColorStop(0, 'rgba(146,66,26,0.5)');
+      gr.addColorStop(0.6, 'rgba(130,58,22,0.25)');
+      gr.addColorStop(1, 'rgba(120,52,20,0)');
+      ctx.fillStyle = gr;
+      ctx.beginPath();
+      ctx.moveTo(vx - r*0.75, vy);
+      ctx.lineTo(vx + r*0.75, vy);
+      ctx.lineTo(vx + r*(0.2 + rng()*0.3), vy + lung);
+      ctx.lineTo(vx - r*(0.2 + rng()*0.3), vy + lung);
+      ctx.closePath();
+      ctx.fill();
+      // aureola di ruggine attorno alla testa
+      ctx.fillStyle = 'rgba(140,62,24,0.25)';
+      ctx.beginPath();
+      ctx.arc(vx + (rng()*2-1)*r*0.3, vy + (rng()*2-1)*r*0.3, r*1.6, 0, Math.PI*2);
+      ctx.fill();
+      // mezzaluna d'ombra della testa, spinta a est dal sole a ovest
+      ctx.fillStyle = 'rgba(30,18,10,0.4)';
+      ctx.beginPath();
+      ctx.arc(vx + r*0.35, vy + r*0.2, r*0.95, 0, Math.PI*2);
+      ctx.fill();
+      // testa: il riflesso sta in alto a ovest, verso il sole
+      const g = ctx.createRadialGradient(vx - r*0.45, vy - r*0.35, r*0.1, vx, vy, r);
+      g.addColorStop(0, '#e8dcc2');
+      g.addColorStop(0.55, '#8f877a');
+      g.addColorStop(1, '#4c463d');
+      ctx.beginPath(); ctx.arc(vx, vy, r, 0, Math.PI*2);
+      ctx.fillStyle = g; ctx.fill();
+      ctx.strokeStyle = 'rgba(30,26,20,0.6)'; ctx.lineWidth = r*0.2; ctx.stroke();
+      const a = 0.6 + rng()*1.2;
+      ctx.beginPath();
+      ctx.moveTo(vx + Math.cos(a)*r*0.7, vy + Math.sin(a)*r*0.7);
+      ctx.lineTo(vx - Math.cos(a)*r*0.7, vy - Math.sin(a)*r*0.7);
+      ctx.strokeStyle = 'rgba(40,35,28,0.8)'; ctx.lineWidth = r*0.28; ctx.stroke();
+    }
+
+    /* ================= messa in scena ================= */
+    ctx.save();
+
+    const cx0 = w/2, cy0 = h/2;
+
+    /* 1 — ALONE DI STACCO: bagliore caldo del sole basso dietro il
+          pannello, centrato un po' a ovest, che lo solleva dalla rete */
+    let alone = ctx.createRadialGradient(cx0 - w*0.12, cy0 - h*0.05, w*0.05, cx0 - w*0.06, cy0, w*0.80);
+    alone.addColorStop(0, 'rgba(255,198,122,0.85)');
+    alone.addColorStop(0.4, 'rgba(255,170,96,0.48)');
+    alone.addColorStop(1, 'rgba(255,140,80,0)');
+    ctx.fillStyle = alone;
+    ctx.fillRect(-padX, -padTop, w + padX*2, h + padTop + padBot);
+    let alone2 = ctx.createRadialGradient(cx0 - w*0.18, cy0, w*0.02, cx0 - w*0.1, cy0, w*0.42);
+    alone2.addColorStop(0, 'rgba(255,222,160,0.55)');
+    alone2.addColorStop(1, 'rgba(255,200,130,0)');
+    ctx.fillStyle = alone2;
+    ctx.fillRect(-padX, -padTop, w + padX*2, h + padTop + padBot);
+
+    /* leggera rotazione prospettica: appeso non perfettamente dritto */
+    ctx.translate(w/2, 0);
+    ctx.rotate(-0.028);
+    ctx.translate(-w/2, 0);
+
+    const spesso = w * 0.022;      // spessore del compensato visto di taglio
+
+    /* 2 — OMBRA PORTATA sulla rete: sole quasi orizzontale da ovest ->
+          ombra spinta a EST, appena alta, quasi niente verso il basso.
+          Tre veli sovrapposti al posto del blur: bordo morbido che non
+          si legge come un secondo pannello. (innesto dalla bozza-luce) */
+    ctx.save();
+    const veli = [
+      { dx: w*0.085, dy: h*0.010, sc: 1.005, a: 0.26 },
+      { dx: w*0.105, dy: h*0.018, sc: 1.030, a: 0.18 },
+      { dx: w*0.130, dy: h*0.026, sc: 1.060, a: 0.11 }
+    ];
+    for (const v of veli) {
+      ctx.save();
+      ctx.translate(w/2 + v.dx, h/2 + v.dy);
+      ctx.scale(v.sc, v.sc * 0.99);
+      rrect(-w/2, -h/2, w, h, w*0.012);
+      ctx.fillStyle = 'rgba(17,13,22,' + v.a + ')';
+      ctx.fill();
+      // anche la lavagnetta del minuto proietta la sua
+      rrect(w*0.68 - w/2, h*1.05 - h/2, w*0.16, h*0.21, w*0.006);
+      ctx.fillStyle = 'rgba(17,13,22,' + (v.a*0.8) + ')';
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+    // ombra di contatto, stretta, subito dietro il bordo est
+    ctx.save();
+    ctx.translate(w*0.030, h*0.018);
+    rrect(0, 0, w, h, w*0.012);
+    ctx.fillStyle = 'rgba(12,9,18,0.38)';
+    ctx.fill();
+    ctx.restore();
+
+    /* 3 — attacchi: fil di ferro a sinistra, catenella arrugginita a destra */
+    filoDiFerro(w*0.10, h*0.015, w*0.045, -h*0.24);
+    catena(w*0.90, h*0.015, w*0.955, -h*0.22, 7);
+
+    /* 4 — taglio del compensato (spessore a destra e sotto, in ombra) */
+    ctx.fillStyle = '#6b5233';
+    ctx.beginPath();
+    ctx.moveTo(w, h*0.004); ctx.lineTo(w + spesso, h*0.012);
+    ctx.lineTo(w + spesso, h + spesso*0.7); ctx.lineTo(w, h); ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, h); ctx.lineTo(w + spesso, h);
+    ctx.lineTo(w + spesso, h + spesso*0.9); ctx.lineTo(spesso*0.3, h + spesso*0.9); ctx.closePath();
+    ctx.fillStyle = '#57422a';
+    ctx.fill();
+    for (let i = 0; i < 5; i++) {
+      const t = (i + 0.5) / 5;
+      ctx.beginPath();
+      ctx.moveTo(w + spesso*t, h*0.02);
+      ctx.lineTo(w + spesso*t, h + spesso*0.7*t);
+      ctx.strokeStyle = i % 2 ? 'rgba(42,30,18,0.55)' : 'rgba(160,128,82,0.5)';
+      ctx.lineWidth = spesso*0.09;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(w*0.01, h + spesso*0.9*t);
+      ctx.lineTo(w + spesso*0.8, h + spesso*0.9*t);
+      ctx.strokeStyle = i % 2 ? 'rgba(42,30,18,0.45)' : 'rgba(150,120,78,0.4)';
+      ctx.lineWidth = spesso*0.08;
+      ctx.stroke();
+    }
+
+    /* 5 — faccia di compensato nudo (si vedra' nei punti scrostati) */
+    rrect(0, 0, w, h, w*0.012);
+    const legno = ctx.createLinearGradient(0, 0, w, h*0.4);
+    legno.addColorStop(0, '#b8935c');
+    legno.addColorStop(0.5, '#a8834f');
+    legno.addColorStop(1, '#8f6d40');
+    ctx.fillStyle = legno;
+    ctx.fill();
+    ctx.save();
+    ctx.clip();
+    for (let i = 0; i < 26; i++) {
+      const vy = h * (i + rng()) / 26;
+      ctx.beginPath();
+      ctx.moveTo(-w*0.02, vy);
+      for (let sx = 0; sx <= 8; sx++) {
+        ctx.quadraticCurveTo(w*(sx+0.5)/8, vy + (rng()*2-1)*h*0.018, w*(sx+1)/8, vy + (rng()*2-1)*h*0.008);
+      }
+      ctx.strokeStyle = 'rgba(96,70,38,' + (0.10 + rng()*0.14) + ')';
+      ctx.lineWidth = 1 + rng()*1.6;
+      ctx.stroke();
+    }
+    for (const [nx, ny] of [[w*0.30, h*0.52], [w*0.72, h*0.20]]) {
+      for (let r = 4; r > 0; r--) {
+        ctx.beginPath();
+        ctx.ellipse(nx, ny, w*0.008*r, h*0.007*r, 0.3, 0, Math.PI*2);
+        ctx.strokeStyle = 'rgba(84,58,30,' + (0.35 - r*0.05) + ')';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+      }
+    }
+
+    /* 6 — mano di vernice verde, stinta dal sole, con il legno che affiora */
+    const vern = ctx.createLinearGradient(0, 0, w*0.9, h);
+    vern.addColorStop(0, 'rgba(58,102,62,0.93)');
+    vern.addColorStop(0.55, 'rgba(44,84,52,0.94)');
+    vern.addColorStop(1, 'rgba(33,66,42,0.95)');
+    ctx.fillStyle = vern;
+    ctx.fillRect(-w*0.02, -h*0.02, w*1.05, h*1.05);
+    // vernice stinta dal sole in alto a ovest, piu' cupa e umida in basso a est
+    const stinta = ctx.createRadialGradient(w*0.18, h*0.12, w*0.02, w*0.22, h*0.18, w*0.55);
+    stinta.addColorStop(0, 'rgba(196,208,150,0.20)');
+    stinta.addColorStop(1, 'rgba(196,208,150,0)');
+    ctx.fillStyle = stinta;
+    ctx.fillRect(0, 0, w, h);
+    const umida = ctx.createRadialGradient(w*0.85, h*0.95, w*0.03, w*0.8, h*0.9, w*0.5);
+    umida.addColorStop(0, 'rgba(10,26,18,0.30)');
+    umida.addColorStop(1, 'rgba(10,26,18,0)');
+    ctx.fillStyle = umida;
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 18; i++) {
+      const vy = h * rng(), vw = w*(0.2 + rng()*0.5), vx = rng()*w*0.8;
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.015 + rng()*0.03) + ')';
+      ctx.fillRect(vx, vy, vw, h*(0.008 + rng()*0.02));
+    }
+    for (let i = 0; i < 30; i++) {
+      const vy = h * (i + rng()) / 30;
+      ctx.beginPath();
+      ctx.moveTo(-w*0.02, vy);
+      for (let sx = 0; sx <= 8; sx++) {
+        ctx.quadraticCurveTo(w*(sx+0.5)/8, vy + (rng()*2-1)*h*0.014, w*(sx+1)/8, vy + (rng()*2-1)*h*0.006);
+      }
+      ctx.strokeStyle = i % 3 ? 'rgba(14,26,16,' + (0.07 + rng()*0.09) + ')'
+                              : 'rgba(150,170,120,' + (0.04 + rng()*0.05) + ')';
+      ctx.lineWidth = 0.8 + rng()*1.4;
+      ctx.stroke();
+    }
+    for (const [nx, ny] of [[w*0.30, h*0.52], [w*0.72, h*0.20]]) {
+      for (let r = 4; r > 0; r--) {
+        ctx.beginPath();
+        ctx.ellipse(nx, ny, w*0.008*r, h*0.007*r, 0.3, 0, Math.PI*2);
+        ctx.strokeStyle = 'rgba(12,24,14,' + (0.22 - r*0.035) + ')';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+      }
+    }
+    // scrostature: piccole, sui bordi e sugli angoli, col legno che affiora
+    const chips = [
+      [w*0.022, h*0.045, w*0.030, h*0.040], [w*0.975, h*0.92, w*0.026, h*0.045],
+      [w*0.13, h*0.985, w*0.045, h*0.026], [w*0.982, h*0.09, w*0.022, h*0.05],
+      [w*0.60, h*0.988, w*0.035, h*0.022], [w*0.008, h*0.60, w*0.018, h*0.055],
+      [w*0.40, h*0.012, w*0.032, h*0.020], [w*0.985, h*0.46, w*0.018, h*0.05],
+      [w*0.79, h*0.01, w*0.026, h*0.018], [w*0.033, h*0.36, w*0.02, h*0.04]
+    ];
+    for (const [ex, ey, ew, eh] of chips) {
+      ctx.beginPath();
+      const nP = 8;
+      const raggi = [];
+      for (let i = 0; i < nP; i++) raggi.push(0.55 + rng()*0.5);
+      for (let i = 0; i <= nP; i++) {
+        const a = i/nP * Math.PI*2, r = raggi[i % nP];
+        const px = ex + Math.cos(a)*ew*r, py = ey + Math.sin(a)*eh*r;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = '#ab8752';
+      ctx.fill();
+      ctx.save();
+      ctx.clip();
+      for (let g = 0; g < 3; g++) {
+        ctx.beginPath();
+        ctx.moveTo(ex - ew, ey - eh + eh*g*0.7);
+        ctx.lineTo(ex + ew, ey - eh + eh*g*0.7 + (rng()*2-1)*eh*0.3);
+        ctx.strokeStyle = 'rgba(96,70,38,0.45)';
+        ctx.lineWidth = 0.9;
+        ctx.stroke();
+      }
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(16,30,18,0.75)';
+      ctx.lineWidth = 1.3;
+      ctx.stroke();
+    }
+    // slavatura d'acqua dal bordo alto
+    for (let i = 0; i < 4; i++) {
+      const sx = w*(0.15 + rng()*0.7);
+      ctx.beginPath();
+      ctx.moveTo(sx - w*0.008, 0);
+      ctx.quadraticCurveTo(sx + (rng()*2-1)*w*0.01, h*0.1, sx, h*(0.10 + rng()*0.14));
+      ctx.quadraticCurveTo(sx + w*0.006, h*0.06, sx + w*0.008, 0);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(20,32,22,0.18)';
+      ctx.fill();
+    }
+
+    /* 7 — riquadro bianco dipinto a mano lungo il bordo */
+    ctx.save();
+    ctx.strokeStyle = 'rgba(236,228,206,0.85)';
+    ctx.lineWidth = w*0.006;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    const mrg = w*0.028, jj = w*0.004;
+    ctx.moveTo(mrg + rng()*jj, mrg + rng()*jj);
+    ctx.lineTo(w - mrg + rng()*jj, mrg - rng()*jj);
+    ctx.lineTo(w - mrg - rng()*jj, h - mrg + rng()*jj);
+    ctx.lineTo(mrg - rng()*jj, h - mrg - rng()*jj);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = w*0.003;
+    ctx.strokeStyle = '#fffef4';
+    ctx.stroke();
+    ctx.restore();
+
+    /* 8 — intestazione dipinta e tarlata (niente crenatura da software) */
+    testoDipinto(w*0.5, h*0.155, h*0.085, 'DOPOLAVORO F.C.', 'rgba(240,232,210,0.92)', 1);
+    tarlaScritta(w*0.5, h*0.155, w*0.5, h*0.09, 'rgba(48,88,54,0.9)', 16);
+    ctx.beginPath();
+    ctx.moveTo(w*0.20, h*0.235);
+    ctx.quadraticCurveTo(w*0.5, h*0.245, w*0.80, h*0.232);
+    ctx.strokeStyle = 'rgba(236,228,206,0.55)';
+    ctx.lineWidth = h*0.008;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    (function pallone(bx, by, br) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(240,232,210,0.9)';
+      ctx.lineCap = 'round';
+      ctx.lineWidth = h*0.010;
+      ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath();
+      for (let i = 0; i <= 5; i++) {
+        const a = -Math.PI/2 + i/5*Math.PI*2;
+        const px = bx + Math.cos(a)*br*0.38, py = by + Math.sin(a)*br*0.38;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(240,232,210,0.85)';
+      ctx.fill();
+      ctx.lineWidth = h*0.007;
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI/2 + i/5*Math.PI*2;
+        ctx.beginPath();
+        ctx.moveTo(bx + Math.cos(a)*br*0.4, by + Math.sin(a)*br*0.4);
+        ctx.lineTo(bx + Math.cos(a)*br*0.95, by + Math.sin(a)*br*0.95);
+        ctx.stroke();
+      }
+      ctx.restore();
+    })(w*0.135, h*0.15, h*0.036);
+
+    /* 9 — finestre incassate scure del punteggio. L'incasso segue il
+          sole basso da ovest: parete interna OVEST in ombra netta,
+          velo ambientale leggero dall'alto, filo di luce calda che
+          entra sul fianco interno EST e sul bordo basso. */
+    const pwid = w*0.295, pY = h*0.30, pH = h*0.44;
+    function pannello(px) {
+      rrect(px, pY, pwid, pH, w*0.008);
+      const gp = ctx.createLinearGradient(px, pY, px + pwid*0.5, pY + pH);
+      gp.addColorStop(0, '#0c1712');
+      gp.addColorStop(1, '#14231a');
+      ctx.fillStyle = gp;
+      ctx.fill();
+      ctx.save();
+      rrect(px, pY, pwid, pH, w*0.008);
+      ctx.clip();
+      // ombra netta sulla parete interna ovest (il bordo blocca il sole radente)
+      ctx.beginPath();
+      ctx.rect(px, pY, pwid*0.09, pH);
+      const gi = ctx.createLinearGradient(px, 0, px + pwid*0.10, 0);
+      gi.addColorStop(0, 'rgba(0,0,0,0.55)'); gi.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = gi; ctx.fill();
+      // velo ambientale dall'alto, appena percettibile
+      ctx.beginPath();
+      ctx.rect(px, pY, pwid, pH*0.10);
+      const gi2 = ctx.createLinearGradient(0, pY, 0, pY + pH*0.12);
+      gi2.addColorStop(0, 'rgba(0,0,0,0.30)'); gi2.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = gi2; ctx.fill();
+      // il sole radente entra e accende il fianco interno est
+      ctx.beginPath();
+      ctx.rect(px + pwid*0.93, pY, pwid*0.07, pH);
+      const gi3 = ctx.createLinearGradient(px + pwid*0.92, 0, px + pwid, 0);
+      gi3.addColorStop(0, 'rgba(255,190,120,0)'); gi3.addColorStop(1, 'rgba(255,190,120,0.22)');
+      ctx.fillStyle = gi3; ctx.fill();
+      // aloni di gesso di partite passate
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.ellipse(px + pwid*(0.2 + rng()*0.6), pY + pH*(0.25 + rng()*0.5),
+                    pwid*0.16, pH*0.12, rng(), 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(220,225,215,0.028)';
+        ctx.fill();
+      }
+      ctx.restore();
+      // filo di luce calda sul bordo basso dell'incasso
+      ctx.beginPath();
+      ctx.moveTo(px + w*0.004, pY + pH);
+      ctx.lineTo(px + pwid - w*0.004, pY + pH);
+      ctx.strokeStyle = 'rgba(255,214,160,0.4)';
+      ctx.lineWidth = w*0.0035;
+      ctx.stroke();
+    }
+    pannello(w*0.115);
+    pannello(w*0.59);
+
+    /* cifre a smalto bianco: ombra di stacco dentro la finestra, corpo
+       fermo, vernice mangiata a chiazze e gocce che scendono
+       (innesti dalla bozza-materia, su fondo scuro per il contrasto) */
+    const sN = h*0.30, cyN = h*0.525;
+    const cxCasa = w*0.115 + pwid/2, cxOsp = w*0.59 + pwid/2;
+    // ombra della vernice sulla lavagna, spinta a est dal sole a ovest
+    numeroDipinto(cxCasa + h*0.018, cyN + h*0.014, sN, String(dati.casa),   'rgba(0,0,0,0.5)', h*0.052, false);
+    numeroDipinto(cxOsp  + h*0.018, cyN + h*0.014, sN, String(dati.ospiti), 'rgba(0,0,0,0.5)', h*0.052, false);
+    numeroDipinto(cxCasa, cyN, sN, String(dati.casa),   '#f6efdc', h*0.052, false);
+    numeroDipinto(cxOsp,  cyN, sN, String(dati.ospiti), '#f6efdc', h*0.052, false);
+    sbeccaNumero(cxCasa, cyN, sN, String(dati.casa),   'rgba(16,27,20,0.9)');
+    sbeccaNumero(cxOsp,  cyN, sN, String(dati.ospiti), 'rgba(16,27,20,0.9)');
+    colatureNumero(cxCasa, cyN, sN, String(dati.casa),   'rgba(243,236,218,0.85)', pY + pH);
+    colatureNumero(cxOsp,  cyN, sN, String(dati.ospiti), 'rgba(243,236,218,0.85)', pY + pH);
+
+    // due punti dipinti fra i pannelli
+    for (const dy of [h*0.45, h*0.60]) {
+      ctx.beginPath();
+      ctx.arc(w*0.5 + (rng()*2-1)*w*0.004, dy, h*0.022, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(240,232,210,0.9)';
+      ctx.fill();
+    }
+
+    /* 10 — etichette squadre, sottolineate a pennello (niente adesivi
+           fluo da UI: solo smalto bianco stanco, come il resto) */
+    testoDipinto(cxCasa, h*0.83, h*0.062, 'CASA',   'rgba(238,230,208,0.9)', 1);
+    testoDipinto(cxOsp,  h*0.83, h*0.062, 'OSPITI', 'rgba(238,230,208,0.9)', 1);
+    tarlaScritta(cxCasa, h*0.83, w*0.12, h*0.06, 'rgba(44,84,52,0.9)', 5);
+    tarlaScritta(cxOsp,  h*0.83, w*0.14, h*0.06, 'rgba(44,84,52,0.9)', 5);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(w*0.185, h*0.895);
+    ctx.quadraticCurveTo(w*0.26, h*0.902, w*0.345, h*0.893);
+    ctx.strokeStyle = 'rgba(236,228,206,0.6)'; ctx.lineWidth = h*0.011; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(w*0.66, h*0.896);
+    ctx.quadraticCurveTo(w*0.74, h*0.888, w*0.815, h*0.898);
+    ctx.strokeStyle = 'rgba(236,228,206,0.6)'; ctx.lineWidth = h*0.011; ctx.stroke();
+
+    /* 11 — un solo adesivo lasciato dai ragazzini (contorno sgombro:
+           il punteggio non deve avere rivali) */
+    ctx.save();
+    ctx.translate(w*0.935, h*0.755);
+    ctx.rotate(-0.24);
+    ctx.fillStyle = '#c8b98f';
+    ctx.fillRect(-w*0.024, -h*0.02, w*0.048, h*0.04);
+    ctx.fillStyle = '#a04438';
+    ctx.fillRect(-w*0.024, -h*0.02, w*0.048, h*0.016);
+    ctx.strokeStyle = 'rgba(60,50,40,0.4)'; ctx.lineWidth = 1;
+    ctx.strokeRect(-w*0.024, -h*0.02, w*0.048, h*0.04);
+    ctx.restore();
+
+    /* 12 — viti arrugginite ai quattro angoli, con le loro colature */
+    vite(w*0.045, h*0.055, w*0.010);
+    vite(w*0.955, h*0.055, w*0.010);
+    vite(w*0.045, h*0.945, w*0.010);
+    vite(w*0.955, h*0.945, w*0.010);
+
+    ctx.restore(); // fine clip faccia
+
+    /* 13 — BISELLI: lama calda del sole sul bordo ovest/alto,
+           spessore spento a est/basso */
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineWidth = w*0.0075;
+    ctx.beginPath();
+    ctx.moveTo(w*0.007, h*0.98); ctx.lineTo(w*0.007, h*0.014); ctx.lineTo(w*0.98, h*0.009);
+    ctx.strokeStyle = 'rgba(255,220,155,0.9)';
+    ctx.stroke();
+    ctx.lineWidth = w*0.004;
+    ctx.beginPath();
+    ctx.moveTo(w*0.015, h*0.975); ctx.lineTo(w*0.015, h*0.022); ctx.lineTo(w*0.975, h*0.017);
+    ctx.strokeStyle = 'rgba(255,236,190,0.45)';
+    ctx.stroke();
+    ctx.lineWidth = w*0.0065;
+    ctx.beginPath();
+    ctx.moveTo(w*0.993, h*0.018); ctx.lineTo(w*0.993, h*0.988); ctx.lineTo(w*0.016, h*0.993);
+    ctx.strokeStyle = 'rgba(6,10,8,0.7)';
+    ctx.stroke();
+    ctx.restore();
+
+    /* 14 — doppia temperatura sull'oggetto: caldo aranciato a ovest,
+           freddo violaceo a est (innesto dalla bozza-luce: la stessa
+           coppia di temperature la usa anche la scena dietro) */
+    rrect(0, 0, w, h, w*0.012);
+    const rad = ctx.createLinearGradient(0, 0, w, h*0.35);
+    rad.addColorStop(0, 'rgba(255,202,128,0.38)');
+    rad.addColorStop(0.45, 'rgba(255,188,112,0.08)');
+    rad.addColorStop(1, 'rgba(30,32,72,0.34)');
+    ctx.fillStyle = rad;
+    ctx.fill();
+    rrect(0, 0, w, h, w*0.012);
+    const vig = ctx.createRadialGradient(w*0.45, h*0.42, w*0.25, w*0.5, h*0.5, w*0.72);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(8,14,10,0.22)');
+    ctx.fillStyle = vig;
+    ctx.fill();
+
+    /* 15 — lavagnetta del minuto, appesa sotto con lo spago */
+    ctx.save();
+    ctx.translate(w*0.76, h*1.0);
+    ctx.rotate(0.045);
+    const lw2 = w*0.16, lh2 = h*0.21;
+    ctx.beginPath();
+    ctx.moveTo(-lw2*0.32, h*0.055); ctx.lineTo(-lw2*0.42, -h*0.012);
+    ctx.moveTo( lw2*0.34, h*0.055); ctx.lineTo( lw2*0.40, -h*0.012);
+    ctx.strokeStyle = '#b9a179';
+    ctx.lineWidth = w*0.004;
+    ctx.stroke();
+    // ombra della lavagnetta, anche lei spinta a est
+    ctx.save();
+    ctx.shadowColor = 'rgba(18,14,24,0.5)';
+    ctx.shadowBlur = h*0.05;
+    ctx.shadowOffsetX = w*0.030;
+    ctx.shadowOffsetY = h*0.020;
+    rrect(-lw2/2, h*0.05, lw2, lh2, w*0.006);
+    ctx.fillStyle = '#3d3226';
+    ctx.fill();
+    ctx.restore();
+    rrect(-lw2/2, h*0.05, lw2, lh2, w*0.006);
+    ctx.fillStyle = '#8f6d40'; ctx.fill();
+    rrect(-lw2/2 + w*0.008, h*0.05 + w*0.008, lw2 - w*0.016, lh2 - w*0.016, w*0.004);
+    ctx.fillStyle = '#1a2420'; ctx.fill();
+    ctx.fillStyle = 'rgba(220,225,215,0.08)';
+    ctx.fillRect(-lw2/2 + w*0.01, h*0.05 + lh2 - w*0.03, lw2 - w*0.02, w*0.02);
+    numeroDipinto(-w*0.008, h*0.05 + lh2*0.52, lh2*0.52, String(dati.minuto), '#e8ebdf', lh2*0.07, true);
+    ctx.beginPath();
+    ctx.moveTo(lw2*0.30, h*0.05 + lh2*0.30);
+    ctx.lineTo(lw2*0.25, h*0.05 + lh2*0.46);
+    ctx.strokeStyle = 'rgba(232,235,223,0.85)';
+    ctx.lineWidth = lh2*0.06;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-lw2/2 + w*0.002, h*0.05 + lh2); ctx.lineTo(-lw2/2 + w*0.002, h*0.053); ctx.lineTo(lw2/2, h*0.052);
+    ctx.strokeStyle = 'rgba(255,214,150,0.6)'; ctx.lineWidth = w*0.003; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(lw2/2 - w*0.002, h*0.06); ctx.lineTo(lw2/2 - w*0.002, h*0.05 + lh2 - w*0.002);
+    ctx.lineTo(-lw2/2, h*0.05 + lh2 - w*0.002);
+    ctx.strokeStyle = 'rgba(8,12,10,0.55)'; ctx.lineWidth = w*0.003; ctx.stroke();
+    ctx.restore();
+
+    /* 16 — edera: pochi ciuffi sull'angolo alto a destra, lontani dal
+           punteggio (contorno sfoltito rispetto alla bozza) */
+    ctx.beginPath();
+    ctx.moveTo(w*0.895, -h*0.12);
+    ctx.quadraticCurveTo(w*0.94, h*0.02, w*0.935, h*0.13);
+    ctx.strokeStyle = '#31461f';
+    ctx.lineWidth = w*0.005;
+    ctx.stroke();
+    const anchse = [
+      [w*0.885, -h*0.085], [w*0.945, -h*0.045],
+      [w*0.905, h*0.005],  [w*0.955, h*0.055],
+      [w*0.915, h*0.105],  [w*0.955, h*0.155]
+    ];
+    for (let i = 0; i < anchse.length; i++) {
+      const [fx, fy] = anchse[i];
+      foglia(fx + (rng()*2-1)*w*0.006, fy, h*(0.048 + rng()*0.03),
+             (rng()*2-1)*0.9, i % 3 === 0);
+    }
+    // due foglie sole al piede, in basso a sinistra
+    foglia(w*0.03, h*1.005, h*0.05, 0.5, true);
+    foglia(w*0.075, h*1.03, h*0.042, -0.7, false);
+
+    ctx.restore(); // fine spazio ruotato
+    return off;
+  }
+}
+
+/* ================================================================
+   Solo messa in mostra: il tramonto del campetto dietro la rete.
+   Doppia temperatura anche qui: ovest caldo aranciato, est viola
+   freddo — oggetto e mondo condividono la stessa sorgente.
+   ================================================================ */
+(function mostra() {
+  const canvas = document.getElementById('scena');
+  const W = 915, H = 412;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // cielo delle sette di sera, sole basso a ovest (sinistra)
+  const cielo = ctx.createLinearGradient(0, 0, 0, H);
+  cielo.addColorStop(0, '#3d2b55');
+  cielo.addColorStop(0.45, '#7c4344');
+  cielo.addColorStop(0.72, '#c67840');
+  cielo.addColorStop(1, '#e8a350');
+  ctx.fillStyle = cielo;
+  ctx.fillRect(0, 0, W, H);
+  // lato est piu' freddo: il viola della sera sale da destra
+  const freddoEst = ctx.createLinearGradient(W*0.45, 0, W, 0);
+  freddoEst.addColorStop(0, 'rgba(58,48,110,0)');
+  freddoEst.addColorStop(1, 'rgba(58,48,110,0.22)');
+  ctx.fillStyle = freddoEst;
+  ctx.fillRect(0, 0, W, H);
+
+  // sole e suo bagliore
+  const sole = ctx.createRadialGradient(112, 300, 8, 112, 300, 240);
+  sole.addColorStop(0, 'rgba(255,236,180,0.95)');
+  sole.addColorStop(0.12, 'rgba(255,210,130,0.55)');
+  sole.addColorStop(0.5, 'rgba(255,160,90,0.18)');
+  sole.addColorStop(1, 'rgba(255,140,80,0)');
+  ctx.fillStyle = sole;
+  ctx.fillRect(0, 0, W, H);
+  ctx.beginPath(); ctx.arc(112, 300, 30, 0, Math.PI*2);
+  ctx.fillStyle = '#ffe9b8'; ctx.fill();
+
+  // tetti del quartiere in controluce
+  ctx.fillStyle = '#2b1e30';
+  const tetti = [[0,318,90,94],[80,296,70,116],[142,330,60,82],[196,286,84,126],
+                 [272,312,66,100],[330,300,96,112],[418,326,74,86],[484,292,90,120],
+                 [566,316,70,96],[628,298,92,114],[712,322,66,90],[770,290,86,122],[848,314,80,98]];
+  for (const [tx, ty, tw, th] of tetti) ctx.fillRect(tx, ty, tw, th);
+  ctx.strokeStyle = '#241a28'; ctx.lineWidth = 2;
+  for (const ax of [118, 336, 522, 664, 806]) {
+    ctx.beginPath(); ctx.moveTo(ax, 296); ctx.lineTo(ax, 268); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ax-8, 276); ctx.lineTo(ax+8, 276); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(255,196,110,0.85)';
+  for (const [fx, fy] of [[214,318],[230,340],[502,320],[520,346],[648,330],[788,318],[804,342],[352,330]])
+    ctx.fillRect(fx, fy, 6, 8);
+
+  // fascia bassa: siepe scura al piede della recinzione
+  const siepe = ctx.createLinearGradient(0, 356, 0, H);
+  siepe.addColorStop(0, 'rgba(24,30,20,0)');
+  siepe.addColorStop(0.5, 'rgba(22,28,18,0.85)');
+  siepe.addColorStop(1, '#151a10');
+  ctx.fillStyle = siepe;
+  ctx.fillRect(0, 340, W, H-340);
+
+  // ==== recinzione: tubo in alto, paletti, maglia romboidale ====
+  function tubo(x1, y1, x2, y2, r) {
+    const a = Math.atan2(y2-y1, x2-x1);
+    ctx.save();
+    ctx.translate(x1, y1);
+    ctx.rotate(a);
+    const L = Math.hypot(x2-x1, y2-y1);
+    const g = ctx.createLinearGradient(0, -r, 0, r);
+    g.addColorStop(0, '#8a8f99');
+    g.addColorStop(0.35, '#c6ccd4');
+    g.addColorStop(0.7, '#5d626c');
+    g.addColorStop(1, '#3a3e46');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, -r, L, r*2);
+    const g2 = ctx.createLinearGradient(0, 0, L*0.5, 0);
+    g2.addColorStop(0, 'rgba(255,190,120,0.5)');
+    g2.addColorStop(1, 'rgba(255,190,120,0)');
+    ctx.fillStyle = g2;
+    ctx.fillRect(0, -r, L*0.5, r*2);
+    ctx.restore();
+  }
+  tubo(0, 34, W, 30, 6);                    // corrimano superiore
+  tubo(64, 28, 60, H, 5);                   // paletto ovest
+  tubo(852, 26, 856, H, 5);                 // paletto est
+
+  // maglia romboidale: fili con una pancia leggera e presa di luce
+  // diversa filo per filo — vissuta, non da stampante
+  let semeM = 424242;
+  const rndM = () => {
+    semeM |= 0; semeM = (semeM + 0x6D2B79F5) | 0;
+    let t = Math.imul(semeM ^ (semeM >>> 15), 1 | semeM);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 40, W, H-40);
+  ctx.clip();
+  const passoM = 30;
+  for (let lato = 0; lato < 2; lato++) {
+    const segno = lato === 0 ? 1 : -1;
+    for (let sx = -H; sx < W + H; sx += passoM) {
+      const panc = (rndM()*2-1) * 4;                 // pancia del filo
+      const x2 = sx + segno*(H*0.62);
+      // ombra del filo
+      ctx.beginPath();
+      ctx.moveTo(sx + 1.6, 41.6);
+      ctx.quadraticCurveTo((sx+x2)/2 + panc + 1.6, (40+H)/2 + 1.6, x2 + 1.6, H + 1.6);
+      ctx.strokeStyle = 'rgba(30,24,36,' + (0.4 + rndM()*0.2) + ')';
+      ctx.lineWidth = 2.4;
+      ctx.stroke();
+      // filo zincato
+      ctx.beginPath();
+      ctx.moveTo(sx, 40);
+      ctx.quadraticCurveTo((sx+x2)/2 + panc, (40+H)/2, x2, H);
+      ctx.strokeStyle = 'rgba(196,202,210,' + (0.45 + rndM()*0.3) + ')';
+      ctx.lineWidth = 1.5 + rndM()*0.7;
+      ctx.stroke();
+    }
+  }
+  // il sole accende la maglia a ovest, la sera la raffredda a est
+  const lucerete = ctx.createLinearGradient(0, 0, 420, 0);
+  lucerete.addColorStop(0, 'rgba(255,190,120,0.16)');
+  lucerete.addColorStop(1, 'rgba(255,190,120,0)');
+  ctx.fillStyle = lucerete;
+  ctx.fillRect(0, 40, 420, H-40);
+  const freddorete = ctx.createLinearGradient(W*0.55, 0, W, 0);
+  freddorete.addColorStop(0, 'rgba(70,60,130,0)');
+  freddorete.addColorStop(1, 'rgba(70,60,130,0.14)');
+  ctx.fillStyle = freddorete;
+  ctx.fillRect(W*0.55, 40, W*0.45, H-40);
+  ctx.restore();
+
+  // ==== l'oggetto-eroe ====
+  disegnaTabellone(ctx, 236, 92, 464, 248, { casa: 2, ospiti: 1, minuto: '72' });
+})();
+</script>
+</body>
+</html>

@@ -10,8 +10,19 @@
 
    I numeri non hanno bisogno di occhi e un critico non puo' discuterli.
 
+   RIPRODUCIBILITA', lezione pagata due volte e ora pagata qui: questa
+   misura campionava una partita SENZA seme fisso, quindi quali tiri
+   cadessero nella finestra era un lancio di dadi. Tre esecuzioni sullo
+   stesso identico codice: 8, 20 e 8 valori distinti di carica — e una
+   quarta, in mano a un verificatore, ne ha visti 1 e ha dichiarato rosso
+   un gioco sano. Un cancello che lancia dadi prima o poi fa anche il
+   contrario: copre una regressione vera con una finestra fortunata.
+   Adesso Math.random e' sostituito con un generatore a seme fisso PRIMA
+   che la pagina esegua una riga (lo stesso di scatta.js): stessa partita,
+   stessi numeri, a ogni esecuzione. --seme per cambiare partita.
+
    uso:  node strumenti/misura.js
-         node strumenti/misura.js --sec 4 --scena tiro
+         node strumenti/misura.js --sec 4 --seme 7
    ===================================================================== */
 const fs = require('fs');
 const path = require('path');
@@ -47,6 +58,15 @@ function verifica(ok, testo, dettaglio) {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 915, height: 412 }, isMobile: true, hasTouch: true, locale: 'it-IT' });
   const pag = await ctx.newPage();
+  /* il caso si governa prima di ogni riga di pagina, come in scatta.js */
+  await pag.addInitScript(seme => {
+    let s = seme >>> 0 || 1;
+    const prossimo = () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s >>> 0; };
+    Math.random = () => prossimo() / 4294967296;
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues = a => { for (let i = 0; i < a.length; i++) a[i] = prossimo(); return a; };
+    }
+  }, +arg('seme', 20260728));
   await pag.goto(`http://127.0.0.1:${srv.porta}/CALCETTO-il-gioco.html`, { waitUntil: 'load' });
   await pag.waitForFunction('window.__test !== undefined', null, { timeout: 20000 });
   await pag.waitForTimeout(500);

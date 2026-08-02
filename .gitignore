@@ -50,3 +50,7 @@ package-lock.json
 riferimenti/*/
 strisce/
 filmati/
+
+# la sandbox del tabellone-eroe: si tiene solo la definitiva
+bozze-tabellone/*
+!bozze-tabellone/FINALE.html
