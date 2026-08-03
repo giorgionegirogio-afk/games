@@ -39,9 +39,12 @@
        3) AMBRA, l'UNICO accento, massimo tre presenze per schermata;
        4) GESSO, tutto il testo. Non esiste un secondo colore di testo.
      --tu e --loro sono le due maglie, e --tu CAMBIA CON IL KIT che hai
-     scelto: il titolo, il tuo punteggio, la tua riga in classifica
-     prendono il colore della divisa che indossi. Comprare una divisa
-     ricolora il tuo gioco senza spostare un pixel del risultato.
+     scelto: il titolo (la meta' CETTO e la O-pallone), il tuo punteggio,
+     il tuo nome, la tua riga in classifica prendono il colore della
+     divisa che indossi. Comprare una divisa ricolora il tuo gioco senza
+     spostare un pixel del risultato. Il wordmark bicolore e lo scudetto
+     di STAGIONE sono il trattamento firma, non la diluizione: quella era
+     il lime sparso su bordi e ornamenti, ed e' rimossa.
      --fluo e --rosa restano definite perche' sono i due kit di partenza,
      ma nell'interfaccia non si usano piu' come decorazione: si usa --tu.
      ===================================================================== */
@@ -50,8 +53,8 @@
      delle schermate di servizio non e' piu' quasi nero, e su un verde che
      sale a Y 0,043 il vecchio grigio scendeva a 4,3:1 — sotto la soglia
      per un testo piccolo. Con questo sta a 5,6:1 sull'angolo piu' chiaro. */
-  --gesso:#f2f5ef; --grigio:#a8bcae; --fluo:#d8ff3d; --rosa:#ff5c8a;
-  --tu:#d8ff3d; --loro:#ffa0c4;
+  --gesso:#f2f5ef; --grigio:#a8bcae; --fluo:#d6ff26; --rosa:#ff5c8a;
+  --tu:#d6ff26; --loro:#ffa0c4;
   --ambra:#ffb020;
   /* UN ACCENTO, E UNO SOLO — e questa riga e' tutta la correzione.
      --oro valeva #ffb020, cioe' ERA --ambra: la stessa identica tinta
@@ -188,10 +191,59 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
   font-family:var(--cond);font-weight:700;font-size:clamp(9px,2.2vw,13px);letter-spacing:.16em;
   text-transform:uppercase;color:rgba(242,245,239,.72);line-height:1.15;
 }
-/* i due tabelloni delle schermate di servizio non sono agganciati al bordo
-   dello schermo: i ganci stanno SOPRA il pannello e senza questo margine
-   la prima cosa che si vede del tabellone e' un gancio tagliato */
-#end .tabellone{margin-top:8px}
+/* ---------------------------------------------------------------------
+   IL SEGNAPUNTI DI COMPENSATO (l'oggetto-eroe di FINE PARTITA e della
+   home). Il rapporto 1.514 non e' un gusto: e' tavola 1.871 piu' l'aria
+   che le serve intorno — 0,22*w ai lati per le code dell'alone, 0,32*h
+   sopra per catenella e fil di ferro, 0,46*h sotto per la lavagnetta del
+   minuto. Con l'aspect-ratio l'altezza esiste PRIMA che il canvas sia
+   cotto: adattaTabellino misura il pannello vero anche al primo giro. */
+.eroe-tab{position:relative;width:100%;aspect-ratio:1.514;flex:0 0 auto}
+.eroe-tab canvas.eroecv{position:absolute;inset:0;width:100%;height:100%;display:block}
+#end .eroe-fine{max-width:380px;margin:2px auto 0}
+/* la didascalia sotto l'eroe: fischio finale / golden goal / rigori */
+.eroe-sotto{
+  font-family:var(--cond);font-weight:700;font-size:clamp(10px,2.2vw,13px);letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(242,245,239,.72);text-align:center;margin:0 0 6px;
+}
+/* in home e' scenografia: piccolo, sotto le voci, mai sopra la piega
+   altrui. */
+.eroe-home{max-width:210px;margin:2px auto 0}
+/* NEI FORMATI IN CUI LA COLONNA E' CENTRATA IN VERTICALE l'eroe NON sta
+   nel flusso: dentro la colonna la sua altezza risaliva tutto il menu —
+   misurato, GIOCA saliva da y72 a y17 su 915x412 e finiva sotto il chip
+   delle monete (che chiude a y39) e sotto la piastrella dell'ingranaggio;
+   su tablet saliva da y179 a y104 e copriva mezza striscia delle insegne.
+   Staccato (fixed, in basso a destra), le cinque voci tornano centrate
+   ESATTAMENTE dov'erano e il chip riprende la sua riga pulita.
+   Le misure non sono gusto: a 110 di larghezza la tavola parte al 18%
+   dell'altezza (aria della catenella), cioe' a y336 su 400 di schermo —
+   due pixel sotto il piede di BACHECA (334): sopra il bottone passano
+   solo i fili della catenella, la tavola no. */
+@media (max-height:470px){ .eroe-home{position:fixed;right:190px;bottom:4px;max-width:110px;margin:0} }
+/* IL 21:9 NON E' IL 915x412: dodici pixel d'altezza in meno e il claim a
+   19px che passava da quattro a cinque righe. La colonna cresceva, BACHECA
+   scendeva e la tavola dell'eroe le copriva il nastro e la didascalia.
+   Qui — e SOLO qui, le altre inquadrature restano come approvate — il
+   claim torna al tetto di prima (15px, quattro righe) e la tavola si
+   stringe: piu' corta, parte piu' in basso, e sopra BACHECA ripassano
+   solo i fili della catenella. */
+@media (max-height:470px) and (min-aspect-ratio:21/9){
+  #menu .claim{font-size:clamp(12px,3vw,15px)}
+  .eroe-home{max-width:96px}
+}
+/* su tablet la colonna vive DENTRO la cornice del campo e sotto la
+   cornice c'e' la striscia delle insegne di quartiere (FORNO LUNA stava
+   proprio sotto l'eroe): il segnapunti scende sulla tribuna, sotto la
+   striscia — la striscia chiude a y687 su 834, l'eroe parte a y693 — come
+   un tabellone vero appeso sopra la gente. Nessuna insegna coperta. */
+@media (min-width:900px) and (min-height:640px){ .eroe-home{position:fixed;right:44px;bottom:2px;max-width:210px;margin:0} }
+/* sul telefono piccolo in verticale le cinque voci riempiono gia' tutto:
+   li' l'eroe finirebbe SOTTO la piega e comprerebbe uno scorrimento (e la
+   pastiglia col chevron) solo per se'. Una scenografia che non si vede
+   senza scorrere non e' scenografia: si toglie, come il tabellone-titolo
+   si riduce a fascia sotto i 700 px (stessa regola, stessa soglia). */
+@media (max-height:700px) and (orientation:portrait){ .eroe-home{display:none} }
 .tab-mezzo{
   position:absolute;left:44.5%;width:8%;top:50.9%;height:27.8%;
   display:flex;align-items:center;justify-content:center;
@@ -727,6 +779,17 @@ body.barra #gearBtn{display:none}
 }
 .pannello .titolone{margin:0 0 18px}
 #pausa .menu-voci{display:flex;flex-direction:column;grid-template-columns:none}
+/* i numeri di meta' partita in PAUSA: la stessa barra del possesso del
+   tabellino finale (stesse classi, stessa lettura) e sotto una riga per i
+   falli nella stessa gabbia tipografica. Tutto in tinte di squadra sui
+   NUMERI e grigio sulle parole: niente accenti nuovi in una schermata che
+   ne ha gia' uno, il bottone RIPRENDI. */
+.pausastat{max-width:300px;margin:-6px auto 18px}
+.pausastat .pfrow{display:flex;justify-content:space-between;align-items:baseline;
+  font-family:var(--cond);font-weight:700;font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--grigio);margin-top:9px}
+.pausastat .pfrow b{font-family:var(--cond);font-weight:700;font-size:14px}
+.pausastat .pfrow b.a{color:var(--tu)} .pausastat .pfrow b.b{color:var(--loro)}
 
 /* ---------- menu "vivo": lascia vedere il campo notturno sul canvas ---------- */
 /* =====================================================================
@@ -1387,7 +1450,10 @@ input{user-select:text;-webkit-user-select:text}
 @keyframes splLine{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes splUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-/* ---------- transizione di scena a bande diagonali fluo ---------- */
+/* ---------- transizione di scena a bande diagonali verdi ----------
+   la banda accesa era ambra, cioe' l'accento usato per decorazione: la
+   regola dice che l'ambra sta SOLO sul bottone che manda avanti. La
+   banda che scandisce il ritmo e' un verde piu' chiaro della scena. */
 #wipe{position:fixed;inset:0;z-index:50;pointer-events:none;display:none;overflow:hidden}
 #wipe.on{display:block}
 #wipe i{
@@ -1395,7 +1461,7 @@ input{user-select:text;-webkit-user-select:text}
   transform:skewX(-16deg) scaleY(0);transform-origin:50% 0;
 }
 #wipe i:nth-child(1){left:-6%;background:var(--campo2)}
-#wipe i:nth-child(2){left:15%;background:var(--ambra)}
+#wipe i:nth-child(2){left:15%;background:#0a441a}
 #wipe i:nth-child(3){left:36%;background:var(--campo2)}
 #wipe i:nth-child(4){left:57%;background:var(--campo2)}
 #wipe i:nth-child(5){left:78%;background:var(--campo2)}
@@ -1517,11 +1583,10 @@ button:active{transform:scale(.96)}
     align-items:center;max-width:none;padding:0 20px;box-sizing:border-box}
   #end .golone{grid-column:1 / -1;margin-bottom:2px}
   #end .gagliardetti,#end .placca,#end .vincitore,#end #endTrofeo{grid-column:1}
-  #end .tabellone{grid-column:1;max-width:250px;margin:2px auto 4px}
-  #end .tabellone .gagliardetti{gap:6px;margin:0}
-  #end .tabellone .gagliardetti .gg{flex:0 0 62px}
-  #end .tabellone .gagliardetti svg{width:26px}
-  #end .tabellone .gagliardetti .gn{font-size:8px;margin-top:1px;letter-spacing:.04em}
+  /* l'eroe riempie la colonna sinistra: a 915x412 sono ~345 px, cioe' una
+     tavola da ~240 — il protagonista, come da metro, non un francobollo */
+  #end .eroe-fine{grid-column:1;max-width:none;margin:0 auto}
+  #end .eroe-sotto{grid-column:1;margin:0}
   #end .momento{padding:5px 10px;gap:8px}
   #end .momento .ml{font-size:9px;letter-spacing:.16em}
   #end .momento .mv{font-size:13.5px}
@@ -1587,6 +1652,9 @@ button:active{transform:scale(.96)}
 #end[data-fit] .momento{padding:4px 10px}
 #end[data-fit] .gagliardetti svg{width:34px}
 #end[data-fit] .gagliardetti{margin:0 auto}
+/* anche l'eroe respira: si stringe, non si taglia — la regola d'ordine
+   e' la stessa del resto del pannello */
+#end[data-fit] .eroe-fine{max-width:300px}
 #end[data-fit] .placca{margin:3px auto 2px}
 #end[data-fit] .vincitore{margin-bottom:5px}
 #end[data-fit] #endCoins{padding:5px 12px;margin-top:2px}
@@ -1617,6 +1685,7 @@ button:active{transform:scale(.96)}
 #end[data-fit="2"] .momento .mv{font-size:12.5px}
 #end[data-fit="2"] .momento .ml{font-size:9px;letter-spacing:.14em}
 #end[data-fit="2"] .placca .pm{font-size:27px;padding:3px}
+#end[data-fit="2"] .eroe-fine{max-width:250px}
 #end[data-fit="2"] .gagliardetti svg{width:27px}
 #end[data-fit="2"] .gagliardetti .gn{font-size:9px;margin-top:1px}
 #end[data-fit="2"] #endCoins{padding:4px 12px}
@@ -1661,13 +1730,16 @@ button:active{transform:scale(.96)}
       <!-- doppio contorno: gesso fuori, intercapedine scura dentro -->
       <use href="#lgShape" fill="#f2f5ef" stroke="#f2f5ef" stroke-width="14" stroke-linejoin="round"/>
       <use href="#lgShape" fill="#062d10" stroke="#062d10" stroke-width="7" stroke-linejoin="round"/>
-      <!-- LETTERING A DUE TINTE: gesso e IL COLORE DELLA TUA MAGLIA. Non e'
-           una decorazione, e' la regola: le due tinte delle divise stanno
-           solo su cio' che rappresenta una squadra, e il titolo del gioco
-           rappresenta la tua. Cambi kit, cambia il titolo. -->
-      <text x="0" y="118" font-family="'Archivo Black','Arial Black',sans-serif" font-size="100"><tspan fill="#f2f5ef">CAL</tspan><tspan fill="var(--tu,#d8ff3d)">CETT</tspan></text>
+      <!-- LETTERING A DUE TINTE: gesso e IL COLORE DELLA TUA MAGLIA. Il
+           wordmark bicolore e' il trattamento firma del marchio: la stessa
+           tinta che indossi in campo (kit FLUO da nuovo) lega menu, divisa
+           e HUD. Non e' la diluizione gia' pagata — quella era il lime
+           sparso su bordi e ornamenti; QUI la tinta rappresenta la tua
+           squadra, e cambia con il kit che scegli. E' l'unica presenza di
+           --tu nella home fuori da divise e punteggi, ed e' voluta. -->
+      <text x="0" y="118" font-family="'Archivo Black','Arial Black',sans-serif" font-size="100"><tspan fill="#f2f5ef">CAL</tspan><tspan fill="var(--tu,#d6ff26)">CETT</tspan></text>
       <!-- la O finale: anello nella tinta della maglia con il pallone dentro -->
-      <circle cx="561" cy="82" r="38" fill="none" stroke="var(--tu,#d8ff3d)" stroke-width="20"/>
+      <circle cx="561" cy="82" r="38" fill="none" stroke="var(--tu,#d6ff26)" stroke-width="20"/>
       <g>
         <circle cx="561" cy="82" r="15.5" fill="#f2f5ef" stroke="#062d10" stroke-width="2.4"/>
         <circle cx="561" cy="82" r="4.6" fill="#062d10"/>
@@ -1692,6 +1764,13 @@ button:active{transform:scale(.96)}
 <div id="pausa" class="ov trasp nofade hidden">
   <div class="box pannello">
     <h1 class="titolone unatinta" style="font-size:clamp(32px,8vw,52px)">PAUSA</h1>
+    <!-- I NUMERI DI META' PARTITA STANNO QUI. Possesso e falli sono usciti
+         dalla vista di gioco — in campo non cambiano nessuna decisione — e
+         vivono dove uno li GUARDA con la partita ferma: qui e nel tabellino
+         finale. Il blocco si riempie a ogni apertura; quando non ha niente
+         di onesto da dire (possesso sotto i tre secondi campionati, zero
+         falli) resta nascosto invece di mentire. -->
+    <div id="pausaStat" class="pausastat hidden"></div>
     <div class="menu-voci">
       <!-- l'unico accento della schermata di PAUSA sta sul bottone che ti
            rimanda a giocare. Prima l'arancione stava sul filo sopra il
@@ -1747,8 +1826,12 @@ button:active{transform:scale(.96)}
            si spezza a meta' concetto si legge due volte. Gli spazi
            insecabili dentro ciascuna clausola lasciano andare a capo solo
            i punti mediani, cioe' esattamente dove il senso si interrompe
-           gia' da solo. -->
-      <div class="claim">Si&nbsp;apre&nbsp;in&nbsp;un&nbsp;secondo &middot; niente&nbsp;account &middot; niente&nbsp;pubblicit&agrave; &middot; niente&nbsp;attese &middot; 90&nbsp;secondi&nbsp;a&nbsp;partita</div>
+           gia' da solo. E il punto mediano e' legato ALLA CLAUSOLA CHE
+           CHIUDE: con lo spazio normale da entrambi i lati, nel formato
+           21:9 la riga si spezzava PRIMA del separatore e la riga nuova
+           partiva con "· 90 secondi", un segno d'interpunzione orfano a
+           inizio riga. Insecabile a sinistra, spazio vero solo a destra. -->
+      <div class="claim">Si&nbsp;apre&nbsp;in&nbsp;un&nbsp;secondo&nbsp;&middot; niente&nbsp;account&nbsp;&middot; niente&nbsp;pubblicit&agrave;&nbsp;&middot; niente&nbsp;attese&nbsp;&middot; 90&nbsp;secondi&nbsp;a&nbsp;partita</div>
     </div>
     <div class="menu-dx">
       <!-- UN GLIFO PER VOCE. Cinque parallelogrammi identici si
@@ -1766,6 +1849,16 @@ button:active{transform:scale(.96)}
         <button class="voce" id="btnSpogliatoio"><i class="vico" data-ico="maglia"></i>SPOGLIATOIO <small>squadra &middot; rosa &middot; campi</small></button>
         <button class="voce" id="btnBacheca"><i class="vico" data-ico="bacheca"></i>BACHECA <small>trofei e statistiche</small></button>
       </div>
+      <!-- IL SEGNAPUNTI APPESO, presenza d'ambiente: l'ultimo risultato
+           giocato (0:0 da nuovo) resta scritto sulla lavagna come al
+           campetto, dove nessuno cancella il punteggio della sera prima.
+           E' scenografia, non insegna: nei formati a colonna centrata sta
+           FUORI dal flusso (fixed, in basso a destra — vedi il CSS di
+           .eroe-home), perche' dentro la colonna la sua altezza spingeva
+           GIOCA sotto il chip delle monete. I dati veri glieli mettono
+           aggiornaEroeHome e montaEroeTab; aria-hidden perche' e' un
+           fondale, non contenuto. -->
+      <div class="eroe-tab eroe-home" data-casa="0" data-ospiti="0" data-minuto="90" aria-hidden="true"></div>
       <div class="coinpill fissa"><i class="coin"></i> <b class="coinval">0</b> MONETE</div>
     </div>
   </div>
@@ -2096,10 +2189,12 @@ button:active{transform:scale(.96)}
     <rect x="20" y="8" width="24" height="48" rx="5" fill="rgba(14,58,23,.9)" stroke="#f2f5ef" stroke-width="3"/>
     <line x1="27" y1="13.5" x2="37" y2="13.5" stroke="#f2f5ef" stroke-width="2" stroke-linecap="round"/>
     <circle cx="32" cy="50" r="2.2" fill="#f2f5ef"/>
-    <path d="M10 34 A 23 23 0 0 1 16 17" fill="none" stroke="#d8ff3d" stroke-width="3.4" stroke-linecap="round"/>
-    <path d="M18.5 11.5 L18 21.5 L9.5 16.5 Z" fill="#d8ff3d"/>
+    <!-- la freccia di rotazione e' L'AZIONE chiesta allo schermo, cioe'
+         l'accento; il lime qui era decorazione -->
+    <path d="M10 34 A 23 23 0 0 1 16 17" fill="none" stroke="#ffb020" stroke-width="3.4" stroke-linecap="round"/>
+    <path d="M18.5 11.5 L18 21.5 L9.5 16.5 Z" fill="#ffb020"/>
   </svg>
-  <div class="rtit">RUOTA IL <span style="color:var(--tu)">TELEFONO</span></div>
+  <div class="rtit">RUOTA IL TELEFONO</div>
   <div class="rsub">la partita si gioca in orizzontale</div>
 </div>
 
@@ -2161,18 +2256,15 @@ button:active{transform:scale(.96)}
 <div id="end" class="ov trasp hidden">
   <div class="box">
     <div class="golone" id="endTitolo">FISCHIO FINALE</div>
-    <!-- IL TABELLONE DI COMPENSATO, seconda delle sei schermate in cui
-         compare. Ha assorbito tre elementi: le due maglie appese, la targa
-         del punteggio e la didascalia. Il risultato lo portano le due
-         targhette di latta, come su un tabellone vero del campetto — e le
-         cifre prendono la tinta della squadra SCURITA, perche' su una latta
-         chiara un lime da 0,86 di luminanza non si legge. -->
-    <div class="tabellone tab-fine" data-seme="12">
-      <div class="tab-in"><div class="gagliardetti" id="endGagl"></div></div>
-      <b class="tab-targa a" id="endS0">0</b>
-      <b class="tab-targa b" id="endS1">0</b>
-      <div class="tab-sotto" id="endVinc">FISCHIO FINALE</div>
-    </div>
+    <!-- IL SEGNAPUNTI DI COMPENSATO, il protagonista della schermata che
+         la gente condivide. Ha assorbito le due maglie appese, la targa
+         del punteggio e la didascalia: il risultato finale sta dipinto a
+         smalto bianco nelle due finestre CASA/OSPITI, il minuto sulla
+         lavagnetta appesa sotto. Le cifre sono canvas, non testo: per il
+         lettore di schermo il punteggio sta nell'aria-label, messa da
+         endMatch insieme ai dataset. -->
+    <div class="eroe-tab eroe-fine" id="endEroe" role="img" data-minuto="90"></div>
+    <div class="eroe-sotto" id="endVinc">FISCHIO FINALE</div>
     <div id="endTrofeo" class="hidden">HAI VINTO IL TORNEO!</div>
     <div class="statwrap"><table>
       <tr><th style="text-align:right" id="endTh0">FLUO</th><th></th><th style="text-align:left" id="endTh1">ROSA</th></tr>
@@ -2396,8 +2488,11 @@ const ICONS={
   guanto:'<path d="M6.2 21 v-7.8 a5.6 5.6 0 0 1 5.6 -5.6 h1.4 a5.6 5.6 0 0 1 5.6 5.6 V21 Z" fill="#f2f5ef" stroke="#062d10" stroke-width="1.4" stroke-linejoin="round"/><path d="M6.4 13.6 L3.6 10.4 a2 2 0 0 1 3 -2.6 L9 10.2" fill="#f2f5ef" stroke="#062d10" stroke-width="1.4" stroke-linejoin="round"/><rect x="5.6" y="18.2" width="13" height="3.4" rx="1" fill="#d8ff3d" stroke="#062d10" stroke-width="1.2"/><path d="M12.5 11 v5" stroke="#062d10" stroke-width="1.2" opacity=".45"/>',
   ghiaccio:'<rect x="4" y="4" width="16" height="16" rx="3.2" fill="rgba(57,211,230,.9)" stroke="#f2f5ef" stroke-width="1.6"/><path d="M8 16.5 L16.5 8" stroke="#f2f5ef" stroke-width="1.7" opacity=".85" stroke-linecap="round"/><path d="M11.5 18 L18 11.5" stroke="#f2f5ef" stroke-width="1.4" opacity=".45" stroke-linecap="round"/>',
   grafico:'<g fill="#d8ff3d"><rect x="4" y="14.4" width="3.7" height="6"/><rect x="9.4" y="10.6" width="3.7" height="9.8"/><rect x="14.8" y="6.8" width="3.7" height="13.6"/></g><path d="M4.6 9.4 L11 6.4 L14.6 8 L19.6 3.6" fill="none" stroke="#f2f5ef" stroke-width="1.8" stroke-linecap="round"/><path d="M15.8 3.4 L19.9 3.3 L19.6 7.4" fill="none" stroke="#f2f5ef" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
-  trofeo:'<path d="M6.8 3.6 h10.4 v5.2 a5.2 5.2 0 0 1 -10.4 0 Z" fill="#ffb020" stroke="#062d10" stroke-width="1.2"/><path d="M6.8 5 H3.9 a3.5 3.5 0 0 0 3.6 4.3" fill="none" stroke="#ffb020" stroke-width="1.7"/><path d="M17.2 5 h2.9 a3.5 3.5 0 0 1 -3.6 4.3" fill="none" stroke="#ffb020" stroke-width="1.7"/><rect x="10.6" y="13.6" width="2.8" height="3.2" fill="#ffb020"/><rect x="7.4" y="16.8" width="9.2" height="3" rx="1" fill="#ffb020" stroke="#062d10" stroke-width="1"/>',
-  monete:'<g stroke="#062d10" stroke-width="1"><ellipse cx="9.6" cy="18" rx="6.6" ry="2.7" fill="#ffb020"/><ellipse cx="9.6" cy="14.6" rx="6.6" ry="2.7" fill="#ffb020"/><ellipse cx="9.6" cy="11.2" rx="6.6" ry="2.7" fill="#ffe9a3"/><circle cx="17.6" cy="7.8" r="4.7" fill="#ffb020"/></g><circle cx="17.6" cy="7.8" r="2.5" fill="none" stroke="#8a6a10" stroke-width="1.1"/>',
+  /* trofei e monete sono CIO' CHE SI GUADAGNA, quindi stanno in --oro
+     (#c9a24a), non in ambra: l'ambra e' l'accento d'azione e su un glifo
+     era decorazione. Vedi la legge dei quattro colori in cima al file. */
+  trofeo:'<path d="M6.8 3.6 h10.4 v5.2 a5.2 5.2 0 0 1 -10.4 0 Z" fill="#c9a24a" stroke="#062d10" stroke-width="1.2"/><path d="M6.8 5 H3.9 a3.5 3.5 0 0 0 3.6 4.3" fill="none" stroke="#c9a24a" stroke-width="1.7"/><path d="M17.2 5 h2.9 a3.5 3.5 0 0 1 -3.6 4.3" fill="none" stroke="#c9a24a" stroke-width="1.7"/><rect x="10.6" y="13.6" width="2.8" height="3.2" fill="#c9a24a"/><rect x="7.4" y="16.8" width="9.2" height="3" rx="1" fill="#c9a24a" stroke="#062d10" stroke-width="1"/>',
+  monete:'<g stroke="#062d10" stroke-width="1"><ellipse cx="9.6" cy="18" rx="6.6" ry="2.7" fill="#c9a24a"/><ellipse cx="9.6" cy="14.6" rx="6.6" ry="2.7" fill="#c9a24a"/><ellipse cx="9.6" cy="11.2" rx="6.6" ry="2.7" fill="#e8d9ae"/><circle cx="17.6" cy="7.8" r="4.7" fill="#c9a24a"/></g><circle cx="17.6" cy="7.8" r="2.5" fill="none" stroke="#8a6a10" stroke-width="1.1"/>',
   mappa:'<path d="M3.5 6.2 L9 4.2 L15 6.2 L20.5 4.2 V17.8 L15 19.8 L9 17.8 L3.5 19.8 Z" fill="#f2f5ef" stroke="#062d10" stroke-width="1.2" stroke-linejoin="round"/><path d="M9 4.6 V17.6 M15 6.4 V19.4" stroke="#96ab9e" stroke-width="1"/><circle cx="12.2" cy="10.6" r="2.3" fill="#ff5c8a"/>',
   lucchetto:'<rect x="5.8" y="10.4" width="12.4" height="9.6" rx="2" fill="#f2f5ef" stroke="#062d10" stroke-width="1.2"/><path d="M8.4 10.4 V8.2 a3.6 3.6 0 0 1 7.2 0 v2.2" fill="none" stroke="#f2f5ef" stroke-width="2.2"/><circle cx="12" cy="14.4" r="1.6" fill="#062d10"/><rect x="11.3" y="15" width="1.4" height="2.8" rx=".7" fill="#062d10"/>',
   audioOn:'<path d="M4 9.4 v5.2 h4 l5 4.6 V4.8 L8 9.4 Z" fill="#f2f5ef"/><path d="M15.6 9.2 a4.4 4.4 0 0 1 0 5.6" stroke="#d8ff3d" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M17.9 6.8 a8 8 0 0 1 0 10.4" stroke="#d8ff3d" stroke-width="2" fill="none" stroke-linecap="round"/>',
@@ -2408,7 +2503,10 @@ const ICONS={
   sombrero:'<path d="M3.4 19.4 C5.6 6.6 18.4 6.6 20.6 19.4" fill="none" stroke="#d8ff3d" stroke-width="2" stroke-linecap="round" stroke-dasharray="3.6 2.6"/><circle cx="4.2" cy="19.6" r="2.4" fill="#f2f5ef" stroke="#062d10" stroke-width="1"/><rect x="17.2" y="14.2" width="3.6" height="6.6" fill="none" stroke="#f2f5ef" stroke-width="1.4"/>',
   volo:'<circle cx="15.6" cy="6.8" r="3.4" fill="#f2f5ef" stroke="#062d10" stroke-width="1.1"/><path d="M3.2 20.4 L9 14.6" stroke="#96ab9e" stroke-width="2.2" stroke-linecap="round"/><path d="M8.4 15.2 L13.4 8.8" stroke="#d8ff3d" stroke-width="2.6" stroke-linecap="round"/><path d="M18.8 12.4 L20.8 15.2 M20.4 9.4 L22.2 10.2" stroke="#d8ff3d" stroke-width="1.6" stroke-linecap="round"/>',
   fischietto:'<path d="M3.6 9.4 h9.8 l2.6 -2.2 v9.6 l-2.6 -2.2 H7.4 a3.8 3.8 0 0 1 -3.8 -3.8 Z" fill="#f2f5ef" stroke="#062d10" stroke-width="1.2" stroke-linejoin="round"/><circle cx="7.6" cy="12" r="1.5" fill="#062d10"/><path d="M18.4 8.4 a5 5 0 0 1 0 7.2" fill="none" stroke="#d8ff3d" stroke-width="1.8" stroke-linecap="round"/>',
-  scudetto:'<path d="M12 2.8 L20.2 6 v6.4 c0 4.4 -3.6 7.2 -8.2 8.8 C7.4 19.6 3.8 16.8 3.8 12.4 V6 Z" fill="#0e3a17" stroke="#d8ff3d" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 7 l1.7 3.5 3.8 .5 -2.8 2.7 .7 3.8 -3.4 -1.8 -3.4 1.8 .7 -3.8 -2.8 -2.7 3.8 -.5 Z" fill="#d8ff3d"/>',
+  /* lo scudetto di STAGIONE resta fluo: rappresenta IL TUO campionato,
+     la squadra che indossi — stessa famiglia del wordmark bicolore.
+     E' l'eccezione dichiarata, non decorazione sparsa. */
+  scudetto:'<path d="M12 2.8 L20.2 6 v6.4 c0 4.4 -3.6 7.2 -8.2 8.8 C7.4 19.6 3.8 16.8 3.8 12.4 V6 Z" fill="#0e3a17" stroke="#d6ff26" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 7 l1.7 3.5 3.8 .5 -2.8 2.7 .7 3.8 -3.4 -1.8 -3.4 1.8 .7 -3.8 -2.8 -2.7 3.8 -.5 Z" fill="#d6ff26"/>',
   laurea:'<path d="M12 4.6 L21 9.2 L12 13.8 L3 9.2 Z" fill="#0e3a17" stroke="#f2f5ef" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.4 12 v3.8 c0 1.7 9.2 1.7 9.2 0 V12" fill="none" stroke="#f2f5ef" stroke-width="1.4"/><path d="M21 9.4 v5" stroke="#ffb020" stroke-width="1.6"/><circle cx="21" cy="15.6" r="1.3" fill="#ffb020"/>',
   /* l'ingranaggio: l'unico bottone d'angolo della home. Gesso, non ambra:
      l'ambra dice "premi qui" e la home ha gia' il suo primario. */
@@ -2520,8 +2618,22 @@ const FIELDS=[
        misure. Per arrivare a 0,59 servirebbe una divisa avversaria quasi
        bianca (L>0,83) oppure una regola diversa sul cancello. Con una
        maglia colorata e la soglia a 3:1, 0,45 e' il tetto aritmetico.
+       ---------------------------------------------------------------
+       TERZA TARATURA — ancora croma, ancora a luminanza ferma. Misurata
+       sui pixel veri della scena azione: saturazione mediana nostra 0,79,
+       del concorrente 0,89. Il valore e' al tetto aritmetico qui sopra,
+       quindi si spinge SOLO l'asse che resta: r e b scendono quasi a zero
+       e il verde sale di un punto a compensare.
+         #05620F (5·98·15)  -> #026309 (2·99·9)    Y 0,0880 -> 0,0895 (+1,7%)
+         #077312 (7·115·18) -> #037410 (3·116·16)  Y 0,1235 -> 0,1254 (+1,5%)
+       Entrambi dentro il +-12% della regola generale; il rapporto fra le
+       bande resta 1,23:1. Le divise salgono di croma INSIEME (vedi KITS e
+       TEAMCOL2): la fluo da S 0,76 a 0,85 perdendo lo 0,6% di luminanza,
+       cioe' niente. La rosa della CPU NON si tocca: e' il cancello 3:1
+       (oscilla 3,3-3,4 misurato) e ogni punto di croma sul rosa costa
+       luminanza — la sua parte satura resta la banda #ec6a96.
        --------------------------------------------------------------- */
-    th:{ g1:'#05620F', g2:'#077312', fuori:'#131008', grad:'#1a150c',
+    th:{ g1:'#026309', g2:'#037410', fuori:'#131008', grad:'#1a150c',
          gesso:'242,245,239', usura:'rgba(56,42,20,.42)',
          cornice:'#6a5230', pista:'#2e1c10', corniceGlow:'rgba(255,207,63,.13)',
          grana1:'rgba(214,190,120,.05)', grana2:'rgba(0,0,0,.06)',
@@ -2586,7 +2698,10 @@ const FIELDS=[
 /* 8 kit per la squadra del giocatore: maglia (c1) + pantaloncini/calzettoni (c2)
    pat = pattern della maglia: 0 tinta unita, 1 palato, 2 banda */
 const KITS=[
-  { nome:'FLUO',      c1:'#d8ff3d', c2:'#9fbf1e', pat:0 },
+  /* la fluo sale di croma insieme al manto (terza taratura del campo):
+     #d8ff3d S0,76 Y0,8646 -> #d6ff26 S0,85 Y0,8596; la seconda tinta
+     #9fbf1e S0,84 -> #9cc012 S0,91 a Y invariata (0,447->0,448). */
+  { nome:'FLUO',      c1:'#d6ff26', c2:'#9cc012', pat:0 },
   { nome:'CELESTE',   c1:'#79c7ff', c2:'#1e5f9e', pat:1 },
   { nome:'ARANCIO',   c1:'#ff9d2e', c2:'#8a4d00', pat:2 },
   { nome:'VIOLA',     c1:'#c58aff', c2:'#5b2a8a', pat:1 },
@@ -2737,6 +2852,7 @@ function defaultSave(){
     tour:null,                    // torneo in corso (bracket persistito)
     season:null,                  // stagione in corso (calendario e classifica)
     rosa:null,                    // i tuoi quattro giocatori, con nome e attributi
+    lastRes:null,                 // ultimo risultato giocato, per la lavagna della home
   };
 }
 function loadSave(){
@@ -2784,6 +2900,8 @@ function loadSave(){
     if(j.tour&&typeof j.tour==='object'&&Array.isArray(j.tour.teams)&&j.tour.teams.length===8&&Array.isArray(j.tour.rounds)) s.tour=j.tour;
     if(j.season&&typeof j.season==='object'&&Array.isArray(j.season.squadre)&&j.season.squadre.length===8&&Array.isArray(j.season.cal)) s.season=j.season;
     if(Array.isArray(j.rosa)&&j.rosa.length===4) s.rosa=j.rosa;
+    if(Array.isArray(j.lastRes)&&j.lastRes.length===2&&isFinite(j.lastRes[0])&&isFinite(j.lastRes[1]))
+      s.lastRes=[Math.max(0,j.lastRes[0]|0), Math.max(0,j.lastRes[1]|0)];
   }
   return s;
 }
@@ -3370,20 +3488,24 @@ function endMatch(){
   setScene('end');
   Audio5.whistle(true);
   Audio5.crowdLevel(0.4);
-  ui.endS0.textContent=G.score[0];
-  ui.endS1.textContent=G.score[1];
-  /* LE CIFRE SULLA LATTA. La targhetta e' chiara (#e8e4d6) e le due tinte di
-     maglia sono scelte per staccarsi da un'ERBA scura: sul metallo la fluo
-     a 0,86 di luminanza sparisce. Si tiene la tinta e si toglie luce — 140
-     punti su 255 per canale — e resta un verde oliva scuro e un bordeaux
-     che si riconoscono ancora come le due squadre e si leggono a 3,3:1. */
-  ui.endS0.style.color=shade(TEAMCOL[0],-140); ui.endS1.style.color=shade(TEAMCOL[1],-140);
-  const gagl=$('endGagl');
-  if(gagl && typeof kitSVG==='function'){
-    gagl.innerHTML=[0,1].map(t=>
-      '<div class="gg">'+kitSVG({nome:'e'+t, c1:TEAMCOL[t], c2:TEAMCOL2[t], pat:TEAMPAT[t]})+
-      '<div class="gn" style="color:'+TEAMCOL[t]+'">'+esc((t===0?G.teamName:G.oppName)||'')+'</div></div>').join('');
+  /* IL RISULTATO LO PORTA L'OGGETTO-EROE: il segnapunti di compensato, a
+     smalto bianco su lavagna scura, col minuto sulla lavagnetta. Le maglie
+     appese e le targhette di latta che dicevano la stessa cosa sono state
+     TOLTE, non affiancate: due voci sullo stesso numero si rubano il peso
+     a vicenda. I nomi delle squadre restano in testa al tabellino, nella
+     loro tinta. Per chi ascolta invece di guardare, il punteggio sta
+     nell'aria-label. */
+  const eroeEnd=$('endEroe');
+  if(eroeEnd){
+    eroeEnd.dataset.casa=G.score[0]; eroeEnd.dataset.ospiti=G.score[1];
+    eroeEnd.dataset.minuto='90';
+    eroeEnd.setAttribute('aria-label','Risultato finale: '+esc(G.teamName)+' '+G.score[0]+', '+esc(G.oppName)+' '+G.score[1]);
   }
+  /* l'ultimo risultato resta scritto sulla lavagna della home, come al
+     campetto: nessuno cancella il punteggio della sera prima */
+  SAVE.lastRes=[G.score[0]|0, G.score[1]|0];
+  persistSave();
+  aggiornaEroeHome();
   /* il campo appena giocato resta dietro, sfocato: il verdetto si dà li' */
   congelaCampo();
   /* ---------- CHI HA VINTO, PRIMA DI TUTTO ----------
@@ -3507,8 +3629,9 @@ function endMatch(){
   show(ui.end);
   adattaTitoloFine();
   adattaTabellino(componiTabellino);
-  /* il tabellone si dipinge dopo che la schermata ha una misura vera */
-  ui.end.querySelectorAll('.tabellone').forEach(montaTabellone);
+  /* l'eroe si cuoce dopo che la schermata ha una misura vera (e dopo
+     adattaTabellino: i gradi di respiro possono avergli cambiato taglia) */
+  ui.end.querySelectorAll('.eroe-tab').forEach(montaEroeTab);
 }
 
 /* IL RESOCONTO STA SOPRA LA PIEGA A QUALUNQUE PUNTEGGIO.
@@ -6621,7 +6744,7 @@ let VW=0, VH=0, DPR=1, SCALE=1, OX=0, OY=0;
 let duelH=0, duelF=0, duelMis=0;
 
 const COL={campo:'#062d10',campo2:'#0e3a17',linea:'#1e4432',gesso:'#f2f5ef',
-  fluo:'#d8ff3d',rosa:'#ff5c8a',ciano:'#39d3e6',oro:'#ffb020',rosso:'#ff4d4d',grigio:'#96ab9e',
+  fluo:'#d6ff26',rosa:'#ff5c8a',ciano:'#39d3e6',oro:'#ffb020',rosso:'#ff4d4d',grigio:'#96ab9e',
   ambra:'#ffb020'};
 /* =====================================================================
    L'OGGETTO-EROE: IL TABELLONE DI COMPENSATO.
@@ -6995,6 +7118,901 @@ function montaTabellone(el){
 function montaTabelloni(){
   const l=document.querySelectorAll('.tabellone');
   for(let i=0;i<l.length;i++){ l[i].querySelectorAll('canvas.tabcv').forEach(x=>x.dataset.ok=''); montaTabellone(l[i]); }
+}
+
+/* =====================================================================
+   IL TABELLONE SEGNAPUNTI DI COMPENSATO — L'OGGETTO-EROE del fischio
+   finale e della home. Non e' il pannello-titolo qui sopra: e' il
+   segnapunti vero del campetto, dipinto in bozze-tabellone/FINALE.html e
+   innestato qui pari pari. CASA e OSPITI a smalto, cifre sbeccate con le
+   colature, lavagnetta del minuto appesa sotto, fil di ferro e catenella,
+   edera, ruggine — e la stessa unica luce di tutto il gioco: sole basso
+   da OVEST, alone caldo dietro, ombra spinta a est.
+   COSTO: la scena e' dipinta UNA volta su un canvas d'appoggio interno
+   (chiave = misura+punteggio+minuto); ogni chiamata successiva e' UN
+   drawImage. Casualita' a seme fisso: due scatti sono identici.
+   FIRMA: disegnaTabelloneEroe(ctx, x, y, w, h, dati) con (x,y,w,h) il
+   rettangolo della SOLA tavola; alone, ombra e lavagnetta sporgono da
+   soli (~0,5*w ai lati, ~0,32*h sopra, ~0,46*h sotto).
+   ===================================================================== */
+function disegnaTabelloneEroe(ctx, x, y, w, h, dati) {
+
+  /* ---- margini della scena attorno alla tavola (alone, ombra,
+          attacchi, lavagnetta del minuto) ---- */
+  const padX = w * 0.50, padTop = h * 0.32, padBot = h * 0.46;
+
+  /* ---- CACHE FUORI SCHERMO: tutta la parte costosa (venature,
+          vernice, ruggine, edera, cifre sbeccate) vive qui e viene
+          dipinta UNA sola volta; si rifa' solo se cambiano taglia o
+          dati. Ogni fotogramma in partita costa UN drawImage. ---- */
+  const chiave = [Math.round(w), Math.round(h), dati.casa, dati.ospiti, dati.minuto].join('|');
+  let memo = disegnaTabelloneEroe._memo;
+  if (!memo || memo.chiave !== chiave) {
+    memo = disegnaTabelloneEroe._memo = {
+      chiave: chiave,
+      canvas: dipingiScena(w, h, dati, padX, padTop, padBot)
+    };
+  }
+  ctx.drawImage(memo.canvas,
+                x - padX, y - padTop,
+                w + padX * 2, h + padTop + padBot);
+
+  /* ================================================================
+     Da qui in giu': la pittura vera, eseguita solo nel canvas
+     d'appoggio (mai per fotogramma).
+     ================================================================ */
+  function dipingiScena(w, h, dati, padX, padTop, padBot) {
+    const SS = 2;                       // sovracampionamento: nitida anche su schermi densi
+    const cw = Math.max(1, Math.round((w + padX * 2) * SS));
+    const chh = Math.max(1, Math.round((h + padTop + padBot) * SS));
+    const off = (typeof OffscreenCanvas !== 'undefined')
+      ? new OffscreenCanvas(cw, chh)
+      : (function(){ const c = document.createElement('canvas'); c.width = cw; c.height = chh; return c; })();
+    const ctx = off.getContext('2d');
+    ctx.scale(SS, SS);
+    ctx.translate(padX, padTop);
+    // da qui: spazio locale, faccia della tavola = (0,0)-(w,h)
+
+    /* ---- casualita' deterministica ---- */
+    function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;
+      var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;
+      return((t^t>>>14)>>>0)/4294967296;}}
+    const rng = mulberry32(20250802);
+
+    /* ---- cifre dipinte a mano (scatola unitaria 0..1) ---- */
+    const CIFRE = {
+      '0': [[[0.50,0.06],[0.76,0.16],[0.84,0.50],[0.76,0.84],[0.50,0.95],[0.24,0.83],[0.16,0.50],[0.25,0.16],[0.50,0.06]]],
+      '1': [[[0.30,0.24],[0.55,0.07],[0.55,0.94]]],
+      '2': [[[0.22,0.28],[0.31,0.11],[0.55,0.06],[0.76,0.17],[0.77,0.38],[0.54,0.62],[0.25,0.91]],
+            [[0.25,0.91],[0.80,0.90]]],
+      '3': [[[0.25,0.15],[0.50,0.06],[0.74,0.16],[0.72,0.37],[0.50,0.47]],
+            [[0.50,0.47],[0.78,0.59],[0.73,0.85],[0.46,0.95],[0.22,0.84]]],
+      '4': [[[0.61,0.07],[0.21,0.60],[0.84,0.60]],
+            [[0.66,0.33],[0.66,0.95]]],
+      '5': [[[0.75,0.08],[0.31,0.08],[0.26,0.43],[0.53,0.39],[0.76,0.53],[0.74,0.80],[0.48,0.94],[0.22,0.84]]],
+      '6': [[[0.70,0.09],[0.43,0.15],[0.27,0.44],[0.24,0.72],[0.44,0.93],[0.68,0.86],[0.74,0.62],[0.52,0.50],[0.30,0.58]]],
+      '7': [[[0.22,0.09],[0.80,0.09],[0.45,0.94]],
+            [[0.37,0.52],[0.67,0.52]]],
+      '8': [[[0.50,0.06],[0.70,0.14],[0.71,0.32],[0.50,0.44],[0.30,0.32],[0.31,0.14],[0.50,0.06]],
+            [[0.50,0.44],[0.76,0.56],[0.76,0.82],[0.50,0.95],[0.24,0.82],[0.25,0.56],[0.50,0.44]]],
+      '9': [[[0.31,0.89],[0.58,0.84],[0.74,0.55],[0.76,0.27],[0.56,0.08],[0.32,0.14],[0.26,0.39],[0.48,0.50],[0.70,0.42]]]
+    };
+
+    function tracciaPenn(punti, s, ox, oy, jit) {
+      const p = punti.map(q => [ox + q[0]*s + (rng()*2-1)*jit,
+                                oy + q[1]*s + (rng()*2-1)*jit]);
+      ctx.beginPath();
+      ctx.moveTo(p[0][0], p[0][1]);
+      for (let i = 1; i < p.length - 1; i++) {
+        const mx = (p[i][0]+p[i+1][0])/2, my = (p[i][1]+p[i+1][1])/2;
+        ctx.quadraticCurveTo(p[i][0], p[i][1], mx, my);
+      }
+      ctx.lineTo(p[p.length-1][0], p[p.length-1][1]);
+      ctx.stroke();
+    }
+
+    function cifraDipinta(cx, cy, s, ch, colore, spess, gesso) {
+      const tratti = CIFRE[ch];
+      if (!tratti) return;
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const ox = cx - s/2, oy = cy - s/2;
+      if (gesso) {
+        for (let pass = 0; pass < 3; pass++) {
+          ctx.strokeStyle = colore;
+          ctx.globalAlpha = pass === 0 ? 0.85 : 0.30;
+          ctx.lineWidth = spess * (pass === 0 ? 1 : 0.6);
+          for (const t of tratti) tracciaPenn(t, s, ox, oy, s*0.022);
+        }
+      } else {
+        // vernice: corpo pieno, tratto fermo (tremolio minimo: nitido anche in miniatura)
+        ctx.strokeStyle = colore;
+        ctx.globalAlpha = 1;
+        for (const t of tratti) {
+          ctx.lineWidth = spess * (0.92 + rng()*0.18);
+          tracciaPenn(t, s, ox, oy, s*0.012);
+        }
+        // filo di luce del pennello verso il sole (alto-ovest)
+        ctx.globalAlpha = 0.32;
+        ctx.lineWidth = spess * 0.4;
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.translate(-spess*0.15, -spess*0.15);
+        for (const t of tratti) tracciaPenn(t, s, ox, oy, s*0.012);
+      }
+      ctx.restore();
+    }
+
+    function numeroDipinto(cx, cy, s, testo, colore, spess, gesso) {
+      const passo = s * 0.66;
+      let x0 = cx - (testo.length - 1) * passo / 2;
+      for (const ch of testo) { cifraDipinta(x0, cy, s, ch, colore, spess, gesso); x0 += passo; }
+    }
+
+    /* la vernice bianca delle cifre e' mangiata a chiazze che rivelano
+       la lavagna scura sotto (innesto dalla bozza-materia) */
+    function sbeccaNumero(cx, cy, s, testo, fondo) {
+      const passo = s * 0.66;
+      let x0 = cx - (testo.length - 1) * passo / 2;
+      for (const ch of testo) {
+        const tratti = CIFRE[ch];
+        if (!tratti) { x0 += passo; continue; }
+        const ox = x0 - s/2, oy = cy - s/2;
+        for (const t of tratti) {
+          const n = 1 + Math.floor(rng() * 2);
+          for (let i = 0; i < n; i++) {
+            const j = Math.floor(rng() * (t.length - 1));
+            const tt = rng();
+            const px = ox + (t[j][0] + (t[j+1][0]-t[j][0]) * tt) * s;
+            const py = oy + (t[j][1] + (t[j+1][1]-t[j][1]) * tt) * s;
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(rng() * 6.28);
+            const rr = s * (0.014 + rng() * 0.018);
+            ctx.beginPath();
+            ctx.moveTo(-rr, 0);
+            ctx.lineTo(-rr*0.3, -rr*(0.5 + rng()*0.6));
+            ctx.lineTo(rr*(0.5 + rng()*0.5), -rr*0.3);
+            ctx.lineTo(rr*0.6, rr*(0.4 + rng()*0.6));
+            ctx.lineTo(-rr*0.3, rr*0.6);
+            ctx.closePath();
+            ctx.fillStyle = fondo;
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+        x0 += passo;
+      }
+    }
+
+    /* gocce di smalto che scendono sotto le cifre (innesto dalla bozza-materia) */
+    function colatureNumero(cx, cy, s, testo, colore, maxY) {
+      const passo = s * 0.66;
+      let x0 = cx - (testo.length - 1) * passo / 2;
+      ctx.save();
+      ctx.lineCap = 'round';
+      for (const ch of testo) {
+        const n = 1 + Math.floor(rng() * 2);
+        for (let i = 0; i < n; i++) {
+          const gx = x0 + (rng()*2 - 1) * s * 0.22;
+          const gy = cy + s * (0.34 + rng() * 0.08);
+          const gl = Math.min(s * (0.08 + rng() * 0.14), maxY - gy - s*0.03);
+          if (gl < s * 0.03) continue;
+          ctx.strokeStyle = colore;
+          ctx.globalAlpha = 0.8;
+          ctx.lineWidth = s * (0.018 + rng() * 0.012);
+          ctx.beginPath();
+          ctx.moveTo(gx, gy);
+          ctx.quadraticCurveTo(gx + (rng()*2-1)*s*0.01, gy + gl*0.6, gx + (rng()*2-1)*s*0.012, gy + gl);
+          ctx.stroke();
+          ctx.globalAlpha = 0.85;
+          ctx.beginPath();
+          ctx.arc(gx + (rng()*2-1)*s*0.008, gy + gl, s * (0.014 + rng()*0.008), 0, Math.PI*2);
+          ctx.fillStyle = colore;
+          ctx.fill();
+        }
+        x0 += passo;
+      }
+      ctx.restore();
+    }
+
+    function testoDipinto(cx, cy, size, testo, colore, alfa) {
+      ctx.save();
+      ctx.font = '700 ' + size + 'px "Arial Black", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const larg = [];
+      let tot = 0;
+      for (const ch of testo) { const lw = ctx.measureText(ch).width * 1.06; larg.push(lw); tot += lw; }
+      let x0 = cx - tot/2;
+      for (let i = 0; i < testo.length; i++) {
+        const ch = testo[i];
+        ctx.save();
+        ctx.translate(x0 + larg[i]/2, cy + (rng()*2-1)*size*0.05);
+        ctx.rotate((rng()*2-1)*0.05);
+        // doppia battuta sfalsata: da stencil passato due volte, non da font
+        ctx.globalAlpha = alfa * 0.45;
+        ctx.fillStyle = colore;
+        ctx.fillText(ch, size*0.035, size*0.04);
+        ctx.globalAlpha = alfa * (0.9 + rng()*0.1);
+        ctx.fillText(ch, 0, 0);
+        ctx.restore();
+        x0 += larg[i];
+      }
+      ctx.restore();
+    }
+
+    /* chiazze del colore di fondo che mangiano una scritta: vernice saltata */
+    function tarlaScritta(cx, cy, wZona, hZona, fondo, n) {
+      for (let i = 0; i < n; i++) {
+        ctx.save();
+        ctx.translate(cx + (rng()*2-1)*wZona/2, cy + (rng()*2-1)*hZona/2);
+        ctx.rotate(rng()*6.28);
+        const rr = hZona * (0.05 + rng() * 0.10);
+        ctx.beginPath();
+        ctx.moveTo(-rr, 0);
+        ctx.lineTo(-rr*0.2, -rr*(0.5+rng()*0.6));
+        ctx.lineTo(rr*(0.4+rng()*0.6), -rr*0.3);
+        ctx.lineTo(rr*0.5, rr*(0.3+rng()*0.6));
+        ctx.closePath();
+        ctx.fillStyle = fondo;
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function rrect(x0, y0, w0, h0, r) {
+      ctx.beginPath();
+      ctx.moveTo(x0+r, y0);
+      ctx.arcTo(x0+w0, y0, x0+w0, y0+h0, r);
+      ctx.arcTo(x0+w0, y0+h0, x0, y0+h0, r);
+      ctx.arcTo(x0, y0+h0, x0, y0, r);
+      ctx.arcTo(x0, y0, x0+w0, y0, r);
+      ctx.closePath();
+    }
+
+    function foglia(fx, fy, fs, ang, scuro) {
+      ctx.save();
+      ctx.translate(fx, fy);
+      ctx.rotate(ang);
+      ctx.beginPath();
+      ctx.moveTo(0, fs*0.68);
+      ctx.bezierCurveTo(-fs*0.30, fs*0.28, -fs*0.42, -fs*0.05, -fs*0.30, -fs*0.32);
+      ctx.bezierCurveTo(-fs*0.16, -fs*0.52, fs*0.16, -fs*0.52, fs*0.30, -fs*0.32);
+      ctx.bezierCurveTo( fs*0.42, -fs*0.05,  fs*0.30, fs*0.28, 0, fs*0.68);
+      ctx.closePath();
+      const g = ctx.createLinearGradient(-fs*0.5, 0, fs*0.5, 0);
+      if (scuro) { g.addColorStop(0, '#2e4a22'); g.addColorStop(1, '#1c3015'); }
+      else       { g.addColorStop(0, '#5d7f35'); g.addColorStop(1, '#33511f'); }
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(15,28,10,0.55)';
+      ctx.lineWidth = fs*0.05;
+      ctx.stroke();
+      // il sole basso da ovest accende il fianco sinistro della foglia
+      ctx.beginPath();
+      ctx.moveTo(0, fs*0.62);
+      ctx.bezierCurveTo(-fs*0.28, fs*0.26, -fs*0.38, -fs*0.05, -fs*0.27, -fs*0.30);
+      ctx.strokeStyle = 'rgba(255,200,125,0.4)';
+      ctx.lineWidth = fs*0.07;
+      ctx.stroke();
+      // nervatura centrale e due laterali
+      ctx.strokeStyle = scuro ? 'rgba(120,150,80,0.35)' : 'rgba(200,220,150,0.4)';
+      ctx.lineWidth = fs*0.05;
+      ctx.beginPath();
+      ctx.moveTo(0, fs*0.6); ctx.lineTo(0, -fs*0.42);
+      ctx.moveTo(0, fs*0.1); ctx.lineTo(-fs*0.22, -fs*0.12);
+      ctx.moveTo(0, fs*0.1); ctx.lineTo(fs*0.22, -fs*0.12);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function filoDiFerro(x1, y1, x2, y2) {
+      const dx = x2-x1, dy = y2-y1, L = Math.hypot(dx, dy);
+      const nx = -dy/L, ny = dx/L, onde = Math.max(4, Math.round(L/9));
+      for (let lato = 0; lato < 2; lato++) {
+        ctx.beginPath();
+        for (let i = 0; i <= onde*8; i++) {
+          const t = i/(onde*8);
+          const amp = Math.sin(t*Math.PI*onde + lato*Math.PI) * L*0.012;
+          const px = x1 + dx*t + nx*amp, py = y1 + dy*t + ny*amp;
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.strokeStyle = lato ? 'rgba(96,100,108,0.9)' : 'rgba(208,213,220,0.95)';
+        ctx.lineWidth = lato ? h*0.008 : h*0.011;
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(x2 + w*0.006, y2 - h*0.008, h*0.014, 0.4, Math.PI*2.1);
+      ctx.strokeStyle = 'rgba(165,170,178,0.9)';
+      ctx.lineWidth = h*0.007;
+      ctx.stroke();
+    }
+
+    function catena(x1, y1, x2, y2, maglie) {
+      const dx = (x2-x1)/maglie, dy = (y2-y1)/maglie;
+      for (let i = 0; i < maglie; i++) {
+        const cx = x1 + dx*(i+0.5), cy = y1 + dy*(i+0.5);
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(Math.atan2(dy, dx) + Math.PI/2);
+        ctx.beginPath();
+        if (i % 2 === 0) ctx.ellipse(0, 0, h*0.016, h*0.027, 0, 0, Math.PI*2);
+        else             ctx.ellipse(0, 0, h*0.007, h*0.026, 0, 0, Math.PI*2);
+        ctx.strokeStyle = '#5e3f2b';
+        ctx.lineWidth = h*0.012;
+        ctx.stroke();
+        ctx.beginPath();
+        if (i % 2 === 0) ctx.ellipse(-h*0.004, -h*0.005, h*0.014, h*0.024, 0, -2.4, 0.6);
+        else             ctx.ellipse(-h*0.003, -h*0.004, h*0.006, h*0.023, 0, -2.4, 0.6);
+        ctx.strokeStyle = 'rgba(255,205,150,0.6)';
+        ctx.lineWidth = h*0.005;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function vite(vx, vy, r) {
+      // colatura di ruggine: cono sfumato che si assottiglia scendendo
+      const lung = r * (4 + rng() * 5);
+      const gr = ctx.createLinearGradient(vx, vy, vx, vy + lung);
+      gr.addColorStop(0, 'rgba(146,66,26,0.5)');
+      gr.addColorStop(0.6, 'rgba(130,58,22,0.25)');
+      gr.addColorStop(1, 'rgba(120,52,20,0)');
+      ctx.fillStyle = gr;
+      ctx.beginPath();
+      ctx.moveTo(vx - r*0.75, vy);
+      ctx.lineTo(vx + r*0.75, vy);
+      ctx.lineTo(vx + r*(0.2 + rng()*0.3), vy + lung);
+      ctx.lineTo(vx - r*(0.2 + rng()*0.3), vy + lung);
+      ctx.closePath();
+      ctx.fill();
+      // aureola di ruggine attorno alla testa
+      ctx.fillStyle = 'rgba(140,62,24,0.25)';
+      ctx.beginPath();
+      ctx.arc(vx + (rng()*2-1)*r*0.3, vy + (rng()*2-1)*r*0.3, r*1.6, 0, Math.PI*2);
+      ctx.fill();
+      // mezzaluna d'ombra della testa, spinta a est dal sole a ovest
+      ctx.fillStyle = 'rgba(30,18,10,0.4)';
+      ctx.beginPath();
+      ctx.arc(vx + r*0.35, vy + r*0.2, r*0.95, 0, Math.PI*2);
+      ctx.fill();
+      // testa: il riflesso sta in alto a ovest, verso il sole
+      const g = ctx.createRadialGradient(vx - r*0.45, vy - r*0.35, r*0.1, vx, vy, r);
+      g.addColorStop(0, '#e8dcc2');
+      g.addColorStop(0.55, '#8f877a');
+      g.addColorStop(1, '#4c463d');
+      ctx.beginPath(); ctx.arc(vx, vy, r, 0, Math.PI*2);
+      ctx.fillStyle = g; ctx.fill();
+      ctx.strokeStyle = 'rgba(30,26,20,0.6)'; ctx.lineWidth = r*0.2; ctx.stroke();
+      const a = 0.6 + rng()*1.2;
+      ctx.beginPath();
+      ctx.moveTo(vx + Math.cos(a)*r*0.7, vy + Math.sin(a)*r*0.7);
+      ctx.lineTo(vx - Math.cos(a)*r*0.7, vy - Math.sin(a)*r*0.7);
+      ctx.strokeStyle = 'rgba(40,35,28,0.8)'; ctx.lineWidth = r*0.28; ctx.stroke();
+    }
+
+    /* ================= messa in scena ================= */
+    ctx.save();
+
+    const cx0 = w/2, cy0 = h/2;
+
+    /* 1 — ALONE DI STACCO: bagliore caldo del sole basso dietro il
+          pannello, centrato un po' a ovest, che lo solleva dalla rete */
+    let alone = ctx.createRadialGradient(cx0 - w*0.12, cy0 - h*0.05, w*0.05, cx0 - w*0.06, cy0, w*0.80);
+    alone.addColorStop(0, 'rgba(255,198,122,0.85)');
+    alone.addColorStop(0.4, 'rgba(255,170,96,0.48)');
+    alone.addColorStop(1, 'rgba(255,140,80,0)');
+    ctx.fillStyle = alone;
+    ctx.fillRect(-padX, -padTop, w + padX*2, h + padTop + padBot);
+    let alone2 = ctx.createRadialGradient(cx0 - w*0.18, cy0, w*0.02, cx0 - w*0.1, cy0, w*0.42);
+    alone2.addColorStop(0, 'rgba(255,222,160,0.55)');
+    alone2.addColorStop(1, 'rgba(255,200,130,0)');
+    ctx.fillStyle = alone2;
+    ctx.fillRect(-padX, -padTop, w + padX*2, h + padTop + padBot);
+
+    /* leggera rotazione prospettica: appeso non perfettamente dritto */
+    ctx.translate(w/2, 0);
+    ctx.rotate(-0.028);
+    ctx.translate(-w/2, 0);
+
+    const spesso = w * 0.022;      // spessore del compensato visto di taglio
+
+    /* 2 — OMBRA PORTATA sulla rete: sole quasi orizzontale da ovest ->
+          ombra spinta a EST, appena alta, quasi niente verso il basso.
+          Tre veli sovrapposti al posto del blur: bordo morbido che non
+          si legge come un secondo pannello. (innesto dalla bozza-luce) */
+    ctx.save();
+    const veli = [
+      { dx: w*0.085, dy: h*0.010, sc: 1.005, a: 0.26 },
+      { dx: w*0.105, dy: h*0.018, sc: 1.030, a: 0.18 },
+      { dx: w*0.130, dy: h*0.026, sc: 1.060, a: 0.11 }
+    ];
+    for (const v of veli) {
+      ctx.save();
+      ctx.translate(w/2 + v.dx, h/2 + v.dy);
+      ctx.scale(v.sc, v.sc * 0.99);
+      rrect(-w/2, -h/2, w, h, w*0.012);
+      ctx.fillStyle = 'rgba(17,13,22,' + v.a + ')';
+      ctx.fill();
+      // anche la lavagnetta del minuto proietta la sua
+      rrect(w*0.68 - w/2, h*1.05 - h/2, w*0.16, h*0.21, w*0.006);
+      ctx.fillStyle = 'rgba(17,13,22,' + (v.a*0.8) + ')';
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+    // ombra di contatto, stretta, subito dietro il bordo est
+    ctx.save();
+    ctx.translate(w*0.030, h*0.018);
+    rrect(0, 0, w, h, w*0.012);
+    ctx.fillStyle = 'rgba(12,9,18,0.38)';
+    ctx.fill();
+    ctx.restore();
+
+    /* 3 — attacchi: fil di ferro a sinistra, catenella arrugginita a destra */
+    filoDiFerro(w*0.10, h*0.015, w*0.045, -h*0.24);
+    catena(w*0.90, h*0.015, w*0.955, -h*0.22, 7);
+
+    /* 4 — taglio del compensato (spessore a destra e sotto, in ombra) */
+    ctx.fillStyle = '#6b5233';
+    ctx.beginPath();
+    ctx.moveTo(w, h*0.004); ctx.lineTo(w + spesso, h*0.012);
+    ctx.lineTo(w + spesso, h + spesso*0.7); ctx.lineTo(w, h); ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, h); ctx.lineTo(w + spesso, h);
+    ctx.lineTo(w + spesso, h + spesso*0.9); ctx.lineTo(spesso*0.3, h + spesso*0.9); ctx.closePath();
+    ctx.fillStyle = '#57422a';
+    ctx.fill();
+    for (let i = 0; i < 5; i++) {
+      const t = (i + 0.5) / 5;
+      ctx.beginPath();
+      ctx.moveTo(w + spesso*t, h*0.02);
+      ctx.lineTo(w + spesso*t, h + spesso*0.7*t);
+      ctx.strokeStyle = i % 2 ? 'rgba(42,30,18,0.55)' : 'rgba(160,128,82,0.5)';
+      ctx.lineWidth = spesso*0.09;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(w*0.01, h + spesso*0.9*t);
+      ctx.lineTo(w + spesso*0.8, h + spesso*0.9*t);
+      ctx.strokeStyle = i % 2 ? 'rgba(42,30,18,0.45)' : 'rgba(150,120,78,0.4)';
+      ctx.lineWidth = spesso*0.08;
+      ctx.stroke();
+    }
+
+    /* 5 — faccia di compensato nudo (si vedra' nei punti scrostati) */
+    rrect(0, 0, w, h, w*0.012);
+    const legno = ctx.createLinearGradient(0, 0, w, h*0.4);
+    legno.addColorStop(0, '#b8935c');
+    legno.addColorStop(0.5, '#a8834f');
+    legno.addColorStop(1, '#8f6d40');
+    ctx.fillStyle = legno;
+    ctx.fill();
+    ctx.save();
+    ctx.clip();
+    for (let i = 0; i < 26; i++) {
+      const vy = h * (i + rng()) / 26;
+      ctx.beginPath();
+      ctx.moveTo(-w*0.02, vy);
+      for (let sx = 0; sx <= 8; sx++) {
+        ctx.quadraticCurveTo(w*(sx+0.5)/8, vy + (rng()*2-1)*h*0.018, w*(sx+1)/8, vy + (rng()*2-1)*h*0.008);
+      }
+      ctx.strokeStyle = 'rgba(96,70,38,' + (0.10 + rng()*0.14) + ')';
+      ctx.lineWidth = 1 + rng()*1.6;
+      ctx.stroke();
+    }
+    for (const [nx, ny] of [[w*0.30, h*0.52], [w*0.72, h*0.20]]) {
+      for (let r = 4; r > 0; r--) {
+        ctx.beginPath();
+        ctx.ellipse(nx, ny, w*0.008*r, h*0.007*r, 0.3, 0, Math.PI*2);
+        ctx.strokeStyle = 'rgba(84,58,30,' + (0.35 - r*0.05) + ')';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+      }
+    }
+
+    /* 6 — mano di vernice verde, stinta dal sole, con il legno che affiora */
+    const vern = ctx.createLinearGradient(0, 0, w*0.9, h);
+    vern.addColorStop(0, 'rgba(58,102,62,0.93)');
+    vern.addColorStop(0.55, 'rgba(44,84,52,0.94)');
+    vern.addColorStop(1, 'rgba(33,66,42,0.95)');
+    ctx.fillStyle = vern;
+    ctx.fillRect(-w*0.02, -h*0.02, w*1.05, h*1.05);
+    // vernice stinta dal sole in alto a ovest, piu' cupa e umida in basso a est
+    const stinta = ctx.createRadialGradient(w*0.18, h*0.12, w*0.02, w*0.22, h*0.18, w*0.55);
+    stinta.addColorStop(0, 'rgba(196,208,150,0.20)');
+    stinta.addColorStop(1, 'rgba(196,208,150,0)');
+    ctx.fillStyle = stinta;
+    ctx.fillRect(0, 0, w, h);
+    const umida = ctx.createRadialGradient(w*0.85, h*0.95, w*0.03, w*0.8, h*0.9, w*0.5);
+    umida.addColorStop(0, 'rgba(10,26,18,0.30)');
+    umida.addColorStop(1, 'rgba(10,26,18,0)');
+    ctx.fillStyle = umida;
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 18; i++) {
+      const vy = h * rng(), vw = w*(0.2 + rng()*0.5), vx = rng()*w*0.8;
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.015 + rng()*0.03) + ')';
+      ctx.fillRect(vx, vy, vw, h*(0.008 + rng()*0.02));
+    }
+    for (let i = 0; i < 30; i++) {
+      const vy = h * (i + rng()) / 30;
+      ctx.beginPath();
+      ctx.moveTo(-w*0.02, vy);
+      for (let sx = 0; sx <= 8; sx++) {
+        ctx.quadraticCurveTo(w*(sx+0.5)/8, vy + (rng()*2-1)*h*0.014, w*(sx+1)/8, vy + (rng()*2-1)*h*0.006);
+      }
+      ctx.strokeStyle = i % 3 ? 'rgba(14,26,16,' + (0.07 + rng()*0.09) + ')'
+                              : 'rgba(150,170,120,' + (0.04 + rng()*0.05) + ')';
+      ctx.lineWidth = 0.8 + rng()*1.4;
+      ctx.stroke();
+    }
+    for (const [nx, ny] of [[w*0.30, h*0.52], [w*0.72, h*0.20]]) {
+      for (let r = 4; r > 0; r--) {
+        ctx.beginPath();
+        ctx.ellipse(nx, ny, w*0.008*r, h*0.007*r, 0.3, 0, Math.PI*2);
+        ctx.strokeStyle = 'rgba(12,24,14,' + (0.22 - r*0.035) + ')';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+      }
+    }
+    // scrostature: piccole, sui bordi e sugli angoli, col legno che affiora
+    const chips = [
+      [w*0.022, h*0.045, w*0.030, h*0.040], [w*0.975, h*0.92, w*0.026, h*0.045],
+      [w*0.13, h*0.985, w*0.045, h*0.026], [w*0.982, h*0.09, w*0.022, h*0.05],
+      [w*0.60, h*0.988, w*0.035, h*0.022], [w*0.008, h*0.60, w*0.018, h*0.055],
+      [w*0.40, h*0.012, w*0.032, h*0.020], [w*0.985, h*0.46, w*0.018, h*0.05],
+      [w*0.79, h*0.01, w*0.026, h*0.018], [w*0.033, h*0.36, w*0.02, h*0.04]
+    ];
+    for (const [ex, ey, ew, eh] of chips) {
+      ctx.beginPath();
+      const nP = 8;
+      const raggi = [];
+      for (let i = 0; i < nP; i++) raggi.push(0.55 + rng()*0.5);
+      for (let i = 0; i <= nP; i++) {
+        const a = i/nP * Math.PI*2, r = raggi[i % nP];
+        const px = ex + Math.cos(a)*ew*r, py = ey + Math.sin(a)*eh*r;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = '#ab8752';
+      ctx.fill();
+      ctx.save();
+      ctx.clip();
+      for (let g = 0; g < 3; g++) {
+        ctx.beginPath();
+        ctx.moveTo(ex - ew, ey - eh + eh*g*0.7);
+        ctx.lineTo(ex + ew, ey - eh + eh*g*0.7 + (rng()*2-1)*eh*0.3);
+        ctx.strokeStyle = 'rgba(96,70,38,0.45)';
+        ctx.lineWidth = 0.9;
+        ctx.stroke();
+      }
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(16,30,18,0.75)';
+      ctx.lineWidth = 1.3;
+      ctx.stroke();
+    }
+    // slavatura d'acqua dal bordo alto
+    for (let i = 0; i < 4; i++) {
+      const sx = w*(0.15 + rng()*0.7);
+      ctx.beginPath();
+      ctx.moveTo(sx - w*0.008, 0);
+      ctx.quadraticCurveTo(sx + (rng()*2-1)*w*0.01, h*0.1, sx, h*(0.10 + rng()*0.14));
+      ctx.quadraticCurveTo(sx + w*0.006, h*0.06, sx + w*0.008, 0);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(20,32,22,0.18)';
+      ctx.fill();
+    }
+
+    /* 7 — riquadro bianco dipinto a mano lungo il bordo */
+    ctx.save();
+    ctx.strokeStyle = 'rgba(236,228,206,0.85)';
+    ctx.lineWidth = w*0.006;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    const mrg = w*0.028, jj = w*0.004;
+    ctx.moveTo(mrg + rng()*jj, mrg + rng()*jj);
+    ctx.lineTo(w - mrg + rng()*jj, mrg - rng()*jj);
+    ctx.lineTo(w - mrg - rng()*jj, h - mrg + rng()*jj);
+    ctx.lineTo(mrg - rng()*jj, h - mrg - rng()*jj);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = w*0.003;
+    ctx.strokeStyle = '#fffef4';
+    ctx.stroke();
+    ctx.restore();
+
+    /* 8 — intestazione dipinta e tarlata (niente crenatura da software) */
+    testoDipinto(w*0.5, h*0.155, h*0.085, 'DOPOLAVORO F.C.', 'rgba(240,232,210,0.92)', 1);
+    tarlaScritta(w*0.5, h*0.155, w*0.5, h*0.09, 'rgba(48,88,54,0.9)', 16);
+    ctx.beginPath();
+    ctx.moveTo(w*0.20, h*0.235);
+    ctx.quadraticCurveTo(w*0.5, h*0.245, w*0.80, h*0.232);
+    ctx.strokeStyle = 'rgba(236,228,206,0.55)';
+    ctx.lineWidth = h*0.008;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    (function pallone(bx, by, br) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(240,232,210,0.9)';
+      ctx.lineCap = 'round';
+      ctx.lineWidth = h*0.010;
+      ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath();
+      for (let i = 0; i <= 5; i++) {
+        const a = -Math.PI/2 + i/5*Math.PI*2;
+        const px = bx + Math.cos(a)*br*0.38, py = by + Math.sin(a)*br*0.38;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(240,232,210,0.85)';
+      ctx.fill();
+      ctx.lineWidth = h*0.007;
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI/2 + i/5*Math.PI*2;
+        ctx.beginPath();
+        ctx.moveTo(bx + Math.cos(a)*br*0.4, by + Math.sin(a)*br*0.4);
+        ctx.lineTo(bx + Math.cos(a)*br*0.95, by + Math.sin(a)*br*0.95);
+        ctx.stroke();
+      }
+      ctx.restore();
+    })(w*0.135, h*0.15, h*0.036);
+
+    /* 9 — finestre incassate scure del punteggio. L'incasso segue il
+          sole basso da ovest: parete interna OVEST in ombra netta,
+          velo ambientale leggero dall'alto, filo di luce calda che
+          entra sul fianco interno EST e sul bordo basso. */
+    const pwid = w*0.295, pY = h*0.30, pH = h*0.44;
+    function pannello(px) {
+      rrect(px, pY, pwid, pH, w*0.008);
+      const gp = ctx.createLinearGradient(px, pY, px + pwid*0.5, pY + pH);
+      gp.addColorStop(0, '#0c1712');
+      gp.addColorStop(1, '#14231a');
+      ctx.fillStyle = gp;
+      ctx.fill();
+      ctx.save();
+      rrect(px, pY, pwid, pH, w*0.008);
+      ctx.clip();
+      // ombra netta sulla parete interna ovest (il bordo blocca il sole radente)
+      ctx.beginPath();
+      ctx.rect(px, pY, pwid*0.09, pH);
+      const gi = ctx.createLinearGradient(px, 0, px + pwid*0.10, 0);
+      gi.addColorStop(0, 'rgba(0,0,0,0.55)'); gi.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = gi; ctx.fill();
+      // velo ambientale dall'alto, appena percettibile
+      ctx.beginPath();
+      ctx.rect(px, pY, pwid, pH*0.10);
+      const gi2 = ctx.createLinearGradient(0, pY, 0, pY + pH*0.12);
+      gi2.addColorStop(0, 'rgba(0,0,0,0.30)'); gi2.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = gi2; ctx.fill();
+      // il sole radente entra e accende il fianco interno est
+      ctx.beginPath();
+      ctx.rect(px + pwid*0.93, pY, pwid*0.07, pH);
+      const gi3 = ctx.createLinearGradient(px + pwid*0.92, 0, px + pwid, 0);
+      gi3.addColorStop(0, 'rgba(255,190,120,0)'); gi3.addColorStop(1, 'rgba(255,190,120,0.22)');
+      ctx.fillStyle = gi3; ctx.fill();
+      // aloni di gesso di partite passate
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.ellipse(px + pwid*(0.2 + rng()*0.6), pY + pH*(0.25 + rng()*0.5),
+                    pwid*0.16, pH*0.12, rng(), 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(220,225,215,0.028)';
+        ctx.fill();
+      }
+      ctx.restore();
+      // filo di luce calda sul bordo basso dell'incasso
+      ctx.beginPath();
+      ctx.moveTo(px + w*0.004, pY + pH);
+      ctx.lineTo(px + pwid - w*0.004, pY + pH);
+      ctx.strokeStyle = 'rgba(255,214,160,0.4)';
+      ctx.lineWidth = w*0.0035;
+      ctx.stroke();
+    }
+    pannello(w*0.115);
+    pannello(w*0.59);
+
+    /* cifre a smalto bianco: ombra di stacco dentro la finestra, corpo
+       fermo, vernice mangiata a chiazze e gocce che scendono
+       (innesti dalla bozza-materia, su fondo scuro per il contrasto) */
+    const sN = h*0.30, cyN = h*0.525;
+    const cxCasa = w*0.115 + pwid/2, cxOsp = w*0.59 + pwid/2;
+    // ombra della vernice sulla lavagna, spinta a est dal sole a ovest
+    numeroDipinto(cxCasa + h*0.018, cyN + h*0.014, sN, String(dati.casa),   'rgba(0,0,0,0.5)', h*0.052, false);
+    numeroDipinto(cxOsp  + h*0.018, cyN + h*0.014, sN, String(dati.ospiti), 'rgba(0,0,0,0.5)', h*0.052, false);
+    numeroDipinto(cxCasa, cyN, sN, String(dati.casa),   '#f6efdc', h*0.052, false);
+    numeroDipinto(cxOsp,  cyN, sN, String(dati.ospiti), '#f6efdc', h*0.052, false);
+    sbeccaNumero(cxCasa, cyN, sN, String(dati.casa),   'rgba(16,27,20,0.9)');
+    sbeccaNumero(cxOsp,  cyN, sN, String(dati.ospiti), 'rgba(16,27,20,0.9)');
+    colatureNumero(cxCasa, cyN, sN, String(dati.casa),   'rgba(243,236,218,0.85)', pY + pH);
+    colatureNumero(cxOsp,  cyN, sN, String(dati.ospiti), 'rgba(243,236,218,0.85)', pY + pH);
+
+    // due punti dipinti fra i pannelli
+    for (const dy of [h*0.45, h*0.60]) {
+      ctx.beginPath();
+      ctx.arc(w*0.5 + (rng()*2-1)*w*0.004, dy, h*0.022, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(240,232,210,0.9)';
+      ctx.fill();
+    }
+
+    /* 10 — etichette squadre, sottolineate a pennello (niente adesivi
+           fluo da UI: solo smalto bianco stanco, come il resto) */
+    testoDipinto(cxCasa, h*0.83, h*0.062, 'CASA',   'rgba(238,230,208,0.9)', 1);
+    testoDipinto(cxOsp,  h*0.83, h*0.062, 'OSPITI', 'rgba(238,230,208,0.9)', 1);
+    tarlaScritta(cxCasa, h*0.83, w*0.12, h*0.06, 'rgba(44,84,52,0.9)', 5);
+    tarlaScritta(cxOsp,  h*0.83, w*0.14, h*0.06, 'rgba(44,84,52,0.9)', 5);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(w*0.185, h*0.895);
+    ctx.quadraticCurveTo(w*0.26, h*0.902, w*0.345, h*0.893);
+    ctx.strokeStyle = 'rgba(236,228,206,0.6)'; ctx.lineWidth = h*0.011; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(w*0.66, h*0.896);
+    ctx.quadraticCurveTo(w*0.74, h*0.888, w*0.815, h*0.898);
+    ctx.strokeStyle = 'rgba(236,228,206,0.6)'; ctx.lineWidth = h*0.011; ctx.stroke();
+
+    /* 11 — un solo adesivo lasciato dai ragazzini (contorno sgombro:
+           il punteggio non deve avere rivali) */
+    ctx.save();
+    ctx.translate(w*0.935, h*0.755);
+    ctx.rotate(-0.24);
+    ctx.fillStyle = '#c8b98f';
+    ctx.fillRect(-w*0.024, -h*0.02, w*0.048, h*0.04);
+    ctx.fillStyle = '#a04438';
+    ctx.fillRect(-w*0.024, -h*0.02, w*0.048, h*0.016);
+    ctx.strokeStyle = 'rgba(60,50,40,0.4)'; ctx.lineWidth = 1;
+    ctx.strokeRect(-w*0.024, -h*0.02, w*0.048, h*0.04);
+    ctx.restore();
+
+    /* 12 — viti arrugginite ai quattro angoli, con le loro colature */
+    vite(w*0.045, h*0.055, w*0.010);
+    vite(w*0.955, h*0.055, w*0.010);
+    vite(w*0.045, h*0.945, w*0.010);
+    vite(w*0.955, h*0.945, w*0.010);
+
+    ctx.restore(); // fine clip faccia
+
+    /* 13 — BISELLI: lama calda del sole sul bordo ovest/alto,
+           spessore spento a est/basso */
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineWidth = w*0.0075;
+    ctx.beginPath();
+    ctx.moveTo(w*0.007, h*0.98); ctx.lineTo(w*0.007, h*0.014); ctx.lineTo(w*0.98, h*0.009);
+    ctx.strokeStyle = 'rgba(255,220,155,0.9)';
+    ctx.stroke();
+    ctx.lineWidth = w*0.004;
+    ctx.beginPath();
+    ctx.moveTo(w*0.015, h*0.975); ctx.lineTo(w*0.015, h*0.022); ctx.lineTo(w*0.975, h*0.017);
+    ctx.strokeStyle = 'rgba(255,236,190,0.45)';
+    ctx.stroke();
+    ctx.lineWidth = w*0.0065;
+    ctx.beginPath();
+    ctx.moveTo(w*0.993, h*0.018); ctx.lineTo(w*0.993, h*0.988); ctx.lineTo(w*0.016, h*0.993);
+    ctx.strokeStyle = 'rgba(6,10,8,0.7)';
+    ctx.stroke();
+    ctx.restore();
+
+    /* 14 — doppia temperatura sull'oggetto: caldo aranciato a ovest,
+           freddo violaceo a est (innesto dalla bozza-luce: la stessa
+           coppia di temperature la usa anche la scena dietro) */
+    rrect(0, 0, w, h, w*0.012);
+    const rad = ctx.createLinearGradient(0, 0, w, h*0.35);
+    rad.addColorStop(0, 'rgba(255,202,128,0.38)');
+    rad.addColorStop(0.45, 'rgba(255,188,112,0.08)');
+    rad.addColorStop(1, 'rgba(30,32,72,0.34)');
+    ctx.fillStyle = rad;
+    ctx.fill();
+    rrect(0, 0, w, h, w*0.012);
+    const vig = ctx.createRadialGradient(w*0.45, h*0.42, w*0.25, w*0.5, h*0.5, w*0.72);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(8,14,10,0.22)');
+    ctx.fillStyle = vig;
+    ctx.fill();
+
+    /* 15 — lavagnetta del minuto, appesa sotto con lo spago */
+    ctx.save();
+    ctx.translate(w*0.76, h*1.0);
+    ctx.rotate(0.045);
+    const lw2 = w*0.16, lh2 = h*0.21;
+    ctx.beginPath();
+    ctx.moveTo(-lw2*0.32, h*0.055); ctx.lineTo(-lw2*0.42, -h*0.012);
+    ctx.moveTo( lw2*0.34, h*0.055); ctx.lineTo( lw2*0.40, -h*0.012);
+    ctx.strokeStyle = '#b9a179';
+    ctx.lineWidth = w*0.004;
+    ctx.stroke();
+    // ombra della lavagnetta, anche lei spinta a est
+    ctx.save();
+    ctx.shadowColor = 'rgba(18,14,24,0.5)';
+    ctx.shadowBlur = h*0.05;
+    ctx.shadowOffsetX = w*0.030;
+    ctx.shadowOffsetY = h*0.020;
+    rrect(-lw2/2, h*0.05, lw2, lh2, w*0.006);
+    ctx.fillStyle = '#3d3226';
+    ctx.fill();
+    ctx.restore();
+    rrect(-lw2/2, h*0.05, lw2, lh2, w*0.006);
+    ctx.fillStyle = '#8f6d40'; ctx.fill();
+    rrect(-lw2/2 + w*0.008, h*0.05 + w*0.008, lw2 - w*0.016, lh2 - w*0.016, w*0.004);
+    ctx.fillStyle = '#1a2420'; ctx.fill();
+    ctx.fillStyle = 'rgba(220,225,215,0.08)';
+    ctx.fillRect(-lw2/2 + w*0.01, h*0.05 + lh2 - w*0.03, lw2 - w*0.02, w*0.02);
+    numeroDipinto(-w*0.008, h*0.05 + lh2*0.52, lh2*0.52, String(dati.minuto), '#e8ebdf', lh2*0.07, true);
+    ctx.beginPath();
+    ctx.moveTo(lw2*0.30, h*0.05 + lh2*0.30);
+    ctx.lineTo(lw2*0.25, h*0.05 + lh2*0.46);
+    ctx.strokeStyle = 'rgba(232,235,223,0.85)';
+    ctx.lineWidth = lh2*0.06;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-lw2/2 + w*0.002, h*0.05 + lh2); ctx.lineTo(-lw2/2 + w*0.002, h*0.053); ctx.lineTo(lw2/2, h*0.052);
+    ctx.strokeStyle = 'rgba(255,214,150,0.6)'; ctx.lineWidth = w*0.003; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(lw2/2 - w*0.002, h*0.06); ctx.lineTo(lw2/2 - w*0.002, h*0.05 + lh2 - w*0.002);
+    ctx.lineTo(-lw2/2, h*0.05 + lh2 - w*0.002);
+    ctx.strokeStyle = 'rgba(8,12,10,0.55)'; ctx.lineWidth = w*0.003; ctx.stroke();
+    ctx.restore();
+
+    /* 16 — edera: pochi ciuffi sull'angolo alto a destra, lontani dal
+           punteggio (contorno sfoltito rispetto alla bozza) */
+    ctx.beginPath();
+    ctx.moveTo(w*0.895, -h*0.12);
+    ctx.quadraticCurveTo(w*0.94, h*0.02, w*0.935, h*0.13);
+    ctx.strokeStyle = '#31461f';
+    ctx.lineWidth = w*0.005;
+    ctx.stroke();
+    const anchse = [
+      [w*0.885, -h*0.085], [w*0.945, -h*0.045],
+      [w*0.905, h*0.005],  [w*0.955, h*0.055],
+      [w*0.915, h*0.105],  [w*0.955, h*0.155]
+    ];
+    for (let i = 0; i < anchse.length; i++) {
+      const [fx, fy] = anchse[i];
+      foglia(fx + (rng()*2-1)*w*0.006, fy, h*(0.048 + rng()*0.03),
+             (rng()*2-1)*0.9, i % 3 === 0);
+    }
+    // due foglie sole al piede, in basso a sinistra
+    foglia(w*0.03, h*1.005, h*0.05, 0.5, true);
+    foglia(w*0.075, h*1.03, h*0.042, -0.7, false);
+
+    ctx.restore(); // fine spazio ruotato
+    return off;
+  }
+}
+/* Il contenitore DOM dell'eroe: <div class="eroe-tab" data-casa data-ospiti
+   data-minuto>. La misura la decide il CSS (aspect-ratio 1.514, cioe'
+   tavola + aria); qui si cuoce il canvas a pixel veri e lo si ridipinge
+   solo se cambiano misura o dati — stessa disciplina di montaTela. */
+function montaEroeTab(el){
+  if(!el || el.offsetWidth<8) return;
+  let cv2=el.querySelector('canvas.eroecv');
+  if(!cv2){ cv2=document.createElement('canvas'); cv2.className='eroecv'; el.insertBefore(cv2, el.firstChild); }
+  const d=Math.min(2, window.devicePixelRatio||1);
+  const W=el.offsetWidth, H=el.offsetHeight;
+  /* ARIA=0.22 invece dello 0,5 pieno della bozza: ai lati oltre 0,22*w
+     restano solo le code dell'alone (il gradiente si spegne a 0,8*w dal
+     centro, cioe' esattamente al bordo del canvas) — cosi' la tavola
+     guadagna un terzo di larghezza a parita' di ingombro. Sopra e sotto
+     l'aria resta piena: la' sporgono catenella e lavagnetta. */
+  const ARIA=0.22, PROP=1.871;
+  const w=W/(1+2*ARIA), h=w/PROP;
+  const dati={ casa:el.dataset.casa||'0', ospiti:el.dataset.ospiti||'0', minuto:el.dataset.minuto||'90' };
+  const chiave=[Math.round(W*d),Math.round(H*d),dati.casa,dati.ospiti,dati.minuto].join('|');
+  if(cv2.dataset.ok===chiave) return;
+  cv2.width=Math.round(W*d); cv2.height=Math.round(H*d);
+  const c=cv2.getContext('2d');
+  c.setTransform(d,0,0,d,0,0);
+  disegnaTabelloneEroe(c, (W-w)/2, h*0.32, w, h, dati);
+  cv2.dataset.ok=chiave;
+}
+/* il tabellone della home porta l'ultimo risultato salvato (0:0 da nuovo):
+   i dati stanno nei dataset, il ridisegno lo decide la chiave in montaEroeTab */
+function aggiornaEroeHome(){
+  const el=document.querySelector('#menu .eroe-home');
+  if(!el) return;
+  const r=(SAVE.lastRes && SAVE.lastRes.length===2) ? SAVE.lastRes : [0,0];
+  el.dataset.casa=r[0]; el.dataset.ospiti=r[1]; el.dataset.minuto='90';
 }
 /* =====================================================================
    LA COPPA DEL QUARTIERE — il secondo oggetto-eroe, UNA funzione e tre usi.
@@ -7577,6 +8595,10 @@ function montaEroi(){
     ca[i].querySelectorAll('canvas.eroecv').forEach(x=>x.dataset.ok='');
     montaTela(ca[i], disegnaCartello);
   }
+  /* il segnapunti di compensato (fischio finale e home): la sua chiave di
+     cottura tiene conto anche dei dati, quindi non si azzera a mano */
+  const ta=document.querySelectorAll('.eroe-tab');
+  for(let i=0;i<ta.length;i++) montaEroeTab(ta[i]);
 }
 /* =====================================================================
    LE DUE MAGLIE CHE STAVANO DENTRO L'ERBA.
@@ -7619,12 +8641,12 @@ const TEAMCOL=[COL.fluo,ROSA_KIT];           // tinte squadra (mutabili: kit / t
    rumore fra due esecuzioni. #ec6a96 e lo stesso tono con sei punti di
    luminosita in piu: la banda resta la parte forte della maglia e il
    margine torna dove stava. */
-const TEAMCOL2=['#9fbf1e','#ec6a96'];        // seconda tinta della maglia
+const TEAMCOL2=['#9cc012','#ec6a96'];        // seconda tinta della maglia
 const TEAMPAT=[0,2];                         // pattern maglia: 0 unita, 1 palato, 2 banda
-const TEAMRGB=['216,255,61','255,176,207'];  // versione "r,g,b" per anelli e stick
+const TEAMRGB=['214,255,38','255,176,207'];  // versione "r,g,b" per anelli e stick
 function hexToRgb(h){
   const m=/^#?([0-9a-f]{6})$/i.exec(String(h||''));
-  if(!m) return '216,255,61';
+  if(!m) return '214,255,38';
   const n=parseInt(m[1],16);
   return ((n>>16)&255)+','+((n>>8)&255)+','+(n&255);
 }
@@ -7697,9 +8719,10 @@ function applyKit(){
   }
   refreshTeamRGB();
   /* IL COROLLARIO DELLA LEGGE DEI QUATTRO COLORI: l'accento "tu"
-     dell'interfaccia E' il colore della tua maglia. Il titolo in home, il
-     tuo punteggio, la tua riga in classifica prendono la tinta della divisa
-     che hai scelto. Comprare una divisa ricolora il gioco intero senza
+     dell'interfaccia E' il colore della tua maglia. Il tuo punteggio, il
+     tuo nome, la tua riga in classifica prendono la tinta della divisa
+     che hai scelto (il titolo in home NO: e' il nome del gioco, sta in
+     gesso). Comprare una divisa ricolora il gioco intero senza
      spostare un pixel del risultato — che e' esattamente la cosa che si
      puo' vendere senza vendere un vantaggio. */
   try{
@@ -13552,7 +14575,7 @@ const ui={
   pausa:$('pausa'), pauseBtn:$('pauseBtn'),
   gioca:$('gioca'), torneo:$('torneo'), campi:$('campi'), squadra:$('squadra'),
   trofei:$('trofei'), statistiche:$('statistiche'), impostazioni:$('impostazioni'),
-  endS0:$('endS0'), endS1:$('endS1'), endTitolo:$('endTitolo'), endVinc:$('endVinc'),
+  endTitolo:$('endTitolo'), endVinc:$('endVinc'),
   endTh0:$('endTh0'), endTh1:$('endTh1'), endTrofeo:$('endTrofeo'),
   endCoins:$('endCoins'), coinBreak:$('coinBreak'), coinGain:$('coinGain'), coinSaldo:$('coinSaldo'),
   btnRivincita:$('btnRivincita'),
@@ -13619,12 +14642,33 @@ addEventListener('resize', ()=>{
      fotografia stirata, e su un oggetto-eroe si vede subito. */
   montaTabelloni();
   montaCoppe();
+  montaEroi();
 });
 
 /* ---------- pausa: il gioco si ferma davvero ---------- */
 function refreshPauseAudio(){
   const b=$('btnPauseAudio');
   if(b) b.textContent='AUDIO: '+(Audio5.muted?'OFF':'ON');
+}
+/* possesso e falli, tolti dalla vista di gioco, si riempiono qui a ogni
+   apertura della pausa. Le regole di onesta' sono le stesse del tabellino
+   finale: sotto POSSESSO_MIN campioni la barra non c'e' (su due secondi
+   mentirebbe con autorita'), e la riga dei falli a zero contro zero tace. */
+function refreshPauseStats(){
+  const el=$('pausaStat'); if(!el) return;
+  const S=G.stats||{};
+  const totPos=S.possesso ? (S.possesso[0]||0)+(S.possesso[1]||0) : 0;
+  let h='';
+  if(totPos>=POSSESSO_MIN){
+    const p0=Math.round((S.possesso[0]||0)/totPos*100);
+    h+='<div class="poslab"><b class="a">'+p0+'%</b><span>Possesso palla</span><b class="b">'+(100-p0)+'%</b></div>'+
+       '<div class="posbar"><i style="width:'+p0+'%;background:'+TEAMCOL[0]+'"></i>'+
+       '<i style="width:'+(100-p0)+'%;background:'+TEAMCOL[1]+'"></i></div>';
+  }
+  if(S.falli && (S.falli[0]||S.falli[1]))
+    h+='<div class="pfrow"><b class="a">'+S.falli[0]+'</b><span>Falli</span><b class="b">'+S.falli[1]+'</b></div>';
+  el.innerHTML=h;
+  el.classList.toggle('hidden', !h);
 }
 function setPaused(v){
   v=!!v;
@@ -13637,7 +14681,7 @@ function setPaused(v){
      si legge attenuato dentro il pannello ed e' un errore di strati */
   { const tb=document.getElementById('tut'); if(tb) tb.classList.toggle('pausahide', v); }
   if(v){
-    show(ui.pausa); refreshPauseAudio();
+    show(ui.pausa); refreshPauseAudio(); refreshPauseStats();
     Audio5.crowdLevel(0.15);
   }else{
     hide(ui.pausa);
@@ -14205,7 +15249,9 @@ function buildTorneoUI(){
   buildBracket(T);
   if(T.out){
     ui.tourStato.textContent='ELIMINATO IN '+TOUR_ROUNDS[T.round];
-    ui.tourStato.style.color='#ffb020';
+    /* niente ambra su uno stato: l'accento sta solo sul bottone che manda
+       avanti (NUOVO TORNEO), lo stato e' testo come tutto il resto */
+    ui.tourStato.style.color='';
     ui.tourPremio.textContent='Il quartiere non dimentica. Riprova.';
     ui.btnTourPlay.innerHTML='NUOVO TORNEO <small>nuovo sorteggio del tabellone</small>';
   }else{
@@ -14595,6 +15641,7 @@ function doResetSave(){
   buildFieldTex(); buildVignette();
   refreshMute(); refreshPauseAudio(); refreshDiffRows(); refreshTouchRows();
   refreshImpostUI(); refreshCoinVals(); buildFieldRow();
+  aggiornaEroeHome();                    // anche la lavagna della home torna 0:0
   ui.teamNameIn.value=SAVE.teamName;
   toast('scopa','DATI AZZERATI','Si riparte dall\'Oratorio.');
 }
@@ -14649,9 +15696,11 @@ document.querySelectorAll('.vico').forEach(e=>{ e.innerHTML=icoSVG(e.dataset.ico
 
 /* stato iniziale della UI di progressione */
 applyKit();
+aggiornaEroeHome();                      // la lavagna della home legge l'ultimo risultato salvato
 montaTabelloni();
 requestAnimationFrame(montaTabelloni);   // dopo il primo impaginamento vero
 requestAnimationFrame(montaCoppe);
+requestAnimationFrame(montaEroi);
 refreshCoinVals();
 buildFieldRow();
 refreshImpostUI();
