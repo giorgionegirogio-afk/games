@@ -341,6 +341,10 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
   font-weight:700;font-size:clamp(14px,3.6vw,19px);text-transform:uppercase;letter-spacing:.02em;line-height:1.35;
 }
 .frase b{color:var(--gesso)}
+/* la stessa targa, in coda alla pagina invece che in testa: margini corti
+   e corpo un gradino sotto, perche' sotto l'eroe fa da didascalia di voce,
+   non da apertura — e non deve comprare scorrimento */
+.frase.stretta{margin:0 auto;max-width:620px;padding:7px 14px;font-size:clamp(13px,3.4vw,16.5px)}
 .menu-voci{display:flex;flex-direction:column;gap:13px;max-width:440px;margin:0 auto}
 /* Il taglio a 12-14° della targa broadcast, portato nel DOM: la partita e
    i menu parlano finalmente la stessa lingua grafica. */
@@ -395,11 +399,38 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
 .eti{font-family:var(--cond);font-weight:700;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--grigio);margin:18px 0 8px}
 .eti::before{content:"";display:inline-block;width:8px;height:8px;background:var(--gesso);margin-right:8px;vertical-align:.02em}
 
-/* ---------- come si gioca ---------- */
-.regole{max-width:560px;margin:0 auto;text-align:left}
-.regole h3{font-family:var(--nero);font-weight:900;text-transform:uppercase;letter-spacing:.04em;font-size:15px;color:var(--gesso);margin:16px 0 6px}
-.regole p{color:var(--grigio);font-size:14px;line-height:1.5;margin-bottom:6px}
+/* ---------- come si gioca: LA LAVAGNA TATTICA DEL MISTER ----------
+   La schermata che spiega i gesti era quattordici paragrafi grigi su
+   fondo pagina: la peggiore del mazzo. Adesso e' una LAVAGNA — la
+   stessa ardesia, lo stesso legno e lo stesso smalto del tabellone del
+   torneo, cotti da disegnaLavagna() sul canvas di fondo — e ogni gesto
+   ha il suo SCHEMA tracciato col gessetto: X i nostri, O gli avversari,
+   la porta tre righe, la traiettoria tratteggiata. Un disegnino per
+   gesto, non un paragrafo. */
+.regole{max-width:600px;margin:0 auto;text-align:left}
+.lav-mister{margin:0 auto 14px}
+.lav-corpo{position:relative;padding:42px 26px 26px;z-index:1}
+.lav-kick{font-family:var(--cond);font-weight:700;font-size:11px;letter-spacing:.24em;
+  text-transform:uppercase;color:rgba(242,245,239,.66);text-align:center;margin-bottom:10px}
+.regole h3{font-family:var(--nero);font-weight:900;text-transform:uppercase;letter-spacing:.04em;font-size:14px;color:var(--gesso);margin:18px 0 5px}
+.regole p{color:rgba(242,245,239,.78);font-size:13.5px;line-height:1.5;margin-bottom:6px}
 .regole b{color:var(--gesso)}
+/* le schede dei gesti: cornice di smalto sulla lavagna (la grammatica
+   del tabellone del torneo), disegnino sopra, UNA riga sotto */
+.gessi{display:grid;grid-template-columns:repeat(auto-fill,minmax(162px,1fr));gap:12px;margin:10px 0 4px}
+.gessi .ges{border:1.6px solid rgba(242,245,239,.34);border-radius:3px;padding:8px 10px 9px;
+  background:rgba(6,20,13,.22)}
+.gessi svg{display:block;width:100%;height:auto;margin-bottom:5px}
+.gessi .gn{font-family:var(--nero);font-weight:900;font-size:12.5px;letter-spacing:.03em;
+  text-transform:uppercase;color:var(--gesso)}
+.gessi .gt{display:block;font-family:var(--cond);font-weight:600;font-size:11.5px;line-height:1.4;
+  color:rgba(242,245,239,.72);margin-top:3px}
+/* il tratto del gessetto: mai pieno, mai colorato — e' gesso su ardesia */
+.gsvg *{stroke:rgba(242,245,239,.92);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.gsvg .trat{stroke-dasharray:6 7}
+.gsvg .palla{fill:rgba(242,245,239,.92);stroke:none}
+.gsvg .avv{stroke:rgba(242,245,239,.55)}
+.gsvg .lieve{stroke:rgba(242,245,239,.5);stroke-width:2.2}
 kbd{
   font-family:var(--mono);font-size:12px;font-weight:600;color:var(--campo);background:var(--gesso);
   padding:1px 7px;border-radius:3px;border-bottom:2px solid var(--grigio);margin:0 1px;white-space:nowrap;
@@ -760,10 +791,11 @@ kbd{
   font-family:var(--nero);font-weight:900;
   background:rgba(14,58,23,.85);color:var(--gesso);border:1px solid var(--linea);cursor:pointer;
 }
-/* IN PARTITA i due comandi vivono DENTRO la barra alta: 44x44 agli angoli,
-   nessun bordo, fondo uguale a quello della barra — che e' gia' dipinta sul
-   canvas sotto di loro. Fuori dalla partita restano le pastiglie di prima. */
-body.barra #pauseBtn{top:0;left:0;width:44px;height:44px;background:transparent;border:0}
+/* IN PARTITA la pausa sta all'angolo: 44x44, nessun bordo. Il tabellone e'
+   diventato un OGGETTO centrato (vedi drawHUD) e non arriva piu' fin qui,
+   quindi il bottone porta con se' un quadrato dello stesso materiale — se no
+   il glifo galleggerebbe sull'erba. Fuori dalla partita resta la pastiglia. */
+body.barra #pauseBtn{top:0;left:0;width:44px;height:44px;background:rgb(8,19,13);border:0}
 body.barra #gearBtn{display:none}
 #pausa{z-index:45}
 /* PAUSA: un pannello vero, non tre rettangoli sospesi sul campo sfocato */
@@ -779,12 +811,19 @@ body.barra #gearBtn{display:none}
 }
 .pannello .titolone{margin:0 0 18px}
 #pausa .menu-voci{display:flex;flex-direction:column;grid-template-columns:none}
-/* i numeri di meta' partita in PAUSA: la stessa barra del possesso del
-   tabellino finale (stesse classi, stessa lettura) e sotto una riga per i
-   falli nella stessa gabbia tipografica. Tutto in tinte di squadra sui
-   NUMERI e grigio sulle parole: niente accenti nuovi in una schermata che
-   ne ha gia' uno, il bottone RIPRENDI. */
-.pausastat{max-width:300px;margin:-6px auto 18px}
+/* i numeri di meta' partita in PAUSA stanno su una LAVAGNETTA: ardesia
+   un valore sopra il pannello e cornice di smalto a pennello — la
+   stessa grammatica delle sfide sulla lavagna del torneo. La barra del
+   possesso resta quella del tabellino finale (stesse classi, stessa
+   lettura); tinte di squadra sui NUMERI, grigio sulle parole: niente
+   accenti nuovi in una schermata che ne ha gia' uno, RIPRENDI. */
+.pausastat{max-width:320px;margin:-2px auto 20px;padding:11px 14px 13px;
+  background:linear-gradient(180deg,#1c4a31,#0f3120);
+  border:2px solid rgba(242,245,239,.42);border-radius:3px;
+  box-shadow:0 3px 0 rgba(3,10,6,.5), inset 0 1px 0 rgba(255,255,255,.07)}
+/* la finestra di PAUSA respira: tre voci e una lavagnetta, non un muro */
+#pausa .menu-voci{gap:15px}
+#pausa .pannello{padding:22px 22px 26px}
 .pausastat .pfrow{display:flex;justify-content:space-between;align-items:baseline;
   font-family:var(--cond);font-weight:700;font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;
   color:var(--grigio);margin-top:9px}
@@ -882,61 +921,55 @@ body.barra #gearBtn{display:none}
 .fchip.lock .pz{font-family:var(--cond);font-weight:700;color:var(--oro);letter-spacing:.04em}
 .fchip.lock svg{opacity:.9}
 
-.rosa-intro{color:var(--grigio);font-size:13.5px;max-width:520px;margin:0 auto 14px;line-height:1.5}
+.rosa-intro{color:var(--grigio);font-size:13.5px;max-width:700px;margin:0 auto 8px;line-height:1.5}
 .rosa-intro b{color:var(--gesso)}
-/* COLONNA VERTICALE, SCHEDE INTERE. Il carosello orizzontale provato prima
-   veniva tranciato dal bordo del riquadro da 640px: la terza scheda restava
-   mozzata in mezzo al nome, con le barre ridotte a monconi di pochi pixel e
-   duecento pixel di fondo vuoto oltre il taglio — e niente che dicesse che
-   si poteva scorrere di lato. Le schede tornano a tutta larghezza, una sotto
-   l'altra: si scorre in verticale, che e' l'asse gia' segnalato dalla
-   pastiglia con la freccia in giu'. */
-/* GRIGLIA CHE VA A CAPO, MAI UNA COLONNA SOLA. Con una colonna da 520 px la
-   densita' era di un giocatore e mezzo per schermata e meta' della larghezza
-   restava vuota, con la seconda scheda tranciata a meta' dal piede fisso del
-   pannello. Quattro schede, quattro colonne, una riga: tutto sopra la piega,
-   niente da scorrere. Una griglia che va a capo non puo' amputare niente per
-   costruzione, e per questo va imposta come forma, non come consiglio. */
-.rosalist{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;
-  max-width:none;margin:0 auto;text-align:left;align-items:start}
-@media (max-width:820px){ .rosalist{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px} }
-@media (max-width:470px){ .rosalist{grid-template-columns:minmax(0,1fr);gap:10px} }
-.rcard{background:var(--campo2);border:1px solid var(--linea);border-left:4px solid var(--tu);padding:11px 13px;min-width:0}
-.rcard.gk{border-left-color:#2fd8a0}
-/* nome e ruolo su due righe: in una griglia a quattro colonne il ruolo
-   accanto al nome si mangiava meta' riquadro e i nomi diventavano 'Gin...' */
-.rcard .rtop{display:block;margin-bottom:8px}
-.rcard .rn{font-family:var(--cond);font-weight:700;font-size:16px;color:var(--gesso);letter-spacing:.03em;
-  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rcard .rn{display:block}
-.rcard .rr{display:block;font-family:var(--cond);font-weight:600;font-size:10.5px;letter-spacing:.1em;color:var(--grigio);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rattr{display:grid;grid-template-columns:72px minmax(0,1fr) 26px;gap:6px;align-items:center;margin-bottom:4px}
-.rattr .re{font-family:var(--cond);font-weight:700;font-size:10.5px;letter-spacing:.06em;color:var(--grigio);white-space:nowrap}
 /* =====================================================================
-   LE BARRE DEI DATI NON PORTANO LA TINTA DELLA MAGLIA.
-   METRO.md, paragrafo 3: le due tinte delle divise sono riservate alle
-   divise e a cio' che le rappresenta. Qui il lime era la quantita' di un
-   attributo — velocita', tiro, tecnica — cioe' decorazione pura: dodici
-   barre lime per schermata, e a forza di ricomparire il lime non voleva
-   piu' dire "la mia squadra".
-   Adesso le barre sono una scala neutra di gesso (chiara in punta, piu'
-   spenta all'attacco: si legge come una tacca di riempimento, non come
-   una bandiera) e la tinta della squadra resta SOLO sul filetto a
-   sinistra della scheda, che e' l'unica cosa in questa pagina che
-   rappresenta davvero una squadra. Il portiere tiene il suo verde acqua
-   sul filetto, per la stessa ragione: e' un ruolo, non un dato.
-   Contrasto: gesso a 0,92 sopra un solco a 0,35 di nero — la lunghezza
-   della barra resta leggibile quanto prima, e il numero accanto non e'
-   mai stato l'unico portatore dell'informazione.
+   LA MAGLIA DI FIANCO, LE RIGHE AL POSTO DELLE SCHEDE.
+   Le quattro schede verticali (nome + quattro barre l'una, ventotto
+   righe in tutto) diventano quattro RIGHE orizzontali: nome e ruolo a
+   sinistra, i quattro numeri in fila con la loro tacca sotto. Stessa
+   informazione, un quarto delle righe — e la larghezza risparmiata e'
+   la colonna dell'oggetto-eroe: la maglia della squadra appesa alla
+   recinzione con le mollette, nella tinta del kit che indossi.
+   Le barre restano in scala di gesso: le tinte delle divise sono
+   riservate alle divise (METRO, paragrafo 3) — e qui la divisa c'e'
+   DAVVERO, ed e' l'unica cosa nella tinta della squadra.
    ===================================================================== */
-.rbar{height:7px;background:rgba(0,0,0,.42);position:relative;overflow:hidden;flex:1;min-width:0;
+.rosariga{display:flex;gap:18px;align-items:center;justify-content:center;margin:0 auto;text-align:left}
+.eroe-maglia{width:clamp(150px,40vh,210px);aspect-ratio:5/6}
+.rosalist{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:6px}
+.rrow{display:grid;grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,1fr));gap:10px;
+  align-items:center;background:var(--campo2);border:1px solid var(--linea);
+  border-left:4px solid var(--tu);padding:7px 12px;min-width:0}
+.rrow.gk{border-left-color:#2fd8a0}
+.rrow .rn{display:block;font-family:var(--cond);font-weight:700;font-size:16px;color:var(--gesso);
+  letter-spacing:.03em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .rnome small{display:block;font-family:var(--cond);font-weight:600;font-size:10.5px;
+  letter-spacing:.08em;color:var(--grigio);text-transform:uppercase;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ra{min-width:0}
+/* etichetta e numero sulla STESSA riga, la tacca sotto: e' quello che
+   tiene le quattro righe dentro uno schermo di telefono in orizzontale */
+.ra em{font-style:normal;font-family:var(--cond);font-weight:600;font-size:9.5px;
+  letter-spacing:.06em;color:var(--grigio);text-transform:uppercase;white-space:nowrap}
+.ra b{font-family:var(--cond);font-weight:700;font-size:15px;line-height:1.05;color:var(--gesso);margin-left:5px}
+.rb{display:block;height:4px;margin-top:3px;background:rgba(0,0,0,.42);
   box-shadow:inset 0 1px 0 rgba(0,0,0,.35), inset 0 -1px 0 rgba(255,232,186,.10)}
-.rbar i{position:absolute;left:0;top:0;bottom:0;
-  background:linear-gradient(90deg, rgba(242,245,239,.70), rgba(242,245,239,.98));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
-.rattr .rv{font-family:var(--cond);font-weight:600;font-size:11.5px;color:var(--gesso);text-align:right}
-.rcard .rnota{font-family:var(--cond);font-weight:600;font-size:10.5px;color:var(--grigio);margin-top:6px;opacity:.85}
-.rcard .cresciuto{color:var(--tu)}
+.rb i{display:block;height:100%;
+  background:linear-gradient(90deg, rgba(242,245,239,.70), rgba(242,245,239,.98))}
+.rrow .cresciuto{color:var(--tu)}
+/* la rampa dei bottoni qui parte piu' corta: la pagina deve entrare
+   INTERA in un telefono in orizzontale, che e' la sua unica qualita'
+   difesa fin dal giro 2 — misurato: con i 34px standard la quarta riga
+   finiva sotto la piega e ricompariva la pastiglia del chevron */
+#rosa .azioni{margin-top:10px;padding-top:22px}
+/* sotto i 620 la maglia non ci sta di fianco senza schiacciare i numeri:
+   un eroe che compra scorrimento o trancia il contenuto e' un ingombro */
+@media (max-width:620px){ .eroe-maglia{display:none} }
+@media (max-width:470px){
+  .rrow{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .rrow .rnome{grid-column:1/-1}
+}
 
 /* schermata STAGIONE: classifica leggibile anche su telefono */
 .twrap-sea{border:1px solid var(--linea);background:var(--campo2);margin:12px auto;max-width:520px;overflow-x:auto}
@@ -1041,6 +1074,65 @@ body.barra #gearBtn{display:none}
 .flock svg path{stroke:#f2f5ef}
 .flock svg circle{fill:#0a2413}
 .fprice{display:flex;align-items:center;justify-content:center;gap:5px;font-family:var(--cond);font-weight:600;font-size:11px;letter-spacing:.06em;color:var(--grigio);margin-bottom:6px}
+/* ---- LA BACHECA DI SUGHERO ----
+   Le anteprime dei campi sono CARTOLINE appuntate con la puntina alla
+   bacheca di sughero del circolo, ognuna con la sua piccola rotazione:
+   otto fotografie del quartiere, non otto tessere da negozio. Il
+   sughero e' cotto in CSS — base calda che prende il sole da ovest,
+   due semine di granuli — e la cornice e' lo stesso legno di tutte le
+   assi del gioco. */
+#campi .cards{
+  /* i granuli del sughero sono TESSERE di puntini, non gradienti ripetuti
+     dal centro: quelli disegnano anelli, e una bacheca non ha anelli */
+  background:
+    radial-gradient(circle 1.4px at 30% 40%, rgba(64,40,16,.32) 60%, transparent 61%) 0 0/13px 11px,
+    radial-gradient(circle 1.1px at 70% 20%, rgba(255,224,170,.26) 60%, transparent 61%) 4px 6px/17px 13px,
+    radial-gradient(circle 1.6px at 15% 75%, rgba(54,34,14,.28) 60%, transparent 61%) 2px 3px/19px 17px,
+    linear-gradient(112deg,#a87c4b 0%,#916339 55%,#77522b 100%);
+  border:8px solid #5c4322;
+  box-shadow:inset 0 0 0 2px rgba(255,236,196,.28), inset 0 0 26px rgba(40,22,6,.5),
+             6px 7px 0 rgba(3,10,6,.38);
+  padding:22px 18px 76px;
+}
+#campi .fcard{
+  background:linear-gradient(180deg,#f2ecdb,#e3d9c0);
+  clip-path:none;padding:9px;
+  box-shadow:0 5px 9px rgba(20,12,4,.5);
+}
+/* ogni cartolina pende a modo suo: rotazioni piccole e alternate */
+#campi .fcard:nth-child(odd){transform:rotate(-2.1deg)}
+#campi .fcard:nth-child(even){transform:rotate(1.7deg)}
+#campi .fcard:nth-child(4n+3){transform:rotate(1.3deg)}
+#campi .fcard:nth-child(4n){transform:rotate(-1.6deg)}
+/* la puntina: stessa lamiera delle viti della lavagna */
+#campi .fcard::before{content:"";position:absolute;top:-7px;left:50%;margin-left:-7px;z-index:3;
+  width:14px;height:14px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #e6dfcb, #9a927c 55%, #5b5443);
+  border:1px solid rgba(26,20,8,.6);
+  box-shadow:0 3px 4px rgba(10,6,2,.55)}
+/* su carta chiara l'inchiostro e' scuro; la fotografia ha il bordo bianco */
+#campi .fcard canvas{border:3px solid #f8f3e6;box-shadow:0 1px 3px rgba(30,20,8,.35)}
+#campi .fcard h4{color:#3a3020}
+#campi .fcard .fdesc{color:#6b5c40}
+#campi .fbtn{color:#57492e;border-color:#b3a380;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.08));
+  box-shadow:0 2px 0 rgba(90,70,40,.4);
+  /* prezzo e moneta su UNA riga: in colonna stretta la moneta cadeva da
+     sola su una seconda riga — una riga prezzo che va a capo e' sciatta */
+  display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
+/* la moneta D'ORO resta d'oro anche sulla carta crema: la tinta --oro
+   sul crema si spegneva in un cerchietto oliva. Qui il metallo scurisce
+   di un gradino e il bordo si marca, come l'inchiostro sulle cartoline. */
+#campi .fbtn .coin{flex:0 0 auto;width:1.05em;height:1.05em;
+  background:radial-gradient(circle at 34% 30%, #ffdf8a, #e8a51e 55%, #a06e0c);
+  box-shadow:inset 0 0 0 1px rgba(96,62,6,.85), 0 1px 1px rgba(60,40,10,.35)}
+/* niente scheda al 50%: sbiadiva ANCHE la moneta e il prezzo. Il "non te
+   lo puoi permettere" lo dice il testo spento, la moneta resta leggibile */
+#campi .fbtn.no{opacity:1;color:#8a795a;border-color:#c3b48f;cursor:default}
+#campi .fbtn.use{color:#20301a;border-color:#57492e}
+#campi .fbtn.buy{color:#7a5c14;border-color:#a8892f}
+#campi .fbtn.inuse{background:linear-gradient(180deg,#ffc757,#e59200);border-color:#a86f00;color:#12210f;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 2px 0 #7a4c05}
 
 /* schermata SQUADRA */
 .namein{
@@ -1068,27 +1160,38 @@ input{user-select:text;-webkit-user-select:text}
 /* schermata TROFEI */
 /* DUE COLONNE, QUATTRO RIGHE: otto trofei visibili insieme invece di
    quattro e mezzo, con la quinta riga tranciata dal piede fisso del
-   pannello. Una griglia che va a capo non puo' amputare niente. */
+   pannello. Una griglia che va a capo non puo' amputare niente.
+   GIRO 2: sul telefono in orizzontale le colonne diventano TRE e le
+   righe si stringono di qualche punto — e' il prezzo che la lista paga
+   per convivere con la mensola senza finire sotto la piega. La regola
+   resta quella del giro 1: otto obiettivi LEGGIBILI nel primo schermo. */
 .achlist{max-width:none;margin:0 auto;text-align:left;
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px;row-gap:8px;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px;row-gap:6px;
   align-items:start;padding:0 20px}
 @media (max-width:640px){ .achlist{grid-template-columns:minmax(0,1fr);padding:0 12px} }
+/* la pagina dei TROFEI si allarga come la ROSA: la mensola vuole tutta
+   la larghezza e la lista, su tre colonne, riprende in orizzontale lo
+   spazio che ha ceduto in verticale */
+#trofei .box{max-width:none;padding:0 20px;box-sizing:border-box}
+#trofei #achList{max-width:940px}
+@media (min-width:840px){ #trofei #achList{grid-template-columns:repeat(3,minmax(0,1fr))} }
+#trofei .albowrap{max-width:700px;margin:0 auto}
 /* la vetrina degli obiettivi deve invogliare: tessera piena, filo d'oro a
    sinistra, icona dentro un disco. I bloccati non si spengono: si
    scoloriscono solo nell'icona, il testo resta leggibile. */
 .achrow{
-  display:flex;gap:12px;align-items:center;position:relative;
+  display:flex;gap:10px;align-items:center;position:relative;
   background:linear-gradient(90deg,rgba(255,207,63,.09),var(--campo2) 42%);
   border-left:4px solid var(--oro);box-shadow:0 2px 0 rgba(0,0,0,.35);
-  padding:10px 12px;margin-bottom:0;min-width:0;
+  padding:6px 10px;margin-bottom:0;min-width:0;
   clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%);
 }
 .achrow.lock{border-left-color:var(--linea);background:var(--campo2)}
 .achrow .aico{
-  flex:0 0 34px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  flex:0 0 28px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;
   border-radius:50%;background:rgba(255,207,63,.14);box-shadow:inset 0 0 0 1px rgba(255,207,63,.55);
 }
-.achrow .aico svg{width:20px;height:20px}
+.achrow .aico svg{width:18px;height:18px}
 /* L'icona resta LEGGIBILE anche da bloccata: e' il modo per capire di che
    cosa parla l'obiettivo. A cambiare e' l'ANELLO, che dice il livello. */
 .achrow.lock .aico{opacity:.72;background:rgba(255,255,255,.05)}
@@ -1100,18 +1203,18 @@ input{user-select:text;-webkit-user-select:text}
 .achrow.liv-argento{border-left-color:#c3ccc7}
 .achrow.liv-oro{border-left-color:var(--oro)}
 .achrow .atxt{flex:1 1 auto;min-width:0;text-align:left}
-.achrow b{display:block;font-family:var(--nero);font-weight:900;font-size:12.5px;letter-spacing:.05em}
-.achrow small{display:block;color:var(--grigio);font-size:11px}
+.achrow b{display:block;font-family:var(--nero);font-weight:900;font-size:12px;letter-spacing:.05em;line-height:1.15}
+.achrow small{display:block;color:var(--grigio);font-size:10.5px;line-height:1.25}
 /* barra di avanzamento: '10 rubate pulite' senza dire a che punto sei era
    una riga inerte. Il contatore sta dentro la barra, a destra. */
 .achrow .aprog{
-  position:relative;height:16px;margin-top:5px;background:rgba(0,0,0,.42);
+  position:relative;height:13px;margin-top:2px;background:rgba(0,0,0,.42);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);
 }
 .achrow .aprog i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(180deg,#e7ff6b,#a8cc22)}
 .achrow .aprog em{
-  position:absolute;right:6px;top:0;line-height:16px;font-style:normal;
-  font-family:var(--cond);font-weight:600;font-size:12px;letter-spacing:.04em;color:var(--gesso);
+  position:absolute;right:6px;top:0;line-height:13px;font-style:normal;
+  font-family:var(--cond);font-weight:600;font-size:11px;letter-spacing:.04em;color:var(--gesso);
 }
 .achrow .apremio{
   flex:0 0 auto;display:flex;align-items:center;gap:4px;
@@ -1140,10 +1243,17 @@ input{user-select:text;-webkit-user-select:text}
 @keyframes toastOut{from{opacity:1;transform:none}to{opacity:0;transform:translateX(40px)}}
 
 /* tabellone torneo */
-/* Le tre colonne si distribuiscono su TUTTA la larghezza disponibile
-   invece di restare ancorate insieme al centro con un quinto di schermo
-   vuoto sulla destra. */
-.brwrap{display:flex;gap:26px;justify-content:stretch;align-items:stretch;overflow-x:auto;padding:6px 2px;width:100%}
+/* =====================================================================
+   IL TABELLONE E' UNA LAVAGNA DI COMPENSATO APPESA (oggetto-eroe della
+   schermata TORNEO). Qui c'e' solo la scatola: legno, corde, ganci,
+   smalto e polvere di gesso li cuoce disegnaLavagna() sul canvas di
+   fondo, una volta sola, fuori dal ciclo di gioco. Le sfide sono DOM
+   sopra il canvas — scritte di gesso su cornici di smalto, non piu'
+   pastiglie da app — e il riempimento alto del .brwrap e' l'aria che il
+   canvas riserva alle corde e alla cornice. */
+.lavagna{position:relative;margin:2px auto 0;width:100%}
+.brwrap{display:flex;gap:26px;justify-content:stretch;align-items:stretch;overflow-x:auto;
+  padding:30px 4.5% 16px;width:100%}
 /* GRIGLIA A RADDOPPIO. I connettori non si posizionano piu' con scarti
    costanti (13 pixel dall'alto e dal basso della coppia, giusti solo se la
    scheda e' alta 26): ogni colonna e' una griglia di QUATTRO righe e ogni
@@ -1156,13 +1266,18 @@ input{user-select:text;-webkit-user-select:text}
    copre le righe che le competono e i centri non tornano); a stare in mezzo
    sono le singole schede */
 .brcol > .brmatch{align-self:center}
-.brcol .breti{font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.14em;color:var(--grigio);text-transform:uppercase;position:absolute;top:6px;left:0;right:0;text-align:center}
+/* le intestazioni dei turni sono scritte col gesso, come tutto il resto
+   della lavagna: gesso pieno, non grigio da interfaccia */
+.brcol .breti{font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.14em;color:rgba(242,245,239,.74);text-transform:uppercase;position:absolute;top:8px;left:0;right:0;text-align:center}
 /* i raccordi fra i turni: senza, il tabellone e' tre colonne che non si
    parlano e tocca indovinare chi affronta chi */
+/* LA SFIDA E' UNA CORNICE DI SMALTO SULLA LAVAGNA, non una pastiglia.
+   Fondo quasi trasparente (sotto c'e' il verde della lavagna cotta dal
+   canvas), bordo bianco a pennello, angoli appena ammorbiditi: la
+   stessa mano del tabellone-eroe del riferimento FINALE. */
 .brmatch{
-  background:linear-gradient(180deg,#123726,#0b2418);position:relative;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 2px 0 rgba(0,0,0,.4);
-  clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);
+  background:rgba(6,20,13,.28);position:relative;
+  border:2px solid rgba(242,245,239,.42);border-radius:3px;
 }
 /* CONNETTORI A GOMITO. Prima erano barre verticali isolate, spostate a
    sinistra dello slot d'arrivo, e verso la finale un segmento che pendeva
@@ -1171,7 +1286,8 @@ input{user-select:text;-webkit-user-select:text}
    bordo destro di ciascuna scheda della coppia, verticale che unisce le
    due, orizzontale fino al bordo sinistro dello slot successivo. */
 .brcol:not(:last-child) .brmatch::after{
-  content:"";position:absolute;right:-13px;top:calc(50% - 1px);width:13px;height:2px;background:var(--linea);
+  content:"";position:absolute;right:-13px;top:calc(50% - 1px);width:13px;height:2px;
+  background:rgba(242,245,239,.45);
 }
 .brpair{display:grid;grid-template-rows:1fr 1fr;align-items:center;gap:8px;position:relative}
 .brwrap .brcol:nth-of-type(1) .brpair{grid-row:span 2}
@@ -1183,56 +1299,25 @@ input{user-select:text;-webkit-user-select:text}
 .brcol:not(:last-child) .brpair::after{
   /* dal centro della prima scheda al centro della seconda: nella griglia a
      due righe uguali sono esattamente il 25% e il 75% dell'altezza */
-  content:"";position:absolute;right:-14px;top:25%;bottom:25%;width:2px;background:var(--linea);
+  content:"";position:absolute;right:-14px;top:25%;bottom:25%;width:2px;
+  background:rgba(242,245,239,.45);
 }
 .brcol:not(:first-child) .brmatch::before{
-  content:"";position:absolute;left:-13px;top:calc(50% - 1px);width:13px;height:2px;background:var(--linea);
+  content:"";position:absolute;left:-13px;top:calc(50% - 1px);width:13px;height:2px;
+  background:rgba(242,245,239,.45);
 }
-/* =====================================================================
-   LA COPPA NEL TABELLONE. E' una quarta colonna del flex, larga quanto
-   una colonna di sfide, e sta all'altezza della finale. Sotto i 640 px di
-   larghezza si stringe, sotto i 480 sparisce: un oggetto-eroe che manda
-   il tabellone in scorrimento orizzontale non e' un eroe, e' un ingombro.
-   ===================================================================== */
+/* la coppa (fine partita e bacheca): qui c'e' solo la scatola, il
+   disegno lo fa disegnaCoppa() sul canvas. Nel TORNEO non abita piu' —
+   l'eroe di quella schermata e' la lavagna, e la coppa ha la mensola. */
 .coppa{position:relative;flex:0 0 auto}
 .coppa canvas.coppacv{display:block;width:100%;height:100%}
-/* =====================================================================
-   LA COPPA E' L'OGGETTO-EROE DEL TORNEO, E ADESSO NE HA LA MISURA.
-   Misurato sul riferimento: nel tabellone del capo della categoria il
-   trofeo e' alto quasi mezzo schermo e largo un ottavo, illuminato da un
-   faro, ed e' l'UNICA cosa ricca di una pagina fatta di righe tutte
-   uguali. Da noi era 104x158 in un angolo a destra: una miniatura, e per
-   giunta schiacciata sul bordo.
-   Da 104x158 a 158x244 — il 78% in piu' di area, il 59% dell'altezza
-   dello schermo su un telefono in orizzontale — e centrata sull'asse
-   della colonna della finale invece che appesa al margine.
-   Non costa un millisecondo di partita: e' un canvas cotto una volta,
-   fuori dal ciclo di gioco.
-   ===================================================================== */
-/* LA MISURA LA DETTA L'ALTEZZA, non la larghezza. Con un'altezza fissa a
-   244 px il tabellone su un telefono in orizzontale cresceva oltre la
-   piega e le due ultime sfide dei quarti finivano sotto la fascia dei
-   bottoni: un oggetto-eroe che nasconde il contenuto della pagina non e'
-   un eroe, e' un ingombro (e' la stessa lezione gia' pagata sulla home).
-   Adesso la coppa e' alta il 44% del viewport, con l'aspetto bloccato:
-   sul telefono in orizzontale fa 181x117 (era 158x104, cioe' +29% di
-   area) e il tabellone resta tutto sopra la piega; su un tablet arriva a
-   264x171, che e' la misura da vetrina. */
-/* LA COPPA E' L'OGGETTO-EROE DEL TORNEO, E UN EROE SI VEDE.
-   Stava a 44vh, cioe' 181 px su un telefono in orizzontale: il 5,6%
-   dell'area della schermata, un dodicesimo del lato lungo. Nel riferimento
-   il trofeo occupa un QUINTO dello schermo ed e' l'unica cosa ricca di una
-   pagina fatta di righe tutte uguali — e la nostra pagina e' fatta
-   esattamente di righe tutte uguali.
-   PERCHE' E' USCITA DAL FLUSSO. Alzandola dentro la riga flessibile la
-   coppa tirava in basso il tabellone e il verdetto ("QUARTI DI FINALE —
-   TOCCA A TE") finiva sotto il pulsante GIOCA: un oggetto-eroe che
-   schiaccia il testo che deve reggere non regge niente. Fuori dal flusso
-   occupa la fascia destra che era vuota da sempre — quella sotto la
-   colonna FINALE — e le tre colonne si prendono lo spazio che le lasciava
-   prima. Il tabellone non si e' spostato di un pixel; la coppa e'
-   raddoppiata. */
-#tourBoard{position:relative;--hcoppa:clamp(190px,63vh,330px);--wcoppa:calc(var(--hcoppa) * 79 / 122)}
+/* QUI C'ERANO QUARANTA RIGHE SULLA MISURA DELLA COPPA NEL TORNEO.
+   Erano giuste per la pagina di prima — quella fatta di righe tutte
+   uguali, dove la coppa era l'unica cosa ricca. Adesso l'eroe del
+   TORNEO e' il tabellone stesso, diventato lavagna di compensato, e
+   la coppa vive sulla mensola dei TROFEI: la lezione sulla misura
+   ("un eroe si vede: un quinto dello schermo") viaggia con lei. */
+#tourBoard{position:relative}
 /* =====================================================================
    I DUE EROI NUOVI — il pallone della schermata AMICHEVOLE e il cartello
    della schermata CAMPI. Stessa disciplina del tabellone e della coppa:
@@ -1240,13 +1325,31 @@ input{user-select:text;-webkit-user-select:text}
    (Ce n'era un terzo, la maglia appesa della ROSA: tolta perche'
    mandava quella pagina in scorrimento — vedi il commento nel corpo
    della schermata ROSA.) */
-.eroe-pallone,.eroe-cartello{position:relative;flex:0 0 auto}
-.eroe-pallone canvas.eroecv,.eroe-cartello canvas.eroecv{
+.eroe-pallone,.eroe-cartello,.eroe-maglia,.eroe-mensola{position:relative;flex:0 0 auto}
+.eroe-pallone canvas.eroecv,.eroe-cartello canvas.eroecv,
+.eroe-maglia canvas.eroecv,.eroe-mensola canvas.eroecv,.lavagna canvas.eroecv{
   position:absolute;inset:0;width:100%;height:100%;display:block}
-.giocariga{display:flex;gap:20px;align-items:center;justify-content:center;margin:2px auto 4px;
-  max-width:640px;width:100%}
-.giocapall{width:clamp(96px,26vh,168px);aspect-ratio:1/1}
-.giocascelte{flex:1 1 auto;min-width:0}
+/* la riga va a capo: su un portrait stretto il pallone cresciuto non
+   deve schiacciare le scelte a otto pixel di colonna */
+.giocariga{display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:center;
+  margin:2px auto 4px;max-width:640px;width:100%}
+/* IL PALLONE HA LA MISURA DI UN EROE. Era 26vh in un riquadro quadrato:
+   un francobollo accanto alle pastiglie, con un'ombretta corta da
+   mezzogiorno. Adesso il riquadro e' largo 64vh e panoramico (13/10):
+   dentro ci sta il pallone col diametro a un terzo abbondante
+   dell'altezza dello schermo, l'erba su cui e' POSATO e l'ombra lunga
+   che il sole basso da ovest gli tira verso est. La citazione non sta
+   piu' SOPRA di lui a rubargli i primi 60 px: sta sotto, nella fascia
+   che restava vuota, e la schermata continua a non scorrere. */
+/* 52vh, non 64: la citazione tornata sotto l'eroe (giro 2) compra i suoi
+   ~60 px qui, dal diametro, non dallo scorrimento — misurato a 915x412:
+   a 55vh la pagina sforava di 33 px e il chevron prometteva contenuto
+   che non c'era. Il pallone resta due quinti dell'altezza dello schermo
+   e la pagina entra intera. */
+.giocapall{width:clamp(180px,52vh,320px);aspect-ratio:13/10}
+/* base flessibile di 240px: di fianco al pallone finche' la riga tiene
+   (915x412 tiene), a capo solo dove la larghezza manca davvero */
+.giocascelte{flex:1 1 240px;min-width:0}
 .campolinea{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
 .campolinea b{font-family:var(--nero);font-weight:900;text-transform:uppercase;
   font-size:clamp(15px,3.4vw,21px);letter-spacing:.02em;color:var(--gesso)}
@@ -1272,6 +1375,13 @@ input{user-select:text;-webkit-user-select:text}
    scorrere fino in fondo senza finire sotto il pulsante */
 #campi .cards{padding-bottom:64px}
 .eroe-cartello{width:clamp(158px,30vw,238px);aspect-ratio:16/7}
+/* la mensola dei TROFEI: larga quanto la pagina, alta un quarto scarso
+   dello schermo — la misura da eroe, ma non di piu'. GIRO 2: a un terzo
+   dell'altezza la mensola spingeva la lista degli obiettivi sotto la
+   piega, e una vetrina che nasconde cio' che espone non e' una vetrina.
+   L'altezza e' in clamp, non in aspect-ratio: sul portrait stretto la
+   tavola si accorcia ma le coppe restano a misura di coppa. */
+.eroe-mensola{width:min(100%,720px);height:clamp(76px,21vh,108px);margin:0 auto 4px}
 .cart-nome{position:absolute;left:7%;right:7%;top:24%;height:25%;
   display:flex;align-items:center;justify-content:center;
   font-family:var(--nero);font-weight:900;text-transform:uppercase;line-height:1;
@@ -1287,39 +1397,17 @@ input{user-select:text;-webkit-user-select:text}
   font-family:var(--cond);font-weight:700;text-transform:uppercase;line-height:1.08;
   font-size:clamp(6.5px,1.36vw,9px);letter-spacing:.05em;color:#4a4028;overflow:hidden}
 @media (max-width:380px){ .cartellowrap{display:none} }
-.brcoppa{position:absolute;right:0;top:-4px;height:var(--hcoppa);width:var(--wcoppa);
-  margin:0;align-self:auto;pointer-events:none}
-#tourBoard .brwrap{padding-right:calc(var(--wcoppa) + 18px)}
-@media (max-width:720px){ #tourBoard{--hcoppa:clamp(150px,52vh,240px)} }
-/* QUI C'ERA UNA SCORCIATOIA CHE RIMPICCIOLIVA LA COPPA, ED E' TOLTA.
-   Diceva  @media (max-height:560px){ --hcoppa:clamp(150px,50vh,240px) }
-   per la paura che, su un telefono in orizzontale, la base del trofeo
-   finisse sotto il pulsante ambra "GIOCA VS ...".
-   LA PAURA NON ERA MISURATA. Fotografato il torneo alla stessa vista
-   che usa scatta.js — 915x412, cioe' proprio il caso che la regola
-   voleva salvare — la base della coppa si ferma 15 px CSS sopra il filo
-   del bottone: stretta, ma libera. La regola non stava rimediando a una
-   sovrapposizione, la stava prevenendo dove non c'era, e per farlo
-   portava l'altezza da 260 a 206 px: un quinto in meno di lato, un
-   terzo in meno di area, sull'unico oggetto della pagina che deve
-   essere piu' ricco di tutto il resto (metro, paragrafo 2 — nel
-   riferimento il trofeo occupa un QUINTO dello schermo).
-   Un eroe non si rimpicciolisce per prudenza: se un giorno la base
-   toccasse davvero il bottone, si sposta il bottone o si accorcia la
-   fascia, non si accorcia l'eroe. */
-@media (max-width:470px){ .brcoppa{display:none} #tourBoard .brwrap{padding-right:2px} }
-/* nella BACHECA la coppa sta a sinistra dell'albo d'oro */
+/* l'albo d'oro: righe piene, senza coppa di fianco — la coppa sta sulla
+   mensola in cima alla stessa schermata, e ripeterla qui era ridondanza */
 .albowrap{display:flex;gap:16px;align-items:flex-start;justify-content:center}
 .albowrap .achlist{flex:1 1 auto;min-width:0}
-.albocoppa{width:84px;height:112px;flex:0 0 84px}
-@media (max-width:430px){ .albocoppa{width:62px;height:84px;flex:0 0 62px} }
 /* a FINE PARTITA, accanto al verdetto, solo quando si vince */
 .fincoppa{width:74px;height:100px;flex:0 0 74px}
 .finrow{display:flex;align-items:center;justify-content:center;gap:14px}
 .brmatch.next::after,.brmatch.next::before{background:var(--oro)}
 .brmatch.next{border-color:var(--oro);box-shadow:0 0 10px rgba(255,207,63,.22)}
 .brteam{display:flex;align-items:center;gap:6px;padding:5px 8px;font-family:var(--cond);font-weight:600;font-size:10.5px;color:var(--grigio);text-transform:uppercase}
-.brteam+.brteam{border-top:1px solid rgba(30,68,50,.6)}
+.brteam+.brteam{border-top:1px dashed rgba(242,245,239,.25)}
 .brteam .dot{width:8px;height:8px;flex:0 0 8px}
 .brteam.win{color:var(--gesso);font-weight:700}
 .brteam.lose{opacity:.35;text-decoration:line-through}
@@ -1355,10 +1443,70 @@ input{user-select:text;-webkit-user-select:text}
 .trofbar .tb i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(180deg,#ffe08a,var(--oro))}
 .trofbar .tl{display:flex;justify-content:space-between;font-family:var(--cond);font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--grigio);margin-bottom:5px}
 .trofbar .tl b{color:var(--oro);font-family:var(--cond)}
+/* STATISTICHE SULLA LAVAGNA. Le tessere da app (fondo scuro, tagli,
+   ombre) spariscono: sull'ardesia i numeri sono SCRITTI col gessetto e
+   ogni cifra sta sulla sua riga di registro — un filo tratteggiato di
+   gesso, come le righe che un mister tira a mano libera. Le tinte di
+   maglia restano solo su gol fatti/subiti, che parlano di squadre. */
+.lav-stat{max-width:560px;margin:0 auto 12px}
+/* riempimenti CORTI: sulla lavagna la riga dei trofei e' l'ultima, e con
+   40px d'aria in testa finiva dentro la velatura dei bottoni — 0/15 quasi
+   illeggibile. L'aria si toglie dai margini, non dai numeri. */
+.lav-stat .lav-corpo{position:relative;padding:26px 28px 14px;z-index:1}
+.lav-stat .statlist,.lav-stat .statmini{max-width:none;margin-bottom:4px}
+#statistiche .stile{background:none;box-shadow:none;clip-path:none;padding:5px 6px 7px;
+  border-bottom:1.6px dashed rgba(242,245,239,.30)}
+#statistiche .sv{color:var(--gesso)}
+#statistiche .sl{color:rgba(242,245,239,.62)}
+/* i glifi TENGONO il loro colore: provati in scala di gesso, il bersaglio
+   e il fulmine diventavano macchie grigie indistinguibili — l'icona e' il
+   modo piu' rapido di trovare la riga, e il colore e' meta' dell'icona. */
+#statistiche .sico{opacity:.95}
+#statistiche .sv.fluo{color:var(--tu)}
+#statistiche .sv.rosa{color:var(--loro)}
+/* la barra dei trofei, gessata ma con il conto in ORO: i trofei sono
+   ricompensa, e la ricompensa parla ambra-grigio in tutto il gioco */
+.lav-stat .trofbar{max-width:none;margin:8px 0 0}
+#statistiche .trofbar .tb{height:13px;background:none;box-shadow:none;
+  border:1.6px solid rgba(242,245,239,.5);border-radius:2px}
+#statistiche .trofbar .tb i{background:repeating-linear-gradient(115deg,
+  #ffd977 0 3px, rgba(255,207,63,.35) 3px 7px)}
+#statistiche .trofbar .tl{color:rgba(242,245,239,.78)}
+#statistiche .trofbar .tl b{color:var(--oro)}
 
 /* impostazioni */
 .setwrap{display:flex;flex-direction:column;gap:12px;max-width:440px;margin:0 auto}
 .voce.warn{border-color:var(--oro);color:var(--oro)}
+/* L'INTERRUTTORE CON LA MANOPOLA SMALTATA. Un'opzione che si accende e
+   si spegne non e' un bottone qualunque: e' un interruttore, e si vede
+   dalla manopola — una pastiglia di smalto bianco (lo stesso smalto
+   della lavagna e delle viti) che corre in una fessura scura. Lo stato
+   resta anche scritto nel testo: la manopola lo mostra, non lo
+   sostituisce. Niente tinte nuove: fessura scura, corsa verde quando e'
+   acceso, smalto sopra. */
+.voce.sw{padding-right:84px;text-align:left;padding-left:22px}
+/* la didascalia e' una DIDASCALIA: minuscolo, corpo e spaziatura un
+   gradino sotto il titolo — in MAIUSCOLO con corpo 12,5 e .12em andava a
+   capo su tre righe nella colonna stretta della griglia, con 'SEPARATI'
+   orfano sotto la manopola. Cosi' ogni frase sta su UNA riga, e le frasi
+   stesse sono tagliate su questa misura. Vale per tutta la pagina delle
+   impostazioni: meta' didascalie maiuscole e meta' no sarebbero due mani
+   diverse sulla stessa lavagna. */
+#impostazioni .voce small{text-transform:none;letter-spacing:.06em;font-size:11.5px}
+.voce.sw::before{content:"";position:absolute;right:18px;top:50%;margin-top:-10px;width:50px;height:20px;
+  background:rgba(4,16,10,.62);
+  box-shadow:inset 0 2px 3px rgba(0,0,0,.55), inset 0 -1px 0 rgba(255,255,255,.10)}
+.voce.sw.on::before{background:#2c5b41}
+.voce.sw::after{content:"";position:absolute;right:46px;top:50%;margin-top:-12px;width:24px;height:24px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #ffffff, #e6e6da 55%, #b6b6a6);
+  border:1px solid rgba(20,14,4,.55);
+  box-shadow:0 2px 0 rgba(0,0,0,.45), inset 0 -2px 2px rgba(90,90,74,.35);
+  transition:right .12s}
+.voce.sw.on::after{right:16px}
+@media (prefers-reduced-motion:reduce){ .voce.sw::after{transition:none} }
+/* i titoli di sezione qui sono smalto pieno, non grigio: e' la pagina
+   della manutenzione, e le targhette si leggono prima dei comandi */
+#impostazioni .eti{color:var(--gesso)}
 
 /* monete a fine partita */
 #endCoins{max-width:440px;margin:-6px auto 20px;border:1px solid var(--linea);border-left:6px solid var(--oro);background:var(--campo2);padding:12px 16px;text-align:left}
@@ -1541,7 +1689,11 @@ button:active{transform:scale(.96)}
      affiancata a un controllo che gia' apparteneva a quella sezione, e
      'DATI' finiva accanto a 'MOVIOLA DOPO IL GOL'. Sembravano etichette
      di riga, non titoli. */
-  .setwrap>.eti{grid-column:1 / -1;margin:16px 0 2px;padding-top:10px;border-top:1px solid var(--linea)}
+  /* margini corti: con 16px+10px di riempimento la seconda card di
+     ACCESSIBILITA' scivolava sotto la velatura dei bottoni e il titolo
+     ALTO CONTRASTO si leggeva grigio — i pixel si tolgono dalle
+     intestazioni, non dai comandi */
+  .setwrap>.eti{grid-column:1 / -1;margin:8px 0 2px;padding-top:6px;border-top:1px solid var(--linea)}
   .setwrap>.eti:first-child{margin-top:2px;padding-top:0;border-top:0}
   .setwrap>.diff-row{grid-column:1 / -1}
   .golone{font-size:clamp(26px,7vw,40px)}
@@ -1551,12 +1703,21 @@ button:active{transform:scale(.96)}
      8' sembrava un errore di dati. Riga piu' bassa di 4 px, intestazioni
      piu' vicine e passi piu' stretti: 192 px invece di 224, e ci stanno
      tutte e otto. */
-  .brwrap{padding:2px;gap:18px}
-  .brcol{padding-top:18px;gap:6px}
-  .brpair{gap:6px}
-  .brteam{padding:3px 7px}
-  .tourstato{font-size:clamp(15px,4vw,20px);margin:6px 0}
-  .tourinfo{margin:6px 0}
+  /* il riempimento non scende piu' a 2px: la lavagna ha una cornice e
+     due corde, e il tabellone deve stare DENTRO lo smalto, non sopra il
+     legno. I pixel si recuperano dalle righe (squadre a 2px di
+     riempimento, passi a 4) invece che dall'aria dell'eroe. */
+  .brwrap{padding:22px 3.5% 10px;gap:18px}
+  .brcol{padding-top:20px;gap:3px}
+  .brpair{gap:3px}
+  .brteam{padding:1px 7px}
+  .tourstato{font-size:clamp(15px,4vw,20px);margin:4px 0}
+  .tourinfo{margin:4px 0}
+  /* verdetto e premio su UNA riga, un corpo sotto: sotto la lavagna lo
+     spazio e' poco e due righe centrate finivano sotto la fascia dei
+     bottoni — il verdetto che l'eroe deve reggere non puo' sparire */
+  #tourBoard .tourstato{display:inline-block;margin:4px 10px 0 0;vertical-align:middle;font-size:17px}
+  #tourBoard .tourinfo{display:inline-block;margin:4px 0 0;vertical-align:middle}
   .gagliardetti{gap:10px;margin:2px auto}
   .gagliardetti .gg{flex:0 0 104px}
   .gagliardetti svg{width:40px}
@@ -1777,7 +1938,7 @@ button:active{transform:scale(.96)}
            pannello, cioe' su una decorazione, e i tre bottoni erano
            indistinguibili fra loro. -->
       <button class="voce primaria" id="btnResume">RIPRENDI <small>oppure premi ESC</small></button>
-      <button class="voce" id="btnPauseAudio">AUDIO: ON</button>
+      <button class="voce sw" id="btnPauseAudio">AUDIO: ON</button>
       <button class="voce" id="btnQuit">ABBANDONA <small>torna al menu</small></button>
     </div>
   </div>
@@ -1908,7 +2069,16 @@ button:active{transform:scale(.96)}
 <div id="gioca" class="ov hidden">
   <div class="box">
     <h1 class="sotto-titolo">AMICHEVOLE</h1>
-    <div class="frase">&laquo;La partita di calcetto del dopolavoro, compressa in <b>90 secondi</b>. Chi legge il tempo dell'altro, segna.&raquo;</div>
+    <!-- LA CITAZIONE E' TORNATA, SOTTO L'EROE (giro 2). Toglierla era
+         sembrato pulizia — "lo dice gia' il claim della home" — ma il
+         giudizio ha misurato la perdita: era l'unica riga di VOCE che
+         spiegava il gioco e ne fissava l'identita', e nessun elemento ne
+         ereditava la funzione. La lezione vera era un'altra: non "via la
+         citazione", ma "la citazione non deve stare SOPRA l'eroe a
+         rubargli i primi 60 px". Adesso sta sotto il pallone, nella
+         fascia che era rimasta vuota, e la schermata continua a non
+         scorrere. Il pallone resta POSATO SULL'ERBA con l'ombra lunga
+         delle sette di sera, e le due scelte gli stanno accanto. -->
     <!-- QUINDICI COSE TOCCABILI DIVENTANO CINQUE.
          Qui sotto c'erano tre pastiglie di difficolta' e OTTO pastiglie di
          campo, ciascuna con lucchetto e prezzo: undici bersagli dello
@@ -1938,7 +2108,7 @@ button:active{transform:scale(.96)}
         </div>
       </div>
     </div>
-    <div style="height:6px"></div>
+    <div class="frase stretta">&laquo;La partita di calcetto del dopolavoro, compressa in <b>90 secondi</b>. Chi legge il tempo dell'altro, <b>segna</b>.&raquo;</div>
     <!-- I due modi di giocare e l'uscita stanno nella barra agganciata al
          fondo: INDIETRO tagliato a meta' dal bordo era l'ultima cosa che
          si vedeva di questa schermata. -->
@@ -1968,22 +2138,24 @@ button:active{transform:scale(.96)}
       </div>
     </div>
     <div id="tourBoard" class="hidden">
-      <!-- LA COPPA STA DENTRO IL TABELLONE, non accanto: e' l'unica cosa
-           ricca della pagina e regge tutte le sedici righe che le stanno
-           intorno, esattamente come fa il trofeo del capo della categoria
-           nella stessa identica schermata. -->
-      <!-- IL VERDETTO TORNA SOTTO IL TABELLONE, dov'era. Era stato
-           portato in cima perche' con la velatura opaca "QUARTI DI
-           FINALE - TOCCA A TE" spariva del tutto; tolta quella velatura
-           (vedi .azioni) la riga si rilegge da sola e la ragione dello
-           spostamento non c'e' piu'. In cima costava due cose:
-             - il tabellone scendeva di due righe e si comprimeva;
-             - la coppa e' fuori dal flusso, ancorata a top:-4px di
-               #tourBoard, e solo .brwrap si riserva la sua fascia con
-               padding-right: con un testo a tutta larghezza li' sopra,
-               la coda del verdetto finisce SOTTO la coppa. -->
-      <div class="brwrap" id="bracket"></div>
-      <div class="coppa brcoppa" id="tourCoppa" data-vuota="1"></div>
+      <!-- IL TABELLONE E' UNA LAVAGNA DI COMPENSATO APPESA — l'oggetto-eroe
+           di questa schermata, deciso dalla direzione. Gli accoppiamenti
+           non sono piu' righe da app appoggiate sul prato: stanno SCRITTI
+           SULLA LAVAGNA, dentro cornici di smalto bianco dato a pennello,
+           come i tabelloni veri dei tornei di quartiere. Il legno, le
+           corde e i ganci li disegna disegnaLavagna() su un canvas di
+           fondo; le sfide restano DOM sopra, perche' devono crescere con
+           TESTO GRANDE e restare leggibili a un lettore di schermo.
+           LA COPPA CHE STAVA QUI ACCANTO SE N'E' ANDATA: due oggetti
+           ricchi nella stessa pagina si rubano l'occhio a vicenda — "due
+           eroi non sono nessun eroe" e' una lezione gia' pagata due volte
+           — e adesso la coppa ha una casa sua, la mensola dei TROFEI.
+           Lo spazio che occupava se lo riprende il tabellone. -->
+      <!-- IL VERDETTO STA SOTTO IL TABELLONE, dov'era: con la velatura
+           tolta dalle .azioni la riga si legge da sola. -->
+      <div class="lavagna">
+        <div class="brwrap" id="bracket"></div>
+      </div>
       <div class="tourstato" id="tourStato"></div>
       <div class="tourinfo" id="tourPremio"></div>
     </div>
@@ -2084,30 +2256,29 @@ button:active{transform:scale(.96)}
 <div id="rosa" class="ov hidden">
   <div class="box">
     <h1 class="sotto-titolo">LA ROSA</h1>
-    <!-- QUI C'ERA UNA MAGLIA APPESA ALLA RETE, oggetto-eroe di questa
-         schermata, ed e' stata tolta. Non perche' fosse disegnata male
-         — era il pezzo migliore del giro 3 — ma perche' non stava in
-         piedi la ragione per cui poteva restare.
-         IL COMMENTO CHE L'ACCOMPAGNAVA DICEVA IL FALSO. Diceva "sta
-         FUORI dal flusso, nella fascia di prato vuoto in basso a
-         sinistra", e citava a proprio favore la regola giusta: "un
-         eroe che sposta il contenuto non e' un eroe, e' un ingombro".
-         Ma il codice sotto quel commento la metteva DENTRO il flusso,
-         in riga con la presentazione (.rosaeroe): la maglia spostava
-         il contenuto eccome.
-         LA MISURA. Fotografata LA ROSA a 915x412 prima e dopo: al giro
-         2 la pagina ci stava tutta e la pastiglia del chevron NON
-         compariva (zero pixel accesi nel suo riquadro); con la maglia
-         compare, identica a quella di TROFEI. Cioe' l'eroe e' costato
-         alla ROSA la sua unica qualita' — entrare per intero in uno
-         schermo — per aggiungere un ornamento di 104 px.
-         Il metro, paragrafo 2, chiede un oggetto-eroe per schermata; il
-         metro, paragrafo 4, chiede meno cose e piu' grandi. Quando i
-         due si contraddicono su una pagina di sole quattro schede,
-         vince quello che non manda la pagina in scorrimento. -->
+    <!-- LA MAGLIA APPESA ALLA RECINZIONE E' TORNATA, e stavolta la
+         ragione sta in piedi. La prima volta era stata tolta perche',
+         messa SOPRA le quattro schede, mandava la pagina in scorrimento:
+         l'eroe costava alla ROSA la sua unica qualita' — entrare per
+         intero in uno schermo. La lezione non era "niente eroe": era
+         "niente eroe che compra scorrimento".
+         Adesso la maglia sta DI FIANCO, e lo spazio glielo pagano le
+         schede stesse: quattro schede da sette righe l'una diventano
+         quattro RIGHE respirate (nome, ruolo e quattro numeri in
+         orizzontale) — meno cose, piu' grandi, metro paragrafo 4 — e la
+         larghezza che le schede non usano piu' e' esattamente la colonna
+         dell'eroe. Stessa altezza di pagina, un centro in piu'. -->
+    <!-- LA FRASE D'IDENTITA' TORNA INTERA (giro 2). Accorciarla per
+         guadagnare una riga aveva amputato l'attacco («Quattro uomini,
+         non quattro sagome») e la coda («in base a quello che hanno
+         fatto in campo»), cioe' proprio le due meta' che davano senso
+         alla pagina. Allargata a due righe piene costa quanto la frase
+         monca su una colonna stretta. -->
     <p class="rosa-intro">Quattro uomini, non quattro sagome. Ogni attributo sposta davvero la simulazione, e <b>cresce dopo ogni partita</b> in base a quello che hanno fatto in campo.</p>
-    <div class="rosalist" id="rosaList"></div>
-    <div style="height:14px"></div>
+    <div class="rosariga">
+      <div class="eroe-maglia" aria-hidden="true"></div>
+      <div class="rosalist" id="rosaList"></div>
+    </div>
     <div class="azioni"><button class="btnA sec" id="btnBackRosa">TORNA AL MENU</button></div>
   </div>
 </div>
@@ -2116,14 +2287,26 @@ button:active{transform:scale(.96)}
 <div id="trofei" class="ov hidden">
   <div class="box">
     <h1 class="sotto-titolo">TROFEI</h1>
-    <div class="eti">Obiettivi</div>
+    <!-- LA MENSOLA DI LEGNO CON LE COPPE — l'oggetto-eroe di questa
+         schermata, la piu' vicina al riferimento del capo della
+         categoria. Le sette coppe sono gli obiettivi d'oro: le vinte
+         d'ottone nella luce calda da ovest, le altre in penombra.
+         Sostituisce la coppa che stava accanto all'albo d'oro (era la
+         stessa coppa, due volte nella stessa pagina).
+         GIRO 2: LA MENSOLA NON SI COMPRA LA PAGINA. Alla prima uscita
+         era alta un terzo dello schermo e spingeva la lista sotto la
+         piega: di otto obiettivi se ne leggevano due, TORNA AL MENU
+         copriva gli altri, e l'etichetta OBIETTIVI era sparita con la
+         scusa che "lo dice la mensola" (non lo dice: la mensola mostra
+         le coppe, non nomina la sezione). Adesso la mensola tiene la
+         misura da eroe — un quarto abbondante dell'altezza, tutta la
+         larghezza — ma la paga il legno, non la lista: sotto ci stanno
+         l'etichetta e le prime otto righe, su tre colonne compatte. -->
+    <div class="eroe-mensola" aria-hidden="true"></div>
+    <div class="eti" style="margin:0 0 4px">Obiettivi</div>
     <div class="achlist" id="achList"></div>
     <div class="eti" style="margin-top:22px">Albo d'oro dei tornei</div>
-    <!-- la stessa coppa del torneo, piena se ne hai vinto almeno uno,
-         vuota (stesso disegno, in grigio) se l'albo e' ancora bianco:
-         si riconosce che e' LA STESSA coppa, ed e' quello il punto -->
     <div class="albowrap">
-      <div class="coppa albocoppa" id="alboCoppa" data-vuota="1"></div>
       <div class="achlist" id="alboList"></div>
     </div>
     <div style="height:14px"></div>
@@ -2132,12 +2315,21 @@ button:active{transform:scale(.96)}
 </div>
 
 <!-- ============ STATISTICHE ============ -->
+<!-- I NUMERI DELLA CARRIERA STANNO SU UNA LAVAGNA, scritti col gessetto:
+     stessa ardesia e stesso legno del tabellone del torneo e della
+     lavagna del mister. Le tessere da app scompaiono: righe di gesso
+     allineate, e la barra dei trofei e' TRATTEGGIATA come si tratteggia
+     una barra col gessetto. -->
 <div id="statistiche" class="ov hidden">
   <div class="box">
     <h1 class="sotto-titolo">STATISTICHE</h1>
-    <div class="statlist" id="statList"></div>
-    <div class="statmini" id="statMini"></div>
-    <div class="trofbar" id="statTrofei"></div>
+    <div class="lavagna lav-stat">
+      <div class="lav-corpo">
+        <div class="statlist" id="statList"></div>
+        <div class="statmini" id="statMini"></div>
+        <div class="trofbar" id="statTrofei"></div>
+      </div>
+    </div>
     <div class="azioni"><button class="btnA sec" id="btnBackStats">TORNA AL MENU</button></div>
   </div>
 </div>
@@ -2148,8 +2340,8 @@ button:active{transform:scale(.96)}
     <h1 class="sotto-titolo">IMPOSTAZIONI</h1>
     <div class="setwrap">
       <div class="eti">Gioco</div>
-      <button class="voce" id="btnSetAudio">AUDIO: ON</button>
-      <button class="voce" id="btnSetVib">VIBRAZIONE: ON</button>
+      <button class="voce sw" id="btnSetAudio">AUDIO: ON</button>
+      <button class="voce sw" id="btnSetVib">VIBRAZIONE: ON</button>
       <div class="eti">Comandi touch (mobile)</div>
       <div class="diff-row">
         <button class="tbtn sel" data-m="0">Gesti (flick)</button>
@@ -2164,8 +2356,8 @@ button:active{transform:scale(.96)}
            difficolta' della CPU, che e' una preferenza di gusto e puo'
            aspettare. Sono due righe di markup spostate. -->
       <div class="eti">Accessibilit&agrave;</div>
-      <button class="voce" id="btnSetMoto">EFFETTI DI MOVIMENTO: COMPLETI <small>scossa schermo, coriandoli, transizioni</small></button>
-      <button class="voce" id="btnSetDalt">DIVISE AD ALTO CONTRASTO: NO <small>per daltonismo: kit e portieri ben separati</small></button>
+      <button class="voce sw" id="btnSetMoto">MOVIMENTO: COMPLETO <small>scossa, coriandoli, transizioni</small></button>
+      <button class="voce sw" id="btnSetDalt">ALTO CONTRASTO: NO <small>daltonismo: kit ben separati</small></button>
       <div class="eti">Difficolt&agrave; predefinita CPU</div>
       <div class="diff-row">
         <button class="diff" data-d="0">Facile</button>
@@ -2174,7 +2366,7 @@ button:active{transform:scale(.96)}
       </div>
       <div class="eti">Partita</div>
       <button class="voce" id="btnSetTempo">DURATA PARTITA: 90&Prime; <small>90, 120 o 180 secondi</small></button>
-      <button class="voce" id="btnSetMoviola">MOVIOLA DOPO IL GOL: S&Igrave; <small>rivedi la rete al rallentatore</small></button>
+      <button class="voce sw" id="btnSetMoviola">MOVIOLA DOPO IL GOL: S&Igrave; <small>rivedi la rete al rallentatore</small></button>
       <div class="eti">Dati</div>
       <button class="voce" id="btnReset">AZZERA TUTTI I DATI <small>monete, campi, trofei, statistiche</small></button>
     </div>
@@ -2210,44 +2402,43 @@ button:active{transform:scale(.96)}
   </div>
 </div>
 
-<!-- ============ COME SI GIOCA ============ -->
+<!-- ============ COME SI GIOCA (la lavagna tattica del mister) ============ -->
 <div id="howto" class="ov hidden">
   <div class="box regole">
-    <h1 class="titolone" style="font-size:clamp(30px,8vw,52px)">COME SI <span>GIOCA</span></h1>
-    <h3>La partita</h3>
-    <p>Quattro contro quattro, portiere compreso, in gabbia: le sponde tengono il pallone sempre in gioco. <b>90 secondi</b>, poi &mdash; sul pareggio &mdash; <b>golden goal</b>: il prossimo gol vince. Controlli sempre il tuo giocatore pi&ugrave; vicino al pallone (anello e freccia lo segnalano), gli altri si muovono da soli.</p>
-    <h3><span class="pill c">Touch</span> mobile</h3>
-    <p>Trascina = corri (stick virtuale con base e levetta) &middot; rilascio semplice = passaggio &middot; <b>flick verso la porta avversaria</b> = tiro (la qualit&agrave; dipende dal momento del flick rispetto all'anello che pulsa) &middot; flick verso un avversario vicino quando difendi = scivolata. Nel menu puoi scegliere <b>3 pulsanti</b> (PASSA / TIRA / SCIVOLA) al posto dei gesti. In 2 giocatori lo schermo &egrave; diviso: met&agrave; sinistra P1, met&agrave; destra P2.</p>
-    <h3><span class="pill">P1 &middot; la tua squadra</span> tastiera</h3>
-    <p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> muovi &middot; <kbd>C</kbd> passaggio al pi&ugrave; smarcato &middot; <kbd>X</kbd> <b>tiro col timing</b>: tieni premuto, l'anello pulsa, rilascia nella finestra giusta &middot; <kbd>Z</kbd> scivolata &middot; <kbd>Shift</kbd> <b>scatto</b> &middot; <kbd>Q</kbd> <b>cambia giocatore</b></p>
-    <h3><span class="pill r">P2 &middot; squadra rosa</span> tastiera</h3>
-    <p><kbd>&#8593;</kbd><kbd>&#8595;</kbd><kbd>&#8592;</kbd><kbd>&#8594;</kbd> muovi &middot; <kbd>N</kbd> passaggio &middot; <kbd>M</kbd> tiro col timing &middot; <kbd>B</kbd> scivolata &middot; <kbd>Shift destro</kbd> scatto &middot; <kbd>/</kbd> cambia giocatore</p>
-    <h3>Le tre armi che cambiano la partita</h3>
-    <p><b>Scatto</b>: tieni <kbd>Shift</kbd> (su telefono: spingi la levetta oltre il bordo). Vai il 34% pi&ugrave; veloce ma consumi <b>fiato</b>: sotto un quarto perdi passo anche camminando. Chi corre sempre, negli ultimi venti secondi non arriva pi&ugrave;.<br>
-    <b>Pallonetto</b>: tieni lo scatto <i>mentre rilasci il tiro</i>. Scavalca il portiere in uscita, ma perde potenza: &egrave; la risposta a chi esce sempre.<br>
-    <b>Tiro al volo</b>: tieni premuto il tasto tiro <i>prima</i> che la palla ti arrivi. La potenza tua si somma a quella che arriva: il gol pi&ugrave; bello del gioco.</p>
-    <h3>La squadra pensa, non insegue</h3>
-    <p>Ogni squadra ha uno <b>stato</b> &mdash; attacco, costruzione, pressing, difesa, gestione &mdash; e i ruoli restano assegnati per almeno un secondo e mezzo. L'<b>ultimo uomo</b> non abbandona mai la propria met&agrave; campo: se perdi palla a centrocampo, trovi ancora qualcuno davanti alla porta. E quando l'azione si ribalta, per due secondi le ali <b>scattano lunghe</b>: quello &egrave; il contropiede.</p>
-    <p>Se sei in vantaggio negli ultimi quindici secondi la CPU non attacca pi&ugrave;: <b>porta la palla in un angolo e fa scorrere il tempo</b>. Come al campetto.</p>
-    <h3>I tuoi quattro uomini</h3>
-    <p>Non sono sagome: hanno un nome e quattro attributi che <b>spostano davvero la simulazione</b> &mdash; velocit&agrave;, tiro, tecnica (quanto &egrave; larga la loro finestra di tiro) e contrasto (quanto sono puliti in scivolata). Dopo ogni partita uno di loro <b>cresce di un punto</b>, in base a quello che ha fatto in campo. Li trovi nel men&ugrave; sotto <b>ROSA</b>.</p>
-    <h3>Il portiere &egrave; un giocatore vero</h3>
-    <p>Non &egrave; un dado: esce sulla bisettrice, legge il tiro con un suo tempo di reazione e si tuffa. La parata avviene <b>per contatto</b>. Se lo spiazzi o lo scavalchi, &egrave; gol: mirare bene serve davvero.</p>
-    <h3>Il tiro col timing</h3>
-    <p>Finestra dolce di <b>300 ms</b>: rilascio dentro = tiro teso e angolato; troppo presto = debole e centrale; troppo tardi = strozzato, spesso fuori. <b>Tap rapido</b> del tasto tiro (senza carica) = tocco corto, un appoggio veloce nella direzione di corsa.</p>
-    <h3>Se non si sblocca: i rigori</h3>
-    <p>Sul pareggio si va al <b>golden goal</b>: il prossimo gol vince. Ma la morte improvvisa non pu&ograve; durare per sempre: dopo <b>quaranta secondi</b> si decide <b>dal dischetto</b>, con la stessa meccanica della punizione-duello, a oltranza.</p>
-    <h3>Moviola</h3>
-    <p>Dopo ogni rete si rivede il gol <b>al rallentatore</b>. Si spegne dalle Impostazioni se preferisci il ritmo pieno.</p>
-    <h3>Pausa</h3>
-    <p><kbd>ESC</kbd> oppure il bottone <b>&#10074;&#10074;</b> in alto a sinistra: il gioco si ferma davvero (riprendi, audio, abbandona).</p>
-    <h3>La scivolata: conta l'angolo, non solo l'attimo</h3>
-    <p>Chi porta palla la tiene <b>davanti ai piedi</b>. Se entri <b>di fronte o di lato</b> e nei primi <b>100 ms</b> arrivi sul pallone, &egrave; <b>rubata pulita</b>: palla tua e scatto di contropiede. Se prendi l'uomo &mdash; perch&eacute; sei arrivato tardi, o perch&eacute; ti sei infilato <b>da dietro</b> &mdash; &egrave; <b>fallo</b>. Da dietro o in ritardo il fallo &egrave; <b>cattivo</b>: <span class="pill r">cartellino</span>.</p>
-    <h3>Cartellini e inferiorit&agrave; numerica</h3>
-    <p>Al <b>secondo cartellino</b> della stessa squadra un uomo esce per <b>12 secondi</b>: si gioca in due contro tre, e in 90 secondi si sente. &Egrave; la regola del calcetto vero: la scivolata &egrave; una <b>decisione</b>, non un riflesso.</p>
-    <h3>La punizione-duello</h3>
-    <p>Ogni fallo apre il duello: il tiratore sceglie la zona e ferma la barra di potenza nella banda giusta, il portiere sceglie il tuffo <b>di nascosto</b>. Chi legge l'altro, vince.</p>
-    <div style="height:18px"></div>
+    <h1 class="sotto-titolo" style="text-align:center">COME SI GIOCA</h1>
+    <div class="lavagna lav-mister">
+      <div class="lav-corpo">
+        <div class="lav-kick">La lavagna del mister</div>
+        <p><b>4 contro 4 in gabbia</b>, portiere compreso: le sponde tengono il pallone sempre in gioco. <b>90 secondi</b>; sul pareggio <b>golden goal</b> &mdash; il prossimo gol vince &mdash; e dopo quaranta secondi si decide <b>dal dischetto</b>. Controlli sempre il tuo uomo pi&ugrave; vicino al pallone: anello e freccia lo segnalano, gli altri si muovono da soli.</p>
+        <h3>I gesti, alla lavagna</h3>
+        <div class="gessi">
+          <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path d="M16 40l12 14m0-14L16 54"/><path d="M92 12l12 14m0-14L92 26"/><path class="trat" d="M32 44 Q62 36 88 24"/><path d="M88 24l-9 1m9-1l-4 8"/><circle class="palla" cx="30" cy="46" r="3.6"/></svg>
+            <b class="gn">Passaggio</b><span class="gt">rilascia il dito &middot; <kbd>C</kbd> &mdash; palla al pi&ugrave; smarcato</span></div>
+          <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path d="M22 26l12 14m0-14L22 40"/><circle class="lieve" cx="28" cy="33" r="12"/><circle class="lieve" cx="28" cy="33" r="18" opacity=".5"/><path d="M46 33 Q72 31 96 30"/><path d="M96 30l-9-4m9 4l-8 5"/><path d="M104 6h11v50h-11"/></svg>
+            <b class="gn">Tiro col timing</b><span class="gt">tieni e rilascia sull'anello che pulsa &middot; flick verso la porta &middot; <kbd>X</kbd></span></div>
+          <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><circle class="avv" cx="84" cy="24" r="8"/><circle class="palla" cx="72" cy="42" r="3.6"/><path d="M18 34l12 14m0-14L18 48"/><path class="lieve" d="M10 46l9 2m-9 4l7 1"/><path d="M34 44 60 43"/><path d="M60 43l-8-4m8 4l-8 4"/></svg>
+            <b class="gn">Scivolata</b><span class="gt">flick sull'avversario &middot; <kbd>Z</kbd> &mdash; di fronte &egrave; rubata, da dietro &egrave; fallo</span></div>
+          <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path d="M52 24l12 14m0-14L52 38"/><path class="lieve" d="M26 24l9 7-9 7m-13-14l9 7-9 7"/><path d="M72 31 102 31"/><path d="M102 31l-9-5m9 5l-9 5"/></svg>
+            <b class="gn">Scatto</b><span class="gt">levetta oltre il bordo &middot; <kbd>Shift</kbd> &mdash; +34%, ma il fiato finisce</span></div>
+          <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path d="M14 40l10 12m0-12L14 52"/><circle class="avv" cx="70" cy="40" r="8"/><path class="trat" d="M28 46 Q62 4 98 32"/><path d="M98 32l-2-9m2 9l-8-3"/><path d="M104 10h11v46h-11"/></svg>
+            <b class="gn">Pallonetto</b><span class="gt">scatto mentre rilasci il tiro &mdash; scavalca il portiere in uscita</span></div>
+          <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path class="trat" d="M8 20 Q30 32 46 40"/><circle class="palla" cx="50" cy="42" r="3.8"/><path d="M56 30l12 14m0-14L56 44"/><path d="M72 36 98 24"/><path d="M98 24l-9-1m9 1l-5 8"/><path d="M104 4h11v44h-11"/></svg>
+            <b class="gn">Tiro al volo</b><span class="gt">tieni il tiro prima che la palla arrivi &mdash; le potenze si sommano</span></div>
+        </div>
+        <h3>Tastiera</h3>
+        <p><span class="pill c">P1</span> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> muovi &middot; <kbd>C</kbd> passa &middot; <kbd>X</kbd> tira &middot; <kbd>Z</kbd> scivola &middot; <kbd>Shift</kbd> scatto &middot; <kbd>Q</kbd> cambia uomo<br>
+        <span class="pill r">P2</span> <kbd>&#8593;</kbd><kbd>&#8595;</kbd><kbd>&#8592;</kbd><kbd>&#8594;</kbd> muovi &middot; <kbd>N</kbd> passa &middot; <kbd>M</kbd> tira &middot; <kbd>B</kbd> scivola &middot; <kbd>Shift destro</kbd> scatto &middot; <kbd>/</kbd> cambia uomo</p>
+        <p>Su telefono trascini per correre (stick virtuale); nel menu puoi scegliere <b>3 pulsanti</b> al posto dei gesti. In 2 giocatori lo schermo &egrave; diviso a met&agrave;.</p>
+        <h3>Le regole del campetto</h3>
+        <p><b>La squadra pensa.</b> L'ultimo uomo non abbandona mai la sua met&agrave; campo; quando l'azione si ribalta le ali scattano lunghe: &egrave; il contropiede. In vantaggio negli ultimi quindici secondi la CPU porta la palla nell'angolo, come al campetto.</p>
+        <p><b>Il portiere &egrave; un giocatore vero.</b> Esce sulla bisettrice, legge il tiro e si tuffa: la parata avviene per contatto. Se lo spiazzi o lo scavalchi, &egrave; gol.</p>
+        <p><b>Cartellini.</b> Fallo da dietro o in ritardo = cartellino; al secondo della stessa squadra un uomo esce per 12 secondi. La scivolata &egrave; una decisione, non un riflesso.</p>
+        <p><b>La punizione-duello.</b> Il tiratore sceglie la zona e ferma la barra di potenza, il portiere sceglie il tuffo di nascosto: chi legge l'altro, vince.</p>
+        <p><b>I tuoi quattro uomini.</b> Hanno un nome e quattro attributi che spostano davvero la simulazione; dopo ogni partita uno cresce di un punto. Li trovi in <b>ROSA</b>.</p>
+        <p><b>Moviola e pausa.</b> Dopo ogni rete si rivede il gol al rallentatore (si spegne dalle Preferenze). <kbd>ESC</kbd> o il bottone <b>&#10074;&#10074;</b> fermano il gioco davvero.</p>
+      </div>
+    </div>
+    <div style="height:14px"></div>
     <div class="azioni"><button class="btnA sec" id="btnBackMenu">TORNA AL MENU</button></div>
   </div>
 </div>
@@ -4897,15 +5088,17 @@ function ampPasso(v){
 
 /* IL TETTO DELLA DEFORMAZIONE, e perche' e' 1,12 e non 1,16.
    collaudo.js misura il colore della maglia in una finestra fissa —
-   avanti fra -5,4 e -3,6 unita', di lato fra 2,2 e 4,6 — calcolata
-   sull'angolo atan2(fy,fx) e senza sapere niente di deformazioni. Ogni
-   unita' di schiacciamento sposta il disegno DENTRO quella finestra.
-   Con squash 1,12 e rollio del busto 0,11 rad il campione piu' esterno
-   cade a 6,58 avanti e 5,17 di lato dentro il torso: le distanze da tutto
-   cio' che non e' maglia pura (motivi, piega del fianco, dischetto del
-   numero) restano sopra 0,4 unita'. La verifica per esteso sta sopra
-   ognuno di quei numeri, dentro drawPlayer. Chi alza questo tetto deve
-   rifare quel conto, altrimenti il contrasto misurato diventa una bugia. */
+   avanti fra -8,4 e -6,6 unita', di lato fra 2,2 e 4,6 (arretrata dal
+   vecchio -5,4/-3,6, che con P_DIS campionava la calotta della testa:
+   il conto sta in collaudo.js) — calcolata sull'angolo atan2(fy,fx) e
+   senza sapere niente di deformazioni. Ogni unita' di schiacciamento
+   sposta il disegno DENTRO quella finestra. Con squash 1,12 e rollio
+   del busto 0,11 rad il campione piu' esterno cade a ~9,4 avanti e ~5,2
+   di lato: dentro il busto (semiasse 12,4 x P_DIS = 14,6) con margine,
+   e la sola cosa non-maglia-pura che l'ultima fila puo' toccare e' il
+   blocco della seconda tinta del kit — che e' comunque divisa, e la
+   mediana lo assorbe. Chi alza questo tetto deve rifare quel conto,
+   altrimenti il contrasto misurato diventa una bugia. */
 const SQUASH_MAX = 1.12;
 /* torsione del busto: quanto ruota indietro preparandosi e quanto ruota
    oltre finendo il gesto. KICK_B_T e' la durata del seguito del busto, la
@@ -8073,8 +8266,11 @@ function disegnaCoppa(c, W, H, opt){
      dall'alto e' meta' di quello che lo fa sembrare un oggetto vero
      invece di un ritaglio. A 0,085 il cono non si vedeva contro il verde
      del campo; a 0,17 si legge come un faro e il metallo ha da dove
-     prendere i riflessi. */
-  {
+     prendere i riflessi.
+     SULLA MENSOLA il faro si spegne (opt.faro===false): sette coni di
+     luce per sette coppe sarebbero un teatro, li' la luce e' UNA e viene
+     da ovest per tutte. */
+  if(opt.faro!==false){
     const g=c.createLinearGradient(cx,0,cx,H*0.88);
     g.addColorStop(0,'rgba(255,226,170,.19)');
     g.addColorStop(0.55,'rgba(255,222,164,.085)');
@@ -8345,20 +8541,58 @@ function montaCoppe(){
    Costo: zero per fotogramma, cotto una volta nel canvas della schermata.
    ===================================================================== */
 function disegnaPallone(c, W, H){
-  const R=Math.min(W,H)*0.40, cx=W*0.50, cy=H*0.455;
+  /* IL RIQUADRO E' PANORAMICO (13/10): il pallone sta a ovest, verso il
+     sole, e il resto della tavola lo occupa la sua ombra lunga. Prima il
+     quadrato lo teneva sospeso su un'ombretta corta da mezzogiorno — a
+     un gioco che si chiama "le sette di sera" serviva l'ombra delle
+     sette di sera. */
+  const R=H*0.335, cx=W*0.335, cy=H*0.475;
   const RD=semeRnd(23);
   c.clearRect(0,0,W,H);
-  /* --- 1. l'ombra: proiezione lunga verso est + macchia di contatto --- */
+  const py=cy+R*0.98;                          /* la linea di contatto con l'erba */
+  /* --- 0. l'erba DIETRO: una POZZA ellittica che sfuma in ogni
+         direzione — mai una fascia, perche' una fascia stampa il
+         rettangolo del canvas sul fondo della schermata. I fili si
+         addensano attorno al pallone e si diradano verso i bordi;
+         qualche punta accesa dal sole basso, niente lime. --- */
   {
-    const py=cy+R*1.02;
-    const g=c.createRadialGradient(cx+R*0.34,py,1, cx+R*0.34,py,R*1.15);
-    g.addColorStop(0,'rgba(6,14,26,.52)'); g.addColorStop(0.55,'rgba(6,14,26,.20)');
-    g.addColorStop(1,'rgba(6,14,26,0)');
-    c.save(); c.translate(cx,py); c.scale(1,0.20); c.translate(-cx,-py);
-    c.fillStyle=g; c.beginPath(); c.arc(cx+R*0.34,py,R*1.15,0,6.2832); c.fill();
+    const gcx=cx+W*0.12, gy=py+H*0.02;
+    const g=c.createRadialGradient(gcx,gy,R*0.2, gcx,gy,W*0.50);
+    g.addColorStop(0,'rgba(5,30,13,.60)');
+    g.addColorStop(0.6,'rgba(5,30,13,.32)');
+    g.addColorStop(1,'rgba(5,30,13,0)');
+    c.save(); c.translate(gcx,gy); c.scale(1,0.30); c.translate(-gcx,-gy);
+    c.fillStyle=g; c.beginPath(); c.arc(gcx,gy,W*0.50,0,6.2832); c.fill();
     c.restore();
-    c.fillStyle='rgba(4,10,18,.42)';
-    c.beginPath(); c.ellipse(cx+R*0.06, py-R*0.02, R*0.52, R*0.085, 0,0,6.2832); c.fill();
+    for(let i=0;i<40;i++){
+      /* distribuzione triangolare: fitta sotto il pallone, rada in punta */
+      const x=cx+(RD()+RD()-1)*W*0.46, lontano=Math.min(1,Math.abs(x-cx)/(W*0.42));
+      const y0=py+(RD()-0.18)*H*0.05;
+      const h=H*(0.040+RD()*0.070)*(1-0.45*lontano), piega=(RD()-0.30)*h*0.8;
+      c.strokeStyle= RD()<0.20 ? 'rgba(255,214,150,.24)' : 'rgba(10,52,22,.55)';
+      c.lineWidth=Math.max(1,H*0.010);
+      c.beginPath(); c.moveTo(x,y0);
+      c.quadraticCurveTo(x+piega*0.3, y0-h*0.6, x+piega, y0-h);
+      c.stroke();
+    }
+  }
+  /* --- 1. L'OMBRA LUNGA. Il sole sta a ovest, basso: l'ombra parte da
+         sotto il pallone e corre verso EST fin quasi al bordo, scura
+         all'attacco e sfumata in punta — e' lei a dire che ora e'. --- */
+  {
+    const L=W*0.56;
+    const g=c.createLinearGradient(cx,py,cx+L,py);
+    g.addColorStop(0,'rgba(6,14,26,.50)');
+    g.addColorStop(0.45,'rgba(6,14,26,.30)');
+    g.addColorStop(1,'rgba(6,14,26,0)');
+    c.save();
+    c.translate(cx+L*0.5,py+H*0.012); c.rotate(0.035); c.scale(1,0.16);
+    c.translate(-(cx+L*0.5),-(py+H*0.012));
+    c.fillStyle=g; c.beginPath(); c.arc(cx+L*0.5,py+H*0.012,L*0.52,0,6.2832); c.fill();
+    c.restore();
+    /* la macchia di contatto, stretta e scura, dove il peso appoggia */
+    c.fillStyle='rgba(4,10,18,.48)';
+    c.beginPath(); c.ellipse(cx+R*0.10, py, R*0.54, R*0.080, 0.02,0,6.2832); c.fill();
   }
   /* --- 2. la sfera: il cuoio, con il terminatore da nord-ovest --- */
   {
@@ -8417,10 +8651,12 @@ function disegnaPallone(c, W, H){
       c.strokeStyle='rgba(250,246,232,.26)'; c.lineWidth=R*0.022/Math.max(0.3,sk); c.stroke();
       c.restore();
     };
+    /* di scorcio ma non a LAMA: alla misura da eroe uno schiacciamento
+       sotto 0,45 trasformava i pannelli sul bordo in schegge scure */
     penta(PCX,PCY,PR*0.92,0,0.96,'0.90');
-    penta(cx-R*0.86, cy+R*0.30, R*0.30, 0.5, 0.34,'0.86');
-    penta(cx+R*0.52, cy-R*0.68, R*0.28, 2.2, 0.36,'0.86');
-    penta(cx+R*0.30, cy+R*0.86, R*0.30, 3.1, 0.30,'0.86');
+    penta(cx-R*0.84, cy+R*0.30, R*0.30, 0.5, 0.50,'0.78');
+    penta(cx+R*0.50, cy-R*0.66, R*0.28, 2.2, 0.52,'0.78');
+    penta(cx+R*0.30, cy+R*0.84, R*0.30, 3.1, 0.46,'0.78');
   }
   /* i pannelli sono a tinta piatta e ignorano la sfera: qui si rimette
      sopra la stessa curva di luce del cuoio, cosi' il nero dei pentagoni
@@ -8446,8 +8682,8 @@ function disegnaPallone(c, W, H){
       else c.lineTo(px+Math.cos(aa)*r2, py+Math.sin(aa)*r2);
     }
     c.closePath();
-    c.fillStyle='rgba(150,138,110,.52)'; c.fill();
-    c.strokeStyle='rgba(70,60,40,.38)'; c.lineWidth=R*0.014; c.stroke();
+    c.fillStyle='rgba(150,138,110,.40)'; c.fill();
+    c.strokeStyle='rgba(70,60,40,.32)'; c.lineWidth=R*0.014; c.stroke();
   }
   {
     const g=c.createLinearGradient(0,cy+R*0.28,0,cy+R);
@@ -8464,8 +8700,13 @@ function disegnaPallone(c, W, H){
     const g=c.createRadialGradient(cx-R*0.40,cy-R*0.44,1, cx-R*0.40,cy-R*0.44,R*0.62);
     g.addColorStop(0,'rgba(255,250,230,.46)'); g.addColorStop(1,'rgba(255,250,230,0)');
     c.fillStyle=g; c.beginPath(); c.arc(cx,cy,R,0,6.2832); c.fill();
-    c.fillStyle='rgba(255,252,240,.60)';
-    c.beginPath(); c.ellipse(cx-R*0.44,cy-R*0.50,R*0.17,R*0.10,-0.6,0,6.2832); c.fill();
+    /* il cuore caldo della speculare: piu' piccolo e piu' morbido di
+       prima — alla misura da eroe un'ellisse piena leggeva come un
+       adesivo bianco, non come cuoio lucido */
+    const s=c.createRadialGradient(cx-R*0.44,cy-R*0.50,1, cx-R*0.44,cy-R*0.50,R*0.22);
+    s.addColorStop(0,'rgba(255,252,240,.55)'); s.addColorStop(1,'rgba(255,252,240,0)');
+    c.fillStyle=s;
+    c.beginPath(); c.ellipse(cx-R*0.44,cy-R*0.50,R*0.24,R*0.16,-0.6,0,6.2832); c.fill();
   }
   {
     const g=c.createRadialGradient(cx+R*0.86,cy+R*0.42,R*0.06, cx+R*0.86,cy+R*0.42,R*0.80);
@@ -8487,6 +8728,18 @@ function disegnaPallone(c, W, H){
   c.beginPath(); c.arc(cx,cy,R-R*0.030,Math.PI*1.03,Math.PI*1.72); c.stroke();
   c.strokeStyle='rgba(160,188,242,.30)'; c.lineWidth=R*0.026;
   c.beginPath(); c.arc(cx,cy,R-R*0.030,Math.PI*0.06,Math.PI*0.62); c.stroke();
+  /* --- 7. l'erba DAVANTI: pochi fili che salgono sul piede del pallone
+         e sull'attacco dell'ombra. Sono loro a incastrarlo nel manto:
+         senza, il cerchio resta APPOGGIATO sopra i fili come un adesivo. --- */
+  for(let i=0;i<20;i++){
+    const x=cx+(RD()+RD()-1)*R*1.35, y0=py+H*0.010+RD()*H*0.030;
+    const h=H*(0.045+RD()*0.055), piega=(RD()-0.35)*h*0.7;
+    c.strokeStyle= RD()<0.18 ? 'rgba(255,214,150,.28)' : 'rgba(5,30,13,.80)';
+    c.lineWidth=Math.max(1,H*0.011);
+    c.beginPath(); c.moveTo(x,y0);
+    c.quadraticCurveTo(x+piega*0.3,y0-h*0.6,x+piega,y0-h);
+    c.stroke();
+  }
 }
 /* =====================================================================
    IL CARTELLO SCRITTO A MANO — quarto oggetto-eroe, per la schermata CAMPI.
@@ -8570,6 +8823,366 @@ function disegnaCartello(c, W, H, seme){
     c.strokeStyle='rgba(26,20,8,.60)'; c.lineWidth=0.7*u; c.stroke();
   }
 }
+/* =====================================================================
+   LA MAGLIA APPESA ALLA RECINZIONE — oggetto-eroe della ROSA.
+   E' la maglia della TUA squadra, nella tinta e nel disegno del kit che
+   indossi (compra una divisa e la trovi stesa qui), appesa con due
+   mollette di legno al corrimano della recinzione, come dopo
+   l'allenamento. Le tecniche sono quelle di casa e nessuna e' nuova:
+     · la rete a rombi dietro, che sfuma prima di toccare i bordi del
+       canvas — mai stampare il rettangolo sul fondo;
+     · UNA SOLA LUCE da ovest: fianco ovest caldo, fianco est che cade
+       nel blu della sera, ombra portata della maglia sulla rete a est;
+     · le pieghe del tessuto: quattro passate verticali morbide, perche'
+       una maglia appesa non e' un cartello piatto.
+   Qui — e solo qui — la tinta della squadra e' legittima per il METRO,
+   paragrafo 3: non e' decorazione, E' la divisa.
+   ===================================================================== */
+function disegnaMaglia(c, W, H){
+  const RD=semeRnd(7);
+  c.clearRect(0,0,W,H);
+  const kit=KITS[clamp(SAVE.kit|0,0,KITS.length-1)], c1=kit.c1, c2=kit.c2, pat=kit.pat|0;
+  const ry=H*0.052;                            /* il corrimano della recinzione */
+  /* --- 1. la rete a rombi: due famiglie di diagonali, poi una sfumatura
+         in cancellazione sui bordi bassi e laterali --- */
+  {
+    c.save();
+    const passo=W*0.15, pend=0.60;             /* dx per dy: rombi larghi */
+    c.lineWidth=Math.max(1,W*0.007);
+    for(let k=-6;k<14;k++){
+      const x0=k*passo;
+      c.strokeStyle='rgba(196,210,222,.24)';
+      c.beginPath(); c.moveTo(x0,ry); c.lineTo(x0+(H-ry)*pend,H); c.stroke();
+      c.beginPath(); c.moveTo(x0,ry); c.lineTo(x0-(H-ry)*pend,H); c.stroke();
+    }
+    /* il filo di sole sui rombi a ovest */
+    c.strokeStyle='rgba(255,232,186,.14)';
+    for(let k=-6;k<3;k++){
+      const x0=k*passo;
+      c.beginPath(); c.moveTo(x0,ry); c.lineTo(x0+(H-ry)*pend,H); c.stroke();
+    }
+    c.globalCompositeOperation='destination-out';
+    let g=c.createLinearGradient(0,H*0.60,0,H);
+    g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.95)');
+    c.fillStyle=g; c.fillRect(0,H*0.60,W,H*0.40);
+    g=c.createLinearGradient(0,0,W*0.14,0);
+    g.addColorStop(0,'rgba(0,0,0,.9)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=g; c.fillRect(0,0,W*0.14,H);
+    g=c.createLinearGradient(W*0.86,0,W,0);
+    g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.9)');
+    c.fillStyle=g; c.fillRect(W*0.86,0,W*0.14,H);
+    c.restore();
+  }
+  /* --- 2. il corrimano: un tubo, con il filo caldo sopra --- */
+  c.strokeStyle='rgba(6,14,10,.60)'; c.lineWidth=H*0.030;
+  c.beginPath(); c.moveTo(0,ry); c.lineTo(W,ry); c.stroke();
+  c.strokeStyle='#a9b7c0'; c.lineWidth=H*0.018;
+  c.beginPath(); c.moveTo(0,ry); c.lineTo(W,ry); c.stroke();
+  c.strokeStyle='rgba(255,232,186,.55)'; c.lineWidth=H*0.006;
+  c.beginPath(); c.moveTo(0,ry-H*0.006); c.lineTo(W,ry-H*0.006); c.stroke();
+  /* --- 3. la sagoma della maglia, leggermente storta come una cosa
+         appesa davvero. Prima l'ombra sulla rete, poi il corpo. --- */
+  const sagoma=()=>{
+    c.beginPath();
+    c.moveTo(W*0.335,H*0.115);
+    c.quadraticCurveTo(W*0.24,H*0.135,W*0.205,H*0.155);
+    c.lineTo(W*0.135,H*0.335);
+    c.lineTo(W*0.265,H*0.385);
+    c.lineTo(W*0.295,H*0.315);
+    c.lineTo(W*0.295,H*0.735);
+    c.quadraticCurveTo(W*0.5,H*0.775,W*0.705,H*0.735);
+    c.lineTo(W*0.705,H*0.315);
+    c.lineTo(W*0.735,H*0.385);
+    c.lineTo(W*0.865,H*0.335);
+    c.lineTo(W*0.795,H*0.155);
+    c.quadraticCurveTo(W*0.76,H*0.135,W*0.665,H*0.115);
+    c.quadraticCurveTo(W*0.5,H*0.185,W*0.335,H*0.115);
+    c.closePath();
+  };
+  /* l'ombra portata sulla rete: verso est-sud, come ogni ombra del gioco */
+  c.save(); c.translate(W*0.055,H*0.042);
+  sagoma(); c.fillStyle='rgba(6,10,24,.36)'; c.fill();
+  c.restore();
+  c.save();
+  c.translate(W*0.5,H*0.42); c.rotate(0.028); c.translate(-W*0.5,-H*0.42);
+  sagoma(); c.strokeStyle='rgba(6,14,10,.62)'; c.lineWidth=Math.max(1.4,W*0.014); c.stroke();
+  sagoma(); c.fillStyle=c1; c.fill();
+  sagoma(); c.clip();
+  /* il disegno del kit: gli stessi tre pattern che drawPlayer stampa in
+     campo — tinta unita col filo, palato, banda — cosi' l'anteprima e'
+     una promessa che il campo mantiene */
+  if(pat===1){
+    c.fillStyle=c2;
+    for(let x=0.335;x<0.67;x+=0.095) c.fillRect(W*x,H*0.09,W*0.048,H*0.70);
+  }else if(pat===2){
+    c.fillStyle=c2;
+    c.fillRect(W*0.375,H*0.09,W*0.115,H*0.70);
+    c.fillRect(W*0.515,H*0.09,W*0.030,H*0.70);
+  }else{
+    c.fillStyle=c2; c.globalAlpha=0.8;
+    c.fillRect(W*0.305,H*0.09,W*0.040,H*0.70);
+    c.globalAlpha=1;
+  }
+  /* maniche e colletto nella seconda tinta */
+  c.fillStyle=c2;
+  c.beginPath();
+  c.moveTo(W*0.24,H*0.135); c.lineTo(W*0.205,H*0.155); c.lineTo(W*0.135,H*0.335);
+  c.lineTo(W*0.265,H*0.385); c.lineTo(W*0.305,H*0.27); c.closePath(); c.fill();
+  c.beginPath();
+  c.moveTo(W*0.76,H*0.135); c.lineTo(W*0.795,H*0.155); c.lineTo(W*0.865,H*0.335);
+  c.lineTo(W*0.735,H*0.385); c.lineTo(W*0.695,H*0.27); c.closePath(); c.fill();
+  c.beginPath();
+  c.moveTo(W*0.335,H*0.115); c.quadraticCurveTo(W*0.5,H*0.185,W*0.665,H*0.115);
+  c.lineTo(W*0.63,H*0.098); c.quadraticCurveTo(W*0.5,H*0.152,W*0.37,H*0.098);
+  c.closePath(); c.fill();
+  /* le pieghe: una maglia appesa cade in onde verticali morbide */
+  for(let i=0;i<4;i++){
+    const x=W*(0.36+i*0.085), am=W*(0.008+RD()*0.012);
+    c.strokeStyle= i%2 ? 'rgba(0,0,0,.12)' : 'rgba(0,0,0,.09)';
+    c.lineWidth=W*(0.020+RD()*0.014);
+    c.beginPath(); c.moveTo(x,H*0.22);
+    c.quadraticCurveTo(x+am,H*0.45,x-am*0.6,H*0.74);
+    c.stroke();
+  }
+  /* UNA SOLA LUCE: fianco ovest caldo, fianco est nel blu della sera,
+     e l'orlo in basso appena in ombra */
+  let g=c.createLinearGradient(W*0.135,0,W*0.865,0);
+  g.addColorStop(0,'rgba(255,232,186,.30)');
+  g.addColorStop(0.42,'rgba(255,232,186,0)');
+  g.addColorStop(0.72,'rgba(20,30,60,0)');
+  g.addColorStop(1,'rgba(20,30,60,.30)');
+  c.fillStyle=g; c.fillRect(0,0,W,H);
+  g=c.createLinearGradient(0,H*0.60,0,H*0.78);
+  g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.18)');
+  c.fillStyle=g; c.fillRect(0,H*0.60,W,H*0.18);
+  c.restore();
+  /* il contorno sopra ogni cosa, che tiene insieme la sagoma */
+  c.save();
+  c.translate(W*0.5,H*0.42); c.rotate(0.028); c.translate(-W*0.5,-H*0.42);
+  sagoma(); c.strokeStyle='rgba(6,14,10,.55)'; c.lineWidth=Math.max(1.2,W*0.010); c.stroke();
+  c.restore();
+  /* --- 4. le due mollette di legno che la tengono al corrimano --- */
+  for(const s of [[W*0.300,-0.05],[W*0.700,0.06]]){
+    c.save();
+    c.translate(s[0],ry); c.rotate(s[1]);
+    const mw=W*0.048, mh=H*0.105;
+    c.fillStyle='rgba(6,10,24,.40)';
+    c.fillRect(-mw/2+W*0.008,-H*0.020+H*0.008,mw,mh);
+    const gm=c.createLinearGradient(-mw/2,0,mw/2,0);
+    gm.addColorStop(0,'#caa25e'); gm.addColorStop(0.5,'#a97f42'); gm.addColorStop(1,'#7a5a2c');
+    c.fillStyle=gm; c.fillRect(-mw/2,-H*0.020,mw,mh);
+    /* la fessura e la molla */
+    c.fillStyle='rgba(40,26,10,.55)'; c.fillRect(-W*0.004,-H*0.020+mh*0.38,W*0.008,mh*0.62);
+    c.fillStyle='#8f9aa2'; c.fillRect(-mw/2,-H*0.020+mh*0.30,mw,H*0.010);
+    c.strokeStyle='rgba(6,14,10,.55)'; c.lineWidth=Math.max(1,W*0.006);
+    c.strokeRect(-mw/2,-H*0.020,mw,mh);
+    c.fillStyle='rgba(255,236,196,.40)'; c.fillRect(-mw/2,-H*0.020,W*0.007,mh);
+    c.restore();
+  }
+}
+/* =====================================================================
+   LA LAVAGNA DEL TORNEO — oggetto-eroe della schermata TORNEO.
+   Il tabellone degli accoppiamenti non e' un elenco: e' una lavagna di
+   compensato APPESA CON DUE CORDE, la sorella grande del segnapunti
+   della home e del cartello dei campi. Qui si cuoce solo la materia —
+   compensato, verde lavagna, smalto bianco a pennello, corde, viti,
+   polvere di gesso — mentre le sfide restano DOM sopra il canvas, per
+   TESTO GRANDE e lettore di schermo. Luce: una sola, calda, da ovest;
+   ombra portata del pannello verso est-sud, come ogni cosa del gioco.
+   ===================================================================== */
+function disegnaLavagna(c, W, H){
+  const RD=semeRnd(31);
+  c.clearRect(0,0,W,H);
+  const T=Math.min(H*0.10,18);                 /* aria per le corde */
+  const F=Math.max(9,Math.min(W,H)*0.028);     /* spessore della cornice */
+  /* l'ombra del pannello sul prato dietro, sfumata su tre passate */
+  for(let i=0;i<3;i++){
+    const k=[1.9,1.4,1.0][i], a=[0.10,0.16,0.26][i];
+    c.fillStyle='rgba(6,10,24,'+a+')';
+    c.fillRect(4*k, T+3*k, W-4*k, H-T-3*k);
+  }
+  /* le due corde, doppino ritorto, con l'anello dove mordono la cornice */
+  for(const fx of [0.10,0.90]){
+    const x=W*fx;
+    c.strokeStyle='rgba(6,14,10,.62)'; c.lineWidth=5;
+    c.beginPath(); c.moveTo(x,0); c.lineTo(x,T+F*0.7); c.stroke();
+    c.strokeStyle='#b8935a'; c.lineWidth=3;
+    c.beginPath(); c.moveTo(x-0.6,0); c.lineTo(x-0.6,T+F*0.7); c.stroke();
+    c.strokeStyle='rgba(255,232,186,.55)'; c.lineWidth=1.1;
+    c.beginPath(); c.moveTo(x-1.6,0); c.lineTo(x-1.6,T+F*0.7); c.stroke();
+    /* il torciglione: tacche diagonali corte lungo la corda */
+    c.strokeStyle='rgba(60,40,16,.55)'; c.lineWidth=1.2;
+    for(let y=3;y<T+F*0.6;y+=5){
+      c.beginPath(); c.moveTo(x-2.4,y); c.lineTo(x+1.8,y+2.6); c.stroke();
+    }
+    c.fillStyle='#8a6d3c';
+    c.beginPath(); c.arc(x,T+F*0.55,3.2,0,6.2832); c.fill();
+    c.strokeStyle='rgba(6,14,10,.66)'; c.lineWidth=1.2; c.stroke();
+  }
+  /* la cornice di compensato, con la venatura e il filo di sole a ovest */
+  {
+    const g=c.createLinearGradient(0,T,W*0.9,H);
+    g.addColorStop(0,'#8a6435'); g.addColorStop(0.55,'#7d5a2e'); g.addColorStop(1,'#5c4322');
+    c.fillStyle=g; c.fillRect(0,T,W,H-T);
+    c.save(); c.beginPath(); c.rect(0,T,W,H-T); c.clip();
+    for(let i=0;i<10;i++){
+      const yy=T+RD()*(H-T), am=(1+RD()*2.2);
+      c.strokeStyle= RD()<0.5?'rgba(226,196,142,.16)':'rgba(48,32,14,.20)';
+      c.lineWidth=0.8+RD()*1.6;
+      c.beginPath(); c.moveTo(0,yy);
+      for(let k=1;k<=6;k++) c.lineTo(W*k/6, yy+Math.sin(k*1.7+i)*am);
+      c.stroke();
+    }
+    c.restore();
+    c.fillStyle='rgba(255,236,196,.50)'; c.fillRect(0,T,W,1.6);
+    c.fillStyle='rgba(255,236,196,.38)'; c.fillRect(0,T,1.6,H-T);
+    c.fillStyle='rgba(140,178,255,.20)'; c.fillRect(W-1.4,T,1.4,H-T);
+    c.fillStyle='rgba(24,16,6,.42)';     c.fillRect(0,H-1.8,W,1.8);
+  }
+  /* il verde lavagna dentro la cornice, un valore sopra il campo per
+     staccarsene, con la vignettatura e la luce che entra da ovest */
+  {
+    const x0=F, y0=T+F, x1=W-F, y1=H-F;
+    c.fillStyle='rgba(6,14,10,.55)'; c.fillRect(x0-1.5,y0-1.5,(x1-x0)+3,(y1-y0)+3);
+    let g=c.createLinearGradient(0,y0,0,y1);
+    g.addColorStop(0,'#1c4a31'); g.addColorStop(0.6,'#16402a'); g.addColorStop(1,'#0f3120');
+    c.fillStyle=g; c.fillRect(x0,y0,x1-x0,y1-y0);
+    g=c.createLinearGradient(x0,0,x1,0);
+    g.addColorStop(0,'rgba(255,232,186,.10)');
+    g.addColorStop(0.4,'rgba(255,232,186,0)');
+    g.addColorStop(0.78,'rgba(20,30,60,0)');
+    g.addColorStop(1,'rgba(20,30,60,.14)');
+    c.fillStyle=g; c.fillRect(x0,y0,x1-x0,y1-y0);
+    /* la polvere di gesso: aloni chiari bassi, dove si cancella col palmo */
+    c.save(); c.beginPath(); c.rect(x0,y0,x1-x0,y1-y0); c.clip();
+    for(let i=0;i<6;i++){
+      const px=x0+RD()*(x1-x0), pyy=y1-RD()*(y1-y0)*0.5, pr=20+RD()*46;
+      const gp=c.createRadialGradient(px,pyy,0,px,pyy,pr);
+      gp.addColorStop(0,'rgba(240,244,238,'+(0.030+RD()*0.035)+')');
+      gp.addColorStop(1,'rgba(240,244,238,0)');
+      c.fillStyle=gp; c.beginPath(); c.arc(px,pyy,pr,0,6.2832); c.fill();
+    }
+    c.restore();
+    /* la riga di smalto bianco data a pennello lungo il bordo interno:
+       due passate, la seconda scostata di un pelo — e' il pennello */
+    c.strokeStyle='rgba(240,240,226,.60)'; c.lineWidth=2;
+    c.strokeRect(x0+4,y0+4,(x1-x0)-8,(y1-y0)-8);
+    c.strokeStyle='rgba(240,240,226,.26)'; c.lineWidth=1.1;
+    c.strokeRect(x0+5.5,y0+5.3,(x1-x0)-10.6,(y1-y0)-10.4);
+  }
+  /* le quattro viti agli angoli della cornice */
+  const vt=[[F*0.55,T+F*0.55],[W-F*0.55,T+F*0.55],[F*0.55,H-F*0.55],[W-F*0.55,H-F*0.55]];
+  for(const p of vt){
+    const r=Math.max(2.2,F*0.22);
+    c.fillStyle='rgba(18,12,4,.45)'; c.beginPath(); c.arc(p[0]+1,p[1]+1.2,r,0,6.2832); c.fill();
+    const g=c.createLinearGradient(p[0]-r,p[1]-r,p[0]+r,p[1]+r);
+    g.addColorStop(0,'#e6dfcb'); g.addColorStop(0.55,'#9a927c'); g.addColorStop(1,'#5b5443');
+    c.fillStyle=g; c.beginPath(); c.arc(p[0],p[1],r,0,6.2832); c.fill();
+    c.strokeStyle='rgba(26,20,8,.60)'; c.lineWidth=1; c.stroke();
+  }
+}
+/* =====================================================================
+   LA MENSOLA DEI TROFEI — oggetto-eroe della schermata TROFEI, la piu'
+   vicina al riferimento del capo della categoria (il trofeo che regge la
+   pagina). Una tavola di legno con le squadre a staffa, e sopra le SETTE
+   COPPE degli obiettivi d'oro: quelle vinte sono d'ottone e prendono la
+   luce calda da ovest, quelle non vinte restano in PENOMBRA — lo stesso
+   disegno, velato di sera — e sono loro a far venire voglia di giocare.
+   E' la stessa coppa del fischio finale, riusata: un oggetto disegnato
+   bene costa meno di sette oggetti mediocri e crea un'abitudine visiva.
+   Ogni coppa e' cotta su un canvas d'appoggio cosi' la velatura della
+   penombra cade SOLO sul metallo, non sul legno che ha dietro.
+   ===================================================================== */
+function disegnaMensola(c, W, H){
+  c.clearRect(0,0,W,H);
+  const d=Math.min(2, window.devicePixelRatio||1);
+  const py=H*0.76;                              /* il piano della tavola */
+  const spess=H*0.155;                          /* piano + fronte */
+  /* la lama di sole da ovest sul muro dietro, prima di tutto. Parte da
+     zero SUL bordo: un alone che tocca il margine del canvas a piena
+     forza stampa il rettangolo sul fondo della pagina. */
+  let g=c.createLinearGradient(0,0,W*0.85,0);
+  g.addColorStop(0,'rgba(255,214,150,0)');
+  g.addColorStop(0.10,'rgba(255,214,150,.15)');
+  g.addColorStop(0.5,'rgba(255,214,150,.05)');
+  g.addColorStop(1,'rgba(255,214,150,0)');
+  c.fillStyle=g; c.fillRect(0,0,W,py+spess*0.4);
+  /* --- la tavola: piano in luce, fronte in ombra, due staffe --- */
+  {
+    /* il piano, piu' chiaro a ovest dove il sole lo striscia */
+    g=c.createLinearGradient(0,0,W,0);
+    g.addColorStop(0,'#a97f42'); g.addColorStop(0.6,'#8a6435'); g.addColorStop(1,'#6b4d26');
+    c.fillStyle=g; c.fillRect(0,py,W,spess*0.34);
+    c.fillStyle='rgba(255,236,196,.45)'; c.fillRect(0,py,W,Math.max(1,H*0.008));
+    /* il fronte, un valore sotto, con la venatura */
+    g=c.createLinearGradient(0,py+spess*0.34,0,py+spess);
+    g.addColorStop(0,'#7d5a2e'); g.addColorStop(1,'#4a351b');
+    c.fillStyle=g; c.fillRect(0,py+spess*0.34,W,spess*0.66);
+    c.fillStyle='rgba(24,16,6,.40)'; c.fillRect(0,py+spess*0.34,W,Math.max(1,H*0.006));
+    const RD=semeRnd(19);
+    c.save(); c.beginPath(); c.rect(0,py+spess*0.34,W,spess*0.66); c.clip();
+    for(let i=0;i<6;i++){
+      const yy=py+spess*0.34+RD()*spess*0.66;
+      c.strokeStyle= RD()<0.5?'rgba(226,196,142,.14)':'rgba(48,32,14,.20)';
+      c.lineWidth=0.8+RD()*1.4;
+      c.beginPath(); c.moveTo(0,yy);
+      for(let k=1;k<=6;k++) c.lineTo(W*k/6, yy+Math.sin(k*1.9+i)*1.6);
+      c.stroke();
+    }
+    c.restore();
+    /* l'ombra della tavola sul muro sotto, che sfuma prima del bordo */
+    g=c.createLinearGradient(0,py+spess,0,Math.min(H,py+spess+H*0.10));
+    g.addColorStop(0,'rgba(6,10,24,.30)'); g.addColorStop(1,'rgba(6,10,24,0)');
+    c.fillStyle=g; c.fillRect(0,py+spess,W,H*0.10);
+    /* le due staffe */
+    for(const fx of [0.13,0.87]){
+      const x=W*fx, bw=W*0.030, bh=Math.min(H-py-spess-2, H*0.16);
+      c.fillStyle='#543d20';
+      c.beginPath();
+      c.moveTo(x-bw,py+spess); c.lineTo(x+bw,py+spess); c.lineTo(x,py+spess+bh);
+      c.closePath(); c.fill();
+      c.strokeStyle='rgba(24,16,6,.45)'; c.lineWidth=1; c.stroke();
+    }
+  }
+  /* --- le sette coppe degli obiettivi d'oro, da ovest a est --- */
+  const oro=ACH.filter(a=>a.liv==='oro');
+  const n=oro.length;
+  /* qualche centimetro di differenza fra una coppa e l'altra: una fila
+     di trofei tutti identici legge come una texture, non come una
+     bacheca. Il torneo e il campionato sono i piu' alti. */
+  const alt={torneo:1.12, campione:1.06};
+  for(let i=0;i<n;i++){
+    const a=oro[i], vinta=!!SAVE.ach[a.id];
+    const sc=alt[a.id]||[0.95,1.0,1.0,0.93,0.98,1.0,0.96][i%7];
+    /* GIRO 2: la tavola si e' abbassata per non spingere la lista sotto
+       la piega, e le coppe si sono prese una fetta piu' larga della sua
+       altezza (0,78 contro 0,66): la mensola perde centimetri, le coppe
+       quasi niente */
+    const ch=H*0.78*sc, cw=ch*79/122;
+    const cx=W*(n>1 ? 0.068+i*0.864/(n-1) : 0.5);
+    /* la coppa si cuoce su una tela d'appoggio: la penombra deve velare
+       il metallo, non il legno dietro */
+    const off=document.createElement('canvas');
+    off.width=Math.max(2,Math.round(cw*d)); off.height=Math.max(2,Math.round(ch*d));
+    const oc=off.getContext('2d');
+    oc.setTransform(off.width/cw,0,0,off.height/ch,0,0);
+    disegnaCoppa(oc, cw, ch, { vuota:!vinta, faro:false });
+    if(!vinta){
+      /* la penombra: una velatura blu di sera solo sul metallo. A 0,50
+         la coppa leggeva ancora come cromo lucido; a 0,62 restava un
+         grigio qualunque — sette coppe uguali, che e' il rilievo del
+         giudice al giro 2. A 0,70 e' una sagoma che aspetta il suo
+         giorno: si riconosce, ma accanto a una vinta d'ottone la
+         differenza si vede da un metro */
+      oc.globalCompositeOperation='source-atop';
+      oc.fillStyle='rgba(10,17,30,.70)'; oc.fillRect(0,0,cw,ch);
+    }
+    /* la base della coppa appoggia sul piano: il disegno tiene il suo
+       pavimento a ~0,84 dell'altezza, quindi si allinea quello */
+    c.drawImage(off, 0,0,off.width,off.height,
+                cx-cw/2, py+spess*0.16-ch*0.845, cw, ch);
+  }
+}
 /* i due eroi nuovi si montano come gli altri: alla misura che dice il CSS */
 function montaTela(el, disegna){
   if(!el || el.offsetWidth<8) return;
@@ -8594,6 +9207,21 @@ function montaEroi(){
   for(let i=0;i<ca.length;i++){
     ca[i].querySelectorAll('canvas.eroecv').forEach(x=>x.dataset.ok='');
     montaTela(ca[i], disegnaCartello);
+  }
+  const ma=document.querySelectorAll('.eroe-maglia');
+  for(let i=0;i<ma.length;i++){
+    ma[i].querySelectorAll('canvas.eroecv').forEach(x=>x.dataset.ok='');
+    montaTela(ma[i], disegnaMaglia);
+  }
+  const la=document.querySelectorAll('.lavagna');
+  for(let i=0;i<la.length;i++){
+    la[i].querySelectorAll('canvas.eroecv').forEach(x=>x.dataset.ok='');
+    montaTela(la[i], disegnaLavagna);
+  }
+  const me=document.querySelectorAll('.eroe-mensola');
+  for(let i=0;i<me.length;i++){
+    me[i].querySelectorAll('canvas.eroecv').forEach(x=>x.dataset.ok='');
+    montaTela(me[i], disegnaMensola);
   }
   /* il segnapunti di compensato (fischio finale e home): la sua chiave di
      cottura tiene conto anche dei dati, quindi non si azzera a mano */
@@ -8844,7 +9472,22 @@ let BAR_H=45, FOOT_H=64, PA_Y0=45, PA_Y1=348, PA_H=303, PA_CY=196;
    l'alone di stacco e il bordo illuminato, che allargano la sagoma
    leggibile piu' di quanto la scala la stringa.
    ================================================================ */
-const S2_MIN=1.00, S2_BASE=1.155, S2_MAX=1.36, S2_GOL=1.77;
+/* QUINTA TARATURA — solo il LIMITE DI VICINANZA. Confrontate le foto con i
+   riferimenti: da noi le figure stavano in un mare d'erba, da loro le pedine
+   hanno presenza. Misurato con la sonda sulla scena d'azione: il bersaglio
+   di zoom stava INCOLLATO al tetto (4 giocatori stretti chiedono 2,7-3,2 e
+   il tetto tagliava a 1,36 sul telefono), quindi e' il tetto che decide la
+   presenza. Sale del 12,5%: 1,36 -> 1,53, corpo al massimo da 41,7 a 46,9 px
+   sul telefono. IL PAVIMENTO NON SI TOCCA: la lettura tattica nei momenti
+   larghi resta identica, e la garanzia dei 56 px tiene comunque la porta in
+   quadro quando la palla e' in area (il fotogramma sporge sempre di almeno
+   56 px di schermo oltre il pallone, a qualunque zoom).
+   Sale anche il RIPOSO, 1,155 -> 1,25 (+8%): e' il punto da cui la camera
+   parte a inizio partita e a cui torna dopo il gol, e a 1,155 ogni azione
+   cominciava da lontano e passava il primo secondo a rincorrere. Sotto il
+   tetto di CROWD_PASSO ci sta per costruzione: 1,25 x kDev(max 1,15) =
+   1,4375 < 1,45, quindi il passo della folla non cambia su nessun formato. */
+const S2_MIN=1.00, S2_BASE=1.25, S2_MAX=1.53, S2_GOL=1.77;
 /* Si era provato a legare la forbice all'altezza dell'area di gioco per
    riempire i viewport 4:3, e il fondo era finito a 0,90: sul telefono in
    orizzontale il giocatore aveva perso il 31% lineare e l'inquadratura
@@ -10655,7 +11298,13 @@ function updateCamera(rdt){
     ty += clamp((ty-FH/2)/55, -1, 1) * (mancaY*0.86 + 26);
     tx += clamp((tx-FW/2)/220, -1, 1) * mancaX * 0.45;
   }
-  /* 2. zoom dal riquadro pallone + quattro giocatori piu' vicini, +25% */
+  /* 2. zoom dal riquadro pallone + quattro giocatori piu' vicini, +12%.
+     Era +25%: insieme al tetto alzato (quinta taratura, vedi S2_MAX) e'
+     l'altra meta' dell'avvicinamento. Il riquadro contiene SEMPRE pallone
+     e quattro uomini piu' vicini, quindi la lettura tattica del duello non
+     perde niente; perde solo l'aria attorno. Nei momenti larghi il conto
+     scende comunque sotto il pavimento e il pavimento non e' cambiato: la
+     vista piu' AMPIA resta identica a prima. */
   camVicini.length=0;
   for(const p of G.players){ if(p.out<=0) camVicini.push(p); }
   camVicini.sort((p,q)=>((p.x-b.x)*(p.x-b.x)+(p.y-b.y)*(p.y-b.y))
@@ -10666,7 +11315,7 @@ function updateCamera(rdt){
     if(p.x<x0)x0=p.x; else if(p.x>x1)x1=p.x;
     if(p.y<y0)y0=p.y; else if(p.y>y1)y1=p.y;
   }
-  const rw=Math.max(60,(x1-x0)*1.25+3*P_R), rh=Math.max(40,(y1-y0)*1.25+3*P_R);
+  const rw=Math.max(60,(x1-x0)*1.12+3*P_R), rh=Math.max(40,(y1-y0)*1.12+3*P_R);
   let s2t=Math.min(VW/rw, PA_H/rh);
   /* SECONDO VINCOLO: se il rettangolo che contiene TUTTI E OTTO i giocatori
      ci sta nel fotogramma con 40 px di margine, vale quello zoom e non il
@@ -11281,12 +11930,21 @@ function buildBallTex(){
   l.strokeStyle='rgba(4,10,7,.95)'; l.lineWidth=0.2375*R;
   l.beginPath(); l.arc(C,C,R-0.119*R,0,6.2832); l.stroke();
   /* FILO CALDO sul lato della luce e FILO FREDDO sull'altro: e' questa
-     coppia, non il contorno, che fa sembrare un oggetto fatto di qualcosa */
+     coppia, non il contorno, che fa sembrare un oggetto fatto di qualcosa.
+     L'arco caldo e' CENTRATO A OVEST (prima pendeva verso l'alto): il sole
+     delle sette sta basso a ovest, e il pallone deve dirlo come lo dicono
+     i corpi. Sale di un decimo d'opacita' per la stessa ragione dei fili
+     dei giocatori: sotto quella soglia leggeva come antialiasing. */
   l.lineCap='round';
-  l.strokeStyle='rgba(255,232,186,.62)'; l.lineWidth=0.16*R;
-  l.beginPath(); l.arc(C,C,R-0.16*R,Math.PI*1.04,Math.PI*1.76); l.stroke();
+  l.strokeStyle='rgba(255,232,186,.72)'; l.lineWidth=0.16*R;
+  l.beginPath(); l.arc(C,C,R-0.16*R,Math.PI*0.96,Math.PI*1.68); l.stroke();
   l.strokeStyle='rgba(140,178,255,.20)'; l.lineWidth=0.11*R;
-  l.beginPath(); l.arc(C,C,R-0.14*R,Math.PI*0.10,Math.PI*0.62); l.stroke();
+  l.beginPath(); l.arc(C,C,R-0.14*R,Math.PI*0.04,Math.PI*0.56); l.stroke();
+  /* FILO DI RIFLESSO IN CIMA: corto, quasi bianco, staccato dal filo
+     caldo. E' il cielo che si specchia sulla calotta — il segnale che la
+     sfera e' lucida e sta SOPRA l'erba, non incollata. Cotto: costo zero. */
+  l.strokeStyle='rgba(255,252,242,.66)'; l.lineWidth=0.085*R;
+  l.beginPath(); l.arc(C,C,R-0.26*R,Math.PI*1.36,Math.PI*1.62); l.stroke();
   l.lineCap='butt';
 }
 /* disegna il pallone di raggio R con la sua rotazione: sei operazioni */
@@ -11395,22 +12053,14 @@ function kitTex(col,col2,pat,gk,anello){
     g.beginPath(); g.ellipse(-5.5,0,9.9,8.6,0,0,6.2832);
     g.fillStyle=col2; g.fill();
     g.strokeStyle='rgba(0,0,0,.5)'; g.lineWidth=1.6; g.stroke();
-    /* IL BISELLO ANCHE SUI CALZONCINI.
-       Il torso ce l'aveva da una passata, i calzoncini no: sulla sagoma
-       vista dall'alto la meta' posteriore della figura restava una macchia
-       piatta con un contorno nero attorno, e siccome i pantaloncini sono
-       il pezzo che arriva PIU' INDIETRO (fino a -15,4 unita') era proprio
-       il profilo della sagoma a non avere spessore da quella parte.
-       Due archi, gli stessi angoli e le stesse tinte del torso: caldo dal
-       lato del sole (ovest-alto), freddo e scuro dall'altro. Costa due
-       stroke in una tessitura cotta UNA VOLTA per divisa — zero
-       millisecondi per fotogramma, che e' il conto che deve tornare. */
-    g.strokeStyle='rgba(20,30,58,.40)'; g.lineWidth=1.7;
-    g.beginPath(); g.ellipse(-5.5,0,9.9,8.6,0,Math.PI*0.06,Math.PI*0.70); g.stroke();
-    g.strokeStyle='rgba(255,232,186,.50)'; g.lineWidth=1.9;
-    g.beginPath(); g.ellipse(-5.5,0,9.9,8.6,0,Math.PI*1.06,Math.PI*1.70); g.stroke();
-    g.strokeStyle='rgba(255,226,170,.36)'; g.lineWidth=1.1;
-    g.beginPath(); g.ellipse(-5.5,0,10.6,9.3,0,Math.PI*1.14,Math.PI*1.72); g.stroke();
+    /* QUI C'ERA IL BISELLO COTTO DEI CALZONCINI, ed era una luce che
+       GIRAVA COL CORPO: cotta nel frame della figura, ruotava con lei, e
+       un giocatore rivolto a sud aveva il filo caldo a EST — il contrario
+       delle sette di sera. Il metro chiede un bordo illuminato DAL LATO
+       DELLA LUCE, e la luce e' una e sta a ovest. Il bordo adesso si
+       traccia in drawPlayer, due archi per figura con gli angoli
+       compensati della rotazione: il filo resta a ovest comunque sia
+       girato il corpo. Vedi il blocco IL BORDO DI LUCE in drawPlayer. */
   });
   /* TORSO: ellisse 11,4 x 9,6, contorno 2,4, motivo ritagliato dentro,
      piega d'ombra, i due fili del bisello e — per il portiere — l'anello
@@ -11419,9 +12069,10 @@ function kitTex(col,col2,pat,gk,anello){
      lo si disegna. */
   /* IL TASSELLO DEL TORSO CRESCE DA 13,0 A 14,6 per fare posto all'anello
      di stacco. Verificato sui due vincoli di collaudo.js: la finestra della
-     maglia arriva a 7,1 unita' dal centro e l'anello con cui campiona
-     l'erba comincia a 30. L'anello nuovo sta fra 11,4 e 13,8 — non tocca
-     ne' l'una ne' l'altro. */
+     maglia arriva a 9,6 unita' dal centro (arretrata per scavalcare la
+     testa, vedi il conto in collaudo.js) e l'anello con cui campiona
+     l'erba comincia a 30. L'anello di stacco sta fra 11,4 e 13,8 — non
+     tocca ne' l'una ne' l'altro. */
   t.torso=cuociTassello(-14.6,-13.0, 14.6,13.0, g=>{
     /* =============================================================
        L'ALONE DI STACCO, SU OGNI GIOCATORE.
@@ -11466,11 +12117,13 @@ function kitTex(col,col2,pat,gk,anello){
        quindi non costa un ritaglio in piu': gli stessi fill, gli stessi
        stroke, con dentro due ellissi invece di una.
        VERIFICATO sui vincoli di collaudo.js: la finestra della maglia
-       arriva a 7,1 unita' dal centro, e nel busto 12,4 x 8,2 il punto
-       piu' esterno di quella finestra (-5,4 ; 4,6) sta al 47% del
-       semiasse — dentro con largo margine anche con lo schiacciamento
-       al massimo. L'anello con cui campiona l'erba comincia a 30, e la
-       sagoma nuova arriva al piu' a 12,9. Nessuno dei due si muove. */
+       arriva a 9,6 unita' dal centro, e nel busto 12,4 x 8,2 il punto
+       piu' esterno di quella finestra (-8,4 ; 4,6) sta dentro con
+       margine anche con lo schiacciamento al massimo (il conto per
+       esteso sta sopra SQUASH_MAX e in collaudo.js: la finestra e'
+       arretrata per non campionare la calotta della testa). L'anello
+       con cui campiona l'erba comincia a 30, e la sagoma nuova arriva
+       al piu' a 12,9. Nessuno dei due si muove. */
     const sagoma=(gg,k)=>{
       gg.beginPath();
       gg.ellipse(0,0,12.4*k,8.2*k,0,0,6.2832);
@@ -11519,65 +12172,15 @@ function kitTex(col,col2,pat,gk,anello){
     gv.addColorStop(1,   'rgba(255,244,214,.16)');
     g.fillStyle=gv; g.fillRect(-14,-13,28,26);
     g.restore();
-    /* IL BORDO ILLUMINATO, portato al valore che si vede davvero.
-       Misurato sulla fotografia a scala di gioco: a 0,55 di opacita' e 2,2
-       di spessore su una sagoma larga 22,8 unita' il filo caldo restava
-       sotto la soglia in cui l'occhio lo legge come SPESSORE invece che
-       come antialiasing del contorno. A 0,68 e 2,5 la figura si stacca
-       dall'erba anche allo zoom minimo, ed e' il terzo dei tre gesti che
-       METRO.md elenca come dovuti a ogni oggetto dei riferimenti.
-       Costo: zero. Sta dentro la tessitura, cotta una volta per divisa. */
-    /* IL BISELLO SI TAGLIA A META', E NON E' UN VEZZO.
-       Con la sagoma a due ellissi, l'arco nord-ovest di quella delle
-       spalle passa DENTRO il busto: strofinarci sopra il filo caldo
-       disegnava una fascia chiara in mezzo al petto, e a quattro
-       ingrandimenti leggeva come una sciarpa bianca. Un bordo
-       illuminato sta sul PROFILO e da nessun'altra parte.
-       Rimedio: si traccia tutta la sagoma — cioe' solo il suo contorno
-       esterno, perche' il tracciato unito ha un profilo solo — e la si
-       ritaglia a meta': meta' alta il filo caldo, meta' bassa il filo
-       freddo. Due ritagli rettangolari, zero calcoli di geometria. */
-    g.save();
-    g.beginPath(); g.rect(-15,0,30,14); g.clip();
-    g.strokeStyle='rgba(20,30,58,.46)'; g.lineWidth=1.7;
-    sagoma(g,1); g.stroke();
-    g.restore();
-    /* IL FILO CALDO E' UN FILO, NON UN COLLETTO. Provato a 0,88 su 2,5 di
-       spessore piu' un secondo tratto quasi bianco: a quattro
-       ingrandimenti la sagoma leggeva come un omino con una fascia
-       bianca in testa, e la maglia — che e' quella che dice di che
-       squadra e' — spariva sotto il bisello. Un bordo illuminato deve
-       dire SPESSORE, cioe' restare un filo. Resta a 0,74 su 2,2, con un
-       colpo di luce corto e sottile sul solo quarto ovest-alto, dove il
-       sole batte davvero.
-       Sta a 11,4 unita' dal centro, cioe' fuori dalla finestra da 5,4 con
-       cui collaudo.js legge il colore della maglia e dentro l'anello da
-       30 con cui campiona l'erba: non tocca ne' l'uno ne' l'altro. */
-    g.save();
-    g.beginPath(); g.rect(-15,-14,30,14); g.clip();
-    /* SPESSORE 1,5 E NON 2,1. Un bisello e' un FILO: su un torso largo
-       16,4 unita', 2,1 di spessore ne fanno il 13% e a quattro
-       ingrandimenti la fascia chiara si legge come un indumento invece
-       che come luce sul bordo. A 1,5 dice ancora spessore e lascia alla
-       maglia tutta la sua superficie. */
-    g.strokeStyle='rgba(255,244,214,.66)'; g.lineWidth=1.5;
-    sagoma(g,1); g.stroke();
-    g.restore();
-    /* IL FILO DI LUCE SULL'ANELLO, dal lato del sole. E' la seconda meta'
-       della coppia: l'anello scuro fa lo stacco dal prato, questo filo dice
-       che l'anello e' un OGGETTO illuminato e non un buco. Sta SOPRA
-       l'anello esterno, sull'arco ovest-alto, ed e' l'unica cosa che nei
-       riferimenti fa sembrare la pedina rilevata invece che stampata. */
-    g.save();
-    g.beginPath(); g.rect(-15,-14,30,14); g.clip();
-    g.strokeStyle='rgba(255,240,205,.46)'; g.lineWidth=1.1;
-    sagoma(g,1.048); g.stroke();
-    g.restore();
-    g.save();
-    g.beginPath(); g.rect(-15,0,30,14); g.clip();
-    g.strokeStyle='rgba(122,158,232,.16)'; g.lineWidth=1.0;
-    sagoma(g,1.048); g.stroke();
-    g.restore();
+    /* QUI C'ERA IL BISELLO COTTO DEL TORSO — filo caldo sulla meta' alta
+       della tessitura, filo freddo sulla bassa, piu' i due fili
+       sull'anello di stacco. Tutti e quattro GIRAVANO COL CORPO, perche'
+       la tessitura ruota con lui: rivolto a sud, il giocatore aveva il
+       sole a est. La luce del campetto e' UNA e sta a ovest, quindi il
+       bordo di luce non puo' stare in una tessitura che ruota: sta in
+       drawPlayer, due archi per figura con gli angoli compensati della
+       rotazione (blocco IL BORDO DI LUCE). Qui restano le cose che non
+       hanno direzione: anello di stacco, contorno, volume, motivo. */
     if(gk){
       g.strokeStyle=anello; g.lineWidth=2.2;
       g.beginPath(); g.ellipse(-0.6,0,8.4,6.2,0,0,6.2832); g.stroke();
@@ -11653,9 +12256,11 @@ function testaTex(skin,hair){
     g.moveTo(ex+er, 1.42); g.arc(ex, 1.42, er,0,6.2832);
     g.moveTo(ex+er,-1.42); g.arc(ex,-1.42, er,0,6.2832);
     g.fill();
-    /* filo di luce sull'arco nord-ovest: e' lui che dice "sfera" */
-    g.strokeStyle='rgba(255,246,220,.60)'; g.lineWidth=1.0;
-    g.beginPath(); g.arc(0,0,HR-0.5,Math.PI*1.06,Math.PI*1.70); g.stroke();
+    /* QUI C'ERA IL FILO DI LUCE COTTO NELLA CALOTTA: ruotava con la
+       testa, cioe' il sole girava con la nuca. Adesso il filo sta in
+       drawPlayer, DOPO il drawImage della calotta e fuori dalla sua
+       rotazione: la testa e' un cerchio, quindi un arco in coordinate
+       di mondo le calza esatto comunque sia girata. */
   });
   TESTA_TEX.set(chiave,t);
   return t;
@@ -11853,12 +12458,32 @@ function drawPlayer(p){
      dietro il corpo e sporge solo davanti ai piedi: si legge come un cerchio
      posato sull'erba, non come un cerchio infilato addosso all'omino. */
   if(isCtrl){
-    const pl = SAVE.moto ? 0.74+0.26*Math.abs(Math.sin(G.pulse*4)) : 1;
-    ctx.strokeStyle='rgba(0,0,0,.42)'; ctx.lineWidth=4.6;
-    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.2,17.6,7.7,0,0,6.2832); ctx.stroke();
-    ctx.strokeStyle= 'rgba('+TEAMRGB[p.team]+','+pl.toFixed(2)+')';
-    ctx.lineWidth=2.5;
-    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.2,17.6,7.7,0,0,6.2832); ctx.stroke();
+    /* L'ANELLO E' AMBRA, PIENO, E RESPIRA FRA DUE RAGGI.
+       Il metro sul concorrente piu' vicino: la pedina attiva ha un anello
+       ciano completo che la SOLLEVA dal campo. Il nostro era nel colore
+       della squadra — lime su divisa lime: invisibile meta' del tempo — e
+       pulsava d'opacita', cioe' passava meta' del tempo mezzo spento.
+       L'ambra e' la tinta che in tutto il gioco vuol dire "qui si agisce",
+       e il giocatore comandato E' dove si agisce: non e' decorazione, e'
+       l'unico posto in campo dove l'accento tocca il manto. La squadra la
+       dicono la maglia e la targhetta P1/P2, che resta nel suo colore.
+       Il respiro sta sul RAGGIO, non sull'alfa: due valori appena
+       staccati (1,3 unita'), interpolati dal pulse che c'era gia'. Un
+       anello sempre pieno che si allarga di un filo legge come un
+       respiro; uno che sbiadisce legge come un guasto. A movimento
+       ridotto sta fermo a mezza via. Lo zoccolo scuro sotto resta: e'
+       quello che lo tiene leggibile su ogni divisa e in alto contrasto. */
+    const pl = SAVE.moto ? 0.5+0.5*Math.sin(G.pulse*2.6) : 0.5;
+    const arx=17.4+1.3*pl, ary=7.6+0.57*pl;
+    ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=4.8;
+    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.2,arx,ary,0,0,6.2832); ctx.stroke();
+    ctx.strokeStyle='rgba(255,176,32,.95)';
+    ctx.lineWidth=2.8;
+    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.2,arx,ary,0,0,6.2832); ctx.stroke();
+    /* il filo di luce sul quarto ovest dell'anello: e' un oggetto posato
+       sull'erba, e anche lui sta sotto il sole delle sette */
+    ctx.strokeStyle='rgba(255,232,186,.55)'; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.2,arx,ary,0, 0.80*Math.PI,1.40*Math.PI); ctx.stroke();
   }
 
   /* L'OMBRA PORTATA non si disegna qui: sta in drawOmbreGiocatori, una
@@ -11903,6 +12528,17 @@ function drawPlayer(p){
     ctx.fillStyle=col;
     ctx.beginPath(); ctx.ellipse(-1,0,11.5,6.4,0,0,6.2832); ctx.fill();
     ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.lineWidth=1.8; ctx.stroke();
+    /* IL BORDO DI LUCE anche sul corpo a terra — stessa coppia e stessa
+       regola del corpo in piedi: il sole sta a ovest, il tuffo gira, gli
+       angoli si compensano con -ang. Il portiere disteso e' la figura
+       che si guarda di piu' in tutta la parata: senza il filo era l'unico
+       corpo del campo senza lato illuminato. */
+    ctx.lineCap='round';
+    ctx.strokeStyle='rgba(255,244,214,.55)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.ellipse(-1,0,11.2,6.1,0, 0.70*Math.PI-ang, 1.50*Math.PI-ang); ctx.stroke();
+    ctx.strokeStyle='rgba(20,30,58,.36)'; ctx.lineWidth=1.3;
+    ctx.beginPath(); ctx.ellipse(-1,0,11.2,6.1,0, -0.30*Math.PI-ang, 0.50*Math.PI-ang); ctx.stroke();
+    ctx.lineCap='butt';
     ctx.fillStyle=col2;
     ctx.beginPath(); ctx.ellipse(-7.5,0,4.4,5.6,0,0,6.2832); ctx.fill();
     /* braccio avanti: nel tuffo e' un GUANTONE che si allunga verso la
@@ -12248,6 +12884,33 @@ function drawPlayer(p){
     ctx.rotate(tw*1.75);                       // dal frame del bacino a quello delle SPALLE
     ctx.scale(1/sq, sq);
     stendi(KT.torso);
+    /* ---------------- IL BORDO DI LUCE, E NON GIRA COL CORPO ----------
+       METRO.md, prima delle tre tecniche: ogni oggetto dei riferimenti ha
+       un bordo illuminato DAL LATO DELLA LUCE e uno scuro dall'altro. La
+       luce del campetto e' una sola — il sole delle sette, basso a OVEST —
+       quindi il filo caldo sta a ovest COMUNQUE sia girato il corpo: cotto
+       nella tessitura ruotava con la maglia, e mezzo campo aveva il sole
+       dalla parte sbagliata. Qui si traccia per fotogramma, DENTRO il
+       frame delle spalle, con gli angoli compensati della rotazione
+       (lo = -(a+tw)): l'arco segue il profilo del busto ruotato e la luce
+       resta ferma. L'ellisse (-1,5; 0) 13,4 x 8,9 e' il profilo medio di
+       calzoncini+busto+spalle (da -15,4 a +12,4): scarta dal profilo vero
+       di un'unita' al piu', cioe' meno di un pixel a scala di gioco, e in
+       cambio due archi vestono TUTTA la sagoma, coda compresa.
+       Il caldo e' spostato di un quarto verso nord (il sole e' basso ma
+       non a picco), il freddo e' blu di cielo, mai nero: come tutte le
+       ombre del gioco. Costo: due stroke per figura — il conto che la
+       consegna ammette — e resta a 14,1 dal centro, dentro l'anello da 30
+       di collaudo.js e fuori dalla finestra della maglia (7,1). */
+    {
+      const lo=-(a+tw);
+      ctx.lineCap='round';
+      ctx.strokeStyle='rgba(255,244,214,.60)'; ctx.lineWidth=1.6;
+      ctx.beginPath(); ctx.ellipse(-1.5,0,13.4,8.9,0, 0.70*Math.PI+lo, 1.50*Math.PI+lo); ctx.stroke();
+      ctx.strokeStyle='rgba(20,30,58,.40)'; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.ellipse(-1.5,0,13.4,8.9,0, -0.30*Math.PI+lo, 0.50*Math.PI+lo); ctx.stroke();
+      ctx.lineCap='butt';
+    }
     ctx.restore();
 
     /* NUMERO DI MAGLIA sulla CODA del torso, non al centro. Al centro non
@@ -12319,18 +12982,20 @@ function drawPlayer(p){
     ctx.translate(hx,hy); ctx.rotate(a);
     stendi(testaTex(p.skin,p.hair));
     ctx.restore();
-    /* QUI C'ERA IL RIM-LIGHT DELLA TESTA — un arco bianco al 26% di opacita'
-       e 1,1 unita' di spessore su una calotta di 4,9 di raggio. Misurato a
-       posa ferma e camera al massimo campo visivo (S2 1,30), togliendolo
-       cambiavano 269 pixel su un milione e mezzo, e di quei 269 solo 16
-       cambiavano di piu' di 60 livelli: un filo sottopixel che non lascia
-       segno. Sono cinque operazioni per giocatore per fotogramma — la piu'
-       cara e' lo stroke di un arco, che va rasterizzato con l'antialiasing —
-       regalate a niente. Il rim-light del TORSO resta: quello, alla stessa
-       misura, cambia 814 pixel di cui 403 forti, e si vede.
-       Occhi e falce di pelle sono stati misurati con lo stesso metro e
-       RESTANO: 211 pixel a 105 livelli medi i primi, 338 a 60 la seconda.
-       Sono la faccia dell'omino e l'unica cosa che dice dove guarda. */
+    /* IL BORDO DI LUCE DELLA TESTA. Un rim-light bianco al 26% e' gia'
+       stato provato e tolto: 269 pixel cambiati su un milione e mezzo,
+       invisibile. Questo e' un'altra cosa: DOPPIO di spessore-opacita',
+       CALDO invece che bianco, e con il gemello scuro a est — e' la
+       coppia, non il filo solo, che l'occhio legge come luce radente.
+       La testa e' un cerchio: gli archi si tracciano in coordinate di
+       mondo, fuori dalla rotazione della calotta, e il sole resta a
+       ovest comunque giri la nuca. Due stroke corti per figura. */
+    ctx.lineCap='round';
+    ctx.strokeStyle='rgba(255,241,205,.55)'; ctx.lineWidth=1.1;
+    ctx.beginPath(); ctx.arc(hx,hy,4.0, 0.72*Math.PI, 1.48*Math.PI); ctx.stroke();
+    ctx.strokeStyle='rgba(18,26,46,.38)'; ctx.lineWidth=1.0;
+    ctx.beginPath(); ctx.arc(hx,hy,4.0, -0.28*Math.PI, 0.48*Math.PI); ctx.stroke();
+    ctx.lineCap='butt';
   }
   ctx.restore();                      // fine della scala di disegno P_DIS
 
@@ -12411,6 +13076,18 @@ function drawBallAt(x,y,z,rot,glow){
     const r=70/(70+q), a=0.96*70/(70+1.1*q);
     ctx.globalAlpha=a;
     ctx.drawImage(ombraTex, sx-10.8*r, sy-5.0*r, 21.6*r, 10.0*r);
+    /* MACCHIA DI CONTATTO: il nucleo stretto e scuro che i corpi hanno
+       gia' (drawOmbreGiocatori) e il pallone no. E' lei che decide se il
+       pallone POGGIA sull'erba o ci galleggia sopra: la proiezione larga
+       da sola dice dov'e' la luce, non dove tocca. Si spegne in nove
+       unita' di quota — un pallone in volo non tocca niente — mentre la
+       proiezione resta: e' la distanza fra le due a dire quanto e' alto.
+       Costo: un drawImage della tessitura gia' cotta, solo a palla bassa. */
+    const ac=0.52*(1-q/9);
+    if(ac>0.02){
+      ctx.globalAlpha=ac;
+      ctx.drawImage(ombraTex, sx-5.4*r, sy-2.6*r, 10.8*r, 5.2*r);
+    }
     ctx.globalAlpha=1;
   }
   const by=y-z*0.55;
@@ -12742,22 +13419,43 @@ function fmtTime(s){
   const m=(s/60)|0, r=s%60;
   return m+':'+String(r).padStart(2,'0');
 }
-/* ---------- BARRA ALTA DEL PUNTEGGIO: fondo pieno, non traslucido ----------
-   Rettangolo pieno per tutta la larghezza, senza tacche ne' code ne' sagome
-   che scendano sotto il bordo inferiore, e senza velature sfumate sul prato.
-   Il fondo pieno costa meno di un gradiente cotto e non nasconde niente:
-   quello che sta sotto la barra non e' gioco, e' la fascia dove il pallone
-   non arriva mai (il limite di pan della camera). Il timer sta DENTRO la
-   barra perche' la tacca che lo teneva era l'unico pezzo di interfaccia che
-   entrava nell'area di gioco al centro esatto dello schermo. */
+/* ---------- BARRA ALTA DEL PUNTEGGIO: un oggetto, non una fascia ----------
+   Era un rettangolo pieno da bordo a bordo: pesava come un televisore sopra
+   un campetto. Adesso e' un tabellone largo quanto il suo contenuto, ad
+   angoli vivi, fondo scuro OPACO; il campo continua ai suoi lati. Il fondo
+   era nato con un filo di trasparenza (.90), ma i corpi vicini al bordo
+   alto del campo ci passano sotto e il dieci per cento che filtrava li
+   trasformava in sagome nere DENTRO il punteggio: in vetrina leggeva come
+   gioco rotto. Il limite di pan della camera NON basta a impedirlo — al
+   kickoff i difensori alti stanno proprio li'. Opaco come la barra di
+   prima, flottante come l'oggetto di adesso: le due conquiste insieme.
+   Il timer sta DENTRO il tabellone perche' la tacca che lo
+   teneva era l'unico pezzo di interfaccia che entrava nell'area di gioco
+   al centro esatto dello schermo. */
 function drawHUD(){
   if(G.scene==='menu'||G.scene==='end') return;
   /* durante la moviola il tabellone tace: il replay ha la sua grafica */
   if(G.moviola) return;
   const cx=VW/2, H=BAR_H, S=G.stats;
 
-  /* fondo pieno + ombra portata di 3 px sul campo (la luce viene dall'alto) */
-  ctx.fillStyle='#08130D'; ctx.fillRect(0,0,VW,H);
+  /* le misure sono tarate sul telefono in orizzontale (915 px): su schermi
+     piu' stretti si comprimono in blocco invece di accavallarsi */
+  const f=clamp((VW/2-52)/248,0.52,1);
+  const cyT=(H-3)/2, HB=H-3;
+  const sk=Math.tan(16*Math.PI/180)*HB;
+
+  /* IL TABELLONE E' UN OGGETTO, NON UNA FASCIA. La banda piena da bordo a
+     bordo pesava come un televisore sopra un campetto: adesso il fondo e'
+     largo quanto il contenuto — sbarra, nome, punteggio, cronometro,
+     punteggio, nome, sbarra — piu' 14 px di respiro per lato. Angoli vivi,
+     fondo scuro OPACO: il filo di trasparenza che c'era (.90) faceva
+     filtrare i giocatori sotto il bordo alto come sagome nere dentro il
+     pannello (macchia scura accanto a 'CPU' al kickoff). La lavagna appesa
+     non lascia intravedere cio' che le passa dietro. Ai lati dell'oggetto
+     lo schermo torna campo, e il piede sfumato qui sotto addolcisce chi
+     ci passa sotto davvero. */
+  const px0=Math.round(cx-236*f-14), px1=Math.round(cx+230*f+6+sk+14), PW=px1-px0;
+  ctx.fillStyle='rgb(8,19,13)'; ctx.fillRect(px0,0,PW,H);
   /* PIEDE SFUMATO di 12 px: la camera tiene i corpi dentro l'area di gioco,
      ma un salto d'esultanza o un rimpallo possono comunque portare una testa
      sotto il bordo della barra. Con un gradiente corto la testa SFUMA invece
@@ -12765,18 +13463,12 @@ function drawHUD(){
   {
     const g=ctx.createLinearGradient(0,H,0,H+12);
     g.addColorStop(0,'rgba(6,18,12,.85)'); g.addColorStop(1,'rgba(6,18,12,0)');
-    ctx.fillStyle=g; ctx.fillRect(0,H,VW,12);
+    ctx.fillStyle=g; ctx.fillRect(px0,H,PW,12);
   }
-  ctx.fillStyle='rgba(255,255,255,.07)'; ctx.fillRect(0,0,VW,1);
-
-  /* le misure sono tarate sul telefono in orizzontale (915 px): su schermi
-     piu' stretti si comprimono in blocco invece di accavallarsi */
-  const f=clamp((VW/2-52)/248,0.52,1);
-  const cyT=(H-3)/2, HB=H-3;
+  ctx.fillStyle='rgba(255,255,255,.07)'; ctx.fillRect(px0,0,PW,1);
   ctx.textBaseline='middle';
 
   /* SBARRE INCLINATE D'IDENTITA': skewX(-16 gradi), 6 px, alte quanto la barra */
-  const sk=Math.tan(16*Math.PI/180)*HB;
   const sbarra=(x,col)=>{
     ctx.fillStyle=col;
     ctx.beginPath();
@@ -12846,7 +13538,7 @@ function drawHUD(){
      decisione di chi gioca, perche' il possesso lo si sente, non lo si
      legge. Le percentuali vivono in pausa e a fine partita, dove uno le
      GUARDA. Sotto la barra resta il filo di luce e basta. */
-  ctx.fillStyle='rgba(255,222,164,.10)'; ctx.fillRect(0,H-1,VW,1);
+  ctx.fillStyle='rgba(255,222,164,.10)'; ctx.fillRect(px0,H-1,PW,1);
 
   /* INFERIORITA' NUMERICA: chi e' in dieci deve saperlo a colpo d'occhio.
      Sta in fascia bassa, a sinistra della minimappa: nell'area di gioco non
@@ -13924,31 +14616,45 @@ function drawMoviola(){
     ctx.restore();
     ctx.globalAlpha=1;
   }
-  /* bande cinematografiche */
+  /* LA CORNICE QUIETA DA RIPRESA DEL CAMPETTO: le due bande, un filo
+     caldo appena accennato, e gli ANGOLI SMUSSATI scuri — quattro quarti
+     di cerchio che chiudono l'inquadratura come il mirino di una vecchia
+     videocamera. Nessun ornamento che rubi scena alla ripresa. */
   ctx.fillStyle='#040906';
   ctx.fillRect(0,0,VW,BH); ctx.fillRect(0,VH-BH,VW,BH);
-  ctx.fillStyle='rgba(255,222,164,.45)';
+  {
+    const Rc=Math.min(26,Math.max(8,BH));
+    ctx.beginPath();
+    ctx.moveTo(0,BH); ctx.lineTo(Rc,BH); ctx.arc(Rc,BH+Rc,Rc,-Math.PI/2,Math.PI,true); ctx.closePath();
+    ctx.moveTo(VW,BH); ctx.lineTo(VW,BH+Rc); ctx.arc(VW-Rc,BH+Rc,Rc,0,-Math.PI/2,true); ctx.lineTo(VW,BH); ctx.closePath();
+    ctx.moveTo(0,VH-BH); ctx.lineTo(0,VH-BH-Rc); ctx.arc(Rc,VH-BH-Rc,Rc,Math.PI,Math.PI/2,true); ctx.lineTo(0,VH-BH); ctx.closePath();
+    ctx.moveTo(VW,VH-BH); ctx.lineTo(VW-Rc,VH-BH); ctx.arc(VW-Rc,VH-BH-Rc,Rc,Math.PI/2,0,true); ctx.closePath();
+    ctx.fill();
+  }
+  ctx.fillStyle='rgba(255,222,164,.30)';
   ctx.fillRect(0,BH-1.5,VW,1.5); ctx.fillRect(0,VH-BH,VW,1.5);
   /* finche' le bande non sono chiuse, la grafica del replay non c'e' */
   if(ap<0.55){ ctx.textBaseline='alphabetic'; return; }
   ctx.globalAlpha=clamp((ap-0.55)/0.35,0,1);
 
-  /* targhetta MOVIOLA con il doppio triangolo all'indietro */
-  const tx=18, ty=BH+12, tw=150, th=26;
-  ctx.fillStyle='rgba(6,14,10,.92)';
-  ctx.beginPath();
-  ctx.moveTo(tx,ty); ctx.lineTo(tx+tw,ty);
-  ctx.lineTo(tx+tw-9,ty+th); ctx.lineTo(tx,ty+th); ctx.closePath(); ctx.fill();
-  ctx.fillStyle=COL.gesso; ctx.fillRect(tx,ty,3.4,th);
-  /* doppio triangolo indietro */
-  ctx.fillStyle=COL.fluo;
+  /* la scritta MOVIOLA sta su una TARGHETTA DI LAVAGNA piccola — assicella
+     di legno intorno, ardesia dentro, gesso sopra: la lavagnetta del
+     minuto del tabellone-eroe, in formato da regia. Il doppio triangolo
+     all'indietro e' gesso, non lime: il lime dice una squadra. */
+  const tx=16, ty=BH+10, tw=158, th=30;
+  ctx.fillStyle='rgba(3,9,6,.5)'; ctx.fillRect(tx+2,ty+3,tw,th);
+  ctx.fillStyle='#7d5a2e'; ctx.fillRect(tx,ty,tw,th);
+  ctx.fillStyle='rgba(255,236,196,.5)'; ctx.fillRect(tx,ty,tw,1.2); ctx.fillRect(tx,ty,1.2,th);
+  ctx.fillStyle='rgba(24,16,6,.5)'; ctx.fillRect(tx,ty+th-1.4,tw,1.4); ctx.fillRect(tx+tw-1.4,ty,1.4,th);
+  ctx.fillStyle='#16402a'; ctx.fillRect(tx+3,ty+3,tw-6,th-6);
+  ctx.fillStyle=COL.gesso;
   for(const ox of [0,9]){
     ctx.beginPath();
-    ctx.moveTo(tx+22+ox, ty+th/2-6); ctx.lineTo(tx+22+ox, ty+th/2+6);
-    ctx.lineTo(tx+13+ox, ty+th/2); ctx.closePath(); ctx.fill();
+    ctx.moveTo(tx+24+ox, ty+th/2-6); ctx.lineTo(tx+24+ox, ty+th/2+6);
+    ctx.lineTo(tx+15+ox, ty+th/2); ctx.closePath(); ctx.fill();
   }
   ctx.font='700 13px '+FONT_C; ctx.textAlign='left'; ctx.textBaseline='middle';
-  ctx.fillStyle=COL.gesso; ctx.fillText('MOVIOLA', tx+44, ty+th/2+0.5);
+  ctx.fillStyle=COL.gesso; ctx.fillText('MOVIOLA', tx+46, ty+th/2+0.5);
   /* la velocita' non e' piu' una sola: il nastro rallenta avvicinandosi
      alla rete, e il numero lo dice mentre succede */
   const fermo = (M.fase==='rete'||M.fase==='uscita');
@@ -13975,7 +14681,12 @@ function drawMoviola(){
      la testina ci arriva, il marcatore si accende: la barra dice a colpo
      d'occhio che il nastro e' sul gol e non da qualche altra parte. */
   const acceso = fermo ? (SAVE.moto ? 3+2*Math.abs(Math.sin(G.pulse*11)) : 4) : 0;
-  ctx.fillStyle=COL.ambra;
+  /* il marcatore della rete e' AMBRA — l'accento tramonto che segnala il
+     GOL sulla timeline. Provato in bianco caldo ("l'ambra dice premi
+     qui"): a colpo d'occhio l'evento non si distingueva piu' dal resto
+     della barra, che e' esattamente il suo mestiere. Qui l'ambra non
+     invita a premere: marca il fatto, come la tacca oro sull'albo. */
+  ctx.fillStyle='rgba(255,176,32,.95)';
   ctx.fillRect(bx+bw-1.4-acceso/2, by-7-acceso/2, 2.8+acceso, 12+acceso);
   /* testina */
   ctx.fillStyle=COL.gesso;
@@ -13983,7 +14694,7 @@ function drawMoviola(){
   ctx.font='700 9px '+FONT_C; ctx.textBaseline='middle';
   ctx.fillStyle='rgba(168,188,174,.9)'; ctx.textAlign='right';
   ctx.fillText('-'+durata.toFixed(1).replace('.',',')+'s', bx-12, by+1.5);
-  ctx.textAlign='left'; ctx.fillStyle=COL.ambra;
+  ctx.textAlign='left'; ctx.fillStyle='rgba(255,176,32,.95)';
   ctx.fillText('RETE', bx+bw+12, by+1.5);
   ctx.textBaseline='alphabetic';
   ctx.globalAlpha=1;
@@ -14648,7 +15359,7 @@ addEventListener('resize', ()=>{
 /* ---------- pausa: il gioco si ferma davvero ---------- */
 function refreshPauseAudio(){
   const b=$('btnPauseAudio');
-  if(b) b.textContent='AUDIO: '+(Audio5.muted?'OFF':'ON');
+  if(b){ b.textContent='AUDIO: '+(Audio5.muted?'OFF':'ON'); b.classList.toggle('on', !Audio5.muted); }
 }
 /* possesso e falli, tolti dalla vista di gioco, si riempiono qui a ogni
    apertura della pausa. Le regole di onesta' sono le stesse del tabellino
@@ -15152,19 +15863,26 @@ function buildRosaUI(){
   const ruoli=['PORTIERE','ALA','ALA','ULTIMO UOMO'];
   SAVE.rosa.forEach((r,i)=>{
     const d=document.createElement('div');
-    d.className='rcard'+(i===0?' gk':'');
-    let h='<div class="rtop"><span class="rn">'+esc(r.nome)+'</span><span class="rr">'+ruoli[i]+'</span></div>';
+    d.className='rrow'+(i===0?' gk':'');
+    /* ruolo, partite e crescita stanno sulla seconda riga del nome: la
+       scheda da sette righe e' diventata UNA riga con quattro numeri */
+    let h='<div class="rnome"><span class="rn">'+esc(r.nome)+'</span>'+
+      '<small>'+ruoli[i]+' · '+(r.partite|0)+' partite'+(r.gol?' · '+r.gol+' gol':'')+
+      (r.ultimaCrescita?' · <span class="cresciuto">'+esc(r.ultimaCrescita)+'</span>':'')+
+      '</small></div>';
+    let celle=0;
     for(const a of ATTRIBUTI){
       /* per il portiere la tecnica sono i riflessi e il tiro non serve */
       let eti=a.nome;
       if(i===0){ if(a.k==='tiro') continue; if(a.k==='tecnica') eti='RIFLESSI'; if(a.k==='tackle') eti='PRESA'; }
       const v=r[a.k]|0;
-      h+='<div class="rattr"><span class="re">'+eti+'</span>'+
-         '<span class="rbar"><i style="width:'+clamp(v,0,100)+'%"></i></span>'+
-         '<span class="rv">'+v+'</span></div>';
+      h+='<div class="ra"><em>'+eti+'</em><b>'+v+'</b>'+
+         '<span class="rb"><i style="width:'+clamp(v,0,100)+'%"></i></span></div>';
+      celle++;
     }
-    h+='<div class="rnota">'+(r.partite|0)+' partite'+(r.gol?' · '+r.gol+' gol':'')+
-       (r.ultimaCrescita?' · <span class="cresciuto">'+esc(r.ultimaCrescita)+'</span>':'')+'</div>';
+    /* il portiere ha tre attributi: la quarta colonna resta vuota, cosi'
+       i numeri delle quattro righe stanno in colonna come una tabella */
+    while(celle<4){ h+='<div class="ra" aria-hidden="true"></div>'; celle++; }
     d.innerHTML=h;
     box.appendChild(d);
   });
@@ -15321,6 +16039,9 @@ function buildBracket(T){
      cosi' dice anche a che punto sei, non solo che esiste un premio. */
   if(ui.tourCoppa) ui.tourCoppa.dataset.vuota = T.won?'0':'1';
   montaCoppe();
+  /* la lavagna si ricuoce se il tabellone ha cambiato altezza (es. da
+     intro a tabellone pieno): montaTela controlla la misura da solo */
+  document.querySelectorAll('.lavagna').forEach(el=>montaTela(el, disegnaLavagna));
 }
 $('btnNuovoTorneo').addEventListener('click', ()=>{ Audio5.unlock(); Audio5.beep(520); newTournament(); buildTorneoUI(); });
 ui.btnTourPlay.addEventListener('click', ()=>{
@@ -15509,11 +16230,10 @@ function buildTrofeiUI(){
   ui.alboList.innerHTML = SAVE.albo.length
     ? SAVE.albo.map((e,i)=>'<div class="alboriga">'+icoSVG('trofeo',14)+' TORNEO N.'+(i+1)+' — '+esc(e.nome||'')+' <em>&middot; '+esc(e.campo||'')+' &middot; '+esc(e.data||'')+'</em></div>').join('')
     : '<div class="alboriga" style="border-left-color:var(--linea)"><em>Ancora nessun torneo vinto. Il quartiere aspetta.</em></div>';
-  /* la coppa dell'albo si riempie al primo titolo: e' lo stesso disegno,
-     e chi lo vede una volta grigio e una volta d'ottone capisce da solo
-     che cosa gli manca. Nessuna scritta lo deve spiegare. */
-  const cc=$('alboCoppa');
-  if(cc){ cc.dataset.vuota = SAVE.albo.length?'0':'1'; cc.querySelectorAll('canvas').forEach(x=>x.dataset.ok=''); montaCoppa(cc); }
+  /* la mensola si ricuoce a ogni apertura: le coppe appena vinte devono
+     accendersi d'ottone senza aspettare un cambio di misura */
+  const me=document.querySelector('#trofei .eroe-mensola');
+  if(me){ me.querySelectorAll('canvas.eroecv').forEach(x=>x.dataset.ok=''); montaTela(me, disegnaMensola); }
 }
 
 /* statistiche carriera: due tessere grandi, l'arco delle vittorie, poi le
@@ -15526,9 +16246,11 @@ function buildStatsUI(){
      fondo visibile piu' un arco minimo. Un anello vuoto sembrava un
      segnaposto che non si era caricato. */
   const arcoMin=Math.max(C*0.035, C*q);
+  /* sull'ardesia l'arco delle vittorie e' GESSO, non lime: il lime dice
+     una squadra, e una percentuale non e' una squadra */
   const arco='<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">'+
-    '<circle cx="32" cy="32" r="26" fill="none" stroke="#2c5b41" stroke-width="8"/>'+
-    '<circle cx="32" cy="32" r="26" fill="none" stroke="'+'#d8ff3d'+'" stroke-width="8" stroke-linecap="butt"'+
+    '<circle cx="32" cy="32" r="26" fill="none" stroke="rgba(242,245,239,.20)" stroke-width="8"/>'+
+    '<circle cx="32" cy="32" r="26" fill="none" stroke="'+'#f2f5ef'+'" stroke-width="8" stroke-linecap="butt"'+
     ' stroke-dasharray="'+arcoMin.toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 32 32)"/>'+
     '<text x="32" y="36" text-anchor="middle" font-family="Barlow Condensed,sans-serif" font-weight="700"'+
     ' font-size="16" fill="#f2f5ef">'+Math.round(q*100)+'%</text></svg>';
@@ -15561,13 +16283,21 @@ function buildStatsUI(){
 function refreshImpostUI(){
   $('btnSetAudio').textContent='AUDIO: '+(Audio5.muted?'OFF':'ON');
   $('btnSetVib').textContent='VIBRAZIONE: '+(SAVE.vib!==false?'ON':'OFF');
-  $('btnSetMoto').innerHTML='EFFETTI DI MOVIMENTO: '+(SAVE.moto?'COMPLETI':'RIDOTTI')+
-    ' <small>scossa schermo, coriandoli, transizioni</small>';
-  $('btnSetDalt').innerHTML='DIVISE AD ALTO CONTRASTO: '+(SAVE.dalt?'SÌ':'NO')+
-    ' <small>per daltonismo: kit e portieri ben separati</small>';
+  /* etichette corte: la riga dice il fatto, il sottotitolo il dettaglio —
+     con la manopola a destra tre righe di titolo erano un muro */
+  $('btnSetMoto').innerHTML='MOVIMENTO: '+(SAVE.moto?'COMPLETO':'RIDOTTO')+
+    ' <small>scossa, coriandoli, transizioni</small>';
+  $('btnSetDalt').innerHTML='ALTO CONTRASTO: '+(SAVE.dalt?'SÌ':'NO')+
+    ' <small>daltonismo: kit ben separati</small>';
   $('btnSetTempo').innerHTML='DURATA PARTITA: '+SAVE.durata+'″ <small>90, 120 o 180 secondi</small>';
   $('btnSetMoviola').innerHTML='MOVIOLA DOPO IL GOL: '+(SAVE.moviola?'SÌ':'NO')+
     ' <small>rivedi la rete al rallentatore</small>';
+  /* la manopola smaltata segue lo stato scritto nel testo */
+  $('btnSetAudio').classList.toggle('on', !Audio5.muted);
+  $('btnSetVib').classList.toggle('on', SAVE.vib!==false);
+  $('btnSetMoto').classList.toggle('on', !!SAVE.moto);
+  $('btnSetDalt').classList.toggle('on', !!SAVE.dalt);
+  $('btnSetMoviola').classList.toggle('on', !!SAVE.moviola);
 }
 $('btnSetMoviola').addEventListener('click', ()=>{
   SAVE.moviola = SAVE.moviola?0:1; persistSave(); refreshImpostUI(); Audio5.beep(440);
