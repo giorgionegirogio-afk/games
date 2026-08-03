@@ -127,7 +127,7 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
 }
 /* SEGNALE DI SCORRIMENTO: una pastiglia vera, con la freccia e l'ombra.
    Una virgoletta nuda in basso a destra non e' un comando ne' un segnale:
-   e' un glifo. Questa e' una pastiglia lime che si vede sopra qualunque
+   e' un glifo. Questa e' una pastiglia di gesso che si vede sopra qualunque
    fondo e sparisce al primo scorrimento. */
 .ov::before{
   content:"";position:fixed;right:14px;bottom:78px;z-index:6;width:34px;height:34px;border-radius:50%;
@@ -332,7 +332,7 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
    addosso a una parola del titolo, cioe' faceva decorazione: e' esattamente
    l'errore del lime, ripetuto con una tinta nuova. Il testo e' gesso. */
 .titolone span{color:var(--gesso)}
-/* PAUSA non e' una parola composta: una tinta sola e il filo lime sotto */
+/* PAUSA non e' una parola composta: una tinta sola e il filo di gesso sotto */
 .titolone.unatinta{color:var(--gesso);position:relative;padding-bottom:12px}
 .titolone.unatinta::after{content:"";position:absolute;left:50%;bottom:0;width:64px;height:5px;margin-left:-32px;background:var(--gesso)}
 .frase{
@@ -591,17 +591,20 @@ kbd{
 .duelspace{flex:1 1 auto;min-height:0}
 .duelfoot{flex:0 0 auto;padding:10px 14px 12px;background:linear-gradient(rgba(3,9,6,0),rgba(3,9,6,.9) 26%,rgba(3,9,6,.96))}
 .duelbox h2{font-family:var(--nero);font-weight:900;font-size:clamp(18px,4.4vh,30px);line-height:1;text-transform:uppercase;color:var(--oro);text-shadow:2.8px 1.0px 0 rgba(4,12,8,.58)}
-/* tabellone della serie dal dischetto: chi ha segnato, chi ha sbagliato,
-   e a chi tocca. Senza, i rigori erano indistinguibili da una punizione. */
+/* la serie dal dischetto: chi ha segnato, chi ha sbagliato, a chi tocca.
+   LINGUAGGIO LAVAGNA/SMALTO: cornice di smalto su lavagna (la grammatica
+   delle sfide del TORNEO), rete a gesso pieno, sbaglio a CROCETTA. */
 .serie{margin:6px auto 0;max-width:380px;display:flex;gap:8px}
-.serie .sr{flex:1;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.36);padding:4px 8px;border-left:3px solid var(--linea)}
+.serie .sr{flex:1;display:flex;align-items:center;gap:8px;background:rgba(6,20,13,.34);padding:4px 8px;border:2px solid rgba(242,245,239,.42);border-radius:3px}
 .serie .sr span{font-family:var(--cond);font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;flex:1;text-align:left}
 .serie .sr b{font-family:var(--cond);font-weight:700;font-size:19px;color:var(--gesso);min-width:18px}
 .serie .sr em{display:flex;gap:4px}
-.serie .sr em i{width:9px;height:9px;border-radius:50%;background:rgba(150,171,158,.22)}
-.serie .sr em i.seg{background:var(--gesso)}
-.serie .sr em i.sba{background:rgba(150,171,158,.30)}
-.serie .sr em i.ora{background:transparent;box-shadow:inset 0 0 0 2px var(--oro)}
+.serie .sr em i{width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1.4px rgba(242,245,239,.30)}
+.serie .sr em i.seg{background:var(--gesso);box-shadow:none}
+.serie .sr em i.sba{border-radius:0;box-shadow:none;background:
+  linear-gradient(45deg,transparent 42%,rgba(242,245,239,.60) 42%,rgba(242,245,239,.60) 58%,transparent 58%),
+  linear-gradient(-45deg,transparent 42%,rgba(242,245,239,.60) 42%,rgba(242,245,239,.60) 58%,transparent 58%)}
+.serie .sr em i.ora{box-shadow:inset 0 0 0 2px var(--oro)}
 #duelPhase{font-family:var(--cond);font-weight:700;font-size:13.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--gesso);margin:6px 0 0;min-height:17px}
 .zone-row{display:flex;gap:10px;justify-content:center;margin-bottom:8px}
 /* IL BISELLO SUI TRE BOTTONI DEL RIGORE. Erano tre rettangoli piatti con
@@ -637,8 +640,6 @@ kbd{
   transition:transform .08s,filter .1s;
 }
 .zone-row button:active{transform:translateY(3px);filter:none}
-/* sul rigore l'ambra ce l'ha la fascia di potenza, che e' il bersaglio:
-   la zona scelta si segna a gesso */
 /* il bordo l'ha perso col bisello: la zona scelta si segna col gesso
    PIENO, che e' lo stesso segno di "questo e' quello attivo" usato dalla
    difficolta' e dal campo. Senza fondo pieno, dopo il bisello i tre
@@ -762,6 +763,9 @@ kbd{
    si limita a mangiare l'ultima riga — in FISCHIO FINALE era la riga
    'Falli', in una schermata che la gente condivide. */
 .ov.senzafade .azioni{box-shadow:none}
+/* ISTRUZIONI: la fascia adesiva copriva i disegni della lavagna, cioe' il
+   contenuto: pulsante nel flusso, 52 px liberi sotto per la sfumatura fissa. */
+#howto .azioni{position:static;margin:24px 0 0;padding:0 0 52px;background:none;box-shadow:none}
 .btnA{
   font-family:var(--cond);font-weight:700;font-size:19px;text-transform:uppercase;letter-spacing:.08em;
   color:#12210f;border:0;padding:14px 28px;cursor:pointer;
@@ -887,12 +891,9 @@ body.barra #gearBtn{display:none}
 .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .voce.mini{font-size:clamp(13px,3.4vw,16px);padding:13px 8px}
 .voce.mini small{font-size:10px}
-/* IL FILETTO SOTTO IL TITOLO E' SEMPRE LIME.
-   Sette schermate con sei tinte diverse per lo stesso identico elemento non
-   leggono come un tema: leggono come sei file toccati da sei persone. Il
-   lime e' il colore del marchio e resta l'unico che marca una testata. Le
-   altre tinte restano codice semantico e basta: rosa = avversario,
-   ambra = monete e ricompense, ciano = suggerimento. */
+/* IL FILETTO SOTTO IL TITOLO E' SEMPRE GESSO: sei tinte diverse per lo
+   stesso elemento non leggono come un tema. Le altre restano codice
+   semantico: rosa = avversario, ambra = monete, ciano = suggerimento. */
 .sotto-titolo{
   font-family:var(--nero);font-weight:900;font-size:clamp(30px,8vw,52px);text-transform:uppercase;
   line-height:.95;margin:6px 0 20px;text-shadow:3.8px 1.4px 0 rgba(4,12,8,.62);
@@ -1134,7 +1135,16 @@ body.barra #gearBtn{display:none}
 #campi .fbtn.inuse{background:linear-gradient(180deg,#ffc757,#e59200);border-color:#a86f00;color:#12210f;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 2px 0 #7a4c05}
 
-/* schermata SQUADRA */
+/* schermata SQUADRA — sulla lavagna come le sorelle: cornici di smalto */
+.lav-squadra{max-width:560px;margin:0 auto 12px}
+.lav-squadra .lav-corpo{position:relative;padding:24px 26px 16px;z-index:1}
+#squadra .eti{color:var(--gesso)}
+#squadra .namein,#squadra .kitsw{background:rgba(6,20,13,.34);border:2px solid rgba(242,245,239,.42);border-radius:3px}
+#squadra .namein:focus{border-color:var(--gesso)}
+#squadra .kitsw{box-shadow:none}
+#squadra .kitsw.sel{border-color:var(--gesso);background:rgba(242,245,239,.10)}
+#squadra .kitsw small{color:rgba(242,245,239,.74)}
+#squadra .kitsw.sel small{color:var(--gesso)}
 .namein{
   display:block;margin:8px auto 4px;width:100%;max-width:300px;text-align:center;
   font-family:var(--nero);font-weight:900;font-size:19px;text-transform:uppercase;letter-spacing:.04em;
@@ -2243,10 +2253,15 @@ button:active{transform:scale(.96)}
 <div id="squadra" class="ov hidden">
   <div class="box">
     <h1 class="sotto-titolo">SQUADRA</h1>
-    <div class="eti">Nome della squadra</div>
-    <input id="teamNameIn" class="namein" maxlength="12" autocomplete="off" spellcheck="false">
-    <div class="eti" style="margin-top:22px">Kit &middot; maglia e pantaloncini</div>
-    <div class="kitgrid" id="kitGrid"></div>
+    <!-- LA SQUADRA STA SULLA LAVAGNA DELLO SPOGLIATOIO: gesso e smalto -->
+    <div class="lavagna lav-squadra">
+      <div class="lav-corpo">
+        <div class="eti">Nome della squadra</div>
+        <input id="teamNameIn" class="namein" maxlength="12" autocomplete="off" spellcheck="false">
+        <div class="eti" style="margin-top:18px">Kit &middot; maglia e pantaloncini</div>
+        <div class="kitgrid" id="kitGrid"></div>
+      </div>
+    </div>
     <div style="height:18px"></div>
     <div class="azioni"><button class="btnA sec" id="btnBackSquadra">TORNA AL MENU</button></div>
   </div>
@@ -2438,7 +2453,6 @@ button:active{transform:scale(.96)}
         <p><b>Moviola e pausa.</b> Dopo ogni rete si rivede il gol al rallentatore (si spegne dalle Preferenze). <kbd>ESC</kbd> o il bottone <b>&#10074;&#10074;</b> fermano il gioco davvero.</p>
       </div>
     </div>
-    <div style="height:14px"></div>
     <div class="azioni"><button class="btnA sec" id="btnBackMenu">TORNA AL MENU</button></div>
   </div>
 </div>
@@ -2887,12 +2901,18 @@ const FIELDS=[
 ];
 
 /* 8 kit per la squadra del giocatore: maglia (c1) + pantaloncini/calzettoni (c2)
-   pat = pattern della maglia: 0 tinta unita, 1 palato, 2 banda */
+   pat = pattern della maglia: 0 tinta unita con le maniche in c2,
+         1 palato (strisce lungo la corsa), 2 fascia sul petto */
 const KITS=[
   /* la fluo sale di croma insieme al manto (terza taratura del campo):
      #d8ff3d S0,76 Y0,8646 -> #d6ff26 S0,85 Y0,8596; la seconda tinta
      #9fbf1e S0,84 -> #9cc012 S0,91 a Y invariata (0,447->0,448). */
-  { nome:'FLUO',      c1:'#d6ff26', c2:'#9cc012', pat:0 },
+  /* LA CASA DELLA SQUADRA DI CASA E' IL PALATO: vista dall'alto l'area
+     libera piu' grande della maglia e' la SCHIENA, e le strisce lungo la
+     corsa sono il disegno che ci si legge meglio — le maniche da sole
+     (pat 0) stanno quasi tutte sotto testa e braccia. La CPU di
+     partenza porta la FASCIA (ROSA, pat 2): due case, due forme. */
+  { nome:'FLUO',      c1:'#d6ff26', c2:'#9cc012', pat:1 },
   { nome:'CELESTE',   c1:'#79c7ff', c2:'#1e5f9e', pat:1 },
   { nome:'ARANCIO',   c1:'#ff9d2e', c2:'#8a4d00', pat:2 },
   { nome:'VIOLA',     c1:'#c58aff', c2:'#5b2a8a', pat:1 },
@@ -3397,8 +3417,16 @@ function makePlayer(team, idx, x, y, role){
     fiato:100,                         // 0-100: lo sprint lo consuma, la camminata lo recupera
     sprint:false,                      // sta scattando in questo istante
     lob:false,                         // il prossimo tiro sara' un pallonetto
-    skin:SKIN[(seed*2+team)%SKIN.length],
-    hair:HAIR[(seed*3+1)%HAIR.length],
+    /* PELLE E CAPELLI, STABILI E DAVVERO VARI. La mappa vecchia
+       ((seed*2+team) e (seed*3+1) su 6) faceva coincidere la pelle
+       dell'indice 0 con quella dell'indice 3 e — peggio — i capelli
+       cadevano SEMPRE su due sole tinte (1 e 4) per tutti e otto:
+       squadre di gemelli. Con seed%6 e (seed*5+2)%6 ogni squadra ha
+       quattro pelli diverse e quattro teste diverse, le due squadre non
+       si copiano, e il seed resta quello: stessa faccia per lo stesso
+       indice in ogni partita, niente dadi per fotogramma. */
+    skin:SKIN[seed%SKIN.length],
+    hair:HAIR[(seed*5+2)%HAIR.length],
   };
 }
 
@@ -3511,7 +3539,7 @@ function startMatch(mode, diff, opts){
   else { G.oppName = G.mode===2?'ROSA':'CPU'; TEAMCOL[1]=ROSA_KIT; TEAMCOL2[1]='#cf3e6b'; TEAMPAT[1]=2; }
   /* l'alto contrasto vince su qualunque kit avversario: e' un'impostazione
      di accessibilita', non un'estetica */
-  if(SAVE.dalt){ TEAMCOL[1]=BLU_KIT; TEAMCOL2[1]='#123a80'; TEAMPAT[1]=0; }
+  if(SAVE.dalt){ TEAMCOL[1]=BLU_KIT; TEAMCOL2[1]='#123a80'; TEAMPAT[1]=2; }
   refreshTeamRGB();
   setupPlayers(); resetKickoff();
   playWipe();
@@ -9270,7 +9298,7 @@ const TEAMCOL=[COL.fluo,ROSA_KIT];           // tinte squadra (mutabili: kit / t
    luminosita in piu: la banda resta la parte forte della maglia e il
    margine torna dove stava. */
 const TEAMCOL2=['#9cc012','#ec6a96'];        // seconda tinta della maglia
-const TEAMPAT=[0,2];                         // pattern maglia: 0 unita, 1 palato, 2 banda
+const TEAMPAT=[1,2];                         // pattern maglia: 0 maniche, 1 palato, 2 fascia (FLUO e' palato)
 const TEAMRGB=['214,255,38','255,176,207'];  // versione "r,g,b" per anelli e stick
 function hexToRgb(h){
   const m=/^#?([0-9a-f]{6})$/i.exec(String(h||''));
@@ -9341,8 +9369,14 @@ function applyKit(){
   /* modalita' alto contrasto: coppia giallo/blu, distinguibile in ogni
      forma di daltonismo (protanopia, deuteranopia, tritanopia) */
   if(SAVE.dalt){
-    TEAMCOL[0]='#ffe14d'; TEAMCOL2[0]='#8a6a00'; TEAMPAT[0]=0;
-    TEAMCOL[1]=BLU_KIT;   TEAMCOL2[1]='#123a80'; TEAMPAT[1]=0;
+    /* i motivi restano DIVERSI anche qui: maniche per la tua squadra,
+       fascia per l'avversaria. Per chi non separa i colori la FORMA del
+       disegno e' un secondo canale, gratis: la mediana con cui
+       collaudo.js misura il contrasto non tocca mai i blocchi di c2
+       (vedi il conto della corona in kitTex), quindi il 3:1 sul manto
+       non si muove in nessuna delle due modalita'. */
+    TEAMCOL[0]='#ffe14d'; TEAMCOL2[0]='#8a6a00'; TEAMPAT[0]=1;
+    TEAMCOL[1]=BLU_KIT;   TEAMCOL2[1]='#123a80'; TEAMPAT[1]=2;
     GK_KIT[0]=['#f2f5ef','#5a5a5a']; GK_KIT[1]=['#101820','#3a3a3a'];
   }
   refreshTeamRGB();
@@ -11322,9 +11356,6 @@ function updateCamera(rdt){
      riquadro dei quattro piu' vicini. E' cio' che sui viewport alti riporta
      dentro l'inquadratura le due porte e i cartelloni invece di lasciare
      l'85% di prato deserto attorno a un capannello di quattro giocatori. */
-  /* LA MOVIOLA NON SI TOCCA: e' gia' alla distanza giusta ed e' la prova che
-     l'arte regge da vicino. Il replay conserva la forbice stretta di sempre
-     e non conosce il vincolo degli otto giocatori. */
   /* la moviola conserva la forbice stretta e non conosce il vincolo degli
      otto giocatori, ma prende lo stesso avvicinamento del dispositivo: se
      no su un tablet il replay si allontanerebbe rispetto al gioco, cioe'
@@ -12140,20 +12171,43 @@ function kitTex(col,col2,pat,gk,anello){
     g.strokeStyle='rgba(0,0,0,.72)'; g.lineWidth=2.4; g.stroke();
     g.clip();
     g.fillStyle=col2;
+    /* =============================================================
+       LA DIVISA SI DISEGNA, NON SI TINGE. Dall'alto di una maglia si
+       vedono le SPALLE e la SCHIENA: e' li' che il disegno deve stare
+       per leggersi alla nostra inquadratura. Tre case, una per motivo:
+         pat 0  MANICHE in tinta diversa (la casa della squadra di casa:
+                FLUO e' pat 0) — i due spicchi laterali dell'ellisse
+                delle spalle, esattamente dove il negozio e la maglia
+                appesa promettono le maniche in c2;
+         pat 1  PALATO — tre strisce piene lungo l'asse di marcia;
+         pat 2  FASCIA sul petto — una banda unica e larga di traverso,
+                che spunta ai due lati della testa (la casa della CPU
+                di partenza: ROSA e' pat 2).
+       Le MANICHE le portano tutti i motivi: e' cio' che gli anteprima
+       (kitSVG, disegnaMaglia) disegnano gia' da sempre, e il campo era
+       l'unico posto che non manteneva la promessa.
+       IL VINCOLO DI COLLAUDO.JS, verificato motivo per motivo: la
+       finestra della maglia campiona avanti fra -8,4 e -6,6 e di lato
+       fra 2,2 e 4,6 (unita' di mondo). In coordinate della tessitura,
+       con P_DIS 1,18 e lo squash fra 0,94 e 1,12 piu' lo scarto fra
+       direzione di marcia e angolo del corpo, quella corona sta dentro
+       x [-8,2;-4,7] e |y| [1,0;4,8]. Le maniche stanno a x>=-1,8 e
+       |y|>=6,3; la fascia finisce a x=3,6; le strisce esterne partono
+       da |y|=5,7 e quella centrale muore a |y|=1,2 — nessun blocco di
+       c2 entra nella corona, la mediana resta tinta piatta. */
+    g.fillRect(-1.8,-10.6, 9.6, 4.3);            // manica, lato sinistro
+    g.fillRect(-1.8,  6.3, 9.6, 4.3);            // manica, lato destro
     if(pat===3){
       g.fillRect(-12.2,-11,5.2,22);
       g.fillRect(-12,-11,24,3.0);
     }else if(pat===1){
-      g.fillRect(-12,-8.5,24,2.6);
-      g.fillRect(-12,-0.7,24,1.4);
-      g.fillRect(-12,5.9,24,2.6);
+      g.fillRect(-12,-8.8,24,3.1);
+      g.fillRect(-12,-1.2,24,2.4);
+      g.fillRect(-12, 5.7,24,3.1);
     }else if(pat===2){
-      g.fillRect(-2.4,-11,5.2,22);
-      g.fillRect(4.4,-11,1.7,22);
-    }else{
-      g.fillRect(-12.2,-11,4.7,22);
-      g.fillRect(2.9,-11,2,22);
+      g.fillRect(-2.6,-11,6.2,22);
     }
+    /* pat 0: le maniche SONO il disegno — tinta unita con maniche in c2 */
     g.fillStyle='rgba(0,0,0,.16)';
     g.fillRect(-12,6.5,24,3.6);
     /* IL VOLUME DEL TORSO, a gradiente e non a sfaccettature.
@@ -12441,15 +12495,22 @@ function drawPlayer(p){
   if(hasBall && p.slide<0){
     if(!poolTex) buildOmbraTex();
     ctx.drawImage(poolTex, p.x-15.8, p.y+9.8-7.4, 31.6, 14.8);
-    /* sopra la pozza, una MEZZALUNA netta davanti alle scarpe: la sfumatura
-       da sola, a venti pixel di figura, si perde nell'erba; un tratto pieno
-       si vede sempre. Solo l'arco basso, quello che il corpo non copre. */
-    ctx.lineCap='round';
-    ctx.strokeStyle='rgba(0,0,0,.38)'; ctx.lineWidth=3.8;
-    ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0.16*Math.PI,0.84*Math.PI); ctx.stroke();
-    ctx.strokeStyle='rgba(255,206,58,.96)'; ctx.lineWidth=2.2;
-    ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0.16*Math.PI,0.84*Math.PI); ctx.stroke();
-    ctx.lineCap='butt';
+    /* sopra la pozza, l'ANELLO CHIUSO ai piedi del portatore. Era una
+       mezzaluna (0,16-0,84 pi greco): nelle fotografie leggeva come un
+       archetto spezzato, un pezzo d'interfaccia rotto, non come un
+       cerchio posato sull'erba. L'ellisse adesso e' INTERA: il corpo,
+       disegnato dopo, ne copre da solo l'arco posteriore, che e'
+       l'occlusione giusta — quella di un oggetto a terra dietro le
+       gambe — e non un arco lasciato a meta' dal disegno.
+       Quando il portatore e' anche il COMANDATO l'anello non si
+       disegna: li' c'e' gia' l'anello ambra del controllo, e due anelli
+       concentrici sullo stesso paio di scarpe ne fanno zero. */
+    if(!isCtrl){
+      ctx.strokeStyle='rgba(0,0,0,.38)'; ctx.lineWidth=3.8;
+      ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0,6.2832); ctx.stroke();
+      ctx.strokeStyle='rgba(255,206,58,.96)'; ctx.lineWidth=2.2;
+      ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0,6.2832); ctx.stroke();
+    }
   }
   /* ANELLO A TERRA DEL GIOCATORE CONTROLLATO.
      Un filo nel colore della squadra e basta sparisce sul kit dello stesso
@@ -12473,17 +12534,29 @@ function drawPlayer(p){
        respiro; uno che sbiadisce legge come un guasto. A movimento
        ridotto sta fermo a mezza via. Lo zoccolo scuro sotto resta: e'
        quello che lo tiene leggibile su ogni divisa e in alto contrasto. */
+    /* PERCHE' NELLE FOTO RESTAVA UN ARCHETTO, E COME SI CHIUDE DAVVERO.
+       L'ellisse era gia' intera, ma a 17,4 x 7,6 il suo arco alto
+       passava DIETRO meta' sagoma (calzoncini a -15,4, torso a 12,9) e
+       il filo da 2,8 sui lati spariva contro il contorno scuro del
+       corpo: sullo schermo sopravviveva il solo arco davanti ai piedi.
+       Un anello si legge intero quando i suoi FIANCHI escono netti
+       dalla figura: raggio largo a 19,2 (i fianchi passano a due unita'
+       buone da spalle e braccia), filo ambra a 3,4 e zoccolo a 5,4.
+       Resta sotto il corpo — e' un cerchio posato sull'erba — e resta
+       dentro i vincoli: l'estremo laterale (20,6+1,7 di filo) x P_DIS
+       fa 26,3, e l'anello con cui collaudo.js campiona l'erba comincia
+       a 30. Il respiro sta sul raggio fra due valori, com'era. */
     const pl = SAVE.moto ? 0.5+0.5*Math.sin(G.pulse*2.6) : 0.5;
-    const arx=17.4+1.3*pl, ary=7.6+0.57*pl;
-    ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=4.8;
-    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.2,arx,ary,0,0,6.2832); ctx.stroke();
+    const arx=19.2+1.4*pl, ary=8.4+0.61*pl;
+    ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=5.4;
+    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.6,arx,ary,0,0,6.2832); ctx.stroke();
     ctx.strokeStyle='rgba(255,176,32,.95)';
-    ctx.lineWidth=2.8;
-    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.2,arx,ary,0,0,6.2832); ctx.stroke();
+    ctx.lineWidth=3.4;
+    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.6,arx,ary,0,0,6.2832); ctx.stroke();
     /* il filo di luce sul quarto ovest dell'anello: e' un oggetto posato
        sull'erba, e anche lui sta sotto il sole delle sette */
-    ctx.strokeStyle='rgba(255,232,186,.55)'; ctx.lineWidth=1.2;
-    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.2,arx,ary,0, 0.80*Math.PI,1.40*Math.PI); ctx.stroke();
+    ctx.strokeStyle='rgba(255,232,186,.55)'; ctx.lineWidth=1.3;
+    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.6,arx,ary,0, 0.80*Math.PI,1.40*Math.PI); ctx.stroke();
   }
 
   /* L'OMBRA PORTATA non si disegna qui: sta in drawOmbreGiocatori, una
@@ -12943,13 +13016,32 @@ function drawPlayer(p){
        (Direzione, regola 6b: meno bianco sulla sagoma, piu' colore di
        squadra. Il conto della massa di kit migliora insieme al bilancio.) */
     if(hasBall || isCtrl || gk){
+      /* IL NUMERO E' SMALTO, NON UN BOLLINO. Il dischetto bianco con la
+         cifra scura dentro era un francobollo da 2,8 unita': a distanza
+         di camera leggeva come un puntino, non come un numero. Adesso la
+         cifra si stampa DIRETTA sulla maglia, come sui riferimenti:
+         bianco smalto con un filo scuro attorno (strokeText prima del
+         fill), alta 7,5 unita' di font — dimensionata sul torso, che e'
+         largo 24,8. Il filo scuro e' quello che la tiene leggibile anche
+         sul kit bianco e sul fluo.
+         COSTO: due rasterizzazioni di testo invece di una, ma sempre e
+         solo sui due-tre che gia' lo portavano (portatore, comandato,
+         portiere): al piu' sei testi per fotogramma contro gli otto che
+         questa consegna aveva gia' tolto.
+         VINCOLO DI COLLAUDO: il glifo sta attorno a (-8,6;0) come il
+         dischetto di prima e copre MENO area del dischetto pieno (la
+         cifra e' inchiostro, non un disco): i campioni della finestra
+         che puo' toccare li assorbe la mediana, come gia' assorbiva il
+         bordo del dischetto. Verificato rieseguendo collaudo.js. */
       const nx=p.x-ca*8.6, ny=p.y-sa*8.6+yb;
-      ctx.fillStyle='rgba(244,247,241,.94)';
-      ctx.beginPath(); ctx.arc(nx,ny,2.8,0,6.2832); ctx.fill();
-      ctx.fillStyle='rgba(8,16,11,.96)';
-      ctx.font='900 4.4px '+FONT_N;
+      const cifra=String(p.idx+1);
+      ctx.font='900 7.5px '+FONT_N;
       ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(String(p.idx+1), nx, ny+0.3);
+      ctx.lineJoin='round';
+      ctx.strokeStyle='rgba(8,16,11,.88)'; ctx.lineWidth=1.7;
+      ctx.strokeText(cifra, nx, ny+0.3);
+      ctx.fillStyle='#f4f7f1';
+      ctx.fillText(cifra, nx, ny+0.3);
     }
 
     /* TESTA vista dall'alto: da sopra di una persona si vede la NUCA, cioe'
@@ -13343,6 +13435,10 @@ function drawMinimappa(){
   const vy0=Math.max(0,(PA_Y0-Ay)/S2), vy1=Math.min(FH,(PA_Y1-Ay)/S2);
   const quota=Math.max(0,(vx1-vx0))*Math.max(0,(vy1-vy0))/(FW*FH);
   if(quota>=0.92) return;
+  /* Il tentativo di stringerla e incollarla al fondo sui viewport bassi e'
+     stato bocciato a vista: scivolava SOPRA la fascia delle insegne e ne
+     copriva la scritta. Qui sta bene dov'era: 12 px dai bordi, sopra la
+     fascia, con l'insegna che resta intera. */
   const k = Math.min(VW,VH)>=700 ? 1.35 : 1;
   const mw=132*k, mh=64*k, mx=VW-12-mw, my=VH-12-mh;
   ctx.save();
@@ -13848,6 +13944,15 @@ function duelFondo(g){
       c.drawImage(crowdAtlas, t.i*CROWD_CELL,0,CROWD_CELL,CROWD_CELL,
                   VW/2+t.u*g.s(g.hz)-w/2, y-w/2, w, w);
     }
+    /* DIETRO LA PORTA la folla si fa FITTA e SCURA. Seme fisso. */
+    const RD=semeRnd(43), uMax=(g.GW*0.52)/Math.max(1,g.s(g.hz));
+    c.globalAlpha=0.55;
+    for(let i=0;i<230;i++){
+      const u=(RD()*2-1)*uMax, r=RD();
+      const w=Math.max(5, g.GW*0.030*(1-r*0.35));
+      c.drawImage(crowdAtlas, ((RD()*8)|0)*CROWD_CELL,0,CROWD_CELL,CROWD_CELL,
+                  VW/2+u*g.s(g.hz)-w/2, g.hz-3-r*(VH*0.12)-w/2, w, w);
+    }
     c.restore();
     c.fillStyle='rgba(3,9,6,.45)'; c.fillRect(0,0,VW,g.hz);
   }
@@ -13863,6 +13968,34 @@ function duelFondo(g){
     c.lineTo(VW/2+1.9*g.s(ay), ay);
     c.lineTo(VW/2+1.9*g.s(g.GLY), g.GLY);
     c.stroke();
+  }
+  /* IL TAGLIO DI LUCE DEI RIGORI: e' sera, UN faro sul dischetto e sulla
+     porta, il resto in penombra. Cotto qui: zero costo a fotogramma. */
+  {
+    const rSp=Math.max(6,g.GW*0.030);
+    const spX=VW/2, spY=Math.min(g.GLY+(VH-g.GLY)*0.19, g.y1-rSp*1.5);
+    const cy=(g.gy0+spY)/2;
+    let gv=c.createRadialGradient(spX,cy,g.GW*0.55, spX,cy,Math.max(VW,VH)*0.85);
+    gv.addColorStop(0,'rgba(2,8,5,0)');
+    gv.addColorStop(0.5,'rgba(2,8,5,.30)');
+    gv.addColorStop(1,'rgba(2,8,5,.58)');
+    c.fillStyle=gv; c.fillRect(0,0,VW,VH);
+    c.save(); c.globalCompositeOperation='lighter';
+    gv=c.createLinearGradient(0,0,0,spY);
+    gv.addColorStop(0,'rgba(255,232,186,.11)'); gv.addColorStop(1,'rgba(255,232,186,.03)');
+    c.fillStyle=gv;
+    c.beginPath();
+    c.moveTo(spX-g.GW*0.16,-2); c.lineTo(spX+g.GW*0.16,-2);
+    c.lineTo(spX+g.GW*0.60,spY+rSp*3); c.lineTo(spX-g.GW*0.60,spY+rSp*3);
+    c.closePath(); c.fill();
+    for(const [px,py,pr,pa] of [[spX,spY,g.GW*0.26,0.18],[spX,g.gy0+g.GH*0.5,g.GW*0.40,0.10]]){
+      c.save(); c.translate(px,py); c.scale(1,0.42);
+      const gp=c.createRadialGradient(0,0,0, 0,0,pr);
+      gp.addColorStop(0,'rgba(255,226,168,'+pa+')'); gp.addColorStop(1,'rgba(255,226,168,0)');
+      c.fillStyle=gp; c.beginPath(); c.arc(0,0,pr,0,6.2832); c.fill();
+      c.restore();
+    }
+    c.restore();
   }
   return duelBgTex;
 }
@@ -13898,9 +14031,12 @@ function motivoBusto(rx,ry,pat,col2){
   }else if(pat===2){                             // banda centrale
     ctx.fillRect(-rx*0.24,-ry*1.2, rx*0.52, h);
     ctx.fillRect( rx*0.42,-ry*1.2, rx*0.17, h);
-  }else{                                         // due righe verticali
-    ctx.fillRect(-rx*1.2,-ry*1.2, rx*0.44, h);
-    ctx.fillRect( rx*0.26,-ry*1.2, rx*0.20, h);
+  }else{                                         // maniche in tinta diversa
+    /* la stessa casa del campo: pat 0 e' tinta unita con le MANICHE in
+       c2, quindi qui — figura vista da dietro — il c2 sta sui due
+       fianchi, dove sono le maniche, non in due righe inventate */
+    ctx.fillRect(-rx*1.2,-ry*1.2, rx*0.34, h);
+    ctx.fillRect( rx*0.86,-ry*1.2, rx*0.34, h);
   }
   /* la piega d'ombra in fondo al busto: la stessa di kitTex */
   ctx.fillStyle='rgba(0,0,0,.16)';
@@ -13931,6 +14067,15 @@ function drawDuelScene(){
      Adesso la grana c'e' e costa zero: e' proprio la grana che mancava
      perche' questo prato sembrasse lo stesso manto della partita. */
   ctx.drawImage(duelFondo(g), 0,0, VW, VH);
+  /* IL TABELLONE-EROE ANCHE AI RIGORI: piccolo, alla recinzione a est,
+     conto della serie sulle targhette, tiri sulla lavagnetta. La cache
+     sta in disegnaTabelloneEroe: un drawImage a fotogramma. */
+  if(G.rigori){
+    const R=G.rigori;
+    const tw=Math.min(g.GW*0.30,(VW-g.gx1)*0.62), th=tw/1.871;
+    disegnaTabelloneEroe(ctx,(g.gx1+VW)/2-tw/2, g.hz-th*0.28, tw, th,
+      {casa:String(R.seg[0]), ospiti:String(R.seg[1]), minuto:String(R.tiri[0]+R.tiri[1])});
+  }
   /* =====================================================================
      IL PRATO DEL RIGORE PARLA LA LINGUA DEL CAMPO.
      Questa schermata era rimasta al verde vecchio — #16341f, #1d4227,
@@ -14074,6 +14219,14 @@ function drawDuelScene(){
              +g.GH*0.050*anti+g.GH*0.105*ric;
     const rot=lato*1.15*ease-lato*0.20*anti;
     const sc=g.GH*0.0125;
+    /* l'OMBRA LUNGA del portiere, tirata a est dal faro: sfuma a zero */
+    {
+      const oy=g.GLY-g.GH*0.02, lu=g.GW*(0.36+0.10*ease);
+      const gsh=ctx.createLinearGradient(kx,0,kx+lu,0);
+      gsh.addColorStop(0,'rgba(4,10,7,.44)'); gsh.addColorStop(1,'rgba(4,10,7,0)');
+      ctx.fillStyle=gsh;
+      ctx.beginPath(); ctx.ellipse(kx+lu*0.5,oy+g.GH*0.012,lu*0.5,g.GH*0.052,0.05,0,6.2832); ctx.fill();
+    }
     /* l'ombra del portiere cadeva dritta sotto di lui (luce alle 6) mentre
        quella del tiratore andava alle 4: tre luci in un'inquadratura sola
        sono l'errore che faceva sembrare i rigori un pezzo di un altro gioco.
@@ -14914,7 +15067,22 @@ function drawOverlaysCanvas(){
        stessa meta' di schermo, adesso c'e' il tabellone del marcatore, e i
        due devono impilarsi senza toccarsi. Il terzo basso della porta
        resta libero in ogni caso. */
-    const lx=VW/2+(gside?-1:1)*VW*0.20, ly=Math.max(VH*0.38, BAR_H+16+size*0.58);
+    /* A MOVIMENTO RIDOTTO la festa e' un fermo-immagine e va COMPOSTA:
+       colonna unica, riflettore FERMO, penombra ai bordi. Niente tempo. */
+    const lx=VW/2+(gside?-1:1)*VW*(SAVE.moto?0.20:0.235), ly=Math.max(VH*0.38, BAR_H+16+size*0.58);
+    if(!SAVE.moto){
+      ctx.save();
+      ctx.globalAlpha=Math.min(1,t*8);
+      let gv=ctx.createRadialGradient(lx,VH*0.52,Math.min(VW,VH)*0.36, lx,VH*0.52,Math.max(VW,VH)*0.72);
+      gv.addColorStop(0,'rgba(3,9,6,0)'); gv.addColorStop(0.5,'rgba(3,9,6,.22)');
+      gv.addColorStop(1,'rgba(3,9,6,.55)');
+      ctx.fillStyle=gv; ctx.fillRect(0,0,VW,VH);
+      ctx.globalCompositeOperation='lighter';
+      gv=ctx.createRadialGradient(lx,VH*0.52,0, lx,VH*0.52,VH*0.70);
+      gv.addColorStop(0,'rgba(255,232,186,.12)'); gv.addColorStop(1,'rgba(255,232,186,0)');
+      ctx.fillStyle=gv; ctx.fillRect(0,0,VW,VH);
+      ctx.restore();
+    }
     /* IL SECONDO SCOPPIO: quando la scritta si pianta, il colore esce da
        sotto le lettere. E' il battito che mancava fra l'impatto e la
        calma — la festa aveva un solo getto e poi solo discesa. */
@@ -16535,7 +16703,7 @@ window.__test = {
   setDalt(v){
     SAVE.dalt = v?1:0;
     applyKit(); refreshTeamRGB();
-    if(SAVE.dalt){ TEAMCOL[1]=BLU_KIT; TEAMCOL2[1]='#123a80'; TEAMPAT[1]=0; refreshTeamRGB(); }
+    if(SAVE.dalt){ TEAMCOL[1]=BLU_KIT; TEAMCOL2[1]='#123a80'; TEAMPAT[1]=2; refreshTeamRGB(); }
     return SAVE.dalt;
   },
   setTouchButtons(v){ Touch5.useButtons=!!v; },
