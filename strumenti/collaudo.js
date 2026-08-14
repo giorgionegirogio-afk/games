@@ -291,29 +291,42 @@ async function calcetto(browser, srv) {
        dell'illuminazione, l'ombreggiatura e la grana del terreno, ed e'
        proprio li' che si e' persa la visibilita';
      - MAGLIA: una finestra dentro il torso scelta per essere libera da
-       testa, disco del numero e disegno del kit in TUTTI i motivi (tinta
-       unita, palato, banda). In coordinate del giocatore ruotate sulla
-       direzione di marcia: avanti fra -8,4 e -6,6 unita', lato fra 2,2 e
-       4,6 in valore assoluto.
-       LA FINESTRA E' ARRETRATA (era -5,4 / -3,6) PERCHE' CAMPIONAVA LA
-       TESTA. Il punto piu' interno stava a 4,2 unita' dal centro; la
-       calotta ha raggio 4,5, il suo velo d'ombra arriva a ~5,4, e con la
-       figura disegnata a P_DIS=1,18 tutto cio' cresce fino a ~6,4. In
-       posa ferma la mediana reggeva; su un giocatore che gira o carica la
-       finestra scivolava sulla calotta scura e misurava i capelli, non la
-       maglia — mediane da 0,42x della tinta vera, verificato ritagliando
-       il canvas nel fotogramma incriminato. Con la camera avvicinata i
-       giocatori inquadrati sono soprattutto quelli sul pallone (che
-       girano di continuo) e il dado usciva sbagliato una volta su tre.
-       A -8,4/-6,6 la finestra sta oltre il velo della testa (r minima
-       7,1 > 6,4) e dentro il busto (semiasse 12,4 x P_DIS = 14,6) anche
-       con lo schiacciamento al massimo; l'ultima fila puo' sfiorare il
-       blocco della seconda tinta del kit, che e' comunque maglia e la
-       mediana lo assorbe;
+       testa, numero e disegno del kit in TUTTI i motivi (tinta unita,
+       palato, banda).
+       RITARATA PER L'INNESTO Rig3D (2026-08-14), E DICHIARATA: prima le
+       figure erano viste in pianta pura e il torso era un'ellisse
+       ATTORNO al centro, quindi la finestra ruotava con la direzione di
+       marcia (avanti -8,4/-6,6, lato 2,2/4,6). Il rig disegna la figura
+       IN PIEDI sullo schermo (camera 'alto', 50 gradi): il torso e' una
+       capsula VERTICALE SOPRA il centro, uguale comunque il corpo sia
+       girato, e la vecchia finestra cadeva sull'erba (misurato: 1,05:1,
+       cioe' erba su erba). La finestra nuova e' FISSA sullo schermo:
+       lato fra -1,5 e +1,5, sopra fra -12,5 e -10,5 unita' dal centro.
+       IL CONTO, VERIFICATO SUI PIXEL e non solo sulla carta (la sonda:
+       classificare per colore i pixel attorno a ogni giocatore in 4
+       fotogrammi a seme fisso): con piedi a +10, altezza 34, camera a
+       50 gradi (ce=0,643 -> scala 27,8) e P_DIS=1,18, la maglia copre
+       la colonna fra circa -19 e -6 in tutte le andature osservate.
+       PERCHE' COSI' BASSA E STRETTA: il disegno del kit adesso sta SUL
+       torso del rig — la FASCIA e' una banda al 60% del segmento
+       pelvi-collo (sta fra -13 e -17 nelle pose comuni) e il PALATO due
+       strisce verticali a +-2,7 dal filo del busto. Una prima taratura
+       a -17/-12,5 x +-2 misurava la seconda tinta al posto della prima:
+       la mediana della maglia CPU usciva ESATTAMENTE #ec6a96, cioe' il
+       colore della fascia, e il rapporto 2,07:1 era il suo, non quello
+       della divisa. Le tre file a -12,5/-10,5 stanno SOTTO la fascia e
+       dentro le strisce; il petto verso camera con lo schiaccio pieno
+       puo' ancora alzare la fascia fin qui, ma e' una minoranza di pose
+       e la mediana la assorbe — ed era gia' cosi' per l'ultima fila
+       della finestra vecchia;
      - ERBA: un anello fra 30 e 42 unita' dal giocatore, scartando i punti
        vicini a un altro corpo, alla palla o all'ombra portata (che cade
        in basso a destra, +4,2/+7,8) e i punti fuori dal campo o sotto le
-       fasce del tabellone;
+       fasce del tabellone. Il riquadro di esclusione attorno ai corpi e'
+       ALZATO per il rig (le figure adesso si estendono fino a ~-24,5
+       sopra il centro, testa compresa): centro verticale a +2 e
+       semialtezza 28, cosi' l'anello non campiona mai la testa di un
+       ALTRO giocatore scambiandola per erba;
      - il colore rappresentativo e' la MEDIANA per canale dei campioni:
        regge le righe di gesso, le due bande di tosatura e la grana senza
        farsi trascinare da una minoranza di pixel;
@@ -384,10 +397,12 @@ async function calcetto(browser, srv) {
              o in tuffo il torso e' un'altra ellisse e la finestra non tiene */
           if (p.role === 'gk' || p.out > 0) continue;
           if (p.slide >= 0 || p.recover > 0 || p.dive > 0 || p.celeb > 0) continue;
-          const a = Math.atan2(p.fy, p.fx), ca = Math.cos(a), sa = Math.sin(a);
-          for (const av of [-8.4, -7.8, -7.2, -6.6]) {
-            for (const la of [-4.6, -4.0, -3.4, -2.8, -2.2, 2.2, 2.8, 3.4, 4.0, 4.6]) {
-              const wx = p.x + av * ca - la * sa, wy = p.y + av * sa + la * ca;
+          /* finestra FISSA sullo schermo: il torso del rig sta in piedi
+             sopra il centro comunque sia girato il corpo (vedi il conto
+             nel commento in testa) */
+          for (const av of [-12.5, -11.5, -10.5]) {
+            for (const la of [-1.5, -1.0, -0.5, 0, 0.5, 1.0, 1.5]) {
+              const wx = p.x + la, wy = p.y + av;
               const sx = wx * S2 + Ax, sy = wy * S2 + Ay;
               if (!inQuadro(sx, sy)) continue;
               const c = pixel(sx, sy); if (c) maglia[p.team].push(c);
@@ -402,7 +417,9 @@ async function calcetto(browser, srv) {
               for (const q of t.players) {
                 if (q.out > 0) continue;
                 if (q !== p && Math.hypot(q.x - wx, q.y - wy) < 30) { libero = false; break; }
-                if (Math.abs(wx - (q.x + 4.2)) < 26 && Math.abs(wy - (q.y + 7.8)) < 22) { libero = false; break; }
+                /* il riquadro copre corpo+ombra ANCHE in altezza: la figura
+                   del rig sale fino a ~-24,5 (testa) e l'ombra scende a +20 */
+                if (Math.abs(wx - (q.x + 4.2)) < 26 && Math.abs(wy - (q.y + 2)) < 28) { libero = false; break; }
               }
               if (!libero) continue;
               if (Math.hypot(t.ball.x - wx, t.ball.y - wy) < 24) continue;

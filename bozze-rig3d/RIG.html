@@ -9,18 +9,21 @@
 
   COSTO MISURATO (22 figure x 600 frame, 30px, camera alto,
   Chromium headless su questa macchina, 2026-08-14, dopo la passata
-  su rovesciata/camminata/frenata/corsa/palla: ombra a quota dei
-  giunti, polvere d'impatto e fotogramma di contatto compresi):
-    clip camminata:          ~1.3 ms/frame per TUTTE le 22 figure (~745 fps)
-    clip corsa:              ~1.4-1.5 ms/frame                    (~680 fps)
-    clip tiro (con palla):   ~1.6-1.7 ms/frame                    (~610 fps)
-    clip finta (palla):      ~1.6 ms/frame                        (~610 fps)
-    clip rovesciata (palla,
-      ombra staccata+polvere): ~1.9 ms/frame                      (~520 fps)
-    le altre clip stanno tra questi estremi (misura precedente
-    1.3-2.1 ms; il costo aggiunto oggi e' <0.1 ms complessivo).
-    => <0.1 ms a figura: a 60 fps il rig usa ~12% del bilancio di frame,
-       e resta sotto i ~2 ms per 22 figure anche nella clip peggiore.
+  su tuffo (volo vero), palla (velocita' d'uscita + prospettiva PRF +
+  scia a fantasmi), frenata (compasso + bilanciere + solchi) e
+  rovesciata (scia del piede, ombra a distacco quadratico):
+    clip camminata:          ~1.3 ms/frame per TUTTE le 22 figure (~760 fps)
+    clip corsa:              ~1.4 ms/frame                        (~710 fps)
+    clip frenata (solchi):   ~1.6 ms/frame                        (~620 fps)
+    clip tiro (palla+scia):  ~1.6 ms/frame                        (~610 fps)
+    clip finta (palla):      ~1.7 ms/frame                        (~600 fps)
+    clip tuffo (palla, volo,
+      polvere):              ~1.85 ms/frame                       (~540 fps)
+    clip rovesciata (palla, scia
+      piede, ombra+polvere): ~1.86 ms/frame                       (~538 fps)
+    le altre clip stanno tra questi estremi.
+    => <0.1 ms a figura: a 60 fps il rig usa ~11% del bilancio di frame,
+       e resta sotto i ~2 ms per 22 figure anche nelle clip peggiori.
   La stessa misura gira a ogni apertura della pagina (?clipcosto=nome
   per misurare un'altra clip): il numero fresco appare in console e
   nell'angolo in basso a destra.
@@ -112,6 +115,10 @@ const SD = new Float32Array(NJ);     // profondita' camera
 const RPALLA=0.11;
 const PALLA=new Float32Array(4);     // x,y,z,schiacciata
 let PSX=0,PSY=0,PSD=0;               // proiezione schermo della palla
+let PRF=1;                           // fattore prospettico della sola palla
+const PALLB=new Float32Array(4);     // fantasma della scia (riusato)
+const GHX=new Float32Array(2), GHY=new Float32Array(2);   // scia palla
+const SCX=new Float32Array(2), SCY=new Float32Array(2);   // scia piede
 
 /* rampa morbida 0->1 tra a e b */
 function sm(u,a,b){ let t=(u-a)/(b-a); if(t<0)t=0; else if(t>1)t=1; return t*t*(3-2*t); }
@@ -193,11 +200,15 @@ function poseCorsa(u){ poseLoco(u,Q_CORSA); }
 
 /* frenata: piede piantato avanti col tacco, ma il PESO sta DIETRO —
    busto reclinato indietro, bacino arretrato sulla gamba piegata sotto;
-   gli avambracci escono AVANTI a bilanciare (mai sopra la testa) e una
-   torsione di tre quarti del busto tiene leggibile l'inclinazione anche
-   a 0°/180°, lungo l'asse di vista; oscillazione smorzata d'assestamento */
+   torsione di tre quarti del busto per la vista sagittale; e gli indizi
+   che VIVONO IN PIANTA (a 0°/180° la firma sagittale sparisce):
+   il passo che si ALLARGA A COMPASSO, le braccia a BILANCIERE LATERALE
+   nel primo terzo (poi avanti a bilanciare), e i piedi che ARANO — i
+   solchi di slittata dietro i tacchi li disegna clip.polvere.solchi */
 function poseFrenata(u){
   const osc=Math.sin(u*TAU*1.8)*Math.exp(-2.5*u);
+  const largo=sm(u,0.0,0.16);            // il passo si allarga a compasso
+  const terzo=1-sm(u,0.26,0.44);         // il primo terzo dell'arresto
   const crouch=0.24+0.03*osc, lean=-0.38+0.10*osc;
   const pelvY=0.93-crouch;
   corpo(pelvY,0,lean,0);
@@ -206,11 +217,16 @@ function poseFrenata(u){
   const sl=Math.sin(lean), cl=Math.cos(lean);
   const shY=pelvY+0.50*cl, shZ=0.50*sl+dz;
   const st=0.55, cs=Math.cos(st), ss=Math.sin(st);   // torsione di tre quarti
-  braccio(SHR,ELR,HAR,  SHW*cs, shY, shZ+SHW*ss, 0.55+0.18*osc,1.05, 0.10, 1);
-  braccio(SHL,ELL,HAL, -SHW*cs, shY, shZ-SHW*ss, 0.40+0.14*osc,1.20, 0.12,-1);
+  // bilanciere: braccia basse e LARGHE all'inizio, poi avanti
+  const aR2=0.12*terzo+(0.55+0.18*osc)*(1-terzo);
+  const aL2=0.10*terzo+(0.40+0.14*osc)*(1-terzo);
+  const eR2=0.15*terzo+1.05*(1-terzo), eL2=0.20*terzo+1.20*(1-terzo);
+  const outT=0.26*terzo;
+  braccio(SHR,ELR,HAR,  SHW*cs, shY, shZ+SHW*ss, aR2,eR2, 0.10+outT, 1);
+  braccio(SHL,ELL,HAL, -SHW*cs, shY, shZ-SHW*ss, aL2,eL2, 0.12+outT,-1);
   const ht=-0.18, ch=Math.cos(ht), shh=Math.sin(ht); // bacino in controtorsione
-  gamba(HIPR,KNR,FTR,TOR,  HIPW*ch, pelvY, dz+HIPW*shh,  0.72+0.05*osc, 0.06,  0.11);
-  gamba(HIPL,KNL,FTL,TOL, -HIPW*ch, pelvY, dz-HIPW*shh,  0.05, 0.95+0.08*osc, -0.14);
+  gamba(HIPR,KNR,FTR,TOR,  HIPW*ch, pelvY, dz+HIPW*shh,  0.72+0.05*osc, 0.06,  0.11+0.13*largo);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW*ch, pelvY, dz-HIPW*shh,  0.05, 0.95+0.08*osc, -0.14-0.13*largo);
 }
 
 /* ============================================================
@@ -262,9 +278,12 @@ function pallaCalcio(u,q,out){
   else if(u<ti){ const c=(u-tc)/0.035;   // il contatto: toccata e spinta
     out[0]=q.px; out[1]=RPALLA*(1-0.10*c); out[2]=q.pz+0.06*c*c; }
   else{
-    const f=(u-ti)/(1-ti), e=1-(1-f)*(1-f), d=q.gitt*e;
+    // VELOCITA' D'USCITA vera: ease cubico = velocita' iniziale alta
+    // (3x la media) con decadimento; le gittate sono in metri veri,
+    // la palla ESCE dal quadro invece di sospendersi accanto al piede
+    const f=(u-ti)/(1-ti), m=1-f, e=1-m*m*m, d=q.gitt*e;
     out[0]=q.px+q.dirX*d; out[2]=q.pz+0.06+d;
-    out[1]=RPALLA*0.90+q.alza*(q.arco?4*f*(1-f):1-(1-f)*(1-f))+RPALLA*0.10*e;
+    out[1]=RPALLA*0.90+q.alza*(q.arco?4*f*(1-f):e)+RPALLA*0.10*e;
   }
   const dw=Math.abs(u-ti);
   out[3]=dw<0.05?0.40*(1-dw/0.05):0;     // schiacciata sul collo del piede
@@ -273,19 +292,19 @@ function pallaCalcio(u,q,out){
 const Q_PASSAGGIO={tImp:0.44,swing:0.13,segue:0.22, back:0.55,fwd:0.55,follow:1.00,
   kneeBack:0.85,kneeImp:0.18,kneeSegue:0.45, crouch:0.06,dip:0.05,
   leanBack:0.05,leanFwd:0.10, apriSp:0.12,apriAn:0.06, arm:0.45,armOut:0.05,
-  appA:0.28,appK:0.30, px:0.10,pz:0.34, gitt:0.95,alza:0,arco:0,dirX:0};
+  appA:0.28,appK:0.30, px:0.10,pz:0.34, gitt:2.8,alza:0,arco:0,dirX:0};
 const Q_FILTRANTE={tImp:0.36,swing:0.09,segue:0.18, back:0.75,fwd:0.65,follow:1.20,
   kneeBack:1.05,kneeImp:0.12,kneeSegue:0.40, crouch:0.10,dip:0.06,
   leanBack:0.08,leanFwd:0.17, apriSp:0.16,apriAn:0.08, arm:0.65,armOut:0.06,
-  appA:0.30,appK:0.38, px:0.10,pz:0.36, gitt:1.35,alza:0,arco:0,dirX:0};
+  appA:0.30,appK:0.38, px:0.10,pz:0.36, gitt:4.0,alza:0,arco:0,dirX:0};
 const Q_CROSS={tImp:0.44,swing:0.12,segue:0.26, back:0.70,fwd:0.60,follow:1.15,
   kneeBack:1.00,kneeImp:0.15,kneeSegue:0.55, crouch:0.08,dip:0.05,
   leanBack:0.12,leanFwd:0.02, apriSp:0.55,apriAn:0.28, arm:0.55,armOut:0.11,
-  attraversa:0.30, appA:0.26,appK:0.34, px:0.14,pz:0.34, gitt:0.85,alza:0.95,arco:1,dirX:-0.35};
+  attraversa:0.30, appA:0.26,appK:0.34, px:0.14,pz:0.34, gitt:3.6,alza:0.95,arco:1,dirX:-0.35};
 const Q_TIRO={tImp:0.46,swing:0.11,segue:0.26, back:1.00,fwd:0.62,follow:1.70,
   kneeBack:1.40,kneeImp:0.10,kneeSegue:0.55, crouch:0.11,dip:0.08,
   leanBack:0.16,leanFwd:0.26, apriSp:0.25,apriAn:0.12, arm:0.75,armOut:0.08,
-  appA:0.30,appK:0.36, px:0.10,pz:0.36, gitt:1.45,alza:0.5,arco:0,dirX:0};
+  appA:0.30,appK:0.36, px:0.10,pz:0.36, gitt:5.5,alza:0.5,arco:0,dirX:0};
 
 function posePassaggio(u){ poseCalcio(u,Q_PASSAGGIO); }
 function poseFiltrante(u){ poseCalcio(u,Q_FILTRANTE); }
@@ -377,7 +396,13 @@ function poseScivolata(u){
    l'IMPATTO (botta + polvere), mezzo secondo disteso a terra con
    l'oscillata smorzata, e la RIALZATA IN TRE TEMPI: seduto (il busto
    su, le mani puntate dietro), raccolto (il piede sotto, il bacino
-   su), in piedi. Tutte le curve tornano al valore di partenza. */
+   su), in piedi. Tutte le curve tornano al valore di partenza.
+   CRITERIO D'USO: in partita la rovesciata si vede soprattutto in
+   CAMERA BASSA (riprese del gol): quella vista e' la principale.
+   Alla pianta bastano gli indizi di quota e rotazione: l'ombra
+   NETTAMENTE staccata (fattore quadratico sulle quote alte), l'arco
+   di scia dietro il piede che frusta (clip.scia) e la palla SOPRA la
+   figura, piu' grande perche' vicina alla camera alta (PRF). */
 function poseRovesciata(u){
   const ca=sm(u,0.02,0.14);              // carica
   const st=sm(u,0.14,0.26);              // stacco
@@ -483,50 +508,62 @@ function pallaParata(u,o){
   o[3]=dw<0.04?0.42*(1-dw/0.04):0;
 }
 
-/* TUFFO LATERALE: ANTICIPO la carica bassa con le braccia indietro,
-   lo stacco, il volo con ESTENSIONE COMPLETA (busto quasi orizzontale,
-   braccia in linea oltre la testa, gambe tese dietro), la deviazione,
-   l'ATTERRAGGIO sul fianco con la botta (PESO) e l'oscillata smorzata
-   dell'assestamento (SEGUITO), poi la rialzata spinta dalle braccia. */
+/* TUFFO LATERALE: la sequenza VERA del volo. ANTICIPO il caricamento
+   sulle gambe (crouch, braccia indietro), la SPINTA con la distensione
+   completa — il bacino SALE e i piedi LASCIANO il terreno — il VOLO
+   con la quota vera dei giunti (l'ombra si stacca e rimpicciolisce da
+   sola, guidata dal giunto piu' basso), la deviazione all'apice,
+   l'ATTERRAGGIO sul fianco con la botta (PESO), lo SCIVOLAMENTO in
+   avanti con la polvere, e la rialzata col piede raccolto sotto. */
 function poseTuffo(u){
-  const ca=sm(u,0.02,0.14);              // carica
-  const sp=sm(u,0.14,0.24);              // stacco
-  const vol=sm(u,0.18,0.36);             // estensione in volo
-  const cad=sm(u,0.44,0.58);             // caduta a terra
-  const ri=sm(u,0.70,0.96);              // rialzata
-  const dd=(u-0.40)/0.05, imp=Math.exp(-dd*dd);
+  const ca=sm(u,0.02,0.13);              // caricamento sulle gambe
+  const sp=sm(u,0.13,0.21);              // SPINTA: il bacino sale
+  const est=sm(u,0.13,0.30);             // le gambe si distendono dietro
+  const vol=sm(u,0.17,0.34);             // volo: il busto si stende
+  const cad=sm(u,0.44,0.58);             // discesa fino al fianco
+  const ri=sm(u,0.74,0.96);              // rialzata
+  const rac=sm(u,0.72,0.84)*(1-sm(u,0.86,0.98));   // il piede sotto
+  const dd=(u-0.40)/0.05, imp=Math.exp(-dd*dd);    // deviazione all'apice
+  const db=(u-0.58)/0.05, botta=Math.exp(-db*db);  // la botta a terra
   const p=u-0.58, osc=p>0?Math.sin(p*9)*Math.exp(-5*p):0;  // assestamento
-  const pelvY=0.88-0.26*ca+0.24*sp-0.55*cad+0.57*ri-0.02*imp+0.02*osc;
-  const lean=0.12+0.24*ca+1.02*vol+0.06*imp-0.12*cad-1.14*ri+0.10*osc;
+  const slitta=sm(u,0.56,0.72)*(1-sm(u,0.80,0.97));        // scivolamento
+  const pelvY=0.88-0.30*ca+0.47*sp-0.78*cad+0.61*ri-0.04*botta+0.02*osc;
+  const lean=0.12+0.18*ca+1.10*vol+0.05*imp-1.28*ri+0.10*osc;
   corpo(pelvY,0,lean,0);
   const sl=Math.sin(lean), cl=Math.cos(lean);
   const shY=pelvY+0.50*cl, shZ=0.50*sl;
   // braccia: indietro in carica, lanciate in linea col busto nel volo
-  const aBR=0.45-1.00*ca+2.50*vol-0.55*cad-0.95*ri+0.15*osc;
+  const aBR=0.45-1.05*ca+2.55*vol+0.12*imp-0.55*cad-0.95*ri+0.15*osc;
   const aBL=aBR-0.22*vol+0.22*ri;
   const eB=0.45+0.40*ca-0.75*vol+0.55*cad-0.20*ri;
   const outB=0.06+0.06*vol-0.06*ri;
   braccio(SHR,ELR,HAR,  SHW, shY, shZ, aBR,eB, outB, 1);
   braccio(SHL,ELL,HAL, -SHW, shY, shZ, aBL,eB, outB,-1);
-  // gambe: piegate in carica, tese dietro nel volo, sotto per rialzarsi
+  // gambe: piegate in carica, DISTESE DIETRO in volo (via da terra),
+  // raccolte sotto per la rialzata
   const hz=0.06*sl;
-  const aR=0.22-0.50*ca-0.55*vol+0.28*cad+0.77*ri;
-  const aL=aR+0.28*vol-0.28*ri;
-  const kR=0.40+0.60*ca-0.85*sp+0.10*cad+0.15*ri;
+  const aR=0.22+0.33*ca-1.60*est+0.35*cad+0.35*rac+0.92*ri;
+  const aL=aR+0.25*vol-0.25*ri;
+  const kR=0.40+1.15*ca-1.45*est+0.15*cad+0.90*rac+0.15*ri+0.20*botta;
   const kL=kR+0.15*cad-0.15*ri;
   gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, hz, aR,kR,  HIPW);
   gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, hz, aL,kL, -HIPW);
+  // lo scivolamento sul fianco: tutto il corpo avanza, poi rientra
+  if(slitta>0){ const dz2=0.34*slitta; for(let j=0;j<NJ;j++) P[j*3+2]+=dz2; }
 }
 /* palla del tuffo: il tiro arriva a mezza altezza, la schiacciata sui
-   pugni all'apice dell'estensione, la deviazione che scappa di lato */
+   pugni all'apice, la deviazione con velocita' d'uscita alta che
+   RICADE con la gravita' vera, rimbalza corta e rotola FUORI dal quadro */
 function pallaTuffo(u,o){
   const ti=0.40;
   if(u<ti){ const f=u/ti;
-    o[0]=0; o[1]=1.32-0.30*f; o[2]=3.00-2.05*f;
-  }else{ const f=(u-ti)/(1-ti), e=1-(1-f)*(1-f);
-    o[0]=0.30*e; o[2]=0.95+1.55*e;
-    let y=1.02-0.30*f-0.85*f*f;  // la deviazione RICADE accelerando (gravita')
-    if(y<RPALLA)y=RPALLA; o[1]=y;
+    o[0]=0; o[1]=1.34-0.04*f; o[2]=3.00-2.05*f;   // arriva SUI PUGNI (y~1.38)
+  }else{ const f=(u-ti)/(1-ti), m=1-f, e=1-m*m*m;
+    o[0]=0.90*e; o[2]=0.95+3.60*e;
+    let y=1.30+0.50*f-5.0*f*f;      // parabola vera nel tempo
+    if(y<RPALLA){ const g=(f-0.54)*4.3;   // rimbalzo corto, poi rotola
+      y=RPALLA+(g>0&&g<1?0.50*g*(1-g):0); }
+    o[1]=y;
   }
   const dw=Math.abs(u-ti);
   o[3]=dw<0.04?0.42*(1-dw/0.04):0;
@@ -770,16 +807,17 @@ const CLIPS={
   fermo:     {freq:0.5, pose:poseFermo},
   camminata: {freq:1.5, pose:poseCamminata},
   corsa:     {freq:2.6, pose:poseCorsa},
-  frenata:   {freq:0.9, pose:poseFrenata},
+  frenata:   {freq:0.9, pose:poseFrenata, polvere:{t:0.02,d:0.34,solchi:1}},
   passaggio: {freq:1.0, pose:posePassaggio, palla:function(u,o){pallaCalcio(u,Q_PASSAGGIO,o);}},
   filtrante: {freq:1.5, pose:poseFiltrante, palla:function(u,o){pallaCalcio(u,Q_FILTRANTE,o);}},
   cross:     {freq:0.8, pose:poseCross,     palla:function(u,o){pallaCalcio(u,Q_CROSS,o);}},
   tiro:      {freq:0.7, pose:poseTiro,      palla:function(u,o){pallaCalcio(u,Q_TIRO,o);}},
   finta:     {freq:1.0, pose:poseFinta,     palla:pallaFinta},
   scivolata: {freq:0.8, pose:poseScivolata},
-  rovesciata:{freq:0.5, pose:poseRovesciata,palla:pallaRovesciata,polvere:{t:0.555,d:0.22}},
+  rovesciata:{freq:0.5, pose:poseRovesciata,palla:pallaRovesciata,polvere:{t:0.555,d:0.22},
+              scia:{j:TOR,t0:0.31,t1:0.47}},
   parata:    {freq:0.65,pose:poseParata,    palla:pallaParata},
-  tuffo:     {freq:0.45,pose:poseTuffo,     palla:pallaTuffo},
+  tuffo:     {freq:0.45,pose:poseTuffo,     palla:pallaTuffo, polvere:{t:0.56,d:0.20}},
   presa:     {freq:0.55,pose:posePresa,     palla:pallaPresa},
   rinvio:    {freq:0.55,pose:poseRinvio,    palla:pallaRinvio},
   esultanza: {freq:2.4, pose:poseEsultanza},
@@ -869,9 +907,12 @@ function testa(ctx,s,cyw,syw,cam,look){
 
 /* palla: cerchio chiaro bordato scuro (leggibile anche a 2-3 px di raggio),
    con la macchia dell'esagono solo quando c'e' spazio; la schiacciata
-   all'impatto e' la deformazione che vende il colpo */
+   all'impatto e' la deformazione che vende il colpo. PRF e' la
+   prospettiva della sola palla: lontana dalla camera RIMPICCIOLISCE
+   (il tiro che parte), alta e vicina alla camera dall'alto INGRANDISCE
+   (la palla sopra la rovesciata) */
 function disegnaPalla(ctx,s,look){
-  const r=RPALLA*s, sq=PALLA[3];
+  const r=RPALLA*s*PRF, sq=PALLA[3];
   const rx=r*(1+sq*0.7), ry=r*(1-sq);
   ctx.fillStyle=look.palla;
   ctx.beginPath(); ctx.ellipse(PSX,PSY,rx,ry,0,0,TAU); ctx.fill();
@@ -890,10 +931,21 @@ function disegnaPalla(ctx,s,look){
 function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look){
   const clip=CLIPS[nomeClip], cam=CAMERE[nomeCam];
   let u=(tSec*clip.freq)%1; if(u<0)u+=1;
-  clip.pose(u);
   const cyw=Math.cos(yaw), syw=Math.sin(yaw);
   const ce=cam.ce<0.58?0.58:cam.ce;   // non gonfiare troppo le falcate in pianta
   const s=hPx/(1.9*ce);
+  // arco di scia del giunto che frusta (rovesciata): le due posizioni
+  // passate, valutate PRIMA della posa vera (P e' scratch riusato)
+  let nsc=0;
+  if(clip.scia && u>clip.scia.t0 && u<clip.scia.t1){
+    for(let g=2;g>=1;g--){
+      clip.pose(u-0.022*g);
+      const j=clip.scia.j, x=P[j*3], y=P[j*3+1], z=P[j*3+2];
+      const xw=x*cyw+z*syw, zw=z*cyw-x*syw;
+      SCX[nsc]=cx+xw*s; SCY[nsc]=cy-(y*cam.ce+zw*cam.se)*s; nsc++;
+    }
+  }
+  clip.pose(u);
   for(let j=0;j<NJ;j++){
     const x=P[j*3], y=P[j*3+1], z=P[j*3+2];
     const xw=x*cyw+z*syw, zw=z*cyw-x*syw;
@@ -902,7 +954,7 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look){
     SD[j]=zw*cam.ce-y*cam.se;
   }
   // palla della clip (se prevista): stessa proiezione dei giunti
-  let pallaQui=false, pxw=0,pzw=0,pby=0;
+  let pallaQui=false, pxw=0,pzw=0,pby=0, nGh=0;
   if(clip.palla){
     clip.palla(u,PALLA); pallaQui=true;
     let bx=PALLA[0]; pby=PALLA[1]; const bz=PALLA[2];
@@ -913,6 +965,20 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look){
     pxw=bx*cyw+bz*syw; pzw=bz*cyw-bx*syw;
     PSX=cx+pxw*s; PSY=cy-(pby*cam.ce+pzw*cam.se)*s;
     PSD=pzw*cam.ce-pby*cam.se;
+    // prospettiva della sola palla: la profondita' camera la scala
+    if(PSD>0){ PRF=1/(1+0.12*PSD); if(PRF<0.45)PRF=0.45; }
+    else{ PRF=1-0.30*PSD; if(PRF>1.5)PRF=1.5; }
+    // SCIA breve: 2 fantasmi quando la palla percorre tanto spazio per
+    // unita' di tempo (il primo decimo del volo veloce: e' la scia che
+    // vende la velocita' a 30px), niente quando rallenta
+    for(let g=1;g<=2;g++){
+      const ug=u-0.018*g; if(ug<0)break;
+      clip.palla(ug,PALLB);
+      const gx2=PALLA[0]-PALLB[0], gy2=PALLA[1]-PALLB[1], gz2=PALLA[2]-PALLB[2];
+      if(gx2*gx2+gy2*gy2+gz2*gz2 < 0.10*g*g) break;   // ~0.32 m a passo
+      const xw2=PALLB[0]*cyw+PALLB[2]*syw, zw2=PALLB[2]*cyw-PALLB[0]*syw;
+      GHX[nGh]=cx+xw2*s; GHY[nGh]=cy-(PALLB[1]*cam.ce+zw2*cam.se)*s; nGh++;
+    }
   }
   // ombra a terra (niente shadowBlur: una semplice ellisse); in volo
   // si STACCA: la quota del giunto piu' basso la rimpicciolisce e sbiadisce
@@ -921,29 +987,65 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look){
     const xw=x*cyw+z*syw, zw=z*cyw-x*syw;
     let mn=P[1]; for(let j=1;j<NJ;j++){ const yy=P[j*3+1]; if(yy<mn)mn=yy; }
     let quota=mn-0.05; if(quota<0)quota=0;
-    const fo=1/(1+2.6*quota);
+    // il termine quadratico stacca NETTAMENTE l'ombra alle quote alte
+    // (rovesciata, tuffo): e' l'indizio d'aria che la pianta capisce
+    const fo=1/(1+2.6*quota+3.2*quota*quota);
     const gx=cx+xw*s, gy=cy-zw*cam.se*s;
-    ctx.globalAlpha=0.22*(0.30+0.70*fo); ctx.fillStyle='#000';
+    // l'alfa cala meno del raggio: l'ombra piccola resta VISIBILE anche
+    // a 30px — e' il distacco che dice "in aria", non la sparizione
+    ctx.globalAlpha=0.22*(0.40+0.60*fo); ctx.fillStyle='#000';
     ctx.beginPath();
     ctx.ellipse(gx, gy, 0.27*s*fo, (0.27*s*cam.se+0.5)*fo, 0,0,TAU);
     ctx.fill();
-    if(clip.polvere){                 // lo sbuffo di polvere dell'impatto
+    if(clip.polvere){                 // la polvere dell'impatto
       const pv=(u-clip.polvere.t)/clip.polvere.d;
       if(pv>0&&pv<1){
-        ctx.globalAlpha=0.40*(1-pv); ctx.fillStyle='#cdd9b9';
-        const r=(0.06+0.17*pv)*s, dx=(0.16+0.32*pv)*s, ry=(0.03+0.11*pv)*s*cam.ce;
-        ctx.beginPath(); ctx.arc(gx-dx, gy-ry, r*0.8, 0, TAU); ctx.fill();
-        ctx.beginPath(); ctx.arc(gx+dx*0.85, gy-ry*1.2, r, 0, TAU); ctx.fill();
-        ctx.beginPath(); ctx.arc(gx+dx*0.15, gy-ry*1.7, r*0.6, 0, TAU); ctx.fill();
+        if(clip.polvere.solchi){
+          // frenata: i piedi ARANO — due segni brevi dietro i tacchi
+          ctx.globalAlpha=0.50*(1-pv); ctx.strokeStyle='#cdd9b9';
+          const lw=0.05*s; ctx.lineWidth=lw<1?1:lw;
+          const lm=(0.14+0.10*pv)*s;
+          for(let f2=0;f2<2;f2++){
+            const j=f2?FTL:FTR, xj=P[j*3], zj=P[j*3+2];
+            const xwf=xj*cyw+zj*syw, zwf=zj*cyw-xj*syw;
+            const fx2=cx+xwf*s, fy2=cy-zwf*cam.se*s;
+            ctx.beginPath(); ctx.moveTo(fx2,fy2);
+            ctx.lineTo(fx2-syw*lm, fy2+cyw*cam.se*lm); ctx.stroke();
+          }
+        }else{
+          ctx.globalAlpha=0.40*(1-pv); ctx.fillStyle='#cdd9b9';
+          const r=(0.06+0.17*pv)*s, dx=(0.16+0.32*pv)*s, ry=(0.03+0.11*pv)*s*cam.ce;
+          ctx.beginPath(); ctx.arc(gx-dx, gy-ry, r*0.8, 0, TAU); ctx.fill();
+          ctx.beginPath(); ctx.arc(gx+dx*0.85, gy-ry*1.2, r, 0, TAU); ctx.fill();
+          ctx.beginPath(); ctx.arc(gx+dx*0.15, gy-ry*1.7, r*0.6, 0, TAU); ctx.fill();
+        }
       }
     }
     if(pallaQui){   // l'ombra della palla dice a che altezza vola
-      const rp=RPALLA*s*0.9;
-      ctx.globalAlpha=0.20/(1+3*(pby-RPALLA));
+      const rp=RPALLA*s*0.9*(PRF<1?PRF:1);
+      ctx.globalAlpha=0.20/(1+3*(pby-RPALLA)); ctx.fillStyle='#000';
       ctx.beginPath();
       ctx.ellipse(cx+pxw*s, cy-pzw*cam.se*s, rp, rp*cam.se+0.4, 0,0,TAU);
       ctx.fill();
     }
+    ctx.globalAlpha=1;
+  }
+  if(nGh>0){        // la scia della palla: fantasmi sfumati dietro il volo
+    ctx.fillStyle=look.palla;
+    for(let g=0;g<nGh;g++){
+      ctx.globalAlpha=g?0.11:0.22;
+      const rg=RPALLA*s*PRF*(g?0.55:0.75);
+      ctx.beginPath(); ctx.arc(GHX[g],GHY[g],rg,0,TAU); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+  if(nsc>0){        // l'arco di scia dietro il piede che frusta
+    const lw=0.09*s; ctx.lineWidth=lw<1?1:lw; ctx.strokeStyle='#eef4e6';
+    ctx.globalAlpha=0.14;
+    ctx.beginPath(); ctx.moveTo(SCX[0],SCY[0]); ctx.lineTo(SCX[1],SCY[1]); ctx.stroke();
+    ctx.globalAlpha=0.26;
+    ctx.beginPath(); ctx.moveTo(SCX[1],SCY[1]);
+    ctx.lineTo(SX[clip.scia.j],SY[clip.scia.j]); ctx.stroke();
     ctx.globalAlpha=1;
   }
   // profondita' per segmento e insertion sort (lista quasi ordinata)
