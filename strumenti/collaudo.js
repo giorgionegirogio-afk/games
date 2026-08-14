@@ -50,6 +50,21 @@ function servi() {
 async function apri(browser, srv, file, vista) {
   const ctx = await browser.newContext({ viewport: vista, deviceScaleFactor: 1, isMobile: true, hasTouch: true, locale: 'it-IT' });
   const pag = await ctx.newPage();
+  /* IL SEME FISSO, lezione pagata TRE volte (scatta, misura, e poi qui):
+     il controllo sugli autogol applica una quota del 25% su 2-3 reti di
+     una partita SENZA seme — un lancio di moneta. Ha dichiarato rosso un
+     gioco sano (1 su 3), e due esecuzioni dopo era verde (0 su 2, 0 su 3)
+     sullo stesso identico codice. Un cancello che lancia i dadi prima o
+     poi fa anche il contrario: copre una regressione vera. Stesso
+     generatore di scatta.js, installato prima di ogni riga di pagina. */
+  await pag.addInitScript(seme => {
+    let s = seme >>> 0 || 1;
+    const prossimo = () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s >>> 0; };
+    Math.random = () => prossimo() / 4294967296;
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues = a => { for (let i = 0; i < a.length; i++) a[i] = prossimo(); return a; };
+    }
+  }, 20260728);
   const errori = [];
   pag.on('console', m => { if (m.type() === 'error') errori.push(m.text()); });
   pag.on('pageerror', e => errori.push('ECCEZIONE: ' + e.message));
@@ -230,9 +245,23 @@ async function calcetto(browser, srv) {
      - MAGLIA: una finestra dentro il torso scelta per essere libera da
        testa, disco del numero e disegno del kit in TUTTI i motivi (tinta
        unita, palato, banda). In coordinate del giocatore ruotate sulla
-       direzione di marcia: avanti fra -5,4 e -3,6 unita', lato fra 2,2 e
-       4,6 in valore assoluto. Misurato: oltre il 90% dei campioni cade
-       sulla tinta principale della maglia;
+       direzione di marcia: avanti fra -8,4 e -6,6 unita', lato fra 2,2 e
+       4,6 in valore assoluto.
+       LA FINESTRA E' ARRETRATA (era -5,4 / -3,6) PERCHE' CAMPIONAVA LA
+       TESTA. Il punto piu' interno stava a 4,2 unita' dal centro; la
+       calotta ha raggio 4,5, il suo velo d'ombra arriva a ~5,4, e con la
+       figura disegnata a P_DIS=1,18 tutto cio' cresce fino a ~6,4. In
+       posa ferma la mediana reggeva; su un giocatore che gira o carica la
+       finestra scivolava sulla calotta scura e misurava i capelli, non la
+       maglia — mediane da 0,42x della tinta vera, verificato ritagliando
+       il canvas nel fotogramma incriminato. Con la camera avvicinata i
+       giocatori inquadrati sono soprattutto quelli sul pallone (che
+       girano di continuo) e il dado usciva sbagliato una volta su tre.
+       A -8,4/-6,6 la finestra sta oltre il velo della testa (r minima
+       7,1 > 6,4) e dentro il busto (semiasse 12,4 x P_DIS = 14,6) anche
+       con lo schiacciamento al massimo; l'ultima fila puo' sfiorare il
+       blocco della seconda tinta del kit, che e' comunque maglia e la
+       mediana lo assorbe;
      - ERBA: un anello fra 30 e 42 unita' dal giocatore, scartando i punti
        vicini a un altro corpo, alla palla o all'ombra portata (che cade
        in basso a destra, +4,2/+7,8) e i punti fuori dal campo o sotto le
@@ -308,7 +337,7 @@ async function calcetto(browser, srv) {
           if (p.role === 'gk' || p.out > 0) continue;
           if (p.slide >= 0 || p.recover > 0 || p.dive > 0 || p.celeb > 0) continue;
           const a = Math.atan2(p.fy, p.fx), ca = Math.cos(a), sa = Math.sin(a);
-          for (const av of [-5.4, -4.8, -4.2, -3.6]) {
+          for (const av of [-8.4, -7.8, -7.2, -6.6]) {
             for (const la of [-4.6, -4.0, -3.4, -2.8, -2.2, 2.2, 2.8, 3.4, 4.0, 4.6]) {
               const wx = p.x + av * ca - la * sa, wy = p.y + av * sa + la * ca;
               const sx = wx * S2 + Ax, sy = wy * S2 + Ay;

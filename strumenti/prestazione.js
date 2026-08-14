@@ -25,6 +25,17 @@
    vedere il costo VERO, e quanto margine c'e', va tirato il freno:
    --freno 2 o 4. Li' il tetto sparisce e si misura il lavoro.
 
+   TERZA AVVERTENZA, pagata con un cancello rosso che accusava un innocente:
+   UNA sola finestra di misura non distingue il gioco lento dal BANCO
+   occupato. Un altro processo che ruba la CPU per qualche secondo fa
+   saltare la mediana di un gradino intero di vsync (16,7 -> 33,3 ms, +99%)
+   e il cancello incolpa il gioco di un costo che non ha: e' successo,
+   stesso file al bit, rosso sotto carico e verde a banco libero. Per
+   questo si misurano TRE finestre e per ogni voce si tiene la MEDIANA
+   delle tre. Un rallentamento vero del gioco le alza tutte e tre — il
+   cancello sa ancora fallire — mentre un colpo di carico del banco ne
+   sporca una sola, e quella viene scartata.
+
    uso:  node strumenti/prestazione.js --fissa     misura e conserva il riferimento
          node strumenti/prestazione.js             confronta con il riferimento
          node strumenti/prestazione.js --freno 4   il costo vero, senza tetto
@@ -78,39 +89,48 @@ const RIFERIMENTO = path.join(__dirname, 'prestazione-base.json');
   /* il freno si tira DOPO l'avvio: quello che ci interessa e' il costo
      del gioco a regime, non quello del caricamento */
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: freno });
-  console.log(`computer rallentato di ${freno} volte, ${sec} secondi di partita\n`);
+  const FINESTRE = 3;   // terza avvertenza: la mediana di tre finestre scarta il colpo di carico
+  console.log(`computer rallentato di ${freno} volte, ${FINESTRE} finestre da ${sec} secondi di partita\n`);
 
-  const tempi = await pag.evaluate(async (secondi) => {
-    const t = [];
-    let ultimo = performance.now();
-    return await new Promise(fine => {
-      const inizio = ultimo;
-      function giro(ora) {
-        t.push(ora - ultimo); ultimo = ora;
-        if (ora - inizio < secondi * 1000) requestAnimationFrame(giro);
-        else fine(t.slice(3));         // i primi giri sono sporchi
-      }
-      requestAnimationFrame(giro);
-    });
-  }, sec);
+  const giri = [];
+  for (let g = 0; g < FINESTRE; g++) {
+    const tempi = await pag.evaluate(async (secondi) => {
+      const t = [];
+      let ultimo = performance.now();
+      return await new Promise(fine => {
+        const inizio = ultimo;
+        function giro(ora) {
+          t.push(ora - ultimo); ultimo = ora;
+          if (ora - inizio < secondi * 1000) requestAnimationFrame(giro);
+          else fine(t.slice(3));         // i primi giri sono sporchi
+        }
+        requestAnimationFrame(giro);
+      });
+    }, sec);
+    if (!tempi.length) { console.error('nessun fotogramma misurato'); process.exit(1); }
+    const ord = [...tempi].sort((a, b) => a - b);
+    const perc = q => ord[Math.min(ord.length - 1, Math.floor(ord.length * q))];
+    const media = tempi.reduce((a, b) => a + b, 0) / tempi.length;
+    const lenti = tempi.filter(x => x > 33.3).length;   // due fotogrammi persi
+    giri.push({ n: tempi.length, media, meta: perc(0.5), p95: perc(0.95), max: ord[ord.length - 1], lenti });
+    console.log(`  finestra ${g + 1}: ${String(tempi.length).padStart(3)} fotogrammi — media ${media.toFixed(1)} ms, meta' ${perc(0.5).toFixed(1)}, p95 ${perc(0.95).toFixed(1)}, peggiore ${ord[ord.length - 1].toFixed(1)}, saltati ${lenti} (${(lenti / tempi.length * 100).toFixed(1)}%)`);
+  }
 
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   await ctx.close(); await browser.close(); srv.chiudi();
 
-  if (!tempi.length) { console.error('nessun fotogramma misurato'); process.exit(1); }
-  const ord = [...tempi].sort((a, b) => a - b);
-  const perc = q => ord[Math.min(ord.length - 1, Math.floor(ord.length * q))];
-  const media = tempi.reduce((a, b) => a + b, 0) / tempi.length;
-  const lenti = tempi.filter(x => x > 33.3).length;   // due fotogrammi persi
+  /* per ogni voce, la mediana delle finestre: con tre valori e' il centrale */
+  const centrale = a => [...a].sort((x, y) => x - y)[(a.length - 1) >> 1];
+  const media = centrale(giri.map(g => g.media));
+  const meta = centrale(giri.map(g => g.meta));
+  const p95 = centrale(giri.map(g => g.p95));
 
-  console.log(`  fotogrammi misurati   ${tempi.length}`);
+  console.log(`\n  mediana delle finestre`);
   console.log(`  media                 ${media.toFixed(1)} ms   (${(1000 / media).toFixed(0)} al secondo)`);
-  console.log(`  meta' sotto           ${perc(0.5).toFixed(1)} ms`);
-  console.log(`  novantacinque su cento sotto ${perc(0.95).toFixed(1)} ms`);
-  console.log(`  il peggiore           ${ord[ord.length - 1].toFixed(1)} ms`);
-  console.log(`  fotogrammi saltati    ${lenti} (${(lenti / tempi.length * 100).toFixed(1)}%)\n`);
+  console.log(`  meta' sotto           ${meta.toFixed(1)} ms`);
+  console.log(`  novantacinque su cento sotto ${p95.toFixed(1)} ms\n`);
 
-  const ora = { media: +media.toFixed(2), meta: +perc(0.5).toFixed(2), p95: +perc(0.95).toFixed(2), freno, quando: sec };
+  const ora = { media: +media.toFixed(2), meta: +meta.toFixed(2), p95: +p95.toFixed(2), freno, quando: sec };
 
   if (fissa) {
     fs.writeFileSync(RIFERIMENTO, JSON.stringify(ora, null, 1));

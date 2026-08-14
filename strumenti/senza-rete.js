@@ -86,7 +86,11 @@ function servi() {
     const locali = bloccate.filter(u => u.startsWith('http://127.0.0.1:'));
 
     const ok1 = esterne.length === 0;
-    const ok2 = !gioca.errore && (gioca.fase === 'matchEnd' || gioca.scena === 'end' || gioca.scena === 'goal' || gioca.scena === 'play');
+    /* 'kickoff' e' scena di partita quanto 'play' e 'goal': dopo una rete
+       la palla torna al centro, e con le cineprese sul gol la finestra e'
+       lunga. Fermarsi li' non e' un difetto del gioco: e' il momento in
+       cui la fotografia l'ha colto. */
+    const ok2 = !gioca.errore && (gioca.fase === 'matchEnd' || ['end', 'goal', 'play', 'kickoff'].includes(gioca.scena));
     const ok3 = errori.length === 0;
 
     console.log((ok1 ? '  OK   ' : '  NO   ') + `nessuna richiesta fuori dal dispositivo (${esterne.length})` +

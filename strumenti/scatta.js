@@ -304,6 +304,7 @@ K('azione-contrasto', TELEFONO_O, VIA + `
 
 K('gioca', TELEFONO_O, VIA + `document.getElementById('btnGioca').click()`);
 K('campi', TELEFONO_O, VIA + `document.getElementById('btnCampi').click()`);
+K('negozio', TELEFONO_O, VIA + `document.getElementById('btnNegozio').click()`);
 K('squadra', TELEFONO_O, VIA + `document.getElementById('btnSquadra') ? document.getElementById('btnSquadra').click() : document.getElementById('btnRosa').click()`);
 K('rosa', TELEFONO_O, VIA + `document.getElementById('btnRosa').click()`);
 K('trofei', TELEFONO_O, VIA + `document.getElementById('btnTrofei').click()`);

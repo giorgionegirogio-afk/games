@@ -220,7 +220,10 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
    dell'altezza (aria della catenella), cioe' a y336 su 400 di schermo —
    due pixel sotto il piede di BACHECA (334): sopra il bottone passano
    solo i fili della catenella, la tavola no. */
-@media (max-height:470px){ .eroe-home{position:fixed;right:190px;bottom:4px;max-width:110px;margin:0} }
+/* CON LA SESTA VOCE (NEGOZIO) la colonna arriva al fondo e la tavola del
+   segnapunti coprirebbe la didascalia dell'ultima voce. Regola di casa:
+   una scenografia che copre una voce non e' scenografia, si toglie. */
+@media (max-height:470px){ .eroe-home{display:none} }
 /* IL 21:9 NON E' IL 915x412: dodici pixel d'altezza in meno e il claim a
    19px che passava da quattro a cinque righe. La colonna cresceva, BACHECA
    scendeva e la tavola dell'eroe le copriva il nastro e la didascalia.
@@ -294,7 +297,10 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
     max-width:1040px;padding:0 20px;box-sizing:border-box}
   #menu .menu-sx{margin-bottom:0}
   #menu .tabellone{max-width:480px;margin:0 auto 12px}
-  #menu .menu-voci{max-width:none;width:100%;gap:14px}
+  /* CON SEI VOCI la colonna a gap 14 sforava la cornice del campo: gap e
+     padding scendono quel tanto che la riporta DENTRO, sopra e sotto. */
+  #menu .menu-voci{max-width:none;width:100%;gap:10px}
+  #menu .voce{padding:12px 18px}
   #menu .claim{max-width:480px;margin:0 auto}
   #menu .coinpill{margin:0 auto}
 }
@@ -1082,7 +1088,7 @@ body.barra #gearBtn{display:none}
    sughero e' cotto in CSS — base calda che prende il sole da ovest,
    due semine di granuli — e la cornice e' lo stesso legno di tutte le
    assi del gioco. */
-#campi .cards{
+#campi .cards,#negozio .cards{
   /* i granuli del sughero sono TESSERE di puntini, non gradienti ripetuti
      dal centro: quelli disegnano anelli, e una bacheca non ha anelli */
   background:
@@ -1095,27 +1101,27 @@ body.barra #gearBtn{display:none}
              6px 7px 0 rgba(3,10,6,.38);
   padding:22px 18px 76px;
 }
-#campi .fcard{
+#campi .fcard,#negozio .fcard{
   background:linear-gradient(180deg,#f2ecdb,#e3d9c0);
   clip-path:none;padding:9px;
   box-shadow:0 5px 9px rgba(20,12,4,.5);
 }
 /* ogni cartolina pende a modo suo: rotazioni piccole e alternate */
-#campi .fcard:nth-child(odd){transform:rotate(-2.1deg)}
-#campi .fcard:nth-child(even){transform:rotate(1.7deg)}
-#campi .fcard:nth-child(4n+3){transform:rotate(1.3deg)}
-#campi .fcard:nth-child(4n){transform:rotate(-1.6deg)}
+#campi .fcard:nth-child(odd),#negozio .fcard:nth-child(odd){transform:rotate(-2.1deg)}
+#campi .fcard:nth-child(even),#negozio .fcard:nth-child(even){transform:rotate(1.7deg)}
+#campi .fcard:nth-child(4n+3),#negozio .fcard:nth-child(4n+3){transform:rotate(1.3deg)}
+#campi .fcard:nth-child(4n),#negozio .fcard:nth-child(4n){transform:rotate(-1.6deg)}
 /* la puntina: stessa lamiera delle viti della lavagna */
-#campi .fcard::before{content:"";position:absolute;top:-7px;left:50%;margin-left:-7px;z-index:3;
+#campi .fcard::before,#negozio .fcard::before{content:"";position:absolute;top:-7px;left:50%;margin-left:-7px;z-index:3;
   width:14px;height:14px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%, #e6dfcb, #9a927c 55%, #5b5443);
   border:1px solid rgba(26,20,8,.6);
   box-shadow:0 3px 4px rgba(10,6,2,.55)}
 /* su carta chiara l'inchiostro e' scuro; la fotografia ha il bordo bianco */
 #campi .fcard canvas{border:3px solid #f8f3e6;box-shadow:0 1px 3px rgba(30,20,8,.35)}
-#campi .fcard h4{color:#3a3020}
-#campi .fcard .fdesc{color:#6b5c40}
-#campi .fbtn{color:#57492e;border-color:#b3a380;
+#campi .fcard h4,#negozio .fcard h4{color:#3a3020}
+#campi .fcard .fdesc,#negozio .fcard .fdesc{color:#6b5c40}
+#campi .fbtn,#negozio .fbtn{color:#57492e;border-color:#b3a380;
   background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.08));
   box-shadow:0 2px 0 rgba(90,70,40,.4);
   /* prezzo e moneta su UNA riga: in colonna stretta la moneta cadeva da
@@ -1124,16 +1130,97 @@ body.barra #gearBtn{display:none}
 /* la moneta D'ORO resta d'oro anche sulla carta crema: la tinta --oro
    sul crema si spegneva in un cerchietto oliva. Qui il metallo scurisce
    di un gradino e il bordo si marca, come l'inchiostro sulle cartoline. */
-#campi .fbtn .coin{flex:0 0 auto;width:1.05em;height:1.05em;
+#campi .fbtn .coin,#negozio .fbtn .coin{flex:0 0 auto;width:1.05em;height:1.05em;
   background:radial-gradient(circle at 34% 30%, #ffdf8a, #e8a51e 55%, #a06e0c);
   box-shadow:inset 0 0 0 1px rgba(96,62,6,.85), 0 1px 1px rgba(60,40,10,.35)}
 /* niente scheda al 50%: sbiadiva ANCHE la moneta e il prezzo. Il "non te
    lo puoi permettere" lo dice il testo spento, la moneta resta leggibile */
-#campi .fbtn.no{opacity:1;color:#8a795a;border-color:#c3b48f;cursor:default}
-#campi .fbtn.use{color:#20301a;border-color:#57492e}
+#campi .fbtn.no,#negozio .fbtn.no{opacity:1;color:#8a795a;border-color:#c3b48f;cursor:default}
+#campi .fbtn.use,#negozio .fbtn.use{color:#20301a;border-color:#57492e}
 #campi .fbtn.buy{color:#7a5c14;border-color:#a8892f}
-#campi .fbtn.inuse{background:linear-gradient(180deg,#ffc757,#e59200);border-color:#a86f00;color:#12210f;
+#campi .fbtn.inuse,#negozio .fbtn.inuse{background:linear-gradient(180deg,#ffc757,#e59200);border-color:#a86f00;color:#12210f;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 2px 0 #7a4c05}
+
+/* ---- IL NEGOZIO: stesso sughero e cartoline dei CAMPI, ma meno cose e
+   piu' grandi. Saldo su lavagnetta, prezzi in euro su targhette di smalto
+   che dichiarano e non urlano; l'ambra SOLO dove si puo' premere. */
+#negozio .cards{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));max-width:760px;gap:16px;
+  padding:22px 18px 26px}
+#negozio .fcard .fdesc{display:block;font-size:12.5px}
+#negozio .ncard-completo{grid-column:1/-1}
+#negozio .nico{width:46px;height:46px;margin:2px auto 4px;display:flex;align-items:center;justify-content:center;
+  background:#0e3a17;border:1px solid rgba(0,0,0,.4);border-radius:3px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+/* la nota d'onesta' del completo: la somma dei pezzi, detta in chiaro */
+#negozio .nnota{font-family:var(--cond);font-weight:600;font-size:11.5px;line-height:1.3;
+  color:#7a5c14;margin:-2px 0 6px}
+#negozio .nriga{display:flex;flex-direction:column;gap:6px;margin-top:auto}
+#negozio .nriga .fbtn{margin-top:0}
+/* le frasi di stato vanno a capo; SBLOCCA tiene la moneta in riga */
+#negozio .fbtn.use,#negozio .fbtn.inuse{white-space:normal;line-height:1.25}
+#negozio .fbtn.paga{background:linear-gradient(180deg,#ffc757,#e59200);border-color:#a86f00;color:#12210f;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 2px 0 #7a4c05;cursor:pointer}
+.eprezzo{font-family:var(--cond);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+  color:#20301a;background:linear-gradient(180deg,#f8f3e6,#ddd5c0);
+  border:1px solid #8d7c57;border-radius:2px;padding:6px 8px;cursor:pointer;white-space:nowrap;
+  box-shadow:inset 0 1px 0 #fff, 0 2px 0 rgba(90,70,40,.45)}
+.eprezzo:active{transform:translateY(2px);box-shadow:inset 0 1px 0 #fff}
+/* il saldo su lavagnetta: ardesia dentro, legno intorno, gesso sopra */
+.saldo-lavagnetta{display:inline-flex;align-items:center;gap:8px;margin:0 auto 12px;
+  padding:8px 18px;background:linear-gradient(180deg,#1d2b26,#141f1b);
+  border:5px solid #5c4322;box-shadow:inset 0 0 12px rgba(0,0,0,.55), 0 3px 0 rgba(3,10,6,.4);
+  font-family:var(--cond);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--gesso);font-size:14px}
+/* il patto, prima dei prezzi */
+.negozio-patto{font-family:var(--cond);font-weight:600;font-size:13px;line-height:1.4;
+  color:var(--grigio);max-width:640px;margin:0 auto 10px}
+.negozio-patto b{color:var(--gesso)}
+/* pannello onesto in euro + editor dei cartelloni */
+#pattoStore,#sponsorEdit{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  background:rgba(3,10,6,.72)}
+#pattoStore.hidden,#sponsorEdit.hidden{display:none}
+#pattoStore .patto,#sponsorEdit .patto{max-width:430px;margin:16px;padding:20px 22px;text-align:center;position:relative;
+  background:linear-gradient(180deg,#f2ecdb,#e3d9c0);color:#3a3020;
+  font-family:var(--cond);font-weight:600;font-size:15px;line-height:1.5;
+  box-shadow:0 8px 18px rgba(0,0,0,.6)}
+#pattoStore .patto b,#sponsorEdit .patto b{font-weight:700}
+#pattoStore .fbtn,#sponsorEdit .fbtn{margin-top:12px;color:#57492e;border-color:#b3a380;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.08));
+  box-shadow:0 2px 0 rgba(90,70,40,.4)}
+/* inchiostro maiuscolo su carta, come le insegne */
+#sponsorEdit input{display:block;width:100%;box-sizing:border-box;margin:6px 0;padding:7px 9px;
+  font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.08em;text-transform:uppercase;
+  color:#20301a;background:#f8f3e6;border:1px solid #8d7c57;border-radius:2px}
+#sponsorEdit .fbtn.paga{background:linear-gradient(180deg,#ffc757,#e59200);border-color:#a86f00;color:#12210f}
+/* trasparente al layout di serie; colonna quando il completo si sdraia */
+#negozio .ntesto{display:contents}
+/* TORNA AL MENU nel flusso, come alle ISTRUZIONI: la fascia adesiva
+   copriva i cartellini e la sua velatura era la banda scura sui fogli. */
+#negozio .azioni{position:static;margin:20px 0 0;padding:0 0 40px;background:none;box-shadow:none}
+/* in orizzontale i cinque cartellini si vedono INTERI al primo colpo
+   d'occhio — la merce mutilata leggeva come difetto. Il completo si
+   sdraia: icona, testo, prezzi. */
+@media (max-height:470px){
+  #negozio .sotto-titolo{font-size:22px;margin-bottom:6px}
+  #negozio .cards{grid-template-columns:repeat(4,minmax(0,1fr));max-width:96%;gap:10px;padding:10px 12px 12px}
+  #negozio .negozio-patto{font-size:11px;max-width:none;padding:0 60px;margin-bottom:4px}
+  #negozio .saldo-lavagnetta{padding:2px 14px;font-size:12px;border-width:4px;margin-bottom:6px}
+  #negozio .nico{width:28px;height:28px;margin:0 auto 2px;flex:0 0 auto}
+  #negozio .nico .ico{width:18px;height:18px}
+  #negozio .fcard h4{font-size:12px;margin-top:0}
+  #negozio .fcard .fdesc{font-size:10.5px;margin-bottom:3px}
+  #negozio .nnota{font-size:10.5px;margin:0}
+  #negozio .nriga{gap:4px}
+  #negozio .fbtn{font-size:11px;padding:5px 4px}
+  /* la targhetta in euro non sborda: va a capo dentro il bordo */
+  #negozio .eprezzo{font-size:10px;letter-spacing:.04em;padding:3px 5px;white-space:normal;line-height:1.3}
+  #negozio .ncard-completo{flex-direction:row;align-items:center;gap:12px;padding:8px 14px;text-align:left}
+  #negozio .ncard-completo .ntesto{display:block;flex:1 1 auto;min-width:0}
+  #negozio .ncard-completo h4{margin:0}
+  #negozio .ncard-completo .fdesc{margin-bottom:2px}
+  #negozio .ncard-completo .nriga{flex:0 0 auto;margin:0}
+  #negozio .ncard-completo .nriga .fbtn{width:auto;padding:5px 14px}
+}
 
 /* schermata SQUADRA — sulla lavagna come le sorelle: cornici di smalto */
 .lav-squadra{max-width:560px;margin:0 auto 12px}
@@ -1166,6 +1253,10 @@ input{user-select:text;-webkit-user-select:text}
 .kitsw svg{display:block;width:100%;height:auto;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
 .kitsw small{display:block;font-family:var(--cond);font-weight:600;font-size:9.5px;letter-spacing:.06em;color:var(--grigio);margin-top:6px;text-transform:uppercase}
 .kitsw.sel small{color:var(--gesso)}
+/* divisa del pacchetto non sbloccato: la maglia si vede (e' la merce), si
+   spegne un poco; il lucchetto a misura SUA, non svg{width:100%}. */
+.kitsw.lock>svg{opacity:.5}
+.kitsw small svg.ico{display:inline-block;width:10px;height:10px;vertical-align:-1px;filter:none}
 
 /* schermata TROFEI */
 /* DUE COLONNE, QUATTRO RIGHE: otto trofei visibili insieme invece di
@@ -2019,6 +2110,9 @@ button:active{transform:scale(.96)}
         <button class="voce" id="btnTorneo"><i class="vico" data-ico="trofeo"></i>TORNEO <small>tabellone a 8 &middot; montepremi</small></button>
         <button class="voce" id="btnSpogliatoio"><i class="vico" data-ico="maglia"></i>SPOGLIATOIO <small>squadra &middot; rosa &middot; campi</small></button>
         <button class="voce" id="btnBacheca"><i class="vico" data-ico="bacheca"></i>BACHECA <small>trofei e statistiche</small></button>
+        <!-- il negozio entra in home con UNA voce sola: la home resta
+             pulita, i cartellini stanno nella loro schermata -->
+        <button class="voce" id="btnNegozio"><i class="vico" data-ico="monete"></i>NEGOZIO <small>la bacheca del campetto</small></button>
       </div>
       <!-- IL SEGNAPUNTI APPESO, presenza d'ambiente: l'ultimo risultato
            giocato (0:0 da nuovo) resta scritto sulla lavagna come al
@@ -2246,6 +2340,41 @@ button:active{transform:scale(.96)}
     <div class="cards" id="fieldCards"></div>
     <div style="height:16px"></div>
     <div class="azioni"><button class="btnA sec" id="btnBackCampi">TORNA AL MENU</button></div>
+  </div>
+</div>
+
+<!-- ============ NEGOZIO — la bacheca del campetto ============
+     IL MODELLO DI GUADAGNO in chiaro: cinque acquisti dichiarati una volta
+     per sempre, OGNI oggetto sbloccabile anche a monete. Niente pubblicita',
+     casse premio, timer o valuta comprabile. Senza store, il pulsante in
+     euro apre il pannello onesto qui sotto. -->
+<div id="negozio" class="ov hidden">
+  <div class="box">
+    <h1 class="sotto-titolo">LA BACHECA DEL CAMPETTO</h1>
+    <div class="negozio-patto">Prezzi dichiarati una volta, per sempre. Niente pubblicit&agrave;, niente casse premio, niente attese: <b>ogni cosa si sblocca anche giocando</b>.</div>
+    <div class="saldo-lavagnetta"><i class="coin"></i> <b class="coinval">0</b> MONETE</div>
+    <div class="cards" id="negozioCards"></div>
+    <div class="azioni"><button class="btnA sec" id="btnBackNegozio">TORNA AL MENU</button></div>
+  </div>
+  <div id="pattoStore" class="hidden">
+    <div class="patto">
+      <b>Nella versione dello store si comprer&agrave; con un tocco.</b><br>
+      Qui tutto si sblocca giocando.
+      <br><button class="fbtn" id="btnPattoChiudi">D'ACCORDO</button>
+    </div>
+  </div>
+  <div id="sponsorEdit" class="hidden">
+    <div class="patto">
+      <b>SCRIVI I TUOI CARTELLONI</b><br>
+      Fino a quattro nomi, 14 lettere l'uno, dipinti sulle insegne a bordo
+      campo. Un campo vuoto lascia l'insegna di serie.
+      <input id="spon0" maxlength="14" autocomplete="off">
+      <input id="spon1" maxlength="14" autocomplete="off">
+      <input id="spon2" maxlength="14" autocomplete="off">
+      <input id="spon3" maxlength="14" autocomplete="off">
+      <button class="fbtn paga" id="btnSponSalva">DIPINGI</button>
+      <button class="fbtn" id="btnSponChiudi">ANNULLA</button>
+    </div>
   </div>
 </div>
 
@@ -2722,6 +2851,9 @@ const ICONS={
   maglia:'<path d="M8.6 3.4 L4 5.6 L2.4 10.6 L5.6 11.8 L6.6 9.4 V20.4 Q12 21.8 17.4 20.4 V9.4 L18.4 11.8 L21.6 10.6 L20 5.6 L15.4 3.4 Q12 6.8 8.6 3.4 Z" fill="#f2f5ef" stroke="#062d10" stroke-width="1.2" stroke-linejoin="round"/><path d="M9.6 3.9 Q12 6 14.4 3.9" fill="none" stroke="#062d10" stroke-width="1.1"/><rect x="10.4" y="12" width="3.2" height="5.4" fill="#062d10" opacity=".55"/>',
   bacheca:'<rect x="2.8" y="4.4" width="18.4" height="15.2" rx="1.4" fill="#f2f5ef" stroke="#062d10" stroke-width="1.2"/><rect x="5.4" y="7" width="6.6" height="4.4" fill="#062d10" opacity=".35"/><rect x="13.4" y="7" width="5.2" height="2" fill="#062d10" opacity=".35"/><rect x="13.4" y="10.2" width="5.2" height="1.4" fill="#062d10" opacity=".28"/><rect x="5.4" y="13.4" width="13.2" height="1.4" fill="#062d10" opacity=".28"/><rect x="5.4" y="16" width="9" height="1.4" fill="#062d10" opacity=".28"/>',
   ingranaggio:'<path d="M12 8.4 a3.6 3.6 0 1 0 0 7.2 a3.6 3.6 0 0 0 0 -7.2 Z M10.6 2.6 h2.8 l.4 2.5 a7.6 7.6 0 0 1 2.1 1.2 l2.3 -1 1.4 2.4 -1.9 1.6 a7.6 7.6 0 0 1 0 2.4 l1.9 1.6 -1.4 2.4 -2.3 -1 a7.6 7.6 0 0 1 -2.1 1.2 l-.4 2.5 h-2.8 l-.4 -2.5 a7.6 7.6 0 0 1 -2.1 -1.2 l-2.3 1 -1.4 -2.4 1.9 -1.6 a7.6 7.6 0 0 1 0 -2.4 L4.3 7.7 5.7 5.3 8 6.3 a7.6 7.6 0 0 1 2.1 -1.2 Z" fill="#f2f5ef" fill-rule="evenodd"/>',
+  /* i glifi del negozio: tamburo con bacchette, cartellone su pali */
+  tamburo:'<path d="M3.8 10.6 V16.4 a8.2 3 0 0 0 16.4 0 V10.6" fill="#0e3a17" stroke="#f2f5ef" stroke-width="1.3"/><path d="M5.6 12.6 L8.2 18.2 M10.8 13.4 L13.4 19.2 M15.8 13.2 L18.4 17.6" stroke="#d8ff3d" stroke-width="1" opacity=".85"/><ellipse cx="12" cy="10.6" rx="8.2" ry="3" fill="#f2f5ef" stroke="#062d10" stroke-width="1.2"/><path d="M6 3.4 L10.6 8.4 M18 3.4 L13.4 8.4" stroke="#f2f5ef" stroke-width="1.7" stroke-linecap="round"/><circle cx="6" cy="3.4" r="1.4" fill="#f2f5ef"/><circle cx="18" cy="3.4" r="1.4" fill="#f2f5ef"/>',
+  cartellone:'<rect x="2.8" y="4.6" width="18.4" height="9.8" rx="1" fill="#0e3a17" stroke="#f2f5ef" stroke-width="1.4"/><path d="M6.8 14.4 V19.8 M17.2 14.4 V19.8" stroke="#f2f5ef" stroke-width="1.6"/><path d="M5.6 9.5 h7" stroke="#d8ff3d" stroke-width="2.2" stroke-linecap="round"/><path d="M15 9.5 h3.4" stroke="#f2f5ef" stroke-width="2.2" stroke-linecap="round" opacity=".55"/>',
 };
 function icoSVG(name,size){
   const s=size||20;
@@ -3042,8 +3174,37 @@ function nuovaRosa(){
 /* quanto un attributo sposta davvero: banda stretta, ma si sente */
 function fatt(v, ampiezza){ return 1 + ((clamp(v,0,100)-62)/38)*ampiezza; }
 
-/* ricompense in monete a fine partita */
-const COIN_BASE=10, COIN_WIN=25, COIN_GOL=5, COIN_PERF=4, COIN_RUB=3;
+/* ricompense a fine partita — vittoria > pareggio > sconfitta, premi per
+   gol e porta imbattuta. TARATURA: partita media ~48 monete, i quattro
+   pezzi del negozio 5320 in tutto — ~110 partite per sbloccare tutto. */
+const COIN_BASE=10, COIN_WIN=25, COIN_DRAW=12, COIN_GOL=5, COIN_CLEAN=6, COIN_PERF=4, COIN_RUB=3;
+
+/* ---------- IL NEGOZIO: 5 acquisti dichiarati, una volta per sempre ----
+   Somma dei pezzi 7,96 €, il completo (3,99 €) e' la meta': l'unico
+   ancoraggio di prezzo, ed e' vero. Monete in proporzione (≈668/euro):
+   1330+1330+660+2000 = 5320, completo 2660 = meta'. NESSUN oggetto tocca
+   fisica o abilita': lo giura il collaudo d'equita'. */
+const NEGOZIO=[
+  { id:'completo', ico:'pallone', euro:'3,99', monete:2660,
+    nome:'IL CAMPETTO COMPLETO',
+    desc:'Tutto quello che sta su questa bacheca, e tutto ciò che verrà.',
+    nota:'I quattro pezzi separati fanno 7,96 €: il completo vale la metà, ed è vero.' },
+  { id:'campi', ico:'mappa', euro:'1,99', monete:1330,
+    nome:'PACCHETTO CAMPI',
+    desc:'I sette campi oltre l\'Oratorio, tutti insieme.' },
+  { id:'divise', ico:'maglia', euro:'1,99', monete:1330,
+    nome:'PACCHETTO DIVISE',
+    desc:'Disegni e colori alternativi delle maglie.' },
+  { id:'curva', ico:'tamburo', euro:'0,99', monete:660,
+    nome:'LA CURVA',
+    desc:'Cori, esultanze e il tamburo del campetto.' },
+  { id:'sponsor', ico:'cartellone', euro:'2,99', monete:2000,
+    nome:'LO SPONSOR DEL CAMPETTO',
+    desc:'Scrivi tu i nomi sui cartelloni.' },
+];
+/* il completo vale come tutti i pezzi */
+function shopHa(id){ return !!(SAVE.shop[id] || (id!=='completo' && SAVE.shop.completo)); }
+function shopAttivo(id){ return shopHa(id) && !!SAVE.shopA[id]; }
 
 /* ---------- salvataggio versionato (v4: monete e progressione) ---------- */
 const SAVE_KEY='calcetto_save_v4';
@@ -3056,6 +3217,10 @@ function defaultSave(){
     fields:[1,0,0,0,0,0,0,0],     // il primo campo e' gratis
     fieldSel:0,
     kit:0, teamName:'DOPOLAVORO',
+    /* negozio: sbloccati (shop), attivi (shopA), cartelloni dello sponsor */
+    shop:{completo:0,campi:0,divise:0,curva:0,sponsor:0},
+    shopA:{completo:0,campi:0,divise:0,curva:0,sponsor:0},
+    sponsorNomi:[],
     tutorialDone:false,
     ach:{},
     stats:{ partite:0, vittorie:0, golF:0, golS:0, perfetti:0, rubate:0, tornei:0, stagioni:0 },
@@ -3103,6 +3268,14 @@ function loadSave(){
     if(typeof j.fieldSel==='number') s.fieldSel=clamp(j.fieldSel|0,0,FIELDS.length-1);
     if(!s.fields[s.fieldSel]) s.fieldSel=0;
     if(typeof j.kit==='number') s.kit=clamp(j.kit|0,0,KITS.length-1);
+    /* negozio: si rileggono solo le chiavi conosciute */
+    if(j.shop&&typeof j.shop==='object') for(const k in s.shop) s.shop[k]=j.shop[k]?1:0;
+    if(j.shopA&&typeof j.shopA==='object') for(const k in s.shopA) s.shopA[k]=j.shopA[k]?1:0;
+    if(Array.isArray(j.sponsorNomi)) s.sponsorNomi=j.sponsorNomi.filter(x=>typeof x==='string').map(x=>x.slice(0,14)).slice(0,6);
+    /* coerenza: il pacchetto campi possiede tutti i campi, le divise oltre
+       la prima sono del pacchetto divise */
+    if(s.shop.campi||s.shop.completo) for(let i=0;i<FIELDS.length;i++) s.fields[i]=1;
+    if(!(s.shop.divise||s.shop.completo)) s.kit=0;
     if(typeof j.teamName==='string'&&j.teamName.trim()) s.teamName=j.teamName.trim().toUpperCase().slice(0,12);
     if(typeof j.tutorialDone==='boolean') s.tutorialDone=j.tutorialDone;
     if(j.ach&&typeof j.ach==='object') for(const a of ACH){ if(j.ach[a.id]) s.ach[a.id]=true; }
@@ -3338,6 +3511,55 @@ const Audio5 = {
       g.gain.exponentialRampToValueAtTime(0.0001,t+i*0.05+0.3);
       o.connect(g); g.connect(this.master);
       o.start(t+i*0.05); o.stop(t+i*0.05+0.32);
+    });
+  },
+  /* ---- LA CURVA (negozio, solo se attiva): tamburo e coro ----
+     PARTITURE FISSE, zero Math.random: si pianifica dal percorso di
+     simulazione e l'equita' vieta di consumare caso in piu'. */
+  _cvT:0,
+  curvaTamburo(caldo){
+    if(!this.ctx || this.muted || !caldo){ this._cvT=0; return; }
+    const t=this.ctx.currentTime;
+    /* battuta da 1,8 s: PUM... PUM... PUM-PUM-PUM */
+    if(!this._cvT || this._cvT<t-1.8) this._cvT=t+0.08;
+    while(this._cvT<t+0.8){
+      for(const b of [[0,1],[0.45,0.8],[0.9,0.8],[1.12,0.8],[1.35,1]])
+        if(this._cvT+b[0]>=t) this._tamb(this._cvT+b[0], b[1]);
+      this._cvT+=1.8;
+    }
+  },
+  _tamb(at,f){   /* un colpo: pelle bassa che affonda */
+    const o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.type='sine';
+    o.frequency.setValueAtTime(150,at);
+    o.frequency.exponentialRampToValueAtTime(54,at+0.10);
+    g.gain.setValueAtTime(0.0001,at);
+    g.gain.exponentialRampToValueAtTime(0.26*f,at+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,at+0.16);
+    o.connect(g); g.connect(this.master);
+    o.start(at); o.stop(at+0.18);
+  },
+  /* coro caldo sul gol: quattro voci smussate, su di un tono sul finale */
+  coro(){
+    if(!this.ctx) return;
+    const t0=this.ctx.currentTime+0.10;
+    const lp=this.ctx.createBiquadFilter(); lp.type='lowpass';
+    lp.frequency.value=980; lp.Q.value=0.6;
+    lp.connect(this.master);
+    [131,165,196,262].forEach((f,i)=>{
+      const o=this.ctx.createOscillator(), g=this.ctx.createGain();
+      o.type='sawtooth';
+      const d=f*(1+(i%2?0.004:-0.004));   // voci lievemente scordate: e' gente, non un organo
+      o.frequency.setValueAtTime(d*0.94,t0);
+      o.frequency.linearRampToValueAtTime(d,t0+0.22);
+      o.frequency.setValueAtTime(d,t0+0.85);
+      o.frequency.linearRampToValueAtTime(d*1.122,t0+1.05);
+      g.gain.setValueAtTime(0.0001,t0);
+      g.gain.exponentialRampToValueAtTime(0.05,t0+0.18);
+      g.gain.setValueAtTime(0.05,t0+1.2);
+      g.gain.exponentialRampToValueAtTime(0.0001,t0+1.65);
+      o.connect(g); g.connect(lp);
+      o.start(t0); o.stop(t0+1.7);
     });
   },
   beep(f){
@@ -3697,6 +3919,7 @@ function addGoal(team){
   for(const p of G.players){ if(p.team===team) p.celeb=2.4; }
   G.netBulge[side]={ t:0, y:clamp(b?b.y:FH/2,GY0+10,GY1-10), mag:clamp(sp/700,0.45,1) };
   Audio5.net(); Audio5.roar();
+  if(shopAttivo('curva')) Audio5.coro();   // la curva canta sopra il boato
   buzz([35,50,90]);
   setScene('goal');
   b.owner=-1;
@@ -3997,16 +4220,18 @@ function applyMatchRewards(){
   CS.partite++; if(won) CS.vittorie++;
   CS.golF+=G.score[0]; CS.golS+=G.score[1];
   CS.perfetti+=S.perfetti[0]; CS.rubate+=S.rubate[0];
-  /* monete: base + bonus vittoria + gol + tiri perfetti + rubate pulite */
+  /* monete: base + risultato + gol + porta imbattuta + perfetti + rubate */
+  const pari = G.score[0]===G.score[1];
   const br=[['Partita giocata',COIN_BASE]];
   if(won) br.push(['Bonus vittoria',COIN_WIN]);
+  else if(pari) br.push(['Bonus pareggio',COIN_DRAW]);
   if(G.score[0]>0) br.push(['Gol segnati ('+G.score[0]+')',G.score[0]*COIN_GOL]);
+  if(G.score[1]===0) br.push(['Porta imbattuta',COIN_CLEAN]);
   if(S.perfetti[0]>0) br.push(['Tiri perfetti ('+S.perfetti[0]+')',S.perfetti[0]*COIN_PERF]);
   if(S.rubate[0]>0) br.push(['Rubate pulite ('+S.rubate[0]+')',S.rubate[0]*COIN_RUB]);
   let tourWonNow=false;
   /* STAGIONE: punti in classifica e premio a risultato */
   if(G.matchCtx==='season' && SAVE.season){
-    const pari = G.score[0]===G.score[1];
     if(won) br.push(['Vittoria di campionato',SEA_WIN]);
     else if(pari) br.push(['Pareggio di campionato',SEA_DRAW]);
     chiudiGiornata(G.score[0], G.score[1]);
@@ -4941,6 +5166,9 @@ function step(){
     const b=G.ball;
     const prox = Math.max(0, 1-Math.min(b.x, FW-b.x)/300);
     Audio5.crowdLevel(1 + prox*0.9 + G.crowdHype*0.4);
+    /* LA CURVA: tamburo nei momenti caldi, tace a meta' campo */
+    if(shopAttivo('curva'))
+      Audio5.curvaTamburo(prox>0.55 || G.golden || G.timeLeft<=15);
   }
 
   /* hit-stop: congela la simulazione ma non il rendering */
@@ -6864,6 +7092,7 @@ const Duel = {
           : (s.outcome==='parata'?'#f2f5ef':'#ffb020');
         if(s.outcome==='gol'){
           Audio5.roar();
+          if(shopAttivo('curva')) Audio5.coro();
           if(s.shooter===0 && s.shooterHuman && !G.cpu[0]) unlockAch('punizione');
         }else Audio5.clack(true);
       }
@@ -10157,6 +10386,11 @@ function paintField(c, TH, pX, pY, q){
      nei quattro riferimenti. Quindi restano dov'erano e cambia l'ordine:
      la pista li copriva, adesso ci passa sotto. */
   const dipingiCartelloni=()=>{
+  /* LO SPONSOR (se attivo): i nomi del giocatore ai posti pari — cosi'
+     compaiono su ENTRAMBE le fasce. Per chi non compra: identico. */
+  const INS=ADS.slice();
+  if(shopAttivo('sponsor'))
+    SAVE.sponsorNomi.slice(0,4).forEach((nm,k)=>{ if(nm) INS[k*2]=nm; });
   const bandY=[-DK+3, FH+DK-19];
   for(let r=0;r<2;r++){
     const by=bandY[r];
@@ -10164,7 +10398,7 @@ function paintField(c, TH, pX, pY, q){
     c.font='900 9px '+FONT_N; c.textAlign='center'; c.textBaseline='middle';
     const n=6, seg=(FW+80)/n;
     for(let i=0;i<n;i++){
-      const ad=ADS[(i+r*3)%ADS.length];
+      const ad=INS[(i+r*3)%INS.length];
       const acc=((i+r)%3===0)?'#ffb020':COL.gesso;
       const px=-40+i*seg+2, pw=seg-4;
       /* il pannello dell'insegna: verde smalto, non nero. Un cartellone
@@ -11043,6 +11277,14 @@ function drawCrowd(){
      che nessuno conta. */
   const S2=G.view.S2||1, Ax=G.view.Ax||0, Ay=G.view.Ay||0;
   const wx0=(-Ax)/S2-14, wx1=(VW-Ax)/S2+14, wy0=(-Ay)/S2-14, wy1=(VH-Ay)/S2+14;
+  /* LA CURVA (se comprata e accesa): al gol la gradinata dietro la porta
+     che ha subito alza cartoncini nelle tinte di chi segna. La scacchiera
+     la decide d.ph: zero caso. A moto ridotto yo=0: colore si', onda no. */
+  let coreo=-1, cA='', cB='';
+  if(G.scene==='goal' && G.goalCine && shopAttivo('curva')){
+    const ev=G.golLog[G.golLog.length-1];
+    if(ev){ coreo=G.goalCine.side; cA=TEAMCOL[ev.team]; cB=TEAMCOL2[ev.team]; }
+  }
   for(let i=0;i<CROWD.length;i+=CROWD_PASSO){
     const d=CROWD[i];
     if(d.x<wx0||d.x>wx1||d.y<wy0||d.y>wy1) continue;
@@ -11052,6 +11294,14 @@ function drawCrowd(){
     const dw=d.w*CROWD_LARG;
     ctx.drawImage(crowdAtlas, d.i*CROWD_CELL,0,CROWD_CELL,CROWD_CELL,
                   d.x-dw/2, d.y+yo-dw/2, dw, dw);
+    /* il cartoncino sta sopra le spalle e copre mezza faccia */
+    if(coreo>=0 && (coreo ? d.x>FW+8 : d.x<-8)){
+      const cw=dw*0.82, chh=dw*0.52, cy=d.y+yo-dw/2-chh*0.35;
+      ctx.fillStyle = ((d.ph*7)|0)%2 ? cA : cB;
+      ctx.fillRect(d.x-cw/2, cy, cw, chh);
+      ctx.fillStyle='rgba(6,20,10,.4)';
+      ctx.fillRect(d.x-cw/2, cy+chh-1, cw, 1);
+    }
   }
 }
 
@@ -15472,7 +15722,7 @@ const ui={
 };
 /* tutte le schermate-overlay (per la navigazione) */
 const SCREENS=[ui.menu,ui.howto,ui.end,ui.gioca,ui.torneo,ui.campi,ui.squadra,ui.trofei,ui.statistiche,ui.impostazioni,
-               $('spogliatoio'),$('bacheca'),$('extra'),$('rosa'),$('stagione')].filter(Boolean);
+               $('spogliatoio'),$('bacheca'),$('extra'),$('rosa'),$('stagione'),$('negozio')].filter(Boolean);
 function hideAllScreens(){ for(const s of SCREENS) hide(s); }
 /* navigazione fluida: schermata singola attiva */
 function goScreen(el){
@@ -16320,6 +16570,109 @@ function buildCampiUI(){
   });
 }
 
+/* ---------- il negozio: sblocco e bacheca ----------
+   Lo sblocco APPLICA l'oggetto ma non sceglie al posto del giocatore. E'
+   il percorso del collaudo d'equita' (attivaOggetti): zero suoni, zero caso. */
+function sbloccaOggetto(id){
+  if(!(id in SAVE.shop)) return false;
+  SAVE.shop[id]=1; SAVE.shopA[id]=1;
+  if(id==='completo') for(const o of NEGOZIO){ SAVE.shop[o.id]=1; SAVE.shopA[o.id]=1; }
+  if(shopHa('campi')){
+    let nuovi=false;
+    for(let i=0;i<FIELDS.length;i++){ if(!SAVE.fields[i]) nuovi=true; SAVE.fields[i]=1; }
+    if(nuovi){ unlockAch('collezionista'); buildFieldRow(); }
+  }
+  persistSave();
+  return true;
+}
+/* comprare a monete: l'unico altro modo */
+function compraOggetto(id){
+  const o=NEGOZIO.find(x=>x.id===id);
+  if(!o || shopHa(id) || SAVE.coins<o.monete) return false;
+  addCoinsInternal(-o.monete);
+  sbloccaOggetto(id);
+  Audio5.perfect(); buzz(25);
+  toast('monete','SBLOCCATO',o.nome);
+  buildNegozioUI();
+  return true;
+}
+function buildNegozioUI(){
+  const wrap=$('negozioCards');
+  if(!wrap) return;
+  refreshCoinVals();
+  wrap.innerHTML='';
+  const pezzi=NEGOZIO.filter(o=>o.id!=='completo');
+  const tuttiIPezzi=pezzi.every(o=>shopHa(o.id));
+  NEGOZIO.forEach(o=>{
+    const ha = o.id==='completo' ? (!!SAVE.shop.completo || tuttiIPezzi) : shopHa(o.id);
+    const card=document.createElement('div');
+    card.className='fcard'+(o.id==='completo'?' ncard-completo':'');
+    card.innerHTML='<div class="nico">'+icoSVG(o.ico,26)+'</div>'+
+      '<div class="ntesto"><h4>'+esc(o.nome)+'</h4><div class="fdesc">'+esc(o.desc)+'</div>'+
+      (o.nota?'<div class="nnota">'+esc(o.nota)+'</div>':'')+'</div>';
+    if(ha){
+      const riga=document.createElement('div'); riga.className='nriga';
+      if(o.id==='curva'||o.id==='sponsor'){
+        /* gli oggetti con un effetto in campo hanno l'interruttore: lo
+           stato attivo (SAVE.shopA) smette di essere un flag morto */
+        const att=shopAttivo(o.id);
+        const bt=document.createElement('button');
+        bt.className='fbtn '+(att?'inuse':'use');
+        bt.textContent=att?'IN CAMPO — SPEGNI':'A RIPOSO — ACCENDI';
+        bt.addEventListener('click', ()=>{
+          Audio5.unlock(); Audio5.beep(att?300:520);
+          SAVE.shopA[o.id]=att?0:1; persistSave();
+          if(o.id==='sponsor') buildFieldTex();   // le insegne vanno ridipinte
+          buildNegozioUI();
+        });
+        riga.appendChild(bt);
+        if(o.id==='sponsor'){
+          const bs=document.createElement('button');
+          bs.className='fbtn use'; bs.textContent='SCRIVI I TUOI CARTELLONI';
+          bs.addEventListener('click', ()=>{ Audio5.unlock(); Audio5.beep(440); apriSponsorEdit(); });
+          riga.appendChild(bs);
+        }
+      }else{
+        const b=document.createElement('button');
+        b.className='fbtn use'; b.textContent='SBLOCCATO — PER SEMPRE';
+        riga.appendChild(b);
+      }
+      card.appendChild(riga);
+    }else{
+      const riga=document.createElement('div'); riga.className='nriga';
+      const bm=document.createElement('button'); bm.className='fbtn';
+      if(SAVE.coins>=o.monete){
+        bm.classList.add('paga');
+        bm.innerHTML='SBLOCCA · '+o.monete+' <i class="coin"></i>';
+        bm.addEventListener('click', ()=>{ Audio5.unlock(); compraOggetto(o.id); });
+      }else{
+        bm.classList.add('no');
+        bm.innerHTML='SBLOCCA · '+o.monete+' <i class="coin"></i>';
+      }
+      const be=document.createElement('button'); be.className='eprezzo';
+      be.textContent=o.euro+' € · una volta, per sempre';
+      be.addEventListener('click', ()=>{ Audio5.unlock(); Audio5.beep(440); show($('pattoStore')); });
+      riga.appendChild(bm); riga.appendChild(be);
+      card.appendChild(riga);
+    }
+    wrap.appendChild(card);
+  });
+}
+/* i nomi finiscono in dipingiCartelloni */
+function apriSponsorEdit(){
+  for(let i=0;i<4;i++) $('spon'+i).value=SAVE.sponsorNomi[i]||'';
+  show($('sponsorEdit'));
+}
+function salvaSponsor(){
+  const nomi=[];
+  for(let i=0;i<4;i++) nomi.push($('spon'+i).value.trim().toUpperCase().slice(0,14));
+  while(nomi.length && !nomi[nomi.length-1]) nomi.pop();
+  SAVE.sponsorNomi=nomi; persistSave();
+  buildFieldTex();          // le insegne vivono nella tessitura
+  hide($('sponsorEdit'));
+  toast('cartellone','DIPINTI','I tuoi cartelloni sono a bordo campo');
+}
+
 /* squadra: nome editabile + 8 kit */
 /* La divisa disegnata davvero: sagoma di maglia con maniche e scollo,
    pantaloncino sotto, e gli stessi tre pattern che drawPlayer stampa sul
@@ -16355,11 +16708,16 @@ function kitSVG(k){
 function buildKitGrid(){
   ui.kitGrid.innerHTML='';
   KITS.forEach((k,i)=>{
+    /* la divisa di casa e' gratis; le altre sette sono il pacchetto divise
+       (o il completo). Il lucchetto porta alla bacheca. */
+    const libero = i===0 || shopHa('divise');
     const d=document.createElement('div');
-    d.className='kitsw'+(SAVE.kit===i?' sel':'');
-    d.innerHTML=kitSVG(k)+'<small>'+k.nome+'</small>';
+    d.className='kitsw'+(SAVE.kit===i?' sel':'')+(libero?'':' lock');
+    d.innerHTML=kitSVG(k)+'<small>'+(libero?'':icoSVG('lucchetto',10)+' ')+k.nome+'</small>';
     d.addEventListener('click', ()=>{
-      Audio5.unlock(); Audio5.beep(520);
+      Audio5.unlock();
+      if(!libero){ Audio5.beep(240); goScreen($('negozio')); buildNegozioUI(); return; }
+      Audio5.beep(520);
       SAVE.kit=i; applyKit(); persistSave();
       buildKitGrid();
     });
@@ -16583,6 +16941,12 @@ $('btnBackImpost').addEventListener('click', ()=>{ goScreen($('extra')); });
    (trofei, statistiche). Cinque voci in home invece di dieci. */
 $('btnSpogliatoio').addEventListener('click', ()=>{ Audio5.unlock(); goScreen($('spogliatoio')); });
 $('btnBacheca').addEventListener('click', ()=>{ Audio5.unlock(); goScreen($('bacheca')); });
+/* il negozio: una voce in home, la bacheca dei cartellini nella schermata */
+$('btnNegozio').addEventListener('click', ()=>{ Audio5.unlock(); goScreen($('negozio')); buildNegozioUI(); });
+$('btnBackNegozio').addEventListener('click', ()=>{ hide($('pattoStore')); hide($('sponsorEdit')); goScreen(ui.menu); });
+$('btnPattoChiudi').addEventListener('click', ()=>{ Audio5.unlock(); Audio5.beep(520); hide($('pattoStore')); });
+$('btnSponSalva').addEventListener('click', ()=>{ Audio5.unlock(); Audio5.beep(520); salvaSponsor(); });
+$('btnSponChiudi').addEventListener('click', ()=>{ Audio5.unlock(); hide($('sponsorEdit')); });
 $('btnBackSpog').addEventListener('click', ()=>{ goScreen(ui.menu); });
 $('btnBackBach').addEventListener('click', ()=>{ goScreen(ui.menu); });
 $('btnBackExtra').addEventListener('click', ()=>{ goScreen(ui.menu); });
@@ -16756,6 +17120,23 @@ window.__test = {
   startTourMatch(){ startTourMatch(); return G.scene; },
   unlockAch:(id)=>unlockAch(id),
   get fields(){ return FIELDS.map((f,i)=>({id:f.id, nome:f.nome, prezzo:f.prezzo, sbloccato:!!SAVE.fields[i]})); },
+  /* negozio, per equita.js --conf-b: attivaOggetti sblocca E attiva */
+  attivaOggetti(quali){
+    const ids = quali==='tutti' ? NEGOZIO.map(o=>o.id) : [].concat(quali||[]);
+    for(const id of ids) sbloccaOggetto(id);
+    return this.negozio();
+  },
+  negozio(){
+    const oggetti={};
+    for(const o of NEGOZIO) oggetti[o.id]={sbloccato:shopHa(o.id), attivo:shopAttivo(o.id), prezzo:o.monete};
+    return { monete:SAVE.coins, oggetti, cartelloni:SAVE.sponsorNomi.slice() };
+  },
+  /* per fotografare i cartelloni dal banco */
+  scriviCartelloni(nomi){
+    SAVE.sponsorNomi=[].concat(nomi||[]).map(x=>String(x).trim().toUpperCase().slice(0,14)).slice(0,4);
+    persistSave(); buildFieldTex();
+    return SAVE.sponsorNomi.slice();
+  },
   G, Duel, Tut,
 };
 
