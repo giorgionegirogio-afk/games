@@ -13,19 +13,30 @@
    e la RISPOSTA (velocita' massima raggiunta dalla palla dopo il gesto).
 
    Le giocate sono scritte su come il gioco E', non su come lo si
-   immagina. Dal codice dell'input: stick virtuale ovunque sul canvas
-   (tap col pallone = passaggio, flick veloce verso la porta = tiro,
-   rilascio lento = niente); la carica tenuta col dito esiste SOLO in
-   modalita' pulsanti (__test.setTouchButtons), sul bottone TIRA, con
-   finestra dolce fra 0,50 e 0,80 secondi di pressione.
+   immagina. Dal codice dell'input, LO SCHEMA UNICO: stick virtuale
+   ovunque sul canvas (tap col pallone = passaggio, flick veloce verso
+   la porta = tiro, flick TRASVERSALE col pallone dalla meta' campo
+   offensiva = cross, rilascio lento = niente) piu' DUE pulsanti
+   contestuali sempre vivi a destra: il grande a (vw-66, vh-140) — TIRA
+   col possesso, con la carica a finestra dolce 0,50-0,80 s; CONTRASTA
+   senza — e il piccolo a (vw-70, vh-232) — FILTR. col possesso, CAMBIO
+   senza. Il contesto si risolve al touchstart, e cosi' anche la misura.
 
-   Il cancello: se il bersaglio della giocata non cambia velocita' entro
-   500 ms dal momento in cui il gesto COMANDA, la giocata e' NO e lo
-   strumento esce con 1. Il momento che comanda non e' sempre l'inizio
-   del gesto: per tap, flick e carica e' il rilascio — e' il dito che
-   tiene aperta la carica, misurare dall'appoggio boccerebbe per
-   costruzione anche una carica perfetta — mentre per il trascinamento
-   e' l'appoggio del dito. Si stampano entrambe le distanze.
+   Il cancello: se il bersaglio della giocata non risponde entro 500 ms
+   dal momento in cui il gesto COMANDA, la giocata e' NO e lo strumento
+   esce con 1. Il momento che comanda non e' sempre l'inizio del gesto:
+   per tap, flick e carica e' il rilascio — e' il dito che tiene aperta
+   la carica, misurare dall'appoggio boccerebbe per costruzione anche
+   una carica perfetta — mentre per il trascinamento e per i pulsanti
+   contestuali (l'azione parte al touchstart) e' l'appoggio del dito.
+   Si stampano entrambe le distanze.
+
+   La risposta non basta: dev'essere l'azione GIUSTA, e lo dice lo STATO
+   del gioco, non l'impressione. Il tiro e la carica pretendono il
+   contatore dei tiri; la filtrante il contatore delle filtranti e una
+   palla rasoterra piu' rapida del passaggio; il cross il contatore dei
+   cross e una palla che prende quota (b.z); il cambio un indice del
+   comandato diverso; il contrasto un p.slide acceso sul comandato.
 
    La prova che sa fallire: --pausa esegue le stesse giocate col gioco
    in pausa (e rende l'overlay trasparente ai tocchi, se no il dito
@@ -149,18 +160,83 @@ const GIOCATE = {
     },
   },
   carica: {
-    titolo: 'pressione tenuta ~600 ms sul bottone TIRA (modalita\' pulsanti), poi rilascio',
+    titolo: 'pressione tenuta ~600 ms sul pulsante grande col pallone (TIRA), poi rilascio',
     possesso: true, avanti: 0, bersaglio: 'palla', comando: 'fine', richiedeTiro: true,
     async gesto(cdp, pag, info) {
-      /* la carica col dito esiste solo coi 3 pulsanti virtuali: si
-         accende l'opzione, si preme TIRA, la si rispegne alla fine.
-         600 ms cadono dentro la finestra dolce 500-800 ms del gioco. */
+      /* lo schema touch oggi e' unico e il bottone grande vive SEMPRE a
+         (vw-66, vh-140): col possesso e' TIRA. setTouchButtons e' uno
+         shim senza effetto; la chiamata resta per compatibilita' con le
+         versioni vecchie del gioco. 600 ms cadono dentro la finestra
+         dolce 500-800 ms. */
       await pag.evaluate(() => window.__test.setTouchButtons(true));
-      const x = info.vw - 66, y = info.vh - 140;     // bottone TIRA, squadra 0
+      const x = info.vw - 66, y = info.vh - 140;     // bottone grande (TIRA), squadra 0
       await dito.giu(cdp, x, y);
       await attesa(600);
       await dito.su(cdp);
       await pag.evaluate(() => window.__test.setTouchButtons(false));
+    },
+  },
+  filtrante: {
+    titolo: 'pulsante piccolo col pallone (FILTR.) -> palla tesa a un compagno, piu\' rapida del passaggio',
+    possesso: true, bersaglio: 'palla', comando: 'inizio', mira: true, richiedeFiltrante: true,
+    async gesto(cdp, pag, info) {
+      /* il pulsante piccolo vive a (vw-70, vh-232), raggio 24: si preme
+         il centro. L'azione parte al TOCCO, non al rilascio: comanda
+         l'appoggio, con i 50 ms dell'anticipo umano davanti. La mira
+         viene dal corpo (nessuna levetta attiva): la quiete ha gia'
+         girato la faccia del comandato verso un compagno, perche' la
+         filtrante pretende un bersaglio con dot > 0,5. */
+      await dito.giu(cdp, info.vw - 70, info.vh - 232);
+      await attesa(80);
+      await dito.su(cdp);
+    },
+  },
+  cross: {
+    titolo: 'flick trasversale col pallone dalla fascia offensiva -> palla alta verso l\'area',
+    possesso: true, bersaglio: 'palla', comando: 'fine', zonaOffensiva: true, richiedeCross: true,
+    async gesto(cdp, pag, info) {
+      /* flick VERTICALE puro: nx = 0 non supera mai lo 0,25 del tiro,
+         |ny| = 1 supera lo 0,6 del trasversale — e dalla meta' campo
+         offensiva (dove la quiete ha portato il comandato) e' cross.
+         In RAFFICA come il tiro: aspettare il giro di ogni evento
+         renderebbe lento il dito dello strumento, non il gioco. Il dito
+         parte a un terzo dello schermo, lontano dai pulsanti di destra:
+         il flick dello stick vale ovunque sul canvas. */
+      const x = Math.round(info.vw * 0.30);
+      let y = 80;
+      await dito.giu(cdp, x, y);
+      const invii = [];
+      for (let i = 0; i < 5; i++) { y += 44; invii.push(dito.sposta(cdp, x, y)); }
+      invii.push(dito.su(cdp));
+      await Promise.all(invii);
+    },
+  },
+  cambio: {
+    titolo: 'pulsante piccolo senza pallone (CAMBIO) -> il comando passa a un altro giocatore',
+    possesso: false, avanti: 80, bersaglio: 'ctrl', comando: 'inizio', compagniLontani: true,
+    async gesto(cdp, pag, info) {
+      /* stesso pulsante della filtrante, contesto opposto: senza
+         possesso di squadra l'atto risolto al touchstart e' 'swap'.
+         Il bersaglio qui non e' una velocita': e' l'INDICE del
+         comandato, che deve cambiare. La quiete tiene i compagni ad
+         almeno 170 unita' dalla palla perche' il cambio AUTOMATICO non
+         possa rubare la misura al cambio chiesto col dito. */
+      await dito.giu(cdp, info.vw - 70, info.vh - 232);
+      await attesa(80);
+      await dito.su(cdp);
+    },
+  },
+  contrasto: {
+    titolo: 'pulsante grande senza pallone (CONTRASTA) vicino al portatore -> scivolata',
+    possesso: false, bersaglio: 'giocatore', comando: 'inizio', portatore: true, compagniLontani: true, richiedeScivolata: true,
+    async gesto(cdp, pag, info) {
+      /* stesso pulsante della carica, contesto opposto: senza possesso
+         l'atto e' 'slide'. La quiete ha messo il PORTATORE avversario a
+         84 unita' dal comandato: la scivolata si abbassa (0,06 s di
+         anticipo umano) e poi parte, rimirata sul pallone di adesso. */
+      await dito.giu(cdp, info.vw - 66, info.vh - 140);
+      await attesa(80);
+      await dito.su(cdp);
     },
   },
 };
@@ -197,8 +273,11 @@ function installaSonda() {
       const b = G.ball;
       S.campioni.push({
         t: performance.now(),
-        palla: { x: b.x, y: b.y, vx: b.vx, vy: b.vy, owner: b.owner },
-        comandato: p ? { i: pi, x: p.x, y: p.y, vx: p.vx, vy: p.vy, carica: p.charge !== undefined ? p.charge : null } : null,
+        /* z e passTo sono le firme delle azioni nuove: il cross esiste
+           solo se la palla prende quota, la filtrante solo se resta a
+           terra e con un destinatario assegnato */
+        palla: { x: b.x, y: b.y, vx: b.vx, vy: b.vy, z: b.z || 0, owner: b.owner, passTo: b.passTo !== undefined ? b.passTo : null },
+        comandato: p ? { i: pi, x: p.x, y: p.y, vx: p.vx, vy: p.vy, carica: p.charge !== undefined ? p.charge : null, slide: p.slide !== undefined ? p.slide : null } : null,
         vicino: vic ? { i: vi, x: vic.x, y: vic.y, vx: vic.vx, vy: vic.vy } : null,
         scena: G.scene, pausa: !!G.paused,
       });
@@ -217,7 +296,7 @@ function installaSonda() {
    ferma (al piede o libera davanti al giocatore comandato), avversari
    allontanati quanto basta a non rubare la misura nei 500 ms del
    cancello. Tutto con gli hook __test: il file del gioco non si tocca. */
-function preparaQuiete([possesso, avanti]) {
+function preparaQuiete(opz) {
   const t = window.__test, G = t.G;
   t.setPaused && t.setPaused(false);
   try { if (t.Tut && t.Tut.active && t.Tut.finish) t.Tut.finish(true); } catch (e) {}
@@ -227,6 +306,13 @@ function preparaQuiete([possesso, avanti]) {
   const pi = G.ctrl[0];
   if (pi < 0) return { errore: 'nessun giocatore comandato (G.ctrl[0] = -1)' };
   const p = G.players[pi];
+  /* una carica rimasta aperta dalla giocata precedente bloccherebbe
+     l'anticipo del gesto nuovo: si chiude come farebbe chiudiAnticipo */
+  if (p.charge !== undefined && p.charge >= 0) { p.charge = -1; p.chargeKind = 'tiro'; p.chargeT = 0; p.chargeGo = null; }
+  /* il cross esiste solo dalla meta' campo offensiva: il comandato si
+     porta in fascia (y sotto il centro, x ben oltre FW/2) PRIMA di
+     ricevere palla. Punto fisso = giocata ripetibile. */
+  if (opz.zonaOffensiva) { const c = t.campo; p.x = c.FW * 0.68; p.y = c.FH * 0.26; }
   for (const q of G.players) { q.vx = 0; q.vy = 0; }
   const b = G.ball;
   b.vx = 0; b.vy = 0; b.vz = 0; b.z = 0; b.curve = 0; b.passTo = -1;
@@ -235,16 +321,64 @@ function preparaQuiete([possesso, avanti]) {
   const v = t.view;
   const cx = (innerWidth / 2 - v.Ax) / v.S2;
   const dir = cx >= p.x ? 1 : -1;
-  if (possesso) { b.owner = pi; b.x = p.x + dir * 8; b.y = p.y; }
-  else { b.owner = -1; b.x = p.x + dir * avanti; b.y = p.y; }
-  for (const q of G.players) {
-    if (q.team === 0) continue;
+  let portatore = -1;
+  if (opz.portatore) {
+    /* il contrasto si prova sul PORTATORE: il pallone va all'avversario
+       di movimento piu' vicino, messo a 84 unita' dal comandato —
+       dentro il raggio (140) in cui la scivolata ha un bersaglio onesto */
+    let dm = 1e9;
+    for (let i = 0; i < G.players.length; i++) {
+      const q = G.players[i];
+      if (q.team !== 1 || q.out > 0 || q.role === 'gk') continue;
+      const d = Math.hypot(q.x - p.x, q.y - p.y);
+      if (d < dm) { dm = d; portatore = i; }
+    }
+    if (portatore < 0) return { errore: 'nessun avversario di movimento a cui dare il pallone' };
+    const q = G.players[portatore];
+    q.x = p.x + dir * 84; q.y = p.y;
+    b.owner = portatore; b.x = q.x + dir * 8; b.y = q.y;
+  } else if (opz.possesso) { b.owner = pi; b.x = p.x + dir * 8; b.y = p.y; }
+  else { b.owner = -1; b.x = p.x + dir * (opz.avanti || 0); b.y = p.y; }
+  for (let i = 0; i < G.players.length; i++) {
+    const q = G.players[i];
+    if (q.team === 0 || i === portatore) continue;
     const d = Math.hypot(q.x - b.x, q.y - b.y);
     if (d < 170) {
       const l = Math.max(1, d);
       q.x = b.x + (q.x - b.x) / l * 230;
       q.y = b.y + (q.y - b.y) / l * 230;
     }
+  }
+  if (opz.compagniLontani) {
+    /* anche i COMPAGNI si scostano dalla palla: il cambio automatico
+       scatta quando un altro e' piu' vicino di 14 unita' per 200 ms, e
+       ruberebbe la misura del cambio manuale (o il comandato al
+       contrasto a meta' finestra) */
+    for (let i = 0; i < G.players.length; i++) {
+      const q = G.players[i];
+      if (q.team !== 0 || i === pi || q.role === 'gk') continue;
+      const d = Math.hypot(q.x - b.x, q.y - b.y);
+      if (d < 170) {
+        const l = Math.max(1, d);
+        q.x = b.x + (q.x - b.x) / l * 230;
+        q.y = b.y + (q.y - b.y) / l * 230;
+      }
+    }
+  }
+  if (opz.mira) {
+    /* la filtrante senza levetta parte dove GUARDA il corpo, e pretende
+       un compagno con dot > 0,5: la faccia si gira dritta sul compagno
+       di movimento piu' vicino, e il bersaglio esiste per costruzione.
+       Da fermo e senza input la faccia non ruota piu' da sola. */
+    let mig = null, md = 1e9;
+    for (const q of G.players) {
+      if (q.team !== 0 || q === p || q.out > 0 || q.role === 'gk') continue;
+      const d = Math.hypot(q.x - p.x, q.y - p.y);
+      if (d < md) { md = d; mig = q; }
+    }
+    if (!mig) return { errore: 'nessun compagno di movimento a cui filtrare' };
+    const dx = mig.x - p.x, dy = mig.y - p.y, l = Math.max(1, Math.hypot(dx, dy));
+    p.fx = dx / l; p.fy = dy / l;
   }
   const sx = w => w * v.S2 + v.Ax, sy = w => w * v.S2 + v.Ay;
   return {
@@ -290,6 +424,28 @@ function analizza(dati, comando, bersaglio) {
     if (c.comandato && c.comandato.carica != null) caricaMax = Math.max(caricaMax, c.comandato.carica);
     if (c.t > comandoT) vmax = Math.max(vmax, Math.hypot(c.palla.vx || 0, c.palla.vy || 0));
   }
+  /* le firme di stato delle azioni nuove, lette DOPO l'istante che
+     comanda: quota della palla NEL VOLO del nostro calcio (cross alto,
+     filtrante rasoterra), primo p.slide acceso (contrasto), primo
+     cambio dell'indice comandato (cambio), primo destinatario di
+     passaggio assegnato (filtrante). La quota si guarda solo dal
+     rilascio del pallone alla presa successiva: dopo, il compagno che
+     ha ricevuto puo' calciare a sua volta e mettere una z che non e'
+     del nostro gesto. */
+  let zVoloMax = 0, inVolo = false, voloFinito = false;
+  let scivolataMs = null, cambioMs = null, nuovoIndice = null, passToVisto = null;
+  const baseIdx = base.comandato ? base.comandato.i : null;
+  for (const c of C) {
+    if (c.t <= comandoT) continue;
+    if (!voloFinito && c.palla) {
+      if (!inVolo && c.palla.owner < 0) inVolo = true;
+      else if (inVolo && c.palla.owner >= 0) voloFinito = true;
+      if (inVolo && !voloFinito && c.palla.z != null) zVoloMax = Math.max(zVoloMax, c.palla.z);
+    }
+    if (scivolataMs == null && c.comandato && c.comandato.slide != null && c.comandato.slide >= 0) scivolataMs = c.t - comandoT;
+    if (cambioMs == null && baseIdx != null && c.comandato && c.comandato.i !== baseIdx) { cambioMs = c.t - comandoT; nuovoIndice = c.comandato.i; }
+    if (passToVisto == null && c.palla && c.palla.passTo != null && c.palla.passTo >= 0) passToVisto = c.palla.passTo;
+  }
   /* velocita' del flick COME L'HA VISTA LA PAGINA: stessi 90 ms che
      guarda il gioco al rilascio. Serve a distinguere "il gioco non legge
      il tiro" da "il dito dello strumento era lento". */
@@ -302,11 +458,14 @@ function analizza(dati, comando, bersaglio) {
     }
   }
   return {
-    latenzaMs: risp ? risp.t - comandoT : null,
+    /* per il bersaglio 'ctrl' la risposta non e' una velocita': e' il
+       cambio dell'indice del comandato, e la latenza si conta da li' */
+    latenzaMs: bersaglio === 'ctrl' ? cambioMs : (risp ? risp.t - comandoT : null),
     dallInizioMs: risp && inizio ? risp.t - inizio.t : null,
     rispostaMax: vmax,
     caricaMax,
     flickPxS,
+    zVoloMax, scivolataMs, cambioMs, nuovoIndice, passToVisto,
   };
 }
 
@@ -367,7 +526,11 @@ function analizza(dati, comando, bersaglio) {
 
   for (const nome of nomi) {
     const g = GIOCATE[nome];
-    const info = await pag.evaluate(preparaQuiete, [g.possesso, g.avanti]);
+    const info = await pag.evaluate(preparaQuiete, {
+      possesso: !!g.possesso, avanti: g.avanti || 0,
+      zonaOffensiva: !!g.zonaOffensiva, portatore: !!g.portatore,
+      compagniLontani: !!g.compagniLontani, mira: !!g.mira,
+    });
     if (info.errore) {
       verifica(false, `${nome}: ${g.titolo}`, info.errore);
       raccolta.push({ nome, esito: 'NO', errore: info.errore });
@@ -384,22 +547,29 @@ function analizza(dati, comando, bersaglio) {
         if (el) el.style.pointerEvents = 'none';
       });
     }
-    /* il tabellino prima del gesto: per 'tiro' e 'carica' la velocita'
-       della palla non basta — anche un passaggio la muove. Fa fede il
-       contatore dei tiri del gioco: se non sale, il gesto non e' stato
-       letto come tiro, qualunque cosa abbia fatto la palla. */
-    const prima = await pag.evaluate(() => ({
-      tiri: window.__test.G.stats.tiri[0], perfetti: window.__test.G.stats.perfetti[0],
-    }));
+    /* il tabellino prima del gesto: la velocita' della palla non basta —
+       anche un passaggio la muove. Fanno fede i contatori del gioco:
+       tiri per 'tiro' e 'carica', filtranti e cross per le giocate
+       omonime, e l'indice del comandato per 'cambio'. Se il contatore
+       giusto non sale, il gesto e' stato letto come ALTRO. */
+    const contatori = () => pag.evaluate(() => {
+      const G = window.__test.G;
+      return {
+        tiri: G.stats.tiri[0], perfetti: G.stats.perfetti[0],
+        filtranti: G.stats.filtranti ? (G.stats.filtranti[0] || 0) : 0,
+        cross: G.stats.cross ? (G.stats.cross[0] || 0) : 0,
+        ctrl: G.ctrl[0],
+      };
+    });
+    const prima = await contatori();
     await pag.evaluate(() => window.__sondaVia());
     await attesa(150);                       // base di quiete prima del gesto
     await g.gesto(cdp, pag, info);
     await attesa(1300);                      // finestra di risposta
     const dati = await pag.evaluate(() => window.__sondaAlt());
-    const dopo = await pag.evaluate(() => ({
-      tiri: window.__test.G.stats.tiri[0], perfetti: window.__test.G.stats.perfetti[0],
-    }));
+    const dopo = await contatori();
     const tiriFatti = dopo.tiri - prima.tiri, perfettiFatti = dopo.perfetti - prima.perfetti;
+    const filtrantiFatte = dopo.filtranti - prima.filtranti, crossFatti = dopo.cross - prima.cross;
     const a = analizza(dati, g.comando, g.bersaglio);
 
     if (a.errore) {
@@ -408,26 +578,58 @@ function analizza(dati, comando, bersaglio) {
       continue;
     }
     const rispondeInTempo = a.latenzaMs != null && a.latenzaMs <= 500;
-    const passa = rispondeInTempo && (!g.richiedeTiro || tiriFatti >= 1);
-    const chi = g.bersaglio === 'palla' ? 'la palla' : 'il giocatore comandato';
+    /* oltre alla risposta in tempo, l'azione dev'essere quella GIUSTA:
+       lo dicono i contatori del gioco e lo stato campionato, non la
+       nostra impressione sul movimento della palla */
+    const flickTxt = a.flickPxS != null ? ` (flick visto dalla pagina: ${a.flickPxS.toFixed(0)} px/s, al gioco ne servono 650)` : '';
+    let azioneNo = null;
+    if (g.richiedeTiro && tiriFatti < 1)
+      azioneNo = "la palla si muove ma il tabellino non segna tiri: il gesto e' stato letto come altro" + flickTxt;
+    if (!azioneNo && g.richiedeFiltrante) {
+      if (filtrantiFatte < 1) azioneNo = "il contatore delle filtranti non sale: il gesto e' stato letto come altro (passaggio normale?)";
+      else if (a.rispostaMax < 420) azioneNo = `filtrante a tabellino ma palla a ${a.rispostaMax.toFixed(0)} unita'/s: sotto il minimo (420) che la fa piu' rapida del passaggio normale`;
+      else if (a.zVoloMax > 5) azioneNo = `filtrante a tabellino ma la palla prende quota (z max ${a.zVoloMax.toFixed(1)}): la filtrante e' rasoterra per definizione`;
+    }
+    if (!azioneNo && g.richiedeCross) {
+      if (crossFatti < 1) azioneNo = "il contatore dei cross non sale: il flick trasversale e' stato letto come altro" + flickTxt;
+      else if (!(a.zVoloMax > 10)) azioneNo = `cross a tabellino ma la palla non prende quota (z max ${a.zVoloMax.toFixed(1)}: sopra le teste serve 26)`;
+    }
+    if (!azioneNo && g.richiedeScivolata && (a.scivolataMs == null || a.scivolataMs > 500))
+      azioneNo = a.scivolataMs == null
+        ? 'il comandato non entra mai in scivolata (p.slide resta spento)'
+        : `la scivolata parte solo dopo ${a.scivolataMs.toFixed(0)} ms`;
+    const passa = rispondeInTempo && !azioneNo;
+    const chi = g.bersaglio === 'palla' ? 'la palla' : g.bersaglio === 'ctrl' ? "l'indice del comandato" : 'il giocatore comandato';
     const daQuando = g.comando === 'inizio' ? "dall'appoggio del dito" : 'dal rilascio';
     verifica(passa, `${nome}: ${g.titolo}`,
       a.latenzaMs == null
-        ? `${chi} non cambia mai velocita' dopo il gesto: nessuna risposta`
-        : !passa
-          ? `la palla si muove (latenza ${a.latenzaMs.toFixed(0)} ms) ma il tabellino non segna tiri: il gesto e' stato letto come altro` +
-            (a.flickPxS != null ? ` (flick visto dalla pagina: ${a.flickPxS.toFixed(0)} px/s, al gioco ne servono 650)` : '')
-          : `latenza ${a.latenzaMs.toFixed(0)} ms ${daQuando}` +
-            (a.dallInizioMs != null && g.comando !== 'inizio' ? ` (${a.dallInizioMs.toFixed(0)} ms dall'inizio del gesto)` : '') +
-            ` — risposta: palla fino a ${a.rispostaMax.toFixed(0)} unita'/s` +
-            (g.richiedeTiro ? ` — tiri a tabellino +${tiriFatti}, perfetti +${perfettiFatti}` : '') +
-            (nome === 'tiro' && a.flickPxS != null ? ` — flick ${a.flickPxS.toFixed(0)} px/s` : '') +
-            (nome === 'carica' ? ` — carica maturata ${a.caricaMax.toFixed(2)} s (finestra dolce 0,50-0,80)` : ''));
+        ? (g.bersaglio === 'ctrl'
+            ? `${chi} non cambia mai dopo il gesto: nessuna risposta`
+            : `${chi} non cambia mai velocita' dopo il gesto: nessuna risposta`)
+        : !rispondeInTempo
+          ? `risposta a ${a.latenzaMs.toFixed(0)} ms: oltre il cancello dei 500`
+          : azioneNo
+            ? azioneNo + ` (latenza ${a.latenzaMs.toFixed(0)} ms)`
+            : `latenza ${a.latenzaMs.toFixed(0)} ms ${daQuando}` +
+              (a.dallInizioMs != null && g.comando !== 'inizio' ? ` (${a.dallInizioMs.toFixed(0)} ms dall'inizio del gesto)` : '') +
+              (g.bersaglio === 'ctrl' ? '' : ` — risposta: palla fino a ${a.rispostaMax.toFixed(0)} unita'/s`) +
+              (g.richiedeTiro ? ` — tiri a tabellino +${tiriFatti}, perfetti +${perfettiFatti}` : '') +
+              (nome === 'tiro' && a.flickPxS != null ? ` — flick ${a.flickPxS.toFixed(0)} px/s` : '') +
+              (nome === 'carica' ? ` — carica maturata ${a.caricaMax.toFixed(2)} s (finestra dolce 0,50-0,80)` : '') +
+              (g.richiedeFiltrante ? ` — filtranti a tabellino +${filtrantiFatte}, rasoterra (z max ${a.zVoloMax.toFixed(1)})` +
+                (a.passToVisto != null ? `, diretta al compagno ${a.passToVisto}` : '') : '') +
+              (g.richiedeCross ? ` — cross a tabellino +${crossFatti}, quota massima z ${a.zVoloMax.toFixed(1)} (sopra le teste da 26)` +
+                (a.flickPxS != null ? `, flick ${a.flickPxS.toFixed(0)} px/s` : '') : '') +
+              (g.bersaglio === 'ctrl' ? ` — comandato: indice ${prima.ctrl} -> ${a.nuovoIndice}` : '') +
+              (g.richiedeScivolata ? ` — p.slide acceso ${a.scivolataMs.toFixed(0)} ms dopo il tocco` : ''));
     raccolta.push({
       nome, esito: passa ? 'OK' : 'NO',
       latenzaMs: a.latenzaMs, dallInizioMs: a.dallInizioMs,
       rispostaMaxUnitaAlSecondo: a.rispostaMax, caricaMaturataSec: a.caricaMax,
       flickPxS: a.flickPxS, tiriATabellino: tiriFatti, tiriPerfetti: perfettiFatti,
+      filtrantiATabellino: filtrantiFatte, crossATabellino: crossFatti,
+      quotaMaxPalla: a.zVoloMax, scivolataMs: a.scivolataMs,
+      passTo: a.passToVisto, ctrlPrima: prima.ctrl, ctrlNuovo: a.nuovoIndice,
       comando: g.comando, bersaglio: g.bersaglio,
       campioni: dati.campioni, eventi: dati.eventi,
     });

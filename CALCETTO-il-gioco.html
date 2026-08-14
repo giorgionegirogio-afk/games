@@ -808,6 +808,10 @@ body.barra #gearBtn{display:none}
   color:var(--grigio);margin-top:9px}
 .pausastat .pfrow b{font-family:var(--cond);font-weight:700;font-size:14px}
 .pausastat .pfrow b.a{color:var(--tu)} .pausastat .pfrow b.b{color:var(--loro)}
+/* la riga dei comandi in pausa: gesso di lavagna, nessun accento nuovo */
+.pausacmd{max-width:340px;margin:-6px auto 16px;text-align:center;
+  font-family:var(--cond);font-weight:600;font-size:11.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--grigio)}
 
 /* ---------- menu "vivo": lascia vedere il campo notturno sul canvas ---------- */
 /* =====================================================================
@@ -2009,6 +2013,9 @@ button:active{transform:scale(.96)}
          di onesto da dire (possesso sotto i tre secondi campionati, zero
          falli) resta nascosto invece di mentire. -->
     <div id="pausaStat" class="pausastat hidden"></div>
+    <!-- UNA riga che racconta lo schema dei comandi: touch o tastiera
+         secondo l'ultimo input usato (InputPref), nel gesso di lavagna -->
+    <div id="pausaCmd" class="pausacmd"></div>
     <div class="menu-voci">
       <!-- l'unico accento della schermata di PAUSA sta sul bottone che ti
            rimanda a giocare. Prima l'arancione stava sul filo sopra il
@@ -2471,11 +2478,9 @@ button:active{transform:scale(.96)}
       <div class="eti">Gioco</div>
       <button class="voce sw" id="btnSetAudio">AUDIO: ON</button>
       <button class="voce sw" id="btnSetVib">VIBRAZIONE: ON</button>
-      <div class="eti">Comandi touch (mobile)</div>
-      <div class="diff-row">
-        <button class="tbtn sel" data-m="0">Gesti (flick)</button>
-        <button class="tbtn" data-m="1">3 pulsanti</button>
-      </div>
+      <!-- La scelta «Gesti / 3 pulsanti» non esiste piu': lo schema dei
+           comandi touch e' UNICO (stick + due pulsanti contestuali, coi
+           flick sempre attivi), quindi non c'era piu' niente da scegliere. -->
       <!-- ACCESSIBILITA' PRIMA DELLA DIFFICOLTA'.
            I due interruttori che servono a chi ne ha bisogno per giocare
            erano gli ULTIMI della pagina, cioe' gli unici che il piede
@@ -2553,11 +2558,15 @@ button:active{transform:scale(.96)}
             <b class="gn">Pallonetto</b><span class="gt">scatto mentre rilasci il tiro &mdash; scavalca il portiere in uscita</span></div>
           <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path class="trat" d="M8 20 Q30 32 46 40"/><circle class="palla" cx="50" cy="42" r="3.8"/><path d="M56 30l12 14m0-14L56 44"/><path d="M72 36 98 24"/><path d="M98 24l-9-1m9 1l-5 8"/><path d="M104 4h11v44h-11"/></svg>
             <b class="gn">Tiro al volo</b><span class="gt">tieni il tiro prima che la palla arrivi &mdash; le potenze si sommano</span></div>
+          <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path d="M16 30l12 14m0-14L16 44"/><circle class="palla" cx="30" cy="40" r="3.6"/><circle class="avv" cx="58" cy="26" r="8"/><path d="M84 14l12 14m0-14L84 28"/><path d="M34 40 88 34"/><path d="M88 34l-9-3m9 3l-8 5"/></svg>
+            <b class="gn">Filtrante</b><span class="gt">pulsante piccolo &middot; <kbd>E</kbd> &mdash; tesa sulla corsa dello smarcato, mira con la levetta</span></div>
+          <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path d="M16 44l12 14m0-14L16 58"/><circle class="palla" cx="30" cy="52" r="3.6"/><path class="trat" d="M34 50 Q70 6 96 30"/><path d="M96 30l-2-9m2 9l-8-4"/><circle class="avv" cx="66" cy="38" r="8"/><path d="M104 8h11v46h-11"/></svg>
+            <b class="gn">Cross</b><span class="gt">flick trasversale dalla met&agrave; campo offensiva &mdash; palla alta sul secondo palo</span></div>
         </div>
         <h3>Tastiera</h3>
-        <p><span class="pill c">P1</span> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> muovi &middot; <kbd>C</kbd> passa &middot; <kbd>X</kbd> tira &middot; <kbd>Z</kbd> scivola &middot; <kbd>Shift</kbd> scatto &middot; <kbd>Q</kbd> cambia uomo<br>
-        <span class="pill r">P2</span> <kbd>&#8593;</kbd><kbd>&#8595;</kbd><kbd>&#8592;</kbd><kbd>&#8594;</kbd> muovi &middot; <kbd>N</kbd> passa &middot; <kbd>M</kbd> tira &middot; <kbd>B</kbd> scivola &middot; <kbd>Shift destro</kbd> scatto &middot; <kbd>/</kbd> cambia uomo</p>
-        <p>Su telefono trascini per correre (stick virtuale); nel menu puoi scegliere <b>3 pulsanti</b> al posto dei gesti. In 2 giocatori lo schermo &egrave; diviso a met&agrave;.</p>
+        <p><span class="pill c">P1</span> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> muovi &middot; <kbd>C</kbd> passa &middot; <kbd>X</kbd> tira &middot; <kbd>E</kbd> filtrante &middot; <kbd>Z</kbd> scivola &middot; <kbd>Shift</kbd> scatto &middot; <kbd>Q</kbd> cambia uomo<br>
+        <span class="pill r">P2</span> <kbd>&#8593;</kbd><kbd>&#8595;</kbd><kbd>&#8592;</kbd><kbd>&#8594;</kbd> muovi &middot; <kbd>N</kbd> passa &middot; <kbd>M</kbd> tira &middot; <kbd>,</kbd> filtrante &middot; <kbd>B</kbd> scivola &middot; <kbd>Shift destro</kbd> scatto &middot; <kbd>/</kbd> cambia uomo</p>
+        <p>Su telefono trascini per correre (stick virtuale). <b>Stick a sinistra; a destra TIRA/CONTRASTA e FILTR./CAMBIO cambiano col possesso</b>, coi flick sempre attivi. In 2 giocatori lo schermo &egrave; diviso a met&agrave;.</p>
         <h3>Le regole del campetto</h3>
         <p><b>La squadra pensa.</b> L'ultimo uomo non abbandona mai la sua met&agrave; campo; quando l'azione si ribalta le ali scattano lunghe: &egrave; il contropiede. In vantaggio negli ultimi quindici secondi la CPU porta la palla nell'angolo, come al campetto.</p>
         <p><b>Il portiere &egrave; un giocatore vero.</b> Esce sulla bisettrice, legge il tiro e si tuffa: la parata avviene per contatto. Se lo spiazzi o lo scavalchi, &egrave; gol.</p>
@@ -2750,6 +2759,14 @@ const DIETRO_DOT = 0.52;              // allineamento oltre il quale l'entrata e
 const CARTELLINI_PER_ESPULSIONE = 2, ESPULSIONE_SEC = 12;
 /* pulsazione anello per il tiro touch (ciclo) */
 const PULSE_T = 0.90;
+/* finestra del tiro col flick, in FASE dell'anello (0..1): 450 ms su 900,
+   contro i 315 di prima. La fase e' ancorata al POSSESSO (G.possT), non
+   all'orologio della partita: prendi palla, l'anello si carica, la
+   finestra arriva sempre allo stesso momento. La grazia della tecnica
+   (i +-45 ms di releaseCharge) vale anche qui: stessa legge per dito e
+   tasto. SHOT_MIN/SHOT_MAX non si toccano: sono il metro della tastiera
+   e di giocata.js. */
+const FLICK_WIN0 = 0.45, FLICK_WIN1 = 0.95;
 
 /* ---------- stato globale ---------- */
 const G = {
@@ -3328,7 +3345,8 @@ function persistSave(){
   SAVE.mute=Audio5.muted;
   /* nel torneo la difficolta' e' imposta dal turno: non tocca la preferenza */
   if(G.matchCtx!=='tour') SAVE.diff=G.diff;
-  SAVE.touch=(typeof Touch5!=='undefined' && Touch5.useButtons)?1:0;
+  /* SAVE.touch non si scrive piu' (schema comandi unico); nei salvataggi
+     vecchi il campo resta e il load lo ignora senza rompersi */
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){}
 }
 
@@ -3791,7 +3809,7 @@ function startMatch(mode, diff, opts){
   G.kickTeam = Math.random()<0.5?0:1;
   G.score=[0,0]; G.timeLeft=(SAVE.durata||MATCH_SEC); G.golden=false;
   G.goldenT=0; G.rigori=null;
-  G.stats={ tiri:[0,0], perfetti:[0,0], rubate:[0,0], falli:[0,0], parate:[0,0], gialli:[0,0], espulsi:[0,0], pallonetti:[0,0], volee:[0,0], possesso:[0,0], inPorta:[0,0] };
+  G.stats={ tiri:[0,0], perfetti:[0,0], rubate:[0,0], falli:[0,0], parate:[0,0], gialli:[0,0], espulsi:[0,0], pallonetti:[0,0], volee:[0,0], possesso:[0,0], inPorta:[0,0], filtranti:[0,0], cross:[0,0] };
   G.brain=[{stato:'CONTESA',t:0,ruoloT:0,ruoli:{},transizione:0},
            {stato:'CONTESA',t:0,ruoloT:0,ruoli:{},transizione:0}];
   G.particles.length=0; G.freeze=0; G.shake=0; G.shakeDur=0; G.flashRing=0;
@@ -4493,8 +4511,8 @@ function drawConfScreen(){
 const Keys = Object.create(null);
 /* mappa tasti per team: P1 = WASD/C/X/Z, P2 = frecce/N/M/B */
 const KMAP = [
-  { up:'KeyW', dn:'KeyS', lf:'KeyA', rt:'KeyD', pass:'KeyC', shot:'KeyX', slide:'KeyZ', sprint:'ShiftLeft', swap:'KeyQ' },
-  { up:'ArrowUp', dn:'ArrowDown', lf:'ArrowLeft', rt:'ArrowRight', pass:'KeyN', shot:'KeyM', slide:'KeyB', sprint:'ShiftRight', swap:'Slash' },
+  { up:'KeyW', dn:'KeyS', lf:'KeyA', rt:'KeyD', pass:'KeyC', shot:'KeyX', slide:'KeyZ', sprint:'ShiftLeft', swap:'KeyQ', thr:'KeyE' },
+  { up:'ArrowUp', dn:'ArrowDown', lf:'ArrowLeft', rt:'ArrowRight', pass:'KeyN', shot:'KeyM', slide:'KeyB', sprint:'ShiftRight', swap:'Slash', thr:'Comma' },
 ];
 
 addEventListener('keydown', e=>{
@@ -4520,6 +4538,9 @@ addEventListener('keydown', e=>{
       if(e.code===m.pass)  doPass(t);
       if(e.code===m.slide) doSlide(t);
       if(e.code===m.swap)  cambiaGiocatore(t);
+      /* filtrante; con lo sprint tenuto diventa cross — lo stesso
+         pattern sprint-modifica del pallonetto (vedi releaseCharge) */
+      if(e.code===m.thr)   doFiltrante(t, humanSprint(t));
     }
   }
 });
@@ -4581,24 +4602,34 @@ function aiVuoleSprint(p){
   return d>90 && d<300;
 }
 
-/* ---------- touch: stick virtuale + flick oppure 3 pulsanti ---------- */
+/* ---------- touch: LO SCHEMA UNICO ----------
+   Stick a sinistra + DUE pulsanti contestuali a destra, sempre, coi
+   flick dello stick sempre attivi. Non e' un terzo modo fra "gesti" e
+   "3 pulsanti": e' l'unione dei due, e la vecchia scelta binaria delle
+   impostazioni non ha piu' niente da scegliere. */
 const IS_TOUCH = ('ontouchstart' in window) || ((navigator.maxTouchPoints|0)>0);
 /* sui dispositivi ibridi (touch + tastiera) i testi del tutorial seguono
    l'ultimo input davvero usato, non solo la capacita' hardware */
 const InputPref = { touch: IS_TOUCH };
-/* layout dei 3 pulsanti virtuali (coordinate schermo) */
+/* layout dei 2 pulsanti virtuali (coordinate schermo): posizioni FISSE,
+   etichette contestuali col possesso di squadra. Il GRANDE sta alle
+   stesse coordinate del vecchio TIRA — giocata.js 'carica' preme
+   esattamente (vw-66, vh-140) e deve colpire ancora. Il piccolo sta
+   92 unita' sopra (40+24 di raggi + 2x10 di margine hit + margine):
+   nessuna zona ambigua fra i due. */
 function touchBtnLayout(t){
   const right = (G.mode===2) ? (t===1) : true;
   const bx = right ? VW : 0;
   const s = right ? -1 : 1;
+  const poss = possessoTeam(t);
   return [
-    { act:'pass',  label:'PASSA',   x:bx+s*152, y:VH-60,  r:30 },
-    { act:'shot',  label:'TIRA',    x:bx+s*66,  y:VH-140, r:36 },
-    { act:'slide', label:'SCIV.',   x:bx+s*56,  y:VH-56,  r:26 },
+    poss ? { act:'shot',    label:'TIRA',      x:bx+s*66, y:VH-140, r:40 }
+         : { act:'slide',   label:'CONTRASTA', x:bx+s*66, y:VH-140, r:40 },
+    poss ? { act:'through', label:'FILTR.',    x:bx+s*70, y:VH-232, r:24 }
+         : { act:'swap',    label:'CAMBIO',    x:bx+s*70, y:VH-232, r:24 },
   ];
 }
 const Touch5 = {
-  useButtons:false,      // opzione impostazioni: 3 pulsanti al posto dei gesti
   btnTouch:{},           // id tocco -> {t,act} per i pulsanti virtuali
   stick:[ {active:false,id:-1,ox:0,oy:0,dx:0,dy:0,hist:[]},
           {active:false,id:-1,ox:0,oy:0,dx:0,dy:0,hist:[]} ],
@@ -4610,17 +4641,25 @@ const Touch5 = {
   start(id,x,y){
     if(G.paused) return;
     const t=this.teamOf(x);
-    /* modalita' pulsanti: il tocco su un pulsante non muove lo stick */
-    if(this.useButtons && !G.cpu[t] &&
+    /* i pulsanti vivono SEMPRE. Il contesto (possesso o no) si risolve
+       QUI, al touchstart, e l'azione risolta resta in btnTouch[id]: il
+       cambio di contesto a meta' pressione non cambia il gesto in corso. */
+    if(!G.cpu[t] &&
        (G.scene==='play'||G.scene==='golden'||G.scene==='kickoff')){
       for(const bt of touchBtnLayout(t)){
-        if(len(x-bt.x,y-bt.y)<=bt.r+10){
+        const d=len(x-bt.x,y-bt.y);
+        if(d<=bt.r+10){
           this.btnTouch[id]={t,act:bt.act};
-          if(bt.act==='pass') doPass(t);
-          else if(bt.act==='shot') startCharge(t);
-          else doSlide(t);
+          if(bt.act==='shot') startCharge(t);
+          else if(bt.act==='slide') doSlide(t);
+          else if(bt.act==='through') doFiltrante(t, humanSprint(t));
+          else if(bt.act==='swap') cambiaGiocatore(t);
           return;
         }
+        /* zona di esclusione: un dito che manca il pulsante di poco NON
+           diventa origine dello stick — se no il rilascio potrebbe
+           partire come flick (tiro o scivolata involontari) */
+        if(d<=bt.r+18) return;
       }
     }
     const s=this.stick[t];
@@ -4661,7 +4700,6 @@ const Touch5 = {
   /* rilascio: flick veloce = tiro o scivolata, rilascio semplice = passaggio */
   release(t,s){
     if(G.cpu[t] || G.paused) return;
-    if(this.useButtons) return;      // coi pulsanti virtuali lo stick muove soltanto
     if(G.scene!=='play' && G.scene!=='golden' && G.scene!=='kickoff') return;
     const now=performance.now();
     /* velocita' del flick negli ultimi ~90ms */
@@ -4677,10 +4715,16 @@ const Touch5 = {
       const fl=len(fvx,fvy), nx=fvx/fl, ny=fvy/fl;
       const goalDir = t===0?1:-1;
       if(carrying && nx*goalDir>0.25){
-        /* flick verso la porta avversaria = tiro; qualita' dal momento
-           del flick rispetto alla pulsazione dell'anello di timing */
-        const phase=(G.pulse%PULSE_T)/PULSE_T;      // 0..1
-        const q = (phase>0.55&&phase<0.9) ? 1 : (phase<=0.55?0:2); // perfetto/presto/tardi
+        /* flick verso la porta avversaria = tiro. La qualita' NON e' piu'
+           un dado: la fase e' ancorata al POSSESSO (G.possT parte quando
+           prendi palla), la finestra e' FLICK_WIN0-WIN1 (450 ms su 900) e
+           la tecnica regala gli stessi +-45 ms di releaseCharge. Ritmo
+           imparabile: prendi palla, l'anello si carica, si lascia
+           sull'ambra. */
+        const phase=(G.possT%PULSE_T)/PULSE_T;      // 0..1
+        const larg=(p.tecnica-62)/38*0.045/PULSE_T; // grazia della tecnica, in fase
+        const q = (phase>=FLICK_WIN0-larg && phase<=FLICK_WIN1+larg) ? 1
+                : (phase<FLICK_WIN0-larg?0:2);      // perfetto/presto/tardi
         fireShot(p, nx, ny, q);
         return;
       }
@@ -4697,6 +4741,14 @@ const Touch5 = {
         }
         if(best){ startSlide(p, nx, ny); return; }
         startSlide(p, nx, ny); return;   // scivolata comunque nella direzione del flick
+      }
+      /* CROSS: flick trasversale col pallone, dalla meta' campo
+         offensiva — palla alta sul secondo palo. Fuori da quella meta'
+         il flick trasversale resta il passaggio forte di sempre:
+         retrocompatibilita' dei riflessi e delle scene. */
+      if(carrying && Math.abs(ny)>0.6 && metaOffensiva(p)){
+        doCross(p, nx, ny);
+        return;
       }
       /* flick col pallone ma non verso la porta: passaggio forte in direzione */
       if(kickBall(p, nx, ny, 340, 0)) Audio5.kick(0.4);
@@ -4725,8 +4777,8 @@ cv.addEventListener('touchcancel', e=>{
   for(const t of e.changedTouches) Touch5.end(t.identifier);
 });
 addEventListener('contextmenu', e=>{ if(e.target===cv) e.preventDefault(); });
-/* opzione touch persistita */
-Touch5.useButtons = SAVE.touch===1;
+/* la vecchia opzione SAVE.touch (gesti/3 pulsanti) non esiste piu': lo
+   schema e' unico. Il campo nei salvataggi vecchi si legge e si ignora. */
 
 /* =====================================================================
    AZIONI — passaggio, tiro col timing, scivolata
@@ -4734,6 +4786,14 @@ Touch5.useButtons = SAVE.touch===1;
 function ctrlPlayer(t){
   const i=G.ctrl[t];
   return i>=0 ? G.players[i] : null;
+}
+/* la squadra t ha il pallone? E' il contesto dei pulsanti touch. */
+function possessoTeam(t){
+  return G.ball && G.ball.owner>=0 && G.players[G.ball.owner] && G.players[G.ball.owner].team===t;
+}
+/* meta' campo offensiva: da qui il flick trasversale diventa cross */
+function metaOffensiva(p){
+  return p.team===0 ? p.x>FW/2 : p.x<FW/2;
 }
 
 /* il giocatore calcia il pallone (se ce l'ha o se e' a portata) */
@@ -4791,6 +4851,25 @@ function doPass(t){
   if(p.charge>=0 && !p.chargeGo) chiudiAnticipo(p);   // stava caricando il tiro: cambia idea
   anticipa(p, 'passo', PASS_CAR_U, eseguiPassUmano);
 }
+/* il punteggio di SMARCAMENTO di un compagno q visto dal portatore p:
+   apertura dagli avversari + penalita' se qualcuno sta sulla linea di
+   passaggio. Estratto da eseguiPassUmano senza cambiare un numero:
+   adesso lo leggono in due — il passaggio e la filtrante — e la logica
+   vive in un posto solo. */
+function smarcato(p,q,t){
+  let openness=0;
+  for(const o of G.players){
+    if(o.team===t || o.out>0) continue;
+    openness += clamp(len(o.x-q.x,o.y-q.y),0,220);
+    /* penalita' se l'avversario e' sulla linea di passaggio */
+    const ax=q.x-p.x, ay=q.y-p.y, al=Math.max(1,len(ax,ay));
+    const px=o.x-p.x, py=o.y-p.y;
+    const t2=clamp((px*ax+py*ay)/(al*al),0,1);
+    const dLine=len(px-ax*t2, py-ay*t2);
+    if(dLine<40 && t2>0.1 && t2<0.95) openness-=260;
+  }
+  return openness;
+}
 function eseguiPassUmano(p){
   const t=p.team;
   const pi=G.players.indexOf(p);
@@ -4800,17 +4879,7 @@ function eseguiPassUmano(p){
   for(const q of G.players){
     if(q.team!==t || q===p || q.out>0 || q.role==='gk') continue;
     /* smarcato = lontano dagli avversari e con linea di passaggio libera */
-    let openness=0;
-    for(const o of G.players){
-      if(o.team===t || o.out>0) continue;
-      openness += clamp(len(o.x-q.x,o.y-q.y),0,220);
-      /* penalita' se l'avversario e' sulla linea di passaggio */
-      const ax=q.x-p.x, ay=q.y-p.y, al=Math.max(1,len(ax,ay));
-      const px=o.x-p.x, py=o.y-p.y;
-      const t2=clamp((px*ax+py*ay)/(al*al),0,1);
-      const dLine=len(px-ax*t2, py-ay*t2);
-      if(dLine<40 && t2>0.1 && t2<0.95) openness-=260;
-    }
+    let openness=smarcato(p,q,t);
     const goalX = t===0?FW:0;
     openness += (t===0? q.x-p.x : p.x-q.x)*0.9;      // premia chi e' avanti
     openness -= Math.abs(len(q.x-p.x,q.y-p.y)-170)*0.4; // distanza comoda
@@ -4826,6 +4895,90 @@ function eseguiPassUmano(p){
     Audio5.kick(0.35);
     b.passTo=G.players.indexOf(best);
     if(t===0 && !G.cpu[0]) Tut.notify('pass');
+  }
+}
+
+/* --- FILTRANTE: la palla tesa e rasoterra sulla corsa dello smarcato ---
+   Si mira con la levetta (o con la faccia del corpo): fra i compagni con
+   un dot>0,5 rispetto alla direzione chiesta vince il dot migliore, e a
+   parita' vince lo smarcato. Piu' rapida e piu' "in avanti" del
+   passaggio normale (lead 0,55 contro 0,32; 420-640 contro 320-520), e
+   rasoterra per definizione: kickBall sopra 500 metterebbe quota, la
+   filtrante la azzera subito dopo. Entra dal sistema dell'anticipo come
+   ogni gesto preparato. Con comeCross (sprint tenuto, o il pattern del
+   pallonetto) dalla meta' campo offensiva diventa un cross. */
+function doFiltrante(t, comeCross){
+  const p=ctrlPlayer(t);
+  if(!p) return;
+  const pi=G.players.indexOf(p);
+  if(G.ball.owner!==pi && len(G.ball.x-p.x,G.ball.y-p.y)>KICK_R) return;
+  if(p.charge>=0 && !p.chargeGo) chiudiAnticipo(p);   // stava caricando il tiro: cambia idea
+  if(comeCross && metaOffensiva(p)){
+    anticipa(p, 'passo', PASS_CAR_U, q=>{
+      let [mx,my]=humanMove(t);
+      if(!mx&&!my){ mx=q.fx; my=q.fy; }
+      doCross(q, mx, my);
+    });
+    return;
+  }
+  anticipa(p, 'passo', PASS_CAR_U, eseguiFiltrante);
+}
+function eseguiFiltrante(p){
+  const t=p.team;
+  const pi=G.players.indexOf(p);
+  const b=G.ball;
+  if(b.owner!==pi && len(b.x-p.x,b.y-p.y)>KICK_R) return;
+  /* direzione chiesta: la levetta, o dove guarda il corpo */
+  let [mx,my]=humanMove(t);
+  if(!mx&&!my){ mx=p.fx; my=p.fy; }
+  const ml=Math.max(0.001,len(mx,my)); mx/=ml; my/=ml;
+  /* bersaglio: miglior dot col vettore chiesto (richiesto >0,5);
+     se due sono appaiati (entro 0,08) vince lo smarcato */
+  let best=null, bestDot=-1;
+  for(const q of G.players){
+    if(q.team!==t || q===p || q.out>0 || q.role==='gk') continue;
+    const dx=q.x-p.x, dy=q.y-p.y, l=Math.max(1,len(dx,dy));
+    const dot=(dx*mx+dy*my)/l;
+    if(dot<=0.5) continue;
+    if(!best || dot>bestDot+0.08 ||
+       (dot>bestDot-0.08 && smarcato(p,q,t)>smarcato(p,best,t))){
+      if(dot>bestDot){ bestDot=dot; }
+      best=q;
+    }
+  }
+  if(!best) return;
+  /* sulla corsa, piu' avanti del passaggio normale */
+  const lead=0.55;
+  const tx=best.x+best.vx*lead, ty=best.y+best.vy*lead;
+  const dx=tx-p.x, dy=ty-p.y, l=Math.max(1,len(dx,dy));
+  const speed=clamp(380+l*1.1, 420, 640);
+  if(kickBall(p, dx/l, dy/l, speed, 0)){
+    b.vz=0;                                   // tesa e RASOTERRA, sempre
+    b.passTo=G.players.indexOf(best);
+    G.stats.filtranti[t]=(G.stats.filtranti[t]||0)+1;
+    Audio5.kick(0.5);
+  }
+}
+
+/* --- CROSS: balistica sui numeri di casa (z, gravita' 560, soglie
+   26/34/52 gia' del gioco). Punto d'atterraggio nella zona del secondo
+   palo; tempo di volo T fra 0,5 e 0,75 s; a T=0,7 il picco fa ~34:
+   scavalca teste e portiere in uscita, e ricade dove il gate
+   b.z<=Z_SOPRA_TESTA della raccolta riconsegna la palla ai piedi.
+   Niente banner: Soccer Stars non ce l'ha, e la densita' e' una legge. */
+function doCross(p,nx,ny){
+  const t=p.team;
+  const b=G.ball;
+  const goalX = t===0?FW:0;
+  const lx = goalX + (t===0?-55:55);
+  const ly = FH/2 + (p.y<FH/2?1:-1)*GOAL_H*0.28;   // secondo palo
+  const dx=lx-p.x, dy=ly-p.y, dist=Math.max(1,len(dx,dy));
+  const T=clamp(dist/430, 0.5, 0.75);
+  if(kickBall(p, dx/dist, dy/dist, dist/T, 0)){
+    b.vz=280*T;                                // la quota del cross, sopra ogni testa
+    b.passTo=-1;
+    G.stats.cross[t]=(G.stats.cross[t]||0)+1;
+    Audio5.kick(0.6);
   }
 }
 
@@ -5040,7 +5193,14 @@ function lanciaScivolata(p){
 /* =====================================================================
    SIMULAZIONE — passo fisso 60 Hz
    ===================================================================== */
-G.pulse=0;   // fase globale dell'anello di timing (per il tiro touch)
+G.pulse=0;   // fase globale (respiro dell'anello ambra, pulsazioni visive)
+/* fase del TIRO TOUCH ancorata al possesso: riparte da zero ogni volta
+   che il pallone cambia padrone (presa, calcio, punizione — qualunque
+   assegnazione: si osserva b.owner nello step, non i singoli punti).
+   Prendi palla -> l'anello si carica -> la finestra arriva sempre allo
+   stesso momento. Ritmo imparabile, zero casualita'. */
+G.possT=0;
+G.possOwner=-1;
 
 /* parametri CPU per difficolta':
    react    = tempo di reazione (s) delle decisioni IA
@@ -5114,6 +5274,10 @@ function step(){
   const dt=DT;
   G.sceneT+=dt;
   G.pulse+=dt;
+  /* cronometro del possesso: azzerato a OGNI cambio di padrone del
+     pallone (vedi G.possT alla dichiarazione) */
+  if(G.ball && G.ball.owner!==G.possOwner){ G.possOwner=G.ball.owner; G.possT=0; }
+  else G.possT+=dt;
   /* il cronometro del tutorial e' un cronometro di GIOCO come tutti gli
      altri: sta qui, col passo fisso, non nel ciclo dei fotogrammi */
   if(typeof Tut!=='undefined' && Tut.active) Tut.tick(dt);
@@ -12969,6 +13133,26 @@ function drawPlayer(p){
        sull'erba, e anche lui sta sotto il sole delle sette */
     ctx.strokeStyle='rgba(255,232,186,.55)'; ctx.lineWidth=1.3;
     ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0, 0.80*Math.PI,1.40*Math.PI); ctx.stroke();
+    /* LA FRECCIA DI DIREZIONE: un cuneo pieno posato sul bordo
+       dell'anello nell'angolo dei piedi (atan2(fy,fx)), MAI staccato
+       dal corpo — base dentro il filo, punta appena fuori. Stessa
+       coppia di tratti dell'anello: zoccolo scuro sotto, ambra sopra.
+       BUDGET NUMERICO OBBLIGATORIO (stesso conto dell'anello qui
+       sopra): punta a 20,9 + meta' zoccolo 1,4 = 22,3 di estremo, come
+       il filo dell'anello: (2,5+22,3)x1,18 = 29,3 < 30, il raggio da
+       cui collaudo.js campiona l'erba. La freccia rientra nel budget
+       come l'anello. Lo schiacciamento a terra (ary/arx) e' lo stesso
+       dell'ellisse: il cuneo giace sull'erba, non sta in piedi. */
+    const fa=Math.atan2(p.fy,p.fx);
+    const sq=ary/arx;
+    const fcx=p.x+2.5, fcy=p.y+6.6;
+    ctx.beginPath();
+    ctx.moveTo(fcx+Math.cos(fa)*20.9,      fcy+Math.sin(fa)*20.9*sq);
+    ctx.lineTo(fcx+Math.cos(fa+0.46)*14.2, fcy+Math.sin(fa+0.46)*14.2*sq);
+    ctx.lineTo(fcx+Math.cos(fa-0.46)*14.2, fcy+Math.sin(fa-0.46)*14.2*sq);
+    ctx.closePath();
+    ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=2.8; ctx.lineJoin='round'; ctx.stroke();
+    ctx.fillStyle='rgba(255,176,32,.95)'; ctx.fill();
   }
 
   /* L'OMBRA PORTATA non si disegna qui: sta in drawOmbreGiocatori, una
@@ -13506,7 +13690,15 @@ function drawPlayer(p){
   /* targhetta del controllato: qui si registra solo la posizione, il
      disegno avviene in drawHUD fuori dalla camera, a corpo fisso */
   if(isCtrl){
-    G.hudTags.push({ x:p.x, y:p.y+jump, txt:p.team===0?'P1':'P2', col:TEAMCOL[p.team] });
+    /* per P1 la targhetta dice CHI comandi: il cognome breve del tuo
+       uomo (la rosa ha nomi veri), troncato a 8 caratteri. P2 resta
+       P2: e' l'altro pollice sullo stesso schermo, non una rosa curata. */
+    let ttxt='P2';
+    if(p.team===0){
+      const cg=String(p.nome||'').trim().split(' ').pop();
+      ttxt=(cg?cg.toUpperCase().slice(0,8):'P1')||'P1';
+    }
+    G.hudTags.push({ x:p.x, y:p.y+jump, txt:ttxt, col:TEAMCOL[p.team] });
   }
 
   /* ANELLO DI TIMING DEL TIRO — SOLO SOTTO UN DITO UMANO.
@@ -13534,14 +13726,31 @@ function drawPlayer(p){
     }
   }
 
-  /* anello pulsante per il tiro touch (gesti) del portatore controllato */
-  if(Touch5.used && !Touch5.useButtons && isCtrl && G.ball.owner===pi && (p.charge<0 || !!p.chargeGo)){
-    const phase=(G.pulse%PULSE_T)/PULSE_T;
-    const inWin=phase>0.55&&phase<0.9;
-    const R=P_R+8+phase*10;
-    ctx.strokeStyle= inWin?'rgba(255,176,32,.9)':'rgba(242,245,239,.35)';
-    ctx.lineWidth= inWin?3:1.5;
-    ctx.beginPath(); ctx.arc(p.x,p.y,R,0,6.2832); ctx.stroke();
+  /* ANELLO DEL TIRO TOUCH del portatore controllato — nel linguaggio
+     dell'anello di carica tastiera qui sopra, che e' gia' giusto: raggio
+     FISSO, l'arco-finestra ambra evidenziato (settore FLICK_WIN0-WIN1) e
+     una lancetta che gira con la fase ancorata al possesso. Non piu' un
+     cerchio che si gonfia senza dire dove rilasciare: si VEDE il settore
+     e si vede la lancetta entrarci. */
+  if(Touch5.used && isCtrl && G.ball.owner===pi && (p.charge<0 || !!p.chargeGo)){
+    const phase=(G.possT%PULSE_T)/PULSE_T;
+    const inWin=phase>FLICK_WIN0&&phase<FLICK_WIN1;
+    const R=P_R+8;
+    /* finestra del flick come arco evidenziato */
+    ctx.strokeStyle='rgba(255,176,32,.35)'; ctx.lineWidth=5;
+    ctx.beginPath(); ctx.arc(p.x,p.y,R,-Math.PI/2+6.2832*FLICK_WIN0,-Math.PI/2+6.2832*FLICK_WIN1); ctx.stroke();
+    /* lancetta di progressione */
+    const la=-Math.PI/2+6.2832*phase;
+    ctx.strokeStyle= inWin?COL.ambra:COL.gesso; ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(p.x+Math.cos(la)*(R-5), p.y+Math.sin(la)*(R-5));
+    ctx.lineTo(p.x+Math.cos(la)*(R+5), p.y+Math.sin(la)*(R+5));
+    ctx.stroke();
+    if(inWin){
+      const pl=1+Math.sin(G.pulse*28)*0.08;
+      ctx.strokeStyle='rgba(255,176,32,.8)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(p.x,p.y,R*pl+4,0,6.2832); ctx.stroke();
+    }
   }
 
   /* flash dell'anello sul tiro perfetto. E' un'onda che si allarga, cioe'
@@ -14121,7 +14330,10 @@ function drawHUD(){
   const bordoVivo = (G.scene==='play'||G.scene==='golden'||G.scene==='kickoff') && !G.moviola;
   for(const tg of G.hudTags){
     const sx=tg.x*G.view.S2+G.view.Ax, sy=tg.y*G.view.S2+G.view.Ay;
-    const bw=30, bh=16;
+    /* la scatola si allarga quanto il testo: 'P2' resta a 30, il
+       cognome di P1 (fino a 8 caratteri a 11px condensed) ci sta senza
+       traboccare — a scatola fissa il nome mentirebbe sul bordo */
+    const bw=Math.max(30, 9+tg.txt.length*6.2)|0, bh=16;
     ctx.font='700 11px '+FONT_C; ctx.textAlign='center';
     /* "dentro" vuol dire: c'e' posto per la targhetta SOPRA la testa senza
        entrare nella barra del punteggio. Sotto quella soglia non si taglia
@@ -14184,9 +14396,11 @@ function drawTouchSticks(){
   }
 }
 
-/* pulsanti virtuali PASSA / TIRA / SCIVOLA (opzione impostazioni) */
+/* i DUE pulsanti contestuali dello schema unico: TIRA/CONTRASTA grande,
+   FILTR./CAMBIO piccolo. L'etichetta cambia col possesso, la posizione
+   MAI; transizione dell'etichetta senza animazioni (densita'). */
 function drawTouchButtons(){
-  if(!Touch5.useButtons || !(IS_TOUCH||Touch5.used)) return;
+  if(!(IS_TOUCH||Touch5.used)) return;
   if(G.scene!=='play'&&G.scene!=='kickoff'&&G.scene!=='golden') return;
   for(let t=0;t<2;t++){
     if(G.cpu[t]) continue;
@@ -14199,8 +14413,16 @@ function drawTouchButtons(){
       }
       ctx.beginPath(); ctx.arc(bt.x,bt.y,bt.r,0,6.2832);
       ctx.fillStyle='rgba(6,14,10,'+(pressed?0.85:0.5)+')'; ctx.fill();
-      ctx.strokeStyle='rgba('+col+','+(pressed?0.95:0.45)+')';
-      ctx.lineWidth=pressed?3:2; ctx.stroke();
+      if(bt.act==='slide'){
+        /* senza possesso il grande e' CONTRASTA: il filo gesso piu'
+           spesso, NIENTE quarta tinta (legge dei quattro colori) */
+        ctx.strokeStyle='rgba(242,245,239,'+(pressed?0.95:0.6)+')';
+        ctx.lineWidth=pressed?3.5:3;
+      }else{
+        ctx.strokeStyle='rgba('+col+','+(pressed?0.95:0.45)+')';
+        ctx.lineWidth=pressed?3:2;
+      }
+      ctx.stroke();
       /* arco di carica sul pulsante TIRA */
       if(bt.act==='shot'){
         const p=ctrlPlayer(t);
@@ -14213,7 +14435,8 @@ function drawTouchButtons(){
         }
       }
       ctx.fillStyle='rgba('+col+','+(pressed?1:0.8)+')';
-      ctx.font='700 '+Math.max(10,(bt.r*0.4)|0)+'px '+FONT_C;
+      /* le etichette lunghe (CONTRASTA) scalano per stare nel cerchio */
+      ctx.font='700 '+Math.max(10,(bt.r*(bt.label.length>6?0.3:0.4))|0)+'px '+FONT_C;
       ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(bt.label, bt.x, bt.y+1);
     }
@@ -15997,6 +16220,11 @@ function setPaused(v){
   { const tb=document.getElementById('tut'); if(tb) tb.classList.toggle('pausahide', v); }
   if(v){
     show(ui.pausa); refreshPauseAudio(); refreshPauseStats();
+    /* la riga-manifesto dei comandi, secondo l'input davvero in uso */
+    { const pc=document.getElementById('pausaCmd');
+      if(pc) pc.textContent = InputPref.touch
+        ? 'Stick a sinistra · TIRA/CONTRASTA e FILTR./CAMBIO cambiano col possesso'
+        : 'C passa · X tira · E filtrante · Z contrasta · Q cambia · Shift scatto'; }
     Audio5.crowdLevel(0.15);
   }else{
     hide(ui.pausa);
@@ -16104,19 +16332,8 @@ document.querySelectorAll('.taglia').forEach(b=>{
   });
 });
 refreshTaglieRow();
-/* impostazione comandi touch: gesti (flick) oppure 3 pulsanti */
-function refreshTouchRows(){
-  document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('sel', (b.dataset.m==='1')===Touch5.useButtons));
-}
-document.querySelectorAll('.tbtn').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    Audio5.unlock(); Audio5.beep(500);
-    Touch5.useButtons = b.dataset.m==='1';
-    refreshTouchRows();
-    persistSave();
-  });
-});
-refreshTouchRows();
+/* (la riga «Gesti / 3 pulsanti» e i suoi handler non esistono piu':
+   lo schema dei comandi touch e' unico) */
 $('btn1p').addEventListener('click', ()=>{ Audio5.unlock(); startMatch(1,G.diff); });
 $('btn2p').addEventListener('click', ()=>{ Audio5.unlock(); startMatch(2,G.diff); });
 $('btnHow').addEventListener('click', ()=>{ Audio5.unlock(); goScreen(ui.howto); });
@@ -16242,8 +16459,8 @@ const Tut={
   steps:[
     { k:'move',  kb:'Muoviti con <b>W A S D</b>: raggiungi il pallone', tc:'<b>Trascina il dito</b>: lo stick ti fa correre' },
     { k:'pass',  kb:'Premi <b>C</b>: passaggio al compagno pi&ugrave; smarcato', tc:'<b>Rilascia il dito</b> senza flick: passaggio' },
-    { k:'shot',  kb:'Tieni premuto <b>X</b> e rilascia <b>nella finestra</b>: tiro', tc:'<b>Flick verso la porta</b> quando l\'anello pulsa: tiro' },
-    { k:'slide', kb:'In difesa premi <b>Z</b>: scivolata (prima met&agrave; = rubata pulita)', tc:'In difesa <b>flick verso il portatore</b>: scivolata' },
+    { k:'shot',  kb:'Tieni premuto <b>X</b> e rilascia <b>nella finestra</b>: tiro', tc:'Tieni <b>TIRA</b> e lascia sull\'ambra &mdash; o flicka verso la porta' },
+    { k:'slide', kb:'In difesa premi <b>Z</b>: scivolata (prima met&agrave; = rubata pulita)', tc:'Senza palla: <b>CONTRASTA</b>, o flick sul portatore' },
   ],
   t:0, tot:0,
   start(){ this.active=true; this.step=0; this.t=0; this.tot=0; this.refresh(); show(ui.tut); },
@@ -17091,13 +17308,12 @@ function doResetSave(){
   Object.assign(SAVE,d);
   if(!SAVE.rosa) SAVE.rosa=nuovaRosa();   // la squadra rinasce, identica al primo giorno
   G.diff=SAVE.diff;
-  Touch5.useButtons=false;
   G.teamName=SAVE.teamName; G.oppName='CPU';
   G.fieldIdx=0;
   applyKit();
   Audio5.setMuted(false);
   buildFieldTex(); buildVignette();
-  refreshMute(); refreshPauseAudio(); refreshDiffRows(); refreshTouchRows();
+  refreshMute(); refreshPauseAudio(); refreshDiffRows();
   refreshImpostUI(); refreshCoinVals(); buildFieldRow();
   aggiornaEroeHome();                    // anche la lavagna della home torna 0:0
   ui.teamNameIn.value=SAVE.teamName;
@@ -17285,7 +17501,10 @@ window.__test = {
     if(SAVE.dalt){ TEAMCOL[1]=BLU_KIT; TEAMCOL2[1]='#123a80'; TEAMPAT[1]=2; refreshTeamRGB(); }
     return SAVE.dalt;
   },
-  setTouchButtons(v){ Touch5.useButtons=!!v; },
+  /* SHIM: lo schema dei comandi touch e' unico e i pulsanti vivono
+     sempre — questa chiave resta chiamabile (giocata.js la invoca in
+     'carica') ma non cambia piu' alcun comportamento. */
+  setTouchButtons(v){ return !!v; },
   get stats(){ return G.stats; },
   /* disciplina: stato di cartellini ed espulsioni temporanee */
   get disciplina(){
