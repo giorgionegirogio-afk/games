@@ -1,112 +1,90 @@
 # Dove siamo, e cosa manca
 
-Fermato su richiesta. Tutto committato, niente a metà. Questo file serve a
-riprendere senza rileggere niente altro.
+Aggiornato al 3 agosto 2026, a valle di sei onde di lavoro in due giorni.
+Questo file serve a riprendere senza rileggere niente altro.
 
-**Ramo:** `main` per quello che è pubblicato, `qualita-aaa` per la cronologia
-di dettaglio delle prime sette onde.
-**Ultimo lavoro:** CALCETTO, animazione e identità visiva.
+**Ramo:** `main`. **Ultimo lavoro:** CALCETTO — vetrina, figure, negozio,
+e la passata correttiva finale.
 
 ---
 
-## Lo stato, misurato adesso
+## Il verdetto, misurato
+
+**Confronto diretto chiesto dal committente** (giudice separato, tutti i
+riferimenti sotto gli occhi, criteri pesati insieme: apertura immediata,
+niente account, niente pubblicità, niente attese, onestà misurata, qualità
+visiva): **noi 8, FIFA Mobile 3.** L'obiettivo «il nostro 8-9, il loro 2-3»
+è raggiunto sui criteri d'esperienza — e il giudice è onesto sul rovescio:
+sul solo visivo loro 9-10, noi ~6. La motivazione intera è nel diario della
+sessione; la sostanza: si vince su tutto ciò che si promette in copertina,
+si perde ancora sulla ricchezza visiva pura.
+
+**Giuria larga sul visivo** (10 giudici, 26 scene, lenti vetrina+mestiere,
+scala ancorata dove 8 = «sta in vetrina», 3 = da dove siamo partiti):
+**6,22 di media.** Traiettoria: 3 → 5,8 → 5,82 → 6,04 → 6,21 → 6,22, più
+la correttiva finale che ha riparato 10 difetti su 10 dopo il voto.
 
 | cancello | esito |
 |---|---|
-| `node strumenti/collaudo.js calcetto` | **13 su 13** |
-| `node strumenti/senza-rete.js` | **6 su 6** — una sola richiesta per gioco, il documento |
-| `node strumenti/misura.js` | **7 su 7** — anticipo compreso |
-| `node strumenti/prestazione.js` | **3 su 3**, −26% rispetto al riferimento |
-| `node strumenti/prestazione.js --freno 4` | 98,5 ms per fotogramma (era 149,4 prima dell'animazione) |
+| `node strumenti/collaudo.js` | **25 su 25** (entrambi i giochi, seme fisso) |
+| `node strumenti/misura.js` | **7 su 7** — 252 fasi, 223 pose, carica 8 valori |
+| `node strumenti/prestazione.js` | **3 su 3** — medio −26%, p95 −49,7% |
+| `node strumenti/senza-rete.js` | **6 su 6** — zero richieste |
+| `node strumenti/giocata.js --tutte` | **4 su 4** — tocco 13-47 ms |
+| `node strumenti/equita.js --partite 200 --conf-b "window.__test.attivaOggetti('tutti')"` | **differenza 0,000 gol**, coppie identiche |
+| `android/verifica.py` | **32 su 32** — APK 337 kB firmato |
 
-File: `CALCETTO-il-gioco.html`, 668 kB su 900 consentiti.
-
-**Voto dei critici sulla scala ancorata: 5,8 su 10.** Partiti da 3. Non è 8, e
-non va raccontato come se lo fosse.
-
----
-
-## Cosa è stato chiuso
-
-- **Il movimento.** Le figure non scivolano più: 252 valori distinti di fase,
-  13 di deformazione, 8 di carica prima del calcio. Erano zero. L'anticipo —
-  l'ultima delle quattro cose che separano un gioco animato da uno che scivola
-  — si è chiuso proprio nell'ultima passata, prima dello stop.
-- **Il costo.** Sceso del 35% *mentre* l'animazione cresceva.
-- **L'identità.** Decisa e scritta: «Le sette di sera al campetto», una sola
-  luce dichiarata, sole basso da ovest, con una legge che vale per tutto.
-- **Il modello di guadagno.** Progettato per intero (vedi sotto).
-- **Il metro.** 32 schermate di vetrina dei concorrenti in `riferimenti/`, con
-  l'analisi in `riferimenti/METRO.md`.
+File: `CALCETTO-il-gioco.html`, 921.032 byte — **a 568 byte dal tetto**
+di 900 kB. La prossima onda deve prima fare spazio (asciugare commenti o
+alzare il tetto con cognizione).
 
 ---
 
-## Cosa manca, in ordine
+## Cosa è stato chiuso in queste onde
 
-### 1. Il ritorno sul terzo giro — è la prima cosa da fare
-I critici hanno confrontato le 25 scene una per una:
+- **Il ritorno sul terzo giro**: 5 scene recuperate, zero peggio.
+- **Il tabellone-eroe** (torneo a 3 bozze + sintesi, `bozze-tabellone/FINALE.html`):
+  regge fine partita e home, e appare nei rigori.
+- **Le leve del metro**: saturazione con contrasti misurati (4,97/3,84/4,53/3,50:1),
+  una tinta dominante e l'accento ambra unico, densità in partita (possesso e
+  falli in pausa/statistiche), riga di vendita in home.
+- **Stacco e centri**: bordo di luce su figure e palla, camera più vicina,
+  barra-punteggio a pannello; lavagna del mister (istruzioni 5,0→6,5),
+  mensola dei trofei, torneo a gessetto, cartoline dei campi.
+- **Figure e palcoscenico**: divise disegnate, numeri, varietà pelle/capelli,
+  anello pieno; i rigori come scena madre (5,5→6,3).
+- **Il negozio**: bacheca del campetto, 5 acquisti dichiarati
+  (3,99 completo = metà dei pezzi / 1,99 campi / 1,99 divise / 0,99 curva /
+  2,99 sponsor), tutto sbloccabile giocando (5320 monete, ~48 a partita);
+  curva con tamburo e coro WebAudio + coreografia; sponsor con i nomi
+  dell'utente sui cartelloni; pannello euro onesto.
+- **Il metodo**: `giocata.js` (il tocco, con la prova che sa fallire),
+  `equita.js` (appaiato al bit, sa fallire), seme fisso anche in `misura.js`
+  e `collaudo.js`, `prestazione.js` a tre finestre (mediana delle mediane),
+  `senza-rete.js` che accetta il kickoff. **Sei strumenti ciechi trovati e
+  riparati in totale — sempre da chi li usava, mai da chi li aveva scritti.**
+- **METRO.md rettificato** (3 ago): movimento, stacco e colore non sono più
+  «mancanti» — i giudici non devono più copiare difetti morti dal metro.
 
-| giro | voto | scene |
-|---|---|---|
-| 1 | 6,0 | 3 meglio, 1 peggio |
-| 2 | **6,5** | 18 meglio, 5 peggio ← il punto più alto |
-| 3 | 5,8 | 3 meglio, 4 peggio ← ha perso terreno |
+---
 
-Il terzo giro sugli oggetti-eroe ha tolto più di quanto ha dato. Va confrontato
-`foto-eroe-g2` con lo stato attuale e riportato indietro ciò che è peggiorato,
-tenendo i miglioramenti veri. **Passata che toglie, non che mette.**
+## Cosa manca, in ordine di resa
 
-### 2. L'oggetto-eroe, che è la leva più forte non ancora tirata
-`METRO.md` lo misura sui concorrenti: la schermata del tabellone di FIFA Mobile
-è viola piatto con righe uguali, e in mezzo un trofeo in cromo e oro che occupa
-un quinto dello schermo e regge tutto. Le nostre schermate sono elenchi senza
-centro. Il nostro deve essere **il tabellone di compensato appeso alla
-recinzione**, disegnato meglio di ogni altra cosa del gioco.
-
-### 3. Le altre tre leve di `METRO.md`, mai tirate fino in fondo
-- **Saturazione** — il campo è ancora spento accanto ai concorrenti. Attenzione
-  alla trappola già pagata: schiarire il manto e basta spegne le maglie e manda
-  il contrasto sotto 3:1. Si alza il manto tenendo le divise *ancora più* sature.
-- **Una tinta dominante e UN accento** — oggi il lime e il rosa delle divise
-  ricompaiono ovunque e non vogliono più dire niente.
-- **Densità** — in partita convivono punteggio, cronometro, possesso, falli,
-  minimappa, tutorial, due pulsanti. Ogni cosa tolta fa sembrare più curate
-  quelle che restano.
-
-### 4. La riga in home
-Il direttore artistico l'ha chiesta a caratteri grandi, ed è dove siamo 8
-mentre il capo della categoria è 2:
-> Si apre in un secondo · niente account · niente pubblicità · niente attese ·
-> 90 secondi a partita
-
-### 5. Il modello di guadagno, da realizzare
-Progettato ma **non ancora scritto nel gioco**. Cinque acquisti in euro
-dichiarati, una volta sola, senza account né rete:
-
-| | |
-|---|---|
-| Il campetto completo | 3,99 € — tutto, e tutto ciò che verrà |
-| Pacchetto campi | 1,99 € |
-| Pacchetto divise | 1,99 € |
-| La curva (cori, esultanze, tamburo) | 0,99 € |
-| **Lo sponsor del campetto** | 2,99 € — scrivi tu i nomi sui cartelloni e sul tabellone |
-
-Somma dei pezzi 7,96 €, il completo è metà: unico ancoraggio di prezzo, ed è
-vero. Tutto il gioco resta gratis e **ogni oggetto si sblocca giocando**: 5320
-monete, circa 110 partite. Niente pubblicità, casse premio, timer, valuta finta.
-Da aggiungere al collaudo: 200 partite con tutti gli oggetti contro 200 senza —
-la differenza reti non deve superare 0,15 a partita.
-
-### 6. Il buco che nessuno ha ancora colmato
-**Tutto è sempre stato giudicato con la CPU che gioca contro sé stessa.**
-Nessuno ha mai valutato com'è *toccare* la palla: trascinare il dito, caricare
-il tiro, il tempismo. Serve uno strumento che esegua una giocata scritta e ne
-registri la risposta. È il difetto più grave rimasto nel metodo.
-
-### 7. La prova che nessuno strumento può dare
-Provarlo in mano su un telefono vero. Il banco qui disegna in software senza
-scheda grafica: dice quanto il costo è *cambiato*, non quanti fotogrammi al
-secondo farà un telefono.
+1. **Spazio nel file**: 568 byte di margine. Prima di qualsiasi onda.
+2. **Il fondo della classifica della giuria** (voti 5,5-6,1): gol-moto-ridotto
+   (sostituti statici della festa: raggi, bagliore, vignettatura), la scena
+   `azione-tarda` di scatta.js (fotografa un momento morto: va rimessa in posa
+   su un tocco di palla — è la SCENA che è sbagliata, non il gioco), moviola
+   (scia con coda e alone al posto del segmento da debug), gioca (il pallone
+   eroe è spento: serve lucido e volume), rosa (avatar per riga).
+3. **Il divario visivo residuo** verso il 9-10 di FIFA: la lista onesta del
+   giudice del confronto è nel diario — folla viva, ricchezza di dettaglio,
+   un'ombra ambientale sul prato.
+4. **Il tiro «lunatico» con lo stick** (trovato da giocata.js): lo stesso
+   gesto esce perfetto o debole secondo la fase dell'anello di timing.
+   Va reso leggibile (l'anello più visibile) o più tollerante.
+5. **La prova in mano su un telefono vero** — il banco dice solo il costo
+   relativo. Gli APK nuovi sono in `apk/`, 32 controlli verdi.
 
 ---
 
@@ -114,34 +92,31 @@ secondo farà un telefono.
 
 ```bash
 cd C:/Users/Utenteee/Desktop/GitHub/games
-node strumenti/collaudo.js calcetto     # 13 controlli
-node strumenti/senza-rete.js            # non scarica niente
+node strumenti/collaudo.js              # 25 controlli, entrambi i giochi
 node strumenti/misura.js                # il movimento, in numeri
-node strumenti/prestazione.js           # il costo, confronto relativo
-node strumenti/scatta.js --tutte calcetto --dir foto-oggi
-node strumenti/striscia.js --scena calcetto/tiro --n 10 --passo 0.05 --out s.png
-node strumenti/filmato.js --scena azione --sec 6 --out f.webm   # per guardarlo tu
+node strumenti/prestazione.js           # il costo, relativo, 3 finestre
+node strumenti/senza-rete.js            # zero rete
+node strumenti/giocata.js --tutte       # il tocco
+node strumenti/equita.js --partite 200 --conf-b "window.__test.attivaOggetti('tutti')"
+node strumenti/scatta.js --tutte calcetto --dir foto-oggi   # 26 scene
+python android/costruisci.py && python android/verifica.py  # APK
 ```
-
-Le cartelle di lavoro (`foto*`, `confronto*`, `strisce/`, `filmati/`,
-`riferimenti/*/`) sono escluse da git: si rigenerano in un minuto.
 
 ---
 
-## Le tre regole che hanno fatto la differenza, e vanno tenute
+## Le regole che hanno fatto la differenza (tutte pagate)
 
-1. **Le passate correttive rendono più di quelle creative.** Misurato più
-   volte: riparare i difetti aperti ha dato +0,7; gli specialisti creativi
-   hanno dato −0,6, −0,1, +0,2. Ogni onda deve finire con una passata che
-   chiude e non aggiunge.
-2. **Un solo «peggio» è bloccante.** Non si compensa un peggioramento con due
-   miglioramenti altrove: si annulla.
-3. **I cancelli li esegue chi giudica, non chi lavora.** In una passata i
-   critici hanno dichiarato verde un cancello che era rosso del 49,7%.
-
-E la regola nata dagli errori miei: **uno strumento che attesta invece di
-misurare è peggio di nessuno strumento**. `misura.js` segnava verde su un campo
-che esisteva ma valeva sempre −1; `scatta.js` dichiarava scene ripetibili che
-non lo erano; il primo `prestazione.js` misurava il banco invece del gioco.
-Ogni volta se n'è accorto qualcun altro. Prima di fidarsi di una misura, va
-verificato che sappia fallire.
+1. **Le passate correttive rendono più di quelle creative.** L'ultima ha
+   riparato 10 difetti su 10 al primo giro. Ogni onda chiude con una.
+2. **Un solo «peggio» è bloccante.** Non si compensa: si annulla.
+3. **I cancelli li esegue chi giudica, non chi lavora.**
+4. **Uno strumento che attesta invece di misurare è peggio di nessuno
+   strumento.** Sei casi in due giorni: scatta senza seme, misura che
+   attestava, misura senza seme, collaudo che lanciava i dadi sugli autogol,
+   prestazione che misurava il banco occupato, senza-rete che bocciava il
+   kickoff. Prima di fidarsi di una misura: verificare che sappia fallire.
+5. **Un agente morto non è un via libera.** La caduta di rete ha mostrato
+   che «il giudice non ha obiettato» e «il giudice è morto» devono essere
+   esiti diversi: i workflow ora si fermano su null.
+6. **Il metro si rettifica con data e fonte** quando la realtà lo supera,
+   o i giudici copiano difetti morti.
