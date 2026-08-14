@@ -34,9 +34,12 @@ la correttiva finale che ha riparato 10 difetti su 10 dopo il voto.
 | `node strumenti/equita.js --partite 200 --conf-b "window.__test.attivaOggetti('tutti')"` | **differenza 0,000 gol**, coppie identiche |
 | `android/verifica.py` | **32 su 32** — APK 337 kB firmato |
 
-File: `CALCETTO-il-gioco.html`, 921.032 byte — **a 568 byte dal tetto**
-di 900 kB. La prossima onda deve prima fare spazio (asciugare commenti o
-alzare il tetto con cognizione).
+File: `CALCETTO-il-gioco.html`, 921.032 byte. **Il tetto di casa è stato
+alzato da 900 a 1500 kB il 3 agosto 2026**, con cognizione: il committente
+ha chiesto rose da 5/7/11, l'intero vocabolario delle azioni animate e lo
+pseudo-3D — non stanno in 900 kB. Il vincolo vero resta l'altro: UN solo
+file, zero rete, si apre in un secondo (1500 kB su rete mobile media sono
+ancora sotto il secondo, ed è l'argomento di vendita da difendere).
 
 ---
 
