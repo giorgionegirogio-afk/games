@@ -54,3 +54,6 @@ filmati/
 # la sandbox del tabellone-eroe: si tiene solo la definitiva
 bozze-tabellone/*
 !bozze-tabellone/FINALE.html
+
+# la sandbox del rig 3D: si versionano i sorgenti, non le tavole
+bozze-rig3d/*.png

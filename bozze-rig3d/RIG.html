@@ -1,0 +1,1104 @@
+<!--
+  RIG.html — Rig3D: figure pseudo-3D per CALCETTO
+  ================================================
+  Libreria PURA in canvas 2D, zero dipendenze, zero immagini.
+  Scheletro a 18 giunti 3D, pose per curve di fase, yaw 0-360°,
+  due camere preimpostate: "alto" (partita, top-down inclinata)
+  e "bassa" (rigori e riprese del gol, dietro il giocatore).
+  Disegno a capsule con spessore, ordinate per profondita' camera.
+
+  COSTO MISURATO (22 figure x 600 frame, 30px, camera alto,
+  Chromium headless su questa macchina, 2026-08-14, dopo la passata
+  su rovesciata/camminata/frenata/corsa/palla: ombra a quota dei
+  giunti, polvere d'impatto e fotogramma di contatto compresi):
+    clip camminata:          ~1.3 ms/frame per TUTTE le 22 figure (~745 fps)
+    clip corsa:              ~1.4-1.5 ms/frame                    (~680 fps)
+    clip tiro (con palla):   ~1.6-1.7 ms/frame                    (~610 fps)
+    clip finta (palla):      ~1.6 ms/frame                        (~610 fps)
+    clip rovesciata (palla,
+      ombra staccata+polvere): ~1.9 ms/frame                      (~520 fps)
+    le altre clip stanno tra questi estremi (misura precedente
+    1.3-2.1 ms; il costo aggiunto oggi e' <0.1 ms complessivo).
+    => <0.1 ms a figura: a 60 fps il rig usa ~12% del bilancio di frame,
+       e resta sotto i ~2 ms per 22 figure anche nella clip peggiore.
+  La stessa misura gira a ogni apertura della pagina (?clipcosto=nome
+  per misurare un'altra clip): il numero fresco appare in console e
+  nell'angolo in basso a destra.
+
+  Bilancio per figura per frame: ~34 sin/cos, ~18 tracciati canvas
+  (capsule stroke + 2 arc testa + 1 ellisse ombra), ZERO allocazioni
+  (tutti gli array sono riusati, l'ordinamento e' un insertion sort
+  su un array di indici persistente).
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rig3D — figure pseudo-3D</title>
+<style>
+  body{background:#101613;color:#cfe3d4;font:13px/1.4 system-ui,sans-serif;margin:0;padding:10px}
+  h1{font-size:15px;margin:2px 0 8px}
+  .controlli{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:10px}
+  .controlli label{display:flex;gap:5px;align-items:center}
+  canvas{display:block}
+  #anteprima{background:#2e7d3f;border-radius:6px}
+  .riga{margin:8px 0}
+  .riga .tit{font-size:11px;opacity:.75;margin-bottom:2px}
+  .px30{image-rendering:pixelated;width:calc(var(--w)*2px);height:calc(var(--h)*2px)}
+  #costo{position:fixed;right:8px;bottom:8px;background:#000a;color:#ffd76e;
+         padding:4px 8px;border-radius:4px;font:11px monospace;z-index:9}
+  select,input{accent-color:#6fcf8f}
+</style>
+<h1>Rig3D — banco di prova figure pseudo-3D</h1>
+<div class="controlli">
+  <label>clip <select id="selClip">
+    <option value="fermo">fermo</option>
+    <option value="camminata">camminata</option>
+    <option value="corsa" selected>corsa</option>
+    <option value="frenata">frenata</option>
+    <option value="passaggio">passaggio rasoterra</option>
+    <option value="filtrante">passaggio filtrante</option>
+    <option value="cross">cross</option>
+    <option value="tiro">tiro in porta</option>
+    <option value="finta">finta / dribbling</option>
+    <option value="scivolata">contrasto in scivolata</option>
+    <option value="rovesciata">rovesciata</option>
+    <option value="parata">parata bassa</option>
+    <option value="tuffo">tuffo laterale</option>
+    <option value="presa">presa alta</option>
+    <option value="rinvio">rinvio</option>
+    <option value="esultanza">esultanza — corsa a braccia larghe</option>
+    <option value="ginocchia">esultanza — scivolata sulle ginocchia</option>
+    <option value="pugno">esultanza — pugno al cielo</option>
+    <option value="delusione">delusione — gol subito</option>
+  </select></label>
+  <label>camera <select id="selCam">
+    <option value="alto" selected>alto (partita)</option>
+    <option value="bassa">bassa (rigori)</option>
+  </select></label>
+  <label>angolo <input type="range" id="selYaw" min="0" max="360" value="30" style="width:160px">
+    <span id="lblYaw">30°</span></label>
+  <label>velocita' <input type="range" id="selVel" min="10" max="200" value="100" style="width:90px">
+    <span id="lblVel">1.0×</span></label>
+  <label><input type="checkbox" id="selEntrambe"> griglia: entrambe le camere</label>
+</div>
+<canvas id="anteprima" width="300" height="300"></canvas>
+<div id="griglia"></div>
+<div id="costo">misuro il costo…</div>
+
+<script>
+'use strict';
+/* ============================================================
+   Rig3D — libreria pura. Nessuna allocazione per fotogramma.
+   ============================================================ */
+const Rig3D = (function(){
+const TAU = Math.PI*2;
+
+/* --- giunti (indici) --- */
+const PELVIS=0,CHEST=1,NECK=2,HEAD=3,
+      SHL=4,ELL=5,HAL=6, SHR=7,ELR=8,HAR=9,
+      HIPL=10,KNL=11,FTL=12, HIPR=13,KNR=14,FTR=15,
+      TOL=16,TOR=17, NJ=18;
+
+/* --- misure del corpo (metri, altezza ~1.83) --- */
+const THIGH=0.46, SHIN=0.45, UA=0.27, FA=0.25, FOOT=0.145,
+      SHW=0.20, HIPW=0.105, HEADR=0.155;
+
+/* --- scratch riusati: MAI allocati nel frame --- */
+const P  = new Float32Array(NJ*3);   // posa locale (x lato, y su, z avanti)
+const SX = new Float32Array(NJ);     // proiezione schermo x
+const SY = new Float32Array(NJ);     // proiezione schermo y
+const SD = new Float32Array(NJ);     // profondita' camera
+
+/* --- palla (per le clip che la includono): scratch riusato --- */
+const RPALLA=0.11;
+const PALLA=new Float32Array(4);     // x,y,z,schiacciata
+let PSX=0,PSY=0,PSD=0;               // proiezione schermo della palla
+
+/* rampa morbida 0->1 tra a e b */
+function sm(u,a,b){ let t=(u-a)/(b-a); if(t<0)t=0; else if(t>1)t=1; return t*t*(3-2*t); }
+
+function setJ(j,x,y,z){ P[j*3]=x; P[j*3+1]=y; P[j*3+2]=z; }
+
+/* --- FK gamba: a = angolo coscia avanti dal filo a piombo, knee = flessione --- */
+function gamba(hip,kn,ft,toe, hx,hy,hz, a,knee, fx){
+  const b=a-knee;
+  const ca=Math.cos(a), sa=Math.sin(a), cb=Math.cos(b), sb=Math.sin(b);
+  const kx=(hx+fx)*0.5, ky=hy-THIGH*ca, kz=hz+THIGH*sa;
+  let fy=ky-SHIN*cb; const fz=kz+SHIN*sb;
+  if(fy<0.045) fy=0.045;                       // il piede non buca il terreno
+  let tp=-b*0.8; if(tp>1.15)tp=1.15; else if(tp<-0.5)tp=-0.5;  // beccheggio piede
+  let ty=fy-FOOT*Math.sin(tp); if(ty<0.02)ty=0.02;
+  setJ(hip,hx,hy,hz); setJ(kn,kx,ky,kz); setJ(ft,fx,fy,fz);
+  setJ(toe,fx,ty,fz+FOOT*Math.cos(tp));
+}
+
+/* --- FK braccio: a = angolo avanti dalla spalla, elb = flessione gomito --- */
+function braccio(sh,el,ha, sx,sy,sz, a,elb, out,side){
+  const b=a+elb;
+  const ex=sx+out*side, ey=sy-UA*Math.cos(a), ez=sz+UA*Math.sin(a);
+  setJ(sh,sx,sy,sz); setJ(el,ex,ey,ez);
+  setJ(ha, ex-0.04*side, ey-FA*Math.cos(b), ez+FA*Math.sin(b));
+}
+
+/* --- tronco + testa (la testa raddrizza meta' dell'inclinazione) --- */
+function corpo(pelvY,sway,lean,headBob){
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  setJ(PELVIS, sway, pelvY+0.06*cl, 0.06*sl);
+  setJ(CHEST,  sway, pelvY+0.40*cl, 0.40*sl);
+  setJ(NECK,   sway, pelvY+0.52*cl, 0.52*sl);
+  const hl=lean*0.55, shl=Math.sin(hl), chl=Math.cos(hl);
+  setJ(HEAD, sway, pelvY+0.52*cl+0.19*chl+headBob, 0.52*sl+0.19*shl);
+}
+
+/* ============================================================
+   POSE: curve di fase. u in [0,1) e' la fase del ciclo.
+   ============================================================ */
+
+/* locomozione generica parametrica (camminata e corsa) */
+function poseLoco(u,q){
+  const w=u*TAU, sw=Math.sin(w), c2=Math.cos(2*w);
+  const pelvY=0.93-q.crouch+q.bounce*c2;
+  const ht=q.twist*sw, st=-q.twist*1.3*sw;   // bacino e spalle in controrotazione
+  corpo(pelvY,0,q.lean,q.headBob*c2);
+  // spalle (sull'inclinazione del tronco, con torsione)
+  const sl=Math.sin(q.lean), cl=Math.cos(q.lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl, cs=Math.cos(st), ss=Math.sin(st);
+  // braccia in opposizione alle gambe
+  const aAR=-q.arm*sw+q.armOfs, aAL=q.arm*sw+q.armOfs;
+  const eR=q.elb0+q.elbA*(0.5-0.5*sw), eL=q.elb0+q.elbA*(0.5+0.5*sw);
+  braccio(SHR,ELR,HAR,  SHW*cs, shY, shZ+SHW*ss, aAR,eR, q.armOut, 1);
+  braccio(SHL,ELL,HAL, -SHW*cs, shY, shZ-SHW*ss, aAL,eL, q.armOut,-1);
+  // gambe: anticipo (ginocchio raccolto in recupero), peso (bacino che
+  // scende sull'appoggio), seguito (punta che spinge dietro)
+  const ch=Math.cos(ht), sh=Math.sin(ht);
+  const aR=q.leg*sw+q.legOfs, aL=-q.leg*sw+q.legOfs;
+  const s5=Math.sin(w-q.kneeLag);
+  const kR=q.knee0+q.kneeA*(0.5+0.5*s5), kL=q.knee0+q.kneeA*(0.5-0.5*s5);
+  gamba(HIPR,KNR,FTR,TOR,  HIPW*ch, pelvY,  HIPW*sh, aR,kR,  q.stanceW);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW*ch, pelvY, -HIPW*sh, aL,kL, -q.stanceW);
+}
+
+const Q_FERMO={leg:0.03,legOfs:0,knee0:0.05,kneeA:0.02,kneeLag:3.7,
+  arm:0.05,armOfs:0.03,elb0:0.14,elbA:0.04,armOut:0.035,
+  lean:0.03,bounce:0.008,crouch:0,twist:0.02,stanceW:0.12,headBob:0.005};
+const Q_CAMMINATA={leg:0.48,legOfs:0.05,knee0:0.10,kneeA:0.95,kneeLag:4.2,
+  arm:0.55,armOfs:0.05,elb0:0.28,elbA:0.25,armOut:0.04,
+  lean:0.06,bounce:0.034,crouch:0.02,twist:0.14,stanceW:0.10,headBob:0.012};
+const Q_CORSA={leg:0.72,legOfs:0.15,knee0:0.34,kneeA:1.15,kneeLag:3.6,
+  arm:0.52,armOfs:0.08,elb0:1.30,elbA:0.30,armOut:0.055,
+  lean:0.24,bounce:-0.055,crouch:0.05,twist:0.17,stanceW:0.07,headBob:0.010};
+
+function poseFermo(u){ poseLoco(u,Q_FERMO); }
+function poseCamminata(u){ poseLoco(u,Q_CAMMINATA); }
+function poseCorsa(u){ poseLoco(u,Q_CORSA); }
+
+/* frenata: piede piantato avanti col tacco, ma il PESO sta DIETRO —
+   busto reclinato indietro, bacino arretrato sulla gamba piegata sotto;
+   gli avambracci escono AVANTI a bilanciare (mai sopra la testa) e una
+   torsione di tre quarti del busto tiene leggibile l'inclinazione anche
+   a 0°/180°, lungo l'asse di vista; oscillazione smorzata d'assestamento */
+function poseFrenata(u){
+  const osc=Math.sin(u*TAU*1.8)*Math.exp(-2.5*u);
+  const crouch=0.24+0.03*osc, lean=-0.38+0.10*osc;
+  const pelvY=0.93-crouch;
+  corpo(pelvY,0,lean,0);
+  const dz=-0.09;                        // il bacino arretra dietro l'appoggio
+  P[PELVIS*3+2]+=dz; P[CHEST*3+2]+=dz; P[NECK*3+2]+=dz; P[HEAD*3+2]+=dz;
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl+dz;
+  const st=0.55, cs=Math.cos(st), ss=Math.sin(st);   // torsione di tre quarti
+  braccio(SHR,ELR,HAR,  SHW*cs, shY, shZ+SHW*ss, 0.55+0.18*osc,1.05, 0.10, 1);
+  braccio(SHL,ELL,HAL, -SHW*cs, shY, shZ-SHW*ss, 0.40+0.14*osc,1.20, 0.12,-1);
+  const ht=-0.18, ch=Math.cos(ht), shh=Math.sin(ht); // bacino in controtorsione
+  gamba(HIPR,KNR,FTR,TOR,  HIPW*ch, pelvY, dz+HIPW*shh,  0.72+0.05*osc, 0.06,  0.11);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW*ch, pelvY, dz-HIPW*shh,  0.05, 0.95+0.08*osc, -0.14);
+}
+
+/* ============================================================
+   CALCI (gruppo palla): passaggio, filtrante, cross, tiro.
+   Curve di fase comuni: ANTICIPO (w1, la carica con ginocchio
+   raccolto e busto indietro), frustata accelerata (t*t), PESO
+   (affondo del bacino sull'appoggio all'impatto), SEGUITO (w2,
+   la gamba che sale oltre e il busto che accompagna),
+   DEFORMAZIONE (schiacciata della palla nell'attimo d'impatto).
+   ============================================================ */
+function poseCalcio(u,q){
+  const ti=q.tImp, t1=ti-q.swing, tF=ti+q.segue;
+  const w1=sm(u,0.04,t1)*(1-sm(u,t1,ti+0.02));      // anticipo
+  const w2=sm(u,t1,tF)*(1-sm(u,0.86,0.995));        // seguito
+  const dd=(u-ti)/0.13, peso=Math.exp(-dd*dd);      // affondo del peso
+  const pelvY=0.93-(q.crouch+q.dip*peso+0.02*w1);
+  const lean=-q.leanBack*w1+q.leanFwd*w2;
+  corpo(pelvY,0,lean,-0.012*peso);
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  // il corpo si apre in carica e si chiude attraverso l'impatto
+  const st=q.apriSp*(w1-1.1*w2), cs=Math.cos(st), ss=Math.sin(st);
+  const ht=q.apriAn*(w1-0.7*w2), ch=Math.cos(ht), shh=Math.sin(ht);
+  // braccia in opposizione: la sinistra accompagna, la destra bilancia
+  const aR=q.arm*(0.5*w1-0.9*w2), aL=q.arm*(-0.6*w1+1.1*w2);
+  braccio(SHR,ELR,HAR,  SHW*cs, shY, shZ+SHW*ss, aR,0.35, q.armOut+0.05*w2, 1);
+  braccio(SHL,ELL,HAL, -SHW*cs, shY, shZ-SHW*ss, aL,0.30, q.armOut+0.04*w1,-1);
+  // gamba destra calciante: carica -> frustata (t*t) -> seguito (ease-out)
+  let aG,kG;
+  if(u<t1){ const r=sm(u,0.04,t1); aG=-q.back*r; kG=0.25+q.kneeBack*r; }
+  else if(u<ti){ const t=(u-t1)/q.swing, t2=t*t;
+    aG=-q.back+(q.fwd+q.back)*t2;
+    kG=(0.25+q.kneeBack)+(q.kneeImp-0.25-q.kneeBack)*t2; }
+  else if(u<tF){ const t=(u-ti)/q.segue, e=1-(1-t)*(1-t);
+    aG=q.fwd+(q.follow-q.fwd)*e; kG=q.kneeImp+(q.kneeSegue-q.kneeImp)*e; }
+  else{ const r=sm(u,tF,0.99); aG=q.follow*(1-r); kG=q.kneeSegue+(0.25-q.kneeSegue)*r; }
+  const fxR=HIPW-(q.attraversa||0)*w2;   // il cross taglia attraverso il corpo
+  gamba(HIPR,KNR,FTR,TOR,  HIPW*ch, pelvY,  HIPW*shh, aG,kG, fxR);
+  // gamba d'appoggio piantata accanto alla palla, si piega sotto il peso
+  gamba(HIPL,KNL,FTL,TOL, -HIPW*ch, pelvY, -HIPW*shh, q.appA, q.appK+0.30*peso, -0.13);
+}
+/* palla della clip di calcio: ferma, poi il FOTOGRAMMA DI CONTATTO
+   (il collo del piede la tocca e la spinge, schiacciandola) e la
+   partenza BALISTICA: l'ease-out sta solo sulla componente orizzontale,
+   la verticale e' parabola nel tempo (mai spaziatura uniforme in salita) */
+function pallaCalcio(u,q,out){
+  const ti=q.tImp, tc=ti-0.035;
+  if(u<tc){ out[0]=q.px; out[1]=RPALLA; out[2]=q.pz; }
+  else if(u<ti){ const c=(u-tc)/0.035;   // il contatto: toccata e spinta
+    out[0]=q.px; out[1]=RPALLA*(1-0.10*c); out[2]=q.pz+0.06*c*c; }
+  else{
+    const f=(u-ti)/(1-ti), e=1-(1-f)*(1-f), d=q.gitt*e;
+    out[0]=q.px+q.dirX*d; out[2]=q.pz+0.06+d;
+    out[1]=RPALLA*0.90+q.alza*(q.arco?4*f*(1-f):1-(1-f)*(1-f))+RPALLA*0.10*e;
+  }
+  const dw=Math.abs(u-ti);
+  out[3]=dw<0.05?0.40*(1-dw/0.05):0;     // schiacciata sul collo del piede
+}
+
+const Q_PASSAGGIO={tImp:0.44,swing:0.13,segue:0.22, back:0.55,fwd:0.55,follow:1.00,
+  kneeBack:0.85,kneeImp:0.18,kneeSegue:0.45, crouch:0.06,dip:0.05,
+  leanBack:0.05,leanFwd:0.10, apriSp:0.12,apriAn:0.06, arm:0.45,armOut:0.05,
+  appA:0.28,appK:0.30, px:0.10,pz:0.34, gitt:0.95,alza:0,arco:0,dirX:0};
+const Q_FILTRANTE={tImp:0.36,swing:0.09,segue:0.18, back:0.75,fwd:0.65,follow:1.20,
+  kneeBack:1.05,kneeImp:0.12,kneeSegue:0.40, crouch:0.10,dip:0.06,
+  leanBack:0.08,leanFwd:0.17, apriSp:0.16,apriAn:0.08, arm:0.65,armOut:0.06,
+  appA:0.30,appK:0.38, px:0.10,pz:0.36, gitt:1.35,alza:0,arco:0,dirX:0};
+const Q_CROSS={tImp:0.44,swing:0.12,segue:0.26, back:0.70,fwd:0.60,follow:1.15,
+  kneeBack:1.00,kneeImp:0.15,kneeSegue:0.55, crouch:0.08,dip:0.05,
+  leanBack:0.12,leanFwd:0.02, apriSp:0.55,apriAn:0.28, arm:0.55,armOut:0.11,
+  attraversa:0.30, appA:0.26,appK:0.34, px:0.14,pz:0.34, gitt:0.85,alza:0.95,arco:1,dirX:-0.35};
+const Q_TIRO={tImp:0.46,swing:0.11,segue:0.26, back:1.00,fwd:0.62,follow:1.70,
+  kneeBack:1.40,kneeImp:0.10,kneeSegue:0.55, crouch:0.11,dip:0.08,
+  leanBack:0.16,leanFwd:0.26, apriSp:0.25,apriAn:0.12, arm:0.75,armOut:0.08,
+  appA:0.30,appK:0.36, px:0.10,pz:0.36, gitt:1.45,alza:0.5,arco:0,dirX:0};
+
+function posePassaggio(u){ poseCalcio(u,Q_PASSAGGIO); }
+function poseFiltrante(u){ poseCalcio(u,Q_FILTRANTE); }
+function poseCross(u){ poseCalcio(u,Q_CROSS); }
+function poseTiro(u){ poseCalcio(u,Q_TIRO); }
+
+/* ============================================================
+   DUELLO: finta/dribbling, contrasto in scivolata, rovesciata.
+   ============================================================ */
+
+/* finta: doppio tocco d'interno, la palla cambia lato due volte per
+   giro (cosi' la clip torna su se stessa). Curve di fase:
+   ANTICIPO il peso si sposta sull'appoggio PRIMA che la palla parta;
+   PESO l'affondo del bacino a ogni tocco; SEGUITO spalle e testa
+   attraversano dopo il bacino e sporgono oltre. */
+function poseFinta(u){
+  const s1=sm(u,0.21,0.35), s2=sm(u,0.71,0.85);
+  const w1=sm(u,0.15,0.31), w2=sm(u,0.65,0.81);
+  const peso=-(1-2*w1+2*w2);                 // anticipo: parte prima della palla
+  const g1=sm(u,0.24,0.42), g2=sm(u,0.74,0.92);
+  const segue=-(1-2*g1+2*g2);                // seguito: il busto arriva dopo
+  const d1=(u-0.26)/0.09, d2=(u-0.76)/0.09;
+  const dip=Math.exp(-d1*d1)+Math.exp(-d2*d2);   // peso: l'affondo al tocco
+  const pelvY=0.79-0.07*dip;
+  const swP=0.18*peso;
+  corpo(pelvY,swP,0.18,0);
+  const dLat=0.12*(segue-peso);              // il busto sporge oltre il bacino
+  P[CHEST*3]+=dLat*0.45; P[NECK*3]+=dLat*0.70; P[HEAD*3]+=dLat;
+  const cl=Math.cos(0.18), sl=Math.sin(0.18);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl, shX=swP+dLat*0.6;
+  braccio(SHR,ELR,HAR, shX+SHW, shY, shZ, 0.10+0.60*segue,0.55, 0.08+0.06*dip, 1);
+  braccio(SHL,ELL,HAL, shX-SHW, shY, shZ, 0.10-0.60*segue,0.55, 0.08+0.06*dip,-1);
+  // il piede del tocco esce sulla palla e la attraversa spingendola
+  const r1=sm(u,0.13,0.23)*(1-sm(u,0.36,0.50));
+  const p1=sm(u,0.20,0.34);
+  const r2=sm(u,0.63,0.73)*(1-sm(u,0.86,0.99));
+  const p2=sm(u,0.70,0.84);
+  const fxR= 0.19+r1*(0.14-0.58*p1);
+  const fxL=-0.19-r2*(0.14-0.58*p2);
+  const aR=0.16+r1*0.50, aL=0.16+r2*0.50;
+  const kR=0.42+0.20*dip*(1+peso), kL=0.42+0.20*dip*(1-peso);
+  gamba(HIPR,KNR,FTR,TOR,  HIPW+swP*0.6, pelvY, 0.02, aR,kR, fxR);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW+swP*0.6, pelvY, 0.02, aL,kL, fxL);
+}
+function pallaFinta(u,o){
+  const s1=sm(u,0.21,0.35), s2=sm(u,0.71,0.85);
+  o[0]=0.30*(1-2*s1+2*s2);                   // il cambio di lato
+  const tr=4*(s1*(1-s1)+s2*(1-s2));          // 1 a meta' traversata
+  o[1]=RPALLA+0.05*tr; o[2]=0.32+0.08*tr;
+  let dw=Math.abs(u-0.225); const dv=Math.abs(u-0.725); if(dv<dw)dw=dv;
+  o[3]=dw<0.035?0.32*(1-dw/0.035):0;         // schiacciata al tocco
+}
+
+/* contrasto in scivolata: ANTICIPO l'ultimo passo caricato in corsa;
+   la discesa: gamba destra tesa avanti che striscia, sinistra ripiegata
+   sotto, busto indietro col braccio dietro d'appoggio; PESO la botta
+   quando il bacino tocca terra; SEGUITO l'oscillata smorzata del busto
+   che continua a ruotare; infine la rialzata. Due lerp in fila:
+   corsa -> scivolata (giu') -> rialzata (su). */
+function poseScivolata(u){
+  const giu=sm(u,0.08,0.26);
+  const dd=(u-0.28)/0.09, botta=Math.exp(-dd*dd);
+  const su=sm(u,0.70,0.95);
+  const p=u-0.28, osc=p>0?Math.sin(p*9.5)*Math.exp(-4.5*p):0;
+  const pelvY=(0.80+(0.30-0.80)*giu)+(0.62-0.30)*su-0.04*botta;
+  const lean=(0.30+(-0.95-0.30)*giu)+(0.18+0.95)*su+0.11*osc-0.07*botta;
+  corpo(pelvY,0,lean,0);
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const aBR=(-0.45+(-0.55+0.45)*giu)+(-0.30+0.55)*su+0.20*osc;
+  const aBL=( 0.50+( 1.15-0.50)*giu)+( 0.25-1.15)*su-0.15*osc;
+  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aBR,0.30, 0.06+0.10*giu-0.08*su, 1);
+  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aBL,0.45, 0.06+0.06*giu,-1);
+  const aR=(0.55+(1.32-0.55)*giu)+(0.20-1.32)*su+0.05*osc;
+  const kR=(0.40+(0.10-0.40)*giu)+(0.60-0.10)*su;
+  const aL=(-0.45+(-0.85+0.45)*giu)+(-0.10+0.85)*su;
+  const kL=(0.90+(1.05-0.90)*giu)+(0.70-1.05)*su;
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0, aR,kR,  0.10);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, aL,kL, -0.15);
+}
+
+/* ROVESCIATA: carica (ANTICIPO: crouch e braccia indietro), stacco,
+   e nel clou l'ARCO ORIZZONTALE: la schiena si stende quasi parallela
+   al terreno mentre la FORBICE scambia le gambe (la sinistra sale per
+   prima e scende mentre la destra frusta accelerata t*t sopra il petto
+   fino alla palla alta); in volo le braccia si SPALANCANO (dall'alto
+   la figura dice "e' in aria" e l'ombra, guidata dalla quota dei
+   giunti, si stacca e rimpicciolisce). Poi la discesa di schiena,
+   l'IMPATTO (botta + polvere), mezzo secondo disteso a terra con
+   l'oscillata smorzata, e la RIALZATA IN TRE TEMPI: seduto (il busto
+   su, le mani puntate dietro), raccolto (il piede sotto, il bacino
+   su), in piedi. Tutte le curve tornano al valore di partenza. */
+function poseRovesciata(u){
+  const ca=sm(u,0.02,0.14);              // carica
+  const st=sm(u,0.14,0.26);              // stacco
+  const vol=sm(u,0.18,0.40);             // la schiena si stende in aria
+  const dis=sm(u,0.46,0.575);            // discesa di schiena
+  const dd=(u-0.44)/0.05, imp=Math.exp(-dd*dd);      // l'attimo del colpo
+  const db=(u-0.575)/0.045, botta=Math.exp(-db*db);  // la botta a terra
+  const p=u-0.575, osc=p>0?Math.sin(p*11)*Math.exp(-6*p):0;
+  const sed=sm(u,0.70,0.80);             // 1° tempo: seduto
+  const rac=sm(u,0.79,0.885);            // 2° tempo: raccolto sul piede
+  const alz=sm(u,0.875,0.975);           // 3° tempo: in piedi
+  const pelvY=0.93-0.30*ca+0.46*st-0.90*dis+0.06*sed+0.33*rac+0.35*alz
+              -0.05*botta+0.02*osc;
+  const lean=0.06-0.14*ca-1.58*vol+2.02*sed-0.12*rac-0.18*alz
+             +0.10*imp-0.06*botta+0.10*osc;
+  corpo(pelvY,0,lean,0);
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  // braccia: indietro in carica, SPALANCATE in volo, lunghe a terra
+  // oltre la testa, poi puntate dietro a lanciare la rialzata
+  const aBR=-0.10-0.85*ca+2.30*vol-2.92*dis+0.37*sed+1.55*rac-0.45*alz+0.20*osc;
+  const aBL=aBR+0.20*vol-0.20*dis;
+  const eB=0.30+0.10*ca-0.20*vol+0.35*sed-0.15*rac-0.10*alz;
+  const out=0.06+0.26*vol-0.24*dis+0.02*rac-0.04*alz;
+  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aBR,eB, out, 1);
+  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aBL,eB, out,-1);
+  const hz=0.06*sl;
+  // destra calciante: carica, frustata accelerata (t*t) sopra il petto,
+  // seguito, discesa distesa, poi i tre tempi della rialzata
+  let t=(u-0.30)/0.14; if(t<0)t=0; else if(t>1)t=1;
+  const fr=t*t, sg=sm(u,0.44,0.52), dn=sm(u,0.48,0.62);
+  const aG=0.15-0.70*ca-0.05*st+3.05*fr+0.30*sg-1.40*dn-0.20*sed-0.80*rac-0.20*alz;
+  const kG=0.40+0.55*ca+3.40*t*(1-t)-0.75*fr+0.95*sed-0.10*rac-0.65*alz+0.15*botta;
+  // sinistra: sale per prima, scende in forbice quasi orizzontale,
+  // si distende a terra, poi si pianta per la rialzata
+  const su1=sm(u,0.14,0.28), giu1=sm(u,0.30,0.46);
+  const aS=0.30-0.45*ca+2.10*su1-0.90*giu1+0.40*dn-0.30*sed-0.75*rac-0.10*alz;
+  const kS=0.45+0.45*ca+0.35*su1-0.55*giu1-0.10*dn+1.05*sed-0.25*rac-0.95*alz+0.15*botta;
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, hz, aG,kG,  HIPW);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, hz, aS,kS, -HIPW);
+}
+/* palla della rovesciata: il cross scende dall'alto in CADUTA VERA
+   (y accelerata), l'impatto sul collo del piede sopra il petto (con la
+   schiacciata), poi la parabola balistica all'indietro: verticale
+   quadratica nel tempo, ease-out della sola componente orizzontale */
+function pallaRovesciata(u,o){
+  const ti=0.44;
+  if(u<ti){ const f=u/ti;
+    o[0]=0.26-0.155*f; o[1]=1.86+0.80*(1-f*f); o[2]=1.85-1.19*f;
+  }else{ const f=(u-ti)/(1-ti), e=1-(1-f)*(1-f);
+    o[0]=0.105-0.06*e; o[2]=0.66-2.75*e;
+    let y=1.86+1.60*f-3.60*f*f; if(y<RPALLA)y=RPALLA; o[1]=y;
+  }
+  const dw=Math.abs(u-ti);
+  o[3]=dw<0.04?0.45*(1-dw/0.04):0;
+}
+
+/* ============================================================
+   PORTIERE: parata bassa, tuffo laterale, presa alta, rinvio.
+   Le clip vivono nel piano sagittale (come la rovesciata): e' lo
+   yaw della figura a dare il tuffo "laterale" visto dalla porta.
+   ============================================================ */
+
+/* PARATA BASSA: ANTICIPO la molla (il corpo si carica e scende
+   PRIMA che la palla arrivi), la discesa sul ginocchio con le mani
+   che scendono al suolo davanti, PESO la botta all'impatto che
+   affonda spalle e testa, SEGUITO l'oscillata smorzata delle
+   braccia che accompagnano la respinta, poi la rialzata.
+   Tutte le curve tornano al valore di partenza: giro senza scatti. */
+function poseParata(u){
+  const mol=sm(u,0.02,0.16);             // la molla d'anticipo
+  const giu=sm(u,0.16,0.36);             // discesa sul ginocchio
+  const su=sm(u,0.60,0.88);              // rialzata
+  const dd=(u-0.42)/0.055, imp=Math.exp(-dd*dd);       // la botta
+  const p=u-0.42, osc=p>0?Math.sin(p*10)*Math.exp(-5.5*p):0;
+  const pelvY=0.86-0.08*mol-0.34*giu+0.42*su-0.025*imp;
+  const lean=0.14+0.12*mol+0.52*giu-0.64*su+0.09*imp+0.05*osc;
+  corpo(pelvY,0,lean,-0.01*imp);
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const aB=0.55+0.10*mol-0.28*giu+0.18*su+0.12*imp+0.14*osc;
+  const eB=0.55-0.10*mol-0.45*giu+0.55*su+0.10*imp;
+  const outB=0.10+0.05*giu-0.05*su;
+  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aB,eB, outB, 1);
+  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aB+0.06*osc,eB, outB,-1);
+  // destra: passo largo di copertura; sinistra: il ginocchio a terra
+  const aR=0.18+0.37*giu-0.37*su, kR=0.35+0.55*giu-0.55*su;
+  const aL=0.18-0.53*giu+0.53*su, kL=0.35+1.60*giu-1.60*su;
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0, aR,kR,  0.12+0.22*giu-0.22*su);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, aL,kL, -0.12-0.04*giu+0.04*su);
+}
+/* palla della parata: arriva rasoterra veloce, la schiacciata sulle
+   mani, e la respinta che torna via con un saltello smorzato */
+function pallaParata(u,o){
+  const ti=0.42;
+  if(u<ti){ const f=u/ti;
+    o[0]=0; o[1]=0.13; o[2]=2.60-1.98*f;
+  }else{ const f=(u-ti)/(1-ti), e=1-(1-f)*(1-f);
+    o[0]=0.15*e; o[2]=0.62+1.45*e;
+    o[1]=RPALLA+0.30*4*f*(1-f)*(1-0.5*f);
+  }
+  const dw=Math.abs(u-ti);
+  o[3]=dw<0.04?0.42*(1-dw/0.04):0;
+}
+
+/* TUFFO LATERALE: ANTICIPO la carica bassa con le braccia indietro,
+   lo stacco, il volo con ESTENSIONE COMPLETA (busto quasi orizzontale,
+   braccia in linea oltre la testa, gambe tese dietro), la deviazione,
+   l'ATTERRAGGIO sul fianco con la botta (PESO) e l'oscillata smorzata
+   dell'assestamento (SEGUITO), poi la rialzata spinta dalle braccia. */
+function poseTuffo(u){
+  const ca=sm(u,0.02,0.14);              // carica
+  const sp=sm(u,0.14,0.24);              // stacco
+  const vol=sm(u,0.18,0.36);             // estensione in volo
+  const cad=sm(u,0.44,0.58);             // caduta a terra
+  const ri=sm(u,0.70,0.96);              // rialzata
+  const dd=(u-0.40)/0.05, imp=Math.exp(-dd*dd);
+  const p=u-0.58, osc=p>0?Math.sin(p*9)*Math.exp(-5*p):0;  // assestamento
+  const pelvY=0.88-0.26*ca+0.24*sp-0.55*cad+0.57*ri-0.02*imp+0.02*osc;
+  const lean=0.12+0.24*ca+1.02*vol+0.06*imp-0.12*cad-1.14*ri+0.10*osc;
+  corpo(pelvY,0,lean,0);
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  // braccia: indietro in carica, lanciate in linea col busto nel volo
+  const aBR=0.45-1.00*ca+2.50*vol-0.55*cad-0.95*ri+0.15*osc;
+  const aBL=aBR-0.22*vol+0.22*ri;
+  const eB=0.45+0.40*ca-0.75*vol+0.55*cad-0.20*ri;
+  const outB=0.06+0.06*vol-0.06*ri;
+  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aBR,eB, outB, 1);
+  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aBL,eB, outB,-1);
+  // gambe: piegate in carica, tese dietro nel volo, sotto per rialzarsi
+  const hz=0.06*sl;
+  const aR=0.22-0.50*ca-0.55*vol+0.28*cad+0.77*ri;
+  const aL=aR+0.28*vol-0.28*ri;
+  const kR=0.40+0.60*ca-0.85*sp+0.10*cad+0.15*ri;
+  const kL=kR+0.15*cad-0.15*ri;
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, hz, aR,kR,  HIPW);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, hz, aL,kL, -HIPW);
+}
+/* palla del tuffo: il tiro arriva a mezza altezza, la schiacciata sui
+   pugni all'apice dell'estensione, la deviazione che scappa di lato */
+function pallaTuffo(u,o){
+  const ti=0.40;
+  if(u<ti){ const f=u/ti;
+    o[0]=0; o[1]=1.32-0.30*f; o[2]=3.00-2.05*f;
+  }else{ const f=(u-ti)/(1-ti), e=1-(1-f)*(1-f);
+    o[0]=0.30*e; o[2]=0.95+1.55*e;
+    let y=1.02-0.30*f-0.85*f*f;  // la deviazione RICADE accelerando (gravita')
+    if(y<RPALLA)y=RPALLA; o[1]=y;
+  }
+  const dw=Math.abs(u-ti);
+  o[3]=dw<0.04?0.42*(1-dw/0.04):0;
+}
+
+/* PRESA ALTA: ANTICIPO il caricamento a molla delle gambe mentre le
+   braccia partono gia' verso l'alto, il salto, la presa sopra la testa
+   (DEFORMAZIONE: la stretta schiaccia la palla), la discesa con la
+   palla RITIRATA al petto (SEGUITO: le mani arrivano dopo il bacino),
+   l'atterraggio con l'affondo sulle ginocchia (PESO), il rientro. */
+function posePresa(u){
+  const dip=sm(u,0.04,0.18);             // molla d'anticipo
+  const salto=sm(u,0.18,0.30);           // stacco
+  const alza=sm(u,0.16,0.32);            // braccia in cielo
+  const disc=sm(u,0.46,0.60);            // discesa
+  const ritira=sm(u,0.50,0.66);          // la palla al petto
+  const fine=sm(u,0.80,0.97);            // rientro
+  const dd=(u-0.61)/0.05, att=Math.exp(-dd*dd);   // il peso dell'atterraggio
+  const dc=(u-0.42)/0.045, pres=Math.exp(-dc*dc); // la stretta della presa
+  const pelvY=0.90-0.16*dip+0.44*salto-0.44*disc+0.16*fine-0.09*att;
+  const lean=0.10-0.16*alza+0.12*ritira+0.04*fine+0.05*att;
+  corpo(pelvY,0,lean,-0.008*att);
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const aB=0.35-0.50*dip+2.75*alza-1.90*ritira-0.35*fine;
+  const eB=0.35-0.15*alza+1.00*ritira-0.85*fine+0.15*pres;
+  const outB=0.055-0.04*alza+0.04*ritira;
+  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aB,eB, outB, 1);
+  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aB,eB, outB,-1);
+  const kG=0.40+0.45*dip-0.30*salto+0.35*disc+0.65*att-0.50*fine;
+  const aR=0.16+0.10*salto-0.10*fine, aL=0.16-0.06*salto+0.06*fine;
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0, aR,kG,  0.11);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, aL,kG+0.10*salto-0.10*fine, -0.11);
+}
+/* palla della presa: il pallonetto scende dall'alto nelle mani sopra
+   la testa, poi segue le mani fino al petto e ci resta */
+function pallaPresa(u,o){
+  const tc=0.42;
+  if(u<tc){ const f=u/tc;
+    o[0]=0; o[2]=2.50-2.26*f; o[1]=1.58+2.10*f-1.52*f*f;
+  }else{
+    const disc=sm(u,0.46,0.60), r=sm(u,0.50,0.66), g=sm(u,0.80,0.97);
+    const dd=(u-0.61)/0.05, att=Math.exp(-dd*dd);
+    o[0]=0; o[2]=0.24+0.06*r+0.04*g;
+    o[1]=2.16-0.40*disc-0.53*r-0.07*att+0.05*g;
+  }
+  const dw=Math.abs(u-tc);
+  o[3]=dw<0.035?0.30*(1-dw/0.035):0;
+}
+
+/* RINVIO al volo dalle mani: la palla e' TENUTA davanti, ANTICIPO il
+   busto che si carica indietro mentre le mani la mollano, la caduta
+   libera della palla, frustata accelerata t*t della gamba destra,
+   PESO l'affondo sull'appoggio, DEFORMAZIONE la schiacciata al volo,
+   SEGUITO la gamba altissima e le braccia aperte a bilanciare. */
+function poseRinvio(u){
+  const ti=0.48, t1=0.30;
+  const w1=sm(u,0.04,t1)*(1-sm(u,t1,ti+0.02));       // anticipo
+  const w2=sm(u,t1,0.70)*(1-sm(u,0.84,0.99));        // seguito
+  const dd=(u-ti)/0.10, peso=Math.exp(-dd*dd);
+  const molla=sm(u,0.26,0.34);                       // le mani mollano
+  const rip=sm(u,0.86,0.98);                         // e tornano a reggere
+  const hold=1-molla+rip;
+  const pelvY=0.90-0.05*w1-0.06*peso-0.02*w2;
+  const lean=0.10-0.22*w1+0.30*w2;
+  corpo(pelvY,0,lean,-0.012*peso);
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const aR=0.95*hold+(0.25-0.85*w2)*(1-hold);
+  const aL=0.95*hold+(0.55+0.55*w2)*(1-hold);
+  const eB=0.62*hold+0.30*(1-hold);
+  const outB=0.02*hold+(0.12+0.05*w2)*(1-hold);
+  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aR,eB, outB, 1);
+  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aL,eB, outB,-1);
+  // destra calciante: carica -> frustata (t*t) -> seguito -> rientro
+  let aG,kG;
+  if(u<t1){ const r=sm(u,0.08,t1); aG=0.15-1.00*r; kG=0.30+1.05*r; }
+  else if(u<ti){ const t=(u-t1)/(ti-t1), t2=t*t;
+    aG=-0.85+1.90*t2; kG=1.35-1.15*t2; }
+  else if(u<0.72){ const t=(u-ti)/0.24, e=1-(1-t)*(1-t);
+    aG=1.05+0.65*e; kG=0.20+0.15*e; }
+  else{ const r=sm(u,0.72,0.96); aG=1.70-1.55*r; kG=0.35-0.05*r; }
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0, aG,kG,  HIPW);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, 0.10-0.10*w1, 0.25+0.35*peso, -0.13);
+}
+/* palla del rinvio: ferma nelle mani, la caduta libera, la schiacciata
+   sul collo del piede, il volo lungo e alto verso il campo */
+function pallaRinvio(u,o){
+  const ti=0.48;
+  if(u<0.28){ const c=sm(u,0.04,0.26);
+    o[0]=0; o[1]=1.18+0.02*c; o[2]=0.50-0.06*c;
+  }else if(u<ti){ const f=(u-0.28)/(ti-0.28);
+    o[0]=0; o[1]=1.20-0.77*f*f; o[2]=0.44+0.26*f;
+  }else{ const f=(u-ti)/(1-ti), e=1-(1-f)*(1-f);
+    o[0]=0; o[2]=0.70+3.40*e;
+    o[1]=0.43+4.40*f-3.60*f*f;   // parabola vera nel tempo, non nell'ease
+  }
+  const dw=Math.abs(u-ti);
+  o[3]=dw<0.05?0.45*(1-dw/0.05):0;
+}
+
+/* ============================================================
+   FESTA: esultanza di corsa a braccia larghe, scivolata sulle
+   ginocchia, pugno al cielo; e la delusione di chi subisce.
+   Nessuna palla: il gol e' gia' successo.
+   ============================================================ */
+
+/* ESULTANZA DI CORSA: la corsa continua ma il petto si apre, la
+   faccia va al cielo e le braccia si spalancano ad aliante.
+   SEGUITO: il rollio alternato delle ali sul passo (l'ala del lato
+   d'appoggio scende); PESO: il rimbalzo della falcata (bounce). */
+const Q_ESULT={leg:0.58,legOfs:0.08,knee0:0.26,kneeA:0.80,kneeLag:3.6,
+  arm:0,armOfs:0,elb0:0.2,elbA:0,armOut:0.05,
+  lean:-0.09,bounce:-0.030,crouch:0.04,twist:0.05,stanceW:0.08,headBob:0.006};
+function poseEsultanza(u){
+  poseLoco(u,Q_ESULT);
+  const w=u*TAU, sw=Math.sin(w), c2=Math.cos(2*w);
+  const pelvY=0.93-Q_ESULT.crouch+Q_ESULT.bounce*c2;
+  const sl=Math.sin(Q_ESULT.lean), cl=Math.cos(Q_ESULT.lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  P[HEAD*3+1]+=0.015; P[HEAD*3+2]-=0.055;   // la faccia al cielo
+  const roll=0.17*sw;                       // il rollio delle ali (seguito)
+  for(let s=-1;s<=1;s+=2){
+    const sh=s>0?SHR:SHL, el=s>0?ELR:ELL, ha=s>0?HAR:HAL;
+    const lift=0.12+roll*s;
+    setJ(sh, s*SHW, shY, shZ);
+    setJ(el, s*(SHW+UA*0.97), shY+UA*lift, shZ+0.02);
+    setJ(ha, s*(SHW+UA*0.97+FA*0.93), shY+UA*lift+FA*(lift+0.12), shZ+0.03);
+  }
+}
+
+/* SCIVOLATA SULLE GINOCCHIA: l'arrivo accucciato di corsa e'
+   l'ANTICIPO, la caduta sulle ginocchia da' la botta (PESO) con
+   l'oscillata smorzata che la segue, la scivolata inarca la schiena
+   e spalanca le braccia al cielo (SEGUITO: le ali si assestano dopo
+   il busto, sull'onda della botta), poi il passo destro avanti e la
+   rialzata. Tutte le curve tornano al valore d'inizio: giro pulito. */
+function poseGinocchia(u){
+  const giu=sm(u,0.06,0.20);               // la caduta sulle ginocchia
+  const dd=(u-0.22)/0.07, botta=Math.exp(-dd*dd);
+  const p=u-0.22, osc=p>0?Math.sin(p*9)*Math.exp(-4.5*p):0;
+  const arco=sm(u,0.16,0.40);              // la schiena si inarca
+  const ali=sm(u,0.12,0.34)*(1-sm(u,0.58,0.82));  // le braccia spalancate
+  const passo=sm(u,0.60,0.74);             // il piede destro si pianta avanti
+  const su=sm(u,0.70,0.92);                // la rialzata
+  const pelvY=0.78-0.28*giu+0.28*su-0.045*botta;
+  const lean=0.22-0.62*arco+0.62*su+0.10*botta+0.08*osc;
+  corpo(pelvY,0,lean,0);
+  P[HEAD*3+2]-=0.07*ali;                   // la faccia al cielo nell'arco
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  // braccia d'arrivo in falcata opposta (anticipo di corsa), poi neutre
+  const aNR=-0.45+0.60*giu-0.60*su, aNL=0.55-0.40*giu+0.40*su;
+  const eN=0.55-0.20*giu+0.20*su;
+  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aNR,eN, 0.06, 1);
+  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aNL,eN, 0.06,-1);
+  if(ali>0){                               // lerp verso la V spalancata
+    const wy=0.10*osc;
+    for(let s=-1;s<=1;s+=2){
+      const el=s>0?ELR:ELL, ha=s>0?HAR:HAL;
+      const ex=s*(SHW+UA*0.80), ey=shY+UA*(0.55+wy), ez=shZ-0.05;
+      const hx=s*(SHW+UA*0.80+FA*0.70), hy=ey+FA*(0.66+wy), hz=shZ-0.11;
+      P[el*3]+=(ex-P[el*3])*ali; P[el*3+1]+=(ey-P[el*3+1])*ali; P[el*3+2]+=(ez-P[el*3+2])*ali;
+      P[ha*3]+=(hx-P[ha*3])*ali; P[ha*3+1]+=(hy-P[ha*3+1])*ali; P[ha*3+2]+=(hz-P[ha*3+2])*ali;
+    }
+  }
+  const aR=0.30-0.35*giu+0.80*passo-0.45*su;
+  const kR=0.55+1.40*giu-0.95*passo-0.45*su+0.20*botta;
+  const aL=0.10-0.15*giu+0.15*su;
+  const kL=0.55+1.45*giu-1.45*su+0.20*botta;
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0, aR,kR,  0.10);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, aL,kL, -0.12);
+}
+
+/* PUGNO AL CIELO: ANTICIPO la carica accucciata col pugno armato
+   dietro, l'esplosione accelerata (t*t) col saltello, il pugno che
+   OLTREPASSA la verticale e si assesta con l'oscillata smorzata
+   (SEGUITO), PESO l'affondo sulle ginocchia all'atterraggio, la
+   faccia che segue il pugno, infine il braccio che torna giu'. */
+function posePugno(u){
+  const ca=sm(u,0.04,0.20);                // la carica
+  let t=(u-0.20)/0.12; if(t<0)t=0; else if(t>1)t=1;
+  const fr=t*t;                            // l'esplosione, accelerata
+  const cad=sm(u,0.34,0.50);               // la ricaduta
+  const dd=(u-0.50)/0.06, att=Math.exp(-dd*dd);   // il peso dell'atterraggio
+  const p=u-0.32, osc=p>0?Math.sin(p*10)*Math.exp(-4.5*p):0;  // l'overshoot del pugno
+  const giu2=sm(u,0.66,0.88);              // il braccio torna giu'
+  const pelvY=0.90-0.22*ca+0.48*fr-0.26*cad-0.055*att;
+  const lean=0.08+0.20*ca-0.37*fr+0.17*cad+0.04*att;
+  corpo(pelvY,0,lean,0);
+  const hold=fr-giu2;
+  P[HEAD*3+1]+=0.010*hold; P[HEAD*3+2]-=0.055*hold;   // la faccia segue il pugno
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const aR=0.12-0.62*ca+3.62*fr-3.00*giu2+0.16*osc;
+  const eR=0.30+1.55*ca-1.72*fr+0.17*giu2;
+  const aL=0.12-0.55*ca+0.35*fr+0.20*giu2;   // la sinistra resta bassa, in contrasto
+  const eL=0.35+0.75*ca-0.35*fr-0.40*giu2;
+  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aR,eR, 0.055+0.055*fr-0.055*giu2, 1);
+  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aL,eL, 0.09,-1);
+  const kG=0.32+0.88*ca-1.20*fr+0.32*cad+0.55*att;
+  const aRl=0.14+0.12*ca-0.26*fr+0.14*cad;
+  const aLl=0.10-0.12*ca+0.10*fr+0.02*cad;
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0, aRl,kG,  0.11);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, aLl,kG+0.06*fr-0.06*giu2, -0.11);
+}
+
+/* DELUSIONE di chi subisce: ANTICIPO le mani che salgono mentre lo
+   sguardo va al cielo ("perche'?"), poi il crollo in avanti — le
+   braccia mollano DOPO il busto e la testa arriva ULTIMA (SEGUITO),
+   le gambe cedono con l'affondo (PESO) — la sospensione a capo
+   chino, il rientro lento. */
+function poseDelusione(u){
+  const mani=sm(u,0.08,0.22);              // le mani dietro la testa
+  const arco=sm(u,0.10,0.26)*(1-sm(u,0.40,0.56));  // lo sguardo al cielo
+  const piega=sm(u,0.44,0.62);             // il crollo in avanti
+  const molla=sm(u,0.48,0.66);             // le braccia mollano (dopo il busto)
+  const testa=sm(u,0.52,0.72);             // la testa arriva ultima
+  const ri=sm(u,0.82,0.97);                // il rientro
+  const dd=(u-0.55)/0.07, dip=Math.exp(-dd*dd);   // le gambe cedono
+  const maniF=mani*(1-molla);
+  const penz=molla-ri, testaF=testa-ri;
+  const pelvY=0.92+0.02*arco-0.13*piega-0.05*dip+0.13*ri;
+  const lean=0.06-0.32*arco+0.72*piega-0.72*ri+0.05*dip;
+  corpo(pelvY,0,lean,0);
+  P[HEAD*3+2]-=0.06*arco;                  // il "perche'?" al cielo
+  P[HEAD*3+1]-=0.11*testaF; P[HEAD*3+2]+=0.05*testaF;  // la testa che pende
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const aB=0.12+2.43*maniF-0.18*penz;
+  const eB=0.18+2.00*maniF+0.04*penz;
+  const outB=0.05-0.09*maniF;
+  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aB,eB, outB, 1);
+  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aB*1.03,eB, outB,-1);
+  const kG=0.25+0.55*piega+0.40*dip-0.55*ri;
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0,  0.14-0.10*piega+0.10*ri, kG,  0.12);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, -0.05+0.05*piega-0.05*ri, kG+0.05, -0.13);
+}
+
+const CLIPS={
+  fermo:     {freq:0.5, pose:poseFermo},
+  camminata: {freq:1.5, pose:poseCamminata},
+  corsa:     {freq:2.6, pose:poseCorsa},
+  frenata:   {freq:0.9, pose:poseFrenata},
+  passaggio: {freq:1.0, pose:posePassaggio, palla:function(u,o){pallaCalcio(u,Q_PASSAGGIO,o);}},
+  filtrante: {freq:1.5, pose:poseFiltrante, palla:function(u,o){pallaCalcio(u,Q_FILTRANTE,o);}},
+  cross:     {freq:0.8, pose:poseCross,     palla:function(u,o){pallaCalcio(u,Q_CROSS,o);}},
+  tiro:      {freq:0.7, pose:poseTiro,      palla:function(u,o){pallaCalcio(u,Q_TIRO,o);}},
+  finta:     {freq:1.0, pose:poseFinta,     palla:pallaFinta},
+  scivolata: {freq:0.8, pose:poseScivolata},
+  rovesciata:{freq:0.5, pose:poseRovesciata,palla:pallaRovesciata,polvere:{t:0.555,d:0.22}},
+  parata:    {freq:0.65,pose:poseParata,    palla:pallaParata},
+  tuffo:     {freq:0.45,pose:poseTuffo,     palla:pallaTuffo},
+  presa:     {freq:0.55,pose:posePresa,     palla:pallaPresa},
+  rinvio:    {freq:0.55,pose:poseRinvio,    palla:pallaRinvio},
+  esultanza: {freq:2.4, pose:poseEsultanza},
+  ginocchia: {freq:0.5, pose:poseGinocchia},
+  pugno:     {freq:0.55,pose:posePugno},
+  delusione: {freq:0.4, pose:poseDelusione},
+};
+
+/* ============================================================
+   CAMERE preimpostate (elevazione E dal piano orizzontale)
+   ============================================================ */
+function camera(gradiE){ const e=gradiE*Math.PI/180;
+  return {ce:Math.cos(e), se:Math.sin(e)}; }
+const CAMERE={
+  alto:  camera(50),   // la partita: top-down leggermente inclinata
+  bassa: camera(16),   // i rigori / la ripresa del gol: dietro il giocatore
+};
+
+/* ============================================================
+   SEGMENTI da disegnare (capsule) + ordinamento per profondita'
+   kind: 0 capsula, 1 tronco (con disegno maglia), 2 testa
+   bias: spinge avanti/indietro nei pareggi di profondita'
+   ============================================================ */
+const SEGS=[
+  {a:PELVIS,b:NECK, w:0.27, c:'maglia',       bias:-0.012, kind:1},
+  {a:HIPL,  b:HIPR, w:0.175,c:'pantaloncini', bias:-0.006, kind:0},
+  {a:NECK,  b:HEAD, w:0.07, c:'pelle',        bias:-0.002, kind:0},
+  {a:HEAD,  b:HEAD, w:0,    c:'pelle',        bias: 0.010, kind:2},
+  {a:SHR,b:ELR, w:0.100,c:'maglia', bias:0.005, kind:0},
+  {a:ELR,b:HAR, w:0.075,c:'pelle',  bias:0.008, kind:0},
+  {a:SHL,b:ELL, w:0.100,c:'maglia', bias:0.005, kind:0},
+  {a:ELL,b:HAL, w:0.075,c:'pelle',  bias:0.008, kind:0},
+  {a:HIPR,b:KNR, w:0.150,c:'pantaloncini', bias:0.002, kind:0},
+  {a:KNR, b:FTR, w:0.110,c:'calze',        bias:0.004, kind:0},
+  {a:FTR, b:TOR, w:0.100,c:'scarpe',       bias:0.006, kind:0},
+  {a:HIPL,b:KNL, w:0.150,c:'pantaloncini', bias:0.002, kind:0},
+  {a:KNL, b:FTL, w:0.110,c:'calze',        bias:0.004, kind:0},
+  {a:FTL, b:TOL, w:0.100,c:'scarpe',       bias:0.006, kind:0},
+  {a:PELVIS,b:PELVIS, w:0, c:'palla', bias:0, kind:3},  // palla (solo clip col pallone)
+];
+const NS=SEGS.length;
+const DEPTH=new Float32Array(NS);
+const ORD=new Int32Array(NS); for(let i=0;i<NS;i++)ORD[i]=i;
+
+/* disegno della maglia: strisce verticali o fascia orizzontale */
+function motivo(ctx,s,look){
+  const ax=SX[PELVIS],ay=SY[PELVIS],bx=SX[NECK],by=SY[NECK];
+  const dx=bx-ax,dy=by-ay, L=Math.sqrt(dx*dx+dy*dy);
+  if(L<1.5||look.disegno==='tinta')return;
+  const nx=-dy/L, ny=dx/L;
+  ctx.strokeStyle=look.maglia2;
+  if(look.disegno==='strisce'){
+    const o=0.082*s, w=0.062*s;
+    ctx.lineWidth=w<1?1:w;
+    ctx.beginPath();
+    ctx.moveTo(ax+dx*0.10+nx*o, ay+dy*0.10+ny*o);
+    ctx.lineTo(ax+dx*0.90+nx*o, ay+dy*0.90+ny*o);
+    ctx.moveTo(ax+dx*0.10-nx*o, ay+dy*0.10-ny*o);
+    ctx.lineTo(ax+dx*0.90-nx*o, ay+dy*0.90-ny*o);
+    ctx.stroke();
+  }else if(look.disegno==='fascia'){
+    const w=0.11*s, h=0.10*s;
+    ctx.lineWidth=w<1?1:w;
+    ctx.beginPath();
+    ctx.moveTo(ax+dx*0.60-nx*h, ay+dy*0.60-ny*h);
+    ctx.lineTo(ax+dx*0.60+nx*h, ay+dy*0.60+ny*h);
+    ctx.stroke();
+  }
+}
+
+/* testa: cerchio pelle + calotta capelli spostata via dalla faccia.
+   Da dietro i capelli coprono tutto, di profilo meta', di fronte
+   resta la mezzaluna del viso: e' questo che dice DOVE guarda. */
+function testa(ctx,s,cyw,syw,cam,look){
+  const r=HEADR*s, X=SX[HEAD], Y=SY[HEAD];
+  ctx.fillStyle=look.pelle;
+  ctx.beginPath(); ctx.arc(X,Y,r,0,TAU); ctx.fill();
+  const fdx=syw, fdy=-cyw*cam.se;
+  const L=Math.sqrt(fdx*fdx+fdy*fdy);
+  const dot=-cyw*cam.ce;                 // >0 se la faccia punta alla camera
+  let o=r*0.60*(dot+1)*0.5; if(o>0.5*r)o=0.5*r;
+  let hx=X, hy=Y-r*0.10;
+  if(L>1e-4){ hx=X-fdx/L*o; hy=Y-fdy/L*o-r*0.10; }
+  ctx.fillStyle=look.capelli;
+  ctx.beginPath(); ctx.arc(hx,hy,r*0.94,0,TAU); ctx.fill();
+}
+
+/* palla: cerchio chiaro bordato scuro (leggibile anche a 2-3 px di raggio),
+   con la macchia dell'esagono solo quando c'e' spazio; la schiacciata
+   all'impatto e' la deformazione che vende il colpo */
+function disegnaPalla(ctx,s,look){
+  const r=RPALLA*s, sq=PALLA[3];
+  const rx=r*(1+sq*0.7), ry=r*(1-sq);
+  ctx.fillStyle=look.palla;
+  ctx.beginPath(); ctx.ellipse(PSX,PSY,rx,ry,0,0,TAU); ctx.fill();
+  ctx.strokeStyle='#23201a'; ctx.lineWidth=r*0.18<1?1:r*0.18; ctx.stroke();
+  if(r>3.5){
+    ctx.fillStyle='#23201a';
+    ctx.beginPath(); ctx.arc(PSX-rx*0.16,PSY-ry*0.14,r*0.28,0,TAU); ctx.fill();
+  }
+}
+
+/* ============================================================
+   disegna(ctx, cx, cyTerra, hPx, yaw, nomeCamera, nomeClip, tSec, look)
+   cx,cyTerra: punto a terra sotto la figura, in pixel.
+   hPx: altezza apparente voluta della figura (30 in partita).
+   ============================================================ */
+function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look){
+  const clip=CLIPS[nomeClip], cam=CAMERE[nomeCam];
+  let u=(tSec*clip.freq)%1; if(u<0)u+=1;
+  clip.pose(u);
+  const cyw=Math.cos(yaw), syw=Math.sin(yaw);
+  const ce=cam.ce<0.58?0.58:cam.ce;   // non gonfiare troppo le falcate in pianta
+  const s=hPx/(1.9*ce);
+  for(let j=0;j<NJ;j++){
+    const x=P[j*3], y=P[j*3+1], z=P[j*3+2];
+    const xw=x*cyw+z*syw, zw=z*cyw-x*syw;
+    SX[j]=cx+xw*s;
+    SY[j]=cy-(y*cam.ce+zw*cam.se)*s;
+    SD[j]=zw*cam.ce-y*cam.se;
+  }
+  // palla della clip (se prevista): stessa proiezione dei giunti
+  let pallaQui=false, pxw=0,pzw=0,pby=0;
+  if(clip.palla){
+    clip.palla(u,PALLA); pallaQui=true;
+    let bx=PALLA[0]; pby=PALLA[1]; const bz=PALLA[2];
+    // palla bassa vicino ai piedi: scarto laterale in funzione dello yaw,
+    // verso la camera, cosi' a 225°/270° non finisce dentro la tibia
+    let wq=(0.56-(pby-RPALLA))*2.2;
+    if(wq>0){ if(wq>1)wq=1; bx+=0.085*syw*wq; }
+    pxw=bx*cyw+bz*syw; pzw=bz*cyw-bx*syw;
+    PSX=cx+pxw*s; PSY=cy-(pby*cam.ce+pzw*cam.se)*s;
+    PSD=pzw*cam.ce-pby*cam.se;
+  }
+  // ombra a terra (niente shadowBlur: una semplice ellisse); in volo
+  // si STACCA: la quota del giunto piu' basso la rimpicciolisce e sbiadisce
+  {
+    const x=P[PELVIS*3], z=P[PELVIS*3+2];
+    const xw=x*cyw+z*syw, zw=z*cyw-x*syw;
+    let mn=P[1]; for(let j=1;j<NJ;j++){ const yy=P[j*3+1]; if(yy<mn)mn=yy; }
+    let quota=mn-0.05; if(quota<0)quota=0;
+    const fo=1/(1+2.6*quota);
+    const gx=cx+xw*s, gy=cy-zw*cam.se*s;
+    ctx.globalAlpha=0.22*(0.30+0.70*fo); ctx.fillStyle='#000';
+    ctx.beginPath();
+    ctx.ellipse(gx, gy, 0.27*s*fo, (0.27*s*cam.se+0.5)*fo, 0,0,TAU);
+    ctx.fill();
+    if(clip.polvere){                 // lo sbuffo di polvere dell'impatto
+      const pv=(u-clip.polvere.t)/clip.polvere.d;
+      if(pv>0&&pv<1){
+        ctx.globalAlpha=0.40*(1-pv); ctx.fillStyle='#cdd9b9';
+        const r=(0.06+0.17*pv)*s, dx=(0.16+0.32*pv)*s, ry=(0.03+0.11*pv)*s*cam.ce;
+        ctx.beginPath(); ctx.arc(gx-dx, gy-ry, r*0.8, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(gx+dx*0.85, gy-ry*1.2, r, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(gx+dx*0.15, gy-ry*1.7, r*0.6, 0, TAU); ctx.fill();
+      }
+    }
+    if(pallaQui){   // l'ombra della palla dice a che altezza vola
+      const rp=RPALLA*s*0.9;
+      ctx.globalAlpha=0.20/(1+3*(pby-RPALLA));
+      ctx.beginPath();
+      ctx.ellipse(cx+pxw*s, cy-pzw*cam.se*s, rp, rp*cam.se+0.4, 0,0,TAU);
+      ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+  // profondita' per segmento e insertion sort (lista quasi ordinata)
+  for(let i=0;i<NS;i++){
+    const g=SEGS[i];
+    if(g.kind===3){ DEPTH[i]=pallaQui?PSD:1e9; continue; }
+    DEPTH[i]=(SD[g.a]+SD[g.b])*0.5+g.bias;
+  }
+  for(let i=1;i<NS;i++){
+    const o=ORD[i], d=DEPTH[o]; let k=i-1;
+    while(k>=0 && DEPTH[ORD[k]]<d){ ORD[k+1]=ORD[k]; k--; }
+    ORD[k+1]=o;
+  }
+  // dal piu' lontano al piu' vicino
+  for(let i=0;i<NS;i++){
+    const g=SEGS[ORD[i]];
+    if(g.kind===2){ testa(ctx,s,cyw,syw,cam,look); continue; }
+    if(g.kind===3){ if(pallaQui) disegnaPalla(ctx,s,look); continue; }
+    const w=g.w*s;
+    ctx.strokeStyle=look[g.c];
+    ctx.lineWidth=w<1.1?1.1:w;
+    ctx.beginPath();
+    ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
+    ctx.stroke();
+    if(g.kind===1) motivo(ctx,s,look);
+  }
+}
+
+const lookPredefinito={
+  maglia:'#c9302c', maglia2:'#f5f2ea', disegno:'strisce',
+  pantaloncini:'#f5f2ea', calze:'#c9302c',
+  pelle:'#e0a97e', capelli:'#33210f', scarpe:'#1d1d1d',
+  palla:'#f4f2ec',
+};
+
+return {disegna, CAMERE, CLIPS, lookPredefinito};
+})();
+
+/* ============================================================
+   Pagina di prova
+   ============================================================ */
+(function(){
+const Q=new URLSearchParams(location.search);
+const selClip=document.getElementById('selClip'),
+      selCam=document.getElementById('selCam'),
+      selYaw=document.getElementById('selYaw'),
+      selVel=document.getElementById('selVel'),
+      selEntrambe=document.getElementById('selEntrambe'),
+      lblYaw=document.getElementById('lblYaw'),
+      lblVel=document.getElementById('lblVel');
+if(Q.get('clip')) selClip.value=Q.get('clip');
+if(Q.get('camera')) selCam.value=Q.get('camera');
+if(Q.get('angolo')) selYaw.value=Q.get('angolo');
+if(Q.get('griglia')==='entrambe') selEntrambe.checked=true;
+const fase = Q.get('fase')!==null ? parseFloat(Q.get('fase')) : null;
+const STRISCIA = Q.get('striscia')==='1';   // 8 fotogrammi della clip, stesso angolo
+
+const DPR=window.devicePixelRatio||1;
+const ant=document.getElementById('anteprima');
+ant.width=300*DPR; ant.height=300*DPR;
+ant.style.width='300px'; ant.style.height='300px';
+const antCtx=ant.getContext('2d');
+antCtx.setTransform(DPR,0,0,DPR,0,0); antCtx.lineCap='round';
+
+/* griglia: la stessa clip a 8 angoli, a 90px e a 30px, per camera */
+const griglia=document.getElementById('griglia');
+const righe=[];
+function faRiga(tit,hFig,cw,chh,scala){
+  const div=document.createElement('div'); div.className='riga';
+  const t=document.createElement('div'); t.className='tit'; t.textContent=tit;
+  const cv=document.createElement('canvas');
+  const W=cw*8, H=chh;
+  if(scala===1){ // riga 30px: backing 1:1 e CSS x2 pixelato (com'e' in partita)
+    cv.width=W; cv.height=H; cv.className='px30';
+    cv.style.setProperty('--w',W); cv.style.setProperty('--h',H);
+  }else{
+    cv.width=W*DPR; cv.height=H*DPR;
+    cv.style.width=W+'px'; cv.style.height=H+'px';
+  }
+  div.appendChild(t); div.appendChild(cv); griglia.appendChild(div);
+  const ctx=cv.getContext('2d');
+  if(scala!==1) ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.lineCap='round';
+  righe.push({ctx,hFig,cw,chh,tit});
+  return righe[righe.length-1];
+}
+function costruisciGriglia(){
+  griglia.innerHTML=''; righe.length=0;
+  const cams=selEntrambe.checked?['alto','bassa']:[selCam.value];
+  for(const cam of cams){
+    faRiga('camera '+cam+' — 90 px',90,112,132,0).cam=cam;
+    faRiga('camera '+cam+' — 30 px (scala reale di partita, mostrata x2)',30,46,56,1).cam=cam;
+  }
+}
+costruisciGriglia();
+selEntrambe.addEventListener('change',costruisciGriglia);
+selCam.addEventListener('change',costruisciGriglia);
+
+const look=Rig3D.lookPredefinito;
+const RAD=Math.PI/180;
+
+function tClip(now){
+  const vel=selVel.value/100;
+  if(fase!==null) return fase/Rig3D.CLIPS[selClip.value].freq;
+  return now*0.001*vel;
+}
+
+function quadro(now){
+  const t=tClip(now), clip=selClip.value;
+  lblYaw.textContent=selYaw.value+'°';
+  lblVel.textContent=(selVel.value/100).toFixed(1)+'×';
+  // anteprima grande
+  antCtx.fillStyle='#2e7d3f'; antCtx.fillRect(0,0,300,300);
+  antCtx.fillStyle='#28703a'; antCtx.fillRect(0,150,300,4);
+  Rig3D.disegna(antCtx,150,240,170,selYaw.value*RAD,selCam.value,clip,t,look);
+  // griglia
+  for(const r of righe){
+    const ctx=r.ctx;
+    for(let i=0;i<8;i++){
+      ctx.fillStyle=(i%2)?'#2e7d3f':'#2a7439';
+      ctx.fillRect(i*r.cw,0,r.cw,r.chh);
+      // striscia temporale: stesso angolo, 8 fasi; griglia normale: 8 angoli
+      const yawT=STRISCIA?selYaw.value*RAD:i*45*RAD;
+      const uT=(i+0.5)/8;
+      const tT=STRISCIA?uT/Rig3D.CLIPS[clip].freq:t;
+      Rig3D.disegna(ctx,i*r.cw+r.cw/2,r.chh*0.82,r.hFig,yawT,r.cam,clip,tT,look);
+      if(r.hFig>50){
+        ctx.fillStyle='#dff2e2'; ctx.font='10px monospace'; ctx.textAlign='center';
+        ctx.fillText(STRISCIA?'u='+uT.toFixed(2):(i*45)+'°', i*r.cw+r.cw/2, 12);
+      }
+    }
+  }
+  requestAnimationFrame(quadro);
+}
+requestAnimationFrame(quadro);
+
+/* --- misura del costo: 22 figure x 600 frame, come in partita.
+       ?clipcosto=tiro misura una clip diversa (es. quelle con la palla) --- */
+setTimeout(function(){
+  const clipCosto=(Q.get('clipcosto')&&Rig3D.CLIPS[Q.get('clipcosto')])?Q.get('clipcosto'):'corsa';
+  const cv=document.createElement('canvas'); cv.width=480; cv.height=320;
+  const ctx=cv.getContext('2d'); ctx.lineCap='round';
+  const t0=performance.now();
+  for(let f=0;f<600;f++){
+    ctx.fillStyle='#2e7d3f'; ctx.fillRect(0,0,480,320);
+    for(let i=0;i<22;i++){
+      Rig3D.disegna(ctx, 30+(i%8)*55, 60+((i/8)|0)*90, 30,
+        i*0.7, i<11?'alto':'alto', clipCosto, f/60+i*0.13, look);
+    }
+  }
+  const ms=(performance.now()-t0)/600;
+  const msg='COSTO ('+clipCosto+'): 22 figure = '+ms.toFixed(3)+' ms/frame ('+
+            (1000/ms).toFixed(0)+' fps teorici, canvas 2D)';
+  console.log(msg);
+  document.getElementById('costo').textContent=msg;
+},600);
+})();
+</script>
