@@ -1170,6 +1170,11 @@ body.barra #gearBtn{display:none}
 /* TORNA AL MENU nel flusso, come alle ISTRUZIONI: la fascia adesiva
    copriva i cartellini e la sua velatura era la banda scura sui fogli. */
 #negozio .azioni,#impostazioni .azioni,#statistiche .azioni,#campi .azioni{position:static;margin:20px 0 0;padding:0 0 40px;background:none;box-shadow:none}
+/* ROSA e SQUADRA: la stessa ricetta, per la quarta volta. La fascia adesiva
+   di TORNA AL MENU copriva l'ultima riga della rosa (il quinto uomo spariva
+   sotto il bottone) e la seconda fila di kit: il pulsante torna nel flusso
+   e la lista riceve sotto di se' il respiro pari all'altezza del pulsante. */
+#rosa .azioni,#squadra .azioni{position:static;margin:20px 0 0;padding:0 0 40px;background:none;box-shadow:none}
 /* in orizzontale i cinque cartellini si vedono INTERI al primo colpo
    d'occhio — la merce mutilata leggeva come difetto. Il completo si
    sdraia: icona, testo, prezzi. */
@@ -1621,9 +1626,13 @@ input{user-select:text;-webkit-user-select:text}
    dentro la fascia bassa: a 6px dal fondo la barra cadeva esattamente
    sulla riga delle insegne — lo slash e i puntini tagliavano in due
    'TRASPORTI DINO', il fondo semitrasparente oscurava 'GOMME 2000' e il
-   bottone SALTA copriva il pannello accanto. La barra torna sull'erba,
-   sopra la fascia dei tabelloni: la garanzia dei 56px tiene comunque il
-   pallone lontano dal bordo basso dell'area di gioco. */
+   bottone SALTA copriva il pannello accanto.
+   MA LA POSIZIONE FISSA NON BASTAVA SU NESSUN FORMATO: la fascia delle
+   insegne si muove con la camera, e a 412px di altezza la barra tornava a
+   sedersi sulle scritte tagliandole a meta' lettera. La quota vera la
+   scrive drawHUD fotogramma per fotogramma (inline, vince su queste
+   regole): sopra la fascia quando c'e' erba, sotto quando la fascia sta
+   alta — mai a cavallo. Il valore qui e' il default del primo fotogramma. */
 @media (max-height:406px){ #tut{bottom:70px} }
 .pausahide{display:none!important}
 /* la striscia dell'evento e il fumetto abitano la stessa fascia: quando
@@ -3538,7 +3547,7 @@ const CAMERE={
 const SEGS=[
   {a:PELVIS,b:NECK, w:0.27, c:'maglia',       bias:-0.012, kind:1},
   {a:HIPL,  b:HIPR, w:0.175,c:'pantaloncini', bias:-0.006, kind:0},
-  {a:NECK,  b:HEAD, w:0.07, c:'pelle',        bias:-0.002, kind:0},
+  {a:NECK,  b:HEAD, w:0.10, c:'pelle',        bias:-0.002, kind:0},  // il COLLO: a 0.07 spariva sotto il minimo di 1.1px e la testa galleggiava
   {a:HEAD,  b:HEAD, w:0,    c:'pelle',        bias: 0.010, kind:2},
   {a:SHR,b:ELR, w:0.100,c:'maglia', bias:0.005, kind:0},
   {a:ELR,b:HAR, w:0.075,c:'pelle',  bias:0.008, kind:0},
@@ -3555,6 +3564,11 @@ const SEGS=[
 const NS=SEGS.length;
 const DEPTH=new Float32Array(NS);
 const ORD=new Int32Array(NS); for(let i=0;i<NS;i++)ORD[i]=i;
+
+/* il contorno UNICO della figura: lo stesso scuro caldo del bordo della
+   palla, cosi' la sagoma legge come un corpo solo (vedi il passaggio di
+   sottofondo in disegna) e non tredici rettangoli bordati uno a uno */
+const BORDO='#23201a';
 
 /* disegno della maglia: strisce verticali o fascia orizzontale */
 function motivo(ctx,s,look){
@@ -3756,6 +3770,31 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra){
     while(k>=0 && DEPTH[ORD[k]]<d){ ORD[k+1]=ORD[k]; k--; }
     ORD[k+1]=o;
   }
+  // CAPSULE, NON RETTANGOLI: estremi tondi che sporgono oltre il giunto
+  // di un raggio — gomiti, ginocchia e spalle pieni anche a 30px. Il
+  // lineCap va imposto QUI: il canvas del gioco arriva con 'butt', ed
+  // era il 'butt' a lasciare i vuoti ai giunti (a fine figura si rimette).
+  ctx.lineCap='round';
+  // CONTORNO UNICO (misurato con ?rigcosto: 0,28 -> sotto 0,6 ms per 22
+  // figure): un primo passaggio dell'INTERA figura in scuro un filo piu'
+  // largo, poi i colori sopra in ordine di profondita'. Cosi' il bordo
+  // sta sul PERIMETRO della sagoma e mai fra un segmento e l'altro.
+  const bd=0.035*s<0.8?0.8:0.035*s;
+  ctx.strokeStyle=BORDO;
+  for(let i=0;i<NS;i++){
+    const g=SEGS[i];
+    if(g.kind===3) continue;             // la palla ha gia' il suo bordo
+    if(g.kind===2){
+      ctx.fillStyle=BORDO;
+      ctx.beginPath(); ctx.arc(SX[HEAD],SY[HEAD],HEADR*s+bd,0,TAU); ctx.fill();
+      continue;
+    }
+    const w=g.w*s;
+    ctx.lineWidth=(w<1.1?1.1:w)+2*bd;
+    ctx.beginPath();
+    ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
+    ctx.stroke();
+  }
   // dal piu' lontano al piu' vicino
   for(let i=0;i<NS;i++){
     const g=SEGS[ORD[i]];
@@ -3769,6 +3808,7 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra){
     ctx.stroke();
     if(g.kind===1) motivo(ctx,s,look);
   }
+  ctx.lineCap='butt';                    // lo stato del canvas torna com'era
 }
 
 /* ADATTAMENTO (c): il torso dell'ultima figura, per ancorare il numero */
@@ -3850,7 +3890,7 @@ const G = {
   hudTags:[],                           // targhette dei controllati, in coordinate SCHERMO
   confScreen:[],                        // coriandoli davanti all'obiettivo (schermo)
   confPend:null,                        // getto pronto, in attesa che la camera arrivi sulla rete
-  confPop:null,                         // secondo scoppio, sparato dalla scritta
+  confPop:null,                         // secondo scoppio, sparato dalla fascia del gol
   confPopFatto:false,                   // il secondo scoppio si accende una volta sola
   netBulge:[{t:9,y:FH/2,mag:0},{t:9,y:FH/2,mag:0}], // deformazione rete per lato
   crowdHype:0,                          // folla che esplode (s)
@@ -5529,9 +5569,9 @@ function drawConfScreen(){
                        ang, rnd(VW*0.30,VW*1.05), P.cols));
     }
   }
-  /* SECONDO SCOPPIO: parte dalla scritta quando la scritta atterra. E' il
-     colpo di grancassa del secondo tempo — l'esplosione non e' un getto
-     solo che si spegne, sono due che si accavallano. */
+  /* SECONDO SCOPPIO: parte da sotto la fascia del gol quando la fascia si
+     pianta. E' il colpo di grancassa del secondo tempo — l'esplosione non
+     e' un getto solo che si spegne, sono due che si accavallano. */
   if(G.confPop){
     const P=G.confPop; G.confPop=null;
     for(let i=0;i<22;i++){
@@ -8465,16 +8505,24 @@ const Duel = {
       ui.duelPhase.textContent = s.shooterHuman
         ? 'TIRA LA SQUADRA '+s.nomeT(s.shooter)+' — scegli la zona'
         : (s.keeperHuman ? 'TIRA LA CPU — SCEGLI IL TUFFO' : 'TIRA LA CPU');
+      /* SU TOUCH NIENTE RESIDUI DI TASTIERA: «P1: A/S/D oppure tocca» su un
+         telefono e' il cartello di un altro dispositivo. Il suggerimento
+         parla la lingua del dito; A/S/D restano dove c'e' una tastiera. */
       ui.duelHint.textContent = s.shooterHuman
-        ? (s.shooter===0?'P1: A / S / D oppure tocca':'P2: ← / ↓ / → oppure tocca')
+        ? (InputPref.touch ? 'TOCCA LA ZONA'
+                           : (s.shooter===0?'P1: A / S / D oppure tocca':'P2: ← / ↓ / → oppure tocca'))
           + (s.keeperHuman?'  ·  PORTIERE '+s.nomeT(s.keeper)+': scegli il tuffo di nascosto':'')
         : 'PORTIERE '+s.nomeT(s.keeper)+': scegli il tuffo!';
     }else if(s.phase==='power'){
       ui.duelPhase.textContent='FERMA LA BARRA NELLA BANDA!';
-      ui.duelHint.textContent = s.shooter===0?'P1: X oppure tocca la barra':'P2: M oppure tocca la barra';
+      ui.duelHint.textContent = InputPref.touch
+        ? 'TOCCA LA BARRA'
+        : (s.shooter===0?'P1: X oppure tocca la barra':'P2: M oppure tocca la barra');
     }else if(s.phase==='wait'){
       ui.duelPhase.textContent='IL PORTIERE SI PREPARA...';
-      ui.duelHint.textContent = s.keeperHuman ? (s.keeper===0?'P1: A / S / D':'P2: ← / ↓ / →') : '';
+      ui.duelHint.textContent = s.keeperHuman
+        ? (InputPref.touch ? 'TOCCA IL TUFFO' : (s.keeper===0?'P1: A / S / D':'P2: ← / ↓ / →'))
+        : '';
     }
   },
 
@@ -9071,21 +9119,10 @@ function disegnaTabellone(c, W, H, opt){
   }
   c.restore();
 }
-/* IL TABELLONE COTTO UNA VOLTA SOLA, per la festa del gol: il compensato non
-   cambia da un gol all'altro, quindi si dipinge alla prima rete e da li' in
-   poi costa una drawImage. Stessa disciplina di fieldTex e ombraTex —
-   "niente si calcola per fotogramma se si puo' cuocere una volta". */
-let tabTex=null, tabTexW=0;
-function buildTabTex(W){
-  const d=Math.min(2, window.devicePixelRatio||1);
-  const H=Math.round(W*2/3);
-  tabTex=document.createElement('canvas');
-  tabTex.width=Math.round(W*d); tabTex.height=Math.round(H*d);
-  const c=tabTex.getContext('2d');
-  c.setTransform(d,0,0,d,0,0);
-  disegnaTabellone(c, W, H, { seme:7 });
-  tabTexW=W;
-}
+/* QUI C'ERA tabTex, il tabellone cotto per la festa del gol. La festa
+   adesso parla con UNA fascia a tutta larghezza (AZIONI.md, decisione 3)
+   e il compensato in partita non serve piu': l'oggetto-eroe resta al
+   fischio finale e nella home, dipinto da disegnaTabellone qui sotto. */
 /* dipinge il tabellone dentro l'elemento <div class="tabellone"> passato,
    alla misura che il CSS gli ha dato e alla densita' dello schermo */
 function montaTabellone(el){
@@ -13077,8 +13114,8 @@ function updateCamera(rdt){
        Primi 0,85 s alla porta — li' stanno il sacco che si gonfia, la
        scossa e i raggi — poi il bersaglio scivola sul marcatore in mezzo
        secondo, che e' il tempo di una carrellata, non di uno stacco. Il
-       marcatore si posa poco oltre il centro, dalla parte della porta: la
-       scritta GOL! sta gia' dall'altra, e cosi' non si coprono.
+       marcatore si posa poco oltre il centro, dalla parte della porta,
+       sopra la fascia del gol che vive in fascia bassa: non si coprono.
        Sull'AUTORETE non ci si sposta: chi ha deviato non festeggia, e
        l'inquadratura della rete resta l'unica onesta. */
     const mk = (!G.goalAuto && G.goalIdx>=0) ? G.players[G.goalIdx] : null;
@@ -13089,6 +13126,24 @@ function updateCamera(rdt){
       ty += (clamp(mk.y,0,FH)-ty)*e;
     }
     const k=Math.min(1,1-Math.pow(2,-rdt/0.105));
+    G.cam.z+=(tz-G.cam.z)*k;
+    G.cam.x+=(tx-G.cam.x)*k;
+    G.cam.y+=(ty-G.cam.y)*k;
+    return;
+  }
+  /* LA PANORAMICA DEL KICKOFF A ROSA LARGA. Sul 7 e sull'11 il calcio
+     d'inizio e' l'unico momento in cui le due squadre stanno SCHIERATE, ed
+     e' un'immagine che il 5 contro 5 non ha: la camera si apre al pavimento
+     della forbice e scorre dalla propria meta' schierata verso il pallone —
+     una carrellata breve, dentro il secondo che il kickoff gia' dura — e al
+     via l'inseguimento normale stringe da solo sull'azione. A movimento
+     ridotto niente panoramica: inquadratura ferma sul centro, com'era. */
+  if(G.scene==='kickoff' && TAGLIA>5 && SAVE.moto && G.ball){
+    const q=clamp(G.sceneT/1.0,0,1);
+    const e=q*q*(3-2*q);
+    const tz=S2_MIN_DEV/SCALE;
+    const tx=FW*(0.30+0.20*e), ty=FH/2;
+    const k=Math.min(1,1-Math.pow(2,-rdt/0.14));
     G.cam.z+=(tz-G.cam.z)*k;
     G.cam.x+=(tx-G.cam.x)*k;
     G.cam.y+=(ty-G.cam.y)*k;
@@ -13189,7 +13244,18 @@ function updateCamera(rdt){
      otto giocatori, ma prende lo stesso avvicinamento del dispositivo: se
      no su un tablet il replay si allontanerebbe rispetto al gioco, cioe'
      l'esatto contrario del suo mestiere */
-  const zMin = S2_MIN_DEV, zMax = S2_MAX_DEV;
+  /* IL PAVIMENTO DELLO ZOOM SALE CON LA TAGLIA. La forbice era tarata sul
+     5 contro 5, dove il pavimento mostra quasi tutto il campo utile; sul
+     7 e sull'11 lo STESSO pavimento mostra la stessa fetta di mondo — ma
+     il mondo e' cresciuto del 40-100%, quindi nel fotogramma cadevano tre
+     o quattro figure su ventidue e il resto era prato deserto. Il momento
+     "largo" di una partita grande non ha bisogno di piu' erba: ha bisogno
+     del baricentro dell'azione. Il pavimento sale del 15% sul 7 e del 20%
+     sull'11 — la vista piu' stretta (il tetto) non si tocca, quindi i
+     duelli restano identici; cambia solo quanto vuoto si puo' inquadrare
+     nei momenti in cui le squadre si allargano. */
+  const kTag = TAGLIA===11 ? 1.20 : TAGLIA===7 ? 1.15 : 1;
+  const zMin = S2_MIN_DEV*kTag, zMax = S2_MAX_DEV;
   if(!G.moviola){
     let ax0=b.x, ax1=b.x, ay0=b.y, ay1=b.y;
     for(const p of camVicini){
@@ -13270,6 +13336,43 @@ function updateCamera(rdt){
       const dGiu  = G.cam.y<basso ? basso-G.cam.y : 0;
       let d = (dSu&&dGiu) ? (Math.abs(dSu)<Math.abs(dGiu)?dSu:dGiu) : (dSu||dGiu);
       G.cam.y=clamp(G.cam.y+d, b.y-ly, b.y+ly);
+    }
+  }
+  /* 7. IL BORDO DI SCENOGRAFIA SI TIENE INTERO. L'appoggio alla sponda
+     (punto 1-bis) porta la fascia delle insegne dentro il quadro — ma la
+     portava dentro A META': il bordo del fotogramma cadeva in mezzo alla
+     riga delle scritte e i cartelloni uscivano tagliati a meta' lettera,
+     che e' il modo piu' sicuro per leggere "rotto". La fascia sta fra 15
+     e 31 unita' oltre la linea (vedi dipingiCartelloni): se il bordo del
+     quadro cade li' dentro, la camera scivola del minimo necessario —
+     verso l'insegna INTERA quando ne mostra gia' piu' di meta' (ed e' il
+     bordo che chiude lo spazio: cartellone e prime file di folla), via
+     del tutto quando ne mostrava solo un filo. Scivola, non salta: la
+     correzione passa dallo stesso inseguimento esponenziale del pan, e
+     la garanzia dei 56 px del pallone vince comunque su di lei. */
+  {
+    const S2b=SCALE*G.cam.z;
+    const yb=G.cam.y+(VH-PA_CY)/S2b;      // mondo al bordo BASSO del quadro
+    const yt=G.cam.y-PA_CY/S2b;           // mondo al bordo ALTO
+    /* due candidati per fascia — includerla intera o lasciarla fuori — e
+       la garanzia del pallone decide quali sono davvero raggiungibili:
+       quando la sponda ha gia' portato la camera al limite dei 56 px, la
+       direzione preferita puo' essere murata, e allora si prende l'altra.
+       Meglio un'insegna che esce dal quadro di un'insegna decapitata. */
+    const sta=(v)=>v>=b.y-ly && v<=b.y+ly;
+    let d=0;
+    if(yb>FH+13 && yb<FH+33){
+      const dIn=FH+33-yb, dOut=FH+13-yb;
+      const p1=yb>FH+23?dIn:dOut, p2=yb>FH+23?dOut:dIn;
+      d = sta(G.cam.y+p1) ? p1 : (sta(G.cam.y+p2) ? p2 : 0);
+    }else if(yt>-33 && yt<-13){
+      const dIn=-33-yt, dOut=-13-yt;
+      const p1=yt<-23?dIn:dOut, p2=yt<-23?dOut:dIn;
+      d = sta(G.cam.y+p1) ? p1 : (sta(G.cam.y+p2) ? p2 : 0);
+    }
+    if(d){
+      const kq=Math.min(1,1-Math.pow(2,-rdt/0.10));
+      G.cam.y=clamp(G.cam.y+d*kq, b.y-ly, b.y+ly);
     }
   }
 }
@@ -13449,6 +13552,9 @@ function render(){
     }
     ordinaPerY.sort(cmpY);
     drawOmbreGiocatori(ordinaPerY);
+    /* i segni a terra (anello ambra, pozza del portatore) fra le ombre e i
+       corpi: sopra le prime, sotto TUTTI i secondi — vedi drawSegniTerra */
+    drawSegniTerra(ordinaPerY);
     for(const p of ordinaPerY) drawPlayer(p);
     drawBall();
     drawParticles();
@@ -14212,21 +14318,18 @@ function figuraLontana(p){
    ma un corpo fatto di arti no: un arto orfano legge come un guasto.
    Due regole, vive SOLO nel fermo del gol a moto ridotto:
      1) dietro un PANNELLO OPACO o si sta interi o non si sta: chi ha il
-        torso sotto la barra del punteggio o dietro il tabellone di
-        compensato non si disegna affatto, e con lui tace la sua ombra
-        (restava a terra scollegata da tutto). Il pannello gia' si
-        scosta quando puo'; quando non puo', la comparsa cede il posto:
-        e' una comparsa;
-     2) il MARCATORE non si nasconde mai, e chi finisce dietro le
-        lettere di GOL! si ridisegna DAVANTI, intero — un manifesto
-        mette il protagonista davanti al titolo, non dentro (il
-        ridisegno sta in drawOverlaysCanvas, dopo i pannelli; i riquadri
-        qui sotto li annotano i pannelli stessi, dove sono misurati).
+        torso sotto la barra del punteggio o dietro la fascia del gol
+        non si disegna affatto, e con lui tace la sua ombra (restava a
+        terra scollegata da tutto). La comparsa cede il posto: e' una
+        comparsa;
+     2) il MARCATORE non si nasconde mai: se la fascia lo copre, si
+        ridisegna DAVANTI, intero — un manifesto mette il protagonista
+        davanti al titolo, non dentro (il ridisegno sta in
+        drawOverlaysCanvas, dopo la fascia; il riquadro qui sotto lo
+        annota la fascia stessa, dov'e' misurata).
    A movimento pieno non cambia un pixel: la festa si muove, la regia
    e' un'altra, e il collaudo del contrasto misura scene senza pannelli. */
-const FERMO_COPRI=[{on:false,x0:0,x1:0,y0:0,y1:0},   // le lettere di GOL!
-                   {t:-9,x0:0,x1:0,y0:0,y1:0}];      // il tabellone di compensato
-const FERMO_RID=[];            // scratch: figure da ridisegnare davanti
+const FERMO_FASCIA={t:-9,x0:0,x1:0,y0:0,y1:0};       // la fascia del gol
 function fermoCoperto(p){
   if(G.scene!=='goal' || SAVE.moto || G.moviola) return false;
   const S2=G.view.S2||1;
@@ -14237,11 +14340,11 @@ function fermoCoperto(p){
     const f=clamp((VW/2-52)/248,0.52,1);
     if(qx > VW/2-236*f-14-14*S2 && qx < VW/2+230*f+34+14*S2) return true;
   }
-  /* il tabellone: il riquadro e' quello annotato al fotogramma prima
+  /* la fascia del gol: il riquadro e' quello annotato al fotogramma prima
      (il fermo e' fermo: non si sposta di un pixel), col bollo del tempo
      di scena perche' il riquadro del gol precedente non valga mai qui.
      Il marcatore e' esente: lui, se serve, passa davanti (regola 2). */
-  const B=FERMO_COPRI[1];
+  const B=FERMO_FASCIA;
   if(Math.abs(G.sceneT-B.t)<0.1 && !(G.goalIdx>=0 && G.players[G.goalIdx]===p)
      && qx>B.x0+8 && qx<B.x1-8 && qy-20*S2>B.y0 && qy<B.y1+20*S2) return true;
   return false;
@@ -14333,6 +14436,83 @@ function drawOmbreGiocatori(lista){
       ctx.drawImage(ombraTex, cx-8.2, cy-4.1, 16.4, 8.2);
     }
     ctx.globalAlpha=1;
+  }
+}
+
+/* =====================================================================
+   I SEGNI A TERRA — pozza del portatore, ANELLO AMBRA del comandato e
+   freccia di direzione — in una passata sola: SOPRA le ombre, SOTTO tutti
+   i corpi. Prima stavano dentro drawPlayer: sotto il PROPRIO corpo, si',
+   ma sotto quello soltanto — un difensore dipinto dopo (y maggiore) ci
+   calava sopra la gamba e l'anello usciva mezzo coperto, e siccome la
+   palla del portatore sta 16 unita' davanti ai piedi, quel mezzo anello
+   si leggeva come un cerchio attorno alla palla. Qui la legge diventa
+   quella di ogni oggetto posato sull'erba: occluso dal corpo a cui
+   appartiene per il suo arco posteriore (l'occlusione giusta), mai da un
+   corpo estraneo intero. Geometrie, colori e budget numerici IDENTICI a
+   prima: cambia solo il piano su cui poggiano.
+   ===================================================================== */
+function drawSegniTerra(lista){
+  for(const p of lista){
+    if(fermoCoperto(p)) continue;
+    const pi=G.players.indexOf(p);
+    const isCtrl = !G.cpu[p.team] && G.ctrl[p.team]===pi;
+    const hasBall = G.ball && G.ball.owner===pi;
+    if(!isCtrl && !(hasBall && p.slide<0)) continue;
+    /* la stessa scala di disegno P_DIS dei corpi: i segni stanno addosso
+       alla figura ingrandita, non al corpo nudo */
+    ctx.save();
+    ctx.translate(p.x,p.y); ctx.scale(P_DIS,P_DIS); ctx.translate(-p.x,-p.y);
+    if(hasBall && p.slide<0){
+      if(!poolTex) buildOmbraTex();
+      ctx.drawImage(poolTex, p.x-15.8, p.y+9.8-7.4, 31.6, 14.8);
+      /* sopra la pozza, l'ANELLO CHIUSO ai piedi del portatore. Ellisse
+         INTERA: il corpo, disegnato dopo, ne copre da solo l'arco
+         posteriore. Quando il portatore e' anche il COMANDATO l'anello
+         non si disegna: li' c'e' gia' l'anello ambra del controllo, e
+         due anelli concentrici sullo stesso paio di scarpe ne fanno zero. */
+      if(!isCtrl){
+        ctx.strokeStyle='rgba(0,0,0,.38)'; ctx.lineWidth=3.8;
+        ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0,6.2832); ctx.stroke();
+        ctx.strokeStyle='rgba(255,206,58,.96)'; ctx.lineWidth=2.2;
+        ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0,6.2832); ctx.stroke();
+      }
+    }
+    /* ANELLO A TERRA DEL GIOCATORE CONTROLLATO: AMBRA, PIENO, ancorato ai
+       piedi (il centro (+2,5;+6,6) con P_DIS coincide quasi con l'ombra
+       portata (+4,2;+7,8): anello e ombra sono UN oggetto a terra). Lo
+       zoccolo scuro sotto e' quello che lo tiene leggibile su ogni divisa
+       e in alto contrasto. Il respiro sta sul RAGGIO fra due valori; a
+       movimento ridotto sta fermo a mezza via. BUDGET: estremo laterale
+       (2,5+20,6+1,7)x1,18 = 29,3 < 30 — il raggio da cui collaudo.js
+       campiona l'erba resta pulito, freccia compresa. */
+    if(isCtrl){
+      const pl = SAVE.moto ? 0.5+0.5*Math.sin(G.pulse*2.6) : 0.5;
+      const arx=19.2+1.4*pl, ary=8.4+0.61*pl;
+      ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=5.4;
+      ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0,0,6.2832); ctx.stroke();
+      ctx.strokeStyle='rgba(255,176,32,.95)';
+      ctx.lineWidth=3.4;
+      ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0,0,6.2832); ctx.stroke();
+      /* il filo di luce sul quarto ovest dell'anello: e' un oggetto posato
+         sull'erba, e anche lui sta sotto il sole delle sette */
+      ctx.strokeStyle='rgba(255,232,186,.55)'; ctx.lineWidth=1.3;
+      ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0, 0.80*Math.PI,1.40*Math.PI); ctx.stroke();
+      /* LA FRECCIA DI DIREZIONE: cuneo pieno sul bordo dell'anello
+         nell'angolo dei piedi (atan2(fy,fx)), base dentro il filo, punta
+         appena fuori; schiacciata a terra come l'ellisse (ary/arx). */
+      const fa=Math.atan2(p.fy,p.fx);
+      const sq=ary/arx;
+      const fcx=p.x+2.5, fcy=p.y+6.6;
+      ctx.beginPath();
+      ctx.moveTo(fcx+Math.cos(fa)*20.9,      fcy+Math.sin(fa)*20.9*sq);
+      ctx.lineTo(fcx+Math.cos(fa+0.46)*14.2, fcy+Math.sin(fa+0.46)*14.2*sq);
+      ctx.lineTo(fcx+Math.cos(fa-0.46)*14.2, fcy+Math.sin(fa-0.46)*14.2*sq);
+      ctx.closePath();
+      ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=2.8; ctx.lineJoin='round'; ctx.stroke();
+      ctx.fillStyle='rgba(255,176,32,.95)'; ctx.fill();
+    }
+    ctx.restore();
   }
 }
 
@@ -14544,98 +14724,13 @@ function drawPlayer(p){
     ctx.globalAlpha=1;
   }
 
-  if(hasBall && p.slide<0){
-    if(!poolTex) buildOmbraTex();
-    ctx.drawImage(poolTex, p.x-15.8, p.y+9.8-7.4, 31.6, 14.8);
-    /* sopra la pozza, l'ANELLO CHIUSO ai piedi del portatore. Era una
-       mezzaluna (0,16-0,84 pi greco): nelle fotografie leggeva come un
-       archetto spezzato, un pezzo d'interfaccia rotto, non come un
-       cerchio posato sull'erba. L'ellisse adesso e' INTERA: il corpo,
-       disegnato dopo, ne copre da solo l'arco posteriore, che e'
-       l'occlusione giusta — quella di un oggetto a terra dietro le
-       gambe — e non un arco lasciato a meta' dal disegno.
-       Quando il portatore e' anche il COMANDATO l'anello non si
-       disegna: li' c'e' gia' l'anello ambra del controllo, e due anelli
-       concentrici sullo stesso paio di scarpe ne fanno zero. */
-    if(!isCtrl){
-      ctx.strokeStyle='rgba(0,0,0,.38)'; ctx.lineWidth=3.8;
-      ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0,6.2832); ctx.stroke();
-      ctx.strokeStyle='rgba(255,206,58,.96)'; ctx.lineWidth=2.2;
-      ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0,6.2832); ctx.stroke();
-    }
-  }
-  /* ANELLO A TERRA DEL GIOCATORE CONTROLLATO.
-     Un filo nel colore della squadra e basta sparisce sul kit dello stesso
-     colore (lime su lime): sotto ci va uno zoccolo scuro, che e' quello che
-     lo tiene leggibile su qualunque divisa e anche in alto contrasto. Sta
-     dietro il corpo e sporge solo davanti ai piedi: si legge come un cerchio
-     posato sull'erba, non come un cerchio infilato addosso all'omino. */
-  if(isCtrl){
-    /* L'ANELLO E' AMBRA, PIENO, E RESPIRA FRA DUE RAGGI.
-       Il metro sul concorrente piu' vicino: la pedina attiva ha un anello
-       ciano completo che la SOLLEVA dal campo. Il nostro era nel colore
-       della squadra — lime su divisa lime: invisibile meta' del tempo — e
-       pulsava d'opacita', cioe' passava meta' del tempo mezzo spento.
-       L'ambra e' la tinta che in tutto il gioco vuol dire "qui si agisce",
-       e il giocatore comandato E' dove si agisce: non e' decorazione, e'
-       l'unico posto in campo dove l'accento tocca il manto. La squadra la
-       dicono la maglia e la targhetta P1/P2, che resta nel suo colore.
-       Il respiro sta sul RAGGIO, non sull'alfa: due valori appena
-       staccati (1,3 unita'), interpolati dal pulse che c'era gia'. Un
-       anello sempre pieno che si allarga di un filo legge come un
-       respiro; uno che sbiadisce legge come un guasto. A movimento
-       ridotto sta fermo a mezza via. Lo zoccolo scuro sotto resta: e'
-       quello che lo tiene leggibile su ogni divisa e in alto contrasto. */
-    /* PERCHE' NELLE FOTO RESTAVA UN ARCHETTO, E COME SI CHIUDE DAVVERO.
-       L'ellisse era gia' intera, ma a 17,4 x 7,6 il suo arco alto
-       passava DIETRO meta' sagoma (calzoncini a -15,4, torso a 12,9) e
-       il filo da 2,8 sui lati spariva contro il contorno scuro del
-       corpo: sullo schermo sopravviveva il solo arco davanti ai piedi.
-       Un anello si legge intero quando i suoi FIANCHI escono netti
-       dalla figura: raggio largo a 19,2 (i fianchi passano a due unita'
-       buone da spalle e braccia), filo ambra a 3,4 e zoccolo a 5,4.
-       Resta sotto il corpo — e' un cerchio posato sull'erba — e resta
-       dentro i vincoli: l'estremo laterale (20,6+1,7 di filo) x P_DIS
-       fa 26,3, e l'anello con cui collaudo.js campiona l'erba comincia
-       a 30. Il respiro sta sul raggio fra due valori, com'era. */
-    /* CENTRATO SULL'OMBRA PORTATA, non piu' a (0;+10,6): li' l'ellisse
-       finiva in basso a sinistra, staccata dai piedi. Il centro adesso e'
-       (+2,5;+6,6), che con P_DIS coincide quasi con l'ombra (+4,2;+7,8):
-       anello e ombra sono UN oggetto a terra. Estremo laterale
-       (2,5+20,6+1,7)x1,18 = 29,3 < 30: il campione d'erba del collaudo
-       resta pulito. */
-    const pl = SAVE.moto ? 0.5+0.5*Math.sin(G.pulse*2.6) : 0.5;
-    const arx=19.2+1.4*pl, ary=8.4+0.61*pl;
-    ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=5.4;
-    ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0,0,6.2832); ctx.stroke();
-    ctx.strokeStyle='rgba(255,176,32,.95)';
-    ctx.lineWidth=3.4;
-    ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0,0,6.2832); ctx.stroke();
-    /* il filo di luce sul quarto ovest dell'anello: e' un oggetto posato
-       sull'erba, e anche lui sta sotto il sole delle sette */
-    ctx.strokeStyle='rgba(255,232,186,.55)'; ctx.lineWidth=1.3;
-    ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0, 0.80*Math.PI,1.40*Math.PI); ctx.stroke();
-    /* LA FRECCIA DI DIREZIONE: un cuneo pieno posato sul bordo
-       dell'anello nell'angolo dei piedi (atan2(fy,fx)), MAI staccato
-       dal corpo — base dentro il filo, punta appena fuori. Stessa
-       coppia di tratti dell'anello: zoccolo scuro sotto, ambra sopra.
-       BUDGET NUMERICO OBBLIGATORIO (stesso conto dell'anello qui
-       sopra): punta a 20,9 + meta' zoccolo 1,4 = 22,3 di estremo, come
-       il filo dell'anello: (2,5+22,3)x1,18 = 29,3 < 30, il raggio da
-       cui collaudo.js campiona l'erba. La freccia rientra nel budget
-       come l'anello. Lo schiacciamento a terra (ary/arx) e' lo stesso
-       dell'ellisse: il cuneo giace sull'erba, non sta in piedi. */
-    const fa=Math.atan2(p.fy,p.fx);
-    const sq=ary/arx;
-    const fcx=p.x+2.5, fcy=p.y+6.6;
-    ctx.beginPath();
-    ctx.moveTo(fcx+Math.cos(fa)*20.9,      fcy+Math.sin(fa)*20.9*sq);
-    ctx.lineTo(fcx+Math.cos(fa+0.46)*14.2, fcy+Math.sin(fa+0.46)*14.2*sq);
-    ctx.lineTo(fcx+Math.cos(fa-0.46)*14.2, fcy+Math.sin(fa-0.46)*14.2*sq);
-    ctx.closePath();
-    ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=2.8; ctx.lineJoin='round'; ctx.stroke();
-    ctx.fillStyle='rgba(255,176,32,.95)'; ctx.fill();
-  }
+  /* POZZA DEL PORTATORE, ANELLO AMBRA E FRECCIA NON SI DISEGNANO PIU' QUI:
+     stanno in drawSegniTerra, una passata sola DOPO le ombre e PRIMA di
+     tutti i corpi (vedi render). Disegnati dentro drawPlayer, un difensore
+     con y maggiore — cioe' dipinto dopo — calava il proprio corpo SOPRA
+     l'anello del comandato: mezzo anello sotto una gamba avversaria, e i
+     giudici lo leggevano come un cerchio attorno alla palla. Un segno a
+     terra sta sotto TUTTI i corpi, non solo sotto il suo. */
 
   /* L'OMBRA PORTATA non si disegna qui: sta in drawOmbreGiocatori, una
      passata sola prima di TUTTI i corpi (vedi render). */
@@ -14701,13 +14796,17 @@ function drawPlayer(p){
   /* targhetta del controllato: qui si registra solo la posizione, il
      disegno avviene in drawHUD fuori dalla camera, a corpo fisso */
   if(isCtrl){
-    /* per P1 la targhetta dice CHI comandi: il cognome breve del tuo
-       uomo (la rosa ha nomi veri), troncato a 8 caratteri. P2 resta
-       P2: e' l'altro pollice sullo stesso schermo, non una rosa curata. */
+    /* per P1 la targhetta dice CHI comandi: il cognome del tuo uomo (la
+       rosa ha nomi veri), INTERO. Era troncato a 8 caratteri e sullo
+       schermo compariva «PIEDEBUO»: una parola mozzata legge come un
+       difetto, non come un'abbreviazione. La scatola in drawHUD si
+       misura sul testo (measureText), quindi il cognome lungo ci sta
+       per costruzione. P2 resta P2: e' l'altro pollice sullo stesso
+       schermo, non una rosa curata. */
     let ttxt='P2';
     if(p.team===0){
       const cg=String(p.nome||'').trim().split(' ').pop();
-      ttxt=(cg?cg.toUpperCase().slice(0,8):'P1')||'P1';
+      ttxt=(cg?cg.toUpperCase():'P1')||'P1';
     }
     G.hudTags.push({ x:p.x, y:p.y+jump, txt:ttxt, col:TEAMCOL[p.team] });
   }
@@ -15163,6 +15262,7 @@ function disegnaMoviola(){
    angolo restituiscono la lettura tattica che la telecamera stretta toglie.
    Compare solo in gioco e solo quando si vede meno del 92% del campo. */
 function drawMinimappa(){
+  MINI_RECT=null;
   const s=G.scene;
   if(!(s==='play'||s==='golden'||s==='kickoff') || !G.ball || G.paused) return;
   const S2=G.view.S2, Ax=G.view.Ax, Ay=G.view.Ay;
@@ -15183,6 +15283,7 @@ function drawMinimappa(){
      minimappa si aggancia SOPRA di lei: mai sopra una scritta */
   const mw=132*k, mh=64*k, mx=VW-12-mw,
         my=Math.min(VH-12-mh, Ay+(FH+15)*S2-8-mh);
+  MINI_RECT={x0:mx-3, y0:my-3, x1:mx+mw+3, y1:my+mh+3};
   ctx.save();
   /* IL RETTANGOLO DI NERO PURO NELL'ANGOLO. Era il difetto piu' facile da
      vedere e il piu' facile da togliere: su un campo che adesso e' verde
@@ -15270,6 +15371,12 @@ function fmtTime(s){
    Il timer sta DENTRO il tabellone perche' la tacca che lo
    teneva era l'unico pezzo di interfaccia che entrava nell'area di gioco
    al centro esatto dello schermo. */
+/* i chevron di fuori-campo del fotogramma corrente: gli altri segnalini di
+   bordo (il cursore della targhetta) li leggono per non sedercisi sopra.
+   MINI_RECT e' l'ingombro della minimappa dell'ultimo fotogramma disegnato:
+   i segnalini lo scansano — un segnale dietro il radar non esiste. */
+const CHEV_POS=[];
+let MINI_RECT=null;
 function drawHUD(){
   /* in PAUSA l'HUD tace: sotto la tenda restava mezzo leggibile,
      verde su verde — la scena congelata parla da sola */
@@ -15402,6 +15509,7 @@ function drawHUD(){
      px appiccicato al bordo, nel colore della tua squadra e all'altezza del
      centro di quella porta, dice da che parte si segna senza rubare un
      pixel al campo. E' quello che fanno Head Ball 2 e Rocket League. */
+  CHEV_POS.length=0;
   if((G.scene==='play'||G.scene==='golden'||G.scene==='kickoff') && G.ball){
     const S2=G.view.S2, Ax=G.view.Ax, Ay=G.view.Ay;
     const squadre = G.cpu[1] ? [0] : [0,1];
@@ -15409,9 +15517,32 @@ function drawHUD(){
       const gx = t===0 ? FW+GOAL_D : -GOAL_D;
       const sx = gx*S2+Ax;
       if(sx>6 && sx<VW-6) continue;             // la porta si vede: niente freccia
-      const sy = clamp(FH/2*S2+Ay, PA_Y0+20, PA_Y1-20);
+      let sy = clamp(FH/2*S2+Ay, PA_Y0+20, PA_Y1-20);
+      /* REGOLA DI SCARTO: vicino al bordo il chevron finiva ADDOSSO al
+         portiere che difende quella porta (stessa altezza, stesso lato) e i
+         due segnali si mangiavano a vicenda. Se il portiere sta nel raggio
+         del chevron, il chevron si scosta in verticale di quanto basta:
+         l'informazione («di la' si segna») non cambia di un grado. */
+      for(const q of G.players){
+        if(q.role!=='gk' || q.team===t || q.out>0) continue;
+        const ky=q.y*S2+Ay, kx=q.x*S2+Ax;
+        if(Math.abs(kx-(t===0?VW:0))<70 && Math.abs(sy-ky)<30){
+          sy = clamp(ky + (ky<=PA_CY?34:-34), PA_Y0+20, PA_Y1-20);
+        }
+      }
+      /* stessa regola con la minimappa: un chevron dietro il radar e' un
+         chevron che non esiste. Il rettangolo e' quello del fotogramma
+         scorso (la bussola si muove con la camera, cioe' piano). */
+      if(MINI_RECT){
+        const bx2 = t===0?VW-4:4;
+        if(bx2>MINI_RECT.x0-18 && bx2<MINI_RECT.x1+18 &&
+           sy>MINI_RECT.y0-14 && sy<MINI_RECT.y1+14){
+          sy = clamp(MINI_RECT.y0-16, PA_Y0+20, PA_Y1-20);
+        }
+      }
       const d = t===0 ? 1 : -1;
       const bx = t===0 ? VW-4 : 4;
+      CHEV_POS.push({x:bx, y:sy});
       ctx.save();
       ctx.strokeStyle='rgba(4,10,7,.55)'; ctx.lineWidth=6; ctx.lineJoin='round'; ctx.lineCap='round';
       for(let pass=0;pass<2;pass++){
@@ -15442,11 +15573,12 @@ function drawHUD(){
   const bordoVivo = (G.scene==='play'||G.scene==='golden'||G.scene==='kickoff') && !G.moviola;
   for(const tg of G.hudTags){
     const sx=tg.x*G.view.S2+G.view.Ax, sy=tg.y*G.view.S2+G.view.Ay;
-    /* la scatola si allarga quanto il testo: 'P2' resta a 30, il
-       cognome di P1 (fino a 8 caratteri a 11px condensed) ci sta senza
-       traboccare — a scatola fissa il nome mentirebbe sul bordo */
-    const bw=Math.max(30, 9+tg.txt.length*6.2)|0, bh=16;
+    /* la scatola si MISURA sul testo, non si stima: la stima a 6,2 px per
+       lettera era il motivo per cui il cognome andava troncato a monte
+       («PIEDEBUO»). Adesso il cognome resta intero e la scatola si adatta:
+       un'etichetta o entra tutta o non e' un'etichetta. */
     ctx.font='700 11px '+FONT_C; ctx.textAlign='center';
+    const bw=Math.max(30, Math.ceil(ctx.measureText(tg.txt).width)+13), bh=16;
     /* "dentro" vuol dire: c'e' posto per la targhetta SOPRA la testa senza
        entrare nella barra del punteggio. Sotto quella soglia non si taglia
        piu' la posizione (era quello a produrre la punta che mente): si
@@ -15464,7 +15596,16 @@ function drawHUD(){
     }
     if(!bordoVivo) continue;
     const cx=clamp(sx, bw/2+16, VW-bw/2-16);
-    const cy=clamp(sy, PA_Y0+bh/2+16, PA_Y1-bh/2-16);
+    let cy=clamp(sy, PA_Y0+bh/2+16, PA_Y1-bh/2-16);
+    /* REGOLA DI SCARTO fra segnalini: il cursore di bordo e il chevron
+       della porta si aggrappano agli stessi bordi, e quando capitavano
+       alla stessa altezza si coprivano. Il cursore cede il passo: si
+       sposta verso l'interno del quadro, dalla parte dove c'e' spazio. */
+    for(const cv2 of CHEV_POS){
+      if(Math.abs(cx-cv2.x)<bw/2+22 && Math.abs(cy-cv2.y)<bh/2+16){
+        cy = cv2.y<=PA_CY ? cv2.y+bh/2+24 : cv2.y-bh/2-24;
+      }
+    }
     const dx=sx-cx, dy=sy-cy;
     ctx.fillStyle='rgba(5,12,8,.86)'; ctx.fillRect(cx-bw/2,cy-bh/2,bw,bh);
     ctx.strokeStyle=tg.col; ctx.lineWidth=1; ctx.strokeRect(cx-bw/2+.5,cy-bh/2+.5,bw-1,bh-1);
@@ -15482,6 +15623,26 @@ function drawHUD(){
     }
   }
   ctx.textBaseline='alphabetic';
+
+  /* LA BARRA DEL TUTORIAL NON SI SIEDE MAI SUI CARTELLONI. La barra e' DOM
+     e i cartelloni sono mondo: nessuna posizione fissa puo' rispettare
+     entrambi, perche' la fascia delle insegne si muove con la camera. La
+     regola si applica qui, dove la camera e' nota: se il rettangolo della
+     barra cade sulla fascia (mondo FH+15..FH+31), la barra sale sull'erba
+     sopra la fascia; se l'erba che serve sta troppo in alto (camera tutta
+     appoggiata alla sponda) scende SOTTO la fascia, sulla folla — mai a
+     cavallo di una scritta. Si scrive lo stile solo quando il numero
+     cambia: zero lavoro nei fotogrammi fermi. */
+  if(typeof Tut!=='undefined' && Tut.active && ui.tut){
+    const t0=G.view.Ay+(FH+13)*G.view.S2, t1=G.view.Ay+(FH+33)*G.view.S2;
+    const TH=30, PADB=6;
+    let bot=PADB;
+    if(VH-bot>t0 && VH-bot-TH<t1){
+      const sopra=Math.round(VH-t0+8);
+      bot = sopra<=120 ? sopra : Math.max(PADB, Math.round(VH-t1-TH-6));
+    }
+    if(bot!==Tut._bot){ Tut._bot=bot; ui.tut.style.bottom=bot+'px'; }
+  }
 }
 
 function drawTouchSticks(){
@@ -15523,17 +15684,25 @@ function drawTouchButtons(){
         const e=Touch5.btnTouch[k];
         if(e.t===t&&e.act===bt.act){ pressed=true; break; }
       }
+      /* IL DISCO NON E' PIU' VERDE SCURO SU CAMPO VERDE. Un riempimento
+         quasi campo con un filo lime sottile spariva nel manto: contro i
+         rombi di eFootball non reggeva il confronto. Adesso il disco e'
+         una VELATURA CHIARA (si vede il campo sotto, ma il pulsante e' un
+         oggetto), il bordo e' netto e pieno, e alla pressione il
+         riempimento diventa ambra — la tinta che in tutto il gioco vuol
+         dire "qui si agisce". Il layout (posizione e raggio) non cambia
+         di un pixel. */
       ctx.beginPath(); ctx.arc(bt.x,bt.y,bt.r,0,6.2832);
-      ctx.fillStyle='rgba(6,14,10,'+(pressed?0.85:0.5)+')'; ctx.fill();
+      ctx.fillStyle= pressed ? 'rgba(255,176,32,.32)' : 'rgba(242,245,239,.16)';
+      ctx.fill();
       if(bt.act==='slide'){
-        /* senza possesso il grande e' CONTRASTA: il filo gesso piu'
-           spesso, NIENTE quarta tinta (legge dei quattro colori) */
-        ctx.strokeStyle='rgba(242,245,239,'+(pressed?0.95:0.6)+')';
-        ctx.lineWidth=pressed?3.5:3;
+        /* senza possesso il grande e' CONTRASTA: il filo gesso,
+           NIENTE quarta tinta (legge dei quattro colori) */
+        ctx.strokeStyle='rgba(242,245,239,'+(pressed?1:0.9)+')';
       }else{
-        ctx.strokeStyle='rgba('+col+','+(pressed?0.95:0.45)+')';
-        ctx.lineWidth=pressed?3:2;
+        ctx.strokeStyle='rgba('+col+','+(pressed?1:0.9)+')';
       }
+      ctx.lineWidth=pressed?3.5:2.5;
       ctx.stroke();
       /* arco di carica sul pulsante TIRA */
       if(bt.act==='shot'){
@@ -15546,10 +15715,15 @@ function drawTouchButtons(){
           ctx.beginPath(); ctx.arc(bt.x,bt.y,bt.r+5,-Math.PI/2,-Math.PI/2+6.2832*frac); ctx.stroke();
         }
       }
-      ctx.fillStyle='rgba('+col+','+(pressed?1:0.8)+')';
-      /* le etichette lunghe (CONTRASTA) scalano per stare nel cerchio */
-      ctx.font='700 '+Math.max(10,(bt.r*(bt.label.length>6?0.3:0.4))|0)+'px '+FONT_C;
-      ctx.textAlign='center'; ctx.textBaseline='middle';
+      /* l'etichetta e' PIU' SPESSA e porta uno zoccolo scuro suo: cosi'
+         legge sopra la velatura chiara e sopra qualunque erba ci sia
+         sotto, senza dipendere dal caso del manto. Le etichette lunghe
+         (CONTRASTA) scalano per stare nel cerchio, come prima. */
+      ctx.font='800 '+Math.max(11,(bt.r*(bt.label.length>6?0.32:0.42))|0)+'px '+FONT_C;
+      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineJoin='round';
+      ctx.strokeStyle='rgba(6,14,10,.88)'; ctx.lineWidth=3;
+      ctx.strokeText(bt.label, bt.x, bt.y+1);
+      ctx.fillStyle= bt.act==='slide' ? 'rgba(242,245,239,1)' : 'rgba('+col+',1)';
       ctx.fillText(bt.label, bt.x, bt.y+1);
     }
   }
@@ -15613,7 +15787,7 @@ const DUEL_TRIB=[];
    metterci sopra anche un riempimento a motivo su tutto lo schermo era
    fuori discussione.
    La regola del file e' sempre la stessa (fieldTex, ombraTex, kitTex,
-   tabTex, ballPatTex): niente si calcola per fotogramma se si puo' cuocere
+   ballPatTex): niente si calcola per fotogramma se si puo' cuocere
    una volta. Qui si cuoce TUTTO cio' che durante un rigore non cambia mai
    — cielo, tribuna, prato, tosatura, i due gradienti del sole delle sette,
    la grana, la linea di fondo e l'area — e a ogni fotogramma resta UNA
@@ -17046,428 +17220,197 @@ function drawOverlaysCanvas(){
     }
     drawConfScreen();
   }
-  /* ---------- GOL! — LO SCATTO ----------
-     La scritta non "cresce": ARRIVA. Prima saliva da 0,4 a 1 in un terzo
-     di secondo con una curva morbida, e su un lettering di centosettanta
-     pixel un terzo di secondo e' un dissolvenza, non un colpo. Adesso
-     piomba addosso da una volta e mezzo la sua misura in tredici
-     centesimi, si pianta con una molla smorzata, e per i primi centesimi
-     si porta dietro una copia piu' grande e trasparente — la scia
-     dell'impatto. A movimento ridotto niente molla e niente scia: la
-     scritta compare alla sua misura e basta. */
+  /* =====================================================================
+     LA FASCIA DEL GOL DAL VIVO — il fuoco unico dell'evento (AZIONI.md,
+     decisione 3). Prima la festa era spezzata in TRE fuochi sparsi:
+     GOL! gigante su una meta', tabellone di compensato sull'altra, palla
+     in rete al margine — tre posti da guardare per un evento solo. Come
+     nel riferimento, adesso c'e' UNA fascia a tutta larghezza, smalto su
+     lavagna: GOL! nella tinta di chi ha segnato, il marcatore a gesso e
+     il minuto, sulla stessa riga. Il tabellone di compensato non compare
+     piu' qui (resta l'eroe del fischio finale e della home): il punteggio
+     nuovo sta gia' nella barra in alto, e due pannelli che dicono la
+     stessa cosa erano esattamente il problema.
+     Sta in FASCIA BASSA come la sorella della moviola (stessa casa,
+     stessa grammatica d'ingresso): la scena resta viva sopra — i
+     coriandoli, l'alone, la rete che si gonfia — e la bocca della porta
+     non si copre mai.
+     La cronometria (t = sceneT - 0,45):
+       0,00-0,07  ANTICIPO: si affaccia dal bordo basso.
+       0,07-0,41  ENTRATA con superamento e assestamento (easeOutBack).
+       0,41-0,58  il GOL! si posa: entra piu' grande del 18% e si stringe,
+                  e da sotto la fascia parte il secondo scoppio.
+       uscita     negli ultimi 0,25 s riparte verso il basso — un gesto
+                  che finisce, non un interruttore.
+     A MOVIMENTO RIDOTTO la fascia sta ferma alla sua misura, composta:
+     niente corsa, niente lucido, niente scoppio. E la regola del fermo
+     «o interi o niente» resta: la fascia e' un pannello opaco, chi ci
+     finisce col torso dietro non si disegna (fermoCoperto), e il
+     MARCATORE, se mai ci finisse, si ridisegna davanti intero (il blocco
+     qui sotto).
+     COSTO: tre fillRect, tre fillText e due strokeText per fotogramma,
+     per due secondi a gol. Niente texture da cuocere. */
   if(G.scene==='goal' && G.sceneT>0.45 && !G.moviola){
     const t=G.sceneT-0.45;
-    const e=Math.min(1,t/0.13);
-    const k=1-Math.pow(1-e,4);
-    /* molla smorzata dopo l'atterraggio, non un'onda che accompagna */
-    const over = (SAVE.moto && t>0.13) ? Math.exp(-(t-0.13)*9.5)*Math.sin((t-0.13)*25)*0.11 : 0;
-    /* ---------- LA PERMANENZA RESPIRA, E L'USCITA E' UN GESTO ----------
-       Il colpo d'ingresso e' fatto bene e si esaurisce in tredici
-       centesimi; poi la scritta piu' grande del gioco restava PIXEL-FERMA
-       per il secondo e un quarto che resta, nel momento piu' guardato
-       della partita, mentre sotto di lei il campo scorreva. E' l'ultima
-       "immagine incollata" rimasta.
-       Due aggiunte, tutt'e due una moltiplicazione per fotogramma:
-       1) DERIVA: dopo la molla la scala cresce dell'1,8% lungo tutta la
-          permanenza, con una curva che rallenta (radice). Non si vede
-          come un movimento — si vede come una cosa VIVA, che e' il punto.
-       2) USCITA: negli ultimi due decimi e mezzo la scritta non si
-          spegne, PARTE. Accelera in avanti (fino a +14% di scala) e si
-          alza di un decimo della sua misura mentre l'opacita' cala: un
-          gesto che finisce, non un interruttore. E' la stessa regola del
-          seguito applicata a un lettering.
-       QUANDO FINISCE: la scritta vive da sceneT 0,45 fino all'attacco
-       della moviola (1,70) o, se la moviola e' spenta, fino al calcio
-       d'inizio (2,70). La durata si legge dalla stessa preferenza che
-       decide la moviola, cosi' l'uscita cade sempre sul fotogramma
-       giusto e non viene mai troncata a meta'. */
-    const durata = (SAVE.moviola ? 1.70 : 2.70) - 0.45;
-    const usc = SAVE.moto ? clamp((t-(durata-0.25))/0.25, 0, 1) : 0;
-    const deriva = SAVE.moto ? 0.018*Math.sqrt(clamp(t/durata,0,1)) : 0;
-    const sca = SAVE.moto
-      ? (1+1.30*Math.pow(1-k,1.7)+over+deriva+0.14*usc*usc)
-      : (0.86+0.14*k);
-    /* il corpo e' legato ANCHE all'altezza: su un telefono in orizzontale
-       un lettering tarato solo sulla larghezza andava a sbattere contro
-       il tabellone */
-    const size=Math.min(VW*0.19,VH*0.30,170);
-    /* il lettering scappa dalla porta appena inquadrata: la scritta non
-       deve coprire l'azione che sta festeggiando */
-    const gside=G.goalCine?G.goalCine.side:(G.goalTeam===0?1:0);
-    /* la scritta sale dalla meta' dell'altezza al 38%: sotto di lei, sulla
-       stessa meta' di schermo, adesso c'e' il tabellone del marcatore, e i
-       due devono impilarsi senza toccarsi. Il terzo basso della porta
-       resta libero in ogni caso. */
-    /* A MOVIMENTO RIDOTTO la festa e' un fermo-immagine e va COMPOSTA:
-       colonna unica, riflettore FERMO, penombra ai bordi. Niente tempo. */
-    const lx=VW/2+(gside?-1:1)*VW*(SAVE.moto?0.20:0.235), ly=Math.max(VH*0.38, BAR_H+16+size*0.58);
+    const durata=(SAVE.moviola?1.70:2.70)-0.45;
+    const FBH=clamp(Math.round(VH*0.185),56,96);
+    const fy0=VH-FBH-12;
+    /* il riflettore del fermo composto: a moto ridotto la festa e' un
+       fermo-immagine e va COMPOSTA — penombra ai bordi, luce calda al
+       centro del palco, la fascia sotto. */
     if(!SAVE.moto){
       ctx.save();
       ctx.globalAlpha=Math.min(1,t*8);
-      let gv=ctx.createRadialGradient(lx,VH*0.52,Math.min(VW,VH)*0.36, lx,VH*0.52,Math.max(VW,VH)*0.72);
+      let gv=ctx.createRadialGradient(VW/2,VH*0.46,Math.min(VW,VH)*0.36, VW/2,VH*0.46,Math.max(VW,VH)*0.72);
       gv.addColorStop(0,'rgba(3,9,6,0)'); gv.addColorStop(0.5,'rgba(3,9,6,.22)');
       gv.addColorStop(1,'rgba(3,9,6,.55)');
       ctx.fillStyle=gv; ctx.fillRect(0,0,VW,VH);
       ctx.globalCompositeOperation='lighter';
-      gv=ctx.createRadialGradient(lx,VH*0.52,0, lx,VH*0.52,VH*0.70);
+      gv=ctx.createRadialGradient(VW/2,VH*0.46,0, VW/2,VH*0.46,VH*0.70);
       gv.addColorStop(0,'rgba(255,232,186,.12)'); gv.addColorStop(1,'rgba(255,232,186,0)');
       ctx.fillStyle=gv; ctx.fillRect(0,0,VW,VH);
       ctx.restore();
     }
-    /* IL SECONDO SCOPPIO: quando la scritta si pianta, il colore esce da
-       sotto le lettere. E' il battito che mancava fra l'impatto e la
-       calma — la festa aveva un solo getto e poi solo discesa. */
-    if(SAVE.moto && !G.confPopFatto && t>=0.12){
+    /* l'ingresso: la stessa curva della sorella in moviola, dal basso */
+    let off=0, usc=0;
+    if(SAVE.moto){
+      if(t<0.07) off=(FBH+16)*(1-t/0.07*0.12);        // l'anticipo: si affaccia appena
+      else{
+        const k=clamp((t-0.07)/0.34,0,1);
+        const c1=1.70158, c3=c1+1;
+        const e=1+c3*Math.pow(k-1,3)+c1*Math.pow(k-1,2); // superamento e assestamento
+        off=(1-e)*(FBH+16)*0.88;
+      }
+      usc=clamp((t-(durata-0.25))/0.25,0,1);
+      off+=(FBH+28)*usc*usc;                           // l'uscita: riparte da dove e' venuta
+    }
+    const fy=fy0+off;
+    /* IL SECONDO SCOPPIO parte quando la fascia si pianta: il colore
+       esce da sotto la fascia, non piu' da sotto un lettering volante */
+    if(SAVE.moto && !G.confPopFatto && t>=0.41){
       G.confPopFatto=true;
-      G.confPop={ x:lx, y:ly, cols:[TEAMCOL[G.goalTeam],TEAMCOL2[G.goalTeam],'#ffb020'] };
+      G.confPop={ x:VW/2, y:fy0, cols:[TEAMCOL[G.goalTeam],TEAMCOL2[G.goalTeam],'#ffb020'] };
     }
-    /* LA SCRITTA ARRIVA STORTA E SI RADDRIZZA. Prima l'inclinazione era una
-       costante: due gradi e mezzo, uguali dal primo fotogramma all'ultimo.
-       Un lettering che piomba addosso e ATTERRA DRITTO non e' atterrato, e'
-       apparso. Adesso entra a sette gradi e si posa a due e mezzo con la
-       stessa curva della scala, quindi il gesto ha un asse. */
-    const rot = SAVE.moto ? -0.045-0.079*Math.pow(1-k,1.7)+over*0.9 : -0.045;
-    /* ANELLO D'URTO SOTTO LE LETTERE. Quando la scritta si pianta, dal punto
-       in cui si e' piantata parte un cerchio che si allarga e svanisce in un
-       quarto di secondo. E' il rumore del colpo, disegnato: senza, il
-       lettering atterra su niente. Gesso, non tinta di squadra — l'onda e'
-       luce, e la luce in questo gioco non ha colore di maglia. */
-    if(SAVE.moto && t>=0.12 && t<0.40){
-      const u=(t-0.12)/0.28;
-      const rr=size*(0.30+1.55*u);
-      ctx.save();
-      ctx.strokeStyle='rgba(242,245,239,'+(0.52*(1-u)*(1-u)).toFixed(3)+')';
-      ctx.lineWidth=Math.max(1.5, size*0.075*(1-u));
-      ctx.beginPath(); ctx.ellipse(lx,ly,rr,rr*0.42,rot,0,6.2832); ctx.stroke();
-      ctx.restore();
-    }
-    /* SCIA DELL'IMPATTO: una copia piu' grande e quasi trasparente che
-       il lettering si lascia indietro nei primi centesimi */
-    if(SAVE.moto && e<1){
-      ctx.save();
-      ctx.translate(lx,ly); ctx.rotate(rot);
-      ctx.scale(sca*1.34, sca*1.34);
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.font='900 '+Math.round(size)+'px '+FONT_N;
-      ctx.globalAlpha=0.26*(1-e);
-      ctx.fillStyle=TEAMCOL[G.goalTeam];
-      ctx.fillText('GOL!', 0, 0);
-      ctx.restore();
-      ctx.globalAlpha=1;
+    /* fermo composto: la fascia annota il suo riquadro dov'e' misurata */
+    if(!SAVE.moto){
+      const B=FERMO_FASCIA;
+      B.t=G.sceneT; B.x0=0; B.x1=VW; B.y0=fy; B.y1=fy+FBH;
     }
     ctx.save();
-    /* nell'uscita la scritta si alza: e' la parte che fa leggere il gesto
-       come una partenza invece che come una dissolvenza */
-    ctx.translate(lx, ly-size*0.10*usc*usc);
-    ctx.rotate(rot);
-    ctx.scale(sca,sca);
-    ctx.globalAlpha=Math.min(1,t*11)*(1-usc*usc*0.92);
-    /* QUI C'ERANO DODICI RAGGI attorno alla scritta, nella tinta della
-       maglia. Con l'anello d'urto qui sopra facevano lo stesso mestiere due
-       volte, e peggio: nella striscia si leggevano come un riccio di spine
-       dietro le lettere, cioe' rumore attorno alla cosa piu' importante
-       della schermata. Tolti: dodici tracciati e dodici contorni per
-       fotogramma in meno per un secondo e mezzo, e una cosa in meno da
-       guardare nel momento in cui si deve guardare una cosa sola. */
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.font='900 '+Math.round(size)+'px '+FONT_N;
-    /* PIASTRA SCURA sotto le lettere: larga quanto il testo piu' 40 px, con i
-       bordi sfumati da un gradiente invece che da un filtro di sfocatura —
-       la sfocatura per fotogramma su un telefono di fascia media costa, un
-       gradiente no. Senza piastra le lettere restavano sole su un prato. */
-    {
-      const tw=ctx.measureText('GOL!').width+40, th=size*1.05;
-      /* fermo composto (riparazione giro 2): il riquadro vero delle
-         lettere si annota qui, dov'e' gia' misurato — a fine schermata
-         chi ci e' finito dietro viene ridisegnato davanti, intero */
-      if(!SAVE.moto){
-        const B=FERMO_COPRI[0], hw=tw*0.5*sca, hh=th*0.62*sca;
-        B.on=true; B.x0=lx-hw; B.x1=lx+hw; B.y0=ly-hh; B.y1=ly+hh;
-      }
-      const M=Math.max(tw,th), R=M*0.62;
-      const gp=ctx.createRadialGradient(0,0,Math.min(tw,th)*0.22, 0,0, R);
-      gp.addColorStop(0,'rgba(4,12,8,.55)'); gp.addColorStop(0.62,'rgba(4,12,8,.40)');
-      gp.addColorStop(1,'rgba(4,12,8,0)');
-      ctx.save(); ctx.scale(tw/M, th/M);
-      ctx.fillStyle=gp;
-      /* IL RETTANGOLO SI FERMA DOVE FINISCE LA SFUMATURA.
-         Qui si dipingeva un quadrato di lato 2*M mentre la sfumatura arriva
-         a zero gia' al raggio 0,62*M: fuori di li' l'ultima sosta e' alpha
-         zero, quindi erano pixel trasparenti dipinti uno a uno per niente —
-         due terzi e mezzo dell'area (il rapporto e' (2/1,24)^2 = 2,6 volte).
-         Misurato durante la festa del gol: 800 kpixel di periferica per
-         fotogramma, di cui circa 500 buttati. Restringendo il rettangolo al
-         raggio vero l'immagine e' IDENTICA al pixel — oltre 0,62 non c'era
-         nulla da vedere — e la festa perde meta' dei fotogrammi saltati. */
-      ctx.fillRect(-R,-R,R*2,R*2);
-      ctx.restore();
-    }
-    ctx.lineWidth=Math.max(8,size*0.09);
-    ctx.strokeStyle='rgba(5,12,8,.85)';
-    ctx.strokeText('GOL!', 0, 0);
-    ctx.lineWidth=Math.max(3,size*0.03);
-    ctx.strokeStyle='rgba(242,245,239,.9)';
+    ctx.globalAlpha=Math.min(1,t*8);
+    /* fondo lavagna scuro OPACO, filo gesso sopra e sotto, filetto di
+       smalto nella tinta di chi ha segnato: niente gradienti */
+    ctx.fillStyle='#122c1d';
+    ctx.fillRect(0,fy,VW,FBH);
+    ctx.fillStyle='rgba(242,245,239,.55)';
+    ctx.fillRect(0,fy,VW,1.5); ctx.fillRect(0,fy+FBH-1.5,VW,1.5);
     ctx.fillStyle=TEAMCOL[G.goalTeam];
-    ctx.fillText('GOL!', 0, 0);
-    ctx.strokeText('GOL!', 0, 0);
-    /* IL LUCIDO CHE ATTRAVERSA LE LETTERE.
-       Questo e' il rilievo che il critico ha misurato e che aveva ragione a
-       misurare: "dieci fotogrammi, 0,45 secondi, la scritta e' pixel-identica
-       mentre il campo scorre sotto". Era vero. L'ingresso c'era gia' ed e'
-       violento, ma finisce in tredici centesimi, e per il secondo e mezzo
-       che resta il lettering piu' grande del gioco era un timbro.
-       Un riflesso che scorre e' il modo in cui tutti e quattro i riferimenti
-       tengono viva una scritta ferma — su un titolo di vetrina non c'e'
-       schermata in cui non passi. Qui costa: una sfumatura lineare e una
-       fillText in piu', per sei decimi di secondo, una volta a gol.
-       Si disegna DOPO il contorno chiaro, quindi la luce passa sopra al
-       bordo come su un oggetto lucido vero, e si spegne ai due estremi
-       della corsa cosi' non compare e non sparisce di scatto. */
-    if(SAVE.moto && t>0.26 && t<0.86){
-      const u=(t-0.26)/0.60;
-      const tw=ctx.measureText('GOL!').width;
-      const px=-tw*0.66+tw*1.32*u;
-      /* la banda e' STRETTA: un quinto della parola. A meta' parola larga
-         non e' un riflesso, e' uno sbiancamento — provato a 0,84 di
-         larghezza e 0,80 di opacita', le lettere perdevano la tinta della
-         maglia proprio mentre dovevano dire di chi e' il gol. */
-      const gl=ctx.createLinearGradient(px-size*0.17,0,px+size*0.17,0);
+    ctx.fillRect(0,fy+2.4,VW,2.4);
+    /* --- la riga unica: GOL! + marcatore + minuto --- */
+    const nome=(G.goalAuto?'AUTOGOL · ':'')+String(G.goalChi||'').toUpperCase();
+    const min=G.goalMin?String(G.goalMin):'';
+    let fs1=Math.round(FBH*0.58), fs2=Math.round(FBH*0.34);
+    ctx.textBaseline='middle'; ctx.lineJoin='round'; ctx.textAlign='left';
+    /* misura; se la riga non ci sta ("Saverio il Professore" e' un nome
+       vero della rosa), si stringe TUTTA in proporzione, una volta */
+    const misura=()=>{
+      ctx.font='900 '+fs1+'px '+FONT_N; const wG=ctx.measureText('GOL!').width;
+      ctx.font='900 '+fs2+'px '+FONT_N; const wN=nome?ctx.measureText(nome).width:0;
+      ctx.font='700 '+Math.round(fs2*0.88)+'px '+FONT_C; const wM=min?ctx.measureText(min).width:0;
+      const g1=nome?Math.round(fs1*0.42):0, g2=min?Math.round(fs2*0.85):0;
+      return { wG,wN,wM,g1,g2, tot:wG+g1+wN+g2+wM };
+    };
+    let m=misura();
+    if(m.tot>VW*0.92){
+      const k=VW*0.92/m.tot;
+      fs1=Math.max(14,Math.floor(fs1*k)); fs2=Math.max(10,Math.floor(fs2*k));
+      m=misura();
+    }
+    const cy2=fy+FBH/2+1;
+    let x=VW/2-m.tot/2;
+    /* GOL! nello smalto della squadra, con la grafia di sempre: contorno
+       scuro, tinta piena, filo chiaro. All'arrivo entra piu' grande del
+       18% e si posa insieme alla fascia; a moto ridotto niente. */
+    const gk = SAVE.moto ? clamp((t-0.41)/0.17,0,1) : 1;
+    const gsc = SAVE.moto ? 1+0.18*(1-gk)*(1-gk) : 1;
+    ctx.save();
+    ctx.translate(x+m.wG/2, cy2);
+    if(gsc!==1) ctx.scale(gsc,gsc);
+    ctx.font='900 '+fs1+'px '+FONT_N;
+    ctx.lineWidth=Math.max(4,fs1*0.13);
+    ctx.strokeStyle='rgba(5,12,8,.85)';
+    ctx.strokeText('GOL!', -m.wG/2, 0);
+    ctx.fillStyle=TEAMCOL[G.goalTeam];
+    ctx.fillText('GOL!', -m.wG/2, 0);
+    ctx.lineWidth=Math.max(1.6,fs1*0.03);
+    ctx.strokeStyle='rgba(242,245,239,.9)';
+    ctx.strokeText('GOL!', -m.wG/2, 0);
+    /* il lucido che attraversa le lettere: il modo di casa per tenere
+       viva una scritta ferma — sei decimi, una volta a gol, la banda
+       resta stretta (un quinto della parola) per non sbiancare la tinta */
+    if(SAVE.moto && t>0.60 && t<1.20){
+      const u=(t-0.60)/0.60;
+      const px=-m.wG*0.66+m.wG*1.32*u;
+      const gl=ctx.createLinearGradient(px-fs1*0.17,0,px+fs1*0.17,0);
       const q=Math.sin(u*Math.PI);
       gl.addColorStop(0,'rgba(255,248,226,0)');
       gl.addColorStop(0.5,'rgba(255,248,226,'+(0.86*q).toFixed(3)+')');
       gl.addColorStop(1,'rgba(255,248,226,0)');
       ctx.fillStyle=gl;
-      ctx.fillText('GOL!', 0, 0);
+      ctx.fillText('GOL!', -m.wG/2, 0);
     }
     ctx.restore();
-    ctx.globalAlpha=1;
-  }
-  /* =====================================================================
-     IL TABELLONE DI COMPENSATO ALLA FESTA DEL GOL — terza schermata in cui
-     compare l'oggetto-eroe, e l'unica in cui si muove.
-
-     Prima qui c'era un sovrimpresso da regia: una targhetta scura con il
-     numero di maglia, il nome e il minuto. Era fatta bene e diceva tutte le
-     cose giuste, ma era la CENTESIMA targhetta scura smussata del gioco, e
-     il momento con piu' emozione della partita si giocava su un rettangolo
-     nero appoggiato sul prato. Adesso il nome di chi ha segnato e' scritto
-     A GESSO SUL TABELLONE, che entra dal bordo alto, e le due targhette di
-     latta si girano sul punteggio nuovo.
-
-     La cronometria, che e' tutta la differenza fra "compare" e "arriva":
-       0,50-0,59  ANTICIPO: il tabellone sale di 8 px sopra il bordo. Un
-                  gesto si prepara prima di partire.
-       0,59-0,85  ENTRATA: 0,26 s con curva di uscita, e SUPERA di 9 px il
-                  punto d'arrivo prima di posarsi — un pannello appeso a due
-                  ganci non si ferma di colpo.
-       0,85-1,00  assestamento, due oscillazioni smorzate.
-       0,95-1,35  LA GIRATA DELLE TARGHETTE: 0,06 s di anticipo (la targhetta
-                  si alza di 2 px e si inclina indietro di 4 gradi), 0,18 s
-                  di girata con scala verticale da 1 a -1 e curva di
-                  entrata-uscita, 0,10 s di assestamento con superamento
-                  dell'8% e due rimbalzi. E' l'animazione piu' visibile del
-                  gioco e porta da sola tutte e quattro le qualita' del
-                  movimento: anticipo, peso, seguito, deformazione.
-     A MOVIMENTO RIDOTTO il tabellone appare alla sua misura e le targhette
-     mostrano il punteggio nuovo senza girarsi.
-
-     COSTO: il compensato e' cotto una volta sola in tabTex (come fieldTex e
-     ombraTex), quindi per fotogramma restano una drawImage, due scale per le
-     targhette e tre fillText, e solo per un secondo e mezzo ogni gol.
-     ===================================================================== */
-  if(G.scene==='goal' && G.sceneT>0.50 && !G.moviola && G.goalChi){
-    const t=G.sceneT-0.50;
-    /* misura: il lato lungo e' il 34% della larghezza, con un tetto perche'
-       su un tablet in verticale un tabellone da 480 px copre l'azione */
-    /* ===== DOVE STA IL TABELLONE, e perche' non sta piu' li' =====
-       Stava al centro dell'altezza, sulla meta' dal lato della porta che
-       ha subito. Cioe' esattamente sopra la bocca della porta: la
-       celebrazione copriva il proprio soggetto, e nella striscia del gol
-       si vedeva un pannello al posto della rete che si gonfia. E' il
-       peggior difetto che si possa mettere in una schermata di festa.
-       Adesso: FASCIA BASSA, e la meta' di schermo OPPOSTA al pallone —
-       che e' la stessa dove sta gia' la scritta GOL!, quindi i tre pezzi
-       si impilano invece di accavallarsi: la scritta in alto, il
-       tabellone sotto, e tutta la meta' della porta resta libera.
-       Il tabellone si stringe di conseguenza (32% della larghezza invece
-       di 34, con un tetto sull'altezza a meta' schermo): resta sopra il
-       34% del lato corto che la direzione gli assegna, ma smette di
-       essere l'oggetto piu' grande in una schermata dove il soggetto e'
-       la palla in rete. */
-    const BW=Math.min(VW*0.32, VH*0.50, 280), BH2=BW*2/3;
-    if(!tabTex || tabTexW!==Math.round(BW)) buildTabTex(Math.round(BW));
-    const gside=G.goalCine?G.goalCine.side:(G.goalTeam===0?1:0);
-    let cx=clamp(VW/2+(gside?-1:1)*VW*0.235, BW/2+10, VW-BW/2-10);
-    const yFin=Math.max(BAR_H+8, VH-BH2-12);
-    /* IL PANNELLO NON COPRE NESSUNO. Sul fermo-immagine a moto ridotto la
-       targhetta calava su una figura e la tagliava a meta' (errore di
-       z-ordine visto in vetrina): prima di posarsi controlla chi c'e'
-       sotto e, se l'altra meta' bassa e' libera, si sposta li'. */
-    {
-      const S2=G.view.S2, Ax=G.view.Ax, Ay2=G.view.Ay;
-      const copre=x0=>G.players.some(q=>{
-        const qx=q.x*S2+Ax, qy=q.y*S2+Ay2;
-        return Math.abs(qx-x0)<BW/2+30 && qy>yFin-34 && qy<yFin+BH2+22;
-      });
-      const alt=clamp(VW/2+(gside?1:-1)*VW*0.235, BW/2+10, VW-BW/2-10);
-      if(copre(cx) && !copre(alt)) cx=alt;
+    x+=m.wG+m.g1;
+    /* il marcatore a gesso, il puntino, il minuto: la stessa grafia
+       della sorella in moviola */
+    if(nome){
+      ctx.font='900 '+fs2+'px '+FONT_N;
+      ctx.fillStyle=COL.gesso;
+      ctx.fillText(nome, x, cy2);
+      x+=m.wN;
     }
-    let y=yFin, sc=1;
-    if(SAVE.moto){
-      /* ENTRA DAL BASSO, non piu' dall'alto: un pannello agganciato alla
-         fascia bassa che cala da sopra attraversa tutta la schermata e
-         passa sopra la scritta GOL!. Stessa macchina di prima, ribaltata,
-         e i quattro tempi restano tutti e quattro:
-           0,00-0,09  ANTICIPO — scende di 8 px sotto il bordo prima di
-                      salire. Un gesto che parte senza caricare non parte.
-           0,09-0,35  ENTRATA con superamento di 9 px e curva d'uscita.
-           0,35-0,50  ASSESTAMENTO, due oscillazioni smorzate.
-         In piu' la SCALA, che prima non c'era: 0,86 all'ingresso, 1,04 al
-         superamento, 1,00 al fermo. E' quello che fa sembrare il pannello
-         una cosa che ha una massa invece di una diapositiva che scorre. */
-      if(t<0.09){
-        y=VH+8*(t/0.09); sc=0.86;
-      }else if(t<0.35){
-        const k=1-Math.pow(1-(t-0.09)/0.26,3);
-        y=(VH+8)+((yFin-9)-(VH+8))*k;
-        sc=0.86+0.18*k;
-      }else if(t<0.50){
-        const u=(t-0.35)/0.15, osc=Math.exp(-u*5.2)*Math.cos(u*12.6);
-        y=yFin-9*osc;
-        sc=1+0.04*osc;
-      }
-    }
-    /* fermo composto (riparazione giro 2): anche il tabellone annota il
-       suo riquadro. Il pannello gia' si scosta quando puo' (qui sopra),
-       ma quando tutt'e due le meta' sono occupate qualcuno ci finisce
-       dietro, e dal bordo spuntava un piede orfano: dal fotogramma dopo
-       quella comparsa non si disegna piu' (fermoCoperto) — provato a
-       ridisegnarla davanti, copriva il punteggio appena girato, che e'
-       peggio. Solo il marcatore, se mai ci finisse, resta e passa
-       davanti: il protagonista non si taglia e non si nasconde. */
-    if(!SAVE.moto){
-      const B=FERMO_COPRI[1];
-      B.t=G.sceneT; B.x0=cx-BW/2; B.x1=cx+BW/2; B.y0=y; B.y1=y+BH2;
-    }
-    ctx.save();
-    ctx.globalAlpha=Math.min(1,t*8);
-    /* la scala si applica attorno al centro-basso del pannello, che e' il
-       punto in cui appoggia: un oggetto che entra dal basso cresce da dove
-       tocca, non dal proprio centro geometrico */
-    if(sc!==1){
-      ctx.translate(cx, y+BH2);
-      ctx.scale(sc,sc);
-      ctx.translate(-cx, -(y+BH2));
-    }
-    ctx.drawImage(tabTex, cx-BW/2, y, BW, BH2);
-    /* --- il nome, a gesso sul compensato --- */
-    const nome=String(G.goalChi).toUpperCase();
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    let fn=Math.round(BW*0.098);
-    ctx.font='900 '+fn+'px '+FONT_N;
-    const maxN=BW*0.80;
-    /* "Saverio il Professore" e' un nome vero della rosa: il gesso si
-       stringe sul tabellone invece di uscirne */
-    let wN=ctx.measureText(nome).width;
-    if(wN>maxN){ fn=Math.max(9,Math.round(fn*maxN/wN)); ctx.font='900 '+fn+'px '+FONT_N; }
-    ctx.fillStyle=COL.gesso;
-    ctx.fillText(nome, cx, y+BH2*0.255, maxN);
-    /* la riga di servizio: minuto, e l'autogol detto per nome */
-    {
-      const riga=(G.goalAuto?'AUTOGOL · ':'')+(G.goalMin||'');
-      if(riga){
-        ctx.font='700 '+Math.max(8,Math.round(BW*0.043))+'px '+FONT_C;
-        ctx.fillStyle='rgba(242,245,239,.66)';
-        ctx.fillText(riga, cx, y+BH2*0.375);
-      }
-    }
-    /* --- LE DUE TARGHETTE CHE SI GIRANO --- */
-    {
-      /* la girata parte mentre il tabellone si sta ancora assestando: e' il
-         SEGUITO, cioe' il corpo che finisce dopo l'arto. Se aspettasse il
-         fermo, la scena avrebbe due gesti in fila invece di uno solo lungo.
-         Finisce a 1,06 s di scena, cioe' prima che chiunque guardi il
-         fermo-immagine: nella fotografia il punteggio e' gia' quello nuovo. */
-      const flipT=t-0.22;
-      const TY=y+BH2*(TARGA_G.y0+TARGA_G.y1)/2*0.958+BH2*0.025;
-      const TH2=BH2*(TARGA_G.y1-TARGA_G.y0)*0.958;
-      for(let s=0;s<2;s++){
-        const tx=cx-BW/2+TARGA_G.cx[s]*BW*0.968;
-        /* solo la targhetta di chi ha segnato si gira: l'altra e' ferma
-           perche' il suo numero non e' cambiato */
-        const gira = (s===G.goalTeam) && SAVE.moto && flipT>=0 && flipT<0.34;
-        let sy=1, dy=0, rot=0;
-        let val = (s===G.goalTeam && (!SAVE.moto || flipT>=0.15)) ? G.score[s] : G.score[s]-(s===G.goalTeam?1:0);
-        if(gira){
-          if(flipT<0.06){                 // anticipo: si alza e si inclina
-            const u=flipT/0.06; dy=-2*u; rot=-0.0698*u;
-          }else if(flipT<0.24){
-            /* GIRATA. La scala verticale passa da 1 a 0 e torna a 1: a meta'
-               corsa la latta e' di taglio e non si vede, ed e' li' che il
-               numero cambia. Si usa il VALORE ASSOLUTO e non -1, se no la
-               cifra resta specchiata sull'altra faccia — che e' proprio
-               l'errore che si vede subito in un fermo immagine. */
-            const u=(flipT-0.06)/0.18;
-            const e=u<0.5 ? 2*u*u : 1-Math.pow(-2*u+2,2)/2;   // entrata-uscita
-            sy=Math.abs(1-2*e); dy=-2*(1-e); rot=-0.0698*(1-e);
-          }else{                          // assestamento: 8% e due rimbalzi
-            const u=(flipT-0.24)/0.10;
-            sy=1+0.08*Math.exp(-u*4.4)*Math.cos(u*12.6);
-          }
-        }
-        ctx.save();
-        ctx.translate(tx, TY+dy);
-        ctx.rotate(rot);
-        ctx.scale(1, Math.abs(sy)<0.02?0.02:sy);
-        ctx.font='900 '+Math.round(TH2*0.66)+'px '+FONT_N;
-        ctx.fillStyle=shade(TEAMCOL[s],-140);
-        ctx.fillText(String(Math.max(0,val)), 0, 1);
-        ctx.restore();
-      }
+    if(min){
+      ctx.fillStyle=COL.gesso;
+      ctx.beginPath(); ctx.arc(x+m.g2/2, cy2, Math.max(1.6,fs2*0.10),0,6.2832); ctx.fill();
+      ctx.font='700 '+Math.round(fs2*0.88)+'px '+FONT_C;
+      ctx.fillStyle='rgba(242,245,239,.88)';
+      ctx.fillText(min, x+m.g2, cy2);
     }
     ctx.restore();
     ctx.globalAlpha=1;
     ctx.textBaseline='alphabetic';
   }
   /* ========== IL FERMO COMPOSTO NON SMEMBRA NESSUNO (giro 2) ==========
-     Il secondo passaggio promesso dai riquadri qui sopra: nel fermo del
-     gol a moto ridotto le figure finite dietro le lettere di GOL! (e il
-     solo marcatore, se finisse dietro il tabellone) si ridisegnano
-     DAVANTI, intere — braccia, gambe e ombra tornano un corpo solo, e
-     il protagonista sta davanti al titolo come su un manifesto. Stessa
-     camera e stessa scossa del primo passaggio, quindi la figura ricade
-     sui suoi stessi pixel; chi e' nascosto da un pannello opaco resta
-     nascosto (regola 1). Costa i drawPlayer delle sole figure coinvolte
-     — quasi sempre una, per un paio di secondi, una volta a gol. */
-  if(G.scene==='goal' && !SAVE.moto && !G.moviola && FERMO_COPRI[0].on){
-    const S2=G.view.S2||1;
-    const Ax=(G.view.Ax||0)+(G.view.sx||0), Ay=(G.view.Ay||0)+(G.view.sy||0);
-    FERMO_RID.length=0;
-    for(const q of G.players){
-      if(q.out>0 || fermoCoperto(q)) continue;
+     Il secondo passaggio promesso dal riquadro qui sopra: nel fermo del
+     gol a moto ridotto la fascia e' un pannello opaco e chi ci finisce
+     col torso dietro non si disegna (fermoCoperto, regola 1). L'unica
+     eccezione e' il MARCATORE: lui non si nasconde mai — se la fascia
+     lo copre si ridisegna DAVANTI, intero: braccia, gambe e ombra
+     restano un corpo solo, e il protagonista sta davanti al titolo come
+     su un manifesto. Stessa camera e stessa scossa del primo passaggio,
+     quindi la figura ricade sui suoi stessi pixel. Costa UN drawPlayer,
+     per un paio di secondi, una volta a gol. */
+  if(G.scene==='goal' && !SAVE.moto && !G.moviola && G.goalIdx>=0
+     && Math.abs(G.sceneT-FERMO_FASCIA.t)<0.1){
+    const q=G.players[G.goalIdx];
+    if(q && q.out<=0){
+      const S2=G.view.S2||1;
+      const Ax=(G.view.Ax||0)+(G.view.sx||0), Ay=(G.view.Ay||0)+(G.view.sy||0);
       const qx=q.x*S2+Ax, qy=q.y*S2+Ay;
       const hw=16*S2, top=qy-42*S2, bot=qy+14*S2;   // la sagoma, larga per eccesso
-      const B0=FERMO_COPRI[0];
-      if(qx+hw>B0.x0 && qx-hw<B0.x1 && bot>B0.y0 && top<B0.y1){ FERMO_RID.push(q); continue; }
-      /* il tabellone ridisegna davanti SOLO il marcatore (regola 2):
-         una comparsa davanti al pannello coprirebbe nome e punteggio */
-      const B1=FERMO_COPRI[1];
-      if(G.goalIdx>=0 && G.players[G.goalIdx]===q && Math.abs(G.sceneT-B1.t)<0.1
-         && qx+hw>B1.x0 && qx-hw<B1.x1 && bot>B1.y0 && top<B1.y1) FERMO_RID.push(q);
-    }
-    if(FERMO_RID.length){
-      FERMO_RID.sort(cmpY);
-      /* le targhette P1/P2 le ha gia' disegnate drawHUD: quelle accodate
-         da questo secondo passaggio sarebbero doppioni, e si buttano */
-      const nTag=G.hudTags.length;
-      ctx.save();
-      ctx.translate(Ax,Ay); ctx.scale(S2,S2);
-      for(const q of FERMO_RID) drawPlayer(q);
-      ctx.restore();
-      G.hudTags.length=nTag;
+      const B=FERMO_FASCIA;
+      if(qx+hw>B.x0 && qx-hw<B.x1 && bot>B.y0 && top<B.y1){
+        /* le targhette P1/P2 le ha gia' disegnate drawHUD: quelle accodate
+           da questo secondo passaggio sarebbero doppioni, e si buttano */
+        const nTag=G.hudTags.length;
+        ctx.save();
+        ctx.translate(Ax,Ay); ctx.scale(S2,S2);
+        drawPlayer(q);
+        ctx.restore();
+        G.hudTags.length=nTag;
+      }
     }
   }
-  FERMO_COPRI[0].on=false;
   /* striscia evento animata (PALO!, TIRO PERFETTO!, FALLO!, GOLDEN GOAL...) */
   {
     const on = G.bannerT>0 && !!G.banner;
@@ -17906,7 +17849,13 @@ const Tut={
     { k:'slide', kb:'In difesa premi <b>Z</b>: scivolata (prima met&agrave; = rubata pulita)', tc:'Senza palla: <b>CONTRASTA</b>, o flick sul portatore' },
   ],
   t:0, tot:0,
-  start(){ this.active=true; this.step=0; this.t=0; this.tot=0; this.refresh(); show(ui.tut); },
+  start(){
+    this.active=true; this.step=0; this.t=0; this.tot=0;
+    /* la quota della barra la decide drawHUD fotogramma per fotogramma
+       (mai sui cartelloni): qui si azzera il ricordo della partita prima */
+    this._bot=-1; ui.tut.style.bottom='';
+    this.refresh(); show(ui.tut);
+  },
   /* Ogni passo si chiude sull'AZIONE COMPIUTA, con tetto di tre secondi;
      l'intero tutorial non supera i DIECI. Prima il primo passo restava
      acceso per tutta la partita: a 1:19 su 1:30 diceva ancora "1/4".

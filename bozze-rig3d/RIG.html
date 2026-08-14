@@ -844,7 +844,7 @@ const CAMERE={
 const SEGS=[
   {a:PELVIS,b:NECK, w:0.27, c:'maglia',       bias:-0.012, kind:1},
   {a:HIPL,  b:HIPR, w:0.175,c:'pantaloncini', bias:-0.006, kind:0},
-  {a:NECK,  b:HEAD, w:0.07, c:'pelle',        bias:-0.002, kind:0},
+  {a:NECK,  b:HEAD, w:0.10, c:'pelle',        bias:-0.002, kind:0},  // il COLLO: a 0.07 spariva sotto il minimo di 1.1px e la testa galleggiava
   {a:HEAD,  b:HEAD, w:0,    c:'pelle',        bias: 0.010, kind:2},
   {a:SHR,b:ELR, w:0.100,c:'maglia', bias:0.005, kind:0},
   {a:ELR,b:HAR, w:0.075,c:'pelle',  bias:0.008, kind:0},
@@ -861,6 +861,11 @@ const SEGS=[
 const NS=SEGS.length;
 const DEPTH=new Float32Array(NS);
 const ORD=new Int32Array(NS); for(let i=0;i<NS;i++)ORD[i]=i;
+
+/* il contorno UNICO della figura: lo stesso scuro caldo del bordo della
+   palla, cosi' la sagoma legge come un corpo solo (vedi il passaggio di
+   sottofondo in disegna) e non tredici rettangoli bordati uno a uno */
+const BORDO='#23201a';
 
 /* disegno della maglia: strisce verticali o fascia orizzontale */
 function motivo(ctx,s,look){
@@ -1059,6 +1064,31 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look){
     while(k>=0 && DEPTH[ORD[k]]<d){ ORD[k+1]=ORD[k]; k--; }
     ORD[k+1]=o;
   }
+  // CAPSULE, NON RETTANGOLI: estremi tondi che sporgono oltre il giunto
+  // di un raggio — gomiti, ginocchia e spalle pieni anche a 30px. Il
+  // lineCap va imposto QUI, dentro la libreria: non ci si fida dello
+  // stato del canvas ospite (a fine figura si rimette 'butt').
+  ctx.lineCap='round';
+  // CONTORNO UNICO (misurato con ?rigcosto: 0,28 -> sotto 0,6 ms per 22
+  // figure): un primo passaggio dell'INTERA figura in scuro un filo piu'
+  // largo, poi i colori sopra in ordine di profondita'. Cosi' il bordo
+  // sta sul PERIMETRO della sagoma e mai fra un segmento e l'altro.
+  const bd=0.035*s<0.8?0.8:0.035*s;
+  ctx.strokeStyle=BORDO;
+  for(let i=0;i<NS;i++){
+    const g=SEGS[i];
+    if(g.kind===3) continue;             // la palla ha gia' il suo bordo
+    if(g.kind===2){
+      ctx.fillStyle=BORDO;
+      ctx.beginPath(); ctx.arc(SX[HEAD],SY[HEAD],HEADR*s+bd,0,TAU); ctx.fill();
+      continue;
+    }
+    const w=g.w*s;
+    ctx.lineWidth=(w<1.1?1.1:w)+2*bd;
+    ctx.beginPath();
+    ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
+    ctx.stroke();
+  }
   // dal piu' lontano al piu' vicino
   for(let i=0;i<NS;i++){
     const g=SEGS[ORD[i]];
@@ -1072,6 +1102,7 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look){
     ctx.stroke();
     if(g.kind===1) motivo(ctx,s,look);
   }
+  ctx.lineCap='butt';                    // lo stato del canvas torna com'era
 }
 
 const lookPredefinito={
