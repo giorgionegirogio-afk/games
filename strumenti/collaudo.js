@@ -224,6 +224,54 @@ async function calcetto(browser, srv) {
     JSON.stringify(portiere));
 
   /* =====================================================================
+     LE TRE TAGLIE DI ROSA (5 base, 7, 11).
+     Il rischio dichiarato nel piano: FW/FH sono stati costanti per sempre
+     e qualunque valore precalcolato al caricamento (folla, pali, texture,
+     pallone del menu) puo' restare alla taglia vecchia dopo setTaglia —
+     un difetto subdolo che non rompe nulla di misurabile altrove. Qui si
+     verifica che i derivati siano COERENTI col campo corrente, che una
+     partita giri su ogni taglia senza che nessuno esca dal mondo, e che
+     la chiamata nuda startMatch(1,1) riapra la base al bit.
+     ===================================================================== */
+  const taglie = await pag.evaluate(async () => {
+    const t = window.__test;
+    const ATT = { 5:{FW:1150,FH:560,n:10}, 7:{FW:1610,FH:784,n:14}, 11:{FW:2300,FH:1120,n:22} };
+    const esiti = [];
+    for (const tg of [5, 7, 11]) {
+      t.startMatch(1, 1, { size: tg }); t.setCpuVsCpu(true);
+      t.simulate(20);
+      const c = t.campo;
+      let dentro = true, sani = true;
+      for (const p of t.players) {
+        if (!isFinite(p.x) || !isFinite(p.y)) sani = false;
+        if (p.x < -60 || p.x > c.FW + 60 || p.y < -60 || p.y > c.FH + 60) dentro = false;
+      }
+      const b = t.ball;
+      const pallaOk = b && b.x >= 0 && b.x <= c.FW && b.y >= 0 && b.y <= c.FH;
+      esiti.push({ tg, att: ATT[tg], c, dentro, sani, pallaOk, scena: t.state });
+    }
+    t.startMatch(1, 1); t.setCpuVsCpu(true);
+    return { esiti, dopo: t.campo };
+  });
+  for (const e of taglie.esiti) {
+    const c = e.c, a = e.att;
+    /* la tribuna piu' esterna sta a DK(34)+62 unita' dal bordo, piu' il
+       jitter: la sagoma piu' lontana deve cadere fra FW+60 e FW+110.
+       Il pallone del menu rimbalza (e' animato): basta che viva DENTRO
+       il campo corrente — se restasse su un campo vecchio sforerebbe. */
+    const coer = c.FW === a.FW && c.FH === a.FH && c.posti === a.FW &&
+                 c.crowdX > a.FW + 60 && c.crowdX < a.FW + 110 && c.texOK &&
+                 c.giocatori === a.n && c.menuBallX >= 0 && c.menuBallX <= c.FW;
+    verifica(coer, `taglia ${e.tg}: campo, pali, folla, texture e menu coerenti (FW ${c.FW}, ${c.giocatori} in campo)`,
+      JSON.stringify(c));
+    verifica(e.sani && e.dentro && e.pallaOk,
+      `taglia ${e.tg}: la partita gira e nessuno esce dal mondo (scena ${e.scena})`,
+      JSON.stringify({ dentro: e.dentro, sani: e.sani, pallaOk: e.pallaOk }));
+  }
+  verifica(taglie.dopo.taglia === 5 && taglie.dopo.FW === 1150,
+    'startMatch(1,1) riapre la taglia base, 5 contro 5 sul campo di sempre', JSON.stringify(taglie.dopo));
+
+  /* =====================================================================
      LE MAGLIE SI DEVONO VEDERE SULL'ERBA.
 
      Cos'e' successo: una passata sull'illuminazione del campo ha schiarito

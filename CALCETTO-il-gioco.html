@@ -391,16 +391,19 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
 .voce.primaria small{color:rgba(6,45,16,.72)}
 .voce.primaria:hover{color:#12210f;background:linear-gradient(180deg,#ffd77f,#f5a410)}
 .diff-row{display:flex;gap:8px;justify-content:center;margin:4px auto 2px;max-width:440px;width:100%}
-.diff,.tbtn{
+.diff,.tbtn,.taglia{
   flex:1;font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--grigio);background:transparent;border:1px solid var(--linea);padding:8px 4px;cursor:pointer;
 }
+/* le tre taglie di rosa: la riga sotto ha il nome del campo, in piccolo */
+.taglia small{display:block;font-weight:400;font-size:10px;letter-spacing:.14em;opacity:.75;margin-top:2px}
 /* UNO STATO SCELTO NON E' UN INVITO A PREMERE. Difficolta', campo, kit e
    zona del rigore si segnavano tutti in ambra: su GIOCA facevano quattro
    accenti piu' i due bottoni, cioe' sei. Il segno di "questo e' quello
    attivo" e' il gesso pieno — si vede di piu' dell'ambra su fondo scuro e
    non compete col bottone che manda avanti. */
-.diff.sel,.tbtn.sel{color:#12210f;background:var(--gesso);border-color:var(--gesso);font-weight:700}
+.diff.sel,.tbtn.sel,.taglia.sel{color:#12210f;background:var(--gesso);border-color:var(--gesso);font-weight:700}
+.taglia.sel small{opacity:.9}
 /* etichetta di sezione: stessa tacca fluo delle squadre sulla targa */
 .eti{font-family:var(--cond);font-weight:700;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--grigio);margin:18px 0 8px}
 .eti::before{content:"";display:inline-block;width:8px;height:8px;background:var(--gesso);margin-right:8px;vertical-align:.02em}
@@ -2053,7 +2056,7 @@ button:active{transform:scale(.96)}
              stesso — ed e' giusto che l'occhio lo ritrovi — ma la
              didascalia porta il SECONDO fatto del gioco, il formato,
              che prima non stava scritto da nessuna parte in home. -->
-        <div class="tab-sotto">secondi in gabbia, 4 contro 4</div>
+        <div class="tab-sotto">secondi in gabbia, 5 contro 5</div>
       </div>
       <!-- OGNI CLAUSOLA STA SU UNA RIGA SOLA. Con gli spazi normali la
            riga andava a capo dentro le promesse — "90 SECONDI A / PARTITA"
@@ -2108,7 +2111,7 @@ button:active{transform:scale(.96)}
     <h1 class="sotto-titolo">SPOGLIATOIO</h1>
     <div class="menu-voci">
       <button class="voce" id="btnSquadra">SQUADRA <small>nome e kit</small></button>
-      <button class="voce" id="btnRosa">ROSA <small>i tuoi quattro uomini</small></button>
+      <button class="voce" id="btnRosa">ROSA <small>i tuoi cinque uomini</small></button>
       <button class="voce" id="btnCampi">CAMPI <small>sblocca e scegli</small></button>
     </div>
     <div style="height:14px"></div>
@@ -2177,6 +2180,15 @@ button:active{transform:scale(.96)}
           <button class="diff" data-d="0">Facile</button>
           <button class="diff sel" data-d="1">Normale</button>
           <button class="diff" data-d="2">Duro</button>
+        </div>
+        <div class="eti">Rosa</div>
+        <!-- LE TRE TAGLIE. Il 5 e' la base e il default; la scelta persiste
+             nel salvataggio (SAVE.taglia) e vale per l'amichevole. Torneo e
+             stagione restano sul 5: sono bilanciati su quella forza. -->
+        <div class="diff-row" id="taglieRow">
+          <button class="taglia sel" data-t="5">5 contro 5 <small>la gabbia</small></button>
+          <button class="taglia" data-t="7">7 contro 7 <small>il campetto</small></button>
+          <button class="taglia" data-t="11">11 contro 11 <small>il campo grande</small></button>
         </div>
         <div class="eti">Campo</div>
         <div class="campolinea">
@@ -2391,7 +2403,7 @@ button:active{transform:scale(.96)}
          fatto in campo»), cioe' proprio le due meta' che davano senso
          alla pagina. Allargata a due righe piene costa quanto la frase
          monca su una colonna stretta. -->
-    <p class="rosa-intro">Quattro uomini, non quattro sagome. Ogni attributo sposta davvero la simulazione, e <b>cresce dopo ogni partita</b> in base a quello che hanno fatto in campo.</p>
+    <p class="rosa-intro">Cinque uomini, non cinque sagome. Ogni attributo sposta davvero la simulazione, e <b>cresce dopo ogni partita</b> in base a quello che hanno fatto in campo.</p>
     <div class="rosariga">
       <div class="eroe-maglia" aria-hidden="true"></div>
       <div class="rosalist" id="rosaList"></div>
@@ -2526,7 +2538,7 @@ button:active{transform:scale(.96)}
     <div class="lavagna lav-mister">
       <div class="lav-corpo">
         <div class="lav-kick">La lavagna del mister</div>
-        <p><b>4 contro 4 in gabbia</b>, portiere compreso: le sponde tengono il pallone sempre in gioco. <b>90 secondi</b>; sul pareggio <b>golden goal</b> &mdash; il prossimo gol vince &mdash; e dopo quaranta secondi si decide <b>dal dischetto</b>. Controlli sempre il tuo uomo pi&ugrave; vicino al pallone: anello e freccia lo segnalano, gli altri si muovono da soli.</p>
+        <p><b>5 contro 5 in gabbia</b>, portiere compreso: le sponde tengono il pallone sempre in gioco. In amichevole si sale anche a <b>7 contro 7</b> e <b>11 contro 11</b>, su campi pi&ugrave; grandi. <b>90 secondi</b>; sul pareggio <b>golden goal</b> &mdash; il prossimo gol vince &mdash; e dopo quaranta secondi si decide <b>dal dischetto</b>. Controlli sempre il tuo uomo pi&ugrave; vicino al pallone: anello e freccia lo segnalano, gli altri si muovono da soli.</p>
         <h3>I gesti, alla lavagna</h3>
         <div class="gessi">
           <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path d="M16 40l12 14m0-14L16 54"/><path d="M92 12l12 14m0-14L92 26"/><path class="trat" d="M32 44 Q62 36 88 24"/><path d="M88 24l-9 1m9-1l-4 8"/><circle class="palla" cx="30" cy="46" r="3.6"/></svg>
@@ -2551,7 +2563,7 @@ button:active{transform:scale(.96)}
         <p><b>Il portiere &egrave; un giocatore vero.</b> Esce sulla bisettrice, legge il tiro e si tuffa: la parata avviene per contatto. Se lo spiazzi o lo scavalchi, &egrave; gol.</p>
         <p><b>Cartellini.</b> Fallo da dietro o in ritardo = cartellino; al secondo della stessa squadra un uomo esce per 12 secondi. La scivolata &egrave; una decisione, non un riflesso.</p>
         <p><b>La punizione-duello.</b> Il tiratore sceglie la zona e ferma la barra di potenza, il portiere sceglie il tuffo di nascosto: chi legge l'altro, vince.</p>
-        <p><b>I tuoi quattro uomini.</b> Hanno un nome e quattro attributi che spostano davvero la simulazione; dopo ogni partita uno cresce di un punto. Li trovi in <b>ROSA</b>.</p>
+        <p><b>I tuoi cinque uomini.</b> Hanno un nome e quattro attributi che spostano davvero la simulazione; dopo ogni partita uno cresce di un punto. Li trovi in <b>ROSA</b>. Sulle taglie grandi i posti oltre il quinto li coprono i rincalzi di quartiere.</p>
         <p><b>Moviola e pausa.</b> Dopo ogni rete si rivede il gol al rallentatore (si spegne dalle Preferenze). <kbd>ESC</kbd> o il bottone <b>&#10074;&#10074;</b> fermano il gioco davvero.</p>
       </div>
     </div>
@@ -2632,12 +2644,47 @@ button:active{transform:scale(.96)}
    il gioco vive davvero: un telefono tenuto in orizzontale, che sta fra
    2.2 e 2.4. Con il vecchio 900x560 (1.61) meta' schermo restava tribuna
    qualunque cosa facesse la camera. */
-const FW = 1150, FH = 560;         // campo logico
-const GOAL_H = 150;                // luce della porta
+/* =====================================================================
+   LE TRE TAGLIE DI ROSA. Il campo logico non e' piu' una costante: e' la
+   taglia scelta in GIOCA. La 5 e' il campo di sempre, al bit; 7 e 11
+   crescono il MONDO, non le figure — lo zoom e' in pixel per unita'
+   (vedi S2_*), quindi i corpi restano grossi uguali sullo schermo e un
+   campo piu' grande significa solo piu' campo fuori quadro.
+   Rapporto d'aspetto 2.05 INVARIATO su tutte: minimappa e taratura
+   camera restano vere senza ritocchi. La porta cresce MENO del campo
+   (x1.15 / x1.3): se crescesse con lui il portiere sparirebbe.
+   GOAL_D, POST_R, P_R, B_R, KICK_R, P_SPEED non scalano: corpi e piedi
+   sono gli stessi, cambia il mondo. E la gabbia resta: le sponde sono il
+   clamp su FW/FH — nessuna rimessa, a nessuna taglia.
+   kPasso allunga le POCHE distanze assolute dell'IA (slancio, appoggio,
+   standoff, uscita del portiere); tutte le soglie in frazioni di FW/FH
+   scalano da sole.
+   Il modulo e' la formazione in FRAZIONI di campo: fx dalla PROPRIA
+   linea di porta, fy dal centro. idx 0 = portiere; idx 1 = mezzala
+   sinistra (batte il calcio d'inizio), idx 2 la destra: convenzioni di
+   resetKickoff, da non toccare. lato = -1/0/+1 per i tagli in attacco. */
+const TAGLIE={
+  5:{ FW:1150, FH:560,  GOAL_H:150, kPasso:1,    nome:'5 CONTRO 5',
+      modulo:[ {gk:1},
+        {fx:0.375,fy:-0.24,lato:-1}, {fx:0.375,fy:0.24,lato:1},
+        {fx:0.185,fy:-0.16,lato:-1}, {fx:0.185,fy:0.16,lato:1} ] },
+  7:{ FW:1610, FH:784,  GOAL_H:172, kPasso:1.15, nome:'7 CONTRO 7',
+      modulo:[ {gk:1},
+        {fx:0.375,fy:-0.28,lato:-1}, {fx:0.375,fy:0.28,lato:1}, {fx:0.43,fy:0,lato:0},
+        {fx:0.185,fy:-0.26,lato:-1}, {fx:0.185,fy:0,lato:0}, {fx:0.185,fy:0.26,lato:1} ] },
+  11:{ FW:2300, FH:1120, GOAL_H:196, kPasso:1.3,  nome:'11 CONTRO 11',
+      modulo:[ {gk:1},
+        {fx:0.40,fy:-0.10,lato:-1}, {fx:0.40,fy:0.10,lato:1},
+        {fx:0.27,fy:-0.36,lato:-1}, {fx:0.27,fy:-0.12,lato:0}, {fx:0.27,fy:0.12,lato:0}, {fx:0.27,fy:0.36,lato:1},
+        {fx:0.13,fy:-0.34,lato:-1}, {fx:0.13,fy:-0.115,lato:0}, {fx:0.13,fy:0.115,lato:0}, {fx:0.13,fy:0.34,lato:1} ] },
+};
+let TAGLIA = 5, KPASSO = 1;
+let FW = 1150, FH = 560;           // campo logico (riassegnati da setTaglia)
+let GOAL_H = 150;                  // luce della porta (riassegnata da setTaglia)
 const GOAL_D = 34;                 // profondità porta
 const GOAL_Z = 52;                 // ALTEZZA della porta: sopra questa quota la palla e' alta
 const POST_R = 5.5;                // i pali hanno un corpo vero, non sono un effetto sonoro
-const GY0 = FH/2 - GOAL_H/2, GY1 = FH/2 + GOAL_H/2;
+let GY0 = FH/2 - GOAL_H/2, GY1 = FH/2 + GOAL_H/2;
 const DT = 1/60;                   // passo fisso
 /* campioni minimi prima di poter dichiarare un possesso palla: tre
    secondi di gioco a sessanta campioni al secondo */
@@ -3118,20 +3165,23 @@ function pescaNome(lista, val, usati){
    gioco. Stesso generatore dei quattro del Dopolavoro, seminato sul nome
    della squadra: costa quattro stringhe a partita e Molo 4 schiera sempre
    gli stessi quattro. */
-function rosaAvversaria(nomeSquadra){
+function rosaAvversaria(nomeSquadra, quanti){
   const s=String(nomeSquadra||'CPU');
   let h=2166136261>>>0;
   for(let i=0;i<s.length;i++){ h=(h^s.charCodeAt(i))>>>0; h=Math.imul(h,16777619)>>>0; }
   const usatiN=new Set(), usatiC=new Set(), r=[];
   const passo=()=>{ h^=h<<13; h>>>=0; h^=h>>>17; h^=h<<5; h>>>=0; return h/4294967296; };
-  for(let i=0;i<4;i++) r.push(pescaNome(NOMI_ROSA,passo(),usatiN)+' '+pescaNome(COGNOMI_ROSA,passo(),usatiC));
+  /* i primi quattro escono IDENTICI a prima (stessa sequenza del
+     generatore): le squadre note non cambiano uomini con le taglie */
+  for(let i=0;i<(quanti||5);i++) r.push(pescaNome(NOMI_ROSA,passo(),usatiN)+' '+pescaNome(COGNOMI_ROSA,passo(),usatiC));
   return r;
 }
+/* la rosa base e' da CINQUE: la taglia minima e' il 5 contro 5 */
 function nuovaRosa(){
   const r=[];
   const usatiN=new Set(), usatiC=new Set();
   const scegli=pescaNome;
-  for(let i=0;i<4;i++){
+  for(let i=0;i<5;i++){
     const a=semeRosa(i*7+3), b=semeRosa(i*11+5), c=semeRosa(i*13+7), d=semeRosa(i*17+11), e=semeRosa(i*19+13);
     r.push({
       nome: scegli(NOMI_ROSA, a, usatiN)+' '+scegli(COGNOMI_ROSA, b, usatiC),
@@ -3185,6 +3235,7 @@ function defaultSave(){
   return {
     v:4, mute:false, vib:true, diff:1, touch:0,
     moto:1, dalt:0, durata:90,     // accessibilita': effetti, contrasto divise, durata
+    taglia:5,                      // taglia di rosa dell'amichevole: 5, 7 o 11
     moviola:1,                     // rivedere il gol al rallentatore
     coins:0,
     fields:[1,0,0,0,0,0,0,0],     // il primo campo e' gratis
@@ -3234,6 +3285,7 @@ function loadSave(){
     if(j.moto===0||j.moto===1) s.moto=j.moto;
     if(j.dalt===0||j.dalt===1) s.dalt=j.dalt;
     if([90,120,180].indexOf(j.durata)>=0) s.durata=j.durata;
+    if([5,7,11].indexOf(j.taglia)>=0) s.taglia=j.taglia;
     if(j.moviola===0||j.moviola===1) s.moviola=j.moviola;
     if(typeof j.coins==='number'&&isFinite(j.coins)) s.coins=Math.max(0,j.coins|0);
     if(Array.isArray(j.fields)) for(let i=0;i<FIELDS.length;i++) s.fields[i]=j.fields[i]?1:0;
@@ -3256,7 +3308,7 @@ function loadSave(){
     if(Array.isArray(j.albo)) s.albo=j.albo.filter(e=>e&&typeof e==='object').slice(0,200);
     if(j.tour&&typeof j.tour==='object'&&Array.isArray(j.tour.teams)&&j.tour.teams.length===8&&Array.isArray(j.tour.rounds)) s.tour=j.tour;
     if(j.season&&typeof j.season==='object'&&Array.isArray(j.season.squadre)&&j.season.squadre.length===8&&Array.isArray(j.season.cal)) s.season=j.season;
-    if(Array.isArray(j.rosa)&&j.rosa.length===4) s.rosa=j.rosa;
+    if(Array.isArray(j.rosa)&&(j.rosa.length===4||j.rosa.length===5)) s.rosa=j.rosa;
     if(Array.isArray(j.lastRes)&&j.lastRes.length===2&&isFinite(j.lastRes[0])&&isFinite(j.lastRes[1]))
       s.lastRes=[Math.max(0,j.lastRes[0]|0), Math.max(0,j.lastRes[1]|0)];
   }
@@ -3264,6 +3316,10 @@ function loadSave(){
 }
 const SAVE=loadSave();
 if(!SAVE.rosa) SAVE.rosa=nuovaRosa();
+/* migrazione dalla rosa a quattro: si APPENDE il quinto uomo, generato
+   dallo stesso seme deterministico (nuovaRosa e' riproducibile), senza
+   toccare i quattro esistenti: nomi, partite, gol e crescite restano */
+if(SAVE.rosa.length===4) SAVE.rosa.push(nuovaRosa()[4]);
 /* se il sistema chiede meno movimento, lo si onora senza che l'utente debba dirlo */
 try{
   if(SAVE.moto===1 && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) SAVE.moto=0;
@@ -3573,7 +3629,11 @@ setInterval(()=>{ if(Audio5.ctx && Audio5.ctx.state==='running') Audio5.jingleTi
 const SKIN=['#e9bd8f','#c98d5a','#8d5a3b','#f2cfa5','#a96b42','#6e4429'];
 const HAIR=['#241a12','#4a3220','#101010','#7a3b1e','#8e867c','#3a2c1c'];
 function makePlayer(team, idx, x, y, role){
-  const seed=team*4+idx;
+  /* seme di faccia: per i primi quattro resta ESATTAMENTE team*4+idx
+     (le facce note non cambiano con le taglie); dal quinto in poi si
+     esce oltre la banda vecchia cosi' nessuna coppia (team,idx) collide
+     fino all'11 contro 11 */
+  const seed = idx<4 ? team*4+idx : 8+team*7+(idx-4);
   return {
     team, idx, x, y, vx:0, vy:0,
     role: role||'out',                 // 'gk' = portiere vero, 'out' = di movimento
@@ -3625,36 +3685,49 @@ function makePlayer(team, idx, x, y, role){
   };
 }
 
-/* formazione: idx 0 = PORTIERE vero, 1-2 = mezzali, 3 = ultimo uomo.
-   Gli indici 1 e 2 restano quelli di prima: battuta d'inizio e lati invariati. */
+/* formazione DATA-DRIVEN: viene dal modulo della taglia corrente.
+   idx 0 = PORTIERE vero (assoluto, 40 unita' dalla propria linea);
+   idx 1 = mezzala sinistra (batte il calcio d'inizio), idx 2 la destra:
+   resetKickoff e i lati non si toccano, in NESSUN modulo. */
 function formation(team){
   const mx = team===0 ? 1 : -1;
   const gl = team===0 ? 0 : FW;        // la PROPRIA linea di porta
-  return [
-    [gl + mx*40, FH/2],                // portiere, sulla linea
-    [gl + mx*FW*0.375, FH/2 - 132],
-    [gl + mx*FW*0.375, FH/2 + 132],
-    [gl + mx*FW*0.185, FH/2],          // ultimo uomo
-  ];
+  return TAGLIE[TAGLIA].modulo.map(m => m.gk
+    ? [gl + mx*40, FH/2]               // portiere, sulla linea
+    : [gl + mx*FW*m.fx, FH/2 + FH*m.fy]);
 }
-const RUOLI=['gk','out','out','out'];
 
 function setupPlayers(){
   G.players.length = 0;
-  /* i quattro avversari: nomi propri, deterministici sul nome della squadra */
-  const avv = rosaAvversaria(G.oppName);
+  const mod = TAGLIE[TAGLIA].modulo, N = mod.length;
+  /* gli avversari: nomi propri, deterministici sul nome della squadra */
+  const avv = rosaAvversaria(G.oppName, N);
+  /* oltre il quinto la TUA squadra schiera i «rincalzi di quartiere»:
+     nomi deterministici come gli avversari, attributi alla media della
+     rosa vera. La ROSA nominata resta l'oggetto da 5 che il giocatore
+     cura: qui non si allunga niente. */
+  const casa = N>((SAVE.rosa&&SAVE.rosa.length)||0) ? rosaAvversaria('QUARTIERE·'+G.teamName, N) : null;
+  let med=62;
+  if(SAVE.rosa && SAVE.rosa.length){
+    let s=0;
+    for(const r of SAVE.rosa) s+=(r.vel+r.tiro+r.tecnica+r.tackle)/4;
+    med=Math.round(s/SAVE.rosa.length);
+  }
   for(let t=0;t<2;t++){
     const f = formation(t);
-    for(let i=0;i<4;i++){
-      const p = makePlayer(t, i, f[i][0], f[i][1], RUOLI[i]);
+    for(let i=0;i<N;i++){
+      const p = makePlayer(t, i, f[i][0], f[i][1], mod[i].gk?'gk':'out');
+      p.lato = mod[i].lato||0;         // il taglio in attacco lo dice il modulo, non l'indice
       /* la tua squadra ha la rosa vera; l'avversaria ha attributi medi
          scalati sulla propria forza, cosi' le squadre forti si sentono */
       if(t===0 && SAVE.rosa && SAVE.rosa[i]){
         const r=SAVE.rosa[i];
         p.nome=r.nome; p.vel=r.vel; p.tiro=r.tiro; p.tecnica=r.tecnica; p.tackle=r.tackle;
+      }else if(t===0){
+        p.nome=casa?casa[i]:''; p.vel=med; p.tiro=med; p.tecnica=med; p.tackle=med;
       }else{
         const f2 = G.oppForza ? (52 + G.oppForza*2.2) : 62;
-        p.nome=(t===1?avv[i]:''); p.vel=f2; p.tiro=f2; p.tecnica=f2; p.tackle=f2;
+        p.nome=avv[i]; p.vel=f2; p.tiro=f2; p.tecnica=f2; p.tackle=f2;
       }
       G.players.push(p);
     }
@@ -3705,6 +3778,12 @@ function resetKickoff(){
    ===================================================================== */
 function startMatch(mode, diff, opts){
   opts=opts||{};
+  /* LA TAGLIA: opts.size comanda (torneo e stagione passano {size:5},
+     sono bilanciati sulla forza-squadre attuale), poi la scelta salvata,
+     poi la base. La chiamata nuda startMatch(1,1) su salvataggio vergine
+     apre quindi il 5v5 di sempre: collaudo, prestazione e scatta
+     continuano a misurare lo stesso campo al bit. */
+  setTaglia(opts.size || SAVE.taglia || 5);
   G.mode = mode===2?2:1;
   if(diff!==undefined) G.diff = clamp(diff|0,0,2);
   G.cpu=[false, G.mode===2?false:true];
@@ -3748,6 +3827,9 @@ function startMatch(mode, diff, opts){
 }
 
 function setScene(s){
+  /* il menu vive sempre sul campo base: eroe, miniature e pallone del
+     menu sono tarati li' */
+  if(s==='menu') setTaglia(5);
   G.scene=s; G.sceneT=0;
   if(s!=='end') G.frozen=false;
   if(s!=='goal'){ G.confScreen.length=0; G.confPend=null; G.confPop=null; }
@@ -5704,13 +5786,15 @@ function punizioneRapida(fallito, autore){
   b.owner=G.players.indexOf(fallito);
   b.passTo=-1; b.vx=0; b.vy=0; b.vz=0; b.z=0; b.curve=0; b.perfectT=0; b.saveRolled=false;
   fallito.recover=0; fallito.slide=-1; fallito.kickCd=0.25;
-  /* gli avversari indietreggiano di 90 unita' dalla palla */
+  /* gli avversari indietreggiano di 90 unita' dalla palla (che sulle
+     taglie grandi diventano 90*kPasso: il campo e' piu' lungo) */
+  const RAGGIO_PUNIZ=90*KPASSO;
   for(const o of G.players){
     if(o.team===fallito.team || o.out>0 || o.role==='gk') continue;
     const dx=o.x-b.x, dy=o.y-b.y, d=Math.max(1,len(dx,dy));
-    if(d<90){
-      o.x=clamp(b.x+dx/d*90, P_R, FW-P_R);
-      o.y=clamp(b.y+dy/d*90, P_R, FH-P_R);
+    if(d<RAGGIO_PUNIZ){
+      o.x=clamp(b.x+dx/d*RAGGIO_PUNIZ, P_R, FW-P_R);
+      o.y=clamp(b.y+dy/d*RAGGIO_PUNIZ, P_R, FH-P_R);
       o.vx=0; o.vy=0; o.ax=0; o.ay=0; o.kickCd=0.45;
     }
   }
@@ -5985,7 +6069,7 @@ function updateBall(dt){
    legato alla difficolta' e si tuffa. La parata avviene per CONTATTO
    geometrico con il corpo disteso: se lo scavalchi o lo spiazzi, e' gol.
    Cosi' tirare bene e posizionarsi bene contano davvero. */
-const GK_AREA_X = 118;                     // quanto lontano dalla linea puo' uscire
+let GK_AREA_X = 118;                       // quanto lontano dalla linea puo' uscire (scala con kPasso)
 const GK_SPEED = 150, GK_DIVE_SPEED = 430; // passo normale e slancio del tuffo
 const GK_REACH = 26;                       // semiasse del corpo disteso nel tuffo
 /* LA RACCOLTA PRIMA DEL TUFFO — sette centesimi, e si paga e si riscuote.
@@ -6247,7 +6331,7 @@ function ballWalls(b){
    Quattro cilindri agli spigoli della luce. La palla a 640 u/s percorre 10,6
    unita' per passo: un test puntuale la farebbe passare attraverso il palo,
    quindi si risolve la collisione sul segmento del passo (swept). */
-const POSTI = [ [0,GY0], [0,GY1], [FW,GY0], [FW,GY1] ];
+let POSTI = [ [0,GY0], [0,GY1], [FW,GY0], [FW,GY1] ];   // ricostruiti da setTaglia
 function hitPosts(b){
   if(b.z > GOAL_Z) return;                        // sopra la traversa non c'e' palo
   const sp=len(b.vx,b.vy);
@@ -6506,7 +6590,12 @@ function aiMove(p,dt){
   /* ricalcola il bersaglio con un tempo di reazione */
   p.aiT-=dt;
   if(p.aiT<=0){
-    p.aiT = isCpuTeam ? D.react : 0.14;
+    let passo = isCpuTeam ? D.react : 0.14;
+    /* SFALSAMENTO sulle taglie grandi: un libero lontano dalla palla non
+       ha bisogno di ripianificare cinque volte al secondo — a mezzo
+       secondo la linea tiene uguale e vent'uomini CPU costano come otto */
+    if(TAGLIA>=7 && ruoloDi(p)==='libero' && len(b.x-p.x,b.y-p.y)>FW*0.30) passo=Math.max(passo,0.5);
+    p.aiT = passo;
     aiDecide(p, b, carrier, weHaveBall, myGoalX, opGoalX, isCpuTeam, D);
   }
 
@@ -6620,6 +6709,20 @@ function teamBrain(t, dt){
   B.ruoli = {};
   B.ruoli[ultimo.i] = 'ultimo';
   if(pressa) B.ruoli[pressa.i] = 'pressa';
+  /* RADDOPPIO (solo taglie 7 e 11): in fase difensiva il secondo piu'
+     vicino alla palla prende una seconda pressione. Con nove liberi il
+     solo blend ancora-formazione produce il mucchio; con il raddoppio la
+     palla ha due uomini addosso e gli altri tengono le LINEE del modulo,
+     perche' le ancore adesso sono il modulo stesso. */
+  if(TAGLIA>=7 && loro){
+    let rad=null, dr2=1e9;
+    for(const o of mates){
+      if(o===ultimo || o===pressa) continue;
+      const d=len(b.x-o.q.x, b.y-o.q.y);
+      if(d<dr2){ dr2=d; rad=o; }
+    }
+    if(rad) B.ruoli[rad.i]='raddoppio';
+  }
   for(const o of mates) if(B.ruoli[o.i]===undefined) B.ruoli[o.i] = 'libero';
 }
 
@@ -6670,7 +6773,7 @@ function aiDecide(p, b, carrier, weHaveBall, myGoalX, opGoalX, isCpuTeam, D){
     if(carrier===p){
       /* portatore: punta la porta (la logica azione sta in aiCarrier) */
       const ty=clamp(b.y+(FH/2-b.y)*0.1, 50, FH-50);
-      p.aiTX=opGoalX===FW?Math.min(FW-70,p.x+120):Math.max(70,p.x-120);
+      p.aiTX=opGoalX===FW?Math.min(FW-70,p.x+120*KPASSO):Math.max(70,p.x-120*KPASSO);
       p.aiTY=ty;
       /* in vantaggio negli ultimi secondi non si attacca: si porta la palla
          in un angolo lontano e si fa scorrere il tempo */
@@ -6683,15 +6786,18 @@ function aiDecide(p, b, carrier, weHaveBall, myGoalX, opGoalX, isCpuTeam, D){
          Prima seguiva il portatore ovunque, e una palla persa a meta' campo
          diventava un tiro a porta vuota. */
       const limite = myGoalX===0 ? FW*0.46 : FW*0.54;
-      let tx = clamp(carrier.x + (myGoalX===0?-150:150), 60, FW-60);
+      let tx = clamp(carrier.x + (myGoalX===0?-150:150)*KPASSO, 60, FW-60);
       tx = myGoalX===0 ? Math.min(tx, limite) : Math.max(tx, limite);
       p.aiTX=tx;
       p.aiTY=clamp(FH/2 + (carrier.y-FH/2)*0.35, 60, FH-60);
     }else{
-      /* smarcato: offri una linea di passaggio avanzata sul lato */
-      const side = p.idx===1?-1:(p.idx===2?1:(p.y<FH/2?-1:1));
-      /* contropiede: appena si ribalta l'azione i liberi vanno lunghi */
-      const slancio = (B && B.transizione>0) ? 300 : 170;
+      /* smarcato: offri una linea di passaggio avanzata sul lato.
+         Il lato viene dalla voce di formazione (-1/0/+1), non piu'
+         dall'indice: stessa logica, dato invece di numero magico. */
+      const side = p.lato ? p.lato : (p.y<FH/2?-1:1);
+      /* contropiede: appena si ribalta l'azione i liberi vanno lunghi.
+         Distanza assoluta: sulle taglie grandi si allunga con kPasso. */
+      const slancio = ((B && B.transizione>0) ? 300 : 170)*KPASSO;
       const aheadX = clamp(carrier.x + (opGoalX===FW?slancio:-slancio), 60, FW-60);
       let ty = clamp(carrier.y + side*150 + rnd(-30,30), 50, FH-50);
       /* evita di sovrapporsi agli avversari */
@@ -6715,8 +6821,8 @@ function aiDecide(p, b, carrier, weHaveBall, myGoalX, opGoalX, isCpuTeam, D){
       if(carrier && carrier.team!==myTeam && isCpuTeam && D.standoff>0 && p.contieni){
         /* pressing blando: contieni a distanza, lato porta (Facile/Normale) */
         const vx=myGoalX-carrier.x, vy=FH/2-carrier.y, vl=Math.max(1,len(vx,vy));
-        p.aiTX=clamp(carrier.x+vx/vl*D.standoff, P_R, FW-P_R);
-        p.aiTY=clamp(carrier.y+vy/vl*D.standoff, P_R, FH-P_R);
+        p.aiTX=clamp(carrier.x+vx/vl*D.standoff*KPASSO, P_R, FW-P_R);
+        p.aiTY=clamp(carrier.y+vy/vl*D.standoff*KPASSO, P_R, FH-P_R);
       }else{
         /* attacco diretto alla palla; Duro legge la traiettoria in anticipo */
         const lead = carrier ? 0.10+D.lead*0.5 : 0.16+D.lead;
@@ -6739,6 +6845,13 @@ function aiDecide(p, b, carrier, weHaveBall, myGoalX, opGoalX, isCpuTeam, D){
         const conviene = arriva && (!consapevole || !daDietro);
         if(conviene && Math.random()<D.slideP) startSlide(p,nx,ny);
       }
+    }else if(mioRuolo==='raddoppio' && carrier && carrier.team!==myTeam){
+      /* seconda pressione (taglie 7/11): chiude il portatore dal lato
+         della propria porta, un passo piu' largo del pressatore */
+      const vx=myGoalX-carrier.x, vy=FH/2-carrier.y, vl=Math.max(1,len(vx,vy));
+      const so=64*KPASSO;
+      p.aiTX=clamp(carrier.x+vx/vl*so, P_R, FW-P_R);
+      p.aiTY=clamp(carrier.y+vy/vl*so, P_R, FH-P_R);
     }else{
       /* copertura: taglia la linea di passaggio verso l'attaccante piu' pericoloso */
       let danger=null, ddg=1e9;
@@ -9745,12 +9858,16 @@ let S2_MIN_DEV=S2_MIN, S2_MAX_DEV=S2_MAX, S2_BASE_DEV=S2_BASE, S2_GOL_DEV=S2_GOL
 const OUT_MARG=62;
 let CROWD_PASSO=1, CROWD_LARG=1;
 let fieldTex=null, vigTex=null, grainTex=null;
+/* setTaglia deve poter ricuocere le tessiture anche a finestra immutata:
+   il flag azzera la guardia per UNA chiamata e si spegne da solo */
+let RESIZE_FORZA=false;
 
 function resize(){
   const dpr2 = Math.min(2, window.devicePixelRatio||1);
   /* la barra del browser che compare e sparisce scatena resize a raffica:
      se la misura non e' cambiata non si ricuoce niente */
-  if(VW===innerWidth && VH===innerHeight && DPR===dpr2 && fieldTex) return;
+  if(!RESIZE_FORZA && VW===innerWidth && VH===innerHeight && DPR===dpr2 && fieldTex) return;
+  RESIZE_FORZA=false;
   DPR = dpr2;
   VW=innerWidth; VH=innerHeight;
   cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR);
@@ -10369,7 +10486,10 @@ function paintField(c, TH, pX, pY, q){
     const by=bandY[r];
     c.fillStyle='#0c1a12'; c.fillRect(-40,by,FW+80,16);
     c.font='900 9px '+FONT_N; c.textAlign='center'; c.textBaseline='middle';
-    const n=6, seg=(FW+80)/n;
+    /* il PASSO delle insegne e' fisso in unita' (quello del campo base):
+       sulle taglie 7/11 la fascia piu' lunga ne ospita di piu', ripetendo
+       i moduli — nessun nuovo asset, nessun cartellone stirato */
+    const n=Math.max(6, Math.round((FW+80)/((1150+80)/6))), seg=(FW+80)/n;
     for(let i=0;i<n;i++){
       const ad=INS[(i+r*3)%INS.length];
       const acc=((i+r)%3===0)?'#ffb020':COL.gesso;
@@ -10394,7 +10514,9 @@ function paintField(c, TH, pX, pY, q){
 
   /* terreno: a strisce di tosatura oppure tinta unita (cemento, sabbia, asfalto) */
   if(TH.strisce){
-    const NS=13, sw=FW/NS;
+    /* passo di tosatura fisso in unita': 13 bande sul campo base, di piu'
+       sulle taglie grandi — la banda resta larga uguale sotto i piedi */
+    const NS=Math.max(13, Math.round(FW/(1150/13))), sw=FW/NS;
     for(let i=0;i<NS;i++){
       c.fillStyle = i%2? TH.g2 : TH.g1;
       c.fillRect(i*sw,0,sw,FH);
@@ -10774,7 +10896,9 @@ function paintField(c, TH, pX, pY, q){
   /* linee di gesso, leggermente consumate: doppio passaggio sfalsato
      (lineA >1 sui temi scuri: righe piu' decise per la leggibilita') */
   const LA=TH.lineA||1;
-  const AREA_W=118, AREA_H=230, DISCH=112;    // area di rigore e dischetto
+  /* area e dischetto: l'area segue kPasso (uscita del portiere) e la sua
+     ALTEZZA la luce della porta — sul campo base i numeri restano 118/230/112 */
+  const AREA_W=Math.round(118*KPASSO), AREA_H=Math.round(230*GOAL_H/150), DISCH=Math.round(112*KPASSO);
   /* LINEE DI GESSO PIENE. Il METRO chiede "linee bianche piene" e le
      nostre erano al 50%: su un verde saturo un gesso a meta' forza legge
      grigio, e il gesso e' l'unica cosa del manto che ha diritto di essere
@@ -11206,7 +11330,13 @@ function buildCrowdAtlas(){
   crowdAtlas=a;
 }
 const CROWD=[];
-(function(){
+/* Era una IIFE eseguita al caricamento: con le taglie il perimetro della
+   tribuna dipende da FW/FH correnti, quindi si ricuoce a ogni setTaglia.
+   Il costo per fotogramma NON cresce con la taglia: drawCrowd scarta chi
+   e' fuori inquadratura e la finestra in unita' di mondo e' la stessa a
+   ogni taglia — piu' sagome ESISTONO, non se ne DISEGNANO di piu'. */
+function rebuildCrowd(){
+  CROWD.length=0;
   const DK=34;
   /* quattro anelli sui due gradoni piu' vicini al campo */
   for(const d0 of [DK+9, DK+28, DK+44, DK+62]){
@@ -11227,7 +11357,33 @@ const CROWD=[];
                    w:(vicino?rnd(9.4,11.0):rnd(7.6,9.0)), ph:Math.random()*6.28 });
     }
   }
-})();
+}
+rebuildCrowd();
+
+/* =====================================================================
+   setTaglia — L'UNICA porta per cambiare campo logico.
+   Riassegna FW/FH/GOAL_H/GY0/GY1 e ricuoce i derivati di caricamento:
+   la texture del campo (resize forzato), la folla (perimetro nuovo),
+   i pali, il pallone del menu, la camera. Tutto il resto del codice —
+   fisica, sponde, IA, minimappa — e' gia' scritto in funzione di FW/FH
+   e scala da solo. Chiamata in testa a startMatch e al ritorno al menu
+   (sempre taglia 5: menu, eroe e miniature vivono sul campo base). */
+function setTaglia(n){
+  n = (n===7||n===11) ? n : 5;
+  if(n===TAGLIA) return TAGLIA;
+  const T=TAGLIE[n];
+  TAGLIA=n; KPASSO=T.kPasso;
+  FW=T.FW; FH=T.FH; GOAL_H=T.GOAL_H;
+  GY0=FH/2-GOAL_H/2; GY1=FH/2+GOAL_H/2;
+  POSTI=[[0,GY0],[0,GY1],[FW,GY0],[FW,GY1]];
+  GK_AREA_X=Math.round(118*KPASSO);
+  RESIZE_FORZA=true; resize();          // SCALE/OX/OY/PADX/PADY + fieldTex/vignette
+  rebuildCrowd();
+  G.menuBall.x=FW*0.32; G.menuBall.y=FH*0.35;
+  G.cam.x=FW/2; G.cam.y=FH/2;
+  G.netBulge[0]={t:9,y:FH/2,mag:0}; G.netBulge[1]={t:9,y:FH/2,mag:0};
+  return TAGLIA;
+}
 function drawCrowd(){
   if(!crowdAtlas) buildCrowdAtlas();
   const t=G.pulse, hype=G.crowdHype;
@@ -12567,6 +12723,21 @@ function ombraMorbida(x,y,rx,ry,a){
    quanto uno e' staccato da terra.
    Verifica: allo zoom minimo (S2 = 1,30) l'ombra sporge dalla sagoma di
    almeno 6 px in basso e 6 px a destra. */
+/* =====================================================================
+   LOD DELLE FIGURE. In quadro ma oltre 420 unita' dal centro-camera una
+   figura e' fondale: a quella distanza la lettura la sta gia' facendo la
+   minimappa. Si spengono i tre strati piu' cari — alone di stacco, ciclo
+   di corsa (posa fissa), macchia di contatto dell'ombra — e non si tocca
+   MAI il portatore ne' il comandato: la figura piu' vicina al centro
+   camera, quella su cui il collaudo campiona i pixel, resta a dettaglio
+   pieno per costruzione (e' sempre entro il raggio). */
+const LOD_DIST=420;
+function figuraLontana(p){
+  const S2=G.view.S2||1;
+  const cx=(VW/2-(G.view.Ax||0))/S2, cy=(VH/2-(G.view.Ay||0))/S2;
+  const dx=p.x-cx, dy=p.y-cy;
+  return dx*dx+dy*dy > LOD_DIST*LOD_DIST;
+}
 function drawOmbreGiocatori(lista){
   if(!ombraTex) buildOmbraTex();
   /* IL SOLE CHE CALA SUL GOL, applicato qui e in nessun altro posto.
@@ -12638,7 +12809,10 @@ function drawOmbreGiocatori(lista){
     ctx.globalAlpha=a;
     ctx.drawImage(ombraTex, ox-rx, oy-ry, rx*2, ry*2);
     const ac=a*Math.max(0,1-h*0.16);
-    if(ac>0.02){
+    /* LOD: lontano dal centro-camera l'ombra e' la sola ellisse grande
+       (mai sul portatore: la sua figura e' sempre a dettaglio pieno) */
+    const portatore = G.ball && G.ball.owner>=0 && G.players[G.ball.owner]===p;
+    if(ac>0.02 && (portatore || !figuraLontana(p))){
       const ang=p.ang||0, w=SAVE.moto ? Math.cos(p.fase||0) : 0;
       const ca=Math.cos(ang), sa=Math.sin(ang);
       const av=w*(p.amp||1.1)*0.35, la=w*3.0;
@@ -12663,6 +12837,15 @@ function drawPlayer(p){
   const hasBall = G.ball && G.ball.owner===pi;
   const celeb = p.celeb>0;
   const jump = celeb ? -Math.abs(Math.sin((2.4-p.celeb)*9))*7 : 0;
+  /* LOD: oltre 420 unita' dal centro-camera niente alone e posa fissa.
+     Mai sul comandato, sul portatore o su chi esulta. I campi si mettono
+     via e si rimettono a posto in fondo: la fisica non li legge qui. */
+  const lod = !isCtrl && !hasBall && !celeb && figuraLontana(p);
+  let lodSalva=null;
+  if(lod){
+    lodSalva={f:p.fase, a:p.amp, b:p.bob, r:p.rollio};
+    p.fase=0; p.amp=1.1; p.bob=0; p.rollio=0;
+  }
 
   /* POZZA DORATA DEL PORTATORE, a terra e PRIMA del corpo: disegnata dopo,
      la sua ellisse attraversava la maglia e sembrava un hula hoop calato
@@ -12702,7 +12885,7 @@ function drawPlayer(p){
      della camera aveva tolto alla figura: una sagoma con l'alone si
      legge piu' grande di quanto e'. */
   if(!staccoTex) buildStaccoTex();
-  {
+  if(!lod){
     const ax=p.x, ay=p.y+2.6+jump*0.5, ar=18.2;
     /* DOSATO. A 0,62 l'alone leggeva come un bagliore: otto giocatori
        tutti "accesi" sono di nuovo nessuno acceso, ed e' l'errore che
@@ -13371,6 +13554,9 @@ function drawPlayer(p){
     ctx.lineWidth=6*a;
     ctx.beginPath(); ctx.arc(p.x,p.y,P_R+8+(1-a)*30,0,6.2832); ctx.stroke();
   }
+
+  /* LOD: la posa vera torna al suo posto — la fisica non deve accorgersene */
+  if(lodSalva){ p.fase=lodSalva.f; p.amp=lodSalva.a; p.bob=lodSalva.b; p.rollio=lodSalva.r; }
 }
 
 function drawBall(){
@@ -13668,7 +13854,10 @@ function drawMinimappa(){
      stato bocciato a vista: scivolava SOPRA la fascia delle insegne e ne
      copriva la scritta. Qui sta bene dov'era: 12 px dai bordi, sopra la
      fascia, con l'insegna che resta intera. */
-  const k = Math.min(VW,VH)>=700 ? 1.35 : 1;
+  /* sull'11 contro 11 si vede ~1/4 di campo: la bussola c'e' sempre (la
+     quota 0,92 non scatta mai) ed e' l'unico orientamento, quindi il
+     fattore grande vale anche sotto i 700px */
+  const k = (Math.min(VW,VH)>=700 || TAGLIA===11) ? 1.35 : 1;
   /* se la fascia delle insegne (mondo: da FH+15) entra nel quadro, la
      minimappa si aggancia SOPRA di lei: mai sopra una scritta */
   const mw=132*k, mh=64*k, mx=VW-12-mw,
@@ -15902,6 +16091,19 @@ document.querySelectorAll('.diff').forEach(b=>{
   });
 });
 refreshDiffRows();
+/* taglia di rosa: 5 base, 7 e 11 in amichevole; persiste nel salvataggio */
+function refreshTaglieRow(){
+  document.querySelectorAll('.taglia').forEach(b=>b.classList.toggle('sel', +b.dataset.t===(SAVE.taglia||5)));
+}
+document.querySelectorAll('.taglia').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    Audio5.unlock(); Audio5.beep(500);
+    SAVE.taglia=+b.dataset.t;
+    refreshTaglieRow();
+    persistSave();
+  });
+});
+refreshTaglieRow();
 /* impostazione comandi touch: gesti (flick) oppure 3 pulsanti */
 function refreshTouchRows(){
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('sel', (b.dataset.m==='1')===Touch5.useButtons));
@@ -16172,7 +16374,8 @@ function startSeasonMatch(){
   const opp=S.squadre[oi];
   /* la difficolta' non e' arbitraria: e' la forza dell'avversario */
   const diff = opp.forza>=8 ? 2 : (opp.forza>=5 ? 1 : 0);
-  startMatch(1, diff, { tour:true, season:true, opp });
+  /* stagione INCHIODATA al 5v5: e' bilanciata sulla forza-squadre attuale */
+  startMatch(1, diff, { tour:true, season:true, opp, size:5 });
 }
 /* chiude la giornata dopo la partita del giocatore e simula le altre */
 function chiudiGiornata(golCasa, golFuori){
@@ -16265,7 +16468,8 @@ function startTourMatch(){
   if(!T||T.out||T.won) return;
   const oi=tourOpponent(T);
   if(oi<0) return;
-  startMatch(1, TOUR_DIFF[T.round], { tour:true, opp:T.teams[oi] });
+  /* torneo INCHIODATO al 5v5: e' bilanciato sulla forza-squadre attuale */
+  startMatch(1, TOUR_DIFF[T.round], { tour:true, opp:T.teams[oi], size:5 });
 }
 function openTorneo(){
   goScreen(ui.torneo);
@@ -16275,14 +16479,14 @@ function openTorneo(){
 /* ---------- schermata ROSA ---------- */
 function buildRosaUI(){
   const box=$('rosaList'); box.innerHTML='';
-  const ruoli=['PORTIERE','ALA','ALA','ULTIMO UOMO'];
+  const ruoli=['PORTIERE','ALA','ALA','DIFENSORE','DIFENSORE'];
   SAVE.rosa.forEach((r,i)=>{
     const d=document.createElement('div');
     d.className='rrow'+(i===0?' gk':'');
     /* ruolo, partite e crescita stanno sulla seconda riga del nome: la
        scheda da sette righe e' diventata UNA riga con quattro numeri */
     let h='<div class="rnome"><span class="rn">'+esc(r.nome)+'</span>'+
-      '<small>'+ruoli[i]+' · '+(r.partite|0)+' partite'+(r.gol?' · '+r.gol+' gol':'')+
+      '<small>'+(ruoli[i]||'RINCALZO')+' · '+(r.partite|0)+' partite'+(r.gol?' · '+r.gol+' gol':'')+
       (r.ultimaCrescita?' · <span class="cresciuto">'+esc(r.ultimaCrescita)+'</span>':'')+
       '</small></div>';
     let celle=0;
@@ -16308,14 +16512,15 @@ function faiCrescereRosa(){
   const S=G.stats;
   const candidati=[];
   if(G.score[0]>0) candidati.push({i:1+((Math.random()*2)|0), k:'tiro'});
-  if(S.rubate[0]>0) candidati.push({i:3, k:'tackle'});
+  /* i difensori adesso sono due: idx 3 e 4 del modulo base */
+  if(S.rubate[0]>0) candidati.push({i:3+((Math.random()*2)|0), k:'tackle'});
   if(S.perfetti[0]>0) candidati.push({i:1+((Math.random()*2)|0), k:'tecnica'});
   if(S.parate[0]>0) candidati.push({i:0, k:'tecnica'});
-  candidati.push({i:(Math.random()*4)|0, k:['vel','tiro','tecnica','tackle'][(Math.random()*4)|0]});
+  candidati.push({i:(Math.random()*SAVE.rosa.length)|0, k:['vel','tiro','tecnica','tackle'][(Math.random()*4)|0]});
   SAVE.rosa.forEach(r=>{ r.partite=(r.partite|0)+1; r.ultimaCrescita=''; });
   SAVE.rosa[1].gol=(SAVE.rosa[1].gol|0);
   const scelto=candidati[(Math.random()*candidati.length)|0];
-  const r=SAVE.rosa[clamp(scelto.i,0,3)];
+  const r=SAVE.rosa[clamp(scelto.i,0,SAVE.rosa.length-1)];
   if(r && r[scelto.k]<99){
     r[scelto.k]++;
     const nomeAttr=(ATTRIBUTI.find(a=>a.k===scelto.k)||{}).nome||scelto.k;
@@ -16971,7 +17176,20 @@ ui.endTrofeo.innerHTML = icoSVG('trofeo',24)+' HAI VINTO IL TORNEO! '+icoSVG('tr
    ===================================================================== */
 window.__test = {
   get state(){ return G.scene; },
-  startMatch:(mode,difficolta)=>startMatch(mode,difficolta),
+  /* il terzo argomento (opts) passa {size:5|7|11}: la chiamata a due
+     argomenti resta identica e apre la taglia base su salvataggio vergine */
+  startMatch:(mode,difficolta,opts)=>startMatch(mode,difficolta,opts),
+  get taglia(){ return TAGLIA; },
+  /* i derivati di caricamento, per l'assert di coerenza del collaudo:
+     dopo un setTaglia TUTTO cio' che e' precalcolato deve stare sul
+     campo corrente (rischio dei "derivati nascosti") */
+  get campo(){
+    let crowdX=0; for(const d of CROWD) crowdX=Math.max(crowdX,d.x);
+    return { taglia:TAGLIA, FW, FH, GOAL_H, GY0, GY1,
+             posti:POSTI[3][0], crowdX, menuBallX:G.menuBall.x,
+             texOK: !!fieldTex && fieldTex.width>2,
+             giocatori:G.players.length };
+  },
   get score(){ return G.score; },
   get timeLeft(){ return G.timeLeft; },
   setTimeLeft(sec){ G.timeLeft=Math.max(0,+sec||0); },
