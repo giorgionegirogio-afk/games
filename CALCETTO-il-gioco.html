@@ -702,58 +702,19 @@ kbd{
   display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
   position:sticky;bottom:-26px;z-index:4;
   margin:34px -16px -24px;padding:34px 16px 26px;
-  /* LA FASCIA DEI BOTTONI NON E' UNA LASTRA. Con il fondo pagina diventato
-     un campo illuminato da ovest, un rettangolo pieno in tinta unita si
-     staccava come una toppa incollata sopra. Adesso e' una velatura che
-     sale dal nulla: nasconde la lista che scorre sotto (che e' il suo
-     mestiere) senza dichiarare un bordo che non esiste.
-     =================================================================
-     LA VELATURA ARRIVA A UNO, e non e' un dettaglio di gusto: e' la
-     correzione con la resa piu' alta di tutta la passata. A 0,90 e 0,97
-     la riga che passava sotto il bottone non spariva — restava LI',
-     spenta al novanta per cento, leggibile e morta. In sette schermate
-     su venticinque la fotografia mostrava mezza parola sotto TORNA AL
-     MENU, ed e' esattamente il segno che fa dire "non finito".
-     Adesso la rampa e' LUNGA e arriva a UNO: sessanta pixel in cui il
-     testo si dissolve (che e' l'indizio giusto: la lista continua) e poi
-     velatura piena sotto il bottone, dove non passa piu' niente.
-     Due misure che contano quanto le opacita':
-       - il piede della fascia cresce da 16 a 34 px di riempimento in
-         alto, cosi' la dissolvenza ha spazio per essere una dissolvenza
-         invece di un taglio;
-       - sparisce lo zoccolo pieno da 8 px che l'ombra portata metteva
-         SOPRA la fascia: era una riga netta che tranciava le parole a
-         meta' altezza, ed e' quello che nella prima prova faceva sembrare
-         il testo tagliato con la forbice invece che sfumato.
-     L'aria sopra la fascia passa da 22 a 34 px, cosi' l'ultima riga
-     della lista non finisce mai incollata al bordo della velatura.
-     =================================================================
-     LE TAPPE RESTANO IN PERCENTUALE, e le tappe in pixel sono state
-     PROVATE E TOLTE (giro 3, rimosse). La prova stava in una riga:
-       background:linear-gradient(rgba(4,32,13,0) 0px, ... 1) 23px)
-     che porta la velatura a UNO gia' 11 px SOPRA il filo del bottone.
-     Il ragionamento sembrava giusto — "sotto TORNA AL MENU non deve
-     passare mezza parola" — ma misurato accanto alla versione in
-     percentuale, sullo stesso banco e alla stessa inquadratura, toglie
-     piu' di quanto dia su SETTE schermate su venticinque:
-       - SQUADRA: la seconda fila di kit spariva del tutto. In una
-         pagina il cui unico compito e' scegliere una divisa, nascondere
-         che ce ne sono altre sotto non e' pulizia: e' un difetto.
-       - CAMPI: spariva la seconda fila di campetti, stessa storia.
-       - STATISTICHE: 'TROFEI SBLOCCATI 0/15' era una riga PIENA,
-         leggibile al contrasto giusto; con le tappe in pixel diventava
-         un fantasma. La velatura mangiava contenuto vivo invece dello
-         strascico morto che doveva mangiare.
-       - TROFEI: la didascalia della riga corrente si spegneva a meta'.
-     Il tratto sbiadito che passa sotto il bottone NON e' sporcizia: e'
-     l'unico segnale largo che dice "la lista continua". Il chevron da
-     34 px lo dice in piccolo; la riga che sfuma lo dice a tutta pagina,
-     ed e' cosi' che lo dicono anche i riferimenti — nessuno dei quattro
-     chiude il quinto basso dello schermo con una fascia opaca.
-     Con le tappe in percentuale la rampa e' lunga quanto la fascia
-     (~110 px, opacita' piena al 64%): la dissolvenza torna a essere una
-     dissolvenza e sotto il bottone resta l'ombra di una riga, non una
-     riga. E' lo stato del giro 2, quello votato 6,5. */
+  /* LA FASCIA DEI BOTTONI NON E' UNA LASTRA: e' una velatura che sale dal
+     nulla e ARRIVA A UNO — a 0,90/0,97 la riga sotto il bottone restava
+     leggibile e morta ("non finito" in 7 schermate su 25). Rampa lunga,
+     piede a 34 px, niente zoccolo pieno sopra la fascia (tranciava le
+     parole a meta').
+     LE TAPPE RESTANO IN PERCENTUALE: quelle in pixel sono state provate
+     e tolte (giro 3) — velatura piena 11 px sopra il filo del bottone
+     mangiava contenuto VIVO in 7 schermate su 25 (seconda fila di kit e
+     di campetti sparita, TROFEI SBLOCCATI e didascalie fantasma). Il
+     tratto sbiadito sotto il bottone non e' sporcizia: e' il segnale
+     largo che dice "la lista continua", come nei quattro riferimenti.
+     In percentuale la rampa e' lunga quanto la fascia (~110 px, piena
+     al 64%): lo stato del giro 2, quello votato 6,5. */
   background:linear-gradient(rgba(4,32,13,0) 0%, rgba(4,32,13,.26) 18%, rgba(4,32,13,.72) 40%,
              rgba(4,32,13,1) 64%, rgba(4,32,13,1) 100%);
   box-shadow:0 -26px 26px -12px rgba(4,32,13,.55);
@@ -808,6 +769,11 @@ kbd{
 body.barra #pauseBtn{top:0;left:0;width:44px;height:44px;background:rgb(8,19,13);border:0}
 body.barra #gearBtn{display:none}
 #pausa{z-index:45}
+/* PAUSA: dietro il pannello resta LA PARTITA CONGELATA, scurita — non un
+   telo verde. Velo neutro e scuro (niente verde-su-verde) e niente
+   sfumatura fissa in basso, che sul campo fermo leggeva come nebbia. */
+#pausa.ov.trasp{background:rgba(4,11,7,.60)}
+#pausa.ov::after{content:none}
 /* PAUSA: un pannello vero, non tre rettangoli sospesi sul campo sfocato */
 #pausa .box{max-width:460px}
 #rosa .box{max-width:none;padding:0 20px;box-sizing:border-box}
@@ -1196,7 +1162,7 @@ body.barra #gearBtn{display:none}
 #negozio .ntesto{display:contents}
 /* TORNA AL MENU nel flusso, come alle ISTRUZIONI: la fascia adesiva
    copriva i cartellini e la sua velatura era la banda scura sui fogli. */
-#negozio .azioni{position:static;margin:20px 0 0;padding:0 0 40px;background:none;box-shadow:none}
+#negozio .azioni,#impostazioni .azioni,#statistiche .azioni,#campi .azioni{position:static;margin:20px 0 0;padding:0 0 40px;background:none;box-shadow:none}
 /* in orizzontale i cinque cartellini si vedono INTERI al primo colpo
    d'occhio — la merce mutilata leggeva come difetto. Il completo si
    sdraia: icona, testo, prezzi. */
@@ -1362,7 +1328,7 @@ input{user-select:text;-webkit-user-select:text}
    coppia coincide per costruzione col centro della sfida che ne esce, e la
    graffa parte e arriva esattamente sui centri delle schede — a qualunque
    altezza le schede vengano a trovarsi. */
-.brcol{display:grid;grid-template-rows:repeat(4,1fr);align-items:stretch;gap:8px;flex:1 1 0;min-width:118px;position:relative;padding-top:24px}
+.brcol{display:grid;grid-template-rows:repeat(4,1fr);grid-auto-rows:1fr;align-items:stretch;gap:8px;flex:1 1 0;min-width:118px;position:relative;padding-top:24px}
 /* la COPPIA si allunga su tutta la sua area (se no la griglia interna non
    copre le righe che le competono e i centri non tornano); a stare in mezzo
    sono le singole schede */
@@ -1808,8 +1774,15 @@ button:active{transform:scale(.96)}
      due corde, e il tabellone deve stare DENTRO lo smalto, non sopra il
      legno. I pixel si recuperano dalle righe (squadre a 2px di
      riempimento, passi a 4) invece che dall'aria dell'eroe. */
-  .brwrap{padding:22px 3.5% 10px;gap:18px}
-  .brcol{padding-top:20px;gap:3px}
+  /* il piede a 10px finiva DENTRO la cornice dipinta (9px di legno + 6 di
+     smalto): l'ultima riga del tabellone ci restava tagliata. 20px la
+     riportano sull'ardesia. */
+  .brwrap{padding:22px 3.5% 20px;gap:18px}
+  /* i 10px che il piede si e' preso tornano da sopra, non dal verdetto:
+     titolo piu' vicino e intestazioni piu' alte dentro la colonna */
+  #torneo .sotto-titolo{margin-bottom:2px}
+  .brcol{padding-top:16px;gap:3px}
+  .brcol .breti{top:4px}
   .brpair{gap:3px}
   .brteam{padding:1px 7px}
   .tourstato{font-size:clamp(15px,4vw,20px);margin:4px 0}
@@ -12796,17 +12769,23 @@ function drawPlayer(p){
        dentro i vincoli: l'estremo laterale (20,6+1,7 di filo) x P_DIS
        fa 26,3, e l'anello con cui collaudo.js campiona l'erba comincia
        a 30. Il respiro sta sul raggio fra due valori, com'era. */
+    /* CENTRATO SULL'OMBRA PORTATA, non piu' a (0;+10,6): li' l'ellisse
+       finiva in basso a sinistra, staccata dai piedi. Il centro adesso e'
+       (+2,5;+6,6), che con P_DIS coincide quasi con l'ombra (+4,2;+7,8):
+       anello e ombra sono UN oggetto a terra. Estremo laterale
+       (2,5+20,6+1,7)x1,18 = 29,3 < 30: il campione d'erba del collaudo
+       resta pulito. */
     const pl = SAVE.moto ? 0.5+0.5*Math.sin(G.pulse*2.6) : 0.5;
     const arx=19.2+1.4*pl, ary=8.4+0.61*pl;
     ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=5.4;
-    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.6,arx,ary,0,0,6.2832); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0,0,6.2832); ctx.stroke();
     ctx.strokeStyle='rgba(255,176,32,.95)';
     ctx.lineWidth=3.4;
-    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.6,arx,ary,0,0,6.2832); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0,0,6.2832); ctx.stroke();
     /* il filo di luce sul quarto ovest dell'anello: e' un oggetto posato
        sull'erba, e anche lui sta sotto il sole delle sette */
     ctx.strokeStyle='rgba(255,232,186,.55)'; ctx.lineWidth=1.3;
-    ctx.beginPath(); ctx.ellipse(p.x,p.y+10.6,arx,ary,0, 0.80*Math.PI,1.40*Math.PI); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0, 0.80*Math.PI,1.40*Math.PI); ctx.stroke();
   }
 
   /* L'OMBRA PORTATA non si disegna qui: sta in drawOmbreGiocatori, una
@@ -13690,7 +13669,10 @@ function drawMinimappa(){
      copriva la scritta. Qui sta bene dov'era: 12 px dai bordi, sopra la
      fascia, con l'insegna che resta intera. */
   const k = Math.min(VW,VH)>=700 ? 1.35 : 1;
-  const mw=132*k, mh=64*k, mx=VW-12-mw, my=VH-12-mh;
+  /* se la fascia delle insegne (mondo: da FH+15) entra nel quadro, la
+     minimappa si aggancia SOPRA di lei: mai sopra una scritta */
+  const mw=132*k, mh=64*k, mx=VW-12-mw,
+        my=Math.min(VH-12-mh, Ay+(FH+15)*S2-8-mh);
   ctx.save();
   /* IL RETTANGOLO DI NERO PURO NELL'ANGOLO. Era il difetto piu' facile da
      vedere e il piu' facile da togliere: su un campo che adesso e' verde
@@ -13779,7 +13761,9 @@ function fmtTime(s){
    teneva era l'unico pezzo di interfaccia che entrava nell'area di gioco
    al centro esatto dello schermo. */
 function drawHUD(){
-  if(G.scene==='menu'||G.scene==='end') return;
+  /* in PAUSA l'HUD tace: sotto la tenda restava mezzo leggibile,
+     verde su verde — la scena congelata parla da sola */
+  if(G.scene==='menu'||G.scene==='end'||G.paused) return;
   /* durante la moviola il tabellone tace: il replay ha la sua grafica */
   if(G.moviola) return;
   const cx=VW/2, H=BAR_H, S=G.stats;
@@ -15509,8 +15493,21 @@ function drawOverlaysCanvas(){
     const BW=Math.min(VW*0.32, VH*0.50, 280), BH2=BW*2/3;
     if(!tabTex || tabTexW!==Math.round(BW)) buildTabTex(Math.round(BW));
     const gside=G.goalCine?G.goalCine.side:(G.goalTeam===0?1:0);
-    const cx=clamp(VW/2+(gside?-1:1)*VW*0.235, BW/2+10, VW-BW/2-10);
+    let cx=clamp(VW/2+(gside?-1:1)*VW*0.235, BW/2+10, VW-BW/2-10);
     const yFin=Math.max(BAR_H+8, VH-BH2-12);
+    /* IL PANNELLO NON COPRE NESSUNO. Sul fermo-immagine a moto ridotto la
+       targhetta calava su una figura e la tagliava a meta' (errore di
+       z-ordine visto in vetrina): prima di posarsi controlla chi c'e'
+       sotto e, se l'altra meta' bassa e' libera, si sposta li'. */
+    {
+      const S2=G.view.S2, Ax=G.view.Ax, Ay2=G.view.Ay;
+      const copre=x0=>G.players.some(q=>{
+        const qx=q.x*S2+Ax, qy=q.y*S2+Ay2;
+        return Math.abs(qx-x0)<BW/2+30 && qy>yFin-34 && qy<yFin+BH2+22;
+      });
+      const alt=clamp(VW/2+(gside?1:-1)*VW*0.235, BW/2+10, VW-BW/2-10);
+      if(copre(cx) && !copre(alt)) cx=alt;
+    }
     let y=yFin, sc=1;
     if(SAVE.moto){
       /* ENTRA DAL BASSO, non piu' dall'alto: un pannello agganciato alla

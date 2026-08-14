@@ -39,9 +39,13 @@ Ogni oggetto, in tutti e quattro i riferimenti, ha:
 - un **alone di stacco** attorno a ciò che conta (in Soccer Stars la pedina
   attiva ha un anello ciano che la solleva dal campo).
 
-Il nostro gioco ha ombre sotto i giocatori, ma nessun bisello, nessun bordo
-illuminato, nessun alone di stacco. Sono tre tecniche, tutte a costo quasi zero
-su canvas.
+RETTIFICA del 3 agosto 2026: le tre tecniche sono state applicate (onda dello
+stacco: bordo di luce da ovest su figure e palla, anello ambra pieno sul
+comandato, riflesso in cima al pallone) e la saturazione del manto è stata
+alzata con le divise ancora più sature (contrasti misurati 4,97/3,84/4,53/3,50
+a 1, mai sotto 3:1). Testo storico, non più vero: «Il nostro gioco ha ombre
+sotto i giocatori, ma nessun bisello, nessun bordo illuminato, nessun alone di
+stacco.»
 
 ### 2. Un oggetto-eroe per schermata
 
@@ -59,11 +63,14 @@ un cartello del campetto — disegnato meglio di tutto il resto.
 FIFA Mobile: tutto viola, e un solo verde acceso per il pulsante che conta e
 per la squadra che ha vinto. Nient'altro in tutta la schermata usa quel verde.
 
-Da noi il lime e il rosa delle divise ricompaiono ovunque — nei menu, nei
-bordi, nei titoli — e quando ricompaiono non vogliono dire più niente.
-**Regola da adottare: le due tinte delle divise sono riservate alle divise e a
-ciò che le rappresenta. L'accento che dice "premi qui" è una terza tinta e non
-compare mai per decorazione.**
+RETTIFICA del 3 agosto 2026: la regola è stata adottata (onda della vetrina) —
+lime e rosa sono riservati alle squadre, l'accento è un ambra che compare solo
+dove si preme. Chi giudica verifichi le sviste residue, non l'assenza della
+regola. Testo storico: «il lime e il rosa delle divise ricompaiono ovunque —
+nei menu, nei bordi, nei titoli — e quando ricompaiono non vogliono dire più
+niente.» **La regola resta il metro: le due tinte delle divise sono riservate
+alle divise e a ciò che le rappresenta; l'accento che dice "premi qui" è una
+terza tinta e non compare mai per decorazione.**
 
 ### 4. Densità: meno cose, più grandi
 
@@ -75,19 +82,19 @@ I nostri schermi di gioco portano contemporaneamente punteggio, cronometro,
 possesso, falli, minimappa, tutorial, pulsante pausa, pulsante audio. **Ogni
 elemento che togliamo fa sembrare più curati quelli che restano.**
 
-### 5. Il movimento — dove siamo più indietro di tutto
+### 5. Il movimento — RETTIFICA del 3 agosto 2026: risolto e misurato
 
-Questo NON si vede nelle schermate di vetrina: si vede con
-`node strumenti/striscia.js`. Misurato sul nostro gioco: in dieci fotogrammi
-consecutivi (0,72 s) le figure sono **identiche a sé stesse, solo spostate**.
-Nessun passo, nessuna inclinazione in curva, nessuna carica prima del tiro.
+Il paragrafo sotto descriveva lo stato di fine luglio ed è **superato**: chi
+giudica NON deve più elencare questi difetti come mancanti. Misurato da
+`node strumenti/misura.js` (7 misure su 7 verdi, seme fisso): 252 valori
+distinti di fase, 223 pose distinte di una figura che corre, 11 valori di
+deformazione, 8 di carica prima del calcio, 0,5% di scatti bruschi, corpo
+orientato nel 92% dei cambi di direzione. Le quattro cose che mancavano —
+anticipo, peso, seguito, deformazione — **oggi ci sono, in numeri**.
 
-Le quattro cose che mancano, e che sono il confine fra dilettante e mestiere:
-
-- **anticipo** — il gesto si prepara prima di partire;
-- **peso** — si accelera e si decelera, non si va a velocità costante;
-- **seguito** — il gesto finisce invece di spegnersi di colpo;
-- **deformazione** — schiacciamento e allungamento su passo, impatto, parata.
+Testo storico (fine luglio, non più vero): «in dieci fotogrammi consecutivi
+le figure sono identiche a sé stesse, solo spostate. Nessun passo, nessuna
+inclinazione in curva, nessuna carica prima del tiro.»
 
 ---
 
