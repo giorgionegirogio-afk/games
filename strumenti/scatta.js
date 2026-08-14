@@ -207,10 +207,18 @@ K('menu-tablet', TABLET_O, VIA);
    l'orologio: aspettando, la stessa scena dava una posizione di palla diversa
    a ogni scatto e il confronto prima/dopo misurava il tremolio invece della
    modifica. Con simulate la partita e' identica a ogni esecuzione. */
+/* Il tutorial nelle scene in posa e' una bugia: un giocatore vero lo vede
+   solo nella primissima partita, mentre il profilo vergine del banco lo
+   riproponeva in OGNI foto d'azione e di kickoff — la barra «Rilascia il
+   dito...» piantata a 1:26 nelle scene da vetrina. Qui si salta con lo
+   stesso hook del bottone SALTA (Tut.finish(true) via window.__test.Tut). */
+const NOTUT = `window.__test.Tut && window.__test.Tut.finish && window.__test.Tut.finish(true);`;
+
 /* `size` sceglie la taglia di rosa (5/7/11). Quando manca, la chiamata resta
    la nuda startMatch(1,1) di sempre: stessa stringa, stesse scene al bit. */
 const AZIONE = (sec, extra, size) => VIA + `
   window.__test.startMatch(1,1${size ? `,{size:${size}}` : ''});
+  ` + NOTUT + `
   window.__test.setCpuVsCpu && window.__test.setCpuVsCpu(true);
   window.__test.simulate(${(sec / 1000).toFixed(2)});
   for(let i=0;i<90;i++){
@@ -221,7 +229,7 @@ const AZIONE = (sec, extra, size) => VIA + `
   ${extra || ''}
   window.__test.setPaused && window.__test.setPaused(false);`;
 
-K('kickoff', TELEFONO_O, VIA + `window.__test.startMatch(1,1);`, 1200);
+K('kickoff', TELEFONO_O, VIA + `window.__test.startMatch(1,1);` + NOTUT, 1200);
 K('azione', TELEFONO_O, AZIONE(5000), 300);
 K('azione-lungo', LUNGO_O, AZIONE(5000), 300);
 K('azione-tablet', TABLET_O, AZIONE(5000), 300);
@@ -231,9 +239,9 @@ K('azione-tarda', TELEFONO_O, AZIONE(12000), 300);
    vedono: il kickoff mostra il modulo schierato (1-3-3 e 1-4-4-2), l'azione
    mostra campo, porte e minimappa alla taglia grande. Il 5v5 resta la
    chiamata nuda di sempre e non ha bisogno di un doppione. */
-K('kickoff-7v7', TELEFONO_O, VIA + `window.__test.startMatch(1,1,{size:7});`, 1200);
+K('kickoff-7v7', TELEFONO_O, VIA + `window.__test.startMatch(1,1,{size:7});` + NOTUT, 1200);
 K('azione-7v7', TELEFONO_O, AZIONE(5000, '', 7), 300);
-K('kickoff-11v11', TELEFONO_O, VIA + `window.__test.startMatch(1,1,{size:11});`, 1200);
+K('kickoff-11v11', TELEFONO_O, VIA + `window.__test.startMatch(1,1,{size:11});` + NOTUT, 1200);
 K('azione-11v11', TELEFONO_O, AZIONE(5000, '', 11), 300);
 
 K('gol', TELEFONO_O, VIA + `
@@ -310,6 +318,7 @@ K('gol-moto-ridotto', TELEFONO_O, VIA + `
 K('azione-contrasto', TELEFONO_O, VIA + `
   window.__test.setDalt(true);
   window.__test.startMatch(1,1);
+  ` + NOTUT + `
   window.__test.setCpuVsCpu && window.__test.setCpuVsCpu(true);
   ` + F(4000), 300);
 

@@ -1170,11 +1170,13 @@ body.barra #gearBtn{display:none}
 /* TORNA AL MENU nel flusso, come alle ISTRUZIONI: la fascia adesiva
    copriva i cartellini e la sua velatura era la banda scura sui fogli. */
 #negozio .azioni,#impostazioni .azioni,#statistiche .azioni,#campi .azioni{position:static;margin:20px 0 0;padding:0 0 40px;background:none;box-shadow:none}
-/* ROSA e SQUADRA: la stessa ricetta, per la quarta volta. La fascia adesiva
-   di TORNA AL MENU copriva l'ultima riga della rosa (il quinto uomo spariva
-   sotto il bottone) e la seconda fila di kit: il pulsante torna nel flusso
-   e la lista riceve sotto di se' il respiro pari all'altezza del pulsante. */
-#rosa .azioni,#squadra .azioni{position:static;margin:20px 0 0;padding:0 0 40px;background:none;box-shadow:none}
+/* ROSA, SQUADRA e TROFEI: la stessa ricetta, per la sesta volta. La fascia
+   adesiva di TORNA AL MENU copriva l'ultima riga della rosa (il quinto uomo
+   spariva sotto il bottone), la seconda fila di kit, e ai TROFEI l'ultima
+   riga di obiettivi (rett. 14 ago 2026, secondo appello della giuria): il
+   pulsante torna nel flusso e la lista riceve sotto di se' il respiro pari
+   all'altezza del pulsante. */
+#rosa .azioni,#squadra .azioni,#trofei .azioni{position:static;margin:20px 0 0;padding:0 0 40px;background:none;box-shadow:none}
 /* in orizzontale i cinque cartellini si vedono INTERI al primo colpo
    d'occhio — la merce mutilata leggeva come difetto. Il completo si
    sdraia: icona, testo, prezzi. */
@@ -7450,7 +7452,10 @@ function updateBall(dt){
      c'e' stato un colpo, e la scia serve. Dodici punti bastano: sono 0,20 s
      di coda, che e' quanto un occhio ne trattiene. */
   if(SAVE.moto && len(b.vx,b.vy)>260){
-    G.trail.push({x:b.x,y:b.y,t:0,p:b.perfectT>0});
+    /* la quota viaggia col punto: i fantasmi della scia (drawTrail) devono
+       galleggiare dove il pallone galleggiava, non strisciare a terra
+       sotto un cross */
+    G.trail.push({x:b.x,y:b.y,z:b.z||0,t:0,p:b.perfectT>0});
     if(G.trail.length>12) G.trail.shift();
   }
 
@@ -11345,6 +11350,15 @@ let S2_MIN_DEV=S2_MIN, S2_MAX_DEV=S2_MAX, S2_BASE_DEV=S2_BASE, S2_GOL_DEV=S2_GOL
 const OUT_MARG=62;
 let CROWD_PASSO=1, CROWD_LARG=1;
 let fieldTex=null, vigTex=null, grainTex=null;
+/* IL TESTO DELLE INSEGNE NON VIVE PIU' NELLA TESSITURA DEL CAMPO.
+   REGOLA: se la fascia delle insegne non entra INTERA nel quadro
+   (controllo in coordinate schermo, fotogramma per fotogramma), il testo
+   non si disegna affatto — resta il legno pieno. Mai una lettera mozzata,
+   a nessuna posizione di camera, su nessun formato. Per poterlo decidere
+   a ogni fotogramma il testo si stacca dalla tessitura cotta: qui c'e'
+   l'elenco delle insegne (posizione e parola), lo riempie
+   dipingiCartelloni quando cuoce fieldTex, lo legge drawInsegneTesto. */
+const INSEGNE_LIVE=[];
 /* setTaglia deve poter ricuocere le tessiture anche a finestra immutata:
    il flag azzera la guardia per UNA chiamata e si spegne da solo */
 let RESIZE_FORZA=false;
@@ -11690,7 +11704,10 @@ function pozzeLuce(IL){
                              [0.30,0.74,0.50,1],[0.70,0.74,0.50,1]];
   }
 }
-function paintField(c, TH, pX, pY, q){
+function paintField(c, TH, pX, pY, q, vivo){
+  /* vivo=true solo quando si cuoce fieldTex (il campo che la camera
+     inquadra): il testo delle insegne si rimanda a drawInsegneTesto.
+     Le anteprime (CAMPI) restano cotte per intero. */
   pX=pX||PAD; pY=pY||PAD;
   /* q = quanta densita' di dettaglio. Le anteprime della schermata CAMPI
      cuociono OTTO campi a 212 pixel di larghezza: a densita' piena sarebbero
@@ -11937,8 +11954,10 @@ function paintField(c, TH, pX, pY, q){
      Quando la tinta di una squadra ricompare su un cartellone non vuol dire
      piu' niente. La legge dei quattro colori dice: verde campo, le due
      maglie SOLO su cio' che rappresenta una squadra, ambra come unico
-     accento, gesso per tutto il testo. Qui restano gesso e ambra, e l'ambra
-     compare su un cartellone ogni tre — e' l'insegna accesa fra due spente.
+     accento, gesso per tutto il testo. Qui resta SOLO il gesso: l'ambra
+     ogni tre insegne era decorazione su una cosa che non si preme —
+     l'accento e' riservato a cio' che si tocca (rett. 14 ago 2026,
+     secondo appello della giuria a 26).
      I tre tratti del bisello valgono anche qui: contorno scuro asimmetrico
      (piu' sottile dal lato del sole), filo caldo a ovest, filo freddo a est. */
   /* DOVE STANNO I CARTELLONI, e perche' si sono spostati di ventidue unita'.
@@ -11962,24 +11981,34 @@ function paintField(c, TH, pX, pY, q){
      legge e' fra la riga di fondo e la rotaia — che e' anche dove stanno
      nei quattro riferimenti. Quindi restano dov'erano e cambia l'ordine:
      la pista li copriva, adesso ci passa sotto. */
-  const dipingiCartelloni=()=>{
+  /* REGOLA NUOVA (14 ago 2026, 15 giudici su 26): il TESTO delle insegne
+     non si cuoce piu' qui dentro. Sul filo del bordo basso del quadro
+     spuntavano le CIME delle lettere — la fascia tagliata dal viewport.
+     Nella tessitura restano i pannelli di legno pieni; le parole le
+     disegna drawInsegneTesto a ogni fotogramma, e SOLO se la fascia entra
+     intera nel quadro (controllo in coordinate schermo). Mai una lettera
+     mozzata, a nessuna posizione di camera, su nessun formato.
+     Eccezione: le anteprime della schermata CAMPI (vivo=false) mostrano
+     sempre il campo intero, quindi li' il testo si cuoce come prima. */
+  const dipingiCartelloni=(vivo)=>{
   /* LO SPONSOR (se attivo): i nomi del giocatore ai posti pari — cosi'
      compaiono su ENTRAMBE le fasce. Per chi non compra: identico. */
   const INS=ADS.slice();
   if(shopAttivo('sponsor'))
     SAVE.sponsorNomi.slice(0,4).forEach((nm,k)=>{ if(nm) INS[k*2]=nm; });
   const bandY=[-DK+3, FH+DK-19];
+  if(vivo) INSEGNE_LIVE.length=0;
   for(let r=0;r<2;r++){
     const by=bandY[r];
     c.fillStyle='#0c1a12'; c.fillRect(-40,by,FW+80,16);
     c.font='900 9px '+FONT_N; c.textAlign='center'; c.textBaseline='middle';
+    const banda = vivo ? {by, items:[]} : null;
     /* il PASSO delle insegne e' fisso in unita' (quello del campo base):
        sulle taglie 7/11 la fascia piu' lunga ne ospita di piu', ripetendo
        i moduli — nessun nuovo asset, nessun cartellone stirato */
     const n=Math.max(6, Math.round((FW+80)/((1150+80)/6))), seg=(FW+80)/n;
     for(let i=0;i<n;i++){
       const ad=INS[(i+r*3)%INS.length];
-      const acc=((i+r)%3===0)?'#ffb020':COL.gesso;
       const px=-40+i*seg+2, pw=seg-4;
       /* il pannello dell'insegna: verde smalto, non nero. Un cartellone
          di bottega e' verniciato, e la vernice prende luce. */
@@ -11990,9 +12019,13 @@ function paintField(c, TH, pX, pY, q){
          un pixel, ed e' quello che stacca il cartellone dal fondale */
       c.fillStyle='rgba(255,222,164,.66)'; c.fillRect(px,by+2,1,12);
       c.fillStyle='rgba(140,178,255,.22)'; c.fillRect(px+pw-1,by+2,1,12);
-      c.fillStyle=acc; c.globalAlpha=1;
-      c.fillText(ad, px+pw/2, by+8.5);
+      if(banda){ banda.items.push({px,pw,txt:ad}); }
+      else{
+        c.fillStyle=COL.gesso; c.globalAlpha=1;
+        c.fillText(ad, px+pw/2, by+8.5);
+      }
     }
+    if(banda) INSEGNE_LIVE.push(banda);
     /* contorno asimmetrico della fascia: 1 px in cima (lato sole), 2 sotto */
     c.fillStyle='rgba(6,14,10,.55)'; c.fillRect(-40,by,FW+80,1);
     c.fillStyle='rgba(6,14,10,.78)'; c.fillRect(-40,by+14,FW+80,2);
@@ -12318,7 +12351,7 @@ function paintField(c, TH, pX, pY, q){
       c.fillRect(FW, -1, 3.2, FH+2);
       c.restore();
     }
-    dipingiCartelloni();
+    dipingiCartelloni(vivo);
     /* il tubolare, un lato alla volta. lum = quanta luce prende questo
        lato, da -1 (in ombra) a +1 (in pieno sole) */
     const barra=(x,y,w,h,lum,vert)=>{
@@ -12641,7 +12674,7 @@ function buildFieldTex(){
   fieldTex.width=Math.round(W*TS); fieldTex.height=Math.round(H*TS);
   const c=fieldTex.getContext('2d');
   c.scale(TS,TS); c.translate(PADX,PADY);
-  paintField(c, TH, PADX, PADY);
+  paintField(c, TH, PADX, PADY, undefined, true);
 }
 /* anteprima di un campo (schermata CAMPI): stesso pennello, margine minimo */
 function drawFieldPreview(cnv, fi){
@@ -13120,10 +13153,37 @@ function updateCamera(rdt){
        l'inquadratura della rete resta l'unica onesta. */
     const mk = (!G.goalAuto && G.goalIdx>=0) ? G.players[G.goalIdx] : null;
     if(mk && mk.out<=0){
-      const q=clamp((G.sceneT-0.85)/0.50,0,1);
-      const e=q*q*(3-2*q);
-      tx += ((mk.x-(side?1:-1)*mezzo*0.30)-tx)*e;
-      ty += (clamp(mk.y,0,FH)-ty)*e;
+      /* IL MARCATORE E' IN QUADRO DAL PRIMO FOTOGRAMMA — sopra la fascia.
+         La carrellata dei tre tempi era montata bene ma partiva a 0,85 s:
+         nello scatto della giuria (0,9 s) chi esulta stava ancora fuori
+         dal fotogramma, e sopra la fascia del gol si vedevano solo rete,
+         portiere a terra e comparse ferme. Due regole:
+           1) il bersaglio si LIMITA, sempre, a tenere il marcatore dentro
+              il quadro utile — sotto la barra del punteggio, SOPRA la
+              fascia del gol (stessa misura di drawHUD: e' li' che vive il
+              suo nome) — cosi' l'esultanza, che parte al fischio, e' in
+              scena dal primo fotogramma;
+           2) a movimento pieno la carrellata resta e parte a 0,55 s, il
+              tempo dei raggi sul sacco, non un fermo macchina dopo.
+         A movimento ridotto la clamp da sola e' il FERMO COMPOSTO: porta
+         da un lato, marcatore in quadro dall'altro, niente carrellata. */
+      const S2v=SCALE*Math.max(tz,G.cam.z);
+      const FBH=clamp(Math.round(VH*0.185),56,96);
+      /* a moto pieno il limite e' una rete di sicurezza (la carrellata fa
+         il lavoro): basta il bordo. Nel fermo composto il limite E' la
+         composizione: il marcatore rientra di un quinto di quadro. */
+      const insX = SAVE.moto ? 46 : VW*0.20;
+      const mgX=Math.max(30,(VW/2-insX)/S2v);
+      const mgTop=Math.max(24,(VH/2-BAR_H-36)/S2v);
+      const mgBot=Math.max(24,(VH/2-FBH-12-(SAVE.moto?30:56))/S2v);
+      tx=clamp(tx, mk.x-mgX, mk.x+mgX);
+      ty=clamp(ty, mk.y-mgBot, mk.y+mgTop);
+      if(SAVE.moto){
+        const q=clamp((G.sceneT-0.55)/0.50,0,1);
+        const e=q*q*(3-2*q);
+        tx += ((mk.x-(side?1:-1)*mezzo*0.30)-tx)*e;
+        ty += (clamp(mk.y,0,FH)-ty)*e;
+      }
     }
     const k=Math.min(1,1-Math.pow(2,-rdt/0.105));
     G.cam.z+=(tz-G.cam.z)*k;
@@ -13520,6 +13580,7 @@ function render(){
   ctx.scale(S2,S2);
 
   if(fieldTex) ctx.drawImage(fieldTex, -PADX,-PADY, FW+PADX*2, FH+PADY*2);
+  drawInsegneTesto();
   drawCrowd();
   drawGoals();
   G.hudTags.length=0;
@@ -13727,10 +13788,62 @@ function drawTrail(){
     ctx.fillStyle='rgba(255,240,214,'+(0.07+0.26*f).toFixed(3)+')';
     ctx.fill();
   }
+  /* I FANTASMI (secondo appello della giuria a 26). Il nastro dice la
+     direzione, ma a un pallone di trenta pixel la velocita' la vendono le
+     COPIE SFUMATE che si lascia dietro — e' il trucco del rig 3D e di ogni
+     tavola a fumetti: due-tre palloni sbiaditi, sempre piu' piccoli verso
+     la coda. Compaiono solo sul colpo vero (tiro, filtrante, cross:
+     f>0,25), sono DETERMINISTICI — posizioni prese dalla lista della
+     scia, zero Math.random — e costano tre archi pieni per fotogramma
+     solo quando il pallone corre davvero. Quota compresa: il fantasma di
+     un cross galleggia dove il pallone galleggiava (y - z*0,55, la stessa
+     proiezione di drawBallAt). */
+  if(f>0.25){
+    for(let k=1;k<=3;k++){
+      const i=n-1-k*3;
+      if(i<0) break;
+      const g=G.trail[i];
+      const a=(0.32-0.09*k)*f;
+      ctx.fillStyle='rgba(244,240,230,'+a.toFixed(3)+')';
+      ctx.beginPath();
+      ctx.arc(g.x, g.y-(g.z||0)*0.55, B_R*(1-0.14*k)*(1+(g.z||0)*0.012), 0, 6.2832);
+      ctx.fill();
+    }
+  }
 }
 /* un rimbalzo comincia una traiettoria nuova: la scia vecchia non le
    appartiene piu' e se resta attaccata il nastro fa un nodo */
 function tagliaScia(){ G.trail.length=0; }
+
+/* =====================================================================
+   IL TESTO DELLE INSEGNE, fotogramma per fotogramma.
+   REGOLA (14 ago 2026, 15 giudici su 26 sulle cime delle lettere al bordo
+   basso): se la fascia delle insegne NON entra INTERA nel quadro —
+   controllo in coordinate schermo, qui, dove la camera e' nota — il testo
+   NON si disegna affatto: resta il legno pieno cotto in fieldTex. Mai una
+   lettera mozzata, a nessuna posizione di camera, su nessun formato.
+   In piu', per i bordi laterali: ogni parola compare solo se il SUO
+   pannello e' tutto dentro il quadro — o l'insegna intera, o niente.
+   Si chiama dentro la trasformazione della camera, subito dopo la
+   tessitura del campo: stesso strato di prima, stessi pixel quando la
+   fascia si vede tutta. Costa una manciata di fillText solo nei
+   fotogrammi in cui la fascia e' davvero in quadro. */
+function drawInsegneTesto(){
+  if(!INSEGNE_LIVE.length) return;
+  const S2=G.view.S2, Ax=G.view.Ax+(G.view.sx||0), Ay=G.view.Ay+(G.view.sy||0);
+  ctx.font='900 9px '+FONT_N; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle=COL.gesso;
+  for(const b of INSEGNE_LIVE){
+    const y0=Ay+b.by*S2, y1=Ay+(b.by+16)*S2;
+    if(y0<-0.5 || y1>VH+0.5) continue;          // fascia tagliata: legno pieno
+    for(const it of b.items){
+      const x0=Ax+it.px*S2, x1=Ax+(it.px+it.pw)*S2;
+      if(x0<-0.5 || x1>VW+0.5) continue;        // insegna a meta': niente parola
+      ctx.fillText(it.txt, it.px+it.pw/2, b.by+8.5);
+    }
+  }
+  ctx.textBaseline='alphabetic';
+}
 
 /* buffer riusato per l'ordinamento: allocarne uno nuovo a ogni fotogramma
    e' spazzatura gratis per il garbage collector */
@@ -15512,7 +15625,12 @@ function drawHUD(){
   CHEV_POS.length=0;
   if((G.scene==='play'||G.scene==='golden'||G.scene==='kickoff') && G.ball){
     const S2=G.view.S2, Ax=G.view.Ax, Ay=G.view.Ay;
-    const squadre = G.cpu[1] ? [0] : [0,1];
+    /* il chevron parla a un GIOCATORE: per una squadra guidata dalla CPU
+       non esiste nessuno da informare, e nelle scene CPU-CPU restava un
+       «>» senza contesto appiccicato al bordo. Solo squadre umane. */
+    const squadre=[];
+    if(!G.cpu[0]) squadre.push(0);
+    if(!G.cpu[1]) squadre.push(1);
     for(const t of squadre){
       const gx = t===0 ? FW+GOAL_D : -GOAL_D;
       const sx = gx*S2+Ax;
@@ -15528,6 +15646,18 @@ function drawHUD(){
         const ky=q.y*S2+Ay, kx=q.x*S2+Ax;
         if(Math.abs(kx-(t===0?VW:0))<70 && Math.abs(sy-ky)<30){
           sy = clamp(ky + (ky<=PA_CY?34:-34), PA_Y0+20, PA_Y1-20);
+        }
+      }
+      /* REGOLA DI SCARTO coi PULSANTI CONTESTUALI: sul lato dei comandi
+         il chevron e la sua etichetta finivano sopra FILTR./TIRA (visto
+         al kickoff del terzo giro). Se su quel bordo vivono i pulsanti
+         di una squadra umana, il chevron sale sopra la loro colonna. */
+      {
+        let tb=-1;
+        if(G.mode===2) tb = (t===0) ? 1 : 0;      // 2P: comandi t1 a destra, t0 a sinistra
+        else if(t===0) tb = 0;                    // 1P: comandi a destra, come il chevron t0
+        if(tb>=0 && !G.cpu[tb] && (IS_TOUCH||Touch5.used) && sy>VH-286){
+          sy = clamp(VH-286, PA_Y0+20, PA_Y1-20);
         }
       }
       /* stessa regola con la minimappa: un chevron dietro il radar e' un
@@ -15551,6 +15681,17 @@ function drawHUD(){
         ctx.stroke();
         ctx.strokeStyle=TEAMCOL[t]; ctx.lineWidth=3.4;
       }
+      /* ETICHETTA: un «>» da solo non dice niente a chi apre il gioco la
+         prima volta (secondo appello della giuria). La parola PORTA,
+         piccola e nel colore della squadra, gli da' il contesto — con lo
+         zoccolo scuro delle etichette dei pulsanti, mai sotto i 3:1. */
+      ctx.font='700 9px '+FONT_C; ctx.textBaseline='middle'; ctx.lineJoin='round';
+      ctx.textAlign = t===0 ? 'right' : 'left';
+      const ex = bx - d*19;
+      ctx.strokeStyle='rgba(6,14,10,.88)'; ctx.lineWidth=3;
+      ctx.strokeText('PORTA', ex, sy);
+      ctx.fillStyle=TEAMCOL[t];
+      ctx.fillText('PORTA', ex, sy);
       ctx.restore();
     }
   }
@@ -15684,16 +15825,19 @@ function drawTouchButtons(){
         const e=Touch5.btnTouch[k];
         if(e.t===t&&e.act===bt.act){ pressed=true; break; }
       }
-      /* IL DISCO NON E' PIU' VERDE SCURO SU CAMPO VERDE. Un riempimento
-         quasi campo con un filo lime sottile spariva nel manto: contro i
-         rombi di eFootball non reggeva il confronto. Adesso il disco e'
-         una VELATURA CHIARA (si vede il campo sotto, ma il pulsante e' un
-         oggetto), il bordo e' netto e pieno, e alla pressione il
+      /* IL DISCO E' UNO SCRIM SCURO, smalto su lavagna (rett. 14 ago 2026,
+         secondo appello della giuria). La velatura chiara del giro scorso
+         lasciava passare le figure: un giocatore che attraversava il disco
+         impastava l'etichetta TIRA/FILTR. e per mezzo secondo il comando
+         non si leggeva. Adesso sotto l'etichetta c'e' la lavagna — lo
+         stesso scuro del tabellone, abbastanza denso da spegnere chi ci
+         passa dietro — e a staccare il disco dal manto pensa il bordo
+         pieno nel colore squadra, non il riempimento. Alla pressione il
          riempimento diventa ambra — la tinta che in tutto il gioco vuol
          dire "qui si agisce". Il layout (posizione e raggio) non cambia
          di un pixel. */
       ctx.beginPath(); ctx.arc(bt.x,bt.y,bt.r,0,6.2832);
-      ctx.fillStyle= pressed ? 'rgba(255,176,32,.32)' : 'rgba(242,245,239,.16)';
+      ctx.fillStyle= pressed ? 'rgba(255,176,32,.32)' : 'rgba(8,19,13,.62)';
       ctx.fill();
       if(bt.act==='slide'){
         /* senza possesso il grande e' CONTRASTA: il filo gesso,
@@ -15716,10 +15860,16 @@ function drawTouchButtons(){
         }
       }
       /* l'etichetta e' PIU' SPESSA e porta uno zoccolo scuro suo: cosi'
-         legge sopra la velatura chiara e sopra qualunque erba ci sia
-         sotto, senza dipendere dal caso del manto. Le etichette lunghe
-         (CONTRASTA) scalano per stare nel cerchio, come prima. */
-      ctx.font='800 '+Math.max(11,(bt.r*(bt.label.length>6?0.32:0.42))|0)+'px '+FONT_C;
+         legge sopra lo scrim e sopra qualunque cosa passi sotto il disco.
+         E NON SI TRONCA MAI: il corpo si MISURA sul cerchio — si scende
+         di un punto alla volta finche' la parola intera sta dentro il
+         disco (FILTR. sul pulsante piccolo sbordava; una parola mozzata
+         legge come un difetto, non come un comando). */
+      let fs=Math.max(11,(bt.r*(bt.label.length>6?0.32:0.42))|0);
+      ctx.font='800 '+fs+'px '+FONT_C;
+      while(fs>8 && ctx.measureText(bt.label).width>bt.r*2-8){
+        fs--; ctx.font='800 '+fs+'px '+FONT_C;
+      }
       ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineJoin='round';
       ctx.strokeStyle='rgba(6,14,10,.88)'; ctx.lineWidth=3;
       ctx.strokeText(bt.label, bt.x, bt.y+1);
@@ -15933,48 +16083,26 @@ function duelFondo(g){
 }
 
 /* =====================================================================
-   LA MAGLIA DEL DUELLO PARLA LA LINGUA DELLA MAGLIA IN CAMPO.
-   Dal dischetto tiratore e portiere erano due ELLISSI DI TINTA PIATTA,
-   mentre a otto metri d'altezza le stesse due squadre portano il loro
-   motivo, la piega d'ombra sotto il petto e i due fili del bisello. Il
-   rigore e' l'inquadratura in cui la figura e' PIU' GRANDE di tutto il
-   gioco — un terzo dell'altezza dello schermo — ed era l'unica senza
-   materia: e' esattamente il "due grafiche in un file" che si vede in
-   vetrina.
-   Qui arriva lo stesso trattamento di kitTex, con gli stessi numeri
-   riportati in proporzione: il motivo ritagliato dentro la sagoma, la
-   piega d'ombra in fondo al busto (16% di nero) e — sopra tutto — il
-   bisello, filo freddo a est e filo caldo a ovest.
-   Costa un ritaglio e due riempimenti per figura, e sono DUE figure:
-   il fondale cotto in duelFondo() ne ha appena restituiti duecento.
+   LE FIGURE DEL DUELLO LE DISEGNA Rig3D — la camera 'bassa' e' nata
+   ESATTAMENTE per questa vista (vedi AZIONI.md, decisione 3), e la
+   ripresa del gol la usa gia': restava fuori proprio l'inquadratura in
+   cui la figura e' PIU' GRANDE di tutto il gioco. Il tiratore, di
+   spalle, porta la clip 'tiro' — la carica cresce con poseT mentre la
+   barra oscilla, la frustata e il seguito corrono su resultT; il
+   portiere porta la molla ('parata'/'presa' sul centro) e il 'tuffo'
+   sui lati, con lo yaw che da' la direzione. Taglia e punti a terra
+   sono QUELLI DI PRIMA (tiratore ~64% della porta, il 25% piu' del
+   portiere), il pallone resta quello vero della scena (look.palla=null,
+   adattamento (a) del rig), l'ombra portata resta ombraMorbida: al rig
+   si chiede il corpo, non la scena. I cronometri (poseT, resultT) e la
+   fisica del duello non si toccano: resolve() non sa che il rig esiste.
    ===================================================================== */
-function motivoBusto(rx,ry,pat,col2){
-  ctx.save();
-  ctx.beginPath(); ctx.ellipse(0,0,rx,ry,0,0,6.2832); ctx.clip();
-  ctx.fillStyle=col2;
-  const w=rx*2.4, h=ry*2.4;
-  if(pat===3){                                   // portiere: spalla e manica
-    ctx.fillRect(-rx*1.2,-ry*1.2, rx*0.52, h);
-    ctx.fillRect(-rx*1.2,-ry*1.2, w, ry*0.34);
-  }else if(pat===1){                             // fasce orizzontali
-    ctx.fillRect(-rx*1.2,-ry*0.86, w, ry*0.26);
-    ctx.fillRect(-rx*1.2,-ry*0.10, w, ry*0.16);
-    ctx.fillRect(-rx*1.2, ry*0.60, w, ry*0.26);
-  }else if(pat===2){                             // banda centrale
-    ctx.fillRect(-rx*0.24,-ry*1.2, rx*0.52, h);
-    ctx.fillRect( rx*0.42,-ry*1.2, rx*0.17, h);
-  }else{                                         // maniche in tinta diversa
-    /* la stessa casa del campo: pat 0 e' tinta unita con le MANICHE in
-       c2, quindi qui — figura vista da dietro — il c2 sta sui due
-       fianchi, dove sono le maniche, non in due righe inventate */
-    ctx.fillRect(-rx*1.2,-ry*1.2, rx*0.34, h);
-    ctx.fillRect( rx*0.86,-ry*1.2, rx*0.34, h);
-  }
-  /* la piega d'ombra in fondo al busto: la stessa di kitTex */
-  ctx.fillStyle='rgba(0,0,0,.16)';
-  ctx.fillRect(-rx*1.2, ry*0.62, w, ry*0.42);
-  ctx.restore();
-}
+/* I due attori del duello per rigLook: oggetti-scratch (mai allocati nel
+   fotogramma), la divisa vera la restituisce la cache di rigLook. Pelle e
+   capelli sono fissi: dal dischetto si vede UNA figura per squadra, la
+   varieta' della rosa qui non ha un posto dove leggersi. */
+const DUEL_RIG_S={role:'',team:0,skin:'#e0a97e',hair:'#33210f'};
+const DUEL_RIG_K={role:'gk',team:0,skin:'#d9b088',hair:'#2a1d13'};
 function drawDuelScene(){
   const D=Duel; if(D.phase==='off') return;
   const g=duelGeo();
@@ -16102,26 +16230,19 @@ function drawDuelScene(){
   }
 
   /* ---- PORTIERE ----
-     IL TUFFO IN QUATTRO TEMPI, che sono gli stessi del tuffo in partita
-     (drawPlayer, ramo del tuffo) portati dalla vista dall'alto a quella di
-     tre quarti. Non c'e' niente di inventato: c'era gia', scritto e
-     funzionante, e dal dischetto non lo usava nessuno.
-       ATTESA        respira e si sposta di lato. Il respiro e' una
-                     deformazione da 3 centesimi: si vede appena, ma un
-                     corpo che non respira e' un cartonato.
-       RACCOLTA      0,00-0,16 s. Si abbassa, si ACCORCIA (squash 1,16),
-                     le mani rientrano e — la parte che conta — parte di
-                     mezzo passo dalla PARTE OPPOSTA. E' l'anticipo: un
-                     gesto che va a sinistra comincia andando a destra, e
-                     senza quel mezzo passo il tuffo sembra teletrasporto.
-       DISTENSIONE   0,16-0,44 s. Il corpo si ALLUNGA lungo l'asse del
-                     tuffo (squash 0,86, l'unico posto del gioco sotto 1),
-                     le braccia escono di sette unita', le gambe si stendono.
-       RICADUTA      0,44-0,78 s. Tocca terra, si schiaccia del 20% in
-                     quattro centesimi e poi si assesta con due rimbalzi
-                     che si spengono. Il corpo finisce DOPO l'arto.
-     A movimento ridotto restano le posizioni e spariscono respiro,
-     rimbalzi e deformazione: il tuffo resta leggibile, non pulsa. */
+     IL CORPO LO DISEGNA Rig3D, in camera 'bassa', di fronte (yaw pi).
+     I QUATTRO TEMPI restano gli stessi cronometri di prima — raccolta
+     0,00-0,16, distensione 0,16-0,44, ricaduta 0,44-0,78 — ma adesso
+     vestono le clip vere del portiere di partita:
+       ATTESA   'fermo' che respira (freq 0,5) + lo spostamento di lato;
+       CENTRO   'presa' se para (la palla arriva a rt 0,58: la stretta
+                della presa, u 0,42, cade esattamente li'), 'parata' a
+                vuoto se la palla entra comunque;
+       LATO     'tuffo', con lo yaw ruotato di 0,45 pi verso il palo:
+                e' lo yaw a dare il tuffo laterale, come dice la clip.
+     Lo spostamento laterale (ease) resta posizione, il VOLO e' della
+     clip: il punto a terra non sale. A movimento ridotto restano le
+     posizioni e una posa ferma per fase: niente respiro, niente ciclo. */
   {
     const kz=(D.keeperZone>=0?D.keeperZone:1);
     const ris=(D.phase==='result');
@@ -16131,26 +16252,16 @@ function drawDuelScene(){
     const ease   = 1-Math.pow(1-tuffo,3);
     const ric    = ris ? clamp((rt-0.44)/0.34,0,1) : 0;
     const lato   = (kz-1);
-    /* DEFORMAZIONE: un numero solo, dal quale dipendono larghezza e
-       lunghezza del corpo. >1 schiacciato, <1 allungato. */
-    let sqk=1;
-    if(!moto) sqk=1;
-    else if(!ris) sqk = 1+0.030*Math.sin(G.pulse*4.2);
-    else if(ric>0){
-      if(ric<0.12) sqk = 0.86+(1.20-0.86)*(ric/0.12);
-      else{ const w=(ric-0.12)/0.88; sqk = 1+0.20*Math.exp(-w*4.2)*Math.cos(w*13.0); }
-    }
-    else if(tuffo>0) sqk = 1.16-0.30*ease;
-    else sqk = 1+0.16*Math.sin(carica*Math.PI*0.5);
     /* ANTICIPO nella posizione: il mezzo passo contrario, che si spegne
        appena la distensione comincia */
     const anti = carica*(1-tuffo);
     const idle=(ris||!moto)?0:Math.sin(G.pulse*2.1)*g.GW*0.035;
     const kx=VW/2+idle+lato*g.GW*0.34*ease-lato*g.GW*0.030*anti;
-    const ky=g.GLY-g.GH*0.30-Math.sin(ease*Math.PI)*g.GH*0.18
+    /* il punto A TERRA: la quota del corpo (volo, caduta) la fa la clip */
+    const ky=g.GLY-g.GH*0.02;
+    /* il centro-corpo di prima, SOLO per l'inclinazione dell'ombra lunga */
+    const kyv=g.GLY-g.GH*0.30-Math.sin(ease*Math.PI)*g.GH*0.18
              +g.GH*0.050*anti+g.GH*0.105*ric;
-    const rot=lato*1.15*ease-lato*0.20*anti;
-    const sc=g.GH*0.0125;
     /* l'OMBRA LUNGA del portiere, tirata a est dal faro: sfuma a zero */
     {
       const oy=g.GLY-g.GH*0.02, lu=g.GW*(0.36+0.10*ease);
@@ -16159,65 +16270,55 @@ function drawDuelScene(){
       ctx.fillStyle=gsh;
       ctx.beginPath(); ctx.ellipse(kx+lu*0.5,oy+g.GH*0.012,lu*0.5,g.GH*0.052,0.05,0,6.2832); ctx.fill();
     }
-    /* l'ombra del portiere cadeva dritta sotto di lui (luce alle 6) mentre
-       quella del tiratore andava alle 4: tre luci in un'inquadratura sola
-       sono l'errore che faceva sembrare i rigori un pezzo di un altro gioco.
-       In tuffo si allarga come il corpo: e' quello che dice che e' disteso. */
-    ombraMorbida(kx+(g.GLY-ky)*0.20, g.GLY-g.GH*0.02,
+    /* l'ombra portata: stessa luce del tiratore (scarto a est), si
+       allarga col corpo disteso — e' quello che dice che e' in tuffo */
+    ombraMorbida(kx+(g.GLY-kyv)*0.20, g.GLY-g.GH*0.02,
                  g.GH*0.16*(1+0.55*ease), g.GH*0.042, 0.94-0.16*ease);
-    ctx.save(); ctx.translate(kx,ky); ctx.rotate(rot); ctx.scale(sc*sqk, sc/sqk);
-    const gk0=gkKit(D.keeper,0), gk1=gkKit(D.keeper,1);
-    /* SEGUITO DEGLI ARTI: le braccia escono per prime e rientrano per
-       ultime, le gambe si stendono dietro. Un solo numero per parte. */
-    const rea = -2.4*Math.sin(carica*Math.PI*0.5)*(1-tuffo)+7.0*ease-2.4*ric*(1-ric);
-    const gam = 5.2*ease-1.8*Math.sin(carica*Math.PI*0.5)*(1-tuffo);
-    /* gambe: un tracciato solo, due sotto-tracciati */
-    ctx.fillStyle=gk1;
-    ctx.beginPath();
-    ctx.moveTo(-5+4.2,15+gam*0.5); ctx.ellipse(-5,15+gam*0.5,4.2,7.5+gam*0.55,-0.05*gam,0,6.2832);
-    ctx.moveTo( 5+4.2,15+gam*0.5); ctx.ellipse( 5,15+gam*0.5,4.2,7.5+gam*0.55, 0.05*gam,0,6.2832);
-    ctx.fill();
-    /* braccia larghe con i guantoni: aperte a coprire, non a croce */
-    ctx.strokeStyle=gk0; ctx.lineWidth=5.4; ctx.lineCap='round';
-    ctx.beginPath();
-    ctx.moveTo(-6,-3); ctx.lineTo(-18-rea,-8-rea*0.30);
-    ctx.moveTo( 6,-3); ctx.lineTo( 18+rea,-8-rea*0.30);
-    ctx.stroke();
-    ctx.fillStyle='#eef3ea';
-    ctx.beginPath();
-    ctx.moveTo(-20.5-rea+4.2,-9-rea*0.30); ctx.arc(-20.5-rea,-9-rea*0.30,4.2,0,6.2832);
-    ctx.moveTo( 20.5+rea+4.2,-9-rea*0.30); ctx.arc( 20.5+rea,-9-rea*0.30,4.2,0,6.2832);
-    ctx.fill();
-    /* busto */
-    ctx.fillStyle=gk0;
-    ctx.beginPath(); ctx.ellipse(0,0,8.6,11,0,0,6.2832); ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,.62)'; ctx.lineWidth=1.9; ctx.stroke();
-    motivoBusto(8.6,11,3,gk1);
-    /* il bisello, come su ogni corpo del gioco: filo caldo dal lato della
-       luce, gemello freddo e scuro dall'altro. Alzato da 0,55 a 0,72 e da
-       2,0 a 2,6 di spessore: a questa scala — la figura piu' grande del
-       gioco — un filo tarato per un omino di ventisei pixel non si vede. */
-    ctx.strokeStyle='rgba(20,30,58,.50)'; ctx.lineWidth=2.4;
-    ctx.beginPath(); ctx.ellipse(0,0,8.6,11,0,Math.PI*0.05,Math.PI*0.72); ctx.stroke();
-    ctx.strokeStyle='rgba(255,232,186,.72)'; ctx.lineWidth=2.6;
-    ctx.beginPath(); ctx.ellipse(0,0,8.6,11,0,Math.PI*1.05,Math.PI*1.72); ctx.stroke();
-    /* numero di maglia e filo di squadra: appartenenza senza mascherone */
-    ctx.strokeStyle=TEAMCOL[D.keeper]; ctx.lineWidth=1.6;
-    ctx.beginPath(); ctx.moveTo(-8.2,-4.4); ctx.lineTo(8.2,-4.4); ctx.stroke();
-    ctx.fillStyle='rgba(244,247,241,.92)';
-    ctx.beginPath(); ctx.arc(0,2,3.4,0,6.2832); ctx.fill();
-    ctx.fillStyle='rgba(8,16,11,.96)';
-    ctx.font='900 5px '+FONT_N; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('1',0,2.3);
-    /* testa: si incassa nelle spalle quando si raccoglie e si allunga in
-       avanti quando si distende. E' un'unita' e mezza, e si vede. */
-    const th=-14+1.7*Math.sin(carica*Math.PI*0.5)*(1-tuffo)-1.1*ease;
-    ctx.fillStyle='#2a1d13';
-    ctx.beginPath(); ctx.arc(0,th,5.4,0,6.2832); ctx.fill();
-    ctx.fillStyle='#d9b088';
-    ctx.beginPath(); ctx.arc(0,th+0.8,4.0,0,6.2832); ctx.fill();
-    ctx.restore();
-    ctx.lineCap='butt';
+    /* la clip e la sua fase, sui cronometri che c'erano gia' */
+    let clipK, uK;
+    if(!ris){
+      /* l'attesa NON e' 'fermo': un portiere sulla linea sta in POSIZIONE
+         — ginocchia piegate, braccia pronte. E' l'inizio del caricamento
+         del tuffo, tenuto vivo dal respiro sulla stessa molla. */
+      clipK='tuffo'; uK = moto ? 0.080+0.022*Math.sin(G.pulse*2.1) : 0.085;
+    }else if(lato===0){
+      clipK = (D.outcome==='parata') ? 'presa' : 'parata';
+      if(!moto) uK = (clipK==='presa') ? 0.40 : 0.38;
+      else if(clipK==='presa'){
+        uK = rt<0.16 ? 0.04+0.14*carica
+           : rt<0.58 ? 0.18+0.24*(rt-0.16)/0.42
+           : 0.42+0.24*clamp((rt-0.58)/0.52,0,1);
+      }else{
+        uK = rt<0.16 ? 0.02+0.14*carica
+           : rt<0.58 ? 0.16+0.26*(rt-0.16)/0.42
+           : 0.42+0.20*clamp((rt-0.58)/0.62,0,1);
+      }
+    }else{
+      clipK='tuffo';
+      uK = !moto ? 0.30
+         : rt<0.16 ? 0.02+0.11*carica
+         : rt<0.44 ? 0.13+0.31*tuffo
+         : rt<0.78 ? 0.44+0.26*ric
+         : 0.70+0.24*clamp((rt-0.78)/0.9,0,1);
+    }
+    const yawK = (!ris||lato===0) ? Math.PI : Math.PI-lato*Math.PI*0.45;
+    /* stessa taglia di prima: 41 unita' a scala 0,0125 = 0,51 GH */
+    const hbK=g.GH*0.51;
+    DUEL_RIG_K.team=D.keeper;
+    Rig3D.disegna(ctx, kx, ky, hbK, yawK, 'bassa', clipK,
+                  uK/Rig3D.CLIPS[clipK].freq, rigLook(DUEL_RIG_K), true);
+    /* il numero 1, ancorato al torso del rig */
+    {
+      const T=Rig3D.torso();
+      const nx=(T.x0+T.x1)*0.5, ny=(T.y0+T.y1)*0.5;
+      ctx.font='900 '+Math.max(7,Math.round(hbK*0.16))+'px '+FONT_N;
+      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineJoin='round';
+      ctx.strokeStyle='rgba(8,16,11,.88)'; ctx.lineWidth=Math.max(1.7,hbK*0.040);
+      ctx.strokeText('1', nx, ny);
+      ctx.fillStyle='#f4f7f1';
+      ctx.fillText('1', nx, ny);
+      ctx.textBaseline='alphabetic';
+    }
   }
 
   /* ---- PALI (davanti al portiere: e' cosi' che si vede una porta) ----
@@ -16286,27 +16387,21 @@ function drawDuelScene(){
      Piazzato di fianco al pallone e sovrapposto alla linea di porta leggeva
      come uno che sta DENTRO la porta invece che come chi sta per calciare.
      Si disegna prima del pallone: cosi' la palla gli passa davanti. */
-  /* IL TIRATORE ERA UNA LOSANGA CON UN NUMERO. Nelle dieci fotografie di
-     mezzo secondo della striscia dei rigori era identico a se stesso in
-     tutte e dieci: il momento in cui si decide una partita era l'unico
-     posto del gioco senza uno scheletro. Qui arrivano, nell'ordine in cui
-     si vedono, le quattro cose che METRO.md chiama il confine fra
-     dilettante e mestiere:
-       ANTICIPO   mentre la barra della potenza oscilla, il tiratore CARICA
-                  per mezzo secondo — il busto si torce indietro di 8 gradi,
-                  la gamba di calcio si raccoglie di 6 unita', il piede
-                  d'appoggio scivola indietro e il braccio opposto si alza.
-                  Il tempo c'era gia' ed era gia' lungo: non lo si vedeva.
-       PESO       la rincorsa e' un ciclo a quattro pose su tre appoggi, con
-                  la fase legata alla STRADA percorsa verso il pallone; il
-                  bacino sale e scende due volte per ciclo.
-       SEGUITO    la gamba attraversa il punto del pallone e arriva a 14
-                  unita' oltre, poi decade come un cubo; il busto si
-                  raddrizza in 26 centesimi, cioe' DOPO che il piede e'
-                  gia' tornato. Il corpo finisce sempre dopo l'arto.
-       DEFORMAZIONE  schiacciamento sull'appoggio di ogni passo e
-                  sull'impatto col pallone.
-     A movimento ridotto resta la posa di partenza e si spegne tutto. */
+  /* IL TIRATORE LO DISEGNA Rig3D, di spalle (yaw ~0), con la clip 'tiro':
+     e' la stessa figura della partita portata all'inquadratura per cui il
+     rig e' nato. I tempi sono quelli che c'erano gia', nessuno inventato:
+       CARICA     cresce con poseT mentre la barra oscilla (mai col
+                  cursore): u sale 0 -> 0,35, che nella clip e' la gamba
+                  che si arma e il busto che si torce indietro;
+       FRUSTATA   sul cronometro del risultato: u 0,35 -> 0,46 nei primi
+                  14 centesimi (la palla parte a rt 0,14, e u 0,46 e'
+                  l'impatto della clip: il piede prende la palla
+                  ESATTAMENTE quando la palla parte);
+       SEGUITO    u 0,46 -> 0,98 in mezzo secondo: la gamba oltre il
+                  punto, il busto che si raddrizza dopo il piede.
+     L'ultimo passo della rincorsa resta POSIZIONE (sx2 scivola verso il
+     pallone come prima); peso e deformazione stanno dentro la clip.
+     A movimento ridotto resta una posa ferma e si spegne tutto. */
   {
     const ris=(D.phase==='result');
     const moto=SAVE.moto;
@@ -16316,63 +16411,15 @@ function drawDuelScene(){
               : (D.phase==='power' ? clamp((D.poseT||0)/0.55,0,1)
               : (D.phase==='wait' ? 1 : 0));
     const rincorsa = (ris&&moto) ? clamp(rt/0.16,0,1) : 0;
-    /* L'ULTIMO PASSO, non tre. Il ciclo a quattro pose del gioco vive
-       nella corsa lunga; qui la finestra fra il fischio e il contatto e'
-       di TREDICI CENTESIMI — la palla parte a rt 0,14 e non si puo'
-       spostare senza toccare l'esito. Tre appoggi in tredici centesimi
-       fanno 23 appoggi al secondo, cioe' uno strobo. Un rigore vero ha un
-       passo solo che conta, quello che si pianta di fianco al pallone: e'
-       quello che si disegna, e arriva da dietro con una curva d'entrata.
-       Chi allungasse la finestra avrebbe qui il posto giusto per rimettere
-       il ciclo intero: basta far crescere `rincorsa` piu' lentamente. */
-    const passo = ris&&moto ? clamp(rt/0.13,0,1) : 0;
-    const arrivo = ris&&moto ? -5.5*(1-passo)*(1-passo)+0.8*passo : 0;
-    /* il bacino scende sull'appoggio e risale: un'unita' e mezzo, e si vede
-       perche' l'ombra a terra non la segue */
-    const bobC = ris&&moto ? 1.5*Math.sin(clamp(passo,0,1)*Math.PI)*(1-0.4*passo) : 0;
-    /* GAMBA DI CALCIO: raccolta, attraversamento, decadimento cubico */
-    let kick = -6.0*car;
-    if(ris&&moto){
-      if(rt<0.13){ const u=rt/0.13; kick = -7.0*Math.sin(u*Math.PI*0.5); }
-      else{
-        const u=clamp((rt-0.13)/0.09,0,1);
-        /* il seguito decade come un CUBO CHE SI SPEGNE, (1-w)^3, non come
-           1-w^3: quest'ultimo tiene la gamba tesa per tre decimi e poi la
-           riprende di scatto — nella striscia si vedeva il piede restare
-           in aria, ed era il contrario di un seguito. Con (1-w)^3 il
-           grosso del ritorno si consuma subito e l'ultimo quinto si posa
-           piano, che e' come finisce un gesto vero. */
-        const w=clamp((rt-0.22)/0.26,0,1), e=1-w;
-        kick = (-7.0+21.0*u*(2-u))*e*e*e;
-      }
-    }
-    /* IL BUSTO TORNA DRITTO DOPO IL PIEDE: 0,26 s contro gli 0,09 della
-       gamba. E' la regola del seguito, ed e' quella che fa sembrare un
-       tiro un gesto invece di un fotogramma sostituito. */
-    let torsione = -0.14*car;
-    if(ris&&moto){
-      const w=clamp((rt-0.22)/0.26,0,1);
-      torsione = -0.14*Math.max(0,1-rt/0.13)+0.16*clamp((rt-0.10)/0.12,0,1)*(1-w*w);
-    }
-    /* DEFORMAZIONE: appoggio della rincorsa + impatto sul pallone */
-    let sqs=1;
-    if(moto){
-      if(ris){
-        const ap=clamp(1-Math.abs(rt-0.11)/0.06,0,1);   // l'appoggio del passo
-        const im=clamp(1-Math.abs(rt-0.15)/0.09,0,1);   // l'impatto sul pallone
-        sqs += 0.07*ap*ap+0.13*im*im;
-      }
-    }
     const sx2=spotX-g.GW*0.13+rincorsa*g.GW*0.05;
     /* il 25% piu' grande del portiere, misurato sull'ingombro vero: il
-       portiere e' alto 41 unita' di disegno a scala 0,0125, il tiratore 34 */
+       portiere e' alto 0,51 GH, il tiratore 34 unita' a scala 0,0188 */
     const sc=g.GH*0.0188;
-    const sy2=Math.min(spotY+g.GH*0.06, g.y1-sc*13)-sc*bobC;
-    const c1=TEAMCOL[D.shooter], c2=TEAMCOL2[D.shooter];
+    const sy2=Math.min(spotY+g.GH*0.06, g.y1-sc*13);
     /* stessa luce di tutto il gioco: scarto in basso a destra, mai centrata.
-       L'ombra NON prende il saliscendi del passo: sta sul prato, e la
+       L'ombra NON prende il saliscendi del gesto: sta sul prato, e la
        distanza fra corpo e ombra e' il modo in cui si legge il rimbalzo. */
-    ombraMorbida(sx2+sc*2.8, sy2+sc*(13.6+bobC), sc*8.4, sc*2.9, 0.94);
+    ombraMorbida(sx2+sc*2.8, sy2+sc*13.6, sc*8.4, sc*2.9, 0.94);
     /* LA POZZA DI STACCO, LA STESSA DEL PORTATORE IN PARTITA.
        METRO.md dice che ai nostri oggetti manca l'alone che li stacca dal
        fondo, e che i quattro riferimenti ce l'hanno tutti. In partita ce
@@ -16387,7 +16434,7 @@ function drawDuelScene(){
        le scarpe toccano il prato. A 13,2 — la prima misura provata — la
        pozza finiva DIETRO le gambe e il corpo se la mangiava tutta: nella
        fotografia si vedeva un filo d'ambra spuntare da sotto una scarpa. */
-    const py2=sy2+sc*(16.4+bobC*0.4);
+    const py2=sy2+sc*16.4;
     ctx.drawImage(poolTex, sx2-sc*13.6, py2-sc*6.0, sc*27.2, sc*12.0);
     ctx.lineCap='round';
     ctx.strokeStyle='rgba(0,0,0,.38)'; ctx.lineWidth=Math.max(2.2,sc*2.7);
@@ -16395,66 +16442,40 @@ function drawDuelScene(){
     ctx.strokeStyle='rgba(255,206,58,.96)'; ctx.lineWidth=Math.max(1.6,sc*1.7);
     ctx.beginPath(); ctx.ellipse(sx2,py2,sc*11.2,sc*4.4,0,0.10*Math.PI,0.90*Math.PI); ctx.stroke();
     ctx.lineCap='butt';
-    ctx.save(); ctx.translate(sx2,sy2); ctx.scale(sc,sc);
-    /* GAMBE COME CAPSULE, non come pastiglie.
-       Una gamba che calcia disegnata come un'ellisse spostata a diciotto
-       unita' da un busto largo otto e' un'ellisse che GALLEGGIA: nella
-       striscia si vedeva una pastiglia lime staccarsi dal corpo, andare a
-       destra e tornare. Una capsula — un segmento con i capi tondi — parte
-       sempre dall'ANCA e arriva dove arriva il piede: la gamba si ALLUNGA
-       invece di staccarsi, e a gesto finito e' di nuovo corta.
-       Costa un contorno per tutt'e due invece di due riempimenti. */
-    const pAp = -4+arrivo-1.8*car;                  // piede d'appoggio
-    const pTi =  4+kick;                            // piede che calcia
-    const pTiY = 14.0-Math.max(0,kick)*0.42;
-    ctx.strokeStyle=c2; ctx.lineWidth=7.0; ctx.lineCap='round';
-    ctx.beginPath();
-    ctx.moveTo(-3.4,2.0); ctx.lineTo(pAp,14.0);
-    ctx.moveTo( 3.4,2.0); ctx.lineTo(pTi,pTiY);
-    ctx.stroke();
-    /* le due punte scure delle scarpe: dicono dove FINISCE la gamba, ed e'
-       quello che fa leggere la corsa di un piede invece di un'ombra */
-    ctx.fillStyle='#15181a';
-    ctx.beginPath();
-    ctx.moveTo(pAp+2.1,15.4); ctx.arc(pAp,15.4,2.1,0,6.2832);
-    ctx.moveTo(pTi+2.1+Math.max(0,kick)*0.10,pTiY+1.4); ctx.arc(pTi+Math.max(0,kick)*0.10,pTiY+1.4,2.1,0,6.2832);
-    ctx.fill();
-    ctx.lineCap='butt';
-    /* BUSTO: si torce, si schiaccia, e la scala e' l'ultima trasformazione */
-    ctx.save();
-    ctx.rotate(torsione);
-    ctx.scale(1/sqs,sqs);
-    ctx.fillStyle=c1;
-    ctx.beginPath(); ctx.ellipse(0,0,8.0,10,0,0,6.2832); ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,.62)'; ctx.lineWidth=1.9; ctx.stroke();
-    motivoBusto(8.0,10,(TEAMPAT[D.shooter]|0),c2);
-    /* il bisello: filo caldo dal lato della luce, gemello freddo dall'altro.
-       Stesse ragioni e stessi valori del portiere. */
-    ctx.strokeStyle='rgba(20,30,58,.50)'; ctx.lineWidth=2.4;
-    ctx.beginPath(); ctx.ellipse(0,0,8.0,10,0,Math.PI*0.05,Math.PI*0.72); ctx.stroke();
-    ctx.strokeStyle='rgba(255,232,186,.72)'; ctx.lineWidth=2.6;
-    ctx.beginPath(); ctx.ellipse(0,0,8.0,10,0,Math.PI*1.05,Math.PI*1.72); ctx.stroke();
-    /* BRACCIA IN CONTROFASE alle gambe; il braccio OPPOSTO a quello che
-       calcia si alza durante la carica ed e' l'unica parte dell'anticipo
-       che si vede sopra il busto */
-    const b1=-1+2.2*passo*(1-passo)*4, b2=-1-2.6*car-1.6*clamp(kick/14,0,1);
-    ctx.fillStyle=c2;
-    ctx.beginPath();
-    ctx.moveTo(-6.6+2.6,b1); ctx.ellipse(-6.6,b1,2.6,5.4,0,0,6.2832);
-    ctx.moveTo( 6.6+2.6,b2); ctx.ellipse( 6.6-0.8*car,b2,2.6,5.4,0,0,6.2832);
-    ctx.fill();
+    /* la clip e la sua fase: carica su poseT, frustata e seguito su rt */
+    let clipS, uS;
+    if(!moto){ clipS='fermo'; uS=0.12; }
+    else if(ris){
+      clipS='tiro';
+      /* il seguito si consuma in nove decimi, non in mezzo secondo: il
+         corpo deve essere ancora NEL gesto quando la palla trova il sacco
+         (rt 0,58), non gia' tornato sull'attenti */
+      uS = rt<0.14 ? 0.35+0.11*(rt/0.14)
+                   : 0.46+0.52*clamp((rt-0.14)/0.90,0,1);
+    }else if(D.phase==='power'||D.phase==='wait'){
+      clipS='tiro'; uS=0.35*car;
+    }else{
+      clipS='fermo'; uS=(G.pulse*0.5)%1;
+    }
+    const hbS=sc*34;
+    DUEL_RIG_S.team=D.shooter;
+    /* di spalle ma di TRE QUARTI (yaw 0,5 ~ 29 gradi): la clip del calcio
+       vive nel piano sagittale e a yaw zero carica e frustata spariscono
+       dietro la schiena — l'angolo della rincorsa vera le fa leggere */
+    Rig3D.disegna(ctx, sx2, py2, hbS, 0.5, 'bassa', clipS,
+                  uS/Rig3D.CLIPS[clipS].freq, rigLook(DUEL_RIG_S), true);
     /* numero sulla schiena: e' di spalle, il numero e' cio' che si vede */
-    ctx.fillStyle='rgba(244,247,241,.94)';
-    ctx.beginPath(); ctx.arc(0,-1,3.6,0,6.2832); ctx.fill();
-    ctx.fillStyle='rgba(8,16,11,.96)';
-    ctx.font='900 5px '+FONT_N; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('10',0,-0.7);
-    ctx.restore();
-    /* la TESTA entra nella torsione per prima e con piu' escursione del
-       busto: e' lontana da tutto e non ha vincoli */
-    ctx.fillStyle='#2a1d13';
-    ctx.beginPath(); ctx.arc(torsione*9.0,-13+bobC*0.4,5.0,0,6.2832); ctx.fill();
-    ctx.restore();
+    {
+      const T=Rig3D.torso();
+      const nx=(T.x0+T.x1)*0.5, ny=(T.y0+T.y1)*0.5;
+      ctx.font='900 '+Math.max(8,Math.round(hbS*0.17))+'px '+FONT_N;
+      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineJoin='round';
+      ctx.strokeStyle='rgba(8,16,11,.88)'; ctx.lineWidth=Math.max(1.7,hbS*0.040);
+      ctx.strokeText('10', nx, ny);
+      ctx.fillStyle='#f4f7f1';
+      ctx.fillText('10', nx, ny);
+      ctx.textBaseline='alphabetic';
+    }
   }
 
   /* ---- PALLONE ---- */
@@ -17849,8 +17870,14 @@ const Tut={
     { k:'slide', kb:'In difesa premi <b>Z</b>: scivolata (prima met&agrave; = rubata pulita)', tc:'Senza palla: <b>CONTRASTA</b>, o flick sul portatore' },
   ],
   t:0, tot:0,
+  /* IL TUTORIAL E' ONESTO: ogni suggerimento si spegne quando il gesto
+     che insegna RIESCE, anche se e' riuscito prima che il suo passo
+     arrivasse. `fatti` ricorda i gesti gia' compiuti: un passo che
+     insegnerebbe un gesto gia' fatto viene saltato in avanti — nessuno
+     si sente dire "rilascia il dito" dopo che ha gia' passato tre volte. */
+  fatti:{},
   start(){
-    this.active=true; this.step=0; this.t=0; this.tot=0;
+    this.active=true; this.step=0; this.t=0; this.tot=0; this.fatti={};
     /* la quota della barra la decide drawHUD fotogramma per fotogramma
        (mai sui cartelloni): qui si azzera il ricordo della partita prima */
     this._bot=-1; ui.tut.style.bottom='';
@@ -17882,6 +17909,9 @@ const Tut={
   },
   avanza(){
     this.t=0; this.step++;
+    /* i passi il cui gesto e' gia' riuscito si saltano: il suggerimento
+       di un gesto gia' compiuto e' rumore, non insegnamento */
+    while(this.step<this.steps.length && this.fatti[this.steps[this.step].k]) this.step++;
     if(this.step>=this.steps.length) this.finish(false);
     else this.refresh();
   },
@@ -17896,7 +17926,11 @@ const Tut={
     ui.tutText.innerHTML=this.steps[this.step][InputPref.touch?'tc':'kb'];
   },
   notify(k){
-    if(!this.active || !this.steps[this.step] || this.steps[this.step].k!==k) return;
+    if(!this.active) return;
+    /* il gesto riuscito si registra SEMPRE, anche fuori dal suo passo:
+       cosi' il suggerimento di quel gesto non comparira' mai piu' */
+    this.fatti[k]=true;
+    if(!this.steps[this.step] || this.steps[this.step].k!==k) return;
     Audio5.beep(760);
     this.avanza();
   },
