@@ -57,3 +57,6 @@ bozze-tabellone/*
 
 # la sandbox del rig 3D: si versionano i sorgenti, non le tavole
 bozze-rig3d/*.png
+
+# le istantanee del freeze-frame test: si rigenerano con strumenti/istantanea.js
+istantanee*/
