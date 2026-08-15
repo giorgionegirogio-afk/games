@@ -40,6 +40,11 @@
          node strumenti/prestazione.js             confronta con il riferimento
          node strumenti/prestazione.js --freno 4   il costo vero, senza tetto
          node strumenti/prestazione.js --tolleranza 30
+         node strumenti/prestazione.js --taglia 11 la partita 11 contro 11
+                                                   (confrontata con lo STESSO
+                                                   riferimento della base:
+                                                   il mondo grande deve stare
+                                                   dentro la stessa tolleranza)
    ===================================================================== */
 const fs = require('fs');
 const path = require('path');
@@ -70,6 +75,10 @@ const RIFERIMENTO = path.join(__dirname, 'prestazione-base.json');
   const tolleranza = +arg('tolleranza', 25);   // per cento di crescita ammessa
   const freno = +arg('freno', 1);
   const sec = +arg('sec', 10);
+  const taglia = +arg('taglia', 5);            // 5 (base) | 7 | 11
+  /* il riferimento e' UNO e sta sulla base: fissarlo su una taglia grande
+     lo farebbe mentire per sempre (rischio dichiarato nel piano) */
+  if (fissa && taglia !== 5) { console.error('--fissa vale solo sulla taglia base (5)'); process.exit(1); }
   const srv = await servi();
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 915, height: 412 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'it-IT' });
@@ -79,11 +88,19 @@ const RIFERIMENTO = path.join(__dirname, 'prestazione-base.json');
   await pag.goto(`http://127.0.0.1:${srv.porta}/CALCETTO-il-gioco.html`, { waitUntil: 'load' });
   await pag.waitForFunction('window.__test !== undefined', null, { timeout: 20000 });
   await pag.waitForTimeout(600);
-  await pag.evaluate(() => {
+  await pag.evaluate((tg) => {
     const t = window.__test;
     t.dismissSplash && t.dismissSplash();
-    t.startMatch(1, 1); t.setCpuVsCpu(true);
-  });
+    /* la firma a due argomenti resta quella di sempre: la taglia entra
+       solo come opzione esplicita, cosi' il riferimento base non si muove */
+    if (tg === 5) t.startMatch(1, 1); else t.startMatch(1, 1, { size: tg });
+    t.setCpuVsCpu(true);
+  }, taglia);
+  if (taglia !== 5) {
+    const tgVera = await pag.evaluate(() => window.__test.taglia);
+    if (tgVera !== taglia) { console.error(`taglia richiesta ${taglia}, il gioco risponde ${tgVera}`); process.exit(1); }
+    console.log(`scenario: partita ${taglia} contro ${taglia}`);
+  }
   await pag.waitForTimeout(1200);
 
   /* il freno si tira DOPO l'avvio: quello che ci interessa e' il costo

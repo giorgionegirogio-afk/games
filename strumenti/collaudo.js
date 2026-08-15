@@ -20,7 +20,11 @@ const RADICE = path.resolve(__dirname, '..');
 const esiti = [];
 function verifica(ok, testo, dettaglio) {
   esiti.push({ ok: !!ok, testo });
-  console.log((ok ? '  OK   ' : '  NO   ') + testo + (ok || !dettaglio ? '' : '\n         ' + dettaglio));
+  /* il dettaglio si stampa quando il controllo FALLISCE — e anche quando
+     si chiede a mano con DETTAGLI=1, che serve a chi sta tarando un colore
+     e ha bisogno di vedere i numeri anche mentre il cancello e' verde */
+  const mostra = (!ok || process.env.DETTAGLI) && dettaglio;
+  console.log((ok ? '  OK   ' : '  NO   ') + testo + (mostra ? '\n         ' + dettaglio : ''));
 }
 
 const TIPI = {
@@ -320,13 +324,40 @@ async function calcetto(browser, srv) {
        e la mediana la assorbe — ed era gia' cosi' per l'ultima fila
        della finestra vecchia;
      - ERBA: un anello fra 30 e 42 unita' dal giocatore, scartando i punti
-       vicini a un altro corpo, alla palla o all'ombra portata (che cade
-       in basso a destra, +4,2/+7,8) e i punti fuori dal campo o sotto le
-       fasce del tabellone. Il riquadro di esclusione attorno ai corpi e'
-       ALZATO per il rig (le figure adesso si estendono fino a ~-24,5
-       sopra il centro, testa compresa): centro verticale a +2 e
-       semialtezza 28, cosi' l'anello non campiona mai la testa di un
-       ALTRO giocatore scambiandola per erba;
+       vicini a un altro corpo, alla palla o all'ombra portata, e i punti
+       fuori dal campo o sotto le fasce del tabellone. Il riquadro di
+       esclusione attorno ai corpi e' ALZATO per il rig (le figure adesso
+       si estendono fino a ~-24,5 sopra il centro, testa compresa): centro
+       verticale a +2 e semialtezza 28, cosi' l'anello non campiona mai la
+       testa di un ALTRO giocatore scambiandola per erba;
+
+     L'OMBRA NON SI INCOLLA PIU' A MANO, E L'ANELLO GUARDA A OVEST.
+     Fino alla passata sulla luce l'ombra portata era un ovale corto
+     gettato di (+4,2 / +7,8) e bastava un riquadro |dx|<26, |dy|<22 per
+     tenerla fuori dai campioni d'erba. Quei numeri stavano scritti QUI,
+     a mano, mentre il gioco li teneva scritti per conto suo: due copie
+     della stessa verita', cioe' una verita' che prima o poi diverge.
+     Con il sole radente l'ombra e' diventata lunga ottantotto unita' —
+     tre volte e mezza quel riquadro — e attraversa gli anelli di
+     campionamento degli ALTRI giocatori. Un cancello che misura l'ombra
+     e la chiama erba non fallisce: restituisce un numero FALSO, e falso
+     in verde, che e' il modo peggiore di sbagliare.
+     Due rimedi, e valgono insieme:
+     (a) la geometria la DICHIARA il gioco (window.__test.ombraCapsula) e
+         questo strumento la LEGGE. Non possono piu' divergere, e chi
+         allunghera' ancora l'ombra sposta il cancello con lei senza
+         toccare una riga qui. L'esclusione e' una CAPSULA lungo il
+         versore del sole, lunga quanto l'ombra dichiarata, e vale per
+         l'ombra di OGNI giocatore in campo, non solo di quello
+         campionato;
+     (b) l'anello d'erba si campiona SOLO nell'arco di 180 gradi rivolto
+         a OVEST, cioe' verso il sole. Le ombre vanno tutte a est per
+         costruzione: a ovest non puo' caderci nessuna. Restano campioni
+         abbondanti anche con ventidue ombre lunghe in campo, quindi non
+         scatta nemmeno il controllo «pochi campioni non e' un esito
+         buono» qui sotto. Il campionamento resta imparziale perche' il
+         gradiente termico del manto e' quasi piatto sulle ottantaquattro
+         unita' di un anello (il campo ne e' largo millecentocinquanta);
      - il colore rappresentativo e' la MEDIANA per canale dei campioni:
        regge le righe di gesso, le due bande di tosatura e la grana senza
        farsi trascinare da una minoranza di pixel;
@@ -368,6 +399,24 @@ async function calcetto(browser, srv) {
       const FW = 1150, FH = 560;             // campo logico
       const maglia = [[], []], erba = [[], []];
       let fotogrammi = 0;
+      /* la capsula d'ombra dichiarata dal GIOCO: versore, lunghezza
+         massima e mezza larghezza. Se un giorno l'hook sparisse si
+         ricade su una capsula generosa invece che su numeri finti. */
+      const OMB = (t.ombraCapsula && t.ombraCapsula()) ||
+                  { ux: 0.9406, uy: 0.3402, l0: 0, l1: 140, semiCorto: 7.6, piedeX: 4.2, piedeY: 7.8 };
+      /* distanza di un punto dal SEGMENTO d'ombra di q: e' la capsula */
+      const dentroOmbra = (qx, qy, wx, wy) => {
+        const ax = qx + OMB.piedeX, ay = qy + OMB.piedeY;
+        const rx = wx - ax, ry = wy - ay;
+        let t2 = rx * OMB.ux + ry * OMB.uy;          // proiezione sull'asse
+        if (t2 < OMB.l0) t2 = OMB.l0;
+        if (t2 > OMB.l1) t2 = OMB.l1;
+        const px = ax + OMB.ux * t2, py = ay + OMB.uy * t2;
+        /* la mezza larghezza cresce un poco verso la punta (la penombra
+           si allarga): un margine, non una misura fine */
+        const semi = OMB.semiCorto * 1.6 + 4;
+        return Math.hypot(wx - px, wy - py) < semi;
+      };
 
       /* piu' fotogrammi e piu' giocatori: un solo omino su una sola zolla
          sarebbe un aneddoto, non una misura */
@@ -411,15 +460,23 @@ async function calcetto(browser, srv) {
           for (const r of [30, 34, 38, 42]) {
             for (let ang = 0; ang < 360; ang += 15) {
               const rad = ang * Math.PI / 180;
-              const wx = p.x + Math.cos(rad) * r, wy = p.y + Math.sin(rad) * r;
+              const cx = Math.cos(rad), cy = Math.sin(rad);
+              /* SOLO L'ARCO A OVEST, cioe' verso il sole: le ombre vanno
+                 tutte a est per costruzione e a ovest non ne cade nessuna */
+              if (cx * OMB.ux + cy * OMB.uy > 0) continue;
+              const wx = p.x + cx * r, wy = p.y + cy * r;
               if (wx < 8 || wx > FW - 8 || wy < 8 || wy > FH - 8) continue;
               let libero = true;
               for (const q of t.players) {
                 if (q.out > 0) continue;
                 if (q !== p && Math.hypot(q.x - wx, q.y - wy) < 30) { libero = false; break; }
-                /* il riquadro copre corpo+ombra ANCHE in altezza: la figura
-                   del rig sale fino a ~-24,5 (testa) e l'ombra scende a +20 */
-                if (Math.abs(wx - (q.x + 4.2)) < 26 && Math.abs(wy - (q.y + 2)) < 28) { libero = false; break; }
+                /* il riquadro copre il CORPO anche in altezza: la figura
+                   del rig sale fino a ~-24,5 (testa) */
+                if (Math.abs(wx - q.x) < 20 && Math.abs(wy - (q.y + 2)) < 28) { libero = false; break; }
+                /* e la capsula copre l'OMBRA PORTATA di ogni giocatore,
+                   non solo di quello campionato: con ottantotto unita' di
+                   lunghezza le ombre altrui attraversano questo anello */
+                if (dentroOmbra(q.x, q.y, wx, wy)) { libero = false; break; }
               }
               if (!libero) continue;
               if (Math.hypot(t.ball.x - wx, t.ball.y - wy) < 24) continue;

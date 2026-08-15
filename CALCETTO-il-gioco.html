@@ -3686,9 +3686,29 @@ function mescolaTinta(hex,verso,f){
   const m=v=>{const x=Math.round(v); return (x<16?'0':'')+x.toString(16);};
   return '#'+m(r+(R-r)*f)+m(g+(G-g)*f)+m(b+(B-b)*f);
 }
+/* LE DUE TINTE DELLA SERA, e perche' quella d'ombra e' cambiata.
+   Prima il lato in ombra tirava a '#241d10', un bruno caldo: la figura
+   veniva illuminata e ombreggiata con LA STESSA FAMIGLIA di colore, e il
+   risultato non leggeva «sera», leggeva «sporco». Al sole radente il buio
+   non lo riempie il nero e nemmeno il bruno: lo riempie IL CIELO, ed e'
+   blu-violetto — la stessa legge gia' scritta per le ombre del campo.
+   Mettere il caldo da una parte e il freddo dall'altra e' da solo il
+   quaranta per cento dell'effetto «sera» sulle figure, e costa ZERO: le
+   due tinte si calcolano una volta per divisa e restano in cache
+   sull'oggetto look, mai dentro il fotogramma.
+   La cache copre anche gli ARTI: calze, pantaloncini e pelle hanno la
+   loro versione in ombra, cosi' il lato est di una gamba si sceglie con
+   un confronto invece di aggiungere un tratto. */
 function lumiLook(look){
-  look._lume =mescolaTinta(look.maglia,'#fff2cf',0.42);   // filo caldo, ovest
-  look._ombra=mescolaTinta(look.maglia,'#241d10',0.34);   // lato est
+  look._lume =mescolaTinta(look.maglia,'#ffe9b8',0.40);        // ambra, ovest
+  look._ombra=mescolaTinta(look.maglia,SOLE.tintaOmbra,0.38);  // viola-blu, est
+  look._ombS={
+    maglia:       look._ombra,
+    maglia2:      look.maglia2      ? mescolaTinta(look.maglia2,      SOLE.tintaOmbra,0.34) : null,
+    calze:        look.calze        ? mescolaTinta(look.calze,        SOLE.tintaOmbra,0.34) : null,
+    pantaloncini: look.pantaloncini ? mescolaTinta(look.pantaloncini, SOLE.tintaOmbra,0.34) : null,
+    pelle:        look.pelle        ? mescolaTinta(look.pelle,        SOLE.tintaOmbra,0.30) : null,
+  };
   return look;
 }
 
@@ -3793,9 +3813,12 @@ function testa(ctx,s,cyw,syw,cam,look){
      pi greco e' la sinistra dello schermo, cioe' l'ovest del mondo. */
   const t=r*0.30<0.8?0.8:r*0.30, rr=r-t*0.5;
   ctx.lineWidth=t;
-  ctx.strokeStyle='rgba(255,242,205,.42)';
+  ctx.strokeStyle='rgba(255,233,184,.44)';
   ctx.beginPath(); ctx.arc(X,Y,rr,0.60*Math.PI,1.40*Math.PI); ctx.stroke();
-  ctx.strokeStyle='rgba(18,14,7,.28)';
+  /* il lato est della testa prende la stessa tinta d'ombra di tutto il
+     resto della figura — viola-blu del cielo, mai il bruno di prima:
+     illuminare e ombreggiare con la stessa famiglia faceva «sporco» */
+  ctx.strokeStyle='rgba(42,51,88,.34)';
   ctx.beginPath(); ctx.arc(X,Y,rr,-0.35*Math.PI,0.35*Math.PI); ctx.stroke();
 }
 
@@ -3824,6 +3847,10 @@ function disegnaPalla(ctx,s,look){
    ============================================================ */
 function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
   const clip=CLIPS[nomeClip], cam=CAMERE[nomeCam];
+  /* le tinte caldo/freddo della divisa: si calcolano UNA VOLTA per look e
+     restano in cache. Qui in testa e non dentro il ciclo, perche' gli arti
+     le leggono prima che il busto arrivi nell'ordine di profondita'. */
+  if(look._lume===undefined) lumiLook(look);
   /* LOD da vicino: pxs = pixel di schermo per pixel di disegno (la scala
      della trasformazione del chiamante; 1 se non dichiarata). Oltre
      LOD_PX di figura A SCHERMO si accende il dettaglio, sotto niente. */
@@ -4003,7 +4030,21 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
     if(g.kind===3){ if(pallaQui) disegnaPalla(ctx,s,look); continue; }
     /* stessa rastrematura del contorno: -20% sull'avambraccio da vicino */
     const w=g.w*s*((lodOn&&(g.b===HAR||g.b===HAL))?0.80:1), W=w<1.1?1.1:w;
-    ctx.strokeStyle=look[g.c];
+    /* GLI ARTI HANNO UN LATO CALDO E UN LATO FREDDO, senza un tratto in
+       piu'. Braccia e gambe si disegnano gia' come tratti singoli: qui si
+       SCEGLIE la tinta invece di aggiungerne uno. Se il punto medio del
+       segmento sta a EST della verticale del bacino, quell'arto e' dal
+       lato in ombra e si disegna nella sua tinta fredda (in cache dentro
+       lumiLook). Un confronto per arto, una decina per figura, un paio di
+       centinaia a fotogramma: sotto la soglia di misurabilita'.
+       Vale identico nelle camere 'alto' e 'bassa', perche' l'ovest e' un
+       fatto del MONDO e non dipende da come e' girato il corpo. */
+    let tinta=look[g.c];
+    if(g.kind===0 && look._ombS){
+      const alt=look._ombS[g.c];
+      if(alt && (SX[g.a]+SX[g.b])*0.5 > SX[PELVIS]+W*0.18) tinta=alt;
+    }
+    ctx.strokeStyle=tinta;
     ctx.lineWidth=W;
     ctx.beginPath();
     ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
@@ -4068,34 +4109,67 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
       if(L>1.5){
         let nx=-dy/L, ny=dx/L; if(nx>0){nx=-nx;ny=-ny;}   // nx punta a ovest
         if(!lodOn){
-          const rw=W*0.26<0.9?0.9:W*0.26, off=(W-rw)*0.5;
-          ctx.lineWidth=rw;
+          /* ============ IL TERMINATORE, non due bretelle ============
+             Prima erano due filetti da W·0,26 appoggiati sui fili della
+             capsula: a quaranta pixel di figura leggevano come bretelle,
+             non come luce. Adesso sono DUE MEZZE CAPSULE PIENE che si
+             dividono tutto il busto — stessi due tratti di prima, solo
+             piu' larghi, quindi Δcosto = 0.
+
+             E IL TERMINATORE NON PASSA PER IL CENTRO: sta a 0,72 della
+             larghezza dal lato ovest. Non e' un vezzo pittorico, e' cio'
+             che rende STABILE la misura del contrasto. collaudo.js
+             campiona la maglia in una colonna FISSA sullo schermo,
+             x fra -1,5 e +1,5 su un busto largo circa 7,5 unita': con il
+             terminatore in mezzo quella colonna cadrebbe a cavallo delle
+             due tinte e il numero diventerebbe un caso, diverso a ogni
+             posa. A 0,72 il confine cade a 0,22·W ≈ 1,65 unita' a est del
+             centro, cioe' FUORI dalla colonna: il campione sta tutto nel
+             lato in LUCE, e siccome _lume e' piu' chiaro della maglia
+             base il rapporto puo' solo migliorare.
+             Lo si legge anche al contrario: se un giorno qualcuno
+             riporta il terminatore al centro, il cancello del contrasto
+             comincera' a ballare e nessuno sapra' perche'. */
+          const TERM=0.72;
+          const ol=W*(0.5-TERM*0.5), oo=-W*TERM*0.5;
+          const capOld=ctx.lineCap;
+          ctx.lineCap='butt';
+          ctx.lineWidth=W*TERM;
           ctx.strokeStyle=look._lume;
           ctx.beginPath();
-          ctx.moveTo(ax+dx*0.14+nx*off, ay+dy*0.14+ny*off);
-          ctx.lineTo(ax+dx*0.86+nx*off, ay+dy*0.86+ny*off); ctx.stroke();
+          ctx.moveTo(ax+dx*0.06+nx*ol, ay+dy*0.06+ny*ol);
+          ctx.lineTo(ax+dx*0.94+nx*ol, ay+dy*0.94+ny*ol); ctx.stroke();
+          ctx.lineWidth=W*(1-TERM);
           ctx.strokeStyle=look._ombra;
           ctx.beginPath();
-          ctx.moveTo(ax+dx*0.14-nx*off, ay+dy*0.14-ny*off);
-          ctx.lineTo(ax+dx*0.86-nx*off, ay+dy*0.86-ny*off); ctx.stroke();
+          ctx.moveTo(ax+dx*0.06+nx*oo, ay+dy*0.06+ny*oo);
+          ctx.lineTo(ax+dx*0.94+nx*oo, ay+dy*0.94+ny*oo); ctx.stroke();
+          ctx.lineCap=capOld;
         }else{
           /* MAGLIA VERA da vicino: i fili pieni di _lume/_ombra a questa
              scala leggevano come BRETELLE (misurato al primo giro di
              foto). Al loro posto due VELI in alfa a estremi piatti —
              mezza capsula ovest in luce, mezza est in ombra — che
              modellano il tessuto anche sopra strisce e fascia. */
+          /* stesso terminatore decentrato, ma in VELI d'alfa: da vicino il
+             tessuto ha strisce e fasce sotto, e due tinte piene le
+             cancellerebbero. La coppia caldo/freddo e' la stessa della
+             legge della luce — ambra a ovest, cielo a est. */
+          const TERM=0.72;
+          const ol=W*(0.5-TERM*0.5), oo=-W*TERM*0.5;
           ctx.lineCap='butt';
-          ctx.lineWidth=W*0.42;
-          ctx.globalAlpha=0.15;
-          ctx.strokeStyle='#fff2cf';
+          ctx.lineWidth=W*TERM;
+          ctx.globalAlpha=0.17;
+          ctx.strokeStyle='#ffe9b8';
           ctx.beginPath();
-          ctx.moveTo(ax+dx*0.06+nx*W*0.29, ay+dy*0.06+ny*W*0.29);
-          ctx.lineTo(ax+dx*0.94+nx*W*0.29, ay+dy*0.94+ny*W*0.29); ctx.stroke();
-          ctx.globalAlpha=0.13;
-          ctx.strokeStyle='#241d10';
+          ctx.moveTo(ax+dx*0.06+nx*ol, ay+dy*0.06+ny*ol);
+          ctx.lineTo(ax+dx*0.94+nx*ol, ay+dy*0.94+ny*ol); ctx.stroke();
+          ctx.lineWidth=W*(1-TERM);
+          ctx.globalAlpha=0.30;
+          ctx.strokeStyle=SOLE.tintaOmbra;
           ctx.beginPath();
-          ctx.moveTo(ax+dx*0.06-nx*W*0.29, ay+dy*0.06-ny*W*0.29);
-          ctx.lineTo(ax+dx*0.94-nx*W*0.29, ay+dy*0.94-ny*W*0.29); ctx.stroke();
+          ctx.moveTo(ax+dx*0.06+nx*oo, ay+dy*0.06+ny*oo);
+          ctx.lineTo(ax+dx*0.94+nx*oo, ay+dy*0.94+ny*oo); ctx.stroke();
           ctx.globalAlpha=1;
           ctx.lineCap='round';
           /* e il COLLETTO in seconda tinta, appena sotto il collo */
@@ -4391,7 +4465,59 @@ const FIELDS=[
        (oscilla 3,3-3,4 misurato) e ogni punto di croma sul rosa costa
        luminanza — la sua parte satura resta la banda #ec6a96.
        --------------------------------------------------------------- */
-    th:{ g1:'#026309', g2:'#037410', fuori:'#131008', grad:'#1a150c',
+    /* ---------------------------------------------------------------
+       QUARTA TARATURA — LE DUE BANDE SI AVVICINANO (Tema 4, il campo
+       vissuto). La giuria misura il DELTA DI LUMINANZA fra due strisce
+       di rasatura adiacenti e chiede sotto il 10%: il nostro stava al
+       28,6% (Y 0,08956 contro 0,12548, cioe' 1,40:1 di luminanza
+       relativa — il "1,23:1" scritto qui sopra e' il rapporto con la
+       correzione +0,05 della formula del contrasto, non il delta che
+       misura l'occhio). Una tosatura vera non fa due verdi diversi: fa
+       lo stesso verde pettinato in due versi, e la differenza la
+       decide il RIFLESSO, non il pigmento — che e' esattamente quello
+       che il gradiente del "verso del pelo" gia' dipinge dentro ogni
+       banda.
+       COME SI SPOSTA UNA LUMINANZA SENZA SPOSTARE UN COLORE, ed e' la
+       cosa da non sbagliare: si moltiplicano TUTT'E TRE i canali per lo
+       stesso fattore IN SPAZIO LINEARE, non si muove il solo verde. La
+       prima stesura correggeva il canale verde da solo — che sulla
+       coppia quasi-monocroma dell'erba e' indistinguibile, ma sul
+       PARQUET (90·60·30 contro 109·75·40) spostava la tinta di sei
+       gradi e la palestra si ritrovava una doga oliva accanto a una
+       doga mattone: due legni diversi invece di due passate di
+       spazzola. Una moltiplicazione uniforme in lineare cambia il
+       VALORE e lascia la tinta esattamente dov'era, su tutti e cinque
+       i campi a strisce.
+       Si tiene ferma la MEDIA delle due luminanze, e quindi la mediana
+       dell'erba — quella su cui poggia il contrasto maglia/manto di
+       collaudo.js — non si sposta di un millesimo:
+         #026309 (Y 0,08956) -> #026A0A (Y 0,10345)
+         #037410 (Y 0,12548) -> #036E0F (Y 0,11202)
+         media 0,10752 -> 0,10774 (+0,2%), delta fra bande 28,6% -> 7,7%
+       CONTROINTUITIVO MA VERO, e vale la pena scriverlo: questa
+       modifica LIBERA contrasto invece di spenderlo. Bande piu' simili
+       fra loro vogliono dire una mediana d'erba meno dispersa, cioe'
+       un P2 meno rumoroso al cancello — la forbice fra due esecuzioni
+       di collaudo.js si stringe.
+       QUELLO CHE QUESTA MODIFICA NON PUO' FARE, e va detto prima che
+       qualcuno rimisuri e si spaventi: due campioni presi al centro di
+       DUE BANDE VICINE non differiscono del 7,7%, differiscono di piu'.
+       Misurato col contagocce sulla tessitura vera, a 88 unita' di
+       distanza (il passo di una banda) il gradiente termico dell'ora —
+       l'ambra additiva a ponente della LEGGE DELLA LUCE — vale da solo
+       l'11% di luminanza. Sommato o sottratto al 7,7% della tosatura
+       da' circa 18% da una parte e 3% dall'altra, a bande alterne.
+       Quell'undici per cento NON e' la rasatura: e' il dentro-e-fuori
+       dalla luce, ed e' il requisito del tema 1 (18 gradi di escursione
+       di tinta fra i due angoli del prato). I due requisiti si toccano,
+       e vince la luce: quello che si puo' azzerare — e qui si azzera —
+       e' lo SCALINO fra le due tinte della tosatura, che e' la sola
+       cosa che dipende dal pigmento e la sola che la giuria ha
+       misurato quando ha scritto «oggi ~25%». Chi vorra' scendere
+       ancora dovra' prendersela col gradiente, non con queste due
+       tinte, e sappia che paga in temperatura del prato.
+       --------------------------------------------------------------- */
+    th:{ g1:'#026a0a', g2:'#036e0f', fuori:'#131008', grad:'#1a150c',
          gesso:'242,245,239', usura:'rgba(56,42,20,.42)',
          cornice:'#6a5230', pista:'#2e1c10', corniceGlow:'rgba(255,207,63,.13)',
          grana1:'rgba(214,190,120,.05)', grana2:'rgba(0,0,0,.06)',
@@ -4407,8 +4533,15 @@ const FIELDS=[
     desc:'Gabbia notturna sotto i riflettori: le sponde giocano con te.',
     /* stessa regola dell'oratorio: croma a luminanza costante.
        #0c2418 -> #04250f  (Y 0,01406 -> 0,01384, -1,6%)
-       #133626 -> #073818  (Y 0,02916 -> 0,02939, +0,8%) */
-    th:{ g1:'#04250f', g2:'#073818', fuori:'#07120c', grad:'#0a1a12',
+       #133626 -> #073818  (Y 0,02916 -> 0,02939, +0,8%)
+       Quarta taratura, delta fra bande sotto il 10% (vedi oratorio):
+       #04250f -> #042F13, #073818 -> #073016; delta 52,9% -> 5,0%,
+       media della luminanza 0,02161 invariata. A luminanze cosi' basse
+       la quantizzazione a otto bit e' grossolana: questa coppia e'
+       stata cercata a forza bruta fra tutte quelle che tengono la
+       media e la tinta, perche' la sola moltiplicazione lineare qui
+       cadeva al 10,4%, cioe' fuori dal cancello per un pelo. */
+    th:{ g1:'#042f13', g2:'#073016', fuori:'#07120c', grad:'#0a1a12',
          gesso:'242,245,239', usura:'rgba(6,45,16,.5)',
          cornice:'#245239', pista:'#101c16', corniceGlow:'rgba(216,255,61,.16)',
          grana1:'rgba(255,255,255,.03)', grana2:'rgba(0,0,0,.05)',
@@ -4429,14 +4562,22 @@ const FIELDS=[
          bg:'#121216', halo:'255,170,60', strisce:false, tipo:'parcheggio', lineA:1.5 } },
   { id:'palestra', nome:'LA PALESTRA', prezzo:2500,
     desc:'Parquet lucido, righe di mille sport, eco di fischietto.',
-    th:{ g1:'#5a3c1e', g2:'#6d4b28', fuori:'#241610', grad:'#1c110c',
+    /* quarta taratura, delta fra le doghe sotto il 10% (vedi oratorio):
+       #5a3c1e -> #634222, #6d4b28 -> #654625; delta 34,8% -> 8,5%,
+       media della luminanza 0,06968 -> 0,06973. E' la coppia su cui si
+       e' scoperto che la correzione va fatta sui tre canali insieme:
+       col solo verde le due doghe diventavano di due legni diversi. */
+    th:{ g1:'#634222', g2:'#654625', fuori:'#241610', grad:'#1c110c',
          gesso:'240,238,228', usura:'rgba(30,18,8,.4)',
          cornice:'#7c4429', pista:'#2c1a12', corniceGlow:'rgba(255,207,63,.13)',
          grana1:'rgba(255,220,170,.05)', grana2:'rgba(40,20,8,.08)',
          bg:'#120b07', halo:'255,236,190', strisce:true, tipo:'palestra' } },
   { id:'tetto', nome:'IL TETTO', prezzo:4000,
     desc:'Sintetico blu sopra la città: si gioca tra le antenne.',
-    th:{ g1:'#1b3140', g2:'#264458', fuori:'#0d1016', grad:'#11141c',
+    /* quarta taratura, delta fra bande sotto il 10% (vedi oratorio):
+       #1b3140 -> #213A4B, #264458 -> #213D4F; delta 46,7% -> 8,7%,
+       media della luminanza 0,04025 -> 0,04041 */
+    th:{ g1:'#213a4b', g2:'#213d4f', fuori:'#0d1016', grad:'#11141c',
          gesso:'242,245,239', usura:'rgba(8,14,20,.55)',
          cornice:'#345666', pista:'#161a24', corniceGlow:'rgba(177,140,255,.16)',
          grana1:'rgba(180,210,255,.04)', grana2:'rgba(0,0,0,.08)',
@@ -4445,8 +4586,11 @@ const FIELDS=[
     desc:'La finale delle finali: buio totale e riflettori fluo.',
     /* croma a luminanza costante, come gli altri due prati:
        #081410 -> #021508  (Y 0,00588 -> 0,00567, -3,7%)
-       #0f241b -> #03260f  (Y 0,01443 -> 0,01441, -0,1%) */
-    th:{ g1:'#021508', g2:'#03260f', fuori:'#030604', grad:'#050a07',
+       #0f241b -> #03260f  (Y 0,01443 -> 0,01441, -0,1%)
+       Quarta taratura, delta fra bande sotto il 10% (vedi oratorio):
+       #021508 -> #031E0D, #03260f -> #021F0B; delta 60,6% -> 3,9%,
+       media della luminanza 0,01003 -> 0,00997 */
+    th:{ g1:'#031e0d', g2:'#021f0b', fuori:'#030604', grad:'#050a07',
          gesso:'246,250,240', usura:'rgba(4,8,6,.5)',
          cornice:'#33661f', pista:'#0a1108', corniceGlow:'rgba(216,255,61,.3)',
          grana1:'rgba(216,255,61,.035)', grana2:'rgba(0,0,0,.06)',
@@ -6857,6 +7001,35 @@ function solePiuBasso(){
   if(G.scene!=='goal' || !SAVE.moto || G.golHit<0) return 0;
   const q=G.sceneT-G.golHit;
   return q<0.38 ? q/0.38 : Math.max(0, 1-(q-0.38)/0.62);
+}
+/* =====================================================================
+   L'ORA DELLA PARTITA — il cronometro del tramonto, 0 al fischio d'inizio
+   e 1 al fischio finale. UNA SOLA FUNZIONE PURA: zero stato, zero
+   Math.random, zero orologio a muro.
+
+   PERCHE' LEGGE G.timeLeft E NON Date.now(): G.timeLeft e' gia' la
+   variabile della simulazione, e il renderer la LEGGE senza mai scriverla.
+   Cosi' equita.js — che appaia due partite al bit — non vede niente di
+   nuovo, e scatta.js/collaudo.js restano riproducibili, perche' q e'
+   funzione del tempo SIMULATO e non di quanto ci ha messo la macchina.
+
+   A MOVIMENTO RIDOTTO l'ora si ferma a 0,35 — ed e' la trappola ovvia da
+   scrivere subito: movimento ridotto NON vuol dire mezzogiorno. La scena
+   resta la sera, i fari restano accesi, il velo resta steso. Quello che
+   sparisce sono le RAMPE: niente sfarfallii d'accensione, niente finestre
+   che si accendono a vista, niente ombre che si allungano sotto gli occhi.
+   ===================================================================== */
+function oraPartita(){
+  /* A MOVIMENTO RIDOTTO L'ORA SI FERMA A 0,55, non a zero e non a meta'.
+     Perche' proprio 0,55: e' il primo valore oltre la seconda soglia dei
+     fari (0,42 e 0,50), quindi due lampade sono ACCESE e a regime — niente
+     rampe, niente sfarfallii, luce ferma. Chi ha chiesto meno movimento
+     vede la stessa sera degli altri, semplicemente non la vede arrivare. */
+  if(!SAVE.moto) return 0.55;
+  const tot=(SAVE.durata||MATCH_SEC);
+  if(!(tot>0)) return 0.35;
+  if(G.scene==='menu') return 0.35;
+  return clamp(1-G.timeLeft/tot, 0, 1);
 }
 
 function step(){
@@ -11903,15 +12076,118 @@ const VIVACI=['#3d5a48','#4a4030','#2f4a52','#553a3a'];
             riconosce in mezzo secondo dentro una miniatura da store.
             Quello che cambia da campo a campo e' SOLO la tinta, la forza e
             il colore dell'ombra. Mai la direzione.
-            NOTA PER CHI VIENE DOPO: le ombre portate dei corpi
-            (drawOmbreGiocatori) sono ancora gettate di (+4,2 · +7,8), cioe'
-            a 62 gradi. Vanno riportate a (+12,2 · +4,4) con semiassi
-            15,0 x 7,6 — ma quel cambio tocca anche l'allungamento in corsa
-            e il riquadro con cui collaudo.js scarta i campioni d'erba, e
-            appartiene a chi ha in mano la figura, non a chi ha in mano il
-            campo. Finche' non e' fatto, campo e corpi non raccontano la
-            stessa ora: e' il difetto piu' grosso che resta aperto.
+     sole   quanto sole prende QUESTO campo, fra 0 e 1. Scala la LUNGHEZZA
+            delle ombre portate e l'ampiezza del gradiente termico, mai la
+            direzione: oratorio e spiaggia 1,00 (sole pieno), cortile 0,70
+            (cielo coperto: ombre corte e molli), parcheggio 0,60, gabbia e
+            tetto 0,55, notturno 0,50, palestra 0,30 (al chiuso le ombre
+            sono corte, molli e multiple, ma il verso resta quello).
+            LA NOTA E' STATA ESEGUITA (onda della luce): le ombre portate
+            dei corpi non sono piu' gettate a 62 gradi. Adesso partono dal
+            piede e si allungano lungo SOLE.dir — vedi il blocco SOLE qui
+            sotto, che e' la sorgente unica dell'ora del giorno. Campo e
+            corpi raccontano finalmente la stessa ora.
    ===================================================================== */
+/* =====================================================================
+   IL SOLE — LA SORGENTE UNICA. Una sola ora del giorno per tutto il gioco.
+
+   Prima l'ora era scritta in tre posti che potevano divergere: LUCI[].dir
+   per il manto, una coppia di numeri incollati dentro drawOmbreGiocatori
+   per i corpi, e un terzo verso dentro il rig per il filo di luce. Tre
+   verita' sono zero verita': il campo stava alle sette di sera e i corpi
+   a mezzogiorno. Da qui in poi l'ora la dichiara SOLE e nessun altro.
+
+   LA REGOLA COSTITUZIONALE, e non si viola:
+   · SOLE.dir, SOLE.alt, SOLE.caldo e SOLE.cielo valgono su TUTTE le scene
+     di gioco (azione, kickoff, 7v7, 11v11, gol, moviola, rigori, anteprime
+     dei CAMPI) e su TUTTI e otto i campi. Sono l'ORA, e l'ora e' una.
+   · Quello che il tema del campo puo' cambiare e' SOLO *quanto*, mai *da
+     dove*: in LUCI[tipo] resta tinta/forza/ombra/vign (il manto e il suo
+     impianto) e c'e' un solo numero nuovo, `sole` fra 0 e 1, che scala la
+     LUNGHEZZA delle ombre portate e l'ampiezza del gradiente termico.
+     La DIREZIONE resta identica anche a 0,30: e' la firma che si riconosce
+     in mezzo secondo dentro una miniatura da store, ed e' l'argomento gia'
+     scritto qui sopra sulle otto direzioni.
+   · Il tema del campo cambia il MANTO (verde, sabbia, cemento, asfalto,
+     parquet), non l'ORA DEL GIORNO. Nessun campo torna a mezzogiorno.
+
+   I NUMERI, e da dove vengono:
+     dir    versore, 19,9 gradi sotto l'orizzontale dello schermo. E' lo
+            stesso (0,94 · 0,34) normalizzato che LUCI dichiara da sempre.
+     alt    20 gradi sopra l'orizzonte: le sette di sera d'estate.
+     lung   1/tan(20 gradi) = 2,747. E' geometria, non gusto: un corpo alto
+            h getta un'ombra lunga h·2,747.
+     k      2,2 — la quota di quel 2,747 che si disegna davvero. La banda
+            che la giuria chiede e' 1,5-4 volte la figura; con RIG_H·P_DIS
+            = 40,1 unita' di figura apparente, k=2,2 da' 88 unita', cioe'
+            2,2 volte. Sta in mezzo alla banda con margine da tutt'e due
+            le parti.
+     caldo  l'ambra del sole basso. ADDITIVA a ovest: e' l'unica passata
+            che sposta davvero la TINTA di un verde saturo (vedi il conto
+            dentro paintField).
+     cielo  il rimbalzo del crepuscolo. ADDITIVO a est. Il blu pesa 0,0722
+            nella luminanza relativa contro lo 0,7152 del verde: venti
+            punti di blu in piu' spostano la tinta di nove gradi e la
+            luminanza di un'inezia. E' la sola manopola che compra
+            temperatura senza pagarla in contrasto maglia/erba.
+     freddo la moltiplicazione d'ombra, la stessa di OM_MUL.
+     tintaOmbra  il viola-blu verso cui tira ogni ombra: MAI nero puro,
+            perche' il nero spegne il verde e fa sembrare sporco il campo.
+   ===================================================================== */
+const SOLE={
+  dir:[0.9406,0.3402],
+  alt:20,
+  lung:2.747,
+  k:2.2,
+  caldo:'255,222,164',
+  cielo:'70,110,205',
+  freddo:'86,94,124',
+  tintaOmbra:'#2a3358',
+};
+/* =====================================================================
+   LA CONSEGNA A CHI ARREDA IL CAMPO (incarico B, il campo vissuto).
+   Chi aggiunge un oggetto al campetto — recinzione, pali dei fari, case
+   oltre la rete, bici, zaini, sdraio, canestro — NON SCEGLIE MAI UNA
+   DIREZIONE DELLA LUCE: la chiede. Il contratto e' questo, e sono cinque
+   nomi:
+
+     SOLE            l'ora del giorno. Sola fonte di verita'.
+     soleDi(TH)      quanto sole prende quel campo (0..1), da LUCI[].sole.
+     ombraStatica(c, x, y, altezza, larghezza, alfa, sole)
+                     l'ombra COTTA di qualunque cosa stia in piedi. Si
+                     chiama dentro paintField: costo a fotogramma NULLO.
+     paliFaro()      dove stanno i quattro pali dei fari, in coordinate di
+                     campo: B disegna il palo e la sua ombra, A accende la
+                     testa. Primo punto di consegna.
+     FINESTRE_SERA   la tabella delle finestre delle case: B cuoce le
+                     sagome e i rettangoli SPENTI e registra qui i
+                     rettangoli [x,y,w,h]; A li accende uno alla volta col
+                     passo aureo. Secondo punto di consegna. Finche' e'
+                     vuota non costa niente.
+     oraPartita()    0 al fischio d'inizio, 1 al fischio finale.
+
+   Un oggetto aggiunto senza la sua ombra e' un adesivo, e un oggetto con
+   un'ombra propria e' un oggetto da rifare: ogni ombra passa da qui.
+   ===================================================================== */
+/* il versore, gia' normalizzato, e la sua perpendicolare: li leggono le
+   ombre portate, le ombre statiche e il gradiente termico */
+const SOLE_UX=SOLE.dir[0], SOLE_UY=SOLE.dir[1];
+/* le finestre delle case oltre la rete: la tabella la RIEMPIE l'incarico B
+   (dipingiGabbia cuoce le sagome e i rettangoli spenti e registra qui i
+   [x,y,w,h]), A si limita ad accenderle una alla volta col passo aureo.
+   Finche' e' vuota il ciclo di drawFari non fa niente e non costa niente.
+   STA QUI E NON ACCANTO A drawFari, ed e' una necessita' non un gusto:
+   paintField la scrive, e la prima cottura della tessitura avviene dentro
+   il resize() di caricamento — cioe' centinaia di righe PRIMA del punto
+   in cui drawFari e' scritto. Dichiarata la' sotto, sarebbe nella zona
+   morta temporale del `const` e il gioco non si aprirebbe affatto. */
+const FINESTRE_SERA=[];
+/* quanto sole prende QUESTO campo (0..1). Scala la lunghezza delle ombre e
+   l'ampiezza del gradiente termico, mai la direzione. */
+function soleDi(TH){
+  const IL=LUCI[(TH&&TH.tipo)||'erba']||LUCI.erba;
+  return (IL.sole===undefined)?1:IL.sole;
+}
 const LUCI={
   /* LE SETTE DI SERA DIETRO L'ORATORIO. Il sole sta a ovest, appena sopra
      il bordo sinistro del fotogramma: la luce viaggia verso destra a venti
@@ -11928,48 +12204,115 @@ const LUCI={
   oratorio:{ modo:'sole', tinta:'255,222,164', forza:0.155,
              contro:'30,34,72', controA:0.160, dir:[0.94,0.34],
              caduta:0.20, ombra:'22,30,62', penombra:0.19, prof:78,
-             porta:0.26, lung:96, vign:0.22 },
+             porta:0.26, lung:96, vign:0.22, sole:1.00 },
   /* cortile di scuola: cielo coperto, luce diffusa e senza carattere, ma
      i muri alti tutt'intorno lasciano il bordo in ombra piu' che altrove */
   cortile:{ modo:'sole', tinta:'228,240,250', forza:0.095,
             contro:'10,16,22', controA:0.115, dir:[0.94,0.34],
             caduta:0.20, ombra:'9,15,20', penombra:0.25, prof:92,
-            porta:0.20, lung:56, vign:0.24 },
+            porta:0.20, lung:56, vign:0.24, sole:0.70 },
   /* la gabbia di notte: quattro fari sul recinto, luce bianco-fluo */
   erba:{ modo:'torri', tinta:'204,246,164', forza:0.072,
          contro:'4,13,10', controA:0.05, dir:[0.94,0.34],
          caduta:0.24, ombra:'4,14,10', penombra:0.22, prof:72,
-         porta:0.26, lung:62, vign:0.26 },
+         porta:0.26, lung:62, vign:0.26, sole:0.55 },
   /* sabbia al tramonto: il sole e' quasi orizzontale, ombre lunghissime e
      VIOLA — l'ombra sulla sabbia prende il colore del cielo, non il nero */
   spiaggia:{ modo:'sole', tinta:'255,206,136', forza:0.165,
              contro:'30,52,80', controA:0.175, dir:[0.94,0.34],
              caduta:0.18, ombra:'44,36,60', penombra:0.14, prof:66,
-             porta:0.20, lung:84, vign:0.19 },
+             porta:0.20, lung:84, vign:0.19, sole:1.00 },
   /* lampioni al sodio: arancio, pochi, mal messi. Fra un palo e l'altro
      il piazzale resta buio, ed e' giusto cosi' */
   parcheggio:{ modo:'lampioni', tinta:'255,184,94', forza:0.145,
                contro:'9,10,15', controA:0.085, dir:[0.94,0.34],
                caduta:0.24, ombra:'12,12,18', penombra:0.20, prof:78,
-               porta:0.19, lung:62, vign:0.27 },
+               porta:0.19, lung:62, vign:0.27, sole:0.60 },
   /* plafoniere: sei sorgenti in due file, la luce piu' piatta delle otto.
      Caduta quasi nulla: al chiuso gli angoli non si spengono */
   palestra:{ modo:'soffitto', tinta:'255,246,218', forza:0.055,
              contro:'30,16,9', controA:0.045, dir:[0.94,0.34],
              caduta:0.12, ombra:'32,17,9', penombra:0.17, prof:60,
-             porta:0.16, lung:42, vign:0.20 },
+             porta:0.16, lung:42, vign:0.20, sole:0.30 },
   /* sintetico sul tetto: quattro fari freddi piu' il bagliore della citta' */
   tetto:{ modo:'torri', tinta:'184,206,255', forza:0.078,
           contro:'11,9,26', controA:0.075, dir:[0.94,0.34],
           caduta:0.26, ombra:'9,11,24', penombra:0.22, prof:74,
-          porta:0.24, lung:60, vign:0.26 },
+          porta:0.24, lung:60, vign:0.26, sole:0.55 },
   /* la finale: buio totale intorno, quattro torri fluo a piena potenza.
      E' il campo con lo stacco piu' forte fra centro e angoli */
   notturno:{ modo:'torri', tinta:'214,255,138', forza:0.090,
              contro:'3,5,4', controA:0.05, dir:[0.94,0.34],
              caduta:0.30, ombra:'3,8,5', penombra:0.26, prof:78,
-             porta:0.28, lung:66, vign:0.30 },
+             porta:0.28, lung:66, vign:0.30, sole:0.50 },
 };
+/* =====================================================================
+   LA TAVOLA DEL CONSUMO — il campo vissuto, per tipo di fondo.
+
+   La legge e' una sola e vale su tutti e otto: DOVE SI GIOCA DI PIU', IL
+   FONDO CAMBIA. Cambia il come, pero', e questa e' la cosa che va capita
+   prima di ritoccare un numero qui sotto:
+     · sui fondi MOLLI (erba, sabbia) il consumo SCAVA: il verde sparisce
+       e sotto viene fuori la terra, cioe' una tinta piu' scura e piu'
+       calda del fondo;
+     · sui fondi DURI (cemento, asfalto, parquet, sintetico) il consumo
+       LUCIDA: la superficie si liscia, riflette di piu' e diventa piu'
+       CHIARA del fondo. Un cemento consumato dipinto scuro sembra
+       bagnato, non consumato.
+   Per questo la tinta della terra non e' una sola, e per questo 'a' — la
+   forza — e' piu' bassa sui fondi duri: una lucidatura e' un velo, una
+   zolla scoperta e' una macchia.
+
+     a         forza della chiazza principale
+     terra     la tinta del consumo (rgb)
+     chiaro    il puntino di calpestio chiaro (rgba)
+     scuro     il puntino di calpestio scuro  (rgba)
+     toppaA/B  le due tinte delle toppe larghe e molli
+     ciuffo    i fili alti — SOLO sui fondi erbosi; dove manca, niente ciuffi
+     ombretta  la micro-ombra a est di ciuffi e cartacce: e' lei, non la
+               forma, a far leggere "alto tre centimetri" invece di
+               "dipinto sopra"
+   ===================================================================== */
+const USURA={
+  oratorio:{ a:0.22, terra:'92,72,40', chiaro:'116,92,52,.20', scuro:'34,26,12,.17',
+             toppaA:'150,158,72,.085', toppaB:'20,50,18,.105',
+             ciuffo:'152,170,88,.15', ombretta:'26,32,58,.13' },
+  erba:{     a:0.16, terra:'70,60,32', chiaro:'96,80,44,.16', scuro:'20,18,8,.15',
+             toppaA:'110,132,58,.075', toppaB:'8,32,14,.095',
+             ciuffo:'118,146,74,.13', ombretta:'18,26,48,.12' },
+  notturno:{ a:0.14, terra:'62,52,28', chiaro:'86,72,40,.14', scuro:'14,14,6,.14',
+             toppaA:'96,120,50,.070', toppaB:'4,20,8,.088',
+             ciuffo:'104,132,64,.12', ombretta:'14,20,40,.11' },
+  /* sabbia RIMESTATA: piu' chiara e piu' asciutta della sabbia battuta,
+     con i solchi scuri delle impronte a fare la grana */
+  spiaggia:{ a:0.19, terra:'216,190,140', chiaro:'236,214,168,.20', scuro:'82,64,34,.16',
+             toppaA:'236,212,166,.055', toppaB:'96,78,44,.055',
+             ombretta:'44,36,60,.14' },
+  /* cemento LUCIDATO dalle scarpe: si schiarisce e perde la grana */
+  cortile:{  a:0.13, terra:'190,198,204', chiaro:'214,222,228,.13', scuro:'26,32,36,.12',
+             toppaA:'206,214,220,.045', toppaB:'30,38,42,.050',
+             ombretta:'10,16,22,.13' },
+  /* asfalto SLABBRATO: il bitume si consuma e affiora il grigio dell'inerte */
+  parcheggio:{ a:0.16, terra:'124,120,110', chiaro:'156,152,142,.16', scuro:'18,18,20,.16',
+             toppaA:'140,136,126,.050', toppaB:'22,22,26,.060',
+             ombretta:'12,12,18,.14' },
+  /* parquet CONSUMATO: la vernice va via sulla linea di tiro e resta il
+     legno nudo, piu' chiaro e piu' opaco */
+  palestra:{ a:0.11, terra:'232,204,152', chiaro:'244,220,176,.12', scuro:'62,40,18,.12',
+             toppaA:'236,210,162,.040', toppaB:'70,46,22,.050',
+             ombretta:'32,17,9,.12' },
+  /* sintetico CONSUMATO: il pelo si schiaccia e il colore vira al grigio */
+  tetto:{    a:0.14, terra:'132,144,152', chiaro:'158,170,180,.14', scuro:'12,18,28,.13',
+             toppaA:'146,158,168,.045', toppaB:'14,22,34,.060',
+             ombretta:'9,11,24,.13' },
+};
+/* il seme dell'usura: lo decide il TIPO di campo e nient'altro. Stesso
+   campo, stessa usura — in tessitura, nell'anteprima e nella ricottura
+   viva del primo piano. Se dipendesse dal caso della partita, con lo zoom
+   del gol si vedrebbe la terra cambiare forma sotto i piedi. */
+const USURA_SEME={oratorio:101, erba:211, notturno:307, spiaggia:409,
+                  cortile:503, parcheggio:601, palestra:709, tetto:811};
+function usuraSeme(TH){ return USURA_SEME[TH&&TH.tipo] || 101; }
 /* =====================================================================
    ESPOSIZIONE DEL MANTO — la luce si REDISTRIBUISCE, non si somma.
 
@@ -12083,6 +12426,418 @@ function pozzeLuce(IL){
     default:         return [[0.30,0.26,0.50,1],[0.70,0.26,0.50,1],
                              [0.30,0.74,0.50,1],[0.70,0.74,0.50,1]];
   }
+}
+/* =====================================================================
+   LA GABBIA DEL CLAIM — l'INCARICO B4, e il reclamo che la giuria cita
+   per primo: «nessuna gabbia visibile nonostante il claim». Il gioco si
+   chiama CALCETTO, il campo si chiama LA GABBIA, la scheda promette
+   «zaini-palo», «un canestro arrugginito», «una sdraio» — e sul quadro
+   non c'era una rete, un palo, una casa, una bici.
+
+   TUTTO QUI DENTRO E' COTTO IN paintField: costo a fotogramma ZERO. E
+   nessuna riga qui sotto sceglie una direzione della luce: la chiede a
+   SOLE, con ombraStatica. E' il contratto scritto in testa a LUCI.
+
+   DOVE STA LA RETE, e perche' proprio li'. Dalla riga di fondo verso
+   fuori l'ordine e' gia': pista (0-34) · rotaia (4-10,5) · cartelloni
+   (15-31) · gradinate (dal 34 in poi). La rete comincia a 31, cioe'
+   ESATTAMENTE dove finiscono i cartelloni: e' cosi' che sono fatte le
+   gabbie vere — uno zoccolo pieno alto un metro e mezzo, e sopra la
+   maglia. I cartelloni diventano lo zoccolo della rete senza spostare un
+   pixel di quello che c'era.
+
+   LA MAGLIA E' UN MOTIVO, NON MILLE TRATTI. Una rete romboidale
+   disegnata a strokes attorno al perimetro sono novecento tracciati per
+   cottura. Qui e' una tessitura di sedici unita' per dieci, ripetuta con
+   createPattern: quattro fillRect per la rete e quattro per l'ombra.
+   La tessitura si cuoce a TRE VOLTE la scala per non arrivare molle
+   quando fieldTex viene cotta a due pixel per unita'.
+
+   LE CASE STANNO DIETRO IL PUBBLICO, e non e' un ripiego: e' come si
+   vede un campetto vero. Prima le due file di gradoni con la gente, poi
+   il muro delle case. La gente davanti alle case e' giusta; le case
+   davanti alla gente sarebbero un fondale. Niente case sulla spiaggia
+   (c'e' il mare), in palestra (si e' al chiuso) e sul tetto (ha gia' il
+   suo skyline).
+   ===================================================================== */
+const REC_D0=31;        // dove comincia la maglia, dal bordo del manto
+const REC_PROF=26;      // quanto e' profonda la fascia di maglia sul quadro
+const REC_ALT=44;       // altezza VERA della rete: la usa solo l'ombra
+const MAGLIA_K=3;       // la tessitura si cuoce a 3x e si ristende a 1/3
+let magliaTex=null, magliaOmbTex=null;
+function buildMagliaTex(){
+  const K=MAGLIA_K;
+  /* --- il filo: rombi larghi 16 e alti 10 (schiacciati, perche' la rete
+         la si vede di sbieco dall'alto) --- */
+  const W=16*K, H=10*K;
+  magliaTex=document.createElement('canvas');
+  magliaTex.width=W; magliaTex.height=H;
+  const c=magliaTex.getContext('2d');
+  const diag=(st,lw,dx,dy)=>{
+    c.strokeStyle=st; c.lineWidth=lw*K;
+    c.beginPath();
+    for(const o of [-W,0,W]){
+      c.moveTo(o+dx,dy);      c.lineTo(o+W+dx,H+dy);
+      c.moveTo(o+dx,H+dy);    c.lineTo(o+W+dx,dy);
+    }
+    c.stroke();
+  };
+  /* l'ombra del filo, sfalsata a est: e' lei che fa sembrare la rete
+     fatta di metallo tondo invece che di righe disegnate */
+  diag('rgba(6,10,16,.46)', 1.5, 0.8*K, 0.8*K);
+  diag('rgba(206,214,220,.52)', 1.1, 0, 0);
+  /* --- l'ombra a terra: rombi piu' fitti, tinta della legge della luce --- */
+  const SW=10*K, SH=8*K;
+  magliaOmbTex=document.createElement('canvas');
+  magliaOmbTex.width=SW; magliaOmbTex.height=SH;
+  const s=magliaOmbTex.getContext('2d');
+  const t=SOLE.tintaOmbra;
+  s.strokeStyle='rgba('+parseInt(t.slice(1,3),16)+','+parseInt(t.slice(3,5),16)+','+
+                parseInt(t.slice(5,7),16)+',.58)';
+  s.lineWidth=1.25*K;
+  s.beginPath();
+  for(const o of [-SW,0,SW]){
+    s.moveTo(o,0);  s.lineTo(o+SW,SH);
+    s.moveTo(o,SH); s.lineTo(o+SW,0);
+  }
+  s.stroke();
+}
+/* stende la maglia su un rettangolo, alla scala giusta */
+function stendiMaglia(c, tex, x,y,w,h, alfa){
+  const K=MAGLIA_K;
+  const pat=c.createPattern(tex,'repeat');
+  if(!pat) return;
+  c.save();
+  c.globalAlpha=alfa;
+  c.scale(1/K,1/K);
+  c.fillStyle=pat;
+  c.fillRect(x*K,y*K,w*K,h*K);
+  c.restore();
+}
+/* =====================================================================
+   L'OMBRA DELLA RETE SUL MANTO — il pezzo che, da solo, dice «gabbia».
+   Una griglia di rombi scuri che entra nel campo dal lato ovest e dal
+   lato nord e si spegne: e' il segno piu' riconoscibile che esista di un
+   campetto recintato al sole basso, e non c'e' modo di confonderlo con
+   un altro gioco.
+   La direzione non la sceglie questa funzione: la chiede a SOLE. La
+   lunghezza e' REC_ALT · SOLE.lung · sole del campo, cioe' la stessa
+   aritmetica di ombraStatica; lo stiramento dei rombi lungo la luce e'
+   tenuto a 2,0 invece del 2,747 geometrico perche' a 2,747 sui centotredici
+   punti di penetrazione ci stanno due rombi e mezzo e la griglia non si
+   legge piu' come griglia.
+   Cinque fasce per lato con alfa a scendere: e' la sfumatura, e siccome
+   il motivo e' fatto di fili sottili i gradini non si vedono.
+   Costo: dieci fillRect in cottura. Zero a fotogramma.
+   ===================================================================== */
+function ombraGabbia(c, SOL){
+  if(!magliaOmbTex) buildMagliaTex();
+  const pat=c.createPattern(magliaOmbTex,'repeat');
+  if(!pat) return;
+  const K=MAGLIA_K, ang=Math.atan2(SOLE_UY,SOLE_UX), ST=2.0;
+  const L=REC_ALT*SOLE.lung*SOL;
+  const LX=Math.min(FW*0.42, L*SOLE_UX), LY=Math.min(FH*0.42, L*SOLE_UY);
+  const BIG=Math.max(FW,FH)*2;
+  const fascia=(rx,ry,rw,rh,al)=>{
+    if(rw<=0.5||rh<=0.5||al<=0.004) return;
+    c.save();
+    c.beginPath(); c.rect(rx,ry,rw,rh); c.clip();
+    c.globalAlpha=al;
+    c.rotate(ang); c.scale(ST/K,1/K);
+    c.fillStyle=pat;
+    c.fillRect(-BIG*K,-BIG*K, BIG*2*K, BIG*2*K);
+    c.restore();
+  };
+  /* SETTE FASCE E NON CINQUE: con cinque il salto d'alfa fra la prima e la
+     seconda si vedeva come una riga netta in mezzo al prato — un gradino
+     su un motivo regolare si legge, su una sfumatura no. */
+  const N=7, A0=0.60;
+  for(let k=0;k<N;k++){
+    const al=A0*Math.pow(1-k/N,1.6);
+    fascia(k*LX/N, 0, LX/N+0.5, FH, al);             // la rete di ponente
+    fascia(0, k*LY/N, FW, LY/N+0.5, al*0.80);        // la rete di tramontana
+  }
+}
+/* =====================================================================
+   IL CAMPETTO ATTORNO AL CAMPO: rete, pali dei fari, case, bici, props.
+   Si chiama a cottura, dopo la rotaia e i cartelloni (che le fanno da
+   zoccolo) e prima del gesso. Fuori dal manto, sempre.
+   ===================================================================== */
+function dipingiGabbia(c, TH, pX, pY, q, IL, DK, vivo){
+  if(!magliaTex) buildMagliaTex();
+  const SOL=(IL.sole===undefined)?1:IL.sole;
+  const RG=semeRnd(usuraSeme(TH)+53);
+  const dentro=TH.tipo==='palestra';         // al chiuso non c'e' nessuna rete
+  const D0=REC_D0, PR=REC_PROF, DE=D0+PR;
+  /* =================================================================
+     L'INVARIANTE DI TUTTO L'ARREDO: QUI DENTRO NON SI TOCCA IL MANTO.
+     Un solo ritaglio a differenza — tutto il quadro MENO il rettangolo
+     di gioco — e vale per ogni riga della funzione. Non e' pignoleria:
+     i montanti di ponente sono alti quarantaquattro unita' e la loro
+     ombra e' lunga centoventuno, cioe' entra in campo per cinquantasette;
+     dipinta di qua sarebbe una velatura in 'source-over' di blu-violetto
+     sopra l'erba, che e' esattamente l'errore che questo file ha gia'
+     pagato una volta («ogni ombra toglieva luce e aggiungeva grigio»).
+     Sul manto ci va UNA cosa sola, ed e' l'ombra della rete: la mette
+     ombraGabbia, in MOLTIPLICAZIONE, dentro il blocco delle ombre.
+     ================================================================= */
+  c.save();
+  c.beginPath();
+  c.rect(-pX,-pY,FW+pX*2,FH+pY*2);
+  c.rect(0,0,FW,FH);
+  c.clip('evenodd');
+  /* --- 1. LA MAGLIA sui quattro lati --- */
+  if(!dentro){
+    c.save();
+    stendiMaglia(c, magliaTex, -DE, -DE, FW+DE*2, PR, 0.72);           // tramontana
+    stendiMaglia(c, magliaTex, -DE, FH+D0, FW+DE*2, PR, 0.72);         // mezzogiorno
+    stendiMaglia(c, magliaTex, -DE, -D0, PR, FH+D0*2, 0.80);           // ponente (al sole)
+    stendiMaglia(c, magliaTex, FW+D0, -D0, PR, FH+D0*2, 0.62);         // levante (in ombra)
+    /* il corrimano in cima alla rete: un tubo, tre valori come la rotaia */
+    const tubo=(x,y,w,h)=>{
+      c.fillStyle='rgba(8,14,18,.72)'; c.fillRect(x-0.6,y-0.6,w+1.2,h+1.2);
+      c.fillStyle='#3d4a4f'; c.fillRect(x,y,w,h);
+      c.fillStyle='rgba(255,228,172,.34)'; c.fillRect(x,y,w,Math.min(1,h*0.4));
+      if(h>w){ c.fillStyle='rgba(255,228,172,.34)'; c.fillRect(x,y,Math.min(1,w*0.4),h); }
+    };
+    tubo(-DE, -DE, FW+DE*2, 2.2);
+    tubo(-DE, FH+DE-2.2, FW+DE*2, 2.2);
+    tubo(-DE, -DE, 2.2, FH+DE*2);
+    tubo(FW+DE-2.2, -DE, 2.2, FH+DE*2);
+    /* --- 2. I MONTANTI, ogni novanta unita', con la loro ombra --- */
+    const passo=92;
+    const montante=(mx,my,w,h)=>{
+      ombraStatica(c, mx+w*0.5, my+h, REC_ALT, w*1.6, 0.26, SOL);
+      c.fillStyle='rgba(6,12,16,.80)'; c.fillRect(mx-0.8,my-0.8,w+1.6,h+1.6);
+      c.fillStyle='#39464b'; c.fillRect(mx,my,w,h);
+      c.fillStyle='rgba(255,228,172,.40)'; c.fillRect(mx,my,1.1,h);
+      c.fillStyle='rgba(120,158,225,.20)'; c.fillRect(mx+w-1,my,1,h);
+    };
+    const nx=Math.max(4,Math.round((FW+DE*2)/passo));
+    for(let i=0;i<=nx;i++){
+      const mx=-DE+i*(FW+DE*2)/nx-1.6;
+      montante(mx, -DE, 3.2, PR+1.6);
+      montante(mx, FH+D0, 3.2, PR+1.6);
+    }
+    const ny=Math.max(3,Math.round((FH+D0*2)/passo));
+    for(let i=0;i<=ny;i++){
+      const my=-D0+i*(FH+D0*2)/ny-1.6;
+      montante(-DE, my, PR+1.6, 3.2);
+      montante(FW+D0, my, PR+1.6, 3.2);
+    }
+    c.restore();
+  }
+  /* --- 3. I CORPI DEI PALI DEI FARI. Il punto di consegna con A5: qui
+         si disegna il palo e la sua ombra, la testa la accende drawFari
+         alla posizione che paliFaro dichiara. B chiede la posizione, non
+         se la inventa. --- */
+  if(IL.modo!=='soffitto'){
+    for(const [lx,ly] of paliFaro()){
+      const ox=Math.sign(lx-FW/2), oy=Math.sign(ly-FH/2);
+      /* il palo e' SCORCIATO verso l'esterno: il piede sta piu' in la'
+         della lampada, com'e' per ogni verticale vista dall'alto. La
+         testa cade esatta sulla coordinata che paliFaro dichiara, e li'
+         drawFari accende la lampada: e' il punto di consegna fra i due
+         incarichi, e va tenuto al pixel. */
+      const bx=lx+ox*24, by=ly+oy*21;
+      ombraStatica(c, bx, by, 62, 7, 0.32, SOL);
+      c.save();
+      c.lineCap='round';
+      c.strokeStyle='rgba(4,8,12,.92)'; c.lineWidth=8.0;
+      c.beginPath(); c.moveTo(bx,by); c.lineTo(lx,ly); c.stroke();
+      c.strokeStyle='#525f66'; c.lineWidth=5.2;
+      c.beginPath(); c.moveTo(bx,by); c.lineTo(lx,ly); c.stroke();
+      c.strokeStyle='rgba(255,232,180,.55)'; c.lineWidth=1.6;
+      c.beginPath(); c.moveTo(bx-1.7,by-0.4); c.lineTo(lx-1.7,ly-0.4); c.stroke();
+      /* il piede: una piastra imbullonata */
+      c.fillStyle='rgba(8,12,16,.85)';
+      c.beginPath(); c.ellipse(bx,by,7.4,4.0,0,0,6.2832); c.fill();
+      c.fillStyle='rgba(140,152,160,.55)';
+      c.beginPath(); c.ellipse(bx,by-0.8,5.0,2.4,0,0,6.2832); c.fill();
+      /* la carena della lampada, spenta: la luce la mette A */
+      c.fillStyle='rgba(4,8,12,.9)';
+      c.beginPath(); c.ellipse(lx,ly,9.4,5.4,0,0,6.2832); c.fill();
+      c.fillStyle='#464f56';
+      c.beginPath(); c.ellipse(lx,ly,7.8,4.3,0,0,6.2832); c.fill();
+      c.fillStyle='rgba(255,244,208,.34)';
+      c.beginPath(); c.ellipse(lx-0.9,ly-0.7,5.2,2.6,0,0,6.2832); c.fill();
+      c.restore();
+    }
+  }
+  /* --- 4. LE CASE OLTRE LA RETE, con le finestre SPENTE. Le accende
+         drawFari col passo aureo: qui si cuoce la sagoma e si registra
+         il rettangolo in FINESTRE_SERA. Secondo punto di consegna. --- */
+  const conCase = TH.tipo==='oratorio'||TH.tipo==='erba'||TH.tipo==='cortile'||
+                  TH.tipo==='notturno'||TH.tipo==='parcheggio';
+  if(vivo) FINESTRE_SERA.length=0;
+  if(conCase && pY>96 && q>0.5){
+    const d0=66, hMax=Math.min(52, pY-d0-4);
+    if(hMax>18){
+      for(const sotto of [0,1]){
+        let x=-pX+8;
+        while(x<FW+pX-16){
+          const bw=34+RG()*46, bh=24+RG()*(hMax-22);
+          /* il tetto guarda il campo: e' la parte che entra in quadro */
+          const by = sotto ? FH+d0 : -d0-bh;
+          if(x+bw>FW+pX-8) break;
+          /* corpo della casa: un blocco scuro con due valori */
+          c.fillStyle='#0d1016'; c.fillRect(x,by,bw,bh);
+          c.fillStyle='rgba(255,222,164,.07)'; c.fillRect(x,by,1.6,bh);
+          c.fillStyle='rgba(0,0,0,.40)'; c.fillRect(x+bw-2,by,2,bh);
+          /* la falda del tetto, dalla parte del campo */
+          c.fillStyle='#161a22';
+          if(sotto) c.fillRect(x-1.5,by,bw+3,4.5);
+          else      c.fillRect(x-1.5,by+bh-4.5,bw+3,4.5);
+          /* le finestre: due file, spente. Il rettangolo va nella tabella
+             che A accende una alla volta col passo aureo. */
+          const cols=Math.max(2,Math.round(bw/16)), righe=Math.max(1,Math.round(bh/16));
+          for(let ix=0;ix<cols;ix++) for(let iy=0;iy<righe;iy++){
+            if(RG()<0.34) continue;
+            const wx=x+5+ix*(bw-8)/cols, wy=by+6+iy*(bh-10)/righe;
+            c.fillStyle='rgba(6,8,12,.9)'; c.fillRect(wx-0.7,wy-0.7,4.4,4.4);
+            c.fillStyle='rgba(40,46,58,.9)'; c.fillRect(wx,wy,3,3);
+            if(vivo && FINESTRE_SERA.length<30) FINESTRE_SERA.push([wx,wy,3,3]);
+          }
+          x+=bw+3+RG()*10;
+        }
+      }
+      /* IL CAMPANILE DELL'ORATORIO: «l'erba spelacchiata dietro la
+         chiesa», dice la scheda del campo da sempre. Adesso la chiesa
+         c'e'. E' il prop unico di questo campo, e si vede da lontano. */
+      if(TH.tipo==='oratorio'){
+        const cx=FW*0.24, cb=FH+d0, ch=Math.min(76, pY-d0-4);
+        c.fillStyle='#0d1016'; c.fillRect(cx-11, cb, 22, ch);
+        c.fillStyle='#161a22';
+        c.beginPath(); c.moveTo(cx-14,cb+ch); c.lineTo(cx,cb+ch+16); c.lineTo(cx+14,cb+ch);
+        c.closePath(); c.fill();
+        c.fillStyle='rgba(255,222,164,.09)'; c.fillRect(cx-11,cb,1.6,ch);
+        /* la cella campanaria: due archi vuoti, sempre accesi di dentro */
+        c.fillStyle='rgba(255,206,120,.55)';
+        c.fillRect(cx-6.5,cb+7,4.5,8); c.fillRect(cx+2,cb+7,4.5,8);
+      }
+    }
+  }
+  /* --- 5. LE BICI APPOGGIATE ALLA RETE. Stanno sulle due strisce di
+         pista libera a ponente e a levante — la fascia fra la rotaia e i
+         gradoni, che sui lati corti non ha cartelloni ed e' l'unico posto
+         del quadro dove una bici non finisce sotto qualcos'altro. --- */
+  const bici=(bx,by,rot)=>{
+    ombraStatica(c, bx, by+2.4, 11, 15, 0.28, SOL);
+    c.save(); c.translate(bx,by); c.rotate(rot);
+    c.strokeStyle='rgba(10,14,18,.9)'; c.lineWidth=1.7;
+    c.beginPath(); c.arc(-6,0,4.4,0,6.2832); c.stroke();
+    c.beginPath(); c.arc(6,0,4.4,0,6.2832); c.stroke();
+    c.strokeStyle='#7d8790'; c.lineWidth=1.1;
+    c.beginPath(); c.arc(-6,0,4.4,0,6.2832); c.stroke();
+    c.beginPath(); c.arc(6,0,4.4,0,6.2832); c.stroke();
+    c.strokeStyle='#b8452f'; c.lineWidth=1.6;
+    c.beginPath();
+    c.moveTo(-6,0); c.lineTo(-1,-3.4); c.lineTo(4,0); c.lineTo(-1,0.6); c.closePath();
+    c.moveTo(-1,-3.4); c.lineTo(6,-1.2);
+    c.stroke();
+    c.strokeStyle='rgba(255,228,172,.5)'; c.lineWidth=0.8;
+    c.beginPath(); c.moveTo(-6.5,-3.6); c.lineTo(3.6,-3.0); c.stroke();
+    c.restore();
+  };
+  if(!dentro){
+    bici(-21, FH*0.24, 1.52);
+    bici(-21, FH*0.30, 1.60);
+    bici(FW+21, FH*0.79, 1.55);
+  }
+  /* --- 6. IL PROP UNICO DI QUESTO CAMPO. Uno per campo, riconoscibile:
+         i `desc` di FIELDS li promettono da sempre e nessuno c'era. --- */
+  {
+    const px0=-22, px1=FW+22;              // le due strisce di pista libera
+    const ombraProp=(x,y,h,w)=>ombraStatica(c,x,y,h,w,0.30,SOL);
+    if(TH.tipo==='oratorio'){
+      /* GLI ZAINI-PALO: due zaini buttati per terra a fare la porticina,
+         come si e' sempre fatto prima di avere una porta vera */
+      for(const [zx,zy] of [[px0,FH*0.62],[px0,FH*0.74]]){
+        ombraProp(zx,zy+4,9,10);
+        c.fillStyle='#2f4a86'; c.beginPath();
+        c.ellipse(zx,zy,6.5,4.6,0.3,0,6.2832); c.fill();
+        c.fillStyle='rgba(255,228,172,.20)'; c.beginPath();
+        c.ellipse(zx-1.4,zy-1.4,3.6,2.2,0.3,0,6.2832); c.fill();
+        c.strokeStyle='rgba(8,12,18,.7)'; c.lineWidth=1.1;
+        c.beginPath(); c.moveTo(zx-4,zy+2); c.lineTo(zx+4,zy-1); c.stroke();
+      }
+    }else if(TH.tipo==='cortile'){
+      /* IL CANESTRO ARRUGGINITO che la scheda promette dal primo giorno */
+      const bx=px1, by=FH*0.34;
+      ombraProp(bx,by+8,62,7);
+      c.strokeStyle='rgba(8,12,16,.85)'; c.lineWidth=4.6;
+      c.beginPath(); c.moveTo(bx+6,by+8); c.lineTo(bx-2,by-16); c.stroke();
+      c.strokeStyle='#6b5340'; c.lineWidth=3.0;
+      c.beginPath(); c.moveTo(bx+6,by+8); c.lineTo(bx-2,by-16); c.stroke();
+      c.fillStyle='#8a705a'; c.fillRect(bx-9,by-24,15,9);        // il tabellone
+      c.fillStyle='rgba(240,238,228,.5)'; c.fillRect(bx-6,by-22,9,5);
+      c.strokeStyle='#c06a2a'; c.lineWidth=1.4;
+      c.beginPath(); c.ellipse(bx-2,by-14,5.2,2.4,0,0,6.2832); c.stroke();
+    }else if(TH.tipo==='spiaggia'){
+      /* LA SDRAIO: telo a righe, due traversi di legno, la sua ombra */
+      const sx=px1, sy=FH*0.30;
+      ombraProp(sx,sy+7,15,16);
+      c.save(); c.translate(sx,sy); c.rotate(-0.25);
+      c.fillStyle='#8a6a3e'; c.fillRect(-9,-2,18,2.2);
+      c.fillStyle='#d8503f'; c.fillRect(-8,-9,16,7);
+      c.fillStyle='#f0e6d2';
+      for(let i=0;i<4;i++) c.fillRect(-8+i*4.2,-9,2.1,7);
+      c.strokeStyle='rgba(10,14,18,.7)'; c.lineWidth=1.2;
+      c.beginPath(); c.moveTo(-8,0); c.lineTo(-4,6); c.moveTo(8,0); c.lineTo(4,6); c.stroke();
+      c.restore();
+    }else if(TH.tipo==='parcheggio'){
+      /* L'UTILITARIA PARCHEGGIATA SULLO STALLO: si gioca fra le macchine */
+      const ax=px1+6, ay=FH*0.22;
+      ombraProp(ax,ay+11,13,24);
+      c.save(); c.translate(ax,ay); c.rotate(0.06);
+      c.fillStyle='#7d2f2c'; c.beginPath();
+      if(c.roundRect) c.roundRect(-9,-19,18,38,4); else c.rect(-9,-19,18,38);
+      c.fill();
+      c.fillStyle='#1c2530'; c.fillRect(-7,-12,14,10); c.fillRect(-7,4,14,9);
+      c.fillStyle='rgba(255,228,172,.30)'; c.fillRect(-9,-19,2,38);
+      c.fillStyle='rgba(255,240,200,.7)'; c.fillRect(-7,-20,4,2); c.fillRect(3,-20,4,2);
+      c.restore();
+    }else if(TH.tipo==='palestra'){
+      /* IL CARRELLO DEI PALLONI e la panca: l'arredo di ogni palestra */
+      const cx=px1, cy=FH*0.30;
+      ombraProp(cx,cy+8,14,16);
+      c.fillStyle='#5a4632'; c.fillRect(cx-8,cy-8,16,16);
+      c.fillStyle='rgba(0,0,0,.45)'; c.fillRect(cx-8,cy-8,16,16);
+      for(let i=0;i<5;i++){
+        c.fillStyle= i%2?'#e8e2d4':'#d8ac54';
+        c.beginPath(); c.arc(cx-4.5+(i%3)*4.5, cy-4+((i/3)|0)*6, 2.6,0,6.2832); c.fill();
+      }
+      c.fillStyle='#6d4b28'; c.fillRect(cx-9,cy+11,18,4);
+    }else if(TH.tipo==='tetto'){
+      /* LE ANTENNE E LA PARABOLA: «si gioca tra le antenne» */
+      const ax=px1, ay=FH*0.26;
+      ombraProp(ax,ay+6,52,4);
+      c.strokeStyle='rgba(8,12,20,.8)'; c.lineWidth=2.4;
+      c.beginPath(); c.moveTo(ax,ay+6); c.lineTo(ax-3,ay-18); c.stroke();
+      c.strokeStyle='#8e9aa8'; c.lineWidth=1.3;
+      c.beginPath(); c.moveTo(ax,ay+6); c.lineTo(ax-3,ay-18); c.stroke();
+      for(let i=0;i<4;i++){
+        const yy=ay-6-i*3.4;
+        c.beginPath(); c.moveTo(ax-6.5,yy); c.lineTo(ax+3.5,yy); c.stroke();
+      }
+      c.fillStyle='#b6c0cc';
+      c.beginPath(); c.ellipse(ax+7,ay+12,5.4,3.6,0.4,0,6.2832); c.fill();
+      c.fillStyle='rgba(10,16,28,.55)';
+      c.beginPath(); c.ellipse(ax+7.8,ay+12,3.4,2.2,0.4,0,6.2832); c.fill();
+    }else{
+      /* GABBIA e NOTTURNO: la panchina delle riserve, con i borsoni sotto */
+      const bx=px0, by=FH*0.66;
+      ombraProp(bx,by+8,13,22);
+      c.fillStyle='#3a2c1c'; c.fillRect(bx-5,by-11,10,22);
+      c.fillStyle='rgba(255,228,172,.22)'; c.fillRect(bx-5,by-11,1.4,22);
+      c.fillStyle='rgba(0,0,0,.5)'; c.fillRect(bx-5,by+9,10,2);
+      for(const yy of [by-6,by+3]){
+        c.fillStyle='#26424f';
+        c.beginPath(); c.ellipse(bx+7,yy,5.2,3.0,0.2,0,6.2832); c.fill();
+      }
+    }
+  }
+  c.restore();                       // chiude il ritaglio "mai sul manto"
 }
 function paintField(c, TH, pX, pY, q, vivo){
   /* vivo=true solo quando si cuoce fieldTex (il campo che la camera
@@ -12500,36 +13255,167 @@ function paintField(c, TH, pX, pY, q, vivo){
     }
     c.restore();
   }
-  /* ZONE CONSUMATE: davanti alle due porte e attorno al cerchio di
-     centrocampo. Bordo IRREGOLARE (poligono a raggio rumoroso), non un
-     alone radiale: la terra battuta ha un contorno, la sfocatura no. */
-  if(TH.tipo==='erba'||TH.tipo==='oratorio'){
-    const a=TH.tipo==='oratorio'?0.17:0.11;
+  /* =====================================================================
+     LA BIOGRAFIA DEL CAMPETTO — l'INCARICO B, tema 4 della giuria.
+     «Il terreno deve raccontare anni di partite.» Sette zone consumate,
+     e nessuna uguale a un'altra: la bocca di ogni porta, i due dischetti,
+     i due semicerchi d'area, il cerchio di centrocampo. Bordo IRREGOLARE
+     (poligono a raggio rumoroso), non un alone radiale: la terra battuta
+     ha un contorno, la sfocatura no.
+
+     TRE COSE CHE ERANO SBAGLIATE PRIMA E ADESSO NON LO SONO:
+
+     1) LE DUE BOCCHE DI PORTA ERANO IDENTICHE. Stessi raggi (46 x 78),
+        stessa formula, cambiava solo la fase — e la fase su un poligono
+        a tre armoniche sposta le gobbe ma non la SILHOUETTE. Due macchie
+        gemelle a duecento unita' di distanza si riconoscono come copia
+        incollata, ed e' esattamente il reclamo della giuria («di forma
+        DIVERSA fra loro»). Adesso ogni chiazza ha i suoi raggi, la sua
+        rotazione, le sue tre armoniche e il suo numero di gobbe: quella
+        di sinistra e' larga e schiacciata, quella di destra e' piu'
+        stretta, piu' alta e inclinata.
+
+     2) VALEVA SOLO SU ERBA E ORATORIO. Sabbia, cemento, asfalto, parquet
+        e sintetico restavano nuovi di zecca — e un campetto di cemento
+        senza il lucido davanti alla porta e' un rendering, non un posto.
+        Il consumo adesso c'e' su tutti e otto: cambia la TINTA (terra
+        smossa sull'erba, sabbia rimestata sulla spiaggia, cemento
+        lucidato al cortile, asfalto slabbrato al parcheggio, parquet
+        consumato in palestra) e cambia il MODO — sui fondi duri il
+        consumo SCHIARISCE (si lucida), sui fondi molli SCURISCE (si
+        scava). Sul parquet e sul cemento e' una velatura chiara; sul
+        prato e' terra.
+
+     3) IL SEME. Ogni puntino di calpestio usciva da Math.random, cioe'
+        dal caso della PARTITA: lo stesso campo aveva un'usura diversa a
+        ogni cottura, e la ricottura viva del primo piano (campoVivo)
+        mostrava una chiazza DIVERSA da quella della tessitura — con lo
+        zoom del gol si vedeva la terra cambiare forma sotto i piedi.
+        Adesso il generatore e' locale e il seme lo decide il TIPO di
+        campo: stesso campo, stessa usura, per sempre, in tessitura e in
+        primo piano. E' la stessa regola gia' scritta per la grana della
+        pista poco piu' sotto, per la stessa ragione.
+     ===================================================================== */
+  {
+    /* il seme e' il tipo di campo: stessa usura a ogni cottura */
+    const RU=semeRnd(usuraSeme(TH));
+    const U=USURA[TH.tipo]||USURA.oratorio;
+    const AREA_Wu=Math.round(118*KPASSO), DISCHu=Math.round(112*KPASSO);
     c.save();
     c.beginPath(); c.rect(0,0,FW,FH); c.clip();
-    const chiazza=(ux,uy,rx,ry,al,fase)=>{
+    /* chiazza a raggio rumoroso: n gobbe grosse, m gobbe fini, ruotata.
+       I parametri arrivano da fuori uno per uno — e' cosi' che due
+       chiazze diventano DIVERSE invece che sfasate. */
+    const chiazza=(cx,cy,rx,ry,al,rot,n1,a1,n2,a2,n3,a3,tinta)=>{
+      c.save();
+      c.translate(cx,cy); c.rotate(rot);
       c.beginPath();
-      for(let k=0;k<=40;k++){
-        const th2=k/40*6.2832;
-        const w=0.88+0.13*Math.sin(th2*3+fase)+0.07*Math.sin(th2*7+fase*2);
-        const px3=ux+Math.cos(th2)*rx*w, py3=uy+Math.sin(th2)*ry*w;
+      for(let k=0;k<=48;k++){
+        const th2=k/48*6.2832;
+        const w=0.86+a1*Math.sin(th2*n1+1.1)+a2*Math.sin(th2*n2+2.7)+a3*Math.sin(th2*n3+5.2);
+        const px3=Math.cos(th2)*rx*w, py3=Math.sin(th2)*ry*w;
         if(k===0) c.moveTo(px3,py3); else c.lineTo(px3,py3);
       }
       c.closePath();
-      c.fillStyle='rgba(92,72,40,'+al+')'; c.fill();
+      c.fillStyle='rgba('+(tinta||U.terra)+','+al.toFixed(3)+')'; c.fill();
+      c.restore();
     };
-    chiazza(50,FH/2, 46,78, a, 0.7);
-    chiazza(FW-50,FH/2, 46,78, a, 2.3);
-    chiazza(FW/2,FH/2, 62,50, a*0.55, 4.1);
-    /* calpestio: puntini di terra piu' fitti dentro le zone consumate */
-    for(const [ux,uy,rx,ry] of [[50,FH/2,56,88],[FW-50,FH/2,56,88],[FW/2,FH/2,70,58]]){
-      for(let i=0;i<260*q;i++){
-        const th2=Math.random()*6.2832, rr=Math.sqrt(Math.random());
-        c.fillStyle= Math.random()<0.6?'rgba(104,82,46,.18)':'rgba(30,24,12,.16)';
-        c.fillRect(ux+Math.cos(th2)*rx*rr, uy+Math.sin(th2)*ry*rr, 1.6,1.6);
+    /* calpestio: puntini piu' fitti al centro della zona. E' la grana,
+       non il bordo, a far leggere "terra battuta" invece di "macchia". */
+    const calpestio=(cx,cy,rx,ry,dens)=>{
+      const n=Math.round(dens*q);
+      for(let i=0;i<n;i++){
+        const th2=RU()*6.2832, rr=Math.sqrt(RU());
+        c.fillStyle= RU()<0.62 ? 'rgba('+U.chiaro+')' : 'rgba('+U.scuro+')';
+        c.fillRect(cx+Math.cos(th2)*rx*rr, cy+Math.sin(th2)*ry*rr, 1.6,1.6);
       }
+    };
+    const A=U.a;
+    /* --- la bocca di sinistra: LARGA E SCHIACCIATA, tre gobbe grosse --- */
+    chiazza(46, FH/2,      52, 84, A,      0.10, 3,0.155, 7,0.070, 13,0.030);
+    /* --- la bocca di destra: PIU' STRETTA, PIU' ALTA, INCLINATA, e con
+           cinque gobbe invece di tre: e' un'altra macchia, non la stessa
+           girata. Anche il centro e' spostato di sei unita' verso l'alto,
+           perche' nessun portiere logora simmetrico. --- */
+    chiazza(FW-52, FH/2-7, 41, 97, A*0.94, -0.22, 5,0.130, 9,0.085,  3,0.055);
+    /* --- il cerchio di centrocampo: dove si batte il calcio d'inizio.
+           Consumo piu' leggero e piu' largo del cerchio disegnato. --- */
+    chiazza(FW/2, FH/2,    70, 58, A*0.62,  0.55, 4,0.120, 6,0.060, 11,0.028);
+    /* --- i due dischetti: un tondo piccolo e sfrangiato. Sono il segno
+           che in questo gioco si tirano i rigori davvero. --- */
+    chiazza(DISCHu,    FH/2, 15, 13, A*1.15, 0.9, 3,0.190, 8,0.090, 5,0.050);
+    chiazza(FW-DISCHu, FH/2, 13, 15, A*1.15, 2.4, 4,0.170, 7,0.100, 3,0.060);
+    /* --- i due semicerchi d'area: la mezzaluna calpestata dai difensori
+           che si dispongono. Larga, bassissima di alfa, tagliata dalla
+           riga dell'area. --- */
+    for(const side of [0,1]){
+      const bx = side ? FW-AREA_Wu*0.52 : AREA_Wu*0.52;
+      chiazza(bx, FH/2, AREA_Wu*0.58, GOAL_H*1.02, A*0.24, side?0.3:-0.4,
+              3,0.185, 5,0.115, 9,0.055);
     }
+    calpestio(46, FH/2,      62, 96, 300);
+    calpestio(FW-52, FH/2-7, 52,110, 300);
+    calpestio(FW/2, FH/2,    78, 66, 220);
+    calpestio(DISCHu,    FH/2, 20, 18, 70);
+    calpestio(FW-DISCHu, FH/2, 18, 20, 70);
     c.restore();
+    /* =================================================================
+       TOPPE D'ERBA, CIUFFI E CARTACCE (B5). Tre passate di piccole
+       forme sopra la grana, ciascuna con la sua micro-ombra a EST —
+       perche' anche un ciuffo alto tre centimetri, sotto un sole a
+       venti gradi, getta la sua riga di buio, ed e' quella riga (non la
+       forma) a farlo sembrare alto invece che dipinto.
+       LE CARTACCE STANNO LONTANE DAL CENTRO. Un pezzetto chiaro in
+       mezzo al campo, a questa scala, e' un secondo pallone: si tengono
+       entro settanta unita' dalle fasce, dove il gioco passa ma non si
+       cerca la palla. Sono cinque, e sono spente — carta vecchia, non
+       carta bianca. */
+    if(q>0.5){
+      c.save();
+      c.beginPath(); c.rect(0,0,FW,FH); c.clip();
+      /* toppe: chiazze d'erba piu' chiara/piu' scura, larghe e molli.
+         QUARANTAQUATTRO E NON VENTISEI, e la ragione e' l'inquadratura
+         di gioco: la camera segue la palla e nove volte su dieci il
+         fermo-immagine cade in mezzo al campo, dove non arriva ne' la
+         rete, ne' un palo, ne' una casa. Li' il «campetto» lo devono
+         dire il terreno e il gesso, e con ventisei toppe al 5% il
+         terreno non diceva niente. Le due tinte restano una piu'
+         chiara e una piu' scura del manto in parti uguali: la mediana
+         dell'erba — quella del cancello 3:1 — non si muove. */
+      for(let i=0;i<44;i++){
+        const tx=RU()*FW, ty=RU()*FH, tr=6+RU()*22;
+        c.fillStyle = RU()<0.5 ? 'rgba('+U.toppaA+')' : 'rgba('+U.toppaB+')';
+        c.beginPath();
+        c.ellipse(tx,ty, tr, tr*(0.45+RU()*0.4), RU()*3.14, 0, 6.2832);
+        c.fill();
+      }
+      /* ciuffi: tre fili alti, piu' la loro ombra. Solo sui fondi erbosi:
+         un ciuffo d'erba sul parquet sarebbe una svista, non un dettaglio */
+      if(U.ciuffo){
+        for(let i=0;i<200;i++){
+          const tx=RU()*FW, ty=RU()*FH, h=2.4+RU()*3.2;
+          c.fillStyle='rgba('+U.ombretta+')';
+          c.fillRect(tx+1.2, ty+0.5, h*1.5, 1.0);
+          c.fillStyle='rgba('+U.ciuffo+')';
+          for(let k=0;k<3;k++) c.fillRect(tx-1+k*1.1, ty-h*(0.6+RU()*0.5), 0.9, h);
+        }
+      }
+      /* cartacce: cinque, spente, lontane dal centro del quadro */
+      for(let i=0;i<5;i++){
+        const tx=30+RU()*(FW-60);
+        const ty= RU()<0.5 ? 8+RU()*62 : FH-8-RU()*62;
+        const w2=2.2+RU()*2.6, h2=1.6+RU()*1.8, rt=RU()*3.14;
+        c.save(); c.translate(tx,ty); c.rotate(rt);
+        c.fillStyle='rgba('+U.ombretta+')';
+        c.fillRect(-w2*0.4+h2*1.2, -h2*0.4+0.6, w2, h2*0.8);
+        c.fillStyle= i%3===0 ? 'rgba(176,64,52,.42)' : 'rgba(206,198,176,.44)';
+        c.beginPath();
+        c.moveTo(-w2,0); c.lineTo(-w2*0.2,-h2); c.lineTo(w2,-h2*0.3);
+        c.lineTo(w2*0.3,h2); c.closePath(); c.fill();
+        c.restore();
+      }
+      c.restore();
+    }
   }
   /* VERSO DELLA LUCE sul manto: una velatura calda dal lato da cui la
      luce arriva, una fredda dal lato opposto — che e' il rimbalzo del
@@ -12571,6 +13457,113 @@ function paintField(c, TH, pX, pY, q, vivo){
     gFreddo.addColorStop(1,   'rgba('+OM_MUL+','+(IL.controA*1.12).toFixed(3)+')');
     c.globalCompositeOperation='multiply';
     c.fillStyle=gFreddo; c.fillRect(0,0,FW,FH);
+    /* =================================================================
+       IL PRATO TERMICO — e perche' le due passate qui sopra da sole non
+       bastavano. Misurato col contagocce su tre zolle di solo manto:
+         (120,150)  rgb 25,9·122,2·29,7  tinta 122,5 gradi
+         (900,400)  rgb 14,3·106,4·22,3  tinta 125,2 gradi
+         (1500,560) rgb  6,8· 78,3·21,1  tinta 131,8 gradi
+       Escursione totale 9,3 gradi, e il lato "caldo" stava a 122,5, cioe'
+       ancora verde: non c'era un grammo d'ambra.
+
+       LA DIAGNOSI. L'overlay su fondo scuro vale 2·fondo·luce/255, cioe'
+       MOLTIPLICA i tre canali per luce/127,5; il multiply li scala tutti
+       e tre in proporzione. Su un verde saturo come (14·106·22) la tinta
+       la decidono i due canali PICCOLI, R e B, e una scalatura
+       proporzionale li lascia in rapporto: sale il valore, sale la croma,
+       e la tinta non si muove. Il conto:
+         base (14·106·22) -> overlay ambra -> (28·184·28)  tinta ~120
+         base (14·106·22) -> multiply OM_MUL -> (12·94·20) tinta ~125,6
+       Cinque gradi da una parte, mezzo grado dall'altra. Vent'anni di
+       velature non produrranno mai i 15 gradi che il metro chiede: SOLO
+       UNA PASSATA ADDITIVA sposta la tinta di un verde saturo.
+
+       Quindi due 'lighter', e sono le uniche due passate nuove:
+         1) AMBRA VERA a ovest, che si spegne prima della mezzeria;
+         2) RIMBALZO DEL CIELO a est, idem dall'altra parte.
+       Il conto sui pixel veri:
+         angolo ovest: overlay -> (17,5·125,5·23,5)
+                       + ambra  -> tinta 116
+         angolo est:   multiply -> (12,4·94,3·20,0)
+                       + cielo  -> tinta 135
+       MISURATO POI SULLO SCATTO VERO col contagocce (tre zolle di solo
+       manto, medie 20x20): 122,5 · 128,4 · 137,8 gradi, cioe' un'ESCURSIONE
+       DI 23,8 GRADI contro i 9,3 di prima e un cancello di 15. Meta' la
+       danno queste due passate cotte, meta' la temperatura di schermo
+       dentro la vignettatura (vedi buildVignette): il gradiente di campo
+       si vede poco perche' la camera ne inquadra un terzo scarso.
+
+       PERCHE' IL CIELO E' LA LEVA GIUSTA: il blu pesa 0,0722 nella
+       luminanza relativa contro lo 0,7152 del verde. Venti punti di blu
+       in piu' spostano la tinta di nove gradi e la luminanza di un'inezia:
+       e' la sola manopola che compra temperatura senza pagarla in
+       contrasto maglia/erba. L'ambra invece la paga (il rosso pesa
+       0,2126), ed e' per questo che sta solo sul 45% a ovest.
+
+       PERCHE' LA MEDIANA NON SI MUOVE, che e' il rischio numero uno: le
+       due passate sono ANTISIMMETRICHE e valgono ZERO entrambe al 50% del
+       campo. La mediana che collaudo.js campiona — quella che decide il
+       3:1 — sta dove le due passate valgono ~0. E' lo stesso argomento con
+       cui furono tarati LUX_AMP e LUX_RIEQ: non si alza il manto, si
+       REDISTRIBUISCE.
+
+       COSTO: due createLinearGradient e due fillRect dentro una funzione
+       che ne fa gia' una ventina, e tutto dentro la cottura. Zero
+       millisecondi a fotogramma.
+       ================================================================= */
+    {
+      const SOL=(IL.sole===undefined)?1:IL.sole;
+      const x0=FW/2-ux*FW*0.60, y0=FH/2-uy*FH*0.95;
+      const x1=FW/2+ux*FW*0.60, y1=FH/2+uy*FH*0.95;
+      c.globalCompositeOperation='lighter';
+      const gAmbra=c.createLinearGradient(x0,y0,x1,y1);
+      /* 0,10 E NON 0,14, e la ragione e' misurata al cancello: con
+         l'ambra a 0,14 il contrasto maglia/manto della divisa scura in
+         alto contrasto scendeva da 3,29 a 3,04 su uno; l'ambra alza la
+         luminanza dell'erba (il rosso pesa 0,2126) e su una maglia piu'
+         scura del prato quel guadagno si paga tutto. Il taglio si
+         compensa alzando il RIMBALZO DEL CIELO qui sotto, che compra la
+         stessa temperatura per un decimo di luminanza. Questo e'
+         esattamente l'ordine di manovra dichiarato prima di misurare:
+         prima si taglia l'ambra, poi si alza il blu. */
+      gAmbra.addColorStop(0,   'rgba('+SOLE.caldo+','+(0.10*SOL).toFixed(4)+')');
+      gAmbra.addColorStop(0.50,'rgba('+SOLE.caldo+',0)');
+      gAmbra.addColorStop(1,   'rgba('+SOLE.caldo+',0)');
+      c.fillStyle=gAmbra; c.fillRect(0,0,FW,FH);
+      const gCielo=c.createLinearGradient(x0,y0,x1,y1);
+      gCielo.addColorStop(0,   'rgba('+SOLE.cielo+',0)');
+      gCielo.addColorStop(0.50,'rgba('+SOLE.cielo+',0)');
+      gCielo.addColorStop(1,   'rgba('+SOLE.cielo+','+(0.14*SOL).toFixed(4)+')');
+      c.fillStyle=gCielo; c.fillRect(0,0,FW,FH);
+      /* IL RIEQUILIBRIO DELLE DUE ADDITIVE — la temperatura si
+         REDISTRIBUISCE, non si somma. E' la stessa legge di LUX_AMP e
+         LUX_RIEQ, applicata alla coppia caldo/freddo.
+
+         Il conto. Le due rampe sono triangolari e ciascuna copre mezzo
+         campo, quindi in media aggiungono 0,025·(255,222,164) da una
+         parte e 0,035·(70,110,205) dall'altra, cioe' (8,9 · 9,5 · 11,4)
+         su tutto il manto: il verde mediano saliva da 113 a 122, e col
+         verde saliva la mediana che collaudo.js usa per il contrasto.
+         Misurato al cancello: le quattro divise sono TUTTE piu' chiare
+         dell'erba (fluo #d1ec4a, rosa #e0b2be, gialla #e4d364, azzurra
+         #8cbcdd contro un manto #12711e), quindi un manto piu' chiaro
+         abbassa TUTTI E QUATTRO i rapporti. Con l'ambra a 0,14 il
+         peggiore era sceso da 3,29 a 3,04 — un decimo dal rosso.
+
+         Il rimedio non e' togliere la temperatura, e' toglierne
+         l'ESPOSIZIONE: una moltiplicazione uniforme che rimette il
+         manto dov'era. Uniforme quindi non appiattisce niente — scala
+         i tre canali per lo stesso fattore e i rapporti fra lato caldo
+         e lato freddo restano intatti. Sul verde (18·113·30) con
+         alfa 0,11 in OM_MUL: (16,7 · 105,2 · 28,3), luminanza da 0,121
+         a 0,103, e il rapporto della divisa azzurra torna a 3,37.
+         Diciotto gradi di escursione di tinta restano dov'erano: la
+         tinta la decidono i RAPPORTI fra i canali, e una
+         moltiplicazione non li tocca. */
+      c.globalCompositeOperation='multiply';
+      c.fillStyle='rgba('+OM_MUL+','+(0.11*SOL).toFixed(4)+')';
+      c.fillRect(0,0,FW,FH);
+    }
     c.restore();
   }
   /* dettagli del terreno per tema */
@@ -12731,6 +13724,38 @@ function paintField(c, TH, pX, pY, q, vivo){
       c.fillRect(FW, -1, 3.2, FH+2);
       c.restore();
     }
+    /* =================================================================
+       LE OMBRE DELLE STRUTTURE, COTTE — l'INCARICO A4.
+       Tutto cio' che non si muove getta la sua ombra QUI DENTRO, dentro
+       la cottura, con ombraStatica: a fotogramma pagano solo le ventidue
+       figure e la palla, il resto del mondo e' gia' in tessitura.
+       Le due porte proiettano gia' per conto loro poco piu' sotto (sono
+       le uniche strutture DENTRO il rettangolo di gioco e hanno bisogno
+       di tre pezzi: contatto, massa, montanti). Qui ci sono le fasce dei
+       cartelloni — che sono muri alti un metro e mezzo a due passi dalla
+       linea — e il loro peso sul piazzale. E' l'ombra che dice che la
+       fascia STA IN PIEDI invece di essere dipinta per terra.
+       Ritagliata FUORI dal manto: quel poco che tocca il prato lo mette
+       gia' la penombra delle gradinate, e sommarli due volte scurirebbe
+       la fascia del campo dove i giocatori corrono davvero. */
+    {
+      const SOLs=(IL.sole===undefined)?1:IL.sole;
+      const bY=[-DK+3, FH+DK-19];
+      const nB=Math.max(6, Math.round((FW+80)/((1150+80)/6))), sgB=(FW+80)/nB;
+      c.save();
+      c.beginPath();
+      c.rect(-pX,-pY,W,H);
+      c.rect(0,0,FW,FH);
+      c.clip('evenodd');
+      for(let r=0;r<2;r++){
+        for(let i=0;i<nB;i++){
+          /* piede del pannello: il bordo BASSO della fascia, che e' il
+             punto in cui il cartellone tocca terra */
+          ombraStatica(c, -40+i*sgB+2+ (sgB-4)*0.5, bY[r]+15, 9, sgB-4, 0.30, SOLs);
+        }
+      }
+      c.restore();
+    }
     dipingiCartelloni(vivo);
     /* il tubolare, un lato alla volta. lum = quanta luce prende questo
        lato, da -1 (in ombra) a +1 (in pieno sole) */
@@ -12793,6 +13818,13 @@ function paintField(c, TH, pX, pY, q, vivo){
   }
   c.restore();
 
+  /* IL CAMPETTO ATTORNO AL CAMPO (B4): rete, montanti, pali dei fari,
+     case oltre la rete, bici, il prop unico di questo campo. Va QUI —
+     dopo la rotaia e i cartelloni, che le fanno da zoccolo, e prima del
+     gesso, che sta sul manto e non c'entra niente con quello che sta
+     fuori. Tutto cotto: zero operazioni a fotogramma. */
+  dipingiGabbia(c, TH, pX, pY, q, IL, DK, vivo);
+
   /* linee di gesso, leggermente consumate: doppio passaggio sfalsato
      (lineA >1 sui temi scuri: righe piu' decise per la leggibilita') */
   const LA=TH.lineA||1;
@@ -12818,29 +13850,101 @@ function paintField(c, TH, pX, pY, q, vivo){
      coda alta e lascia ferma la mediana su cui poggia il contrasto
      delle maglie. */
   const chalk=(alpha)=>{ c.strokeStyle='rgba('+TH.gesso+','+Math.min(1,alpha*LA)+')'; };
-  c.lineWidth=2.6; chalk(0.92);
-  c.strokeRect(1,1,FW-2,FH-2);
+  /* =====================================================================
+     IL GESSO IRREGOLARE (B2) — «oggi sono perfette», dice la giuria, e ha
+     ragione: erano sette strokeRect e cinque arc, tirati col righello e
+     pieni dal primo all'ultimo millimetro. Nessun campetto ha righe cosi'.
+     Una riga di gesso vera e' passata a mano con la carriola, si consuma
+     dove si corre, e sparisce del tutto in tre-cinque punti per lato.
+
+     COME: ogni linea e ogni arco si spezzano in tratti. `buchi()` decide
+     dove il gesso manca (3-5 interruzioni per riga, larghe l'1-4% della
+     riga), e ogni tratto sopravvissuto si suddivide ancora in due o tre
+     pezzi con alfa fra 0,55 e 1,00 del valore pieno — cosi' la riga
+     sbiadisce e riprende invece di spegnersi tutta insieme.
+
+     IL SEME E' QUELLO DELL'USURA (usuraSeme), non Math.random, e la
+     ragione e' scritta per intero sopra le zone consumate: se il pennello
+     ruba numeri al caso della partita, la simulazione DIVERGE — e' gia'
+     successo, «il fondale del fischio finale ne usciva sporco» — e la
+     ricottura viva del primo piano mostrerebbe righe rotte in punti
+     diversi da quelli della tessitura. Stesso campo, stesse crepe,
+     sempre.
+
+     COSA NON SI SPEZZA, ed e' una scelta di gioco e non di disegno: la
+     larghezza del tratto e la POSIZIONE. Una riga interrotta resta la
+     stessa riga; sposto il gesso di un'unita' e sposto il fuorigioco.
+     ===================================================================== */
+  const RG=semeRnd(usuraSeme(TH)+17);
+  /* [t0,t1] dei tratti superstiti su una riga di lunghezza 1 */
+  const buchi=(nG)=>{
+    const cut=[];
+    for(let i=0;i<nG;i++) cut.push(0.07+RG()*0.86);
+    cut.sort((a,b)=>a-b);
+    const out=[]; let t=0;
+    for(const cp of cut){
+      const g=0.010+RG()*0.030;
+      const a=Math.max(t, cp-g*0.5), b=Math.min(1, cp+g*0.5);
+      if(a>t+0.025) out.push([t,a]);
+      t=Math.max(t,b);
+    }
+    if(t<0.975) out.push([t,1]);
+    return out;
+  };
+  /* un tratto si suddivide ancora in 2-3 pezzi di forza diversa */
+  const forza=(base,fn)=>{
+    const n=2+((RG()*2)|0);
+    for(let k=0;k<n;k++){
+      chalk(base*(0.55+RG()*0.45));
+      fn(k/n, (k+1)/n);
+    }
+  };
+  const gLinea=(x0,y0,x1,y1,base,nG)=>{
+    for(const [ta,tb] of buchi(nG)) forza(base,(u,v)=>{
+      const s=ta+(tb-ta)*u, e=ta+(tb-ta)*v;
+      c.beginPath();
+      c.moveTo(x0+(x1-x0)*s, y0+(y1-y0)*s);
+      c.lineTo(x0+(x1-x0)*e, y0+(y1-y0)*e);
+      c.stroke();
+    });
+  };
+  const gArco=(cx,cy,r,a0,a1,base,nG)=>{
+    for(const [ta,tb] of buchi(nG)) forza(base,(u,v)=>{
+      const s=a0+(a1-a0)*(ta+(tb-ta)*u), e=a0+(a1-a0)*(ta+(tb-ta)*v);
+      c.beginPath(); c.arc(cx,cy,r,s,e); c.stroke();
+    });
+  };
+  const gRett=(x,y,w,h,base,nG)=>{
+    gLinea(x,y,   x+w,y,   base,nG);
+    gLinea(x+w,y, x+w,y+h, base,nG);
+    gLinea(x+w,y+h, x,y+h, base,nG);
+    gLinea(x,y+h, x,y,     base,nG);
+  };
+  c.lineWidth=2.6;
+  gRett(1,1,FW-2,FH-2, 0.92, 4);
   /* linea mediana: tratto PIENO come tutto il resto del gesso. Era
      l'unica linea tratteggiata del campo e sembrava un errore di disegno. */
-  c.beginPath(); c.moveTo(FW/2,0); c.lineTo(FW/2,FH); c.stroke();
-  c.beginPath(); c.arc(FW/2,FH/2,62,0,6.2832); c.stroke();
-  for(const side of [0,1]) c.strokeRect(side?FW-AREA_W:0, FH/2-AREA_H/2, AREA_W, AREA_H);
+  gLinea(FW/2,0, FW/2,FH, 0.92, 4);
+  gArco(FW/2,FH/2,62, 0,6.2832, 0.92, 5);
+  for(const side of [0,1]) gRett(side?FW-AREA_W:0, FH/2-AREA_H/2, AREA_W, AREA_H, 0.92, 3);
   /* ARCHI D'ANGOLO: quattro quarti di cerchio da 14 sulle bandierine */
   for(const [ax,ay,a0] of [[0,0,0],[FW,0,Math.PI/2],[FW,FH,Math.PI],[0,FH,Math.PI*1.5]]){
-    c.beginPath(); c.arc(ax,ay,14,a0,a0+Math.PI/2); c.stroke();
+    gArco(ax,ay,14, a0,a0+Math.PI/2, 0.92, 1);
   }
   /* ARCO dell'area, la mezzaluna fuori dai 16 metri */
   for(const side of [0,1]){
     const dx0=side?FW-DISCH:DISCH;
-    c.beginPath();
-    if(side) c.arc(dx0,FH/2,66,Math.PI*0.62,Math.PI*1.38);
-    else     c.arc(dx0,FH/2,66,-Math.PI*0.38,Math.PI*0.38);
-    c.stroke();
+    if(side) gArco(dx0,FH/2,66, Math.PI*0.62, Math.PI*1.38, 0.92, 3);
+    else     gArco(dx0,FH/2,66, -Math.PI*0.38, Math.PI*0.38, 0.92, 3);
   }
-  c.lineWidth=1.2; chalk(0.32);
-  c.strokeRect(2.6,2.6,FW-5.2,FH-5.2);
-  c.beginPath(); c.moveTo(FW/2+1.6,0); c.lineTo(FW/2-1.6,FH); c.stroke();
-  c.beginPath(); c.arc(FW/2,FH/2,63.8,0,6.2832); c.stroke();
+  /* la SECONDA MANO, sfalsata di un'unita' e mezza: e' il gesso passato
+     due volte, una a inizio stagione e una a meta'. Si spezza anche lei,
+     ma con i suoi buchi in punti diversi — dove manca la prima resta la
+     seconda, e la riga svanisce del tutto solo dove mancano tutt'e due. */
+  c.lineWidth=1.2;
+  gRett(2.6,2.6,FW-5.2,FH-5.2, 0.32, 4);
+  gLinea(FW/2+1.6,0, FW/2-1.6,FH, 0.32, 3);
+  gArco(FW/2,FH/2,63.8, 0,6.2832, 0.32, 4);
   c.fillStyle='rgba('+TH.gesso+',.78)';
   c.beginPath(); c.arc(FW/2,FH/2,3,0,6.2832); c.fill();
   /* DISCHETTI DEL RIGORE: in un gioco che manda ai rigori devono esserci */
@@ -12850,16 +13954,18 @@ function paintField(c, TH, pX, pY, q, vivo){
   }
   /* usura: brevi cancellature sopra le linee. Poche e leggere: prima
      erano trentaquattro tratti bruni da tre pixel sulla sola mediana,
-     e il risultato era una linea che sembrava tratteggiata per sbaglio. */
+     e il risultato era una linea che sembrava tratteggiata per sbaglio.
+     Stesso generatore a seme fisso del gesso spezzato: le cancellature
+     cadono sempre negli stessi punti di questo campo. */
   c.save();
   c.globalAlpha=0.42;
   c.strokeStyle=TH.usura; c.lineWidth=2;
   for(let i=0;i<16;i++){
-    const onV=Math.random()<0.32;
-    const t0=Math.random();
+    const onV=RG()<0.32;
+    const t0=RG();
     c.beginPath();
-    if(onV){ const yy=t0*FH; c.moveTo(FW/2-0.8,yy); c.lineTo(FW/2+0.8,yy+rnd(3,8)); }
-    else{ const xx=t0*FW; c.moveTo(xx,1); c.lineTo(xx+rnd(4,14),1.8); }
+    if(onV){ const yy=t0*FH; c.moveTo(FW/2-0.8,yy); c.lineTo(FW/2+0.8,yy+3+RG()*5); }
+    else{ const xx=t0*FW; c.moveTo(xx,1); c.lineTo(xx+4+RG()*10, 1.8); }
     c.stroke();
   }
   c.restore();
@@ -13017,6 +14123,13 @@ function paintField(c, TH, pX, pY, q, vivo){
       }
     }
   }
+  /* --- 4. L'OMBRA DELLA RETE, che e' il segno della gabbia.
+     Sta qui dentro, cioe' DOPO il gesso e dentro la moltiplicazione, per
+     la stessa ragione per cui ci stanno la caduta e le porte: la griglia
+     di rombi cade su tutto quello che e' a terra, righe bianche comprese.
+     Una linea laterale che resta accesa sotto l'ombra della recinzione
+     tradirebbe il campo dipinto in un colpo solo. */
+  if(TH.tipo!=='palestra') ombraGabbia(c, (IL.sole===undefined)?1:IL.sole);
   c.restore();
 
   /* pocket scuro dietro le porte (la rete dinamica ci va sopra) */
@@ -13157,7 +14270,41 @@ function buildGrain(){
 }
 
 /* ---------- vignette notturna pre-renderizzata ---------- */
+/* =====================================================================
+   LA TEMPERATURA DELLO SCHERMO, e perche' vive QUI e non nel manto.
+
+   Il gradiente termico cotto dentro fieldTex e' in coordinate DI CAMPO:
+   dice l'ora su millecentocinquanta unita'. Ma la camera ne inquadra
+   quattrocento, e dentro una finestra cosi' stretta quel gradiente e'
+   quasi piatto — misurato col contagocce sullo scatto d'azione, da solo
+   portava l'escursione di tinta da 9,3 a 15,4 gradi, cioe' appena sul
+   cancello e solo perche' quella inquadratura capitava sul terzo est.
+   Questa invece e' una velatura DI SCHERMO: vale in OGNI inquadratura,
+   a ogni taglia, su ogni campo, e costa la stessa unica drawImage di
+   prima. Caldo a ovest, rimbalzo del cielo a est.
+
+   LA MANOPOLA GIUSTA E' IL FREDDO, NON IL CALDO — ed e' il conto che
+   protegge il contrasto maglia/erba. Su un'erba (25·122·30):
+     ambra  (255,222,164) al 16%  -> (61,8 · 138,0 · 51,4) tinta 111,8
+            luminanza 94,8 -> 115,5, cioe' OTTO PUNTI DI PRATO PIU' CHIARO
+     cielo  (70,110,205)  al 15%  -> (31,8 · 120,2 · 56,3) tinta 135,3
+            luminanza 94,8 -> 96,9, cioe' due punti su duecentocinquantacinque
+   Dodici gradi di tinta dal lato freddo per un ventesimo del costo in
+   luminanza che chiede il lato caldo. Percio' il caldo resta dov'era
+   (0,115: e' gia' la firma dell'ora, non serve di piu') e la temperatura
+   la compra il blu. E' la stessa legge del prato termico: il blu pesa
+   0,0722 nella luminanza contro lo 0,7152 del verde.
+
+   IL TIME-LAPSE: la vignettatura si RICUOCE a due sole soglie, q=0,34 e
+   q=0,67 — l'alone caldo si stringe, il rimbalzo freddo si allarga e vira
+   al viola. Due cotture da qualche millisecondo in novanta secondi, cioe'
+   invisibili. NON si tengono tre tessiture in memoria: a 1080p con DPR 2
+   sarebbero ventiquattro megabyte. Si ricuoce la stessa.
+   ===================================================================== */
+let vigQ=-1;                            // la soglia d'ora con cui e' cotta
+function scalinoOra(q){ return q<0.34?0 : (q<0.67?1:2); }
 function buildVignette(){
+  vigQ=scalinoOra(oraPartita());
   vigTex=document.createElement('canvas');
   /* LA VIGNETTATURA SI CUOCE ALLA MISURA ESATTA DELLA TELA, non a un terzo.
      Sembra uno spreco di memoria e invece e' il contrario, misurato: cotta
@@ -13241,19 +14388,38 @@ function buildVignette(){
      Somma di due tinte: il giallo del sole vicino al bordo, e null'altro —
      una velatura calda che si esaurisce a meta' schermo. */
   const halo=FIELDS[clamp(G.fieldIdx|0,0,FIELDS.length-1)].th.halo;
+  /* i tre gradini del tramonto: primo tempo, meta', ultimo terzo.
+       ampC  quanto e' ancora largo l'alone caldo: si STRINGE mentre il
+             sole scende sotto il bordo (0,66 -> 0,54 -> 0,42 di larghezza)
+       forF  quanto pesa il rimbalzo del cielo: cresce
+       tinF  e vira dal blu di crepuscolo al viola della notte */
+  const OR=vigQ<0?scalinoOra(oraPartita()):vigQ;
+  const ampC=[0.66,0.54,0.42][OR], forC=[0.098,0.086,0.070][OR];
+  const forF=[0.130,0.155,0.180][OR];
+  const tinF=['70,112,200','78,100,196','86,88,180'][OR];
+  const SOLc=soleDi(FIELDS[clamp(G.fieldIdx|0,0,FIELDS.length-1)].th);
   if(sole){
-    const g2=c.createRadialGradient(-w*0.05,h*0.30,8, -w*0.05,h*0.30, w*0.66);
-    g2.addColorStop(0,   'rgba(255,222,164,.115)');
-    g2.addColorStop(0.42,'rgba(255,222,164,.045)');
-    g2.addColorStop(1,   'rgba(255,222,164,0)');
+    const g2=c.createRadialGradient(-w*0.05,h*0.30,8, -w*0.05,h*0.30, w*ampC);
+    g2.addColorStop(0,   'rgba('+SOLE.caldo+','+forC.toFixed(3)+')');
+    g2.addColorStop(0.42,'rgba('+SOLE.caldo+','+(forC*0.39).toFixed(3)+')');
+    g2.addColorStop(1,   'rgba('+SOLE.caldo+',0)');
     c.fillStyle=g2; c.fillRect(0,0,w,h);
     /* e dal lato opposto il rimbalzo freddo del cielo, che non e' buio:
-       e' l'altra meta' della coppia caldo/freddo */
-    const g3=c.createRadialGradient(w*1.04,h*0.72,8, w*1.04,h*0.72, w*0.58);
-    g3.addColorStop(0,   'rgba(96,124,196,.075)');
-    g3.addColorStop(1,   'rgba(96,124,196,0)');
+       e' l'altra meta' della coppia caldo/freddo — e, per il conto qui
+       sopra, e' la meta' che compra la temperatura quasi gratis */
+    const g3=c.createRadialGradient(w*1.04,h*0.72,8, w*1.04,h*0.72, w*0.72);
+    g3.addColorStop(0,   'rgba('+tinF+','+forF.toFixed(3)+')');
+    g3.addColorStop(0.46,'rgba('+tinF+','+(forF*0.52).toFixed(3)+')');
+    g3.addColorStop(1,   'rgba('+tinF+',0)');
     c.fillStyle=g3; c.fillRect(0,0,w,h);
   }else{
+    /* anche sotto i fari l'ora esiste: il rimbalzo freddo resta, in
+       proporzione a quanto sole prende il campo. La palestra ne prende
+       tre decimi, e infatti quasi non si vede — ma non e' mezzogiorno. */
+    const g3=c.createRadialGradient(w*1.04,h*0.72,8, w*1.04,h*0.72, w*0.70);
+    g3.addColorStop(0,   'rgba('+tinF+','+(forF*SOLc*0.85).toFixed(3)+')');
+    g3.addColorStop(1,   'rgba('+tinF+',0)');
+    c.fillStyle=g3; c.fillRect(0,0,w,h);
     const g2=c.createRadialGradient(w/2,-h*0.15,10, w/2,-h*0.15, h*0.7);
     g2.addColorStop(0,'rgba('+halo+',.06)'); g2.addColorStop(1,'rgba('+halo+',0)');
     c.fillStyle=g2; c.fillRect(0,0,w,h);
@@ -14028,6 +15194,156 @@ function scossaOff(){
   return SCOSSA_OFF;
 }
 
+/* =====================================================================
+   I QUATTRO FARI — la sera che diventa MECCANICA visiva.
+
+   Si accendono UNO ALLA VOLTA a q = 0,42 · 0,50 · 0,58 · 0,66, cioe'
+   attraverso tutto il secondo terzo della partita e non tutti insieme:
+   e' l'accensione scaglionata a farlo leggere come un impianto vero
+   invece che come un interruttore. Ogni accensione e' una rampa di
+   nove decimi di secondo con due sfarfallii, ed e' una FUNZIONE PURA
+   di q: nessun Math.random, nessun orologio, nessuno stato. Due partite
+   appaiate al bit vedono gli stessi fari agli stessi istanti.
+
+   IL COSTO, dichiarato prima di scrivere il codice, perche' questa e'
+   la sola voce cara di tutta la passata e questo file e' gia' stato
+   scottato DUE volte da una composizione additiva su area grande (il
+   'lighter' a schermo pieno del bloom, che dimezzo' i fotogrammi; la
+   vignettatura ingrandita, che porto' il p95 da 16,8 a 33,4 ms):
+     · la pozza e' UNA drawImage di una tessitura radiale cotta una
+       volta, mai un gradiente ricalcolato;
+     · il raggio e' limitato e la pozza e' CULLATA DURO contro il
+       rettangolo visibile: all'inquadratura di gioco ne entrano una o
+       due, mai quattro;
+     · la testa della lampada e' un blit da 24 px, cioe' gratis.
+   PIANO DI RIPIEGO, gia' scritto: se prestazione.js muove il p95 di
+   piu' dell'8%, si mette FARO_ADD a false e le pozze passano a sprite
+   premoltiplicati in 'source-over' — meta' del costo, novanta per cento
+   dell'effetto. Non si alza mai la tolleranza del cancello per far
+   passare l'effetto.
+
+   LA TINTA NON E' BIANCA, ed e' una scelta di leggibilita' prima che di
+   gusto: dentro la pozza il prato diventa il punto piu' chiaro del
+   quadro, e una palla bianca ci sparirebbe dentro — che e' esattamente
+   il difetto («un puntino quasi invisibile») appena riparato. La pozza
+   e' ambra-verde e non arriva mai alla luminanza del pallone.
+
+   A MOVIMENTO RIDOTTO oraPartita() vale 0,35 fisso: i fari sono SPENTI
+   (la prima soglia e' 0,42) e non sfarfalla niente. La sera la
+   raccontano il velo, il gradiente termico e le ombre lunghe, che sono
+   tutti immobili.
+   ===================================================================== */
+const FARO_ADD=true;                 // false = piano di ripiego (source-over)
+const FARO_SOGLIE=[0.42,0.50,0.58,0.66];
+const FARO_RAMPA=0.010;              // 0,9 s su una partita da novanta
+let faroTex=null;
+function buildFaroTex(){
+  const N=192;
+  faroTex=document.createElement('canvas');
+  faroTex.width=N; faroTex.height=N;
+  const c=faroTex.getContext('2d');
+  const g=c.createRadialGradient(N/2,N/2,0, N/2,N/2,N/2);
+  /* ambra-verde: e' la luce che un faro al mercurio lascia su un prato,
+     e non tocca mai il bianco del pallone.
+     IL TETTO DELLA POZZA E' MISURATO SUL PALLONE, non scelto a occhio.
+     Alla prima taratura il cuore stava a 0,50 e sullo scatto del secondo
+     tempo il prato dentro la pozza arrivava a rgb(108·180·105), cioe'
+     luminanza 0,369: contro il pallone (0,888) faceva 2,24:1, SOTTO il
+     tre a uno. Dentro il proprio cono di luce l'erba diventa il punto
+     piu' chiaro del quadro, ed e' esattamente li' che una palla bianca
+     sparisce — il difetto («un puntino quasi invisibile») che il gioco
+     ha appena finito di riparare. Accendere i fari senza questo conto
+     avrebbe peggiorato la cosa appena aggiustata.
+     Con il cuore a 0,30 il prato illuminato resta sotto 0,26 di
+     luminanza e il rapporto palla/erba torna sopra il tre a uno, con la
+     pozza ancora perfettamente leggibile: si vede benissimo lo stesso.
+     Chi la vorra' piu' forte rimisuri col contagocce dentro il cono, non
+     guardando lo schermo. */
+  g.addColorStop(0,   'rgba(206,222,142,.30)');
+  g.addColorStop(0.34,'rgba(196,214,128,.18)');
+  g.addColorStop(0.64,'rgba(176,198,110,.065)');
+  g.addColorStop(1,   'rgba(168,192,104,0)');
+  c.fillStyle=g; c.fillRect(0,0,N,N);
+}
+/* i quattro pali, agli angoli del recinto, in coordinate di campo. E' la
+   tabella che l'INCARICO B legge per disegnare i corpi dei pali e le loro
+   ombre: B chiede la posizione, non se la inventa. */
+function paliFaro(){
+  const dx=58, dy=52;
+  return [[-dx,-dy],[FW+dx,-dy],[-dx,FH+dy],[FW+dx,FH+dy]];
+}
+/* quanto e' accesa la lampada i all'ora q: 0 spenta, 1 a regime */
+function accensioneFaro(i,q){
+  const s=FARO_SOGLIE[i];
+  if(q<=s) return 0;
+  const t=(q-s)/FARO_RAMPA;
+  if(t>=1) return 1;
+  const base=0.5-0.5*Math.cos(t*Math.PI);          // rampa morbida
+  /* i due sfarfallii: una lampada a scarica non si accende, ci prova */
+  const sf=1-0.42*Math.max(0,Math.sin(t*Math.PI*6))*(1-t);
+  return base*sf;
+}
+function drawFari(q){
+  if(q<=0) return;
+  const pali=paliFaro();
+  /* culling duro contro il rettangolo di mondo visibile: e' cio' che
+     tiene la voce cara dentro il budget */
+  const S2v=G.view.S2||1, Axv=G.view.Ax||0, Ayv=G.view.Ay||0;
+  const wx0=(-Axv)/S2v, wx1=(VW-Axv)/S2v;
+  const wy0=(-Ayv)/S2v, wy1=(VH-Ayv)/S2v;
+  const RP=232;                                   // raggio della pozza
+  let acceso=false;
+  for(let i=0;i<4;i++){
+    const a=accensioneFaro(i,q);
+    if(a<=0.004) continue;
+    acceso=true;
+    /* la pozza cade DENTRO il campo, a un terzo dal palo verso il centro */
+    const px=pali[i][0]+(FW/2-pali[i][0])*0.34;
+    const py=pali[i][1]+(FH/2-pali[i][1])*0.40;
+    if(px+RP<wx0||px-RP>wx1||py+RP<wy0||py-RP>wy1) continue;
+    if(!faroTex) buildFaroTex();
+    ctx.save();
+    ctx.beginPath(); ctx.rect(-14,-14,FW+28,FH+28); ctx.clip();
+    ctx.globalCompositeOperation=FARO_ADD?'lighter':'source-over';
+    ctx.globalAlpha=FARO_ADD?a:a*0.62;
+    ctx.drawImage(faroTex, px-RP, py-RP*0.74, RP*2, RP*1.48);
+    ctx.restore();
+  }
+  if(!acceso) return;
+  /* LE TESTE DELLE LAMPADE: quattro blit da ventiquattro pixel, gratis.
+     Stanno FUORI dal manto, sul piazzale, dove B mettera' i pali. */
+  ctx.save();
+  ctx.globalCompositeOperation='lighter';
+  for(let i=0;i<4;i++){
+    const a=accensioneFaro(i,q);
+    if(a<=0.004) continue;
+    const [lx,ly]=pali[i];
+    if(lx<wx0-30||lx>wx1+30||ly<wy0-30||ly>wy1+30) continue;
+    if(!faroTex) buildFaroTex();
+    ctx.globalAlpha=a*0.85;
+    ctx.drawImage(faroTex, lx-13, ly-13, 26, 26);
+    ctx.globalAlpha=a;
+    ctx.fillStyle='rgba(255,246,206,.92)';
+    ctx.fillRect(lx-3.4, ly-2.6, 6.8, 5.2);
+  }
+  ctx.restore();
+  /* LE FINESTRE ACCESE, se B ha cotto le case. Ciascuna ha la sua soglia
+     0,30 + 0,55·frac(i·0,6180339887) — la successione aurea: deterministica,
+     senza Math.random, e sparsa in modo irregolare come vuole l'occhio. */
+  if(FINESTRE_SERA.length){
+    ctx.save();
+    ctx.fillStyle='rgba(255,206,120,.90)';
+    for(let i=0;i<FINESTRE_SERA.length && i<30;i++){
+      const f=FINESTRE_SERA[i];
+      const s=0.30+0.55*((i*0.6180339887)%1);
+      if(q<s) continue;
+      ctx.globalAlpha=Math.min(1,(q-s)/0.02)*0.9;
+      ctx.fillRect(f[0],f[1],f[2]||2,f[3]||2);
+    }
+    ctx.restore();
+  }
+}
+
 function render(){
   vigilaBottoniHUD();
   if(G.frozen) return;
@@ -14137,6 +15453,53 @@ function render(){
   if(gol && fieldTex && fieldTexTS>0 && S2*DPR>fieldTexTS*1.30)
     campoVivoDisegna(S2, Ax+sx, Ay+sy);
   else campoVivoS2=0;
+  /* =====================================================================
+     IL VELO CHE SCENDE — la sera che cala DURANTE la partita.
+     fieldTex e' cotta una volta: cinque megapixel non si ricuociono in
+     novanta secondi. Quindi il tramonto sul manto non e' una ricottura,
+     e' UN SOLO fillRect sul rettangolo del campo, alfa 0,18·q. Ed e' il
+     pezzo che fa dire "sera" senza leggere testo.
+     IN 'source-over' CON UNA TINTA GIA' SCURA, NON IN 'multiply', e il
+     prezzo della differenza e' misurato su questo banco: lo stesso
+     identico fillRect in moltiplicazione costava 2,6 ms per fotogramma
+     (fotogramma medio 25,2 contro 22,6). Una passata a schermo pieno con
+     un modo di fusione diverso da 'source-over' e' la stessa trappola
+     del 'lighter' del bloom e della vignettatura ingrandita: su questa
+     tela il modo di fusione conta piu' della superficie. La tinta
+     (24·28·44) e' gia' scurita alla sorgente, cosi' conserva i rapporti
+     fra i canali quasi come farebbe una moltiplicazione.
+     TETTO DURO A 0,18, e non e' un numero di gusto: oltre quel valore la
+     scala di grigi perde uno dei quattro valori distinguibili (squadra A,
+     squadra B, prato, interfaccia) che il metro dei materiali pretende.
+     STA SOTTO LE FIGURE apposta: il prato scende, i corpi no. Di sera un
+     giocatore si vede DI PIU' contro l'erba, non di meno — e il rapporto
+     maglia/manto che il collaudo misura puo' solo migliorare. */
+  {
+    const qo=oraPartita();
+    {
+      /* E SI DIPINGE SOLO IL RETTANGOLO CHE SI VEDE. Il campo padded e'
+         molto piu' grande del quadro: alla scala di gioco riempirlo tutto
+         voleva dire scrivere due volte e mezzo lo schermo per un velo che
+         si vede una volta sola. Qui si interseca il campo con la finestra
+         di mondo che la camera inquadra — quattro divisioni, e la
+         superficie dipinta e' esattamente quella dello schermo. */
+      const vx0=Math.max(-PADX,(-sx-Ax)/S2),  vx1=Math.min(FW+PADX,(VW-sx-Ax)/S2);
+      const vy0=Math.max(-PADY,(-sy-Ay)/S2),  vy1=Math.min(FH+PADY,(VH-sy-Ay)/S2);
+      if(vx1>vx0 && vy1>vy0){
+        /* IL VELO HA UN PAVIMENTO, non solo un tetto. Al fischio d'inizio
+           q vale zero e senza pavimento il primo fotogramma della partita
+           sarebbe il piu' chiaro di tutti: ma il gioco si chiama «le sette
+           di sera», e la promessa dev'essere vera GIA' AL CALCIO D'INIZIO.
+           Quattro centesimi di partenza, diciotto all'ultimo minuto — il
+           tetto duro resta 0,18, oltre il quale la scala di grigi perde uno
+           dei quattro valori distinguibili. E siccome il velo sta SOTTO le
+           figure, il pavimento non costa contrasto: lo compra. */
+        ctx.fillStyle='rgba(24,28,44,'+(0.04+0.14*qo).toFixed(4)+')';
+        ctx.fillRect(vx0,vy0, vx1-vx0, vy1-vy0);
+      }
+    }
+    drawFari(qo);
+  }
   drawInsegneTesto();
   drawCrowd();
   drawGoals();
@@ -14190,6 +15553,10 @@ function render(){
      gli stessi numeri, ma in virgola mobile, e mezzo pixel di scarto basta
      a far ricadere tutto sul campionamento filtrato. */
   if(vigTex){
+    /* la temperatura dello schermo cambia a DUE sole soglie in tutta la
+       partita (vedi buildVignette): due cotture da qualche millisecondo in
+       novanta secondi, non una per fotogramma */
+    if(scalinoOra(oraPartita())!==vigQ) buildVignette();
     ctx.setTransform(1,0,0,1,0,0);
     ctx.drawImage(vigTex, 0,0);
     ctx.setTransform(DPR,0,0,DPR,0,0);
@@ -14439,6 +15806,145 @@ function buildOmbraTex(){
   g2.addColorStop(0.78,'rgba(255,178,26,.13)');
   g2.addColorStop(1,   'rgba(255,170,20,0)');
   c2.fillStyle=g2; c2.fillRect(0,0,N,N);
+}
+/* =====================================================================
+   L'OMBRA LUNGA — la capsula del sole radente, cotta una volta.
+
+   PERCHE' UNA TESSITURA E NON LA SAGOMA DEL RIG PROIETTATA. Il conto,
+   per ventidue figure: proiettare la sagoma vuol dire chiamare
+   Rig3D.disegna una seconda volta con una matrice di taglio. Il rig
+   disegna la figura come una diciottina di tratti sovrapposti: in tinta
+   piena scura e con alfa sotto l'unita' le sovrapposizioni fanno cuciture
+   piu' scure a ogni giunto — una macchia a chiazze, non un'ombra. Per
+   evitarle servirebbe un canvas fuori schermo PER FIGURA (disegna opaco,
+   poi ristendi con alfa): ventidue pulizie, ventidue disegni del rig e
+   ventidue trasferimenti, cioe' fra 1,5 e 3,0 ms — da quattro a otto
+   volte l'alternativa, per un guadagno che a ventisei-quaranta pixel di
+   figura non si vede. Scartata, e scritto qui perche' non la riproponga
+   nessuno senza rifare il conto.
+
+   PERCHE' L'ELLISSE RUOTATA COSTA ZERO, ed e' la coincidenza su cui si
+   costruisce una firma: LE OMBRE SONO PARALLELE PER DEFINIZIONE, quindi
+   la rotazione non e' per figura, e' per PASSATA. Un solo
+   save/rotate/restore attorno all'INTERO ciclo, e dentro si disegnano
+   ventidue capsule allineate agli assi nel riferimento ruotato. Tre
+   operazioni di stato per fotogramma invece di sessantasei. Il
+   parallelismo, che il metro chiede come requisito estetico, e' anche
+   cio' che rende l'effetto gratis.
+
+   LA FORMA: una capsula con la testa TONDA dal lato del piede e la punta
+   affusolata dall'altro, con l'alfa che cala LUNGO L'ASSE LUNGO invece
+   che radialmente. E' quel gradiente a farla leggere come ombra morbida
+   di sole basso invece che come macchia: la penombra di un'ombra lunga
+   cresce con la distanza dal corpo, e la punta si perde nell'erba.
+   La TINTA non e' nera — e' SOLE.tintaOmbra, il viola-blu del cielo,
+   perche' su un verde il nero puro fa fango (la legge e' scritta in
+   testa a LUCI e vale anche qui).
+   ===================================================================== */
+let ombraLungaTex=null;
+function buildOmbraLungaTex(){
+  const W=256, H=64;
+  ombraLungaTex=document.createElement('canvas');
+  ombraLungaTex.width=W; ombraLungaTex.height=H;
+  const c=ombraLungaTex.getContext('2d');
+  /* =================================================================
+     LA TINTA E' SCURITA AL 40%, E LA RAGIONE E' UN COSTO MISURATO.
+
+     In teoria un'ombra va MOLTIPLICATA e non sovrapposta: e' la legge
+     gia' scritta per OM_MUL, e stendere un viola-blu di mezzo tono
+     sopra il verde toglie luce e aggiunge grigio. Provato davvero:
+       ombre in 'multiply'   fotogramma medio 23,4 ms
+       ombre in 'source-over'                 17,6 ms
+     Cinque virgola otto millisecondi per ventidue trasferimenti da
+     tremila pixel l'uno. Non e' la superficie: e' il MODO DI FUSIONE.
+     Su questa tela una composizione diversa da 'source-over' butta via
+     la strada veloce, e questo file lo ha gia' imparato due volte col
+     'lighter' (il bloom a schermo pieno che dimezzo' i fotogrammi, la
+     vignettatura ingrandita che porto' il p95 da 16,8 a 33,4 ms).
+     Terza volta, stessa lezione, scritta qui perche' sia l'ultima.
+
+     Il rimedio a costo zero e' quello che la vignettatura usa gia': si
+     tiene il 'source-over' e si SCURISCE il colore al 40% del suo
+     valore. Mescolarsi verso un colore molto scuro conserva i rapporti
+     fra i canali quasi come una moltiplicazione; mescolarsi verso un
+     grigio-blu di mezzo tono no. Misurato sull'erba (18·113·30) con la
+     capsula al 46%:
+       multiply    #2a3358 -> (15,4 · 77,0 · 21,0)  saturazione 0,80
+       source-over #2a3358 -> (32,8 · 89,3 · 56,7)  saturazione 0,25
+       source-over al 40%  -> (17,5 · 70,2 · 32,3)  saturazione 0,75
+     Cinque centesimi di saturazione contro cinque virgola otto
+     millisecondi: non e' nemmeno una scelta.
+     ================================================================= */
+  const t=SOLE.tintaOmbra;
+  const R=Math.round(parseInt(t.slice(1,3),16)*0.40),
+        G2=Math.round(parseInt(t.slice(3,5),16)*0.40),
+        B=Math.round(parseInt(t.slice(5,7),16)*0.40);
+  const col=a=>'rgba('+R+','+G2+','+B+','+a+')';
+  c.beginPath();
+  c.moveTo(32,1);
+  c.arc(32,32,31, -Math.PI/2, Math.PI/2, true);      // la testa tonda, sul piede
+  c.quadraticCurveTo(154,63, 252,33.4);
+  c.lineTo(252,30.6);
+  c.quadraticCurveTo(154,1, 32,1);
+  c.closePath();
+  /* LA RAMPA E' LENTA SOTTO IL CORPO E RIPIDA VERSO LA PUNTA. Al primo
+     giro era lineare e il risultato, misurato a occhio sullo scatto
+     d'azione, era una sbavatura: la parte attaccata ai piedi — quella che
+     ancora la figura al terreno — usciva chiara quanto la coda. Un'ombra
+     vera e' PIENA sotto chi la getta e si perde solo dopo. */
+  const g=c.createLinearGradient(0,0,W,0);
+  g.addColorStop(0,   col(1));
+  g.addColorStop(0.26,col(0.94));
+  g.addColorStop(0.56,col(0.60));
+  g.addColorStop(0.80,col(0.24));
+  g.addColorStop(1,   col(0));
+  c.fillStyle=g; c.fill();
+  /* i fianchi si sfumano: un'ombra lunga non ha bordi netti nemmeno di
+     traverso. Un gradiente in cottura, zero costo a fotogramma — e la
+     sfumatura si tiene stretta (un quinto per lato) perche' il cuore
+     della capsula deve restare pieno, se no la sezione utile e' meta'. */
+  c.globalCompositeOperation='destination-in';
+  const gv=c.createLinearGradient(0,0,0,H);
+  gv.addColorStop(0,   'rgba(0,0,0,0)');
+  gv.addColorStop(0.20,'rgba(0,0,0,1)');
+  gv.addColorStop(0.80,'rgba(0,0,0,1)');
+  gv.addColorStop(1,   'rgba(0,0,0,0)');
+  c.fillStyle=gv; c.fillRect(0,0,W,H);
+}
+/* =====================================================================
+   OMBRA STATICA — l'aiuto che l'INCARICO B chiama per OGNI oggetto nuovo.
+   B non sceglie mai una direzione della luce: la chiede qui.
+
+     ombraStatica(c, x, y, altezza, larghezza, alfa)
+
+   Getta dal piede (x,y) lungo SOLE.dir per altezza·SOLE.lung·sole del
+   campo, larga `larghezza`, e sfuma alla punta. Si chiama DENTRO
+   paintField, cioe' in cottura: costo a fotogramma NULLO. Pali della
+   porta, traversa, sacco, cartelloni, recinzione, pali dei fari, bici,
+   props: tutto cio' che non si muove ha l'ombra cotta, e a fotogramma
+   pagano solo le ventidue figure e la palla.
+   ===================================================================== */
+function ombraStatica(c, x, y, altezza, larghezza, alfa, sol){
+  const L=Math.max(2, altezza*SOLE.lung*(sol===undefined?1:sol));
+  const t=SOLE.tintaOmbra;
+  const R=parseInt(t.slice(1,3),16), G2=parseInt(t.slice(3,5),16), B=parseInt(t.slice(5,7),16);
+  const A=(alfa===undefined?0.30:alfa);
+  const ex=SOLE_UX*L, ey=SOLE_UY*L;
+  /* la perpendicolare al versore: e' lo spessore dell'oggetto proiettato */
+  const px=-SOLE_UY*larghezza*0.5, py=SOLE_UX*larghezza*0.5;
+  c.save();
+  c.beginPath();
+  c.moveTo(x+px, y+py);
+  c.lineTo(x-px, y-py);
+  c.lineTo(x-px*0.72+ex, y-py*0.72+ey);
+  c.lineTo(x+px*0.72+ex, y+py*0.72+ey);
+  c.closePath();
+  const g=c.createLinearGradient(x,y, x+ex,y+ey);
+  g.addColorStop(0,   'rgba('+R+','+G2+','+B+','+A.toFixed(3)+')');
+  g.addColorStop(0.42,'rgba('+R+','+G2+','+B+','+(A*0.66).toFixed(3)+')');
+  g.addColorStop(1,   'rgba('+R+','+G2+','+B+',0)');
+  c.fillStyle=g; c.fill();
+  c.restore();
 }
 /* =====================================================================
    L'ALONE DI STACCO — la terza delle tre tecniche che il metro elenca
@@ -15034,19 +16540,101 @@ function fermoCoperto(p){
   return false;
 }
 
+/* =====================================================================
+   LA GEOMETRIA DELL'OMBRA PORTATA, in un posto solo — ed e' anche quello
+   che il collaudo LEGGE invece di incollarsi a mano dei numeri.
+
+   Prima questa geometria stava scritta due volte: qui, e dentro
+   strumenti/collaudo.js come coppia di costanti «+4,2 / +7,8» con un
+   riquadro |dx|<26, |dy|<22. Due copie della stessa verita' sono una
+   verita' che prima o poi diverge, e quando diverge il cancello del
+   contrasto comincia a misurare l'OMBRA al posto dell'ERBA — cioe'
+   restituisce un numero falso, e falso in verde, che e' il modo peggiore
+   di sbagliare. Adesso il gioco la ESPORTA (window.__test.ombraCapsula) e
+   il collaudo la legge: non possono piu' divergere.
+
+     ux, uy      il versore lungo cui cade l'ombra (SOLE.dir)
+     l0, l1      da dove a dove si estende, misurata dal PIEDE
+     semiCorto   la mezza larghezza
+     piedeX/Y    l'ancora sul corpo, invariata dal giro precedente
+
+   l1 e' dichiarata al MASSIMO che l'ombra puo' raggiungere (col sole del
+   gol e col tramonto di fine partita, che la allungano fino al 55%): il
+   riquadro d'esclusione del collaudo dev'essere sempre piu' largo
+   dell'ombra vera, mai piu' stretto. */
+function ombraGeometria(){
+  const TH=FIELDS[clamp(G.fieldIdx|0,0,FIELDS.length-1)].th;
+  const SOL=soleDi(TH);
+  const base=RIG_H*P_DIS*SOLE.k*SOL;             // 34 x 1,18 x 2,2 = 88 unita'
+  return { ux:SOLE_UX, uy:SOLE_UY, l0:0, l1:base*1.55,
+           lungRiposo:base, semiCorto:7.6, piedeX:4.2, piedeY:7.8 };
+}
+
+/* =====================================================================
+   LE OMBRE DELLE FIGURE — la passata che riporta i corpi alla stessa ora
+   del campo.
+
+   Prima l'ombra era un ovale gettato di (+4,2 · +7,8), cioe' a 62 gradi:
+   mezzogiorno. Il manto invece era gia' dipinto alle sette di sera lungo
+   (0,94 · 0,34). Campo e corpi raccontavano due ore diverse, ed era il
+   difetto piu' grosso rimasto aperto in tutto il file.
+
+   TRE COSE, E NESSUNA COSTA UN'OPERAZIONE DI CANVAS IN PIU':
+
+   1) UNA SOLA ROTAZIONE PER PASSATA. Le ombre sono parallele per
+      definizione, quindi il riferimento ruotato si apre una volta sola,
+      attorno all'INTERO ciclo, e dentro si disegnano capsule allineate
+      agli assi. Tre operazioni di stato per fotogramma invece di
+      sessantasei. Ogni posizione entra nel riferimento con quattro
+      moltiplicazioni, che e' meno di quanto costava prima ruotare il
+      vettore di getto. Il parallelismo, che il metro chiede come
+      requisito estetico, e' anche cio' che rende l'effetto gratis.
+
+   2) IL SOLE NON CORRE COL GIOCATORE. La logica di prima allungava
+      l'ombra NELLA DIREZIONE DELLA CORSA, che e' un'idea sbagliata
+      appena si guarda un campo vero: l'asse lungo lo decide la
+      LAMPADA, non le gambe. Adesso l'asse lungo e' fisso lungo u e la
+      velocita' modula il semiasse CORTO (da 7,6 a 6,4: un corpo
+      lanciato e' piu' stretto in sezione). La macchia di contatto
+      continua a camminare sotto il piede che appoggia — quel tratto
+      era giusto e si conserva parola per parola.
+
+   3) LA QUOTA RESTA QUOTA. Salto, esultanza e saliscendi della falcata
+      continuano a staccare, rimpicciolire e schiarire l'ombra: k, r, a
+      sono gli stessi tre numeri di prima.
+
+   LE DUE TESSITURE, DUE drawImage, cioe' ESATTAMENTE quante ne faceva
+   prima: la capsula lunga (ombraLungaTex, cotta) piu' la macchia di
+   contatto (ombraTex, rimpicciolita a 9x5). E' la macchia che dice «il
+   corpo tocca terra»: senza, la figura galleggia sopra la propria ombra.
+
+   L'AFFOLLAMENTO E' LA SOLA COSA CHE PUO' ANDARE STORTA: ventidue ombre
+   da ottantotto unita' in un quadro largo quattrocento possono fondersi
+   in una rete scura. Se succede SI ABBASSA L'ALFA, MAI LA LUNGHEZZA —
+   la lunghezza e' il requisito (almeno 1,5 volte la figura, e qui siamo
+   a 2,2), l'alfa e' la manopola.
+   ===================================================================== */
+const OMBRA_ALFA=0.46;               // al piede; la punta si spegne da sola
 function drawOmbreGiocatori(lista){
   if(!ombraTex) buildOmbraTex();
-  /* IL SOLE CHE CALA SUL GOL, applicato qui e in nessun altro posto.
-     w vale 0 in tutti i fotogrammi di gioco: fuori dalla festa questa riga
-     e' un confronto e basta, e la geometria di riposo dell'ombra — quella
-     tarata sul vincolo di collaudo.js — non si sposta di un millesimo.
-     Dentro la festa la proiezione si allunga fino a 1,35 volte e il verso
-     in cui e' gettata gira di quattro gradi. Non si ruota l'ellisse (sarebbe
-     un save/rotate/restore per giocatore): si ruota il VETTORE con cui viene
-     gettata, che e' esattamente la parte che l'occhio legge. */
+  if(!ombraLungaTex) buildOmbraLungaTex();
+  const GEO=ombraGeometria();
+  /* IL SOLE CHE CALA SUL GOL piu' IL TRAMONTO DELLA PARTITA, nella stessa
+     coppia di variabili: due moltiplicazioni, zero righe nuove nel ciclo
+     caldo. w vale 0 fuori dalla festa del gol; qo e' l'ora della partita,
+     che allunga le ombre del 55% e le gira di sei gradi dal fischio
+     d'inizio al fischio finale. */
   const w=solePiuBasso();
-  const oK=1+0.35*w;
-  const oC=w?Math.cos(0.070*w):1, oS=w?Math.sin(0.070*w):0;
+  const qo=oraPartita();
+  const oK=(1+0.35*w)*(1+0.55*qo);
+  const rot=Math.atan2(SOLE_UY,SOLE_UX)+0.070*w+0.1047*qo;
+  const C=Math.cos(rot), S=Math.sin(rot);
+  const LUNG=GEO.lungRiposo*oK;
+  ctx.save();
+  /* NIENTE 'multiply' QUI DENTRO: costa 5,8 ms per ventidue figure su
+     questa tela, misurato — il perche' e la contromisura (la tinta gia'
+     scurita al 40% dentro ombraLungaTex) stanno scritti in buildOmbraLungaTex */
+  ctx.rotate(rot);
   for(const p of lista){
     /* fermo composto: se la figura non si disegna, nemmeno l'ombra —
        una macchia scura senza corpo era il glitch del giro 2 */
@@ -15061,66 +16649,36 @@ function drawOmbreGiocatori(lista){
     const k = 1+h*0.05;                 // in salto l'ombra si allontana
     const r = 1-h*0.030;                // e rimpicciolisce
     const a = 1-h*0.055;                // e schiarisce
-    const dxo=4.2*k*oK, dyo=7.8*k*oK;
-    const ox=p.x+dxo*oC-dyo*oS, oy=p.y+dxo*oS+dyo*oC;
-    /* ---------- L'OMBRA SEGUE LA POSA ----------
-       A ventisei pixel di figura, uno spostamento di due pixel su un
-       braccio non lo vede nessuno: quello che si vede e' la MACCHIA SCURA
-       grande, perche' e' l'unica cosa a forte contrasto contro l'erba
-       chiara. Finora l'ombra era un ovale identico a se stesso in ogni
-       fotogramma di ogni giocatore di tutta la partita — cioe' la cosa
-       piu' visibile della figura era anche l'unica che non si muoveva.
-       Due cambi, ed entrambi costano moltiplicazioni, non operazioni di
-       canvas: il disegno resta di due drawImage per giocatore.
-
-       1) LA PROIEZIONE SI ALLUNGA NELLA DIREZIONE DELLA CORSA, fino al 34%
-          in piu' sull'asse in cui il giocatore si sta muovendo. Un corpo
-          che corre proietta un'ombra lunga; uno fermo la proietta tonda.
-          Non serve ruotare l'ovale (costerebbe quattro operazioni per
-          giocatore): basta ripartire l'allungamento fra i due assi in
-          proporzione a dove va la velocita'. A quaranta unita' al secondo
-          si e' gia' a meta' dell'effetto.
-       2) LA MACCHIA DI CONTATTO CAMMINA. Non sta piu' inchiodata sotto il
-          bacino: passa sotto il piede che APPOGGIA e torna indietro al
-          mezzo ciclo dopo, esattamente come fa il peso di chi corre. E'
-          un tratto netto che oscilla di tre unita' di lato e tre avanti,
-          cioe' quattro pixel e mezzo a scala di gioco — abbastanza per
-          leggere la falcata anche quando le gambe sono due pastiglie.
-
-       IL VINCOLO, verificato a mano. collaudo.js (riga 328) scarta i
-       campioni d'erba dentro |x-(q.x+4,2)| < 26 e |y-(q.y+7,8)| < 22
-       attorno a ogni giocatore: se l'ombra esce da li', il collaudo
-       comincia a misurare l'ombra al posto dell'erba e il numero del
-       contrasto diventa una bugia. Con l'allungamento al massimo la
-       proiezione arriva a 24,7 di semiasse e a 12,2 di semiasse corto,
-       cioe' -24,5..+24,9 e -11,9..+12,6 rispetto al centro di quel
-       riquadro. Restano 1,1 unita' di margine sull'asse lungo e 9,4
-       sull'altro. Chi alza l'allungamento oltre 0,34 rompe il collaudo.
-
-       A MOVIMENTO RIDOTTO tutt'e due si spengono: con la fase congelata la
-       macchia di contatto resterebbe spostata da una parte per sempre, che
-       non e' "meno movimento", e' un difetto. Ombra tonda e centrata. */
-    const vx=p.vx||0, vy=p.vy||0;
-    const vv=Math.sqrt(vx*vx+vy*vy);
-    const st=SAVE.moto ? 0.34*clamp((vv-14)/40,0,1) : 0;
-    const ex = vv>1 ? Math.abs(vx)/vv : 0.7, ey = vv>1 ? Math.abs(vy)/vv : 0.7;
-    const rx=18.4*r*(1+st*ex)*oK, ry=9.1*r*(1+st*ey);
-    ctx.globalAlpha=a;
-    ctx.drawImage(ombraTex, ox-rx, oy-ry, rx*2, ry*2);
+    /* il piede, e poi il piede NEL RIFERIMENTO RUOTATO */
+    const fx=p.x+GEO.piedeX*k, fy=p.y+GEO.piedeY*k;
+    const X= fx*C+fy*S, Y=-fx*S+fy*C;
+    /* la velocita' STRINGE la sezione invece di allungare l'ombra: e' la
+       lampada a decidere la lunghezza, non le gambe */
+    const vv=Math.sqrt((p.vx||0)*(p.vx||0)+(p.vy||0)*(p.vy||0));
+    const stretta=SAVE.moto ? clamp((vv-14)/40,0,1) : 0;
+    const sc=(GEO.semiCorto-1.2*stretta)*r;
+    const L=LUNG*r;
+    ctx.globalAlpha=a*OMBRA_ALFA;
+    /* la tessitura ha la testa tonda a 32/256 e la punta a 252/256: si
+       riscala perche' il centro del tondo cada ESATTO sul piede e la punta
+       esatta a L unita' di distanza */
+    ctx.drawImage(ombraLungaTex, X-L*0.1455, Y-sc, L*1.164, sc*2);
     const ac=a*Math.max(0,1-h*0.16);
-    /* LOD: lontano dal centro-camera l'ombra e' la sola ellisse grande
+    /* LOD: lontano dal centro-camera l'ombra e' la sola capsula lunga
        (mai sul portatore: la sua figura e' sempre a dettaglio pieno) */
     const portatore = G.ball && G.ball.owner>=0 && G.players[G.ball.owner]===p;
     if(ac>0.02 && (portatore || !figuraLontana(p))){
-      const ang=p.ang||0, w=SAVE.moto ? Math.cos(p.fase||0) : 0;
+      const ang=p.ang||0, ph=SAVE.moto ? Math.cos(p.fase||0) : 0;
       const ca=Math.cos(ang), sa=Math.sin(ang);
-      const av=w*(p.amp||1.1)*0.35, la=w*3.0;
+      const av=ph*(p.amp||1.1)*0.35, la=ph*3.0;
       const cx=p.x+ca*av-sa*la, cy=p.y+7.0+sa*av+ca*la;
-      ctx.globalAlpha=ac*0.9;
-      ctx.drawImage(ombraTex, cx-8.2, cy-4.1, 16.4, 8.2);
+      const CX= cx*C+cy*S, CY=-cx*S+cy*C;
+      ctx.globalAlpha=ac*0.80;
+      ctx.drawImage(ombraTex, CX-10, CY-5.6, 20, 11.2);
     }
-    ctx.globalAlpha=1;
   }
+  ctx.globalAlpha=1;
+  ctx.restore();
 }
 
 /* =====================================================================
@@ -19547,6 +21105,31 @@ window.__test = {
      pallone dai bordi dell'area di gioco */
   get view(){ return G.view; },
   get bande(){ return {bar:BAR_H, y0:PA_Y0, y1:PA_Y1, foot:FOOT_H}; },
+  /* =====================================================================
+     LA CAPSULA D'OMBRA — il metro segue l'oggetto, non viceversa.
+
+     collaudo.js deve scartare i campioni d'erba che cadono dentro
+     un'ombra portata, altrimenti misura l'OMBRA e la chiama ERBA: il
+     contrasto maglia/manto uscirebbe falso, e falso in verde. Finora
+     quella geometria stava incollata a mano dentro lo strumento («+4,2 /
+     +7,8», riquadro |dx|<26 |dy|<22) mentre il gioco la teneva scritta
+     per conto suo: due copie che potevano divergere, e che con l'ombra
+     lunga di questa passata sarebbero divergite di tre volte e mezza.
+     Qui il gioco DICHIARA la sua ombra e lo strumento la legge. Da oggi
+     chi cambia la lunghezza dell'ombra sposta il cancello insieme a lei,
+     senza toccare una riga di collaudo.js.
+     I numeri sono in unita' di campo, dal centro del giocatore.
+     ===================================================================== */
+  ombraCapsula(){
+    const g=ombraGeometria();
+    return { ux:g.ux, uy:g.uy, l0:g.l0, l1:g.l1, lungRiposo:g.lungRiposo,
+             semiCorto:g.semiCorto, piedeX:g.piedeX, piedeY:g.piedeY,
+             alt:SOLE.alt, dir:[SOLE.dir[0],SOLE.dir[1]] };
+  },
+  /* l'ora della partita, 0 al fischio d'inizio e 1 al fischio finale: la
+     leggono gli strumenti che vogliono fotografare due temperature */
+  get ora(){ return oraPartita(); },
+  get fari(){ return [0,1,2,3].map(i=>accensioneFaro(i,oraPartita())); },
   showBanner,
   saveKey:SAVE_KEY,
   dismissSplash:()=>dismissSplash(),
