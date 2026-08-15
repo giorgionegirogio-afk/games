@@ -841,21 +841,30 @@ const CAMERE={
    kind: 0 capsula, 1 tronco (con disegno maglia), 2 testa
    bias: spinge avanti/indietro nei pareggi di profondita'
    ============================================================ */
+/* ARTI CON MASSA (appelli 2026-08): a 40px di figura le vecchie larghezze
+   (braccio 0.100, avambraccio 0.075, coscia 0.150, polpaccio 0.110)
+   leggevano come FILI, non capsule. Su del 50-80%: braccio 0.16,
+   avambraccio 0.13, coscia 0.24, polpaccio 0.175, piede 0.14; la barra
+   dei fianchi sale a 0.24 per non lasciare le cosce piu' larghe del
+   bacino. Il contorno unico resta e assorbe la massa nuova.
+   riv:1 sui polpacci = CALZETTONE CON RISVOLTO: sopra la calza in tinta
+   squadra si stampa un tratto corto al ginocchio in seconda tinta
+   (look.risvolto) — e' il terzo blocco di colore delle pedine vere. */
 const SEGS=[
   {a:PELVIS,b:NECK, w:0.27, c:'maglia',       bias:-0.012, kind:1},
-  {a:HIPL,  b:HIPR, w:0.175,c:'pantaloncini', bias:-0.006, kind:0},
+  {a:HIPL,  b:HIPR, w:0.24, c:'pantaloncini', bias:-0.006, kind:0},
   {a:NECK,  b:HEAD, w:0.10, c:'pelle',        bias:-0.002, kind:0},  // il COLLO: a 0.07 spariva sotto il minimo di 1.1px e la testa galleggiava
   {a:HEAD,  b:HEAD, w:0,    c:'pelle',        bias: 0.010, kind:2},
-  {a:SHR,b:ELR, w:0.100,c:'maglia', bias:0.005, kind:0},
-  {a:ELR,b:HAR, w:0.075,c:'pelle',  bias:0.008, kind:0},
-  {a:SHL,b:ELL, w:0.100,c:'maglia', bias:0.005, kind:0},
-  {a:ELL,b:HAL, w:0.075,c:'pelle',  bias:0.008, kind:0},
-  {a:HIPR,b:KNR, w:0.150,c:'pantaloncini', bias:0.002, kind:0},
-  {a:KNR, b:FTR, w:0.110,c:'calze',        bias:0.004, kind:0},
-  {a:FTR, b:TOR, w:0.100,c:'scarpe',       bias:0.006, kind:0},
-  {a:HIPL,b:KNL, w:0.150,c:'pantaloncini', bias:0.002, kind:0},
-  {a:KNL, b:FTL, w:0.110,c:'calze',        bias:0.004, kind:0},
-  {a:FTL, b:TOL, w:0.100,c:'scarpe',       bias:0.006, kind:0},
+  {a:SHR,b:ELR, w:0.160,c:'maglia', bias:0.005, kind:0},
+  {a:ELR,b:HAR, w:0.130,c:'pelle',  bias:0.008, kind:0},
+  {a:SHL,b:ELL, w:0.160,c:'maglia', bias:0.005, kind:0},
+  {a:ELL,b:HAL, w:0.130,c:'pelle',  bias:0.008, kind:0},
+  {a:HIPR,b:KNR, w:0.240,c:'pantaloncini', bias:0.002, kind:0},
+  {a:KNR, b:FTR, w:0.175,c:'calze',        bias:0.004, kind:0, riv:1},
+  {a:FTR, b:TOR, w:0.140,c:'scarpe',       bias:0.006, kind:0},
+  {a:HIPL,b:KNL, w:0.240,c:'pantaloncini', bias:0.002, kind:0},
+  {a:KNL, b:FTL, w:0.175,c:'calze',        bias:0.004, kind:0, riv:1},
+  {a:FTL, b:TOL, w:0.140,c:'scarpe',       bias:0.006, kind:0},
   {a:PELVIS,b:PELVIS, w:0, c:'palla', bias:0, kind:3},  // palla (solo clip col pallone)
 ];
 const NS=SEGS.length;
@@ -866,6 +875,25 @@ const ORD=new Int32Array(NS); for(let i=0;i<NS;i++)ORD[i]=i;
    palla, cosi' la sagoma legge come un corpo solo (vedi il passaggio di
    sottofondo in disegna) e non tredici rettangoli bordati uno a uno */
 const BORDO='#23201a';
+
+/* LUCE SUI CORPI: il bordo di luce da ovest che gia' modella la palla va
+   anche su busto e testa — un filo caldo sul lato ovest, un filo piu'
+   scuro sul lato est. Le due tinte si PRE-CALCOLANO una volta per divisa
+   (cache sull'oggetto look): zero costo per pixel, il fotogramma paga
+   solo due tratti in piu' per figura. La camera guarda il campo da nord,
+   quindi l'ovest del mondo e' la sinistra dello schermo e il filo non
+   dipende dallo yaw: e' il sole a essere fermo, non il corpo. */
+function mescolaTinta(hex,verso,f){
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  const R=parseInt(verso.slice(1,3),16), G=parseInt(verso.slice(3,5),16), B=parseInt(verso.slice(5,7),16);
+  const m=v=>{const x=Math.round(v); return (x<16?'0':'')+x.toString(16);};
+  return '#'+m(r+(R-r)*f)+m(g+(G-g)*f)+m(b+(B-b)*f);
+}
+function lumiLook(look){
+  look._lume =mescolaTinta(look.maglia,'#fff2cf',0.42);   // filo caldo, ovest
+  look._ombra=mescolaTinta(look.maglia,'#241d10',0.34);   // lato est
+  return look;
+}
 
 /* disegno della maglia: strisce verticali o fascia orizzontale */
 function motivo(ctx,s,look){
@@ -908,6 +936,16 @@ function testa(ctx,s,cyw,syw,cam,look){
   if(L>1e-4){ hx=X-fdx/L*o; hy=Y-fdy/L*o-r*0.10; }
   ctx.fillStyle=look.capelli;
   ctx.beginPath(); ctx.arc(hx,hy,r*0.94,0,TAU); ctx.fill();
+  /* il filo di luce da ovest anche sulla testa: due archi sottili dentro
+     il cerchio. Sono VELI (alfa), non tinte: valgono sopra pelle e capelli
+     insieme, qualunque sia la mezzaluna del viso. Con y in giu' l'angolo
+     pi greco e' la sinistra dello schermo, cioe' l'ovest del mondo. */
+  const t=r*0.30<0.8?0.8:r*0.30, rr=r-t*0.5;
+  ctx.lineWidth=t;
+  ctx.strokeStyle='rgba(255,242,205,.42)';
+  ctx.beginPath(); ctx.arc(X,Y,rr,0.60*Math.PI,1.40*Math.PI); ctx.stroke();
+  ctx.strokeStyle='rgba(18,14,7,.28)';
+  ctx.beginPath(); ctx.arc(X,Y,rr,-0.35*Math.PI,0.35*Math.PI); ctx.stroke();
 }
 
 /* palla: cerchio chiaro bordato scuro (leggibile anche a 2-3 px di raggio),
@@ -1094,20 +1132,50 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look){
     const g=SEGS[ORD[i]];
     if(g.kind===2){ testa(ctx,s,cyw,syw,cam,look); continue; }
     if(g.kind===3){ if(pallaQui) disegnaPalla(ctx,s,look); continue; }
-    const w=g.w*s;
+    const w=g.w*s, W=w<1.1?1.1:w;
     ctx.strokeStyle=look[g.c];
-    ctx.lineWidth=w<1.1?1.1:w;
+    ctx.lineWidth=W;
     ctx.beginPath();
     ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
     ctx.stroke();
-    if(g.kind===1) motivo(ctx,s,look);
+    if(g.riv && look.risvolto){
+      /* il RISVOLTO del calzettone: un tratto corto in seconda tinta
+         appena sotto il ginocchio — il terzo blocco di colore del kit */
+      const ax=SX[g.a],ay=SY[g.a],bx=SX[g.b],by=SY[g.b];
+      ctx.strokeStyle=look.risvolto;
+      ctx.beginPath();
+      ctx.moveTo(ax+(bx-ax)*0.04, ay+(by-ay)*0.04);
+      ctx.lineTo(ax+(bx-ax)*0.32, ay+(by-ay)*0.32);
+      ctx.stroke();
+    }
+    if(g.kind===1){
+      motivo(ctx,s,look);
+      /* il filo di luce/ombra sul busto: tinte pre-calcolate (lumiLook),
+         due tratti sottili sui fili ovest/est della capsula del torso */
+      if(look._lume===undefined) lumiLook(look);
+      const ax=SX[g.a],ay=SY[g.a],dx=SX[g.b]-ax,dy=SY[g.b]-ay;
+      const L=Math.sqrt(dx*dx+dy*dy);
+      if(L>1.5){
+        let nx=-dy/L, ny=dx/L; if(nx>0){nx=-nx;ny=-ny;}   // nx punta a ovest
+        const rw=W*0.26<0.9?0.9:W*0.26, off=(W-rw)*0.5;
+        ctx.lineWidth=rw;
+        ctx.strokeStyle=look._lume;
+        ctx.beginPath();
+        ctx.moveTo(ax+dx*0.14+nx*off, ay+dy*0.14+ny*off);
+        ctx.lineTo(ax+dx*0.86+nx*off, ay+dy*0.86+ny*off); ctx.stroke();
+        ctx.strokeStyle=look._ombra;
+        ctx.beginPath();
+        ctx.moveTo(ax+dx*0.14-nx*off, ay+dy*0.14-ny*off);
+        ctx.lineTo(ax+dx*0.86-nx*off, ay+dy*0.86-ny*off); ctx.stroke();
+      }
+    }
   }
   ctx.lineCap='butt';                    // lo stato del canvas torna com'era
 }
 
 const lookPredefinito={
   maglia:'#c9302c', maglia2:'#f5f2ea', disegno:'strisce',
-  pantaloncini:'#f5f2ea', calze:'#c9302c',
+  pantaloncini:'#f5f2ea', calze:'#c9302c', risvolto:'#f5f2ea',
   pelle:'#e0a97e', capelli:'#33210f', scarpe:'#1d1d1d',
   palla:'#f4f2ec',
 };
