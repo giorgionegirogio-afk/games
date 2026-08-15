@@ -2584,7 +2584,7 @@ button:active{transform:scale(.96)}
         <h3>Tastiera</h3>
         <p><span class="pill c">P1</span> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> muovi &middot; <kbd>C</kbd> passa &middot; <kbd>X</kbd> tira &middot; <kbd>E</kbd> filtrante &middot; <kbd>Z</kbd> scivola &middot; <kbd>Shift</kbd> scatto &middot; <kbd>Q</kbd> cambia uomo<br>
         <span class="pill r">P2</span> <kbd>&#8593;</kbd><kbd>&#8595;</kbd><kbd>&#8592;</kbd><kbd>&#8594;</kbd> muovi &middot; <kbd>N</kbd> passa &middot; <kbd>M</kbd> tira &middot; <kbd>,</kbd> filtrante &middot; <kbd>B</kbd> scivola &middot; <kbd>Shift destro</kbd> scatto &middot; <kbd>/</kbd> cambia uomo</p>
-        <p>Su telefono trascini per correre (stick virtuale). <b>Stick a sinistra; a destra TIRA/CONTRASTA e FILTR./CAMBIO cambiano col possesso</b>, coi flick sempre attivi. In 2 giocatori lo schermo &egrave; diviso a met&agrave;.</p>
+        <p>Su telefono trascini per correre (stick virtuale). <b>Stick a sinistra; a destra TIRA/CONTRASTA e FILTRANTE/CAMBIO cambiano col possesso</b>, coi flick sempre attivi. In 2 giocatori lo schermo &egrave; diviso a met&agrave;.</p>
         <h3>Le regole del campetto</h3>
         <p><b>La squadra pensa.</b> L'ultimo uomo non abbandona mai la sua met&agrave; campo; quando l'azione si ribalta le ali scattano lunghe: &egrave; il contropiede. In vantaggio negli ultimi quindici secondi la CPU porta la palla nell'angolo, come al campetto.</p>
         <p><b>Il portiere &egrave; un giocatore vero.</b> Esce sulla bisettrice, legge il tiro e si tuffa: la parata avviene per contatto. Se lo spiazzi o lo scavalchi, &egrave; gol.</p>
@@ -3515,6 +3515,41 @@ function poseDelusione(u){
   gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, -0.05+0.05*piega-0.05*ri, kG+0.05, -0.13);
 }
 
+/* ESULTANZA AL CIELO — la posa della RIPRESA DEDICATA del gol, nata per
+   la camera bassa (AZIONI.md, decisione 3). Le altre esultanze sono
+   pensate per la pianta: l'aliante a braccia rigide, visto di tre quarti
+   dal basso, leggeva come un corpo steso sull'erba. Questa e' un
+   MANIFESTO: ANTICIPO il mezzo affondo di carica, poi le braccia salgono
+   AL CIELO COI GOMITI PIEGATI a V mentre il petto va IN FUORI (il busto
+   si inarca all'indietro, la faccia al cielo), l'overshoot smorzato
+   della piantata (SEGUITO), e da ferma la posa RESPIRA — il petto sale e
+   scende, le mani vibrano appena. Il giro non si chiude: freq 0,5 e la
+   ripresa dura meno del giro, quindi u non torna mai a zero. */
+function poseCielo(u){
+  const ca=sm(u,0.02,0.10);                 // la carica: mezzo affondo
+  const su=sm(u,0.08,0.24);                 // le braccia salgono, il petto si apre
+  const p=u-0.24, osc=p>0?Math.sin(p*9.5)*Math.exp(-4.2*p):0;   // la piantata
+  const resp=p>0?Math.sin(p*4.6):0;         // il respiro da fermo
+  const pelvY=0.90-0.10*ca+0.03*su+0.012*resp*su;
+  const lean=0.06+0.16*ca-0.36*su-0.035*osc-0.012*resp;  // petto in fuori: arco indietro
+  corpo(pelvY,0,lean,0);
+  P[HEAD*3+1]+=0.030*su; P[HEAD*3+2]-=0.095*su;          // la faccia al cielo
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  /* braccia: giu' in carica, poi su a V APERTA — gomiti piegati e fuori,
+     mani sopra la testa, larghe; il respiro le fa vibrare appena */
+  const aB=0.14-0.40*ca+(2.62+0.14*osc+0.03*resp)*su;
+  const eB=0.30+0.45*ca+(0.36+0.06*osc-0.45*ca)*su;      // ~0.66 a regime
+  const outB=0.05+0.21*su;
+  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aB,eB, outB, 1);
+  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aB*0.97,eB*1.04, outB,-1);
+  /* gambe: piantate, quasi tese, una mezza avanti — un piedistallo,
+     non un passo (strette: il corpo resta una figura, non una campana) */
+  const kG=0.14+0.75*ca-0.06*su;
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0,  0.16-0.05*su, kG+0.05,  0.11);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, -0.10+0.03*su, kG,      -0.11);
+}
+
 const CLIPS={
   fermo:     {freq:0.5, pose:poseFermo},
   camminata: {freq:1.5, pose:poseCamminata},
@@ -3533,6 +3568,7 @@ const CLIPS={
   presa:     {freq:0.55,pose:posePresa,     palla:pallaPresa},
   rinvio:    {freq:0.55,pose:poseRinvio,    palla:pallaRinvio},
   esultanza: {freq:2.4, pose:poseEsultanza},
+  cielo:     {freq:0.5, pose:poseCielo},
   ginocchia: {freq:0.5, pose:poseGinocchia},
   pugno:     {freq:0.55,pose:posePugno},
   delusione: {freq:0.4, pose:poseDelusione},
@@ -3606,24 +3642,33 @@ const BORDO='#23201a';
 const LOD_PX=120;
 let lodOn=false, lodK=1;
 
-/* MANI A CINQUE DITA STILIZZATE (tre tratti bastano): un ventaglio corto
-   oltre il polso, nella direzione dell'avambraccio. Con bordo>=0 disegna
-   il passaggio di contorno (scuro, piu' largo), senno' la pelle. */
+/* MANI CON POLLICE E DITA RAGGRUPPATE (quinto appello). Il ventaglio a
+   tre tratti aperti leggeva come una paletta: le dita di una mano vera
+   stanno INSIEME. Qui due tratti quasi paralleli (il blocco delle dita,
+   lunghezze diverse: la mano non e' simmetrica) piu' un POLLICE corto
+   staccato di lato — il lato del corpo: destro per la mano destra, che
+   e' l'ultimo giunto HAR. Con bordo>=0 disegna il passaggio di contorno
+   (scuro, piu' largo), senno' la pelle. */
 function mano(ctx,s,ja,jb,look,bordo){
   const ax=SX[ja],ay=SY[ja];
   let dx=SX[jb]-ax, dy=SY[jb]-ay;
   const L=Math.sqrt(dx*dx+dy*dy);
   if(L>1e-3){dx/=L;dy/=L;}else{dx=0;dy=1;}
   const px=-dy, py=dx, bx=SX[jb], by=SY[jb];
-  const w=0.048*s<0.8?0.8:0.048*s;
+  const w=0.052*s<0.8?0.8:0.052*s;
   ctx.lineWidth = bordo>=0 ? w+2*bordo : w;
   ctx.strokeStyle = bordo>=0 ? BORDO : look.pelle;
+  const th=(jb===HAR?1:-1);              // il pollice sta dal lato del corpo
   ctx.beginPath();
-  for(let f=-1;f<=1;f++){
-    const ln=(f?0.125:0.155)*s;
-    ctx.moveTo(bx+dx*0.02*s+px*f*0.030*s, by+dy*0.02*s+py*f*0.030*s);
-    ctx.lineTo(bx+dx*ln+px*f*0.058*s, by+dy*ln+py*f*0.058*s);
+  /* il blocco delle dita: due tratti vicini, quasi paralleli */
+  for(let f=0;f<2;f++){
+    const o=(f?0.020:-0.020), ln=(f?0.128:0.150)*s;
+    ctx.moveTo(bx+dx*0.015*s+px*o*s, by+dy*0.015*s+py*o*s);
+    ctx.lineTo(bx+dx*ln+px*(o+(f?0.010:-0.006))*s, by+dy*ln+py*(o+(f?0.010:-0.006))*s);
   }
+  /* il pollice accennato: corto, aperto di lato */
+  ctx.moveTo(bx+dx*0.010*s, by+dy*0.010*s);
+  ctx.lineTo(bx+dx*0.055*s+px*th*0.078*s, by+dy*0.055*s+py*th*0.078*s);
   ctx.stroke();
 }
 
@@ -3710,15 +3755,19 @@ function testa(ctx,s,cyw,syw,cam,look){
     const eo=r*0.30;
     const lw=r*0.10<0.7?0.7:r*0.10;
     ctx.lineCap='round';
+    /* OCCHI A MANDORLA PIENI (quinto appello): i due trattini spessi a
+       capo tondo sbavavano in macchie sotto la frangia. Due ellissi
+       schiacciate lungo l'asse trasversale del viso (px2): pulite a ogni
+       zoom, e si stringono a profilo con la stessa proiezione del volto. */
+    const eAng=Math.atan2(py2,px2);
     ctx.globalAlpha=0.95*vis;
-    ctx.strokeStyle='#2b2119';
-    ctx.lineWidth=lw;
+    ctx.fillStyle='#2b2119';
     ctx.beginPath();
-    ctx.moveTo(exC+px2*eo, eyC+py2*eo);
-    ctx.lineTo(exC+px2*eo+ux*r*0.09, eyC+py2*eo+uy*r*0.09);
-    ctx.moveTo(exC-px2*eo, eyC-py2*eo);
-    ctx.lineTo(exC-px2*eo+ux*r*0.09, eyC-py2*eo+uy*r*0.09);
-    ctx.stroke();
+    ctx.ellipse(exC+px2*eo+ux*r*0.045, eyC+py2*eo+uy*r*0.045, r*0.125, r*0.058, eAng, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(exC-px2*eo+ux*r*0.045, eyC-py2*eo+uy*r*0.045, r*0.125, r*0.058, eAng, 0, TAU);
+    ctx.fill();
     /* sopracciglia in scuro pieno, staccate dagli occhi: al filo della
        calotta devono leggersi sia sopra i capelli sia sopra la pelle */
     ctx.strokeStyle='#1c1410';
@@ -3934,7 +3983,12 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
       ctx.beginPath(); ctx.arc(SX[HEAD],SY[HEAD],HEADR*s+bd,0,TAU); ctx.fill();
       continue;
     }
-    const w=g.w*s;
+    /* GOMITI RASTREMATI da vicino: l'avambraccio cala del 20% rispetto
+       al braccio (0,160 -> 0,104 effettivo) e la giuntura smette di
+       essere un tubo unico. Vale anche per il contorno, che deve seguire
+       la stessa sagoma. Sotto soglia niente: le pedine a 30px non lo
+       leggerebbero. */
+    const w=g.w*s*((lodOn&&(g.b===HAR||g.b===HAL))?0.80:1);
     ctx.lineWidth=(w<1.1?1.1:w)+2*bd;
     ctx.beginPath();
     ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
@@ -3947,7 +4001,8 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
     const g=SEGS[ORD[i]];
     if(g.kind===2){ testa(ctx,s,cyw,syw,cam,look); continue; }
     if(g.kind===3){ if(pallaQui) disegnaPalla(ctx,s,look); continue; }
-    const w=g.w*s, W=w<1.1?1.1:w;
+    /* stessa rastrematura del contorno: -20% sull'avambraccio da vicino */
+    const w=g.w*s*((lodOn&&(g.b===HAR||g.b===HAL))?0.80:1), W=w<1.1?1.1:w;
     ctx.strokeStyle=look[g.c];
     ctx.lineWidth=W;
     ctx.beginPath();
@@ -3955,6 +4010,27 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
     ctx.stroke();
     /* MANI a dita al posto del bozzolo (solo da vicino) */
     if(lodOn && (g.b===HAR||g.b===HAL)) mano(ctx,s,g.a,g.b,look,-1);
+    /* IL BORDO DI LUCE DA OVEST ANCHE SUGLI ARTI in primo piano (quinto
+       appello): il sole delle sette che gia' modella busto e testa lascia
+       un velo caldo sul filo ovest di braccia e gambe — un tratto in alfa
+       per segmento, solo con lodOn acceso (poche figure, scene ravvicinate:
+       il costo non tocca la partita a 22). Il collo, la barra dei fianchi
+       e le scarpe restano fuori: troppo corti, il velo diventerebbe rumore. */
+    if(lodOn && g.kind===0 && g.c!=='scarpe' && g.b!==HEAD && !(g.a===HIPL&&g.b===HIPR)){
+      const ddx=SX[g.b]-SX[g.a], ddy=SY[g.b]-SY[g.a];
+      const Lm=Math.sqrt(ddx*ddx+ddy*ddy);
+      if(Lm>1.5){
+        let nx=-ddy/Lm, ny=ddx/Lm; if(nx>0){nx=-nx;ny=-ny;}   // nx punta a ovest
+        ctx.lineCap='butt';
+        ctx.globalAlpha=0.16; ctx.strokeStyle='#fff2cf';
+        ctx.lineWidth=W*0.30;
+        ctx.beginPath();
+        ctx.moveTo(SX[g.a]+ddx*0.12+nx*W*0.32, SY[g.a]+ddy*0.12+ny*W*0.32);
+        ctx.lineTo(SX[g.a]+ddx*0.88+nx*W*0.32, SY[g.a]+ddy*0.88+ny*W*0.32);
+        ctx.stroke();
+        ctx.globalAlpha=1; ctx.lineCap='round';
+      }
+    }
     /* SCARPE distinte da vicino: la suola scura sotto, un lampo chiaro
        sul fianco — due tratti, e la scarpa smette di essere una virgola */
     if(lodOn && g.c==='scarpe'){
@@ -4109,6 +4185,9 @@ const G = {
   banner:'', bannerT:0, bannerCol:'#ffb020', bannerDur:1.4,
   /* moviola: anello di fotogrammi degli ultimi secondi, per rivedere il gol */
   rec:[], recT:0, moviola:null,
+  /* la RIPRESA DEDICATA del gol in camera bassa (decisione 3): parte dopo
+     il colpo nel sacco, per ogni rete con un marcatore (mai sull'autorete) */
+  ripresa:null, ripresaFatta:false,
   cam:{z:1,x:FW/2,y:FH/2},              // micro-zoom con smoothing
   view:{Ax:0,Ay:0,S2:1},                // ultima trasformazione camera (mondo -> schermo)
   frozen:false,                         // fine partita: il campo resta fermo e sfocato
@@ -5140,6 +5219,7 @@ function startMatch(mode, diff, opts){
   G.banner=''; G.bannerT=0; G.crowdHype=0; G.goalCine=null;
   G.goalSpot=null; G.goalChi=''; G.goalNum=0; G.goalAuto=false; G.goalMin=''; G.goalIdx=-1;
   G.golStop=0; G.golHit=-1; G.golLog.length=0;
+  G.ripresa=null; G.ripresaFatta=false; G.moviola=null; G.moviolaFatta=false;
   G.netBulge[0]={t:9,y:FH/2,mag:0}; G.netBulge[1]={t:9,y:FH/2,mag:0};
   /* si parte gia' alla distanza giusta: 39 px di giocatore, non un campo
      visto dal satellite che poi scende */
@@ -5198,7 +5278,7 @@ function setScene(s){
 function aggiornaBottoniHUD(){
   const s=G.scene;
   const inMatch = s==='play'||s==='kickoff'||s==='golden'||s==='goal'||s==='freekick';
-  const cine = (s==='freekick' && typeof Duel!=='undefined' && Duel.phase!=='off') || !!G.moviola;
+  const cine = (s==='freekick' && typeof Duel!=='undefined' && Duel.phase!=='off') || !!G.moviola || (s==='goal' && !!G.ripresa);
   if(ui && ui.pauseBtn) ui.pauseBtn.classList.toggle('hidden', !inMatch || cine);
   const gb=document.getElementById('gearBtn');
   if(gb) gb.classList.toggle('hidden', inMatch);
@@ -5207,7 +5287,7 @@ function aggiornaBottoniHUD(){
 }
 let cineOra=false;
 function vigilaBottoniHUD(){
-  const c=(G.scene==='freekick' && typeof Duel!=='undefined' && Duel.phase!=='off') || !!G.moviola;
+  const c=(G.scene==='freekick' && typeof Duel!=='undefined' && Duel.phase!=='off') || !!G.moviola || (G.scene==='goal' && !!G.ripresa);
   if(c!==cineOra) aggiornaBottoniHUD();
 }
 
@@ -5298,6 +5378,7 @@ function addGoal(team){
   G.banner=''; G.bannerT=0;
   G.confPopFatto=false;
   G.moviolaFatta=false; G.moviola=null;
+  G.ripresa=null; G.ripresaFatta=false;
   /* la palla ha varcato la linea: una scossa lunga e sorda nel verso in cui
      stava andando. Il COLPO vero, corto e secco, arriva dopo — quando la
      palla tocca il fondo del sacco (vedi il fermo immagine in step). */
@@ -5889,7 +5970,9 @@ addEventListener('keydown', e=>{
   /* Esc sul computer = tasto Indietro sul telefono: una sola definizione */
   if(e.code==='Escape'){ if(window.__indietro) window.__indietro(); else setPaused(!G.paused); return; }
   if(G.paused) return;
-  /* la moviola si SALTA con un tasto qualunque: si guarda, non si subisce */
+  /* moviola e ripresa del gol si SALTANO con un tasto qualunque: si
+     guardano, non si subiscono */
+  if(G.ripresa){ saltaRipresa(); return; }
   if(G.moviola){ saltaMoviola(); return; }
   if(G.scene==='freekick'){ Duel.key(e.code); return; }
   if(G.scene==='play'||G.scene==='kickoff'||G.scene==='golden'){
@@ -6001,11 +6084,16 @@ function touchBtnLayout(t){
      e' lo stato che racconta il gioco, e la foto non deve dipendere da
      chi ha la palla nel fotogramma pescato */
   const poss = HUD_POSA ? true : possessoTeam(t);
+  /* il piccolo a raggio 30 (era 24): FILTRANTE si scrive INTERA — una
+     parola mozzata legge come un difetto — e il disco cresce quel tanto
+     che serve. I CENTRI non si muovono di un pixel (giocata.js preme
+     (vw-70, vh-232) e deve colpire ancora); il varco coi raggi resta:
+     40+30 piu' 2x10 di margine hit = 90 < 92 fra i centri. */
   return [
     poss ? { act:'shot',    label:'TIRA',      x:bx+s*66, y:VH-140, r:40 }
          : { act:'slide',   label:'CONTRASTA', x:bx+s*66, y:VH-140, r:40 },
-    poss ? { act:'through', label:'FILTR.',    x:bx+s*70, y:VH-232, r:24 }
-         : { act:'swap',    label:'CAMBIO',    x:bx+s*70, y:VH-232, r:24 },
+    poss ? { act:'through', label:'FILTRANTE', x:bx+s*70, y:VH-232, r:30 }
+         : { act:'swap',    label:'CAMBIO',    x:bx+s*70, y:VH-232, r:30 },
   ];
 }
 const Touch5 = {
@@ -6142,6 +6230,7 @@ const cv = document.getElementById('gioco');
 function touchXY(t){ return [t.clientX, t.clientY]; }
 cv.addEventListener('touchstart', e=>{
   e.preventDefault(); Audio5.unlock();
+  if(G.ripresa){ saltaRipresa(); return; }   // il tocco salta la ripresa del gol
   if(G.moviola){ saltaMoviola(); return; }   // il tocco salta la moviola
   for(const t of e.changedTouches){ const [x,y]=touchXY(t); Touch5.start(t.identifier,x,y); }
 },{passive:false});
@@ -6159,7 +6248,7 @@ cv.addEventListener('touchcancel', e=>{
 /* col mouse: un clic sul campo salta la moviola (sul touch ci pensa
    touchstart qui sopra; se il browser manda entrambi, saltare due volte
    non fa niente) */
-cv.addEventListener('pointerdown', ()=>{ if(G.moviola) saltaMoviola(); });
+cv.addEventListener('pointerdown', ()=>{ if(G.ripresa) saltaRipresa(); else if(G.moviola) saltaMoviola(); });
 addEventListener('contextmenu', e=>{ if(e.target===cv) e.preventDefault(); });
 /* la vecchia opzione SAVE.touch (gesti/3 pulsanti) non esiste piu': lo
    schema e' unico. Il campo nei salvataggi vecchi si legge e si ignora. */
@@ -6851,7 +6940,22 @@ function step(){
     }
     /* esultanza */
     for(const p of G.players) if(p.celeb>0) p.celeb-=dt;
-    /* dopo la cinematica del gol parte la moviola, se attiva */
+    /* ---------- LA RIPRESA DEDICATA (camera bassa, decisione 3) ----------
+       DOPO l'impatto in rete — il tempo di un urlo — la regia stacca sul
+       marcatore visto dal basso, a schermo pieno, per RIP_DUR secondi.
+       Vive nel passo fisso come tutto il resto: parte e finisce agli
+       stessi fotogrammi a ogni esecuzione. Mai sull'autorete: non c'e'
+       nessuno da festeggiare. Si salta col tocco (saltaRipresa). */
+    if(!G.ripresa && !G.ripresaFatta && G.golHit>=0 && G.sceneT-G.golHit>=RIP_VIA){
+      if(G.goalAuto || G.goalIdx<0) G.ripresaFatta=true;
+      else avviaRipresa();
+    }
+    if(G.ripresa){
+      G.ripresa.t+=dt;
+      if(G.ripresa.t>=G.ripresa.dur){ G.ripresa=null; G.ripresaFatta=true; }
+      else return;
+    }
+    /* dopo la ripresa parte la moviola, se attiva */
     if(G.sceneT>=1.7 && !G.moviola && !G.moviolaFatta){
       G.moviolaFatta = true;
       /* niente striscia MOVIOLA: la striscia degli eventi vive in fascia
@@ -13932,12 +14036,12 @@ function render(){
 
   updateCamera(rdt);
 
-  /* LA RIPRESA DEL GOL: nelle due fasi in camera bassa la moviola non e'
-     piu' la pianta rallentata — e' un'altra inquadratura, come il duello
-     dal dischetto. Copre tutto: il mondo dall'alto non si disegna. */
-  if(G.moviola && (G.moviola.fase==='bassa' || G.moviola.fase==='esultanza')){
+  /* LA RIPRESA DEDICATA DEL GOL: un'altra inquadratura, come il duello
+     dal dischetto — fondale suo, camera bassa del rig, fascia del gol
+     sotto. Copre tutto: il mondo dall'alto non si disegna. */
+  if(G.scene==='goal' && G.ripresa){
     drawRipresaGol();
-    drawMoviola();
+    fasciaGolViva(true);
     return;
   }
 
@@ -15032,11 +15136,32 @@ function drawOmbreGiocatori(lista){
    corpo estraneo intero. Geometrie, colori e budget numerici IDENTICI a
    prima: cambia solo il piano su cui poggiano.
    ===================================================================== */
+/* IL COMANDATO AI FINI DEL DISEGNO (quinto appello). In partita e' G.ctrl
+   e basta. Nelle foto in posa (HUD_POSA, squadre CPU per l'equita' delle
+   scene) il comandato non esiste — G.ctrl[0] vale -1 — e l'unico segno in
+   campo restava l'anello del portatore: nella foto l'ambra sembrava stare
+   sul portatore INVECE che sul comandato. Qui si posa il comandato sul
+   compagno di movimento piu' vicino al pallone SENZA palla al piede: la
+   foto mostra i due segni distinti — la pozza del portatore e l'anello
+   ambra con la freccia del comandato — mai sommati sullo stesso paio di
+   scarpe. SOLO RESA: la simulazione non lo legge, G.ctrl non si tocca. */
+function ctrlDisegno(t){
+  if(!G.cpu[t]) return G.ctrl[t];
+  if(!HUD_POSA || t!==0 || !G.ball) return -1;
+  let best=-1, bd=1e9;
+  for(let i=0;i<G.players.length;i++){
+    const p=G.players[i];
+    if(p.team!==t || p.out>0 || p.role==='gk' || G.ball.owner===i) continue;
+    const d=len(G.ball.x-p.x, G.ball.y-p.y);
+    if(d<bd){ bd=d; best=i; }
+  }
+  return best;
+}
 function drawSegniTerra(lista){
   for(const p of lista){
     if(fermoCoperto(p)) continue;
     const pi=G.players.indexOf(p);
-    const isCtrl = !G.cpu[p.team] && G.ctrl[p.team]===pi;
+    const isCtrl = ctrlDisegno(p.team)===pi;
     const hasBall = G.ball && G.ball.owner===pi;
     if(!isCtrl && !(hasBall && p.slide<0)) continue;
     if(hasBall && p.slide<0){
@@ -15084,7 +15209,12 @@ function anelloPortatoreTratto(p,sopraPalla){
     ctx.strokeStyle='rgba(0,0,0,.38)'; ctx.lineWidth=3.8;
     ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0,6.2832); ctx.stroke();
   }
-  ctx.strokeStyle='rgba(255,206,58,.96)'; ctx.lineWidth=2.2;
+  /* GESSO, NON AMBRA (quinto appello): l'ambra e' la tinta del comandato
+     e di cio' che si preme — un anello ambra anche sul portatore faceva
+     credere che il controllo stesse sulla palla. Il portatore ha la sua
+     pozza dorata a terra e questo filo di gesso, distinti a colpo d'occhio
+     dall'anello ambra pieno con la freccia. */
+  ctx.strokeStyle='rgba(242,245,239,.92)'; ctx.lineWidth=2.2;
   ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0,6.2832); ctx.stroke();
 }
 function anelloComandato(p,sopraPalla){
@@ -15135,10 +15265,11 @@ function drawAnelloSopraPalla(){
   const b=G.ball;
   if(!b) return;
   const k=1+(b.z||0)*0.012, by=b.y-(b.z||0)*0.55, r=B_R*k+1.6;
-  /* l'anello ambra del comandato (per ciascun umano in campo) */
+  /* l'anello ambra del comandato (per ciascun umano in campo, e per il
+     comandato IN POSA delle foto: stessa legge di drawSegniTerra) */
   for(let t=0;t<2;t++){
-    if(G.cpu[t]) continue;
-    const pi=G.ctrl[t];
+    const pi=ctrlDisegno(t);
+    if(pi<0) continue;
     const p=G.players[pi];
     if(!p || p.out>0 || fermoCoperto(p)) continue;
     const cx=p.x+2.5*P_DIS, cy=p.y+6.6*P_DIS;
@@ -15153,7 +15284,7 @@ function drawAnelloSopraPalla(){
   if(b.owner>=0){
     const p=G.players[b.owner];
     if(p && p.out<=0 && p.slide<0 && !fermoCoperto(p) &&
-       !(!G.cpu[p.team] && G.ctrl[p.team]===b.owner)){
+       ctrlDisegno(p.team)!==b.owner){
       const cy=p.y+9.2*P_DIS;
       if(Math.abs(b.x-p.x)<=15.5*P_DIS+r && Math.abs(by-cy)<=8*P_DIS+r){
         ctx.save();
@@ -15808,67 +15939,16 @@ function registraFotogramma(dt){
               d'inizio arrivava di colpo: era l'unico strappo della scena. */
 function avviaMoviola(){
   if(!SAVE.moviola || G.rec.length < REC_HZ) return false;
-  /* OTTO DECIMI prima della rete, non piu' un secondo e due: il nastro in
-     pianta e' l'antefatto, perche' adesso il gesto si rivede DAVVERO nella
-     ripresa in camera bassa che segue. La cronometria del gol non cambia
-     genere: la moviola parte sempre a sceneT 1,7. */
+  /* OTTO DECIMI prima della rete: il nastro in pianta e' l'antefatto —
+     la TRAIETTORIA e chi l'ha messa dentro. Il gesto da vicino e la festa
+     vivono nella ripresa dedicata in camera bassa, che e' gia' passata. */
   const da = Math.max(0, G.rec.length - Math.round(REC_HZ*0.8));
-  const fr = G.rec.slice(da), n=fr.length;
-  /* IL FOTOGRAMMA D'IMPATTO: quello in cui il calcio del marcatore e' piu'
-     fresco (kickT al massimo). E' il quadro del fermo composto a moto
-     ridotto e l'ancora dell'asse della ripresa. */
-  let iImp=n-1;
-  if(G.goalIdx>=0){
-    let best=0;
-    for(let j=0;j<n;j++){
-      const pf=fr[j].p[G.goalIdx];
-      if(pf && pf.kt>best){ best=pf.kt; iImp=j; }
-    }
-  }
-  /* L'ASSE DELLA RIPRESA: la direzione del tiro registrata — dal pallone
-     al momento del calcio al punto d'ingresso in porta. Se il nastro non
-     la dice (tap-in sulla linea), l'asse e' la perpendicolare alla porta. */
-  let ax=(G.goalTeam===0?1:-1), ay=0;
-  if(n>1){
-    const b0=fr[iImp].b, b1=fr[n-1].b;
-    const dx=b1.x-b0.x, dy=b1.y-b0.y, l=len(dx,dy);
-    if(l>18){ ax=dx/l; ay=dy/l; }
-  }
-  const spot = G.goalSpot ? {x:G.goalSpot.x, y:G.goalSpot.y}
-                          : {x:(G.goalTeam===0?FW:0), y:FH/2};
-  /* IL CAST della camera bassa: marcatore, portiere battuto, e al massimo
-     due vicini — quattro figure, non ventidue: e' un'inquadratura, non
-     un censimento. */
-  const cast=[];
-  {
-    if(G.goalIdx>=0) cast.push(G.goalIdx);
-    const gkIdx=G.players.findIndex(q=>q.role==='gk' && q.team!==G.goalTeam);
-    if(gkIdx>=0 && cast.indexOf(gkIdx)<0) cast.push(gkIdx);
-    if(n>0){
-      const pf=fr[n-1].p;
-      const rx=(G.goalIdx>=0&&pf[G.goalIdx])?pf[G.goalIdx].x:spot.x;
-      const ry=(G.goalIdx>=0&&pf[G.goalIdx])?pf[G.goalIdx].y:spot.y;
-      const resto=[];
-      for(let i=0;i<pf.length;i++){
-        if(pf[i].out || cast.indexOf(i)>=0) continue;
-        resto.push({i, d:len(pf[i].x-rx, pf[i].y-ry)});
-      }
-      resto.sort((a,b)=>a.d-b.d);
-      for(let k=0;k<2 && k<resto.length;k++) cast.push(resto[k].i);
-    }
-  }
-  G.moviola = { frames:fr, i:0, t:0, vel:0.7,
-                fase:'entra', tIn:0, tf:0, tu:0,
-                /* la ripresa in camera bassa: playhead suo, asse, cast */
-                i2:0, tb:0, te:0, bt:0, fasciaT:0,
-                iImp, ax, ay, spot, cast };
+  const fr = G.rec.slice(da);
+  G.moviola = { frames:fr, i:0, t:0, vel:0.7, fase:'entra', tIn:0, tf:0, tu:0 };
   return true;
 }
 /* durate dei due stacchi: a movimento ridotto le bande non scorrono */
 const MOV_IN = 0.17, MOV_RETE = 0.34, MOV_OUT = 0.24;
-/* la RIPRESA del gol: carrellata bassa e poi l'esultanza del rig.
-   A moto ridotto la carrellata non c'e': un solo quadro, piu' breve. */
-const MOV_BASSA = 1.4, MOV_BASSA_CODA = 0.35, MOV_BASSA_MOTO = 1.2, MOV_ESU = 0.9;
 
 function aggiornaMoviola(dt){
   const M = G.moviola;
@@ -15890,32 +15970,7 @@ function aggiornaMoviola(dt){
   }
   if(M.fase==='rete'){
     M.tf += dt;
-    if(M.tf >= MOV_RETE){
-      /* STACCO ALLA CAMERA BASSA: il tiro si rivede da dietro il marcatore.
-         A moto ridotto niente carrellata: fermo composto sul quadro
-         d'impatto, con la fascia del gol sopra. */
-      if(n>1){ M.fase='bassa'; M.tb=0; M.bt=0; M.fasciaT=0; M.i2=SAVE.moto?0:M.iImp; }
-      else { M.fase='uscita'; M.tu=0; }
-    }
-    return;
-  }
-  if(M.fase==='bassa'){
-    M.tb += dt; M.fasciaT += dt;
-    if(SAVE.moto){
-      const u=clamp(M.tb/(MOV_BASSA-MOV_BASSA_CODA),0,1);
-      M.i2=Math.min(n-1, Math.floor(u*(n-1)));
-    } else M.i2=M.iImp;
-    /* il gonfiore della rete riparte quando il nastro tocca la rete */
-    if(SAVE.moto && M.i2>=n-1) M.bt+=dt; else M.bt=0;
-    if(M.tb >= (SAVE.moto?MOV_BASSA:MOV_BASSA_MOTO)){
-      if(SAVE.moto && G.goalIdx>=0){ M.fase='esultanza'; M.te=0; }
-      else { M.fase='uscita'; M.tu=0; }
-    }
-    return;
-  }
-  if(M.fase==='esultanza'){
-    M.te += dt; M.fasciaT += dt;
-    if(M.te >= MOV_ESU){ M.fase='uscita'; M.tu=0; }
+    if(M.tf >= MOV_RETE){ M.fase='uscita'; M.tu=0; }
     return;
   }
   M.tu += dt;
@@ -15929,17 +15984,19 @@ function saltaMoviola(){
   M.fase='uscita'; M.tu=0;
   Audio5.uiTick();
 }
+/* ANCHE LA RIPRESA SI SALTA COL TOCCO, come la moviola: si chiude subito
+   e la scena del gol riprende la sua cronometria di sempre. */
+function saltaRipresa(){
+  if(!G.ripresa) return;
+  G.ripresa=null; G.ripresaFatta=true;
+  Audio5.uiTick();
+}
 
 /* disegna lo stato registrato al posto di quello vivo */
 function disegnaMoviola(){
   const M=G.moviola; if(!M) return;
-  /* quale fotogramma: il nastro in pianta segue M.i; la ripresa in camera
-     bassa ha il SUO playhead (M.i2); l'esultanza tiene l'ultimo quadro,
-     cosi' il portiere battuto resta dove il nastro l'ha lasciato */
-  const idx = M.fase==='bassa' ? M.i2
-            : M.fase==='esultanza' ? M.frames.length-1
-            : clamp(M.i,0,M.frames.length-1);
-  const a=M.frames[clamp(idx,0,M.frames.length-1)];
+  const idx = clamp(M.i,0,M.frames.length-1);
+  const a=M.frames[idx];
   for(let k=0;k<a.p.length && k<G.players.length;k++){
     const f=a.p[k], q=G.players[k];
     if(f.out) continue;
@@ -15963,7 +16020,7 @@ function disegnaMoviola(){
 }
 
 /* ---------- MINIMAPPA ----------
-   E' il prezzo da pagare per lo zoom, ed e' un prezzo basso: 132x64 px in
+   E' il prezzo da pagare per lo zoom, ed e' un prezzo basso: 88x43 px in
    basso al centro restituiscono la lettura tattica che la telecamera
    stretta toglie. Compare solo in gioco e solo quando si vede meno del 92%
    del campo. */
@@ -15989,42 +16046,29 @@ function drawMinimappa(){
      sempre, sinistra in 2 giocatori) arrivano fino a 116 px dal bordo
      piu' 10 di margine di tocco; se un viewport stretto porta il centro
      a toccarle, si restringe la BUSSOLA, mai il margine. */
-  const k = Math.min(k0, Math.max(0.9,(VW-258)/132));
+  const k = Math.min(k0, Math.max(0.9,(VW-258)/88));
   /* se la fascia delle insegne (mondo: da FH+15) entra nel quadro, la
      minimappa si aggancia SOPRA di lei: mai sopra una scritta */
-  const mw=132*k, mh=64*k, mx=(VW-mw)/2,
+  const mw=88*k, mh=43*k, mx=(VW-mw)/2,
         my=Math.min(VH-12-mh, Ay+(FH+15)*S2-8-mh);
-  MINI_RECT={x0:mx-3, y0:my-3, x1:mx+mw+3, y1:my+mh+3};
+  MINI_RECT={x0:mx-2, y0:my-2, x1:mx+mw+2, y1:my+mh+2};
   ctx.save();
-  /* IL RETTANGOLO DI NERO PURO NELL'ANGOLO. Era il difetto piu' facile da
-     vedere e il piu' facile da togliere: su un campo che adesso e' verde
-     acceso, un riquadro #06120c con un filo bianco intorno legge come un
-     buco nello schermo. La minimappa e' un campo in miniatura: prende il
-     verde del campo PIENO e prende LA STESSA ROTAIA del campo grande —
-     contorno scuro, filo caldo a ovest e in cima, filo freddo a est e in
-     fondo. Sono quattro fillRect da un pixel: costano quanto il bordo di
-     prima e la bussola smette di essere un ritaglio per diventare un
-     oggetto.
-     IL FONDO E' OPACO, ED E' UNA LEZIONE PAGATA: con l'inquadratura
-     riaperta il pannello e' finito sopra la folla e i tabelloni, e al 78%
-     di opacita' le sagome degli spettatori trapassavano il verde del
-     radar — chiazze chiare e scure dentro il campo in miniatura, i punti
-     rosa confusi con le teste. Un radar si legge in un colpo d'occhio
-     solo se il suo fondo e' SUO. */
-  const THm=FIELDS[clamp(G.fieldIdx|0,0,FIELDS.length-1)].th;
-  ctx.fillStyle='#09140c';
-  ctx.fillRect(mx-3,my-3,mw+6,mh+6);           // zoccolo scuro sotto la rotaia
-  ctx.fillStyle=THm.g1||'#075c14'; ctx.fillRect(mx,my,mw,mh);
-  /* le bande di tosatura, cinque, come sul manto vero */
-  ctx.fillStyle=THm.g2||'#0a6c19';
-  for(let i=1;i<6;i+=2) ctx.fillRect(mx+mw*i/6,my,mw/6,mh);
-  ctx.fillStyle='rgba(6,14,10,.85)';
-  ctx.fillRect(mx-2,my-2,mw+4,1.6); ctx.fillRect(mx-2,my+mh+0.4,mw+4,1.6);
-  ctx.fillRect(mx-2,my-2,1.6,mh+4); ctx.fillRect(mx+mw+0.4,my-2,1.6,mh+4);
-  ctx.fillStyle='rgba(255,232,186,.62)';
-  ctx.fillRect(mx-2,my-2,mw+4,1); ctx.fillRect(mx-2,my-2,1,mh+4);
-  ctx.fillStyle='rgba(140,178,255,.30)';
-  ctx.fillRect(mx-2,my+mh+1,mw+4,1); ctx.fillRect(mx+mw+1,my-2,1,mh+4);
+  /* LA BUSSOLA DISCRETA (quinto appello, rett. 15 ago 2026). Il pannello
+     opaco con la rotaia bordata era diventato la cosa piu' pesante in
+     basso: un rettangolo che COPRIVA il campo. Adesso e' una VELATURA
+     scura al 55% — il manto e le figure che ci passano dietro si
+     intravedono, come sotto il vetro di un orologio — con un solo filo
+     sottile di bordo. Un terzo piu' piccola (132x64 -> 88x43): i pallini
+     e il pallone restano leggibili perche' il fondo scurito stacca i
+     colori squadra piu' del verde pieno di prima. La lezione dell'opaco
+     (le sagome della folla nel radar) resta pagata: il velo al 55% le
+     SPEGNE — si intravedono, non si confondono coi pallini. */
+  ctx.fillStyle='rgba(5,13,9,.55)';
+  ctx.fillRect(mx,my,mw,mh);
+  ctx.strokeStyle='rgba(6,14,10,.6)'; ctx.lineWidth=1;
+  ctx.strokeRect(mx-0.5,my-0.5,mw+1,mh+1);
+  ctx.strokeStyle='rgba(242,245,239,.50)';
+  ctx.strokeRect(mx+0.5,my+0.5,mw-1,mh-1);
   const M=(x,y)=>[mx+x/FW*mw, my+y/FH*mh];
   /* LE DUE PORTE, LA META' CAMPO E IL CERCHIO. Con la camera stretta le
      porte stanno fuori schermo per quasi tutta la partita: la minimappa e'
@@ -16045,13 +16089,17 @@ function drawMinimappa(){
   for(const p of G.players){
     if(p.out>0) continue;
     const q=M(clamp(p.x,0,FW),clamp(p.y,0,FH));
-    const ctrl = !G.cpu[p.team] && G.players[G.ctrl[p.team]]===p;
+    const ctrl = G.players[ctrlDisegno(p.team)]===p;
     if(ctrl){
       ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.lineWidth=1.4;
       ctx.beginPath(); ctx.arc(q[0],q[1],4*k,0,6.2832); ctx.stroke();
     }
     ctx.fillStyle=TEAMCOL[p.team];
     ctx.beginPath(); ctx.arc(q[0],q[1],2.5*k,0,6.2832); ctx.fill();
+    /* filo scuro attorno al pallino: col fondo traslucido una figura che
+       passa dietro il vetro resta un'ombra, il pallino un OGGETTO bordato —
+       e' il bordo, non piu' l'opacita', a tenerli distinti */
+    ctx.strokeStyle='rgba(4,10,7,.85)'; ctx.lineWidth=1; ctx.stroke();
   }
   /* IL PALLONE E' IL PUNTO PIU' GRANDE. Prima era piu' PICCOLO dei giocatori
      e spariva ogni volta che ci finiva sopra un pallino di squadra: in una
@@ -16432,7 +16480,7 @@ function drawTouchSticks(){
 }
 
 /* i DUE pulsanti contestuali dello schema unico: TIRA/CONTRASTA grande,
-   FILTR./CAMBIO piccolo. L'etichetta cambia col possesso, la posizione
+   FILTRANTE/CAMBIO piccolo. L'etichetta cambia col possesso, la posizione
    MAI; transizione dell'etichetta senza animazioni (densita'). */
 function drawTouchButtons(){
   if(!(IS_TOUCH||Touch5.used||HUD_POSA)) return;
@@ -16448,20 +16496,21 @@ function drawTouchButtons(){
         const e=Touch5.btnTouch[k];
         if(e.t===t&&e.act===bt.act){ pressed=true; break; }
       }
-      /* IL DISCO E' UNO SCRIM SCURO, smalto su lavagna (rett. 14 ago 2026,
-         secondo appello della giuria). La velatura chiara del giro scorso
-         lasciava passare le figure: un giocatore che attraversava il disco
-         impastava l'etichetta TIRA/FILTR. e per mezzo secondo il comando
-         non si leggeva. Adesso sotto l'etichetta c'e' la lavagna — lo
-         stesso scuro del tabellone, abbastanza denso da spegnere chi ci
-         passa dietro — e a staccare il disco dal manto pensa il bordo
-         pieno nel colore squadra, non il riempimento. Alla pressione il
-         riempimento diventa ambra — la tinta che in tutto il gioco vuol
-         dire "qui si agisce". Il layout (posizione e raggio) non cambia
-         di un pixel. */
+      /* IL DISCO E' PIENO: SMALTO TRASLUCIDO SU FONDINO SCURO (rett. 15
+         ago 2026, quinto appello). La sola lavagna col filo di bordo
+         leggeva ancora come fil di ferro: il disco c'era ma non aveva
+         corpo. Adesso e' fatto come la levetta dello stick — sotto un
+         fondino scuro NETTO (denso: chi ci passa dietro si spegne, la
+         lezione del secondo appello resta pagata), sopra uno smalto
+         traslucido nel colore squadra (gesso per CONTRASTA: niente
+         quarta tinta) e il bordo pieno a chiudere. Alla pressione lo
+         smalto diventa ambra — la tinta che in tutto il gioco vuol dire
+         "qui si agisce". Le posizioni non cambiano di un pixel. */
       ctx.beginPath(); ctx.arc(bt.x,bt.y,bt.r,0,6.2832);
-      ctx.fillStyle= pressed ? 'rgba(255,176,32,.32)' : 'rgba(8,19,13,.62)';
-      ctx.fill();
+      ctx.fillStyle='rgba(8,19,13,.80)'; ctx.fill();       // il fondino scuro netto
+      ctx.fillStyle= pressed ? 'rgba(255,176,32,.55)'
+                   : (bt.act==='slide' ? 'rgba(242,245,239,.14)' : 'rgba('+col+',.30)');
+      ctx.fill();                                          // lo smalto traslucido
       if(bt.act==='slide'){
         /* senza possesso il grande e' CONTRASTA: il filo gesso,
            NIENTE quarta tinta (legge dei quattro colori) */
@@ -17187,18 +17236,52 @@ function drawDuelScene(){
 }
 
 /* =====================================================================
-   LA RIPRESA DEL GOL IN CAMERA BASSA — il rig 3D e' nato per questa
-   inquadratura (vedi AZIONI.md, decisione 3). Non e' una camera 3D vera:
-   e' la STESSA prospettiva semplificata del duello dai rigori — porta
-   frontale, fondale cotto da duelFondo, scala per riga — con l'ASSE
-   della vista posato sulla direzione del tiro registrata nel ring.
-   Le (x,y) dei fotogrammi si mappano su (laterale, profondita') rispetto
-   all'asse; la scala della figura e' funzione della profondita' (due
-   costanti: RIP_DK ammorbidisce, il resto viene da g.s come al duello).
-   Le figure le disegna Rig3D in camera 'bassa' — QUI l'ombra la fa il
-   rig, perche' e' l'ombra che si stacca da terra a vendere il volo — e
-   sono al massimo quattro: marcatore, portiere battuto, due vicini.
+   LA RIPRESA DEDICATA DEL GOL IN CAMERA BASSA — il rig 3D e' nato per
+   questa inquadratura (AZIONI.md, decisione 3). DOPO l'impatto in rete,
+   per ogni gol con un marcatore (mai sull'autorete), la regia stacca a
+   schermo pieno: il MARCATORE di tre quarti dal basso nella posa 'cielo'
+   — braccia al cielo coi gomiti piegati, petto in fuori — col LOD da
+   primo piano (volto, mani), la porta con la rete gonfia alle spalle, la
+   folla del fondale, i coriandoli che piovono davanti all'obiettivo.
+   Non e' una camera 3D vera: e' la STESSA prospettiva semplificata del
+   duello dai rigori — porta frontale, fondale cotto da duelFondo, scala
+   per riga — con l'ASSE della vista posato sulla direzione del tiro
+   registrata nel ring. Le figure le disegna Rig3D in camera 'bassa', e
+   sono al massimo quattro: marcatore, portiere battuto, due compagni.
+   A MOTO RIDOTTO la stessa scena e' un fermo immagine composto: posa
+   ferma, rete gonfia ferma, niente pioggia di coriandoli.
    ===================================================================== */
+/* quando parte (secondi dopo il colpo nel sacco) e quanto dura */
+const RIP_VIA=0.30, RIP_DUR=1.8, RIP_DUR_FERMO=1.5;
+function avviaRipresa(){
+  /* L'ASSE DELLA RIPRESA: la direzione del tiro registrata nel ring —
+     se il nastro tace (tap-in sulla linea, gol dal kickoff), l'asse e'
+     la perpendicolare alla porta. */
+  const spot = G.goalSpot ? {x:G.goalSpot.x, y:G.goalSpot.y}
+                          : {x:(G.goalTeam===0?FW:0), y:FH/2};
+  let ax=(G.goalTeam===0?1:-1), ay=0;
+  const n=G.rec.length;
+  if(n>3){
+    const b0=G.rec[Math.max(0,n-Math.round(REC_HZ*0.8))].b, b1=G.rec[n-1].b;
+    const dx=b1.x-b0.x, dy=b1.y-b0.y, l=len(dx,dy);
+    if(l>18){ ax=dx/l; ay=dy/l; }
+  }
+  /* IL CAST: marcatore, portiere battuto, e al massimo due compagni —
+     quattro figure, non ventidue: e' un'inquadratura, non un censimento */
+  const cast=[G.goalIdx];
+  const gkIdx=G.players.findIndex(q=>q.role==='gk' && q.team!==G.goalTeam);
+  if(gkIdx>=0) cast.push(gkIdx);
+  const mk=G.players[G.goalIdx];
+  const resto=[];
+  for(let i=0;i<G.players.length;i++){
+    const q=G.players[i];
+    if(q.out>0 || q.team!==G.goalTeam || i===G.goalIdx) continue;
+    resto.push({i, d:len(q.x-mk.x, q.y-mk.y)});
+  }
+  resto.sort((a,b)=>a.d-b.d);
+  for(let k=0;k<2 && k<resto.length;k++) cast.push(resto[k].i);
+  G.ripresa={ t:0, dur:SAVE.moto?RIP_DUR:RIP_DUR_FERMO, ax, ay, spot, cast };
+}
 function ripresaGeo(){
   const BH=Math.round(VH*0.08);              // le bande della moviola
   const y0=BH+VH*0.02, y1=VH-BH-VH*0.02;
@@ -17214,8 +17297,7 @@ function ripresaGeo(){
   return { y0,y1, GLY, GH, GW, gx0:VW/2-GW/2, gx1:VW/2+GW/2, gy0:GLY-GH,
            hz, vpY, s:(y)=>k*(y-vpY) };
 }
-const RIP_DK = 170;        // profondita' che ammorbidisce la carrellata
-const RIP_HFIG = 0.85;     // altezza della figura in rapporto alla porta
+const RIP_DK = 170;        // profondita' che ammorbidisce la prospettiva
 /* dal mondo del nastro allo schermo della ripresa: d = profondita' dalla
    linea di porta verso la camera, lat = scarto laterale dal centro porta */
 function ripMappa(M, wx, wy){
@@ -17226,21 +17308,31 @@ function ripMappa(M, wx, wy){
 }
 const RIP_ORD=[];          // scratch dell'ordinamento per profondita'
 function drawRipresaGol(){
-  const M=G.moviola; if(!M) return;
+  const R=G.ripresa; if(!R) return;
   const g=ripresaGeo();
   ctx.drawImage(duelFondo(g), 0,0, VW, VH);
   const yDi=(d)=>g.GLY+(VH*1.15-g.GLY)*(Math.max(0,d)/(Math.max(0,d)+RIP_DK));
   const persp=(y)=>g.s(y)/g.s(g.GLY);
   const latX=(lat,y)=>VW/2+(lat/(GOAL_H/2))*g.s(y);
-  const esu=M.fase==='esultanza';
+  const fermo=!SAVE.moto;
+  /* il tempo dal colpo nel sacco: guida il tremito della rete */
+  const tNet=Math.max(0, G.sceneT-(G.golHit>=0?G.golHit:0));
+  /* dove la rete e' gonfia, in coordinate laterali della ripresa: serve
+     alla porta E alla regia (il marcatore non si mette davanti al sacco) */
+  const RIP_BLAT=clamp((R.spot.y-FH/2)*R.ax, -GOAL_H*0.34, GOAL_H*0.34);
 
   /* ---- porta: fondo rete, maglie col gonfiore sull'ingresso, pali ---- */
   {
     const inset=g.GW*0.055, insY=g.GH*0.13;
     const bx0=g.gx0+inset, bx1=g.gx1-inset, by0=g.gy0+insY, by1=g.GLY-insY*0.35;
-    let bulge=0;
-    if(!esu && M.bt>0) bulge=Math.exp(-M.bt*2.6)*Math.cos(M.bt*8.6)*g.GH*0.26;
-    const bulgeX=latX((M.spot.y-FH/2)*M.ax, g.GLY);
+    /* IL SACCO ALLE SPALLE DEL MARCATORE: gonfio nel punto d'ingresso,
+       trema del colpo e si affloscia piano. Nel fermo composto a moto
+       ridotto e' un gonfiore fermo — la rete che trattiene il pallone. */
+    /* il gonfiore non si spegne del tutto: la rete TRATTIENE il pallone,
+       e il dente residuo e' cio' che una fotografia della festa vede */
+    const bulge = fermo ? g.GH*0.15
+                        : g.GH*(0.10+0.18*Math.abs(Math.cos(tNet*8.6))*Math.exp(-tNet*1.5));
+    const bulgeX=clamp(latX(RIP_BLAT, g.GLY), g.gx0+g.GW*0.16, g.gx1-g.GW*0.16);
     ctx.fillStyle='rgba(6,16,11,.72)';
     ctx.fillRect(g.gx0,g.gy0,g.GW,g.GH);
     ctx.save();
@@ -17278,112 +17370,120 @@ function drawRipresaGol(){
     ctx.fillRect(g.gx0-pw*0.5,g.gy0-pw,pw,g.GH+pw);
     ctx.fillRect(g.gx1-pw*0.5,g.gy0-pw,pw,g.GH+pw);
     ctx.fillRect(g.gx0-pw*0.5,g.gy0-pw,g.GW+pw,pw);
-  }
-
-  /* ---- il cast, ordinato per profondita' (prima chi e' vicino alla
-     porta, poi chi e' sotto la camera; il pallone si infila dove tocca) */
-  const A=Math.atan2(M.ay,M.ax);
-  RIP_ORD.length=0;
-  for(const i of M.cast){
-    const q=G.players[i];
-    if(!q || q.out>0) continue;
-    const [d]=ripMappa(M,q.x,q.y);
-    /* troppo lontano: fuori inquadratura — ma il MARCATORE dell'esultanza
-       no: la camera lo va a prendere e lo porta in primo piano (d=95) */
-    if(d>460 && !(esu && i===G.goalIdx)) continue;
-    RIP_ORD.push({k:1,i,d:(esu && i===G.goalIdx)?70:d});
-  }
-  if(!esu){
-    const [db]=ripMappa(M,G.ball.x,G.ball.y);
-    RIP_ORD.push({k:0,i:-1,d:db});
-  }
-  RIP_ORD.sort((a,b)=>a.d-b.d);
-
-  for(const o of RIP_ORD){
-    if(o.k===0){
-      /* ---- il pallone del ring: (x,y) sull'asse, z in quota ---- */
-      const [d,lat]=ripMappa(M,G.ball.x,G.ball.y);
-      const y=yDi(d), pp=persp(y);
-      const x=latX(lat,y);
-      const hp=g.GH*RIP_HFIG*pp;
-      const by=y-((G.ball.z||0)/GOAL_Z)*g.GH*pp;
-      const r=Math.max(3,hp*0.085);
-      /* l'ombra a terra: e' lei che dice a che quota vola */
-      ctx.globalAlpha=0.22/(1+0.06*(G.ball.z||0));
-      ctx.fillStyle='#000';
-      ctx.beginPath(); ctx.ellipse(x,y,r*0.9,r*0.34,0,0,6.2832); ctx.fill();
+    /* il pallone, posato sul fondo del sacco sotto il gonfiore: il fatto
+       da cui tutta la scena discende resta in quadro */
+    {
+      const br=Math.max(3.8, g.GH*0.115), bx=bulgeX, by=g.GLY-br*0.9;
+      ctx.globalAlpha=0.28; ctx.fillStyle='#000';
+      ctx.beginPath(); ctx.ellipse(bx,g.GLY-0.5,br*1.05,br*0.34,0,0,6.2832); ctx.fill();
       ctx.globalAlpha=1;
       ctx.fillStyle='#f4f2ec';
-      ctx.beginPath(); ctx.arc(x,by,r,0,6.2832); ctx.fill();
-      ctx.strokeStyle='#23201a'; ctx.lineWidth=Math.max(1,r*0.18); ctx.stroke();
-      if(r>3.5){
-        ctx.fillStyle='#23201a';
-        ctx.beginPath(); ctx.arc(x-r*0.16,by-r*0.14,r*0.28,0,6.2832); ctx.fill();
-      }
-      continue;
+      ctx.beginPath(); ctx.arc(bx,by,br,0,6.2832); ctx.fill();
+      ctx.strokeStyle='#23201a'; ctx.lineWidth=Math.max(1,br*0.18); ctx.stroke();
+      ctx.fillStyle='#23201a';
+      ctx.beginPath(); ctx.arc(bx-br*0.16,by-br*0.14,br*0.28,0,6.2832); ctx.fill();
     }
-    const q=G.players[o.i];
-    const marcatore=(o.i===G.goalIdx);
-    let d,lat;
-    if(esu && marcatore){
-      /* l'esultanza: camera ferma sul marcatore, in primo piano e quasi
-         al centro — e' il suo momento, non un dettaglio di sfondo */
-      d=70; lat=clamp(ripMappa(M,q.x,q.y)[1], -GOAL_H*0.25, GOAL_H*0.25);
-    }else{
-      const m=ripMappa(M,q.x,q.y); d=m[0]; lat=m[1];
-    }
-    const y=yDi(d), pp=persp(y);
-    const x=latX(lat,y);
-    const hb=g.GH*RIP_HFIG*pp/(q.squash||1);
-    let clip,u,tSec;
-    if(esu){
-      if(marcatore){
-        /* stessa scelta deterministica di rigStato: (idx+minuto) su 3 */
-        const scelta=(q.idx+(parseInt(G.goalMin,10)||0))%3;
-        clip = scelta===1?'ginocchia':scelta===2?'pugno':'esultanza';
-        tSec = M.te+0.22;              // si entra a gesto gia' avviato
+  }
+
+  /* ---- il cast: quattro attori, ognuno col suo posto nel quadro.
+     Il MARCATORE davanti, grande, di tre quarti verso la camera, nella
+     posa 'cielo'; il PORTIERE battuto piccolo alla linea di porta, in
+     'delusione'; i COMPAGNI arrivano ai lati, un passo dietro il
+     protagonista. Le posizioni vere si usano solo per decidere il LATO:
+     la profondita' e' di regia — e' un'inquadratura, non una mappa. */
+  RIP_ORD.length=0;
+  {
+    let compagni=0, latPrimo=1, latEroe=0;
+    for(const i of R.cast){
+      const q=G.players[i];
+      if(!q || q.out>0) continue;
+      const m=ripMappa(R,q.x,q.y);
+      let d,lat,clip,tSec,yaw,hK;
+      if(i===G.goalIdx){
+        d=54; lat=clamp(m[1],-GOAL_H*0.24,GOAL_H*0.24);
+        /* mai davanti al sacco: la rete gonfia e il pallone restano ALLE
+           SUE SPALLE, in quadro — e' meta' del racconto */
+        if(Math.abs(lat-RIP_BLAT)<GOAL_H*0.20)
+          lat=clamp(RIP_BLAT-(RIP_BLAT>=0?1:-1)*GOAL_H*0.28, -GOAL_H*0.24, GOAL_H*0.24);
+        latEroe=lat;
+        clip='cielo'; hK=1.30;
+        /* si entra a gesto gia' avviato; nel fermo composto la posa e'
+           quella piantata, a meta' respiro */
+        tSec = fermo ? 1.16 : R.t+0.24;
+        yaw = Math.PI-0.42;          // tre quarti: volto e petto in camera
       }else if(q.team!==G.goalTeam){
-        /* chi ha subito — portiere compreso — porta la delusione sullo sfondo */
-        clip='delusione'; tSec=(0.06+0.80*clamp(M.te/MOV_ESU,0,1))/Rig3D.CLIPS.delusione.freq;
+        d=clamp(m[0],-6,26); lat=clamp(m[1],-GOAL_H*0.42,GOAL_H*0.42);
+        /* il portiere battuto non si nasconde ne' dietro il protagonista
+           ne' dietro il sacco: il suo crollo si deve vedere */
+        if(Math.abs(lat-latEroe)<GOAL_H*0.22 || Math.abs(lat-RIP_BLAT)<GOAL_H*0.14)
+          lat=-(latEroe>=0?1:-1)*GOAL_H*0.26;
+        clip='delusione'; hK=0.78;
+        tSec = fermo ? 1.3 : (0.08+0.72*clamp(R.t/R.dur,0,1))/Rig3D.CLIPS.delusione.freq;
+        yaw = Math.PI;
       }else{
-        clip='esultanza'; tSec=M.te+0.4;   // i compagni fanno festa con lui
+        /* i compagni non arrivano in aliante: uno SCIVOLA sulle ginocchia,
+           l'altro pianta il pugno al cielo — gesti che reggono anche il
+           fotogramma fermo */
+        const sgn = compagni===0 ? (m[1]>=0?1:-1) : -latPrimo;
+        if(compagni===0) latPrimo=sgn;
+        d=30-compagni*8; lat=sgn*GOAL_H*(0.42+0.14*compagni);
+        clip = compagni===0?'ginocchia':'pugno'; hK=0.80;
+        /* il gesto avanza con la ripresa senza mai chiudere il giro */
+        const prog=clamp(R.t/R.dur,0,1);
+        tSec = fermo ? (compagni===0?0.84:0.73)
+             : compagni===0 ? (0.10+0.46*prog)/0.5 : (0.14+0.48*prog)/0.55;
+        yaw = Math.PI+(sgn>0?0.35:-0.35);
+        compagni++;
       }
-    }else{
-      /* il gesto registrato, riletto dagli stessi campi della pianta */
-      const st=rigStato(q);
-      clip=st.clip; u=st.u;
-      tSec=u/Rig3D.CLIPS[clip].freq;
+      RIP_ORD.push({i,d,lat,clip,tSec,yaw,hK});
     }
-    let a;
-    if(q.role==='gk' && (q.dive>0 || q.recover>0)) a=Math.atan2(q.diveDY,q.diveDX);
-    else if(q.rove>=0) a=Math.atan2(-q.roveDY,-q.roveDX);
-    else if(q.slide>=0) a=Math.atan2(q.slideDY||q.fy,q.slideDX||q.fx);
-    else a=q.ang;
-    /* yaw relativo all'asse della ripresa: chi guarda la porta da' le
-       spalle alla camera (yaw 0), come al banco di prova del rig */
-    let yaw = esu && marcatore ? Math.PI : a-A;
-    /* DPR come scala: qui hb e' gia' in pixel di schermo, e sui telefoni
-       densi il primo piano della ripresa merita il LOD quanto i rigori */
-    Rig3D.disegna(ctx, x, y, hb, yaw, 'bassa', clip, tSec, rigLook(q), false, DPR);
-    /* il numero sulla schiena del marcatore, ancorato al torso del rig */
-    if(marcatore && !esu){
-      const T=Rig3D.torso();
-      const nx=(T.x0+T.x1)*0.5, ny=(T.y0+T.y1)*0.5;
-      ctx.font='900 '+Math.max(7,Math.round(hb*0.20))+'px '+FONT_N;
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.lineJoin='round';
-      ctx.strokeStyle='rgba(8,16,11,.88)'; ctx.lineWidth=Math.max(1.7,hb*0.045);
-      ctx.strokeText(String(q.idx+1), nx, ny);
-      ctx.fillStyle='#f4f7f1';
-      ctx.fillText(String(q.idx+1), nx, ny);
-      ctx.textBaseline='alphabetic';
+  }
+  RIP_ORD.sort((a,b)=>a.d-b.d);
+  /* il riflettore ADDOSSO al protagonista: un alone caldo additivo dietro
+     la figura — e' il palco che lo stacca dal fondale, non un effetto.
+     Sta anche nel fermo composto: e' composizione, non movimento. */
+  for(const o of RIP_ORD) if(o.i===G.goalIdx){
+    const y=yDi(o.d), x=clamp(latX(o.lat,y),30,VW-30);
+    const hb=g.GH*o.hK*persp(y);
+    const Rg=hb*0.85, cyg=y-hb*0.52;
+    const gv=ctx.createRadialGradient(x,cyg,0, x,cyg,Rg);
+    gv.addColorStop(0,'rgba(255,236,190,.28)');
+    gv.addColorStop(0.55,'rgba(255,236,190,.11)');
+    gv.addColorStop(1,'rgba(255,236,190,0)');
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    ctx.fillStyle=gv; ctx.fillRect(x-Rg,cyg-Rg,Rg*2,Rg*2);
+    ctx.restore();
+  }
+  for(const o of RIP_ORD){
+    const q=G.players[o.i];
+    const y=yDi(o.d), pp=persp(y);
+    const x=clamp(latX(o.lat,y), 30, VW-30);
+    const hb=g.GH*o.hK*pp;
+    /* DPR come scala: qui hb e' gia' in pixel di schermo, e il primo
+       piano della ripresa merita il LOD quanto i rigori (volto, mani) */
+    Rig3D.disegna(ctx, x, y, hb, o.yaw, 'bassa', o.clip, o.tSec, rigLook(q), false, DPR);
+  }
+
+  /* ---- i coriandoli che piovono DAVANTI alla camera. Il getto in
+     coordinate schermo sopravvive allo stacco (era gia' in pixel), e qui
+     si rifornisce dall'alto finche' la ripresa e' viva. A moto ridotto
+     niente pioggia: il fermo e' composto, non sospeso. */
+  if(!fermo){
+    if(G.confScreen.length<90 && R.t<R.dur-0.45){
+      const cols=[TEAMCOL[G.goalTeam],TEAMCOL2[G.goalTeam],'#ffb020'];
+      for(let k2=0;k2<3;k2++){
+        const cf=nasceConf(rnd(-20,VW+20), rnd(-36,-8), 0, 0, cols);
+        cf.vx=rnd(-36,36); cf.vy=rnd(60,200); cf.life=rnd(1.6,3.0);
+        G.confScreen.push(cf);
+      }
     }
+    drawConfScreen();
   }
 
   /* lo STACCO dalla pianta: un decimo di buio che si apre — e' il taglio
      di montaggio, non una dissolvenza. A moto ridotto niente. */
-  if(SAVE.moto && !esu && M.tb<0.12){
-    ctx.fillStyle='rgba(2,6,4,'+(0.85*(1-M.tb/0.12)).toFixed(3)+')';
+  if(!fermo && R.t<0.12){
+    ctx.fillStyle='rgba(2,6,4,'+(0.85*(1-R.t/0.12)).toFixed(3)+')';
     ctx.fillRect(0,0,VW,VH);
   }
   ctx.textBaseline='alphabetic';
@@ -17400,12 +17500,7 @@ function drawRipresaGol(){
    ===================================================================== */
 function drawMoviola(){
   const M=G.moviola; if(!M) return;
-  /* nelle due fasi in camera bassa la testina segue il playhead della
-     ripresa (il nastro si rivede una seconda volta, da un'altra parte) */
-  const inBassa = M.fase==='bassa' || M.fase==='esultanza';
-  const inPianta = !inBassa;
-  const avIdx = M.fase==='bassa' ? M.i2 : M.fase==='esultanza' ? M.frames.length-1 : M.i;
-  const av=clamp(avIdx/Math.max(1,M.frames.length-1),0,1);
+  const av=clamp(M.i/Math.max(1,M.frames.length-1),0,1);
   const BH0=Math.round(VH*0.08);
   /* LO STACCO: le bande si CHIUDONO all'entrata e si RIAPRONO all'uscita.
      E' l'unica cosa che distingue "si rivede l'azione" da "il gioco ha
@@ -17435,9 +17530,7 @@ function drawMoviola(){
      traiettoria non costa un byte in piu', solo una polilinea. */
   const S2m=G.view.S2||1, Axm=G.view.Ax||0, Aym=G.view.Ay||0;
   const fino=clamp(M.i,0,M.frames.length-1);
-  /* traiettoria e cerchio del marcatore vivono in coordinate di PIANTA:
-     nella ripresa in camera bassa non hanno un posto dove stare */
-  if(inPianta && fino>1){
+  if(fino>1){
     const p0=M.frames[0].b, p1=M.frames[fino].b;
     const x0=p0.x*S2m+Axm, y0=p0.y*S2m+Aym, x1=p1.x*S2m+Axm, y1=p1.y*S2m+Aym;
     ctx.save();
@@ -17469,7 +17562,7 @@ function drawMoviola(){
      dice da solo: al gol il marcatore e' quasi sempre addosso alla palla, e
      i due segni si accavallavano in un grumo di anelli. Si spegne in un
      decimo di secondo appena il nastro si ferma. */
-  const vivoMarc = inBassa ? 0 : (M.fase==='rete' ? 1-Math.min(1,M.tf/0.12) : (M.fase==='uscita'?0:1));
+  const vivoMarc = M.fase==='rete' ? 1-Math.min(1,M.tf/0.12) : (M.fase==='uscita'?0:1);
   if(vivoMarc>0.02 && G.goalIdx>=0 && G.players[G.goalIdx] && G.players[G.goalIdx].out<=0){
     const p=G.players[G.goalIdx];
     const x=p.x*S2m+Axm, y=p.y*S2m+Aym;
@@ -17596,14 +17689,9 @@ function drawMoviola(){
   ctx.fillStyle=COL.gesso; ctx.fillText('MOVIOLA', tx+46, ty+th/2+0.5);
   /* la velocita' non e' piu' una sola: il nastro rallenta avvicinandosi
      alla rete, e il numero lo dice mentre succede */
-  const fermo = (M.fase==='rete'||M.fase==='uscita') ||
-                (M.fase==='bassa' && !SAVE.moto) || M.fase==='esultanza';
-  /* nella carrellata bassa il ritmo e' quello del secondo passaggio */
-  const velOra = M.fase==='bassa' && SAVE.moto
-    ? (M.frames.length-1)/REC_HZ/(MOV_BASSA-MOV_BASSA_CODA)
-    : M.vel;
+  const fermo = (M.fase==='rete'||M.fase==='uscita');
   ctx.fillStyle = fermo ? COL.gesso : 'rgba(168,188,174,.9)';
-  ctx.fillText(fermo?'FERMO':(Math.round(velOra*10)/10).toFixed(1).replace('.',',')+'×',
+  ctx.fillText(fermo?'FERMO':(Math.round(M.vel*10)/10).toFixed(1).replace('.',',')+'×',
                tx+109, ty+th/2+0.5);
 
   /* BARRA DA REGIA, non un input range di sistema. Un tondino su una riga
@@ -17641,67 +17729,176 @@ function drawMoviola(){
   ctx.textAlign='left'; ctx.fillStyle='rgba(255,176,32,.95)';
   ctx.fillText('RETE', bx+bw+12, by+1.5);
 
-  /* =====================================================================
-     LA FASCIA DEL GOL — a tutta larghezza, marcatore e minuto, smalto su
-     lavagna (AZIONI.md, decisione 3). Vive SOLO nelle due fasi della
-     ripresa in camera bassa, agganciata alla banda bassa della moviola:
-     cosi' convive con la ripresa e non fa doppione col tabellone di
-     compensato, che resta il padrone della festa dal vivo.
-     Entra con la grammatica di casa: un accenno d'anticipo, l'entrata con
-     superamento, l'assestamento. A moto ridotto appare alla sua misura.
-     ===================================================================== */
-  if(inBassa && G.goalChi){
-    ctx.globalAlpha=1;
-    const FBH=clamp(Math.round(VH*0.075),34,52);
-    const fy0=VH-BH0-FBH-6;
-    let off=0;
-    if(SAVE.moto){
-      const t=M.fasciaT;
-      if(t<0.07) off=(FBH+14)*(1-t/0.07*0.12);          // l'anticipo: si affaccia appena
-      else{
-        const k=clamp((t-0.07)/0.34,0,1);
-        const c1=1.70158, c3=c1+1;
-        const e=1+c3*Math.pow(k-1,3)+c1*Math.pow(k-1,2); // superamento e assestamento
-        off=(1-e)*(FBH+14)*0.88;
-      }
-    }
-    ctx.save();
-    /* emerge da DIETRO la banda bassa: il ritaglio la fa nascere li' */
-    ctx.beginPath(); ctx.rect(0,0,VW,VH-BH0); ctx.clip();
-    const fy=fy0+off;
-    /* fondo lavagna scuro OPACO, filo gesso sopra e sotto: niente gradienti */
-    ctx.fillStyle='#122c1d';
-    ctx.fillRect(0,fy,VW,FBH);
-    ctx.fillStyle='rgba(242,245,239,.55)';
-    ctx.fillRect(0,fy,VW,1.3); ctx.fillRect(0,fy+FBH-1.3,VW,1.3);
-    /* il nome in smalto nella tinta della squadra, il minuto in gesso */
-    const nome=(G.goalAuto?'AUTOGOL · ':'')+String(G.goalChi).toUpperCase();
-    const min=G.goalMin?String(G.goalMin):'';
-    const fs=Math.round(FBH*0.46);
-    ctx.textBaseline='middle'; ctx.lineJoin='round';
-    ctx.font='900 '+fs+'px '+FONT_N;
-    const wN=ctx.measureText(nome).width;
-    ctx.font='700 '+Math.round(fs*0.78)+'px '+FONT_C;
-    const wM=min?ctx.measureText(min).width:0;
-    const gap=min?Math.round(fs*0.75):0;
-    const x0=VW/2-(wN+gap+wM)/2, cy2=fy+FBH/2+0.5;
-    ctx.textAlign='left';
-    ctx.font='900 '+fs+'px '+FONT_N;
-    ctx.strokeStyle='rgba(3,9,6,.75)'; ctx.lineWidth=Math.max(3,fs*0.16);
-    ctx.strokeText(nome,x0,cy2);
-    ctx.fillStyle=TEAMCOL[G.goalTeam];
-    ctx.fillText(nome,x0,cy2);
-    if(min){
-      /* il puntino di gesso che separa nome e minuto */
-      ctx.fillStyle=COL.gesso;
-      ctx.beginPath(); ctx.arc(x0+wN+gap/2, cy2, Math.max(1.6,fs*0.09),0,6.2832); ctx.fill();
-      ctx.font='700 '+Math.round(fs*0.78)+'px '+FONT_C;
-      ctx.fillText(min, x0+wN+gap, cy2);
-    }
-    ctx.restore();
-  }
+  /* la fascia GOL!-marcatore-minuto non vive piu' qui: appartiene alla
+     RIPRESA DEDICATA (fasciaGolViva), che ormai passa prima del nastro */
   ctx.textBaseline='alphabetic';
   ctx.globalAlpha=1;
+}
+
+/* =====================================================================
+   LA FASCIA DEL GOL DAL VIVO — il fuoco unico dell'evento (AZIONI.md,
+   decisione 3). Prima la festa era spezzata in TRE fuochi sparsi:
+   GOL! gigante su una meta', tabellone di compensato sull'altra, palla
+   in rete al margine — tre posti da guardare per un evento solo. Come
+   nel riferimento, adesso c'e' UNA fascia a tutta larghezza, smalto su
+   lavagna: GOL! nella tinta di chi ha segnato, il marcatore a gesso e
+   il minuto, sulla stessa riga.
+   E' UNA funzione perche' ha DUE case: la vista di gioco (chiamata da
+   drawOverlaysCanvas) e la RIPRESA DEDICATA in camera bassa, dove resta
+   piantata sotto per tutta la ripresa (inRipresa=true: niente uscita,
+   niente riflettore — la scena ha gia' la sua luce).
+   La cronometria (t = sceneT - 0,45):
+     0,00-0,07  ANTICIPO: si affaccia dal bordo basso.
+     0,07-0,41  ENTRATA con superamento e assestamento (easeOutBack).
+     0,41-0,58  il GOL! si posa: entra piu' grande del 18% e si stringe,
+                e da sotto la fascia parte il secondo scoppio.
+     uscita     negli ultimi 0,25 s riparte verso il basso — un gesto
+                che finisce, non un interruttore. MAI durante la ripresa.
+   A MOVIMENTO RIDOTTO la fascia sta ferma alla sua misura, composta:
+   niente corsa, niente lucido, niente scoppio.
+   COSTO: tre fillRect, tre fillText e due strokeText per fotogramma,
+   per due secondi a gol. Niente texture da cuocere. */
+function fasciaGolViva(inRipresa){
+  if(G.scene!=='goal' || G.sceneT<=0.45) return;
+  const t=G.sceneT-0.45;
+  const durata=(SAVE.moviola?1.70:2.70)-0.45;
+  const FBH=clamp(Math.round(VH*0.185),56,96);
+  const fy0=VH-FBH-12;
+  /* il riflettore del fermo composto: a moto ridotto la festa e' un
+     fermo-immagine e va COMPOSTA — penombra ai bordi, luce calda al
+     centro del palco, la fascia sotto. Nella ripresa no: il fondale
+     del rigore ha gia' il suo taglio di luce. */
+  if(!SAVE.moto && !inRipresa){
+    ctx.save();
+    ctx.globalAlpha=Math.min(1,t*8);
+    let gv=ctx.createRadialGradient(VW/2,VH*0.46,Math.min(VW,VH)*0.36, VW/2,VH*0.46,Math.max(VW,VH)*0.72);
+    gv.addColorStop(0,'rgba(3,9,6,0)'); gv.addColorStop(0.5,'rgba(3,9,6,.22)');
+    gv.addColorStop(1,'rgba(3,9,6,.55)');
+    ctx.fillStyle=gv; ctx.fillRect(0,0,VW,VH);
+    ctx.globalCompositeOperation='lighter';
+    gv=ctx.createRadialGradient(VW/2,VH*0.46,0, VW/2,VH*0.46,VH*0.70);
+    gv.addColorStop(0,'rgba(255,232,186,.12)'); gv.addColorStop(1,'rgba(255,232,186,0)');
+    ctx.fillStyle=gv; ctx.fillRect(0,0,VW,VH);
+    ctx.restore();
+  }
+  /* l'ingresso: dal basso, con superamento; l'uscita solo in vista di
+     gioco — per tutta la ripresa la fascia resta piantata */
+  let off=0, usc=0;
+  if(SAVE.moto){
+    if(t<0.07) off=(FBH+16)*(1-t/0.07*0.12);        // l'anticipo: si affaccia appena
+    else{
+      const k=clamp((t-0.07)/0.34,0,1);
+      const c1=1.70158, c3=c1+1;
+      const e=1+c3*Math.pow(k-1,3)+c1*Math.pow(k-1,2); // superamento e assestamento
+      off=(1-e)*(FBH+16)*0.88;
+    }
+    usc=inRipresa?0:clamp((t-(durata-0.25))/0.25,0,1);
+    off+=(FBH+28)*usc*usc;                           // l'uscita: riparte da dove e' venuta
+  }
+  const fy=fy0+off;
+  /* IL SECONDO SCOPPIO parte quando la fascia si pianta: il colore
+     esce da sotto la fascia, non piu' da sotto un lettering volante */
+  if(SAVE.moto && !G.confPopFatto && t>=0.41){
+    G.confPopFatto=true;
+    /* lo scoppio si CONCENTRA SUL MARCATORE: parte sempre da sotto la
+       fascia, ma dalla sua verticale — il colore gli sale addosso, non
+       su un punto qualunque dello schermo. Nella ripresa il marcatore
+       sta al centro del quadro, e VW/2 e' la sua verticale. */
+    let cpx=VW/2;
+    if(!inRipresa && !G.goalAuto && G.goalIdx>=0){
+      const q=G.players[G.goalIdx];
+      if(q && q.out<=0) cpx=clamp(q.x*(G.view.S2||1)+(G.view.Ax||0), VW*0.22, VW*0.78);
+    }
+    G.confPop={ x:cpx, y:fy0, cols:[TEAMCOL[G.goalTeam],TEAMCOL2[G.goalTeam],'#ffb020'] };
+  }
+  /* fermo composto: la fascia annota il suo riquadro dov'e' misurata
+     (solo in vista di gioco: nella ripresa non si smembra nessuno) */
+  if(!SAVE.moto && !inRipresa){
+    const B=FERMO_FASCIA;
+    B.t=G.sceneT; B.x0=0; B.x1=VW; B.y0=fy; B.y1=fy+FBH;
+  }
+  ctx.save();
+  ctx.globalAlpha=Math.min(1,t*8);
+  /* fondo lavagna scuro OPACO, filo gesso sopra e sotto, filetto di
+     smalto nella tinta di chi ha segnato: niente gradienti */
+  ctx.fillStyle='#122c1d';
+  ctx.fillRect(0,fy,VW,FBH);
+  ctx.fillStyle='rgba(242,245,239,.55)';
+  ctx.fillRect(0,fy,VW,1.5); ctx.fillRect(0,fy+FBH-1.5,VW,1.5);
+  ctx.fillStyle=TEAMCOL[G.goalTeam];
+  ctx.fillRect(0,fy+2.4,VW,2.4);
+  /* --- la riga unica: GOL! + marcatore + minuto --- */
+  const nome=(G.goalAuto?'AUTOGOL · ':'')+String(G.goalChi||'').toUpperCase();
+  const min=G.goalMin?String(G.goalMin):'';
+  let fs1=Math.round(FBH*0.58), fs2=Math.round(FBH*0.34);
+  ctx.textBaseline='middle'; ctx.lineJoin='round'; ctx.textAlign='left';
+  /* misura; se la riga non ci sta ("Saverio il Professore" e' un nome
+     vero della rosa), si stringe TUTTA in proporzione, una volta */
+  const misura=()=>{
+    ctx.font='900 '+fs1+'px '+FONT_N; const wG=ctx.measureText('GOL!').width;
+    ctx.font='900 '+fs2+'px '+FONT_N; const wN=nome?ctx.measureText(nome).width:0;
+    ctx.font='700 '+Math.round(fs2*0.88)+'px '+FONT_C; const wM=min?ctx.measureText(min).width:0;
+    const g1=nome?Math.round(fs1*0.42):0, g2=min?Math.round(fs2*0.85):0;
+    return { wG,wN,wM,g1,g2, tot:wG+g1+wN+g2+wM };
+  };
+  let m=misura();
+  if(m.tot>VW*0.92){
+    const k=VW*0.92/m.tot;
+    fs1=Math.max(14,Math.floor(fs1*k)); fs2=Math.max(10,Math.floor(fs2*k));
+    m=misura();
+  }
+  const cy2=fy+FBH/2+1;
+  let x=VW/2-m.tot/2;
+  /* GOL! nello smalto della squadra, con la grafia di sempre: contorno
+     scuro, tinta piena, filo chiaro. All'arrivo entra piu' grande del
+     18% e si posa insieme alla fascia; a moto ridotto niente. */
+  const gk = SAVE.moto ? clamp((t-0.41)/0.17,0,1) : 1;
+  const gsc = SAVE.moto ? 1+0.18*(1-gk)*(1-gk) : 1;
+  ctx.save();
+  ctx.translate(x+m.wG/2, cy2);
+  if(gsc!==1) ctx.scale(gsc,gsc);
+  ctx.font='900 '+fs1+'px '+FONT_N;
+  ctx.lineWidth=Math.max(4,fs1*0.13);
+  ctx.strokeStyle='rgba(5,12,8,.85)';
+  ctx.strokeText('GOL!', -m.wG/2, 0);
+  ctx.fillStyle=TEAMCOL[G.goalTeam];
+  ctx.fillText('GOL!', -m.wG/2, 0);
+  ctx.lineWidth=Math.max(1.6,fs1*0.03);
+  ctx.strokeStyle='rgba(242,245,239,.9)';
+  ctx.strokeText('GOL!', -m.wG/2, 0);
+  /* il lucido che attraversa le lettere: il modo di casa per tenere
+     viva una scritta ferma — sei decimi, una volta a gol, la banda
+     resta stretta (un quinto della parola) per non sbiancare la tinta */
+  if(SAVE.moto && t>0.60 && t<1.20){
+    const u=(t-0.60)/0.60;
+    const px=-m.wG*0.66+m.wG*1.32*u;
+    const gl=ctx.createLinearGradient(px-fs1*0.17,0,px+fs1*0.17,0);
+    const q=Math.sin(u*Math.PI);
+    gl.addColorStop(0,'rgba(255,248,226,0)');
+    gl.addColorStop(0.5,'rgba(255,248,226,'+(0.86*q).toFixed(3)+')');
+    gl.addColorStop(1,'rgba(255,248,226,0)');
+    ctx.fillStyle=gl;
+    ctx.fillText('GOL!', -m.wG/2, 0);
+  }
+  ctx.restore();
+  x+=m.wG+m.g1;
+  /* il marcatore a gesso, il puntino, il minuto */
+  if(nome){
+    ctx.font='900 '+fs2+'px '+FONT_N;
+    ctx.fillStyle=COL.gesso;
+    ctx.fillText(nome, x, cy2);
+    x+=m.wN;
+  }
+  if(min){
+    ctx.fillStyle=COL.gesso;
+    ctx.beginPath(); ctx.arc(x+m.g2/2, cy2, Math.max(1.6,fs2*0.10),0,6.2832); ctx.fill();
+    ctx.font='700 '+Math.round(fs2*0.88)+'px '+FONT_C;
+    ctx.fillStyle='rgba(242,245,239,.88)';
+    ctx.fillText(min, x+m.g2, cy2);
+  }
+  ctx.restore();
+  ctx.globalAlpha=1;
+  ctx.textBaseline='alphabetic';
 }
 
 let strisciaOra=false;
@@ -17866,175 +18063,14 @@ function drawOverlaysCanvas(){
     }
     drawConfScreen();
   }
-  /* =====================================================================
-     LA FASCIA DEL GOL DAL VIVO — il fuoco unico dell'evento (AZIONI.md,
-     decisione 3). Prima la festa era spezzata in TRE fuochi sparsi:
-     GOL! gigante su una meta', tabellone di compensato sull'altra, palla
-     in rete al margine — tre posti da guardare per un evento solo. Come
-     nel riferimento, adesso c'e' UNA fascia a tutta larghezza, smalto su
-     lavagna: GOL! nella tinta di chi ha segnato, il marcatore a gesso e
-     il minuto, sulla stessa riga. Il tabellone di compensato non compare
-     piu' qui (resta l'eroe del fischio finale e della home): il punteggio
-     nuovo sta gia' nella barra in alto, e due pannelli che dicono la
-     stessa cosa erano esattamente il problema.
-     Sta in FASCIA BASSA come la sorella della moviola (stessa casa,
-     stessa grammatica d'ingresso): la scena resta viva sopra — i
-     coriandoli, l'alone, la rete che si gonfia — e la bocca della porta
-     non si copre mai.
-     La cronometria (t = sceneT - 0,45):
-       0,00-0,07  ANTICIPO: si affaccia dal bordo basso.
-       0,07-0,41  ENTRATA con superamento e assestamento (easeOutBack).
-       0,41-0,58  il GOL! si posa: entra piu' grande del 18% e si stringe,
-                  e da sotto la fascia parte il secondo scoppio.
-       uscita     negli ultimi 0,25 s riparte verso il basso — un gesto
-                  che finisce, non un interruttore.
-     A MOVIMENTO RIDOTTO la fascia sta ferma alla sua misura, composta:
-     niente corsa, niente lucido, niente scoppio. E la regola del fermo
-     «o interi o niente» resta: la fascia e' un pannello opaco, chi ci
-     finisce col torso dietro non si disegna (fermoCoperto), e il
-     MARCATORE, se mai ci finisse, si ridisegna davanti intero (il blocco
-     qui sotto).
-     COSTO: tre fillRect, tre fillText e due strokeText per fotogramma,
-     per due secondi a gol. Niente texture da cuocere. */
-  if(G.scene==='goal' && G.sceneT>0.45 && !G.moviola){
-    const t=G.sceneT-0.45;
-    const durata=(SAVE.moviola?1.70:2.70)-0.45;
-    const FBH=clamp(Math.round(VH*0.185),56,96);
-    const fy0=VH-FBH-12;
-    /* il riflettore del fermo composto: a moto ridotto la festa e' un
-       fermo-immagine e va COMPOSTA — penombra ai bordi, luce calda al
-       centro del palco, la fascia sotto. */
-    if(!SAVE.moto){
-      ctx.save();
-      ctx.globalAlpha=Math.min(1,t*8);
-      let gv=ctx.createRadialGradient(VW/2,VH*0.46,Math.min(VW,VH)*0.36, VW/2,VH*0.46,Math.max(VW,VH)*0.72);
-      gv.addColorStop(0,'rgba(3,9,6,0)'); gv.addColorStop(0.5,'rgba(3,9,6,.22)');
-      gv.addColorStop(1,'rgba(3,9,6,.55)');
-      ctx.fillStyle=gv; ctx.fillRect(0,0,VW,VH);
-      ctx.globalCompositeOperation='lighter';
-      gv=ctx.createRadialGradient(VW/2,VH*0.46,0, VW/2,VH*0.46,VH*0.70);
-      gv.addColorStop(0,'rgba(255,232,186,.12)'); gv.addColorStop(1,'rgba(255,232,186,0)');
-      ctx.fillStyle=gv; ctx.fillRect(0,0,VW,VH);
-      ctx.restore();
-    }
-    /* l'ingresso: la stessa curva della sorella in moviola, dal basso */
-    let off=0, usc=0;
-    if(SAVE.moto){
-      if(t<0.07) off=(FBH+16)*(1-t/0.07*0.12);        // l'anticipo: si affaccia appena
-      else{
-        const k=clamp((t-0.07)/0.34,0,1);
-        const c1=1.70158, c3=c1+1;
-        const e=1+c3*Math.pow(k-1,3)+c1*Math.pow(k-1,2); // superamento e assestamento
-        off=(1-e)*(FBH+16)*0.88;
-      }
-      usc=clamp((t-(durata-0.25))/0.25,0,1);
-      off+=(FBH+28)*usc*usc;                           // l'uscita: riparte da dove e' venuta
-    }
-    const fy=fy0+off;
-    /* IL SECONDO SCOPPIO parte quando la fascia si pianta: il colore
-       esce da sotto la fascia, non piu' da sotto un lettering volante */
-    if(SAVE.moto && !G.confPopFatto && t>=0.41){
-      G.confPopFatto=true;
-      /* lo scoppio si CONCENTRA SUL MARCATORE: parte sempre da sotto la
-         fascia, ma dalla sua verticale — la camera del primo piano lo sta
-         gia' portando al centro, e il colore gli sale addosso, non su un
-         punto qualunque dello schermo */
-      let cpx=VW/2;
-      if(!G.goalAuto && G.goalIdx>=0){
-        const q=G.players[G.goalIdx];
-        if(q && q.out<=0) cpx=clamp(q.x*(G.view.S2||1)+(G.view.Ax||0), VW*0.22, VW*0.78);
-      }
-      G.confPop={ x:cpx, y:fy0, cols:[TEAMCOL[G.goalTeam],TEAMCOL2[G.goalTeam],'#ffb020'] };
-    }
-    /* fermo composto: la fascia annota il suo riquadro dov'e' misurata */
-    if(!SAVE.moto){
-      const B=FERMO_FASCIA;
-      B.t=G.sceneT; B.x0=0; B.x1=VW; B.y0=fy; B.y1=fy+FBH;
-    }
-    ctx.save();
-    ctx.globalAlpha=Math.min(1,t*8);
-    /* fondo lavagna scuro OPACO, filo gesso sopra e sotto, filetto di
-       smalto nella tinta di chi ha segnato: niente gradienti */
-    ctx.fillStyle='#122c1d';
-    ctx.fillRect(0,fy,VW,FBH);
-    ctx.fillStyle='rgba(242,245,239,.55)';
-    ctx.fillRect(0,fy,VW,1.5); ctx.fillRect(0,fy+FBH-1.5,VW,1.5);
-    ctx.fillStyle=TEAMCOL[G.goalTeam];
-    ctx.fillRect(0,fy+2.4,VW,2.4);
-    /* --- la riga unica: GOL! + marcatore + minuto --- */
-    const nome=(G.goalAuto?'AUTOGOL · ':'')+String(G.goalChi||'').toUpperCase();
-    const min=G.goalMin?String(G.goalMin):'';
-    let fs1=Math.round(FBH*0.58), fs2=Math.round(FBH*0.34);
-    ctx.textBaseline='middle'; ctx.lineJoin='round'; ctx.textAlign='left';
-    /* misura; se la riga non ci sta ("Saverio il Professore" e' un nome
-       vero della rosa), si stringe TUTTA in proporzione, una volta */
-    const misura=()=>{
-      ctx.font='900 '+fs1+'px '+FONT_N; const wG=ctx.measureText('GOL!').width;
-      ctx.font='900 '+fs2+'px '+FONT_N; const wN=nome?ctx.measureText(nome).width:0;
-      ctx.font='700 '+Math.round(fs2*0.88)+'px '+FONT_C; const wM=min?ctx.measureText(min).width:0;
-      const g1=nome?Math.round(fs1*0.42):0, g2=min?Math.round(fs2*0.85):0;
-      return { wG,wN,wM,g1,g2, tot:wG+g1+wN+g2+wM };
-    };
-    let m=misura();
-    if(m.tot>VW*0.92){
-      const k=VW*0.92/m.tot;
-      fs1=Math.max(14,Math.floor(fs1*k)); fs2=Math.max(10,Math.floor(fs2*k));
-      m=misura();
-    }
-    const cy2=fy+FBH/2+1;
-    let x=VW/2-m.tot/2;
-    /* GOL! nello smalto della squadra, con la grafia di sempre: contorno
-       scuro, tinta piena, filo chiaro. All'arrivo entra piu' grande del
-       18% e si posa insieme alla fascia; a moto ridotto niente. */
-    const gk = SAVE.moto ? clamp((t-0.41)/0.17,0,1) : 1;
-    const gsc = SAVE.moto ? 1+0.18*(1-gk)*(1-gk) : 1;
-    ctx.save();
-    ctx.translate(x+m.wG/2, cy2);
-    if(gsc!==1) ctx.scale(gsc,gsc);
-    ctx.font='900 '+fs1+'px '+FONT_N;
-    ctx.lineWidth=Math.max(4,fs1*0.13);
-    ctx.strokeStyle='rgba(5,12,8,.85)';
-    ctx.strokeText('GOL!', -m.wG/2, 0);
-    ctx.fillStyle=TEAMCOL[G.goalTeam];
-    ctx.fillText('GOL!', -m.wG/2, 0);
-    ctx.lineWidth=Math.max(1.6,fs1*0.03);
-    ctx.strokeStyle='rgba(242,245,239,.9)';
-    ctx.strokeText('GOL!', -m.wG/2, 0);
-    /* il lucido che attraversa le lettere: il modo di casa per tenere
-       viva una scritta ferma — sei decimi, una volta a gol, la banda
-       resta stretta (un quinto della parola) per non sbiancare la tinta */
-    if(SAVE.moto && t>0.60 && t<1.20){
-      const u=(t-0.60)/0.60;
-      const px=-m.wG*0.66+m.wG*1.32*u;
-      const gl=ctx.createLinearGradient(px-fs1*0.17,0,px+fs1*0.17,0);
-      const q=Math.sin(u*Math.PI);
-      gl.addColorStop(0,'rgba(255,248,226,0)');
-      gl.addColorStop(0.5,'rgba(255,248,226,'+(0.86*q).toFixed(3)+')');
-      gl.addColorStop(1,'rgba(255,248,226,0)');
-      ctx.fillStyle=gl;
-      ctx.fillText('GOL!', -m.wG/2, 0);
-    }
-    ctx.restore();
-    x+=m.wG+m.g1;
-    /* il marcatore a gesso, il puntino, il minuto: la stessa grafia
-       della sorella in moviola */
-    if(nome){
-      ctx.font='900 '+fs2+'px '+FONT_N;
-      ctx.fillStyle=COL.gesso;
-      ctx.fillText(nome, x, cy2);
-      x+=m.wN;
-    }
-    if(min){
-      ctx.fillStyle=COL.gesso;
-      ctx.beginPath(); ctx.arc(x+m.g2/2, cy2, Math.max(1.6,fs2*0.10),0,6.2832); ctx.fill();
-      ctx.font='700 '+Math.round(fs2*0.88)+'px '+FONT_C;
-      ctx.fillStyle='rgba(242,245,239,.88)';
-      ctx.fillText(min, x+m.g2, cy2);
-    }
-    ctx.restore();
-    ctx.globalAlpha=1;
-    ctx.textBaseline='alphabetic';
-  }
+  /* LA FASCIA DEL GOL DAL VIVO: la stessa fasciaGolViva della ripresa
+     dedicata, qui nella sua casa d'origine — sotto, a tutta larghezza,
+     mentre sopra la scena resta viva (coriandoli, alone, rete gonfia).
+     La regola del fermo «o interi o niente» resta: la fascia e' un
+     pannello opaco, chi ci finisce col torso dietro non si disegna
+     (fermoCoperto), e il MARCATORE, se mai ci finisse, si ridisegna
+     davanti intero (il blocco qui sotto). */
+  if(G.scene==='goal' && G.sceneT>0.45 && !G.moviola) fasciaGolViva(false);
   /* ========== IL FERMO COMPOSTO NON SMEMBRA NESSUNO (giro 2) ==========
      Il secondo passaggio promesso dal riquadro qui sopra: nel fermo del
      gol a moto ridotto la fascia e' un pannello opaco e chi ci finisce
@@ -18269,7 +18305,7 @@ function setPaused(v){
     /* la riga-manifesto dei comandi, secondo l'input davvero in uso */
     { const pc=document.getElementById('pausaCmd');
       if(pc) pc.textContent = InputPref.touch
-        ? 'Stick a sinistra · TIRA/CONTRASTA e FILTR./CAMBIO cambiano col possesso'
+        ? 'Stick a sinistra · TIRA/CONTRASTA e FILTRANTE/CAMBIO cambiano col possesso'
         : 'C passa · X tira · E filtrante · Z contrasta · Q cambia · Shift scatto'; }
     Audio5.crowdLevel(0.15);
   }else{
@@ -19596,7 +19632,7 @@ window.__test = {
     if(!inMatch) return false;
     G.paused=false; hide(ui.pausa);
     Duel.phase='off'; hide(ui.duel);
-    G.goalCine=null;
+    G.goalCine=null; G.ripresa=null; G.moviola=null;
     if(G.score[0]<=G.score[1]) G.score[0]=G.score[1]+1;
     endMatch();
     return true;
@@ -19604,9 +19640,11 @@ window.__test = {
   resetSave(){ doResetSave(); return true; },
   get rosa(){ return SAVE.rosa; },
   get moviola(){ return G.moviola ? {fotogrammi:G.moviola.frames.length, i:G.moviola.i,
-                                     fase:G.moviola.fase, i2:G.moviola.i2,
-                                     asse:[+G.moviola.ax.toFixed(3),+G.moviola.ay.toFixed(3)],
-                                     cast:G.moviola.cast.slice()} : null; },
+                                     fase:G.moviola.fase} : null; },
+  /* la RIPRESA DEDICATA del gol in camera bassa: stato leggibile dal QA */
+  get ripresa(){ return G.ripresa ? {t:+G.ripresa.t.toFixed(3), dur:G.ripresa.dur,
+                                     asse:[+G.ripresa.ax.toFixed(3),+G.ripresa.ay.toFixed(3)],
+                                     cast:G.ripresa.cast.slice()} : null; },
   get registrati(){ return G.rec.length; },
   /* lo STATO della serie si legge da rigoriStato: la chiave 'rigori' e'
      la funzione che la fa partire. Prima erano la stessa chiave, il

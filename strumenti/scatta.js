@@ -252,19 +252,30 @@ K('azione-7v7', TELEFONO_O, AZIONE(5000, '', 7), 300);
 K('kickoff-11v11', TELEFONO_O, VIA + `window.__test.startMatch(1,1,{size:11});` + NOTUT + HUD, 1200);
 K('azione-11v11', TELEFONO_O, AZIONE(5000, '', 11), 300);
 
+/* Il gol si fotografa nella RIPRESA DEDICATA in camera bassa (AZIONI.md,
+   decisione 3): parte ~0,85 s dopo la rete forzata (colpo nel sacco a
+   0,55 + stacco a 0,30) e a 1,6 s la posa 'cielo' e' piantata, coi
+   coriandoli davanti all'obiettivo e la fascia GOL! sotto. */
 K('gol', TELEFONO_O, VIA + `
   window.__test.startMatch(1,1);
   window.__test.setCpuVsCpu && window.__test.setCpuVsCpu(true);
   ` + F(1500) + `
   window.__test.forceGoal(0);
-  ` + F(900), 300);
+  ` + F(1600), 300);
 
+/* La moviola adesso viene DOPO la ripresa dedicata (~0,85 s + 1,8 s di
+   camera bassa): il vecchio scatto fisso a 2,2 s cadeva in mezzo alla
+   celebrazione e fotografava la regia nuova al posto del replay. Qui si
+   aspetta che il nastro parta davvero (l'hook __test.moviola lo dice) e
+   poi si avanza del mezzo secondo di sempre: stesso fotogramma di prima
+   — chip MOVIOLA, scia, scrubber — qualunque durata abbia la ripresa. */
 K('moviola', TELEFONO_O, VIA + `
   window.__test.startMatch(1,1);
   window.__test.setCpuVsCpu && window.__test.setCpuVsCpu(true);
   ` + F(3000) + `
   window.__test.forceGoal(0);
-  ` + F(2200), 300);
+  for(let i=0;i<80 && !window.__test.moviola;i++){ ` + F(100) + ` }
+  ` + F(500), 300);
 
 K('rigori', TELEFONO_O, VIA + `
   window.__test.startMatch(1,1);
