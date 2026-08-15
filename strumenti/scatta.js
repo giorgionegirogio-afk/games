@@ -243,6 +243,32 @@ K('azione-lungo', LUNGO_O, AZIONE(5000), 300);
 K('azione-tablet', TABLET_O, AZIONE(5000), 300);
 K('azione-tarda', TELEFONO_O, AZIONE(12000), 300);
 
+/* LE DUE TEMPERATURE DELLO STESSO CAMPO — la verifica che la giuria chiede
+   alla lettera: «due foto, primo e secondo tempo, mostrano temperature
+   colore diverse dello stesso campo». Non basta l'azione tarda (dodici
+   secondi su novanta sono ancora il primo terzo): qui si porta il
+   cronometro dove serve con setTimeLeft, che e' un hook di sola
+   simulazione gia' esistente. A 80 secondi rimasti la sera e' appena
+   accennata e i fari sono spenti; a 20 il velo e' steso, la vignettatura
+   e' virata al viola e tutte e quattro le lampade sono accese con la loro
+   pozza. Le due immagini vanno guardate INSIEME: e' il confronto, non la
+   singola foto, a dimostrare il time-lapse. */
+const SERA = (sec) => VIA + `
+  window.__test.startMatch(1,1);
+  ` + NOTUT + HUD + `
+  window.__test.setCpuVsCpu && window.__test.setCpuVsCpu(true);
+  window.__test.simulate(4.00);
+  for(let i=0;i<90;i++){
+    const s=window.__test.state;
+    if((s==='play'||s==='golden') && !window.__test.moviola) break;
+    window.__test.simulate(0.12);
+  }
+  window.__test.setTimeLeft(${sec});
+  window.__test.simulate(0.20);
+  window.__test.setPaused && window.__test.setPaused(false);`;
+K('sera-primo-tempo', TELEFONO_O, SERA(80), 300);
+K('sera-secondo-tempo', TELEFONO_O, SERA(20), 300);
+
 /* LE TAGLIE NUOVE, FOTOGRAFATE. Il 7v7 e l'11v11 esistono solo se si
    vedono: il kickoff mostra il modulo schierato (1-3-3 e 1-4-4-2), l'azione
    mostra campo, porte e minimappa alla taglia grande. Il 5v5 resta la
