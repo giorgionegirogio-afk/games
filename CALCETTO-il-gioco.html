@@ -3589,6 +3589,44 @@ const ORD=new Int32Array(NS); for(let i=0;i<NS;i++)ORD[i]=i;
    sottofondo in disegna) e non tredici rettangoli bordati uno a uno */
 const BORDO='#23201a';
 
+/* ============================================================
+   IL LIVELLO DI DETTAGLIO DA VICINO (15 ago 2026, 15 giudici su 26).
+   La figura e' nata per 30px: ingrandita nel primo piano del gol e dai
+   rigori mostrava testa senza volto, mani a bozzolo, maglia piatta e un
+   contorno che cresceva con lo zoom. Oltre LOD_PX di altezza A SCHERMO
+   (hPx x pxs, l'ultima cifra la passa il chiamante: la scala della sua
+   trasformazione, o il DPR nelle scene gia' in pixel di schermo) il rig
+   aggiunge: volto abbozzato (occhi, sopracciglia, accenno del naso),
+   capelli con un taglio (look.taglio 0/1/2), mani a dita stilizzate,
+   colletto e due toni di tessuto sulla maglia, suola e lampo sulle
+   scarpe — e il contorno unico smette di crescere (~1px a schermo).
+   SOTTO soglia non cambia NIENTE: il costo di ?rigcosto resta quello.
+   lodOn/lodK sono stato di modulo azzerato a ogni disegna(): mai
+   allocazioni, mai stato che sopravvive alla figura. */
+const LOD_PX=120;
+let lodOn=false, lodK=1;
+
+/* MANI A CINQUE DITA STILIZZATE (tre tratti bastano): un ventaglio corto
+   oltre il polso, nella direzione dell'avambraccio. Con bordo>=0 disegna
+   il passaggio di contorno (scuro, piu' largo), senno' la pelle. */
+function mano(ctx,s,ja,jb,look,bordo){
+  const ax=SX[ja],ay=SY[ja];
+  let dx=SX[jb]-ax, dy=SY[jb]-ay;
+  const L=Math.sqrt(dx*dx+dy*dy);
+  if(L>1e-3){dx/=L;dy/=L;}else{dx=0;dy=1;}
+  const px=-dy, py=dx, bx=SX[jb], by=SY[jb];
+  const w=0.048*s<0.8?0.8:0.048*s;
+  ctx.lineWidth = bordo>=0 ? w+2*bordo : w;
+  ctx.strokeStyle = bordo>=0 ? BORDO : look.pelle;
+  ctx.beginPath();
+  for(let f=-1;f<=1;f++){
+    const ln=(f?0.125:0.155)*s;
+    ctx.moveTo(bx+dx*0.02*s+px*f*0.030*s, by+dy*0.02*s+py*f*0.030*s);
+    ctx.lineTo(bx+dx*ln+px*f*0.058*s, by+dy*ln+py*f*0.058*s);
+  }
+  ctx.stroke();
+}
+
 /* LUCE SUI CORPI: il bordo di luce da ovest che gia' modella la palla e i
    pannelli (il sole di TUTTO il gioco sta a ovest) va anche su busto e
    testa — un filo caldo sul lato ovest, un filo piu' scuro sul lato est.
@@ -3648,8 +3686,58 @@ function testa(ctx,s,cyw,syw,cam,look){
   let o=r*0.60*(dot+1)*0.5; if(o>0.5*r)o=0.5*r;
   let hx=X, hy=Y-r*0.10;
   if(L>1e-4){ hx=X-fdx/L*o; hy=Y-fdy/L*o-r*0.10; }
+  /* da vicino i capelli prendono FORMA: look.taglio 0 calotta piena,
+     1 ciuffo in cima, 2 taglio corto (calotta ridotta). A 30-40px la
+     calotta resta quella di sempre: il taglio non si leggerebbe. */
+  const taglio = lodOn ? (look.taglio|0)%3 : 0;
   ctx.fillStyle=look.capelli;
-  ctx.beginPath(); ctx.arc(hx,hy,r*0.94,0,TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(hx,hy,(taglio===2?r*0.84:r*0.94),0,TAU); ctx.fill();
+  if(taglio===1){
+    ctx.beginPath(); ctx.arc(hx,hy-r*0.70,r*0.32,0,TAU); ctx.fill();
+  }
+  /* VOLTO ABBOZZATO, solo da vicino e solo se la faccia guarda la camera:
+     due tratti per gli occhi, le sopracciglia nel colore dei capelli,
+     l'accenno del naso. Tutto lungo l'asse (u) del viso proiettato, cosi'
+     il volto segue lo yaw e sfuma a profilo come fa la mezzaluna. */
+  if(lodOn && L>1e-4 && dot>0.10){
+    const ux=fdx/L, uy=fdy/L, px2=-uy, py2=ux;
+    const vis = dot>0.60 ? 1 : (dot-0.10)/0.50;
+    /* gli occhi vivono NELLA mezzaluna del viso, non sotto la calotta:
+       h0 e' dove la calotta finisce lungo l'asse del viso */
+    const h0=0.94*r-o;
+    let eyeD=(h0<0.30*r?0.30*r:h0)+0.15*r; if(eyeD>0.62*r)eyeD=0.62*r;
+    const exC=X+ux*eyeD, eyC=Y+uy*eyeD;
+    const eo=r*0.30;
+    const lw=r*0.10<0.7?0.7:r*0.10;
+    ctx.lineCap='round';
+    ctx.globalAlpha=0.95*vis;
+    ctx.strokeStyle='#2b2119';
+    ctx.lineWidth=lw;
+    ctx.beginPath();
+    ctx.moveTo(exC+px2*eo, eyC+py2*eo);
+    ctx.lineTo(exC+px2*eo+ux*r*0.09, eyC+py2*eo+uy*r*0.09);
+    ctx.moveTo(exC-px2*eo, eyC-py2*eo);
+    ctx.lineTo(exC-px2*eo+ux*r*0.09, eyC-py2*eo+uy*r*0.09);
+    ctx.stroke();
+    /* sopracciglia in scuro pieno, staccate dagli occhi: al filo della
+       calotta devono leggersi sia sopra i capelli sia sopra la pelle */
+    ctx.strokeStyle='#1c1410';
+    ctx.lineWidth=lw*0.75;
+    ctx.beginPath();
+    ctx.moveTo(exC+px2*(eo+r*0.10)-ux*r*0.15, eyC+py2*(eo+r*0.10)-uy*r*0.15);
+    ctx.lineTo(exC+px2*(eo-r*0.10)-ux*r*0.18, eyC+py2*(eo-r*0.10)-uy*r*0.18);
+    ctx.moveTo(exC-px2*(eo+r*0.10)-ux*r*0.15, eyC-py2*(eo+r*0.10)-uy*r*0.15);
+    ctx.lineTo(exC-px2*(eo-r*0.10)-ux*r*0.18, eyC-py2*(eo-r*0.10)-uy*r*0.18);
+    ctx.stroke();
+    ctx.globalAlpha=0.35*vis;
+    ctx.strokeStyle='#5a3d28';
+    ctx.lineWidth=lw*0.75;
+    ctx.beginPath();
+    ctx.moveTo(exC+ux*r*0.10, eyC+uy*r*0.10);
+    ctx.lineTo(exC+ux*r*0.22+px2*r*0.03, eyC+uy*r*0.22+py2*r*0.03);
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  }
   /* il filo di luce da ovest anche sulla testa: due archi sottili dentro
      il cerchio. Sono VELI (alfa), non tinte: valgono sopra pelle e capelli
      insieme, qualunque sia la mezzaluna del viso. Con y in giu' l'angolo
@@ -3685,8 +3773,12 @@ function disegnaPalla(ctx,s,look){
    cx,cyTerra: punto a terra sotto la figura, in pixel.
    hPx: altezza apparente voluta della figura (30 in partita).
    ============================================================ */
-function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra){
+function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
   const clip=CLIPS[nomeClip], cam=CAMERE[nomeCam];
+  /* LOD da vicino: pxs = pixel di schermo per pixel di disegno (la scala
+     della trasformazione del chiamante; 1 se non dichiarata). Oltre
+     LOD_PX di figura A SCHERMO si accende il dettaglio, sotto niente. */
+  lodK=pxs||1; lodOn=hPx*lodK>=LOD_PX;
   let u=(tSec*clip.freq)%1; if(u<0)u+=1;
   const cyw=Math.cos(yaw), syw=Math.sin(yaw);
   const ce=cam.ce<0.58?0.58:cam.ce;   // non gonfiare troppo le falcate in pianta
@@ -3828,7 +3920,11 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra){
   // figure): un primo passaggio dell'INTERA figura in scuro un filo piu'
   // largo, poi i colori sopra in ordine di profondita'. Cosi' il bordo
   // sta sul PERIMETRO della sagoma e mai fra un segmento e l'altro.
-  const bd=0.035*s<0.8?0.8:0.035*s;
+  /* CONTORNO SCALATO: da vicino lo spessore del bordo unico NON cresce
+     con lo zoom — resta ~1px a schermo (1,35/lodK), come le pedine vere.
+     Sotto soglia la formula e' quella di sempre. */
+  let bd=0.035*s<0.8?0.8:0.035*s;
+  if(lodOn){ const mx=1.35/lodK; if(bd>mx)bd=mx; }
   ctx.strokeStyle=BORDO;
   for(let i=0;i<NS;i++){
     const g=SEGS[i];
@@ -3843,6 +3939,8 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra){
     ctx.beginPath();
     ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
     ctx.stroke();
+    /* le dita entrano nel perimetro: prima il loro contorno scuro */
+    if(lodOn && (g.b===HAR||g.b===HAL)) mano(ctx,s,g.a,g.b,look,bd);
   }
   // dal piu' lontano al piu' vicino
   for(let i=0;i<NS;i++){
@@ -3855,6 +3953,25 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra){
     ctx.beginPath();
     ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
     ctx.stroke();
+    /* MANI a dita al posto del bozzolo (solo da vicino) */
+    if(lodOn && (g.b===HAR||g.b===HAL)) mano(ctx,s,g.a,g.b,look,-1);
+    /* SCARPE distinte da vicino: la suola scura sotto, un lampo chiaro
+       sul fianco — due tratti, e la scarpa smette di essere una virgola */
+    if(lodOn && g.c==='scarpe'){
+      const ax3=SX[g.a],ay3=SY[g.a],dx3=SX[g.b]-ax3,dy3=SY[g.b]-ay3;
+      ctx.strokeStyle='#0b0d0e';
+      ctx.lineWidth=W*0.34;
+      ctx.beginPath();
+      ctx.moveTo(ax3+dx3*0.12, ay3+dy3*0.12+W*0.33);
+      ctx.lineTo(ax3+dx3*0.96, ay3+dy3*0.96+W*0.33);
+      ctx.stroke();
+      ctx.strokeStyle='#d8d4c8';
+      ctx.lineWidth=W*0.20<0.8?0.8:W*0.20;
+      ctx.beginPath();
+      ctx.moveTo(ax3+dx3*0.16, ay3+dy3*0.16-W*0.10);
+      ctx.lineTo(ax3+dx3*0.60, ay3+dy3*0.60-W*0.18);
+      ctx.stroke();
+    }
     if(g.riv && look.risvolto){
       /* il RISVOLTO del calzettone: un tratto corto in seconda tinta
          appena sotto il ginocchio — il terzo blocco di colore del kit */
@@ -3874,16 +3991,45 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra){
       const L=Math.sqrt(dx*dx+dy*dy);
       if(L>1.5){
         let nx=-dy/L, ny=dx/L; if(nx>0){nx=-nx;ny=-ny;}   // nx punta a ovest
-        const rw=W*0.26<0.9?0.9:W*0.26, off=(W-rw)*0.5;
-        ctx.lineWidth=rw;
-        ctx.strokeStyle=look._lume;
-        ctx.beginPath();
-        ctx.moveTo(ax+dx*0.14+nx*off, ay+dy*0.14+ny*off);
-        ctx.lineTo(ax+dx*0.86+nx*off, ay+dy*0.86+ny*off); ctx.stroke();
-        ctx.strokeStyle=look._ombra;
-        ctx.beginPath();
-        ctx.moveTo(ax+dx*0.14-nx*off, ay+dy*0.14-ny*off);
-        ctx.lineTo(ax+dx*0.86-nx*off, ay+dy*0.86-ny*off); ctx.stroke();
+        if(!lodOn){
+          const rw=W*0.26<0.9?0.9:W*0.26, off=(W-rw)*0.5;
+          ctx.lineWidth=rw;
+          ctx.strokeStyle=look._lume;
+          ctx.beginPath();
+          ctx.moveTo(ax+dx*0.14+nx*off, ay+dy*0.14+ny*off);
+          ctx.lineTo(ax+dx*0.86+nx*off, ay+dy*0.86+ny*off); ctx.stroke();
+          ctx.strokeStyle=look._ombra;
+          ctx.beginPath();
+          ctx.moveTo(ax+dx*0.14-nx*off, ay+dy*0.14-ny*off);
+          ctx.lineTo(ax+dx*0.86-nx*off, ay+dy*0.86-ny*off); ctx.stroke();
+        }else{
+          /* MAGLIA VERA da vicino: i fili pieni di _lume/_ombra a questa
+             scala leggevano come BRETELLE (misurato al primo giro di
+             foto). Al loro posto due VELI in alfa a estremi piatti —
+             mezza capsula ovest in luce, mezza est in ombra — che
+             modellano il tessuto anche sopra strisce e fascia. */
+          ctx.lineCap='butt';
+          ctx.lineWidth=W*0.42;
+          ctx.globalAlpha=0.15;
+          ctx.strokeStyle='#fff2cf';
+          ctx.beginPath();
+          ctx.moveTo(ax+dx*0.06+nx*W*0.29, ay+dy*0.06+ny*W*0.29);
+          ctx.lineTo(ax+dx*0.94+nx*W*0.29, ay+dy*0.94+ny*W*0.29); ctx.stroke();
+          ctx.globalAlpha=0.13;
+          ctx.strokeStyle='#241d10';
+          ctx.beginPath();
+          ctx.moveTo(ax+dx*0.06-nx*W*0.29, ay+dy*0.06-ny*W*0.29);
+          ctx.lineTo(ax+dx*0.94-nx*W*0.29, ay+dy*0.94-ny*W*0.29); ctx.stroke();
+          ctx.globalAlpha=1;
+          ctx.lineCap='round';
+          /* e il COLLETTO in seconda tinta, appena sotto il collo */
+          ctx.strokeStyle=look.maglia2;
+          ctx.lineWidth=0.050*s<1?1:0.050*s;
+          ctx.beginPath();
+          ctx.moveTo(ax+dx*0.965+nx*0.095*s, ay+dy*0.965+ny*0.095*s);
+          ctx.lineTo(ax+dx*0.965-nx*0.095*s, ay+dy*0.965-ny*0.095*s);
+          ctx.stroke();
+        }
       }
     }
   }
@@ -3897,7 +4043,7 @@ const lookPredefinito={
   maglia:'#c9302c', maglia2:'#f5f2ea', disegno:'strisce',
   pantaloncini:'#f5f2ea', calze:'#c9302c', risvolto:'#f5f2ea',
   pelle:'#e0a97e', capelli:'#33210f', scarpe:'#1d1d1d',
-  palla:'#f4f2ec',
+  palla:'#f4f2ec', taglio:1,
 };
 
 return {disegna, CAMERE, CLIPS, lookPredefinito, torso:()=>TORSO};
@@ -12805,6 +12951,78 @@ function buildFieldTex(){
   const c=fieldTex.getContext('2d');
   c.scale(TS,TS); c.translate(PADX,PADY);
   paintField(c, TH, PADX, PADY, undefined, true);
+  fieldTexTS=TS;                 // la scala di cottura: la legge il primo piano
+  campoVivoR.ts=0;               // e la finestra nitida si ricuoce da capo
+}
+/* ============================================================
+   IL CAMPO NITIDO NEL PRIMO PIANO (15 ago 2026, 15 giudici su 26).
+   fieldTex e' cotta a non piu' di 2 px per unita' (e col tetto di
+   BUDGET anche meno): nella regia del gol la camera arriva a VH/131
+   px per unita' — cioe' 3-6 volte la cottura — e il manto dietro chi
+   esulta era una sfocatura da ingrandimento raster.
+   Qui, quando l'inquadratura supera la cottura del 30%, la FINESTRA
+   VISIBILE si ridipinge VIVA con lo stesso pennello (paintField, che
+   e' procedurale) alla scala vera dello zoom. Il testo delle insegne
+   resta fuori (vivo=true) e INSEGNE_LIVE viene ripopolata con gli
+   stessi valori: dipingiCartelloni e' deterministica.
+   I rigori e la ripresa del gol non passano di qui: il loro fondale
+   (duelFondo) e' gia' cotto alla risoluzione dello schermo.
+   TRE REGOLE IMPARATE AL CANCELLO DELLE PRESTAZIONI (giro 2):
+   1) SOLO NELLA SCENA DEL GOL. La prima stesura si accendeva sul solo
+      zoom, e la camera di GIOCO arriva a S2 1,53: ricuoceva megapixel
+      a ogni carrellata di partita — fotogramma medio da 23 a 43 ms,
+      picchi da 1,5 s. Il chiamante (render) passa di qui solo con
+      G.scene==='goal': in partita il costo e' ZERO, com'era.
+   2) SI CUOCE A ZOOM FERMO. Durante la stretta della carrellata non
+      si ricuoce (si riusa la finestra buona se copre, senno' resta la
+      cottura di fieldTex per quei 3-4 decimi di corsa): la cottura
+      avviene UNA volta, a inquadratura composta.
+   3) IL PENNELLO NON CONSUMA IL CASO DELLA PARTITA. paintField tira
+      migliaia di Math.random(): rubarli al flusso comune cambiava il
+      seguito della simulazione nelle prove ripetibili (il fondale del
+      fischio finale ne usciva sporco perche' la partita DIVERGEVA).
+      Qui la cottura usa un generatore proprio, a seme fisso — cosi'
+      anche la grana non cambia fra una ricottura e l'altra.
+   ============================================================ */
+let fieldTexTS=0, campoVivoCv=null, campoVivoS2=0;
+const campoVivoR={x0:0,y0:0,w:0,h:0,ts:0};
+function campoVivoDisegna(S2, offX, offY){
+  const vx0=-offX/S2, vy0=-offY/S2, vw=VW/S2, vh=VH/S2;
+  const ts=S2*DPR, R=campoVivoR;
+  /* copre: la finestra cotta contiene l'inquadratura; nitida: e' anche
+     abbastanza densa (una cottura PIU' fitta dello zoom attuale va
+     benissimo: e' sovracampionamento, si riusa senza ricuocere) */
+  const copre = campoVivoCv && R.ts>0 &&
+    vx0>=R.x0 && vy0>=R.y0 && vx0+vw<=R.x0+R.w && vy0+vh<=R.y0+R.h;
+  const nitida = copre && ts<=R.ts*1.35;
+  /* lo zoom e' fermo? (campoVivoS2 lo azzera render quando non passa
+     di qui: il primo fotogramma di una scena non e' mai "fermo") */
+  const fermo = campoVivoS2>0 && Math.abs(S2-campoVivoS2)<=S2*0.01;
+  campoVivoS2=S2;
+  if(!nitida){
+    if(!fermo){ if(copre) ctx.drawImage(campoVivoCv,R.x0,R.y0,R.w,R.h); return; }
+    const mx=vw*0.20, my=vh*0.20;
+    const x0=vx0-mx, y0=vy0-my, w=vw+2*mx, h=vh+2*my;
+    let t2=ts;
+    if(w*h*t2*t2>3.2e6) t2=Math.sqrt(3.2e6/(w*h));   // stesso spirito del BUDGET
+    if(t2<=fieldTexTS*1.05) return;                   // non varrebbe la cottura
+    if(!campoVivoCv) campoVivoCv=document.createElement('canvas');
+    campoVivoCv.width=Math.max(1,Math.ceil(w*t2));
+    campoVivoCv.height=Math.max(1,Math.ceil(h*t2));
+    const c2=campoVivoCv.getContext('2d');
+    c2.setTransform(t2,0,0,t2,-x0*t2,-y0*t2);
+    c2.beginPath(); c2.rect(x0,y0,w,h); c2.clip();
+    const TH=FIELDS[clamp(G.fieldIdx|0,0,FIELDS.length-1)].th;
+    /* regola 3: generatore proprio a seme fisso per la durata della
+       cottura — mai un numero rubato al caso della partita */
+    const mr=Math.random; let sm=0x2f6e2b1|0;
+    Math.random=function(){ sm=(sm+0x6D2B79F5)|0; let t=Math.imul(sm^(sm>>>15),1|sm);
+      t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; };
+    try{ paintField(c2, TH, PADX, PADY, 1, true); }
+    finally{ Math.random=mr; }
+    R.x0=x0; R.y0=y0; R.w=w; R.h=h; R.ts=t2;
+  }
+  ctx.drawImage(campoVivoCv, R.x0, R.y0, R.w, R.h);
 }
 /* anteprima di un campo (schermata CAMPI): stesso pennello, margine minimo */
 function drawFieldPreview(cnv, fi){
@@ -13806,6 +14024,15 @@ function render(){
   ctx.scale(S2,S2);
 
   if(fieldTex) ctx.drawImage(fieldTex, -PADX,-PADY, FW+PADX*2, FH+PADY*2);
+  /* il primo piano del gol ridipinge la finestra visibile ALLA SCALA
+     DELLO ZOOM: niente sfocatura da ingrandimento raster dietro chi
+     esulta. SOLO nella scena del gol (la camera di gioco arriva a S2
+     1,53 e accenderlo in partita costava il doppio del fotogramma —
+     misurato al cancello delle prestazioni), e solo oltre il 30%
+     sopra la cottura di fieldTex. */
+  if(gol && fieldTex && fieldTexTS>0 && S2*DPR>fieldTexTS*1.30)
+    campoVivoDisegna(S2, Ax+sx, Ay+sy);
+  else campoVivoS2=0;
   drawInsegneTesto();
   drawCrowd();
   drawGoals();
@@ -14175,12 +14402,20 @@ function buildBallTex(){
   ballPatTex=document.createElement('canvas');
   ballPatTex.width=N; ballPatTex.height=N;
   const c=ballPatTex.getContext('2d');
-  c.fillStyle='#f4f7ef';
+  /* IL PALLONE E' BIANCO (quarto appello). A #f4f7ef con il pentagono al
+     40% del raggio e il velo d'ombra al 50%, in mischia dentro l'anello
+     ambra il pallone leggeva SCURO su erba scura — l'oggetto che deve
+     essere il piu' leggibile dello schermo era il meno leggibile. La
+     ricetta di Soccer Stars: base quasi bianca, pentagono piu' piccolo,
+     velo d'ombra dimezzato. Il "dove" lo dice il bianco, il "che cosa"
+     lo dicono pentagono e cuciture. */
+  c.fillStyle='#fcfef8';
   c.beginPath(); c.arc(C,C,R,0,6.2832); c.fill();
   c.save();
   c.beginPath(); c.arc(C,C,R,0,6.2832); c.clip();
-  /* pentagono centrale: e' quello che a diciotto pixel dice "pallone" */
-  const pr=0.40*R, lu=0.34*R;
+  /* pentagono centrale: e' quello che a diciotto pixel dice "pallone".
+     Dal 40% al 33% del raggio: identita' intatta, meta' del buio in meno */
+  const pr=0.33*R, lu=0.34*R;
   c.fillStyle='#062d10';
   c.beginPath();
   for(let i=0;i<5;i++){
@@ -14190,7 +14425,7 @@ function buildBallTex(){
   }
   c.closePath(); c.fill();
   /* cuciture dai VERTICI verso il bordo */
-  c.strokeStyle='rgba(6,45,16,.88)'; c.lineWidth=0.144*R; c.lineCap='round';
+  c.strokeStyle='rgba(6,45,16,.88)'; c.lineWidth=0.12*R; c.lineCap='round';
   for(let i=0;i<5;i++){
     const a=i*1.25664-1.5708;
     c.beginPath();
@@ -14201,7 +14436,7 @@ function buildBallTex(){
   /* CINQUE ESAGONI DI BORDO, scorciati come su una sfera vera: stanno fra
      due cuciture, non sopra, e sono l'unica cosa che a pallone fermo dice
      che e' tondo e non piatto. Costano zero: sono cotti. */
-  c.fillStyle='rgba(6,45,16,.30)';
+  c.fillStyle='rgba(6,45,16,.24)';
   for(let i=0;i<5;i++){
     const a=i*1.25664-1.5708+0.6283;
     const d=0.82*R;
@@ -14221,12 +14456,15 @@ function buildBallTex(){
   l.beginPath(); l.arc(C,C,R,0,6.2832); l.clip();
   /* velo d'ombra che si addensa verso il basso-destra: e' il gradiente che
      fa la sfera. Il buio non e' nero ma blu-verde, come tutte le ombre del
-     gioco: il nero puro sull'erba fa fango. */
+     gioco: il nero puro sull'erba fa fango. DIMEZZATO (quarto appello): a
+     .50 il quarto basso-destro del pallone aveva la luminanza dell'erba e
+     in mischia la sfera leggeva come mezza sfera. La forma la dice ancora,
+     il bianco resta bianco. */
   const gs=l.createRadialGradient(C-0.30*R, C-0.34*R, 0.10*R, C-0.10*R, C-0.06*R, 1.55*R);
   gs.addColorStop(0,   'rgba(10,20,16,0)');
-  gs.addColorStop(0.52,'rgba(10,20,16,.07)');
-  gs.addColorStop(0.80,'rgba(10,20,16,.26)');
-  gs.addColorStop(1,   'rgba(8,16,12,.50)');
+  gs.addColorStop(0.52,'rgba(10,20,16,.04)');
+  gs.addColorStop(0.80,'rgba(10,20,16,.14)');
+  gs.addColorStop(1,   'rgba(8,16,12,.28)');
   l.fillStyle=gs; l.fillRect(0,0,N,N);
   /* riflesso speculare al 30% del raggio in alto a sinistra */
   const gl=l.createRadialGradient(C-0.34*R, C-0.38*R, 0, C-0.34*R, C-0.38*R, 0.36*R);
@@ -14837,19 +15075,27 @@ function drawSegniTerra(lista){
 /* il tratto nudo dell'anello del portatore: chiamato DENTRO la scala P_DIS
    (da drawSegniTerra) e riusato dalla passata sopra-palla, che la scala se
    la mette da sola */
-function anelloPortatoreTratto(p){
-  ctx.strokeStyle='rgba(0,0,0,.38)'; ctx.lineWidth=3.8;
-  ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0,6.2832); ctx.stroke();
+/* `sopraPalla`: nella ripassata ritagliata dentro il pallone (quarto
+   appello) lo zoccolo nero NON si ridisegna — su un pallone bianco l'unico
+   suo effetto era scurirlo, cioe' l'esatto contrario del mestiere del
+   pallone. Sull'erba lo zoccolo resta: e' lui che tiene l'ambra a 3:1. */
+function anelloPortatoreTratto(p,sopraPalla){
+  if(!sopraPalla){
+    ctx.strokeStyle='rgba(0,0,0,.38)'; ctx.lineWidth=3.8;
+    ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0,6.2832); ctx.stroke();
+  }
   ctx.strokeStyle='rgba(255,206,58,.96)'; ctx.lineWidth=2.2;
   ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0,6.2832); ctx.stroke();
 }
-function anelloComandato(p){
+function anelloComandato(p,sopraPalla){
   ctx.save();
   ctx.translate(p.x,p.y); ctx.scale(P_DIS,P_DIS); ctx.translate(-p.x,-p.y);
   const pl = SAVE.moto ? 0.5+0.5*Math.sin(G.pulse*2.6) : 0.5;
   const arx=19.2+1.4*pl, ary=8.4+0.61*pl;
-  ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=5.4;
-  ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0,0,6.2832); ctx.stroke();
+  if(!sopraPalla){
+    ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=5.4;
+    ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0,0,6.2832); ctx.stroke();
+  }
   ctx.strokeStyle='rgba(255,176,32,.95)';
   ctx.lineWidth=3.4;
   ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0,0,6.2832); ctx.stroke();
@@ -14870,7 +15116,9 @@ function anelloComandato(p){
   ctx.lineTo(fcx+Math.cos(fa+0.46)*14.2, fcy+Math.sin(fa+0.46)*14.2*sq);
   ctx.lineTo(fcx+Math.cos(fa-0.46)*14.2, fcy+Math.sin(fa-0.46)*14.2*sq);
   ctx.closePath();
-  ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=2.8; ctx.lineJoin='round'; ctx.stroke();
+  if(!sopraPalla){
+    ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=2.8; ctx.lineJoin='round'; ctx.stroke();
+  }
   ctx.fillStyle='rgba(255,176,32,.95)'; ctx.fill();
   ctx.restore();
 }
@@ -14897,7 +15145,7 @@ function drawAnelloSopraPalla(){
     if(Math.abs(b.x-cx)>24*P_DIS+r || Math.abs(by-cy)>13*P_DIS+r) continue;
     ctx.save();
     ctx.beginPath(); ctx.arc(b.x,by,r,0,6.2832); ctx.clip();
-    anelloComandato(p);
+    anelloComandato(p,true);
     ctx.restore();
   }
   /* e l'anello del portatore, che il pallone — 16 unita' davanti ai
@@ -14911,7 +15159,7 @@ function drawAnelloSopraPalla(){
         ctx.save();
         ctx.beginPath(); ctx.arc(b.x,by,r,0,6.2832); ctx.clip();
         ctx.translate(p.x,p.y); ctx.scale(P_DIS,P_DIS); ctx.translate(-p.x,-p.y);
-        anelloPortatoreTratto(p);
+        anelloPortatoreTratto(p,true);
         ctx.restore();
       }
     }
@@ -14953,7 +15201,8 @@ function rigLook(p){
   const c1 = gk ? gkKit(p.team,0) : TEAMCOL[p.team];
   const c2 = gk ? gkKit(p.team,1) : TEAMCOL2[p.team];
   const pat = gk ? 0 : (TEAMPAT[p.team]|0);
-  const chiave = c1+'|'+c2+'|'+pat+'|'+p.skin+'|'+p.hair+(gk?'|G':'');
+  const taglio = (p.idx|0)%3;            // il TAGLIO dei capelli (LOD da vicino)
+  const chiave = c1+'|'+c2+'|'+pat+'|'+p.skin+'|'+p.hair+'|'+taglio+(gk?'|G':'');
   let lk = RIG_LOOKS.get(chiave);
   if(!lk){
     if(RIG_LOOKS.size>64) RIG_LOOKS.clear();
@@ -14972,6 +15221,7 @@ function rigLook(p){
       pantaloncini:c2, calze:c1, risvolto:c2,
       pelle:p.skin, capelli:p.hair, scarpe:'#15181a',
       palla:null,                          // adattamento (a): mai la palla della clip
+      taglio,                              // ciuffo/taglio per indice (solo LOD)
     };
     RIG_LOOKS.set(chiave, lk);
   }
@@ -15168,7 +15418,14 @@ function drawPlayer(p){
     else if(p.rove>=0 || (p.charge>=0 && p.chargeKind==='rovesciata'))
       a = Math.atan2(-(p.roveDY||p.fy), -(p.roveDX||p.fx));
     else if(p.slide>=0 || p.recover>0) a = Math.atan2(p.slideDY||p.fy, p.slideDX||p.fx);
-    else if(celeb) a = Math.PI/2;            // la festa guarda la camera
+    /* LA FESTA IN PROIEZIONE COERENTE (15 ago 2026): guardava la camera
+       in pieno frontale, e nel primo piano del gol la figura leggeva come
+       una figurina incollata su un campo visto dall'alto. La camera di
+       gioco RESTA dall'alto (la bassa e' dei rigori e della ripresa):
+       qui la festa va verso la curva sud di TRE QUARTI, alternando il
+       lato per indice — la torsione da' profondita' alla posa, e il
+       volto del LOD resta leggibile. */
+    else if(celeb) a = Math.PI/2 + (p.idx&1 ? 0.38 : -0.38);
     else a = p.ang;
     const yaw = a + RIG_YAW_K;               // taratura: vedi RIG_YAW_K
     const cy = p.y + RIG_PIEDI;
@@ -15177,7 +15434,10 @@ function drawPlayer(p){
     const tilt = SAVE.moto ? p.rollio*0.30 : 0;
     const conTilt = tilt>0.02 || tilt<-0.02;
     if(conTilt){ ctx.save(); ctx.translate(p.x,cy); ctx.rotate(tilt); ctx.translate(-p.x,-cy); }
-    Rig3D.disegna(ctx, p.x, cy, hb, yaw, 'alto', st.clip, st.u/clip.freq, look, true);
+    /* l'ultima cifra e' la scala a schermo (zoom camera x P_DIS): e' lei
+       che accende il LOD da vicino nel primo piano del gol e MAI a 40px */
+    Rig3D.disegna(ctx, p.x, cy, hb, yaw, 'alto', st.clip, st.u/clip.freq, look, true,
+                  (G.view.S2||1)*P_DIS);
     if(conTilt) ctx.restore();
 
     /* NUMERO DI MAGLIA, smalto sul torso — SU OGNI FIGURA (appelli
@@ -15194,16 +15454,32 @@ function drawPlayer(p){
       const T=Rig3D.torso();
       const nx=T.x0+(T.x1-T.x0)*0.72, ny=T.y0+(T.y1-T.y0)*0.72;
       const cifra=String(p.idx+1);
-      ctx.font='900 7px '+FONT_N;
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.lineJoin='round';
-      /* contorno a 1,45 (era 1,7): con il numero su TUTTE le figure la
-         frangia scura in basso lambiva le file della sonda del collaudo
-         e il fluo P1 scendeva a 3,08:1 — misurato, non temuto */
-      ctx.strokeStyle='rgba(8,16,11,.88)'; ctx.lineWidth=1.45;
-      ctx.strokeText(cifra, nx, ny);
-      ctx.fillStyle='#f4f7f1';
-      ctx.fillText(cifra, nx, ny);
+      /* IL MINIMO LEGGIBILE (quarto appello). Il corpo del glifo qui e'
+         7 unita' locali, cioe' 7 x P_DIS x S2 pixel di schermo: sulla
+         camera larga dell'11 contro 11 scendeva sotto i 5 px e sulla
+         schiena restava una sbavatura chiara — un numero che non si
+         legge e' solo rumore. Sotto i 6,5 px di schermo la cifra si
+         INGRANDISCE fino al minimo (meglio leggibile che fedele: da
+         lontano il torso e' quasi vuoto e una cifra piena legge come
+         una pedina numerata); se per leggerla servirebbe piu' di 11,5
+         unita' — piu' del torso — si OMETTE del tutto. Sulla camera di
+         gioco del 5 contro 5 (S2 >= 1) non cambia un pixel, quindi la
+         sonda del contrasto del collaudo misura la stessa scena. */
+      const sPix=P_DIS*(G.view.S2||1);
+      const fs=Math.max(7, 6.5/sPix);
+      if(fs<=11.5){
+        ctx.font='900 '+fs.toFixed(2)+'px '+FONT_N;
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.lineJoin='round';
+        /* contorno a 1,45 (era 1,7): con il numero su TUTTE le figure la
+           frangia scura in basso lambiva le file della sonda del collaudo
+           e il fluo P1 scendeva a 3,08:1 — misurato, non temuto.
+           Scala col glifo, se il glifo cresce. */
+        ctx.strokeStyle='rgba(8,16,11,.88)'; ctx.lineWidth=1.45*fs/7;
+        ctx.strokeText(cifra, nx, ny);
+        ctx.fillStyle='#f4f7f1';
+        ctx.fillText(cifra, nx, ny);
+      }
     }
   }
   ctx.restore();                      // fine della scala di disegno P_DIS
@@ -15324,7 +15600,7 @@ function drawBallAt(x,y,z,rot,glow){
        unita' di quota — un pallone in volo non tocca niente — mentre la
        proiezione resta: e' la distanza fra le due a dire quanto e' alto.
        Costo: un drawImage della tessitura gia' cotta, solo a palla bassa. */
-    const ac=0.52*(1-q/9);
+    const ac=0.62*(1-q/9);
     if(ac>0.02){
       ctx.globalAlpha=ac;
       ctx.drawImage(ombraTex, sx-5.4*r, sy-2.6*r, 10.8*r, 5.2*r);
@@ -15332,6 +15608,20 @@ function drawBallAt(x,y,z,rot,glow){
     ctx.globalAlpha=1;
   }
   const by=y-z*0.55;
+  /* ALONE DI STACCO DEL PALLONE (quarto appello): lo stesso anello di luce
+     cotta dei corpi (staccoTex), alla scala della sfera — il picco della
+     tessitura sta al 62% del raggio, quindi 1,7 raggi di semiasse lo
+     posano SUL filo del contorno. E' il rialzo d'erba che tiene il bianco
+     staccato dal manto scuro anche in mischia; sempre acceso, perche' il
+     pallone e' l'oggetto che non ha mai il permesso di sparire. Costo: un
+     drawImage della tessitura che c'e' gia'. */
+  {
+    if(!staccoTex) buildStaccoTex();
+    const ar=B_R*k*1.7;
+    ctx.globalAlpha=0.55;
+    ctx.drawImage(staccoTex, x-ar, by-ar, ar*2, ar*2);
+    ctx.globalAlpha=1;
+  }
   if(glow){
     ctx.fillStyle='rgba(255,222,164,.26)';
     ctx.beginPath(); ctx.arc(x,by,B_R*k+4,0,6.2832); ctx.fill();
@@ -15673,9 +15963,10 @@ function disegnaMoviola(){
 }
 
 /* ---------- MINIMAPPA ----------
-   E' il prezzo da pagare per lo zoom, ed e' un prezzo basso: 132x64 px in un
-   angolo restituiscono la lettura tattica che la telecamera stretta toglie.
-   Compare solo in gioco e solo quando si vede meno del 92% del campo. */
+   E' il prezzo da pagare per lo zoom, ed e' un prezzo basso: 132x64 px in
+   basso al centro restituiscono la lettura tattica che la telecamera
+   stretta toglie. Compare solo in gioco e solo quando si vede meno del 92%
+   del campo. */
 function drawMinimappa(){
   MINI_RECT=null;
   const s=G.scene;
@@ -15686,17 +15977,22 @@ function drawMinimappa(){
   const vy0=Math.max(0,(PA_Y0-Ay)/S2), vy1=Math.min(FH,(PA_Y1-Ay)/S2);
   const quota=Math.max(0,(vx1-vx0))*Math.max(0,(vy1-vy0))/(FW*FH);
   if(quota>=0.92) return;
-  /* Il tentativo di stringerla e incollarla al fondo sui viewport bassi e'
-     stato bocciato a vista: scivolava SOPRA la fascia delle insegne e ne
-     copriva la scritta. Qui sta bene dov'era: 12 px dai bordi, sopra la
-     fascia, con l'insegna che resta intera. */
   /* sull'11 contro 11 si vede ~1/4 di campo: la bussola c'e' sempre (la
      quota 0,92 non scatta mai) ed e' l'unico orientamento, quindi il
      fattore grande vale anche sotto i 700px */
-  const k = (Math.min(VW,VH)>=700 || TAGLIA===11) ? 1.35 : 1;
+  const k0 = (Math.min(VW,VH)>=700 || TAGLIA===11) ? 1.35 : 1;
+  /* IN BASSO AL CENTRO, come il radar di eFootball (quarto appello).
+     Nell'angolo destro l'aggancio sopra la fascia delle insegne spingeva
+     il radar SOTTO il pulsante TIRA, che vive inchiodato a (VW-66,
+     VH-140) — giocata.js preme quelle coordinate e non si spostano. La
+     REGOLA DI SCARTO coi comandi: le due colonne dei pulsanti (destra
+     sempre, sinistra in 2 giocatori) arrivano fino a 116 px dal bordo
+     piu' 10 di margine di tocco; se un viewport stretto porta il centro
+     a toccarle, si restringe la BUSSOLA, mai il margine. */
+  const k = Math.min(k0, Math.max(0.9,(VW-258)/132));
   /* se la fascia delle insegne (mondo: da FH+15) entra nel quadro, la
      minimappa si aggancia SOPRA di lei: mai sopra una scritta */
-  const mw=132*k, mh=64*k, mx=VW-12-mw,
+  const mw=132*k, mh=64*k, mx=(VW-mw)/2,
         my=Math.min(VH-12-mh, Ay+(FH+15)*S2-8-mh);
   MINI_RECT={x0:mx-3, y0:my-3, x1:mx+mw+3, y1:my+mh+3};
   ctx.save();
@@ -15907,11 +16203,17 @@ function drawHUD(){
      entra nessun pannello. */
   {
     let dy=0;
+    /* REGOLA DI SCARTO con la bussola centrata: su un viewport stretto il
+       radar in basso al centro puo' arrivare fin qui — il pannello allora
+       sale sopra il suo bordo (MINI_RECT e' il rettangolo del fotogramma
+       scorso, come per i chevron). Mai un pannello dietro il radar. */
+    let fondo=VH-12;
+    if(MINI_RECT && MINI_RECT.x0<12+126+6) fondo=Math.min(fondo, MINI_RECT.y0-5);
     for(let t=0;t<2;t++){
       let fuori=0, resta=0;
       for(const p of G.players){ if(p.team===t && p.out>0){ fuori++; resta=Math.max(resta,p.out); } }
       if(!fuori) continue;
-      const bw=126, bh=22, bx=12, by=VH-12-bh-dy; dy+=bh+5;
+      const bw=126, bh=22, bx=12, by=fondo-bh-dy; dy+=bh+5;
       ctx.fillStyle='rgba(6,14,10,.9)'; ctx.fillRect(bx,by,bw,bh);
       ctx.strokeStyle=COL.rosso; ctx.lineWidth=1.5; ctx.strokeRect(bx+.5,by+.5,bw-1,bh-1);
       ctx.font='700 12px '+FONT_C; ctx.textAlign='center'; ctx.fillStyle=COL.rosso;
@@ -16014,7 +16316,12 @@ function drawHUD(){
      uscito, con la freccia rivolta VERSO di lui. Solo in gioco: durante la
      festa del gol e il replay la camera guarda altro apposta. */
   const bordoVivo = (G.scene==='play'||G.scene==='golden'||G.scene==='kickoff') && !G.moviola;
-  for(const tg of G.hudTags){
+  /* LA TARGHETTA CEDE IL PASSO AI TITOLI DI SCENA (quarto appello): al
+     calcio d'inizio dell'11 contro 11 il tuo uomo sta al centro, cioe'
+     esattamente sotto la scritta CALCIO D'INIZIO, e PIEDEBUONO le finiva
+     addosso. Finche' il titolo e' in scena la targhetta tace: chi comandi
+     te lo dice comunque l'anello ambra, e il titolo dura un respiro. */
+  if(G.scene!=='kickoff') for(const tg of G.hudTags){
     const sx=tg.x*G.view.S2+G.view.Ax, sy=tg.y*G.view.S2+G.view.Ay;
     /* la scatola si MISURA sul testo, non si stima: la stima a 6,2 px per
        lettera era il motivo per cui il cognome andava troncato a monte
@@ -16084,6 +16391,11 @@ function drawHUD(){
       const sopra=Math.round(VH-t0+8);
       bot = sopra<=120 ? sopra : Math.max(PADB, Math.round(VH-t1-TH-6));
     }
+    /* la bussola in basso al centro abita la stessa fascia della barra:
+       se la barra le cadrebbe addosso, sale sopra il suo bordo — mai un
+       pannello dietro il radar (prima partita soltanto: poi la barra
+       se ne va da sola) */
+    if(MINI_RECT && VH-bot>MINI_RECT.y0-4) bot=Math.round(VH-MINI_RECT.y0+6);
     if(bot!==Tut._bot){ Tut._bot=bot; ui.tut.style.bottom=bot+'px'; }
   }
 }
@@ -16617,7 +16929,7 @@ function drawDuelScene(){
     const hbK=g.GH*0.51;
     DUEL_RIG_K.team=D.keeper;
     Rig3D.disegna(ctx, kx, ky, hbK, yawK, 'bassa', clipK,
-                  uK/Rig3D.CLIPS[clipK].freq, rigLook(DUEL_RIG_K), true);
+                  uK/Rig3D.CLIPS[clipK].freq, rigLook(DUEL_RIG_K), true, DPR);
     /* il numero 1, ancorato al torso del rig */
     {
       const T=Rig3D.torso();
@@ -16774,7 +17086,7 @@ function drawDuelScene(){
        vive nel piano sagittale e a yaw zero carica e frustata spariscono
        dietro la schiena — l'angolo della rincorsa vera le fa leggere */
     Rig3D.disegna(ctx, sx2, py2, hbS, 0.5, 'bassa', clipS,
-                  uS/Rig3D.CLIPS[clipS].freq, rigLook(DUEL_RIG_S), true);
+                  uS/Rig3D.CLIPS[clipS].freq, rigLook(DUEL_RIG_S), true, DPR);
     /* numero sulla schiena: e' di spalle, il numero e' cio' che si vede */
     {
       const T=Rig3D.torso();
@@ -17050,7 +17362,9 @@ function drawRipresaGol(){
     /* yaw relativo all'asse della ripresa: chi guarda la porta da' le
        spalle alla camera (yaw 0), come al banco di prova del rig */
     let yaw = esu && marcatore ? Math.PI : a-A;
-    Rig3D.disegna(ctx, x, y, hb, yaw, 'bassa', clip, tSec, rigLook(q));
+    /* DPR come scala: qui hb e' gia' in pixel di schermo, e sui telefoni
+       densi il primo piano della ripresa merita il LOD quanto i rigori */
+    Rig3D.disegna(ctx, x, y, hb, yaw, 'bassa', clip, tSec, rigLook(q), false, DPR);
     /* il numero sulla schiena del marcatore, ancorato al torso del rig */
     if(marcatore && !esu){
       const T=Rig3D.torso();
@@ -17769,7 +18083,12 @@ function drawOverlaysCanvas(){
        dell'altezza, cioe' in mezzo al campo: nello scatto d'azione la fascia
        TIRO PERFETTO! nascondeva fisicamente due giocatori. In basso non c'e'
        quasi mai il pallone (limite di pan della camera). */
-    const y = VH-58;
+    let y = VH-58;
+    /* REGOLA DI SCARTO con la bussola, che adesso abita anche lei il
+       fondo-centro: la striscia le si appoggia SOPRA il bordo invece di
+       coprirle i giocatori (MINI_RECT e' il fotogramma scorso, come per
+       i chevron). Un pannello dietro il radar non esiste. */
+    if(MINI_RECT && y+40>MINI_RECT.y0-4) y=MINI_RECT.y0-46;
     const xoff=(1-kIn)*VW*0.5;
     ctx.save();
     ctx.globalAlpha=eout;

@@ -876,6 +876,44 @@ const ORD=new Int32Array(NS); for(let i=0;i<NS;i++)ORD[i]=i;
    sottofondo in disegna) e non tredici rettangoli bordati uno a uno */
 const BORDO='#23201a';
 
+/* ============================================================
+   IL LIVELLO DI DETTAGLIO DA VICINO (15 ago 2026, 15 giudici su 26).
+   La figura e' nata per 30px: ingrandita nel primo piano del gol e dai
+   rigori mostrava testa senza volto, mani a bozzolo, maglia piatta e un
+   contorno che cresceva con lo zoom. Oltre LOD_PX di altezza A SCHERMO
+   (hPx x pxs, l'ultima cifra la passa il chiamante: la scala della sua
+   trasformazione, o il DPR nelle scene gia' in pixel di schermo) il rig
+   aggiunge: volto abbozzato (occhi, sopracciglia, accenno del naso),
+   capelli con un taglio (look.taglio 0/1/2), mani a dita stilizzate,
+   colletto e due toni di tessuto sulla maglia, suola e lampo sulle
+   scarpe — e il contorno unico smette di crescere (~1px a schermo).
+   SOTTO soglia non cambia NIENTE: il costo di ?rigcosto resta quello.
+   lodOn/lodK sono stato di modulo azzerato a ogni disegna(): mai
+   allocazioni, mai stato che sopravvive alla figura. */
+const LOD_PX=120;
+let lodOn=false, lodK=1;
+
+/* MANI A CINQUE DITA STILIZZATE (tre tratti bastano): un ventaglio corto
+   oltre il polso, nella direzione dell'avambraccio. Con bordo>=0 disegna
+   il passaggio di contorno (scuro, piu' largo), senno' la pelle. */
+function mano(ctx,s,ja,jb,look,bordo){
+  const ax=SX[ja],ay=SY[ja];
+  let dx=SX[jb]-ax, dy=SY[jb]-ay;
+  const L=Math.sqrt(dx*dx+dy*dy);
+  if(L>1e-3){dx/=L;dy/=L;}else{dx=0;dy=1;}
+  const px=-dy, py=dx, bx=SX[jb], by=SY[jb];
+  const w=0.048*s<0.8?0.8:0.048*s;
+  ctx.lineWidth = bordo>=0 ? w+2*bordo : w;
+  ctx.strokeStyle = bordo>=0 ? BORDO : look.pelle;
+  ctx.beginPath();
+  for(let f=-1;f<=1;f++){
+    const ln=(f?0.125:0.155)*s;
+    ctx.moveTo(bx+dx*0.02*s+px*f*0.030*s, by+dy*0.02*s+py*f*0.030*s);
+    ctx.lineTo(bx+dx*ln+px*f*0.058*s, by+dy*ln+py*f*0.058*s);
+  }
+  ctx.stroke();
+}
+
 /* LUCE SUI CORPI: il bordo di luce da ovest che gia' modella la palla va
    anche su busto e testa — un filo caldo sul lato ovest, un filo piu'
    scuro sul lato est. Le due tinte si PRE-CALCOLANO una volta per divisa
@@ -934,8 +972,58 @@ function testa(ctx,s,cyw,syw,cam,look){
   let o=r*0.60*(dot+1)*0.5; if(o>0.5*r)o=0.5*r;
   let hx=X, hy=Y-r*0.10;
   if(L>1e-4){ hx=X-fdx/L*o; hy=Y-fdy/L*o-r*0.10; }
+  /* da vicino i capelli prendono FORMA: look.taglio 0 calotta piena,
+     1 ciuffo in cima, 2 taglio corto (calotta ridotta). A 30-40px la
+     calotta resta quella di sempre: il taglio non si leggerebbe. */
+  const taglio = lodOn ? (look.taglio|0)%3 : 0;
   ctx.fillStyle=look.capelli;
-  ctx.beginPath(); ctx.arc(hx,hy,r*0.94,0,TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(hx,hy,(taglio===2?r*0.84:r*0.94),0,TAU); ctx.fill();
+  if(taglio===1){
+    ctx.beginPath(); ctx.arc(hx,hy-r*0.70,r*0.32,0,TAU); ctx.fill();
+  }
+  /* VOLTO ABBOZZATO, solo da vicino e solo se la faccia guarda la camera:
+     due tratti per gli occhi, le sopracciglia nel colore dei capelli,
+     l'accenno del naso. Tutto lungo l'asse (u) del viso proiettato, cosi'
+     il volto segue lo yaw e sfuma a profilo come fa la mezzaluna. */
+  if(lodOn && L>1e-4 && dot>0.10){
+    const ux=fdx/L, uy=fdy/L, px2=-uy, py2=ux;
+    const vis = dot>0.60 ? 1 : (dot-0.10)/0.50;
+    /* gli occhi vivono NELLA mezzaluna del viso, non sotto la calotta:
+       h0 e' dove la calotta finisce lungo l'asse del viso */
+    const h0=0.94*r-o;
+    let eyeD=(h0<0.30*r?0.30*r:h0)+0.15*r; if(eyeD>0.62*r)eyeD=0.62*r;
+    const exC=X+ux*eyeD, eyC=Y+uy*eyeD;
+    const eo=r*0.30;
+    const lw=r*0.10<0.7?0.7:r*0.10;
+    ctx.lineCap='round';
+    ctx.globalAlpha=0.95*vis;
+    ctx.strokeStyle='#2b2119';
+    ctx.lineWidth=lw;
+    ctx.beginPath();
+    ctx.moveTo(exC+px2*eo, eyC+py2*eo);
+    ctx.lineTo(exC+px2*eo+ux*r*0.09, eyC+py2*eo+uy*r*0.09);
+    ctx.moveTo(exC-px2*eo, eyC-py2*eo);
+    ctx.lineTo(exC-px2*eo+ux*r*0.09, eyC-py2*eo+uy*r*0.09);
+    ctx.stroke();
+    /* sopracciglia in scuro pieno, staccate dagli occhi: al filo della
+       calotta devono leggersi sia sopra i capelli sia sopra la pelle */
+    ctx.strokeStyle='#1c1410';
+    ctx.lineWidth=lw*0.75;
+    ctx.beginPath();
+    ctx.moveTo(exC+px2*(eo+r*0.10)-ux*r*0.15, eyC+py2*(eo+r*0.10)-uy*r*0.15);
+    ctx.lineTo(exC+px2*(eo-r*0.10)-ux*r*0.18, eyC+py2*(eo-r*0.10)-uy*r*0.18);
+    ctx.moveTo(exC-px2*(eo+r*0.10)-ux*r*0.15, eyC-py2*(eo+r*0.10)-uy*r*0.15);
+    ctx.lineTo(exC-px2*(eo-r*0.10)-ux*r*0.18, eyC-py2*(eo-r*0.10)-uy*r*0.18);
+    ctx.stroke();
+    ctx.globalAlpha=0.35*vis;
+    ctx.strokeStyle='#5a3d28';
+    ctx.lineWidth=lw*0.75;
+    ctx.beginPath();
+    ctx.moveTo(exC+ux*r*0.10, eyC+uy*r*0.10);
+    ctx.lineTo(exC+ux*r*0.22+px2*r*0.03, eyC+uy*r*0.22+py2*r*0.03);
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  }
   /* il filo di luce da ovest anche sulla testa: due archi sottili dentro
      il cerchio. Sono VELI (alfa), non tinte: valgono sopra pelle e capelli
      insieme, qualunque sia la mezzaluna del viso. Con y in giu' l'angolo
@@ -971,8 +1059,12 @@ function disegnaPalla(ctx,s,look){
    cx,cyTerra: punto a terra sotto la figura, in pixel.
    hPx: altezza apparente voluta della figura (30 in partita).
    ============================================================ */
-function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look){
+function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,pxs){
   const clip=CLIPS[nomeClip], cam=CAMERE[nomeCam];
+  /* LOD da vicino: pxs = pixel di schermo per pixel di disegno (la scala
+     della trasformazione del chiamante; 1 se non dichiarata). Oltre
+     LOD_PX di figura A SCHERMO si accende il dettaglio, sotto niente. */
+  lodK=pxs||1; lodOn=hPx*lodK>=LOD_PX;
   let u=(tSec*clip.freq)%1; if(u<0)u+=1;
   const cyw=Math.cos(yaw), syw=Math.sin(yaw);
   const ce=cam.ce<0.58?0.58:cam.ce;   // non gonfiare troppo le falcate in pianta
@@ -1111,7 +1203,11 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look){
   // figure): un primo passaggio dell'INTERA figura in scuro un filo piu'
   // largo, poi i colori sopra in ordine di profondita'. Cosi' il bordo
   // sta sul PERIMETRO della sagoma e mai fra un segmento e l'altro.
-  const bd=0.035*s<0.8?0.8:0.035*s;
+  /* CONTORNO SCALATO: da vicino lo spessore del bordo unico NON cresce
+     con lo zoom — resta ~1px a schermo (1,35/lodK), come le pedine vere.
+     Sotto soglia la formula e' quella di sempre. */
+  let bd=0.035*s<0.8?0.8:0.035*s;
+  if(lodOn){ const mx=1.35/lodK; if(bd>mx)bd=mx; }
   ctx.strokeStyle=BORDO;
   for(let i=0;i<NS;i++){
     const g=SEGS[i];
@@ -1126,6 +1222,8 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look){
     ctx.beginPath();
     ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
     ctx.stroke();
+    /* le dita entrano nel perimetro: prima il loro contorno scuro */
+    if(lodOn && (g.b===HAR||g.b===HAL)) mano(ctx,s,g.a,g.b,look,bd);
   }
   // dal piu' lontano al piu' vicino
   for(let i=0;i<NS;i++){
@@ -1138,6 +1236,25 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look){
     ctx.beginPath();
     ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
     ctx.stroke();
+    /* MANI a dita al posto del bozzolo (solo da vicino) */
+    if(lodOn && (g.b===HAR||g.b===HAL)) mano(ctx,s,g.a,g.b,look,-1);
+    /* SCARPE distinte da vicino: la suola scura sotto, un lampo chiaro
+       sul fianco — due tratti, e la scarpa smette di essere una virgola */
+    if(lodOn && g.c==='scarpe'){
+      const ax3=SX[g.a],ay3=SY[g.a],dx3=SX[g.b]-ax3,dy3=SY[g.b]-ay3;
+      ctx.strokeStyle='#0b0d0e';
+      ctx.lineWidth=W*0.34;
+      ctx.beginPath();
+      ctx.moveTo(ax3+dx3*0.12, ay3+dy3*0.12+W*0.33);
+      ctx.lineTo(ax3+dx3*0.96, ay3+dy3*0.96+W*0.33);
+      ctx.stroke();
+      ctx.strokeStyle='#d8d4c8';
+      ctx.lineWidth=W*0.20<0.8?0.8:W*0.20;
+      ctx.beginPath();
+      ctx.moveTo(ax3+dx3*0.16, ay3+dy3*0.16-W*0.10);
+      ctx.lineTo(ax3+dx3*0.60, ay3+dy3*0.60-W*0.18);
+      ctx.stroke();
+    }
     if(g.riv && look.risvolto){
       /* il RISVOLTO del calzettone: un tratto corto in seconda tinta
          appena sotto il ginocchio — il terzo blocco di colore del kit */
@@ -1157,16 +1274,45 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look){
       const L=Math.sqrt(dx*dx+dy*dy);
       if(L>1.5){
         let nx=-dy/L, ny=dx/L; if(nx>0){nx=-nx;ny=-ny;}   // nx punta a ovest
-        const rw=W*0.26<0.9?0.9:W*0.26, off=(W-rw)*0.5;
-        ctx.lineWidth=rw;
-        ctx.strokeStyle=look._lume;
-        ctx.beginPath();
-        ctx.moveTo(ax+dx*0.14+nx*off, ay+dy*0.14+ny*off);
-        ctx.lineTo(ax+dx*0.86+nx*off, ay+dy*0.86+ny*off); ctx.stroke();
-        ctx.strokeStyle=look._ombra;
-        ctx.beginPath();
-        ctx.moveTo(ax+dx*0.14-nx*off, ay+dy*0.14-ny*off);
-        ctx.lineTo(ax+dx*0.86-nx*off, ay+dy*0.86-ny*off); ctx.stroke();
+        if(!lodOn){
+          const rw=W*0.26<0.9?0.9:W*0.26, off=(W-rw)*0.5;
+          ctx.lineWidth=rw;
+          ctx.strokeStyle=look._lume;
+          ctx.beginPath();
+          ctx.moveTo(ax+dx*0.14+nx*off, ay+dy*0.14+ny*off);
+          ctx.lineTo(ax+dx*0.86+nx*off, ay+dy*0.86+ny*off); ctx.stroke();
+          ctx.strokeStyle=look._ombra;
+          ctx.beginPath();
+          ctx.moveTo(ax+dx*0.14-nx*off, ay+dy*0.14-ny*off);
+          ctx.lineTo(ax+dx*0.86-nx*off, ay+dy*0.86-ny*off); ctx.stroke();
+        }else{
+          /* MAGLIA VERA da vicino: i fili pieni di _lume/_ombra a questa
+             scala leggevano come BRETELLE (misurato al primo giro di
+             foto). Al loro posto due VELI in alfa a estremi piatti —
+             mezza capsula ovest in luce, mezza est in ombra — che
+             modellano il tessuto anche sopra strisce e fascia. */
+          ctx.lineCap='butt';
+          ctx.lineWidth=W*0.42;
+          ctx.globalAlpha=0.15;
+          ctx.strokeStyle='#fff2cf';
+          ctx.beginPath();
+          ctx.moveTo(ax+dx*0.06+nx*W*0.29, ay+dy*0.06+ny*W*0.29);
+          ctx.lineTo(ax+dx*0.94+nx*W*0.29, ay+dy*0.94+ny*W*0.29); ctx.stroke();
+          ctx.globalAlpha=0.13;
+          ctx.strokeStyle='#241d10';
+          ctx.beginPath();
+          ctx.moveTo(ax+dx*0.06-nx*W*0.29, ay+dy*0.06-ny*W*0.29);
+          ctx.lineTo(ax+dx*0.94-nx*W*0.29, ay+dy*0.94-ny*W*0.29); ctx.stroke();
+          ctx.globalAlpha=1;
+          ctx.lineCap='round';
+          /* e il COLLETTO in seconda tinta, appena sotto il collo */
+          ctx.strokeStyle=look.maglia2;
+          ctx.lineWidth=0.050*s<1?1:0.050*s;
+          ctx.beginPath();
+          ctx.moveTo(ax+dx*0.965+nx*0.095*s, ay+dy*0.965+ny*0.095*s);
+          ctx.lineTo(ax+dx*0.965-nx*0.095*s, ay+dy*0.965-ny*0.095*s);
+          ctx.stroke();
+        }
       }
     }
   }
@@ -1177,7 +1323,7 @@ const lookPredefinito={
   maglia:'#c9302c', maglia2:'#f5f2ea', disegno:'strisce',
   pantaloncini:'#f5f2ea', calze:'#c9302c', risvolto:'#f5f2ea',
   pelle:'#e0a97e', capelli:'#33210f', scarpe:'#1d1d1d',
-  palla:'#f4f2ec',
+  palla:'#f4f2ec', taglio:1,
 };
 
 return {disegna, CAMERE, CLIPS, lookPredefinito};
