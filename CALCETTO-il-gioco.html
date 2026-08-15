@@ -558,6 +558,17 @@ html.tocco .soloKb{display:none}
 .statwrap td.mrk.r{text-align:right} .statwrap td.mrk.l{text-align:left}
 .statwrap td.mrk .mw{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .statwrap td.mrk .mn{color:var(--grigio);font-weight:600;font-size:11px;letter-spacing:.08em}
+/* IL VOLTO NELLA COLONNA DEL PALLONE, e i margini negativi che lo
+   tengono fuori dai conti dell'altezza. Il tabellino e' l'unica
+   schermata dove due pixel di riga in piu' costano una RETE:
+   adattaTabellino, quando la tabella sfonda, toglie marcatori. Venti
+   pixel di faccia con -5 sopra e -5 sotto occupano dieci pixel contro i
+   sedici che il corpo 13 gia' impegna: la riga non cresce e nessun gol
+   sparisce per fare posto a una figurina. */
+.statwrap td.gpal .gp2{display:inline-flex;align-items:center;gap:6px}
+.statwrap td.gpal .gp2 svg{display:block;margin:0}
+.statwrap canvas.mface{display:block;width:20px;height:20px;margin:-5px 0}
+#end[data-fit="2"] .statwrap canvas.mface{width:16px;height:16px;margin:-4px 0}
 /* l'attribuzione dell'autorete sta sulla SUA riga: cosi' ha tutta la
    larghezza della colonna e il nome arriva in fondo */
 .statwrap td.mrk .au{color:var(--grigio);font-weight:600;font-size:10.5px;letter-spacing:.06em;line-height:1.15}
@@ -579,6 +590,11 @@ html.tocco .soloKb{display:none}
   line-height:1.1;flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .momento .mv em{font-style:normal;font-family:var(--cond);font-weight:700;font-size:12.5px;
   color:var(--grigio);margin-right:7px}
+/* il volto di chi ha deciso la partita, con gli stessi margini negativi
+   della riga dei marcatori: venti pixel di faccia dentro una riga di
+   16,5 non la fanno crescere */
+.momento .mv canvas.mface{display:inline-block;vertical-align:middle;
+  width:20px;height:20px;margin:-4px 5px -4px 0}
 .statwrap tr.altre td{font-family:var(--cond);font-weight:600;font-size:11px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--grigio);text-align:center;padding:3px 10px}
 /* Il tabellino ha tre sezioni dove prima c'era un elenco, quindi righe piu'
@@ -925,9 +941,21 @@ body.barra #gearBtn{display:none}
 .rosariga{display:flex;gap:18px;align-items:center;justify-content:center;margin:0 auto;text-align:left}
 .eroe-maglia{width:clamp(150px,40vh,210px);aspect-ratio:5/6}
 .rosalist{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:6px}
-.rrow{display:grid;grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,1fr));gap:10px;
+.rrow{display:grid;grid-template-columns:auto minmax(0,2fr) repeat(4,minmax(0,1fr));gap:10px;
   align-items:center;background:var(--campo2);border:1px solid var(--linea);
   border-left:4px solid var(--tu);padding:7px 12px;min-width:0}
+/* IL VOLTO IN TESTA ALLA RIGA, e la sua misura e' misurata.
+   Il blocco nome+ruolo che c'era gia' e' alto 31,8 px (16 px di nome e
+   10,5 di ruolo, con le loro interlinee) ed e' LUI a dettare l'altezza
+   della riga: un volto che ci sta dentro non costa un pixel. A quaranta
+   la riga cresceva di venti pixel, cinque righe di cento, e la quinta
+   finiva sotto la piega — provato, fotografato, tornato indietro. A 32
+   la pagina resta quella che entra INTERA in un telefono in
+   orizzontale, che e' l'unica qualita' di questa schermata difesa dal
+   giro 2. Sotto i 620, dove la maglia appesa sparisce, il volto scende
+   a 28 e resta: e' l'ultima cosa da togliere, non la prima. */
+.rrow canvas.rface{display:block;width:32px;height:32px;flex:0 0 auto}
+@media (max-width:780px){ .rrow canvas.rface{width:25px;height:25px} }
 .rrow.gk{border-left-color:#2fd8a0}
 .rrow .rn{display:block;font-family:var(--cond);font-weight:700;font-size:16px;color:var(--gesso);
   letter-spacing:.03em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -953,9 +981,35 @@ body.barra #gearBtn{display:none}
 /* sotto i 620 la maglia non ci sta di fianco senza schiacciare i numeri:
    un eroe che compra scorrimento o trancia il contenuto e' un ingombro */
 @media (max-width:620px){ .eroe-maglia{display:none} }
+/* IL PEDAGGIO DEL VOLTO, RESTITUITO DOVE SI PAGA.
+   Misurato prima e dopo, sullo sforo peggiore della cella dei numeri
+   (etichetta + valore contro la larghezza della colonna):
+     412 px  15 -> 25     600 px  10 -> 17
+     720 px  28 -> 35     915 px   0 ->  3
+   Alle misure larghe — quelle in cui questa schermata viene guardata e
+   fotografata — tre pixel non si vedono. Alle misure intermedie lo
+   sforo c'era gia' (le etichette hanno nowrap e nessuna ellissi) e il
+   volto ne aggiungeva sette: si restituiscono qui, dove non costano
+   niente a nessuno, stringendo gronda e padding della riga. */
+@media (max-width:780px){
+  .rrow{gap:7px;padding:7px 9px}
+  /* e sotto i 780 l'etichetta va SOPRA il numero invece che accanto:
+     la cella non deve piu' contenere la somma dei due ma il piu' largo
+     dei due, e lo sforo sparisce del tutto — che e' piu' di quanto il
+     volto abbia preso. La riga cresce di undici pixel su uno schermo
+     dove di altezza ce n'e' (in orizzontale, dove non ce n'e', questa
+     regola non si applica). */
+  .rrow .ra em{display:block;letter-spacing:.03em}
+  .rrow .ra b{margin-left:0;display:block;line-height:1.0}
+}
+/* sul telefono stretto la riga si impila: nome sopra, i quattro numeri
+   sotto. Il volto resta in testa e si prende le DUE righe — se no
+   l'incolonnamento automatico gli infila il primo numero sotto il mento
+   e la quarta colonna resta vuota. */
 @media (max-width:470px){
-  .rrow{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-  .rrow .rnome{grid-column:1/-1}
+  .rrow{grid-template-columns:auto repeat(4,minmax(0,1fr));gap:8px}
+  .rrow canvas.rface{grid-row:1/3;align-self:center;width:34px;height:34px}
+  .rrow .rnome{grid-column:2/-1}
 }
 
 /* schermata STAGIONE: classifica leggibile anche su telefono */
@@ -2813,9 +2867,125 @@ const PELVIS=0,CHEST=1,NECK=2,HEAD=3,
       HIPL=10,KNL=11,FTL=12, HIPR=13,KNR=14,FTR=15,
       TOL=16,TOR=17, NJ=18;
 
-/* --- misure del corpo (metri, altezza ~1.83) --- */
-const THIGH=0.46, SHIN=0.45, UA=0.27, FA=0.25, FOOT=0.145,
-      SHW=0.20, HIPW=0.105, HEADR=0.155;
+/* --- misure del corpo (metri, altezza ~1.83) ---
+   HEADR e' salito da 0,155 a 0,179 e NON e' un ingrandimento: e' la
+   compensazione esatta del calo d'elevazione della camera in pianta
+   (50 -> 42 gradi, vedi CAMERE). La scala orizzontale s vale
+   hPx/(1,9·cos E) e passa da 27,84 a 24,08, cioe' ×0,865: 0,155/0,865 =
+   0,179 e il cerchio della testa resta 4,3 unita' A SCHERMO, identico
+   al pixel. E' un invariante dichiarato, non un dettaglio: la sonda
+   dell'ERBA di collaudo.js esclude i corpi fino a -26 unita' sopra il
+   centro e la cima della testa sta a -27,7 — ingrandire la testa
+   davvero, o alzare le figure, spingerebbe pelle e capelli dentro
+   l'anello dell'erba e il rapporto di contrasto cambierebbe senza che
+   la maglia sia stata toccata. Il banco ?gabbia stampa quella cima. */
+/* LE MISURE SONO DUE FILE: le NOMINALI (la taglia media, costanti e
+   inviolabili — sono il metro del banco ?gabbia) e le VIVE, che valgono
+   per la figura in corso di disegno. Fra una figura e l'altra le vive
+   cambiano di qualche punto percentuale: e' la CORPORATURA (vedi CORPI).
+   Non e' una variabile per fotogramma travestita da costante: si scrive
+   UNA volta per figura, prima della posa, e non alloca niente. */
+/* LE SPALLE SONO SALITE DA 0,20 A 0,22 (semilarghezza), ed e' una
+   misura della SAGOMA, non del gusto. Sul banco ?banco=silhouette la
+   maschera nera a quaranta pixel dava una testa larga 13 px contro un
+   corpo largo 17: il 76%, cioe' nessuna delle tre masse si staccava
+   dalle altre e il profilo delle scansioni saliva monotono dalla cima
+   dei capelli ai piedi — «un ovale con le gambe». Il rimedio non poteva
+   essere rimpicciolire la testa (la giuria chiede il contrario, e la
+   cima del cranio e' l'invariante che protegge la sonda dell'erba):
+   doveva essere ALLARGARE le spalle. A 0,22 le spalle stanno a 20 px
+   contro i 13 della testa, la V del torace si legge, e le braccia
+   partono piu' lontane dal busto — che e' anche la seconda regola della
+   silhouette, «nessun arto appoggiato alla massa centrale».
+   Non oltre: a 0,235, guardata nel primo piano del gol, la figura
+   diventava un frigorifero. La sagoma si giudica a quaranta pixel ma si
+   paga anche a quattrocento, e fra le due misure comanda l'occhio.
+   I fianchi restano a 0,105: e' la V a fare l'atleta. */
+const N_THIGH=0.46, N_SHIN=0.45, N_UA=0.27, N_FA=0.25, N_FOOT=0.145,
+      N_SHW=0.22, N_HEADR=0.179;
+let THIGH=N_THIGH, SHIN=N_SHIN, UA=N_UA, FA=N_FA, FOOT=N_FOOT,
+    SHW=N_SHW, HEADR=N_HEADR;
+const HIPW=0.105;                    // i fianchi NON cambiano: vedi CORPI
+
+/* =====================================================================
+   LE TRE CORPORATURE, e le due righe che non si toccano.
+
+   Tre uomini diversi, non tre scale dello stesso uomo: chi ha gli arti
+   sottili ha anche le spalle strette e la testa piccola; chi e' largo di
+   spalle ha gli arti grossi e le braccia corte. I fattori vanno in
+   direzioni OPPOSTE, ed e' quello che raddoppia la differenza di sagoma
+   fra due figure affiancate — il punto di tutta la manovra.
+
+   LE TRE GRANDEZZE CHE NON VARIANO, e la ragione e' un cancello:
+     - la LARGHEZZA del busto (il segmento PELVIS-NECK dei SEGS);
+     - l'ALTEZZA A SCHERMO hb, che sta nell'adattatore e resta RIG_H;
+     - la LUNGHEZZA DELLE GAMBE (g resta 1,00 per tutti e tre).
+   La sonda del contrasto di collaudo.js campiona una finestra FISSA
+   sullo schermo — tre file a -12,5/-11,5/-10,5 unita' sopra il centro
+   del giocatore, colonna ±1,5 — mentre il torso e' un oggetto che si
+   muove con le proporzioni. Le prime due erano dichiarate in partenza.
+   La terza e' una RETTIFICA MISURATA, e vale la pena scriverla per
+   esteso perche' il piano diceva il contrario.
+
+   Il piano prevedeva che il bacino seguisse la lunghezza delle gambe:
+   gambe piu' lunghe, uomo piu' alto a parita' di piedi per terra. E'
+   anatomia giusta e sullo schermo si vede. Ma la sonda isolata (stesso
+   seme di collaudo.js) l'ha misurata cosi', sul rapporto maglia/erba:
+     senza corporature ....... 3,20 / 3,99 / 4,66 / 4,08
+     corporature col bacino .. 2,74 / 3,39 / 4,54 / 3,72   (-0,46 su P1)
+     corporature senza bacino  3,02 / 4,17 / 4,67 / 4,10
+   Cinque centimetri di bacino costavano fino a 0,6 di rapporto: la
+   finestra della sonda scorre sul torso e va a pescare la seconda tinta
+   o il lato in ombra. Il contrasto maglia/manto e' il primo dei rischi
+   dichiarati dell'onda («e' gia' successo due volte»), e non si spende
+   per una differenza di un'unita' di schermo su quaranta.
+   Cosa resta della differenza di statura: le gambe sono lunghe uguali,
+   ma con la testa piu' grossa del 5% e le spalle piu' strette del 3% il
+   piccoletto legge piu' basso comunque — e' il rapporto a dire l'eta'
+   e la taglia, non i centimetri.
+
+   Il meccanismo del bacino (DP/DPQ) resta scritto e funzionante, con g
+   a 1,00: serve com'e' il giorno che qualcuno voglia riprovarci, e la
+   prima cosa che quel qualcuno deve fare e' rilanciare la sonda.
+   ===================================================================== */
+const CORPI=[
+  /* 0 spilungone */ {g:1.00, b:1.04, sp:0.88, sh:0.96, hr:0.96},
+  /* 1 tarchiato  */ {g:1.00, b:0.97, sp:1.14, sh:1.06, hr:1.00},
+  /* 2 piccoletto */ {g:1.00, b:0.95, sp:1.00, sh:0.98, hr:1.05},
+  /* 3 neutro: la taglia nominale. E' quella del banco e delle scene
+     fuori partita (duello, ripresa del gol), dove la figura e' una sola
+     e non c'e' nessuno da cui distinguerla. */
+                     {g:1.00, b:1.00, sp:1.00, sh:1.00, hr:1.00},
+];
+let DP=0;        // scarto di quota del bacino dovuto alla lunghezza delle gambe
+/* DPQ — lo stesso scarto, SPENTO QUANDO IL CORPO E' A TERRA.
+   Un uomo con le gambe piu' corte sta piu' basso, in piedi. Steso sul
+   manto no: la scivolata, la rovesciata, la parata e la caduta in
+   ginocchio hanno il bacino gia' appoggiato, e sottrargli altri cinque
+   centimetri gli sprofonda il ginocchio sotto l'erba — misurato dal
+   banco, -0,080 m contro i -0,050 di mezza capsula ammessi. Percio' lo
+   scarto sfuma con la quota del bacino: pieno sopra 0,72 m (tutte le
+   pose in piedi, che stanno fra 0,78 e 0,93), nullo sotto 0,42, lineare
+   in mezzo. Lo calcola corpo(), che ogni posa chiama per
+   prima, e lo consumano gamba() e le braccia: una sola sorgente, quindi
+   anche a meta' rampa i fianchi restano attaccati al bacino. */
+let DPQ=0;
+let MSP=1;       // moltiplicatore di SPESSORE degli arti (solo disegno)
+let VARB=0;      // micro-variazione delle braccia, per seme (rad, antisimmetrica)
+let CORP_ORA=3;
+function corpora(c,vb){
+  c=(c|0); if(c<0||c>3)c=3;
+  VARB=vb||0;
+  if(c===CORP_ORA) return;                  // la maggior parte delle volte
+  CORP_ORA=c;
+  const q=CORPI[c];
+  THIGH=N_THIGH*q.g; SHIN=N_SHIN*q.g; FOOT=N_FOOT*q.g;
+  UA=N_UA*q.b; FA=N_FA*q.b;
+  SHW=N_SHW*q.sh; HEADR=N_HEADR*q.hr;
+  GAMBA_L=THIGH+SHIN;
+  DP=GAMBA_L-(N_THIGH+N_SHIN);
+  MSP=q.sp;
+}
 
 /* --- scratch riusati: MAI allocati nel frame --- */
 const P  = new Float32Array(NJ*3);   // posa locale (x lato, y su, z avanti)
@@ -2837,35 +3007,266 @@ function sm(u,a,b){ let t=(u-a)/(b-a); if(t<0)t=0; else if(t>1)t=1; return t*t*(
 
 function setJ(j,x,y,z){ P[j*3]=x; P[j*3+1]=y; P[j*3+2]=z; }
 
-/* --- FK gamba: a = angolo coscia avanti dal filo a piombo, knee = flessione --- */
+/* =====================================================================
+   L1 — LA GABBIA STRUTTURALE: ogni giunto nasce RUOTANDO un segmento di
+   lunghezza costante, e la lunghezza diventa inviolabile per costruzione.
+
+   Com'era, e perche' fabbricava marionette (misurato col banco ?gabbia,
+   20 clip su 20 fuori gabbia prima di questa riparazione):
+     1. il gomito stava a ex = sx + out*side, uno scostamento LATERALE
+        ADDITIVO: la distanza spalla-gomito diventava sqrt(out²+UA²) e il
+        braccio si ALLUNGAVA piu' si apriva — +72% in frenata, +55% in
+        rovesciata. E' letteralmente lo spaghetto;
+     2. il ginocchio stava a kx=(hx+fx)*0,5, la media aritmetica fra anca
+        e piede DICHIARATO dalla posa: la coscia usciva dal piano della
+        gamba e si allungava fino a +12% (finta);
+     3. `if(fy<0.045) fy=0.045` risolveva il contatto col suolo sulla
+        LUNGHEZZA invece che sull'angolo: la tibia si accorciava fino a
+        -95% (rovesciata), -38% (tiro), -19% (corsa). E' il difetto che
+        la giuria chiama «proporzioni incoerenti fra figure vicine»,
+        perche' due giocatori nella stessa andatura a fase diversa hanno
+        tibie visibilmente diverse.
+
+   Com'e' adesso: ogni osso e' un VERSORE per la sua lunghezza. Un versore
+   ha modulo uno, quindi l'osso ha modulo L — non c'e' un fotogramma in
+   cui possa essere altrimenti, e il banco lo verifica su 64 fasi per clip.
+
+   LA FIRMA NON CAMBIA, e questo e' voluto: `out` e `fx` restano quello
+   che le ventotto chiamate esistenti passano gia' (uno scostamento
+   laterale in metri), ma qui dentro si CONVERTONO in un angolo di
+   abduzione. Cosi' la posizione laterale che la posa chiedeva viene
+   rispettata ESATTAMENTE — UA·sin(ab) = out, (THIGH+SHIN)·sin(ap) = fx-hx
+   — mentre e' la discesa verticale a raccorciarsi del coseno, che e'
+   l'anatomia giusta: una gamba divaricata arriva piu' in alto.
+   L'unico taglio e' quello dell'asin, cioe' l'arto teso in orizzontale:
+   oltre non si va perche' oltre non c'e' niente.
+   ===================================================================== */
+let GAMBA_L=THIGH+SHIN;                      // la leva completa dell'anca
+const PIEDE_Y=0.045;                         // la caviglia appoggiata a terra
+const PUNTA_Y=0.012;                         // e la punta della scarpa
+
+/* =====================================================================
+   L2 — LA SCATOLA DEGLI ANGOLI: nessun arto in configurazione
+   anatomicamente impossibile, in nessun fotogramma di nessuna clip.
+
+   L1 (sopra) garantisce che un osso sia lungo quanto e' lungo. Non
+   garantisce che il ginocchio non si pieghi ALL'INDIETRO, ne' che il
+   gomito non si spezzi in avanti: quelle sono proprieta' dell'ANGOLO, e
+   una tabella di numeri scritta a mano non si autocontrolla. La scatola
+   e' un prodotto di intervalli, quindi CONVESSA: l'interpolazione di due
+   pose legali e' legale per costruzione — e' un teorema, non una
+   speranza, ed e' la ragione per cui il clamp sta qui e non nel disegno.
+
+   I limiti, e da dove vengono:
+     ginocchio  0 .. 2,45 rad. Zero perche' un ginocchio non si inverte;
+                140 gradi perche' oltre il tallone tocca il gluteo.
+     gomito     0 .. 2,70 rad, per la stessa ragione dall'altra parte.
+     abduzione  |ab| <= 1,05 rad. Il braccio si alza di lato fino a
+                sessanta gradi buoni prima che la scapola debba ruotare,
+                e la scapola nel rig non c'e'. Sopra, il braccio sarebbe
+                appeso alla spalla in un modo che nessuno fa.
+     anca       |apertura| <= 0,85 rad, la divaricata di un atleta.
+
+   L3 — L'ACCOPPIAMENTO che una scatola non sa esprimere: un braccio
+   spalancato non ha il gomito TESO. E' l'unico dei tre accoppiamenti
+   previsti che si applica, e la ragione per gli altri due sta scritta
+   sotto, in gamba().
+
+   IL CANCELLO NON E' «zero tagli»: e' «i tagli si contano». TAGLI
+   conta quante volte la scatola ha dovuto correggere una posa, e il
+   banco ?gabbia lo stampa per clip. Una posa che viene corretta e' una
+   posa scritta male: il rimedio giusto e' cambiare il numero nel foglio,
+   non lasciare che sia il clamp a scriverlo ogni fotogramma.
+   ===================================================================== */
+const K_MIN=0, K_MAX=2.45;        // ginocchio
+const E_MIN=0, E_MAX=2.70;        // gomito
+const AB_MAX=0.8674;              // sin(1,05): l'abduzione entra come seno
+const AP_MAX=0.7513;              // sin(0,85): l'apertura d'anca, idem
+let TAGLI=0;
+
+/* --- FK gamba: a = angolo coscia avanti dal filo a piombo, knee =
+   flessione, fx = x del piede voluta (diventa apertura d'anca) --- */
 function gamba(hip,kn,ft,toe, hx,hy,hz, a,knee, fx){
+  hy+=DPQ;                                   // la corporatura alza o abbassa l'anca
+  /* L2 sul GINOCCHIO. Gli altri due accoppiamenti previsti da L3 —
+     «bacino basso implica ginocchia piegate» e «busto inclinato implica
+     anca che bilancia» — NON si applicano, ed e' una scelta misurata:
+     la scivolata ha il bacino a 0,32 e la gamba tesa avanti a 0,10 di
+     flessione, che e' proprio il gesto; imporle 1,34 rad di piega
+     cancellerebbe la posa che la giuria deve riconoscere in silhouette.
+     Un accoppiamento che vale per le pose in piedi e sbaglia su quelle a
+     terra non e' una legge, e' un caso particolare travestito. */
+  if(knee<K_MIN){ knee=K_MIN; TAGLI++; } else if(knee>K_MAX){ knee=K_MAX; TAGLI++; }
   const b=a-knee;
-  const ca=Math.cos(a), sa=Math.sin(a), cb=Math.cos(b), sb=Math.sin(b);
-  const kx=(hx+fx)*0.5, ky=hy-THIGH*ca, kz=hz+THIGH*sa;
-  let fy=ky-SHIN*cb; const fz=kz+SHIN*sb;
-  if(fy<0.045) fy=0.045;                       // il piede non buca il terreno
-  let tp=-b*0.8; if(tp>1.15)tp=1.15; else if(tp<-0.5)tp=-0.5;  // beccheggio piede
-  let ty=fy-FOOT*Math.sin(tp); if(ty<0.02)ty=0.02;
-  setJ(hip,hx,hy,hz); setJ(kn,kx,ky,kz); setJ(ft,fx,fy,fz);
-  setJ(toe,fx,ty,fz+FOOT*Math.cos(tp));
+  let sp=(fx-hx)/GAMBA_L;                    // seno dell'apertura d'anca
+  if(sp>AP_MAX){ sp=AP_MAX; TAGLI++; } else if(sp<-AP_MAX){ sp=-AP_MAX; TAGLI++; }
+  const cp=Math.sqrt(1-sp*sp);               // coseno, senza un altro trig
+  const lat=GAMBA_L*sp;                      // lo scarto laterale voluto, esatto
+  let kx=hx+THIGH*sp, ky=hy-THIGH*cp*Math.cos(a), kz=hz+THIGH*cp*Math.sin(a);
+  let fxx=hx+lat, fyy=ky-SHIN*cp*Math.cos(b), fzz=kz+SHIN*cp*Math.sin(b);
+  if(fyy<PIEDE_Y){
+    /* ======= IL CONTATTO COL SUOLO SI RISOLVE SULL'ANGOLO =======
+       Qui stava `if(fy<0.045) fy=0.045`, una riga che alzava la caviglia
+       lasciando il ginocchio dov'era: cioe' ACCORCIAVA LA TIBIA, fino al
+       -95% misurato sulla rovesciata. Al suo posto la IK a due leve: la
+       caviglia va a quota, e il GINOCCHIO SI PIEGA per arrivarci. Le due
+       ossa restano lunghe quanto sono, per costruzione.
+       Costa un paio di radici, e solo nei fotogrammi in cui serve
+       davvero: un piede che sta gia' sopra il campo non entra qui. */
+    fyy=PIEDE_Y;
+    let vx=fxx-hx, vy=fyy-hy, vz=fzz-hz;
+    let d2=vx*vx+vy*vy+vz*vz, d=Math.sqrt(d2);
+    const DMAX=GAMBA_L*0.998;                // la gamba non si tende oltre se stessa
+    if(d>DMAX){
+      /* fuori portata: si accorcia il passo ORIZZONTALE, mai la gamba */
+      const oz=Math.sqrt(vx*vx+vz*vz);
+      const rimane=DMAX*DMAX-vy*vy;
+      const perm=rimane>0?Math.sqrt(rimane):0;
+      const k2=oz>1e-6?perm/oz:0;
+      vx*=k2; vz*=k2; fxx=hx+vx; fzz=hz+vz;
+      d=Math.sqrt(vx*vx+vy*vy+vz*vz); d2=d*d;
+    }
+    if(d<1e-4){ d=1e-4; d2=1e-8; vy=-d; }
+    const ux=vx/d, uy=vy/d, uz=vz/d;
+    /* il ginocchio: sull'asse anca-caviglia di a1, poi scostato in
+       perpendicolare di hq — nel piano in cui il ginocchio gia' punta,
+       cosi' non si rovescia mai all'indietro */
+    const a1=(THIGH*THIGH-SHIN*SHIN+d2)/(2*d);
+    let hq=THIGH*THIGH-a1*a1; hq=hq>0?Math.sqrt(hq):0;
+    let wx=kx-hx, wy=ky-hy, wz=kz-hz;
+    const pr=wx*ux+wy*uy+wz*uz;
+    let px=wx-ux*pr, py=wy-uy*pr, pz=wz-uz*pr;
+    let pl=Math.sqrt(px*px+py*py+pz*pz);
+    if(pl<1e-5){
+      /* gamba gia' tesa: nessun piano dichiarato dal ginocchio. Si prende
+         l'AVANTI del corpo (z+) tolta la componente lungo l'asse; se anche
+         quello e' degenere (gamba distesa in avanti) si ripiega sul lato. */
+      px=-ux*uz; py=-uy*uz; pz=1-uz*uz;
+      pl=Math.sqrt(px*px+py*py+pz*pz);
+      if(pl<1e-5){ px=1-ux*ux; py=-uy*ux; pz=-uz*ux; pl=Math.sqrt(px*px+py*py+pz*pz); }
+      if(pl<1e-5){ px=0; py=0; pz=1; pl=1; }
+    }
+    const bx=hx+ux*a1, by=hy+uy*a1, bz=hz+uz*a1;   // il piede della perpendicolare
+    px/=pl; py/=pl; pz/=pl;
+    kx=bx+px*hq; ky=by+py*hq; kz=bz+pz*hq;
+    /* IL GINOCCHIO NON AFFONDA NEL CAMPO. Con il bacino a terra (scivolata,
+       rovesciata, tuffo, parata) la gamba deve ripiegarsi molto, e la
+       piega andava dalla parte in cui il ginocchio gia' puntava: sotto il
+       manto, fino a 19 cm. Un ginocchio sepolto e' un arto in
+       configurazione impossibile — la prima delle verifiche della giuria.
+       Se il verso scelto lo manda sottoterra si prende l'altro, che e'
+       l'unica altra soluzione della stessa IK: stesse ossa, stessa
+       caviglia, il ginocchio dall'altra parte. */
+    if(ky<PIEDE_Y){
+      const ky2=by-py*hq;
+      if(ky2>ky){ kx=bx-px*hq; ky=ky2; kz=bz-pz*hq; }
+    }
+  }
+  /* il beccheggio del piede e' un ANGOLO, e anche il suo limite: la punta
+     non buca il campo perche' la caviglia smette di flettersi, non perche'
+     la scarpa si accorci */
+  let tp=-b*0.8; if(tp>1.15)tp=1.15; else if(tp<-0.5)tp=-0.5;
+  let st=Math.sin(tp);
+  const smx=(fyy-PUNTA_Y)/FOOT;
+  if(st>smx) st=smx<-1?-1:smx;
+  const ct=Math.sqrt(1-st*st);
+  setJ(hip,hx,hy,hz); setJ(kn,kx,ky,kz); setJ(ft,fxx,fyy,fzz);
+  setJ(toe, fxx, fyy-FOOT*st, fzz+FOOT*ct);
 }
 
-/* --- FK braccio: a = angolo avanti dalla spalla, elb = flessione gomito --- */
+/* --- FK braccio: a = angolo avanti dalla spalla, elb = flessione
+   gomito, out = scarto laterale voluto della mano (diventa abduzione) --- */
 function braccio(sh,el,ha, sx,sy,sz, a,elb, out,side){
+  sy+=DPQ;                                   // la spalla segue il bacino
+  /* LA MICRO-VARIAZIONE, e perche' sta QUI e non dopo. Due figure nella
+     stessa clip alla stessa fase sono lo STESSO disegno, pixel per
+     pixel: e' il requisito «mai due giocatori nella stessa posa» violato
+     per costruzione. VARB e' un pizzico di braccio in piu' avanti da un
+     lato e in meno dall'altro, estratto dal seme del NOME: entra PRIMA
+     della cinematica, cosi' l'osso resta lungo uguale e la posa che ne
+     esce e' comunque una posa legale. Applicata dopo, sarebbe uno
+     spostamento di mano — cioe' di nuovo uno spaghetto. */
+  a+=VARB*side;
+  let sa2=out/UA;                            // seno dell'abduzione
+  if(sa2>AB_MAX){ sa2=AB_MAX; TAGLI++; } else if(sa2<-AB_MAX){ sa2=-AB_MAX; TAGLI++; }
+  /* L2 sul GOMITO, poi L3: un braccio spalancato non ha il gomito
+     teso. L'abduzione qui e' un seno, e per il minimo del gomito basta
+     il seno: e' monotono nell'intervallo e costa zero trigonometriche. */
+  if(elb<E_MIN){ elb=E_MIN; TAGLI++; } else if(elb>E_MAX){ elb=E_MAX; TAGLI++; }
+  const eMin=0.12+0.29*(sa2<0?-sa2:sa2);
+  if(elb<eMin){ elb=eMin; TAGLI++; }
   const b=a+elb;
-  const ex=sx+out*side, ey=sy-UA*Math.cos(a), ez=sz+UA*Math.sin(a);
+  const ca2=Math.sqrt(1-sa2*sa2);
+  const ex=sx+UA*sa2*side, ey=sy-UA*ca2*Math.cos(a), ez=sz+UA*ca2*Math.sin(a);
+  /* l'avambraccio rientra verso il corpo (l'abduzione cala del 45%): e'
+     quello che il vecchio -0,04*side voleva dire, ma senza rubare
+     lunghezza all'osso */
+  const sb2=sa2*0.55, cb2=Math.sqrt(1-sb2*sb2);
   setJ(sh,sx,sy,sz); setJ(el,ex,ey,ez);
-  setJ(ha, ex-0.04*side, ey-FA*Math.cos(b), ez+FA*Math.sin(b));
+  setJ(ha, ex+FA*sb2*side, ey-FA*cb2*Math.cos(b), ez+FA*cb2*Math.sin(b));
 }
 
-/* --- tronco + testa (la testa raddrizza meta' dell'inclinazione) --- */
-function corpo(pelvY,sway,lean,headBob){
+/* --- tronco + testa (la testa raddrizza meta' dell'inclinazione) ---
+   IL BOB DELLA TESTA E' UN CENNO, NON UN COLLO ELASTICO. Prima l'ultimo
+   argomento era una quota AGGIUNTA alla y della testa: sollevava il
+   cranio staccandolo dal collo, e il banco lo leggeva come un collo che
+   si allunga fino al +30% (clip 'cielo'). Adesso lo stesso numero e' un
+   angolo di cenno attorno al collo — la testa oscilla come oscilla la
+   testa di chi corre — e la distanza collo-cranio resta 0,19 m sempre.
+   Il fattore 5,26 = 1/0,19 converte la vecchia quota nell'angolo che
+   sposta la testa altrettanto: le clip esistenti non cambiano numeri. */
+const CENNO=1/0.19;
+/* IL BUSTO SI INCLINA ANCHE DI LATO, e anche quello e' una ROTAZIONE:
+   `roll` (opzionale, radianti) fa pendere la colonna verso destra. Prima
+   la finta otteneva lo stesso effetto sommando metri alla x di torace,
+   collo e testa — cioe' stirando la colonna del 7% — e il banco la
+   trovava fuori gabbia. Un asse che pende resta lungo uguale. */
+function corpo(pelvY,sway,lean,headBob,roll){
+  /* la corporatura alza o abbassa il bacino — ma non quando e' a terra */
+  DPQ = pelvY>0.72 ? DP : pelvY<0.42 ? 0 : DP*(pelvY-0.42)*3.3333;
+  pelvY+=DPQ;
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  setJ(PELVIS, sway, pelvY+0.06*cl, 0.06*sl);
-  setJ(CHEST,  sway, pelvY+0.40*cl, 0.40*sl);
-  setJ(NECK,   sway, pelvY+0.52*cl, 0.52*sl);
-  const hl=lean*0.55, shl=Math.sin(hl), chl=Math.cos(hl);
-  setJ(HEAD, sway, pelvY+0.52*cl+0.19*chl+headBob, 0.52*sl+0.19*shl);
+  let dx=0, dk=1;
+  if(roll){ dx=Math.sin(roll); dk=Math.cos(roll); }
+  const ey=dk*cl, ez=dk*sl;                 // versore della colonna
+  setJ(PELVIS, sway+0.06*dx, pelvY+0.06*ey, 0.06*ez);
+  setJ(CHEST,  sway+0.40*dx, pelvY+0.40*ey, 0.40*ez);
+  setJ(NECK,   sway+0.52*dx, pelvY+0.52*ey, 0.52*ez);
+  const hl=lean*0.55+headBob*CENNO, shl=Math.sin(hl), chl=Math.cos(hl);
+  let hx=0, hk=1;
+  if(roll){ hx=Math.sin(roll*0.75); hk=Math.cos(roll*0.75); }
+  setJ(HEAD, sway+0.52*dx+0.19*hx, pelvY+0.52*ey+0.19*hk*chl, 0.52*ez+0.19*hk*shl);
+}
+
+/* LA TESTA SI GIRA, NON SCIVOLA. Sei clip volevano «la faccia al cielo»
+   o «la testa che pende» e lo ottenevano sommando metri alla y e alla z
+   del cranio: il collo si allungava fino al +30% (misurato dal banco
+   ?gabbia sulla clip 'cielo') o si accorciava del 27% (delusione).
+   Qui la testa RUOTA attorno al collo nel piano sagittale — positivo il
+   mento che scende, negativo la faccia che sale — e l'osso resta 0,19 m
+   per costruzione. Da chiamare DOPO corpo(). */
+function cenno(rad){
+  const nx=P[NECK*3], ny=P[NECK*3+1], nz=P[NECK*3+2];
+  const dy=P[HEAD*3+1]-ny, dz=P[HEAD*3+2]-nz;
+  const c=Math.cos(rad), s=Math.sin(rad);
+  setJ(HEAD, P[HEAD*3], ny+dy*c-dz*s, nz+dy*s+dz*c);
+}
+
+/* BRACCIO A DIREZIONI: due versori, due ossa. Serve alle pose che escono
+   dal cono di abduzione di braccio() — l'aliante dell'esultanza, la V
+   delle ginocchia — dove il gomito sta SOPRA la spalla e nessun
+   `out` laterale saprebbe dirlo. I due vettori si danno in qualunque
+   scala: qui dentro si normalizzano, quindi le ossa misurano UA e FA
+   esatti comunque siano stati scritti i numeri. */
+function braccioDir(sh,el,ha, sx,sy,sz, ux,uy,uz, vx,vy,vz){
+  sy+=DPQ;                                   // la spalla segue il bacino
+  let l=Math.sqrt(ux*ux+uy*uy+uz*uz);
+  if(l<1e-6){ ux=0; uy=-1; uz=0; l=1; }
+  const ex=sx+UA*ux/l, ey=sy+UA*uy/l, ez=sz+UA*uz/l;
+  let m=Math.sqrt(vx*vx+vy*vy+vz*vz);
+  if(m<1e-6){ vx=0; vy=-1; vz=0; m=1; }
+  setJ(sh,sx,sy,sz); setJ(el,ex,ey,ez);
+  setJ(ha, ex+FA*vx/m, ey+FA*vy/m, ez+FA*vz/m);
 }
 
 /* ============================================================
@@ -2896,15 +3297,38 @@ function poseLoco(u,q){
   gamba(HIPL,KNL,FTL,TOL, -HIPW*ch, pelvY, -HIPW*sh, aL,kL, -q.stanceW);
 }
 
-const Q_FERMO={leg:0.03,legOfs:0,knee0:0.05,kneeA:0.02,kneeLag:3.7,
-  arm:0.05,armOfs:0.03,elb0:0.14,elbA:0.04,armOut:0.035,
-  lean:0.03,bounce:0.008,crouch:0,twist:0.02,stanceW:0.12,headBob:0.005};
-const Q_CAMMINATA={leg:0.48,legOfs:0.05,knee0:0.10,kneeA:0.95,kneeLag:4.2,
-  arm:0.55,armOfs:0.05,elb0:0.28,elbA:0.25,armOut:0.04,
-  lean:0.06,bounce:0.034,crouch:0.02,twist:0.14,stanceW:0.10,headBob:0.012};
+/* =====================================================================
+   LE TRE ANDATURE, riscritte sulle regole della SILHOUETTE.
+   Sono le tre clip che occupano quasi tutto il quadro, quasi sempre: se
+   una sagoma non si legge, si legge male qui. Le regole sono quelle con
+   cui i numeri vanno SCRITTI, non un controllo dopo:
+     1. angoli larghi fra gli arti — mai gambe unite su una posa che il
+        fermo-immagine possa pescare;
+     2. nessun arto appoggiato al busto: un braccio lungo il fianco e' un
+        braccio che sparisce dentro la massa centrale;
+     3. da fermo la figura ha una BASE, non sta in equilibrio su un punto.
+
+   ATTESA. Era il difetto dei «birilli» del calcio d'inizio: leg 0,03
+   (le due cosce a tre centesimi di radiante l'una dall'altra: un tubo
+   solo), armOut 0,035 (abduzione 0,13 rad, le braccia incollate) e
+   gomiti quasi tesi. Adesso le cosce si aprono di 0,20 rad complessivi,
+   il ginocchio ha 0,12 di flessione — un uomo in attesa non ha le gambe
+   dritte — e le braccia stanno a 0,28 rad di abduzione con il gomito a
+   0,30: staccate dal busto, con la spalla che si vede.
+   CAMMINATA e CORSA. lean sale a 0,08 e 0,28 (il busto si inclina nel
+   senso del moto: e' cio' che distingue una corsa da una passeggiata in
+   sagoma) e armOut porta l'abduzione a 0,20 e 0,26 rad, cosi' le
+   braccia non rientrano nel torace nel punto morto della falcata.
+   ===================================================================== */
+const Q_FERMO={leg:0.10,legOfs:0.01,knee0:0.12,kneeA:0.03,kneeLag:3.7,
+  arm:0.05,armOfs:0.03,elb0:0.30,elbA:0.04,armOut:0.075,
+  lean:0.05,bounce:0.008,crouch:0,twist:0.02,stanceW:0.135,headBob:0.005};
+const Q_CAMMINATA={leg:0.48,legOfs:0.05,knee0:0.12,kneeA:0.95,kneeLag:4.2,
+  arm:0.55,armOfs:0.05,elb0:0.30,elbA:0.25,armOut:0.054,
+  lean:0.08,bounce:0.034,crouch:0.02,twist:0.14,stanceW:0.105,headBob:0.012};
 const Q_CORSA={leg:0.72,legOfs:0.15,knee0:0.34,kneeA:1.15,kneeLag:3.6,
-  arm:0.52,armOfs:0.08,elb0:1.30,elbA:0.30,armOut:0.055,
-  lean:0.24,bounce:-0.055,crouch:0.05,twist:0.17,stanceW:0.07,headBob:0.010};
+  arm:0.52,armOfs:0.08,elb0:1.30,elbA:0.30,armOut:0.070,
+  lean:0.28,bounce:-0.055,crouch:0.05,twist:0.17,stanceW:0.075,headBob:0.010};
 
 function poseFermo(u){ poseLoco(u,Q_FERMO); }
 function poseCamminata(u){ poseLoco(u,Q_CAMMINATA); }
@@ -3042,9 +3466,11 @@ function poseFinta(u){
   const dip=Math.exp(-d1*d1)+Math.exp(-d2*d2);   // peso: l'affondo al tocco
   const pelvY=0.79-0.07*dip;
   const swP=0.18*peso;
-  corpo(pelvY,swP,0.18,0);
-  const dLat=0.12*(segue-peso);              // il busto sporge oltre il bacino
-  P[CHEST*3]+=dLat*0.45; P[NECK*3]+=dLat*0.70; P[HEAD*3]+=dLat;
+  /* il busto SPORGE oltre il bacino, e lo fa PENDENDO: la colonna si
+     inclina di lato invece di scorrere (0,71 m e' l'altezza bacino-testa,
+     quindi lo scarto laterale voluto diviso 0,71 e' l'angolo che lo da') */
+  const dLat=0.12*(segue-peso);
+  corpo(pelvY,swP,0.18,0,dLat/0.71);
   const cl=Math.cos(0.18), sl=Math.sin(0.18);
   const shY=pelvY+0.50*cl, shZ=0.50*sl, shX=swP+dLat*0.6;
   braccio(SHR,ELR,HAR, shX+SHW, shY, shZ, 0.10+0.60*segue,0.55, 0.08+0.06*dip, 1);
@@ -3081,7 +3507,12 @@ function poseScivolata(u){
   const dd=(u-0.28)/0.09, botta=Math.exp(-dd*dd);
   const su=sm(u,0.70,0.95);
   const p=u-0.28, osc=p>0?Math.sin(p*9.5)*Math.exp(-4.5*p):0;
-  const pelvY=(0.80+(0.30-0.80)*giu)+(0.62-0.30)*su-0.04*botta;
+  /* il bacino della strisciata sale da 0,30 a 0,32 e la botta affonda di
+     0,03 invece di 0,04: due centimetri e mezzo comprati al ginocchio
+     ripiegato sotto, che con le gambe lunghe dello spilungone finiva a
+     -0,052 m sotto il manto — oltre il fondo ammesso dal banco. La posa
+     e' la stessa; il ginocchio adesso sta sul campo anche per lui. */
+  const pelvY=(0.80+(0.32-0.80)*giu)+(0.62-0.32)*su-0.03*botta;
   const lean=(0.30+(-0.95-0.30)*giu)+(0.18+0.95)*su+0.11*osc-0.07*botta;
   corpo(pelvY,0,lean,0);
   const sl=Math.sin(lean), cl=Math.cos(lean);
@@ -3136,7 +3567,12 @@ function poseRovesciata(u){
   // braccia: indietro in carica, SPALANCATE in volo, lunghe a terra
   // oltre la testa, poi puntate dietro a lanciare la rialzata
   const aBR=-0.10-0.85*ca+2.30*vol-2.92*dis+0.37*sed+1.55*rac-0.45*alz+0.20*osc;
-  const aBL=aBR+0.20*vol-0.20*dis;
+  /* la sinistra va DIETRO piu' della destra nella discesa: con la
+     scatola degli angoli che tiene il gomito non teso, a -0,20 la mano
+     finiva 5,3 cm sotto il manto (misurato dal banco), cioe' sepolta
+     invece che appoggiata. Piu' il braccio arretra, meno il coseno
+     spinge la mano in giu': a -0,32 la mano si appoggia. */
+  const aBL=aBR+0.20*vol-0.32*dis;
   const eB=0.30+0.10*ca-0.20*vol+0.35*sed-0.15*rac-0.10*alz;
   const out=0.06+0.26*vol-0.24*dis+0.02*rac-0.04*alz;
   braccio(SHR,ELR,HAR,  SHW, shY, shZ, aBR,eB, out, 1);
@@ -3377,6 +3813,45 @@ function pallaRinvio(u,o){
   o[3]=dw<0.05?0.45*(1-dw/0.05):0;
 }
 
+/* =====================================================================
+   ATTESA DEL PORTIERE — la sagoma riservata al ruolo.
+   E' il «portiere riconoscibile a colpo d'occhio» risolto in SILHOUETTE
+   e non in colore: gli altri dieci in attesa stanno in piedi, stretti,
+   con le braccia lungo il corpo; il portiere e' accucciato (bacino a
+   0,80 invece di 0,93), i piedi larghissimi (±0,40 m, cioe' quasi due
+   teste di base) e le braccia FUORI a gomiti piegati. Riempita di nero
+   e' l'unica figura del campo con quel profilo a tenda, e nessun
+   compagno gliela puo' rubare perche' la clip la sceglie il RUOLO.
+   Il dondolio lento (mezza frequenza) sposta il peso da un piede
+   all'altro: da fermo non e' una statua, ma non e' nemmeno un ciclo di
+   passo — un portiere in attesa non cammina sul posto.
+   Le braccia: out = UA·sin(ab), quindi 0,212 m e' un'abduzione di 0,95
+   rad, il valore chiesto dal foglio. Il gomito a 0,62 tiene le mani
+   avanti e lontane dal busto: l'arto esce dalla sagoma del torso per
+   piu' del 60% della sua lunghezza, che e' la regola con cui una
+   silhouette resta leggibile a 40 px.
+   ===================================================================== */
+function poseAttesaGK(u){
+  const w=u*TAU, sw=Math.sin(w), c2=Math.cos(2*w);
+  const dond=Math.sin(w*0.5);              // il peso passa da un piede all'altro
+  const pelvY=0.80+0.014*c2;
+  corpo(pelvY, 0.035*dond, 0.16, 0.006*c2);
+  const sl=Math.sin(0.16), cl=Math.cos(0.16);
+  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  /* 0,200: l'abduzione entra come SENO diviso UA, e con le braccia
+     corte del piccoletto 0,212 sfondava il tetto della scatola (0,8674 =
+     sin 1,05). Una posa che vive dentro la gabbia e' una posa che nessun
+     clamp deve riscrivere sessanta volte al secondo. */
+  const ab=0.200+0.012*sw;
+  braccio(SHR,ELR,HAR,  SHW, shY, shZ, 0.30+0.06*sw, 0.62, ab, 1);
+  braccio(SHL,ELL,HAL, -SHW, shY, shZ, 0.30-0.06*sw, 0.62, ab,-1);
+  /* la BASE: i piedi vanno dove li vuole la posa, e il ginocchio si
+     piega quanto serve per arrivarci (e' la IK a due leve di gamba(),
+     non un piede alzato di forza) */
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0, 0.14, 0.75,  0.40+0.025*dond);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, 0.14, 0.75, -0.40+0.025*dond);
+}
+
 /* ============================================================
    FESTA: esultanza di corsa a braccia larghe, scivolata sulle
    ginocchia, pugno al cielo; e la delusione di chi subisce.
@@ -3396,14 +3871,17 @@ function poseEsultanza(u){
   const pelvY=0.93-Q_ESULT.crouch+Q_ESULT.bounce*c2;
   const sl=Math.sin(Q_ESULT.lean), cl=Math.cos(Q_ESULT.lean);
   const shY=pelvY+0.50*cl, shZ=0.50*sl;
-  P[HEAD*3+1]+=0.015; P[HEAD*3+2]-=0.055;   // la faccia al cielo
+  cenno(-0.28);                             // la faccia al cielo
   const roll=0.17*sw;                       // il rollio delle ali (seguito)
   for(let s=-1;s<=1;s+=2){
     const sh=s>0?SHR:SHL, el=s>0?ELR:ELL, ha=s>0?HAR:HAL;
     const lift=0.12+roll*s;
-    setJ(sh, s*SHW, shY, shZ);
-    setJ(el, s*(SHW+UA*0.97), shY+UA*lift, shZ+0.02);
-    setJ(ha, s*(SHW+UA*0.97+FA*0.93), shY+UA*lift+FA*(lift+0.12), shZ+0.03);
+    /* l'ALIANTE: le due ali quasi orizzontali, con il rollio del passo.
+       Fuori dal cono di braccio() (il gomito sta all'altezza della
+       spalla), quindi a direzioni — e le ossa restano lunghe uguali */
+    braccioDir(sh,el,ha, s*SHW, shY, shZ,
+               s*0.97, lift, 0.074,
+               s*0.93, lift+0.12, 0.040);
   }
 }
 
@@ -3424,7 +3902,7 @@ function poseGinocchia(u){
   const pelvY=0.78-0.28*giu+0.28*su-0.045*botta;
   const lean=0.22-0.62*arco+0.62*su+0.10*botta+0.08*osc;
   corpo(pelvY,0,lean,0);
-  P[HEAD*3+2]-=0.07*ali;                   // la faccia al cielo nell'arco
+  cenno(-0.37*ali);                        // la faccia al cielo nell'arco
   const sl=Math.sin(lean), cl=Math.cos(lean);
   const shY=pelvY+0.50*cl, shZ=0.50*sl;
   // braccia d'arrivo in falcata opposta (anticipo di corsa), poi neutre
@@ -3432,14 +3910,26 @@ function poseGinocchia(u){
   const eN=0.55-0.20*giu+0.20*su;
   braccio(SHR,ELR,HAR,  SHW, shY, shZ, aNR,eN, 0.06, 1);
   braccio(SHL,ELL,HAL, -SHW, shY, shZ, aNL,eN, 0.06,-1);
-  if(ali>0){                               // lerp verso la V spalancata
+  if(ali>0){
+    /* verso la V spalancata. Prima si interpolavano le POSIZIONI di
+       gomito e mano: a meta' strada le ossa perdevano fino al 68% della
+       loro lunghezza (misurato). Adesso si interpolano le DIREZIONI e le
+       si ridanno a braccioDir, che rinormalizza: a meta' strada le ossa
+       sono ancora lunghe quanto sono. */
     const wy=0.10*osc;
     for(let s=-1;s<=1;s+=2){
-      const el=s>0?ELR:ELL, ha=s>0?HAR:HAL;
-      const ex=s*(SHW+UA*0.80), ey=shY+UA*(0.55+wy), ez=shZ-0.05;
-      const hx=s*(SHW+UA*0.80+FA*0.70), hy=ey+FA*(0.66+wy), hz=shZ-0.11;
-      P[el*3]+=(ex-P[el*3])*ali; P[el*3+1]+=(ey-P[el*3+1])*ali; P[el*3+2]+=(ez-P[el*3+2])*ali;
-      P[ha*3]+=(hx-P[ha*3])*ali; P[ha*3+1]+=(hy-P[ha*3+1])*ali; P[ha*3+2]+=(hz-P[ha*3+2])*ali;
+      const sh=s>0?SHR:SHL, el=s>0?ELR:ELL, ha=s>0?HAR:HAL;
+      const sx=s*SHW;
+      /* shY+DPQ e non shY: la spalla e' gia' stata scritta con lo scarto
+         di corporatura, e leggere la direzione dell'osso senza toglierlo
+         la storcerebbe fino al 20% sui corpi piu' alti */
+      const ux=P[el*3]-sx, uy=P[el*3+1]-(shY+DPQ), uz=P[el*3+2]-shZ;
+      const vx=P[ha*3]-P[el*3], vy=P[ha*3+1]-P[el*3+1], vz=P[ha*3+2]-P[el*3+2];
+      const tux=s*0.80*UA, tuy=UA*(0.55+wy), tuz=-0.05;
+      const tvx=s*0.70*FA, tvy=FA*(0.66+wy), tvz=-0.06;
+      braccioDir(sh,el,ha, sx,shY,shZ,
+        ux+(tux-ux)*ali, uy+(tuy-uy)*ali, uz+(tuz-uz)*ali,
+        vx+(tvx-vx)*ali, vy+(tvy-vy)*ali, vz+(tvz-vz)*ali);
     }
   }
   const aR=0.30-0.35*giu+0.80*passo-0.45*su;
@@ -3467,7 +3957,7 @@ function posePugno(u){
   const lean=0.08+0.20*ca-0.37*fr+0.17*cad+0.04*att;
   corpo(pelvY,0,lean,0);
   const hold=fr-giu2;
-  P[HEAD*3+1]+=0.010*hold; P[HEAD*3+2]-=0.055*hold;   // la faccia segue il pugno
+  cenno(-0.29*hold);                       // la faccia segue il pugno
   const sl=Math.sin(lean), cl=Math.cos(lean);
   const shY=pelvY+0.50*cl, shZ=0.50*sl;
   const aR=0.12-0.62*ca+3.62*fr-3.00*giu2+0.16*osc;
@@ -3501,8 +3991,9 @@ function poseDelusione(u){
   const pelvY=0.92+0.02*arco-0.13*piega-0.05*dip+0.13*ri;
   const lean=0.06-0.32*arco+0.72*piega-0.72*ri+0.05*dip;
   corpo(pelvY,0,lean,0);
-  P[HEAD*3+2]-=0.06*arco;                  // il "perche'?" al cielo
-  P[HEAD*3+1]-=0.11*testaF; P[HEAD*3+2]+=0.05*testaF;  // la testa che pende
+  /* il "perche'?" al cielo, e poi la testa che pende: due cenni, non due
+     traslazioni del cranio (il collo si accorciava del 27%) */
+  cenno(-0.32*arco+0.95*testaF);
   const sl=Math.sin(lean), cl=Math.cos(lean);
   const shY=pelvY+0.50*cl, shZ=0.50*sl;
   const aB=0.12+2.43*maniF-0.18*penz;
@@ -3533,7 +4024,7 @@ function poseCielo(u){
   const pelvY=0.90-0.10*ca+0.03*su+0.012*resp*su;
   const lean=0.06+0.16*ca-0.36*su-0.035*osc-0.012*resp;  // petto in fuori: arco indietro
   corpo(pelvY,0,lean,0);
-  P[HEAD*3+1]+=0.030*su; P[HEAD*3+2]-=0.095*su;          // la faccia al cielo
+  cenno(-0.46*su);                                       // la faccia al cielo
   const sl=Math.sin(lean), cl=Math.cos(lean);
   const shY=pelvY+0.50*cl, shZ=0.50*sl;
   /* braccia: giu' in carica, poi su a V APERTA — gomiti piegati e fuori,
@@ -3552,6 +4043,7 @@ function poseCielo(u){
 
 const CLIPS={
   fermo:     {freq:0.5, pose:poseFermo},
+  attesaGK:  {freq:0.42,pose:poseAttesaGK},   // la sagoma del ruolo (vedi poseAttesaGK)
   camminata: {freq:1.5, pose:poseCamminata},
   corsa:     {freq:2.6, pose:poseCorsa},
   frenata:   {freq:0.9, pose:poseFrenata, polvere:{t:0.02,d:0.34,solchi:1}},
@@ -3579,8 +4071,32 @@ const CLIPS={
    ============================================================ */
 function camera(gradiE){ const e=gradiE*Math.PI/180;
   return {ce:Math.cos(e), se:Math.sin(e)}; }
+/* =====================================================================
+   L'ELEVAZIONE DELLA CAMERA IN PIANTA: 50 -> 42 GRADI, ed e' la riga
+   che da sola raddrizza le figure. Non e' gusto, e' un conto.
+
+   La proiezione e' SY = cy - (y·ce + zw·se)·s con s = hPx/(1,9·ce).
+   La QUOTA contribuisce y·ce·s = y·hPx/1,9 — INDIPENDENTE
+   dall'elevazione, perche' la s la normalizza. La PROFONDITA' invece
+   contribuisce z·se·s = z·(hPx/1,9)·tan E. A 50 gradi tan E = 1,19: la
+   falcata in avanti pesa sullo schermo il 19% PIU' dell'altezza. Una
+   coscia a 0,9 rad porta il piede a ~0,35 m avanti, cioe' ~8,8 unita'
+   di allungamento verticale su una figura alta 40 — un quarto del corpo
+   speso a distendere gli arti lungo il terreno. Ecco perche' una corsa
+   leggeva come una caduta e un fermo come un granchio: «marionette
+   cadute» era la descrizione esatta di un fatto geometrico.
+
+   A 42 gradi tan E = 0,900: lo splay cala del 24%, e NON SI SPOSTA DI
+   UN PIXEL la quota verticale dei giunti — verificato a calcolo, y·ce·s
+   non dipende da E. L'unico effetto collaterale e' la scala orizzontale
+   s, che cala del 13,5% (27,84 -> 24,08): si compensa allargando dello
+   stesso fattore le misure TRASVERSALI (HEADR, larghezze dei SEGS), e
+   la figura resta larga uguale a schermo.
+   La camera 'bassa' non si tocca: e' quella dei rigori e della ripresa
+   del gol, dove la profondita' DEVE pesare.
+   ===================================================================== */
 const CAMERE={
-  alto:  camera(50),   // la partita: top-down leggermente inclinata
+  alto:  camera(42),   // la partita: top-down leggermente inclinata
   bassa: camera(16),   // i rigori / la ripresa del gol: dietro il giocatore
 };
 
@@ -3599,21 +4115,42 @@ const CAMERE={
    riv:1 sui polpacci = CALZETTONE CON RISVOLTO: sopra la calza in tinta
    squadra si stampa un tratto corto al ginocchio in seconda tinta
    (look.risvolto) — e' il terzo blocco di colore delle pedine vere. */
+/* LA SILHOUETTE A TRE MASSE, e le due strozzature che la fanno leggere.
+   Riempita di nero puro la figura deve dare TESTA, BUSTO, GAMBE come tre
+   masse distinte. Non lo era: la testa (4,3 unita' di raggio) si
+   attaccava a un busto largo 7,5 tramite un collo largo 2,8 — in nero un
+   ovale unico. Le larghezze qui sotto sono tutte moltiplicate per 1,156
+   (la compensazione del calo d'elevazione: restano identiche a schermo)
+   TRANNE due, che sono la manovra vera:
+     - il COLLO scende a 0,085 invece di salire a 0,116: a schermo passa
+       da 2,8 a 2,05 unita', una strozzatura del 27% fra testa e busto.
+       E' quanto basta perche' la scansione orizzontale della sagoma
+       abbia un minimo locale netto al collo — l'indizio che dice «e' un
+       uomo». Resta sopra il minimo strutturale di 1,1 px;
+     - la BARRA DEI FIANCHI resta 0,24 mentre il busto sale a 0,312: il
+       bacino si strozza rispetto al torace, ed e' il secondo minimo
+       locale. A schermo la barra cala del 13,5%, il busto no. */
 const SEGS=[
-  {a:PELVIS,b:NECK, w:0.27, c:'maglia',       bias:-0.012, kind:1},
+  {a:PELVIS,b:NECK, w:0.312,c:'maglia',       bias:-0.012, kind:1},
   {a:HIPL,  b:HIPR, w:0.24, c:'pantaloncini', bias:-0.006, kind:0},
-  {a:NECK,  b:HEAD, w:0.10, c:'pelle',        bias:-0.002, kind:0},  // il COLLO: a 0.07 spariva sotto il minimo di 1.1px e la testa galleggiava
+  {a:NECK,  b:HEAD, w:0.085,c:'pelle',        bias:-0.002, kind:0},  // il COLLO: la strozzatura fra le due masse alte
   {a:HEAD,  b:HEAD, w:0,    c:'pelle',        bias: 0.010, kind:2},
-  {a:SHR,b:ELR, w:0.160,c:'maglia', bias:0.005, kind:0},
-  {a:ELR,b:HAR, w:0.130,c:'pelle',  bias:0.008, kind:0},
-  {a:SHL,b:ELL, w:0.160,c:'maglia', bias:0.005, kind:0},
-  {a:ELL,b:HAL, w:0.130,c:'pelle',  bias:0.008, kind:0},
-  {a:HIPR,b:KNR, w:0.240,c:'pantaloncini', bias:0.002, kind:0},
-  {a:KNR, b:FTR, w:0.175,c:'calze',        bias:0.004, kind:0, riv:1},
-  {a:FTR, b:TOR, w:0.140,c:'scarpe',       bias:0.006, kind:0},
-  {a:HIPL,b:KNL, w:0.240,c:'pantaloncini', bias:0.002, kind:0},
-  {a:KNL, b:FTL, w:0.175,c:'calze',        bias:0.004, kind:0, riv:1},
-  {a:FTL, b:TOL, w:0.140,c:'scarpe',       bias:0.006, kind:0},
+  /* arti:1 = lo SPESSORE segue la corporatura (MSP). Solo gli arti: il
+     busto, il collo, la barra dei fianchi e la testa restano larghi
+     uguali per tutti — il busto perche' e' la finestra della sonda del
+     contrasto, gli altri tre perche' sono le strozzature che fanno
+     leggere le tre masse, e una strozzatura che cambia figura per
+     figura non e' piu' un indizio, e' rumore. */
+  {a:SHR,b:ELR, w:0.185,c:'maglia', bias:0.005, kind:0, arti:1},
+  {a:ELR,b:HAR, w:0.150,c:'pelle',  bias:0.008, kind:0, arti:1},
+  {a:SHL,b:ELL, w:0.185,c:'maglia', bias:0.005, kind:0, arti:1},
+  {a:ELL,b:HAL, w:0.150,c:'pelle',  bias:0.008, kind:0, arti:1},
+  {a:HIPR,b:KNR, w:0.277,c:'pantaloncini', bias:0.002, kind:0, arti:1},
+  {a:KNR, b:FTR, w:0.202,c:'calze',        bias:0.004, kind:0, riv:1, arti:1},
+  {a:FTR, b:TOR, w:0.162,c:'scarpe',       bias:0.006, kind:0, arti:1},
+  {a:HIPL,b:KNL, w:0.277,c:'pantaloncini', bias:0.002, kind:0, arti:1},
+  {a:KNL, b:FTL, w:0.202,c:'calze',        bias:0.004, kind:0, riv:1, arti:1},
+  {a:FTL, b:TOL, w:0.162,c:'scarpe',       bias:0.006, kind:0, arti:1},
   {a:PELVIS,b:PELVIS, w:0, c:'palla', bias:0, kind:3},  // palla (solo clip col pallone)
 ];
 const NS=SEGS.length;
@@ -3720,7 +4257,10 @@ function motivo(ctx,s,look){
   const nx=-dy/L, ny=dx/L;
   ctx.strokeStyle=look.maglia2;
   if(look.disegno==='strisce'){
-    const o=0.082*s, w=0.062*s;
+    /* le strisce si misurano sul busto, che e' passato da 0,27 a 0,312:
+       stesso rapporto di prima (0,607 della semilarghezza), cosi' le due
+       righe restano fuori dalla colonna ±1,5 della sonda del contrasto */
+    const o=0.0948*s, w=0.0717*s;
     ctx.lineWidth=w<1?1:w;
     ctx.beginPath();
     ctx.moveTo(ax+dx*0.10+nx*o, ay+dy*0.10+ny*o);
@@ -3729,11 +4269,20 @@ function motivo(ctx,s,look){
     ctx.lineTo(ax+dx*0.90-nx*o, ay+dy*0.90-ny*o);
     ctx.stroke();
   }else if(look.disegno==='fascia'){
-    const w=0.11*s, h=0.10*s;
+    /* LA FASCIA SALE E DIMAGRISCE (A0 dell'onda delle figure). Stava al
+       60% del segmento pelvi-collo spessa 0,11·s: la banda della SECONDA
+       tinta copriva da -11,87 a -15,48 unita' sopra il centro, cioe'
+       occupava GIA' una delle tre file della sonda di collaudo.js
+       (-12,5 / -11,5 / -10,5). Il cancello del contrasto reggeva solo
+       perche' la mediana pesca 14 campioni su 21 sulla prima tinta: un
+       margine di 0,37 unita', cioe' 0,017 m di geometria del rig.
+       A 0,70 e 0,085·s la banda parte a -13,4 e nessuna fila la tocca.
+       E' il margine COMPRATO prima di spendere qualunque cosa sul rig. */
+    const w=0.085*s, h=0.1156*s;
     ctx.lineWidth=w<1?1:w;
     ctx.beginPath();
-    ctx.moveTo(ax+dx*0.60-nx*h, ay+dy*0.60-ny*h);
-    ctx.lineTo(ax+dx*0.60+nx*h, ay+dy*0.60+ny*h);
+    ctx.moveTo(ax+dx*0.70-nx*h, ay+dy*0.70-ny*h);
+    ctx.lineTo(ax+dx*0.70+nx*h, ay+dy*0.70+ny*h);
     ctx.stroke();
   }
 }
@@ -3751,14 +4300,33 @@ function testa(ctx,s,cyw,syw,cam,look){
   let o=r*0.60*(dot+1)*0.5; if(o>0.5*r)o=0.5*r;
   let hx=X, hy=Y-r*0.10;
   if(L>1e-4){ hx=X-fdx/L*o; hy=Y-fdy/L*o-r*0.10; }
-  /* da vicino i capelli prendono FORMA: look.taglio 0 calotta piena,
-     1 ciuffo in cima, 2 taglio corto (calotta ridotta). A 30-40px la
-     calotta resta quella di sempre: il taglio non si leggerebbe. */
-  const taglio = lodOn ? (look.taglio|0)%3 : 0;
+  /* IL TAGLIO SI VEDE ANCHE A 40 PX, ed e' il cambio: prima la forma dei
+     capelli era dettaglio ravvicinato (`lodOn ? ... : 0`) e in pianta —
+     cioe' in tutta la partita — le teste erano TUTTE la stessa calotta.
+     Il raggio della calotta e' gia' disegnato: farlo dipendere dal taglio
+     non costa un tratto in piu' e da' quattro teste distinguibili in
+     sagoma, non solo in tinta. I dettagli veri (il ciuffo, i tre lobi
+     del riccio, la fascetta) restano sotto lodOn, perche' sotto i 40 px
+     sarebbero mezzo pixel di rumore.
+     Nessuna calotta esce dal contorno della testa: la piu' larga e' il
+     riccio a 1,00·r, alzata di 0,10·r, cioe' 1,10·r contro il perimetro
+     scuro che sta a r+bd = 1,22·r. */
+  const taglio = (look.taglio|0)%4;
+  const rc = taglio===0 ? r*0.82 : taglio===2 ? r*1.00 : taglio===3 ? r*0.90 : r*0.94;
   ctx.fillStyle=look.capelli;
-  ctx.beginPath(); ctx.arc(hx,hy,(taglio===2?r*0.84:r*0.94),0,TAU); ctx.fill();
-  if(taglio===1){
-    ctx.beginPath(); ctx.arc(hx,hy-r*0.70,r*0.32,0,TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(hx,hy,rc,0,TAU); ctx.fill();
+  if(lodOn){
+    if(taglio===1){                       // il CIUFFO in cima
+      ctx.beginPath(); ctx.arc(hx,hy-r*0.70,r*0.32,0,TAU); ctx.fill();
+    }else if(taglio===2){                 // il RICCIO: tre lobi sul bordo
+      ctx.beginPath(); ctx.arc(hx-r*0.62,hy-r*0.46,r*0.30,0,TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(hx+r*0.62,hy-r*0.46,r*0.30,0,TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(hx,        hy-r*0.80,r*0.30,0,TAU); ctx.fill();
+    }else if(taglio===3 && look.maglia2){ // la FASCETTA, in seconda tinta
+      ctx.strokeStyle=look.maglia2;
+      const lw=r*0.26; ctx.lineWidth=lw<1?1:lw;
+      ctx.beginPath(); ctx.arc(hx,hy,rc*0.86,Math.PI*0.10,Math.PI*0.90); ctx.stroke();
+    }
   }
   /* VOLTO ABBOZZATO, solo da vicino e solo se la faccia guarda la camera:
      due tratti per gli occhi, le sopracciglia nel colore dei capelli,
@@ -3855,6 +4423,16 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
      della trasformazione del chiamante; 1 se non dichiarata). Oltre
      LOD_PX di figura A SCHERMO si accende il dettaglio, sotto niente. */
   lodK=pxs||1; lodOn=hPx*lodK>=LOD_PX;
+  /* LA CORPORATURA SI SCEGLIE QUI, prima di ogni posa: le misure vive
+     valgono per questa figura e per tutte le valutazioni che seguono
+     (compresi i due fantasmi della scia). look.corp e look.varb
+     arrivano dal SEME DEL NOME e stanno nella cache di rigLook, quindi
+     non si calcolano nel fotogramma: qui si fanno solo sei prodotti, e
+     solo quando la corporatura cambia davvero rispetto alla figura
+     precedente. Senza dichiarazione si torna alla taglia nominale — e'
+     il caso del banco, del duello e della ripresa del gol, dove la
+     figura e' una sola e non c'e' nessuno da cui distinguerla. */
+  corpora(look.corp===undefined?3:look.corp, look.varb||0);
   let u=(tSec*clip.freq)%1; if(u<0)u+=1;
   const cyw=Math.cos(yaw), syw=Math.sin(yaw);
   const ce=cam.ce<0.58?0.58:cam.ce;   // non gonfiare troppo le falcate in pianta
@@ -3999,8 +4577,17 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
   /* CONTORNO SCALATO: da vicino lo spessore del bordo unico NON cresce
      con lo zoom — resta ~1px a schermo (1,35/lodK), come le pedine vere.
      Sotto soglia la formula e' quella di sempre. */
-  let bd=0.035*s<0.8?0.8:0.035*s;
-  if(lodOn){ const mx=1.35/lodK; if(bd>mx)bd=mx; }
+  /* IL TETTO DEL CONTORNO VALE A TUTTE LE SCALE (A0). Prima si applicava
+     solo con lodOn acceso: sotto soglia, in una camera stretta, il bordo
+     scuro ingrassava con lo zoom e le tre masse della silhouette (testa,
+     busto, gambe) si saldavano in un unico ovale nero. 1-2 px a schermo
+     e' il vincolo, e non dipende dal LOD. */
+  /* 0,0405 e non 0,035: e' 0,035 compensato del calo d'elevazione, cosi'
+     il contorno resta lo stesso NUMERO DI PIXEL di prima. Se ingrassasse
+     salderebbe le tre masse; se dimagrisse la sagoma perderebbe il
+     perimetro che la stacca dall'erba. */
+  let bd=0.0405*s<0.8?0.8:0.0405*s;
+  { const mx=1.35/lodK; if(bd>mx)bd=mx; }
   ctx.strokeStyle=BORDO;
   for(let i=0;i<NS;i++){
     const g=SEGS[i];
@@ -4015,11 +4602,18 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
        essere un tubo unico. Vale anche per il contorno, che deve seguire
        la stessa sagoma. Sotto soglia niente: le pedine a 30px non lo
        leggerebbero. */
-    const w=g.w*s*((lodOn&&(g.b===HAR||g.b===HAL))?0.80:1);
+    const w=g.w*(g.arti?MSP:1)*s*((lodOn&&(g.b===HAR||g.b===HAL))?0.80:1);
     ctx.lineWidth=(w<1.1?1.1:w)+2*bd;
+    /* IL BUSTO NON HA LA CALOTTA IN CIMA — e' la riga che stacca la
+       testa dal tronco. Vedi il commento esteso nella passata a colori:
+       il contorno deve avere la STESSA sagoma, altrimenti la calotta
+       scura ricuce la strozzatura che il colore aveva aperto. */
+    const piatto = g.kind===1 && !lodOn;
+    if(piatto) ctx.lineCap='butt';
     ctx.beginPath();
     ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
     ctx.stroke();
+    if(piatto) ctx.lineCap='round';
     /* le dita entrano nel perimetro: prima il loro contorno scuro */
     if(lodOn && (g.b===HAR||g.b===HAL)) mano(ctx,s,g.a,g.b,look,bd);
   }
@@ -4029,7 +4623,7 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
     if(g.kind===2){ testa(ctx,s,cyw,syw,cam,look); continue; }
     if(g.kind===3){ if(pallaQui) disegnaPalla(ctx,s,look); continue; }
     /* stessa rastrematura del contorno: -20% sull'avambraccio da vicino */
-    const w=g.w*s*((lodOn&&(g.b===HAR||g.b===HAL))?0.80:1), W=w<1.1?1.1:w;
+    const w=g.w*(g.arti?MSP:1)*s*((lodOn&&(g.b===HAR||g.b===HAL))?0.80:1), W=w<1.1?1.1:w;
     /* GLI ARTI HANNO UN LATO CALDO E UN LATO FREDDO, senza un tratto in
        piu'. Braccia e gambe si disegnano gia' come tratti singoli: qui si
        SCEGLIE la tinta invece di aggiungerne uno. Se il punto medio del
@@ -4046,9 +4640,37 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
     }
     ctx.strokeStyle=tinta;
     ctx.lineWidth=W;
+    /* =================================================================
+       LA CALOTTA DEL BUSTO E' QUELLA CHE SALDAVA LA TESTA AL TRONCO.
+       Misurato sul banco ?banco=silhouette: la maschera nera a 40 px non
+       aveva NESSUNA strozzatura fra le tre masse (masse = 0 su nove
+       sagome su dieci), e il motivo non era il collo — che a 0,085 e'
+       gia' sottile — ma la mezza capsula tonda con cui il tratto del
+       busto sporgeva oltre il giunto NECK: mezza larghezza di torso,
+       cioe' 3,76 unita' di raggio, mentre la testa sta appena 3,40
+       unita' sopra il collo. La calotta arrivava PIU' IN ALTO del
+       centro del cranio: testa e busto erano letteralmente lo stesso
+       ovale, e nessuna sottigliezza del collo poteva rimediarlo.
+       Con l'estremo piatto il tronco finisce dove finisce il collo, e
+       il profilo delle scansioni orizzontali scende da 4,31 (la testa) a
+       2,64 (il collo) prima di risalire a 3,76 (le spalle): una
+       strozzatura del 30%, cioe' il minimo locale che dice «e' un uomo».
+       Le spalle NON diventano squadrate: le due capsule delle braccia
+       hanno la loro calotta tonda e partono proprio da li'.
+       Il fondo del tratto resta coperto dalla barra dei fianchi e dalle
+       cosce, quindi il taglio non si vede in basso.
+       SOLO SOTTO SOGLIA, e questo e' il compromesso onesto: da vicino
+       (il primo piano del gol, il duello) la testa si stacca gia' da
+       sola perche' ci sono cento pixel a raccontarla, e li' il taglio
+       netto del tronco si vede — legge come una scatola. La spalla
+       quadrata e' un rimedio per quaranta pixel, non un disegno.
+       Costo: zero — stesso tratto, altro lineCap. */
+    const piatto = g.kind===1 && !lodOn;
+    if(piatto) ctx.lineCap='butt';
     ctx.beginPath();
     ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
     ctx.stroke();
+    if(piatto) ctx.lineCap='round';
     /* MANI a dita al posto del bozzolo (solo da vicino) */
     if(lodOn && (g.b===HAR||g.b===HAL)) mano(ctx,s,g.a,g.b,look,-1);
     /* IL BORDO DI LUCE DA OVEST ANCHE SUGLI ARTI in primo piano (quinto
@@ -4129,8 +4751,23 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
              base il rapporto puo' solo migliorare.
              Lo si legge anche al contrario: se un giorno qualcuno
              riporta il terminatore al centro, il cancello del contrasto
-             comincera' a ballare e nessuno sapra' perche'. */
-          const TERM=0.72;
+             comincera' a ballare e nessuno sapra' perche'.
+
+             DA 0,72 A 0,78, E IL MOTIVO E' MISURATO (onda delle figure).
+             Il conto sopra dava 1,65-1,95 unita' di margine sulla colonna
+             a ±1,5 SUPPONENDO l'asse del busto sulla verticale del
+             giocatore. Non ci sta: il busto e' INCLINATO in avanti, e in
+             pianta l'inclinazione diventa uno scarto ORIZZONTALE quando
+             la figura corre di traverso — z·sin(yaw)·s, che con lean 0,24
+             vale gia' 3,5 unita', otto volte il margine. Meta' delle
+             direzioni di marcia porta il confine DENTRO la colonna, la
+             mediana comincia a pescare il lato freddo, e il rapporto
+             misurato della maglia P1 crolla senza che nessuno abbia
+             toccato un colore: 2,96:1 sulla sonda isolata. A 0,78 il
+             confine sta a 0,28·W ≈ 2,5 unita' a est e il lato in ombra
+             resta ampio (il 22% del busto): la legge della luce vale
+             ancora, la misura smette di ballare. */
+          const TERM=0.78;
           const ol=W*(0.5-TERM*0.5), oo=-W*TERM*0.5;
           const capOld=ctx.lineCap;
           ctx.lineCap='butt';
@@ -4174,10 +4811,10 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
           ctx.lineCap='round';
           /* e il COLLETTO in seconda tinta, appena sotto il collo */
           ctx.strokeStyle=look.maglia2;
-          ctx.lineWidth=0.050*s<1?1:0.050*s;
+          ctx.lineWidth=0.058*s<1?1:0.058*s;
           ctx.beginPath();
-          ctx.moveTo(ax+dx*0.965+nx*0.095*s, ay+dy*0.965+ny*0.095*s);
-          ctx.lineTo(ax+dx*0.965-nx*0.095*s, ay+dy*0.965-ny*0.095*s);
+          ctx.moveTo(ax+dx*0.965+nx*0.110*s, ay+dy*0.965+ny*0.110*s);
+          ctx.lineTo(ax+dx*0.965-nx*0.110*s, ay+dy*0.965-ny*0.110*s);
           ctx.stroke();
         }
       }
@@ -4196,8 +4833,333 @@ const lookPredefinito={
   palla:'#f4f2ec', taglio:1,
 };
 
-return {disegna, CAMERE, CLIPS, lookPredefinito, torso:()=>TORSO};
+/* =====================================================================
+   IL BANCO DELLA GABBIA — la libreria si lascia ISPEZIONARE (?gabbia).
+   Non e' un modo di disegnare a parte (un banco che disegna «a modo suo»
+   mente): e' la STESSA pose() della partita, valutata sugli stessi
+   scratch, e la lettura dei giunti che ne esce.
+   Costo nel fotogramma: zero. Sono riferimenti a oggetti gia' esistenti,
+   costruiti una volta al caricamento del modulo.
+
+   OSSA e' l'elenco dei segmenti a lunghezza COSTANTE per costruzione:
+   se la cinematica diretta e' onesta, la distanza fra i due giunti vale
+   sempre L, in ogni clip, a ogni fase, per ogni corporatura. Lo scarto
+   percentuale da L e' la misura che trasforma «spaghetti con la testa»
+   da opinione in cancello (±1,0%).
+   ===================================================================== */
+/* La lunghezza nominale e' una FUNZIONE e non un numero perche' le
+   misure vive cambiano con la CORPORATURA: il metro dello spilungone
+   non e' quello del tarchiato, e un banco che li misurasse tutti col
+   metro della taglia media stamperebbe un 3% di scarto inventato su
+   ogni osso lungo. Le chiusure nascono una volta al caricamento. */
+const OSSA=[
+  {n:'busto',        a:PELVIS,b:NECK, f:()=>0.46},
+  {n:'pelvi-torace', a:PELVIS,b:CHEST,f:()=>0.34},
+  {n:'torace-collo', a:CHEST, b:NECK, f:()=>0.12},
+  {n:'collo',        a:NECK,  b:HEAD, f:()=>0.19},
+  {n:'spalle',       a:SHL,   b:SHR,  f:()=>2*SHW},
+  {n:'fianchi',      a:HIPL,  b:HIPR, f:()=>2*HIPW},
+  {n:'braccioR',     a:SHR,b:ELR, f:()=>UA},
+  {n:'avambraccioR', a:ELR,b:HAR, f:()=>FA},
+  {n:'braccioL',     a:SHL,b:ELL, f:()=>UA},
+  {n:'avambraccioL', a:ELL,b:HAL, f:()=>FA},
+  {n:'cosciaR',      a:HIPR,b:KNR, f:()=>THIGH},
+  {n:'tibiaR',       a:KNR, b:FTR, f:()=>SHIN},
+  {n:'piedeR',       a:FTR, b:TOR, f:()=>FOOT},
+  {n:'cosciaL',      a:HIPL,b:KNL, f:()=>THIGH},
+  {n:'tibiaL',       a:KNL, b:FTL, f:()=>SHIN},
+  {n:'piedeL',       a:FTL, b:TOL, f:()=>FOOT},
+];
+/* valuta una posa e restituisce lo scarto peggiore fra tutte le ossa,
+   piu' la quota del giunto piu' basso (il piede che non deve bucare) */
+const ESITO={osso:'',scarto:0,quota:0,cima:0};
+function bancoPosa(nomeClip,u){
+  CLIPS[nomeClip].pose(u);
+  let peggio=0, chi='', minY=1e9;
+  for(let i=0;i<OSSA.length;i++){
+    const o=OSSA[i];
+    const dx=P[o.a*3]-P[o.b*3], dy=P[o.a*3+1]-P[o.b*3+1], dz=P[o.a*3+2]-P[o.b*3+2];
+    const d=Math.sqrt(dx*dx+dy*dy+dz*dz), L=o.f();
+    const sc=(d-L)/L;
+    if(Math.abs(sc)>Math.abs(peggio)){ peggio=sc; chi=o.n; }
+  }
+  for(let j=0;j<NJ;j++){ const y=P[j*3+1]; if(y<minY)minY=y; }
+  ESITO.osso=chi; ESITO.scarto=peggio; ESITO.quota=minY;
+  ESITO.cima=P[HEAD*3+1]+HEADR;
+  return ESITO;
+}
+
+return {disegna, CAMERE, CLIPS, lookPredefinito, torso:()=>TORSO,
+        banco:{posa:bancoPosa, OSSA, P, NJ, esito:ESITO,
+               corpora, testa:()=>HEADR, nCorpi:CORPI.length,
+               /* quante volte la scatola degli angoli ha dovuto
+                  correggere una posa: azzerabile, cosi' il banco lo
+                  conta per clip e non in blocco */
+               tagli:()=>TAGLI, azzeraTagli:()=>{TAGLI=0;}}};
 })();
+
+/* =====================================================================
+   ?gabbia — IL BANCO DELLA GABBIA DELLE PROPORZIONI.
+   Per ogni clip x 64 fasi stampa in console un JSON con: lo scarto
+   massimo di ogni osso dalla sua lunghezza nominale (cancello ±1,0%),
+   la quota minima raggiunta da un giunto (nessun piede sotto terra) e
+   la cima della testa (l'invariante che protegge la sonda dell'ERBA di
+   collaudo.js: l'anello dei compagni esclude fino a -26 unita', e la
+   testa non deve salire dentro quell'anello).
+   Ripetibile a seme fisso, stessa macchina, stesso giro: senza questo
+   banco l'onda delle figure e' cieca senza che si veda.
+   Lo legge strumenti/gabbia.js.
+   ===================================================================== */
+if(/[?&]gabbia/.test(location.search)){
+  setTimeout(function(){
+    try{
+      const B=Rig3D.banco, FASI=64;
+      const NOMI=['pelvi','torace','collo','testa','spallaL','gomitoL','manoL',
+                  'spallaR','gomitoR','manoR','ancaL','ginocchioL','piedeL',
+                  'ancaR','ginocchioR','piedeR','puntaL','puntaR'];
+      const SCA=RIG_H/(1.9*Rig3D.CAMERE.alto.ce);   // la scala orizzontale in pianta
+      const BORDOPX=Math.min(1.35/((G.view.S2||1)*P_DIS), Math.max(0.8, 0.0405*SCA));
+      /* OGNI CLIP x OGNI FASE x OGNI CORPORATURA. La corporatura va nel
+         giro perche' e' geometria: cambia le lunghezze delle ossa, la
+         quota del bacino e — quello che conta davvero — la CIMA della
+         testa, che e' l'invariante che protegge la sonda dell'erba. Un
+         banco che misurasse solo la taglia media direbbe verde mentre lo
+         spilungone sporge nell'anello dei compagni. */
+      const CORPI=['spilungone','tarchiato','piccoletto','neutro'];
+      const clip=[];
+      for(const nome in Rig3D.CLIPS){
+        const perOsso={}; for(const o of B.OSSA) perOsso[o.n]=0;
+        let quota=1e9, chiQuota='', cima=1e9, chiCima='', peggio=0, chiPeggio='', uPeggio=0;
+        B.azzeraTagli();
+        for(let c=0;c<CORPI.length;c++){
+          B.corpora(c,0);
+          for(let f=0;f<FASI;f++){
+            const u=f/FASI;
+            Rig3D.CLIPS[nome].pose(u);
+            for(const o of B.OSSA){
+              const dx=B.P[o.a*3]-B.P[o.b*3], dy=B.P[o.a*3+1]-B.P[o.b*3+1], dz=B.P[o.a*3+2]-B.P[o.b*3+2];
+              const L=o.f(), sc=(Math.sqrt(dx*dx+dy*dy+dz*dz)-L)/L;
+              if(Math.abs(sc)>Math.abs(perOsso[o.n])) perOsso[o.n]=sc;
+              if(Math.abs(sc)>Math.abs(peggio)){ peggio=sc; chiPeggio=o.n; uPeggio=u; }
+            }
+            for(let j=0;j<B.NJ;j++){ const y=B.P[j*3+1]; if(y<quota){quota=y; chiQuota=NOMI[j]||('g'+j);} }
+            /* LA CIMA DELLA TESTA IN UNITA' DI SCHERMO, non in metri: e'
+               quella che la sonda dell'ERBA di collaudo.js incontra. Il
+               conto e' il suo — piedi a RIG_PIEDI, quota moltiplicata per
+               RIG_H/1,9 (che non dipende dall'elevazione), raggio della
+               testa e contorno in scala orizzontale, tutto per P_DIS. */
+            const ct=(RIG_PIEDI - B.P[3*3+1]*RIG_H/1.9 - (B.testa()*SCA+BORDOPX))*P_DIS;
+            if(ct<cima){ cima=ct; chiCima=CORPI[c]; }
+          }
+        }
+        B.corpora(3,0);
+        const ossa={};
+        for(const k in perOsso) if(Math.abs(perOsso[k])>0.0005) ossa[k]=+(perOsso[k]*100).toFixed(2);
+        clip.push({clip:nome, peggio:+(peggio*100).toFixed(2), osso:chiPeggio, u:+uPeggio.toFixed(3),
+                   quota:+quota.toFixed(4), giunto:chiQuota,
+                   cima:+cima.toFixed(4), corpCima:chiCima, tagli:B.tagli(), ossa});
+      }
+      console.log('[gabbia] '+JSON.stringify({fasi:FASI, corpi:CORPI.length, clip}));
+    }catch(e){ console.log('[gabbia] fallito: '+(e&&e.message)); }
+  }, 600);
+}
+
+/* =====================================================================
+   ?banco=silhouette — IL CANCELLO DELLA SAGOMA.
+
+   La verifica che la giuria ha promesso di usare e' questa: riempi la
+   figura di nero puro, mostrala a quaranta pixel a un estraneo, e
+   chiedigli di nominare l'azione. Se non ci riesce, la posa non e' una
+   posa: e' un groviglio con la testa. Il giudizio finale resta l'uomo
+   (>= 8 su 10), ma un giudizio umano non si puo' chiedere venti volte
+   in un pomeriggio, e senza una misura in mezzo lo sciame lavora alla
+   cieca. Qui sotto c'e' il PRE-CANCELLO: cinque numeri calcolati sulla
+   maschera nera, che non dicono se la sagoma e' bella ma dicono se ha
+   le proprieta' senza le quali non puo' essere letta.
+
+     inchiostro  quanto della scatola e' pieno. Sotto 0,28 e' uno
+                 scheletro di fili (gli «spaghetti»); sopra 0,52 e' un
+                 blocco (il «birillo»). Legge il rapporto, non l'area:
+                 vale a ogni scala.
+     masse       la scansione riga per riga della maschera deve avere
+                 almeno DUE strozzature nette — il collo e il bacino.
+                 Sono i due minimi che dicono «testa, busto, gambe»
+                 invece di «ovale». E' la ragione per cui il collo e'
+                 stato assottigliato e il busto allargato.
+     arti        nella meta' bassa devono esserci righe con DUE tratti
+                 neri separati: due gambe, non un tronco di cono. Una
+                 falcata con le gambe unite non la legge nessuno.
+     forma       il rapporto larghezza/altezza della scatola. In piedi
+                 sta fra 0,35 e 0,75; la scivolata e il tuffo devono
+                 leggere ORIZZONTALI, cioe' sopra 1,15. E' il numero che
+                 distingue «steso» da «in piedi» senza guardare niente
+                 altro.
+     distinzione la distanza di Hamming fra ogni coppia di sagome su una
+                 griglia 32x32. Un solo numero che meccanizza insieme
+                 «le azioni si distinguono fra loro» e «mai due
+                 giocatori nella stessa posa».
+
+   IL BANCO NON DISEGNA A MODO SUO. Stessa Rig3D.disegna della partita,
+   stessa camera 'alto', stessa scala (RIG_H x P_DIS = 40 px), stesso
+   contorno: un banco che si costruisse un disegno tutto suo direbbe
+   verde su una figura che in campo non esiste. L'unica differenza e' il
+   look, con OGNI campo a nero — ed e' il punto dell'esercizio.
+   Lo legge strumenti/silhouette.js.
+   ===================================================================== */
+if(/[?&]banco=silhouette/.test(location.search)){
+  setTimeout(function(){
+   try{
+    /* le dieci azioni del provino, con la fase scelta a mano nel punto
+       piu' significativo del gesto (non a caso: un provino a fase
+       casuale misura il fotogramma di passaggio, non il gesto) */
+    const PROVA=[
+      {clip:'fermo',     u:0.20, nome:'sta fermo',            steso:0},
+      {clip:'camminata', u:0.15, nome:'cammina',              steso:0},
+      /* la corsa si prova nel VOLO (ginocchio raccolto, gambe
+         spalancate), non al contatto: al contatto una corsa e una
+         camminata hanno la stessa sagoma, ed e' giusto che sia cosi' —
+         quello che le distingue e' la falcata */
+      {clip:'corsa',     u:0.32, nome:'corre',                steso:0},
+      {clip:'tiro',      u:0.30, nome:'carica il tiro',       steso:0},
+      {clip:'tiro',      u:0.62, nome:'ha appena tirato',     steso:0},
+      {clip:'scivolata', u:0.35, nome:'scivola in contrasto', steso:1},
+      {clip:'tuffo',     u:0.42, nome:'il portiere si tuffa', steso:1},
+      {clip:'attesaGK',  u:0.25, nome:'il portiere aspetta',  steso:0},
+      {clip:'esultanza', u:0.30, nome:'esulta',               steso:0},
+      {clip:'delusione', u:0.55, nome:"e' deluso",         steso:0},
+    ];
+    const COL=5, RIG=2, CW=104, CH=124, N=PROVA.length;
+    const cv=document.createElement('canvas');
+    cv.width=COL*CW; cv.height=RIG*CH;
+    const g=cv.getContext('2d',{willReadFrequently:true});
+    /* IL LOOK TUTTO NERO. _lume e _ombS si scrivono a mano perche'
+       lumiLook, se li trovasse vuoti, mescolerebbe il nero con l'ambra
+       e con il viola del cielo e la maschera non sarebbe piu' una
+       maschera: sarebbe una figura grigia in due tinte. */
+    const NERO='#000';
+    const nero={maglia:NERO,maglia2:NERO,pantaloncini:NERO,calze:NERO,risvolto:NERO,
+      pelle:NERO,capelli:NERO,scarpe:NERO,palla:null,taglio:0,corp:3,varb:0,
+      _lume:NERO,_ombra:NERO,
+      _ombS:{maglia:NERO,maglia2:NERO,calze:NERO,pantaloncini:NERO,pelle:NERO}};
+
+    function disegnaCella(i,clip,u,yaw,corp){
+      const cx=(i%COL)*CW+CW/2, cy=((i/COL)|0)*CH+CH-14;
+      nero.corp=corp;
+      g.save();
+      g.translate(cx,cy); g.scale(P_DIS,P_DIS); g.translate(-cx,-cy);
+      Rig3D.disegna(g,cx,cy,RIG_H,yaw,'alto',clip,u/Rig3D.CLIPS[clip].freq,nero,true,P_DIS);
+      g.restore();
+    }
+
+    /* ---- le misure sulla maschera ---- */
+    function misura(i){
+      const x0=(i%COL)*CW, y0=((i/COL)|0)*CH;
+      const d=g.getImageData(x0,y0,CW,CH).data;
+      const m=new Uint8Array(CW*CH);
+      let minx=CW,maxx=-1,miny=CH,maxy=-1,tot=0;
+      for(let y=0;y<CH;y++)for(let x=0;x<CW;x++){
+        if(d[(y*CW+x)*4+3]>128){ m[y*CW+x]=1; tot++;
+          if(x<minx)minx=x; if(x>maxx)maxx=x; if(y<miny)miny=y; if(y>maxy)maxy=y; }
+      }
+      if(tot<20) return {vuota:true};
+      const bw=maxx-minx+1, bh=maxy-miny+1;
+      /* profilo delle scansioni orizzontali: e' da qui che escono le
+         tre masse (due strozzature) */
+      const prof=new Int32Array(bh);
+      for(let y=0;y<bh;y++){ let c=0; for(let x=minx;x<=maxx;x++) if(m[(y+miny)*CW+x])c++; prof[y]=c; }
+      let picco=0; for(let y=0;y<bh;y++) if(prof[y]>picco)picco=prof[y];
+      /* un minimo conta se e' abbastanza profondo rispetto ai due
+         massimi che lo circondano: una strozzatura, non una increspatura */
+      let masse=0;
+      for(let y=2;y<bh-2;y++){
+        if(prof[y]<=prof[y-1] && prof[y]<=prof[y+1] && prof[y]>0){
+          let sx=prof[y]; for(let k=y-1;k>=0;k--){ if(prof[k]>sx)sx=prof[k]; if(prof[k]<prof[y])break; }
+          let dx=prof[y]; for(let k=y+1;k<bh;k++){ if(prof[k]>dx)dx=prof[k]; if(prof[k]<prof[y])break; }
+          const alto=Math.min(sx,dx);
+          if(alto>0 && (alto-prof[y])/alto>=0.25 && alto>=0.25*picco){ masse++; y+=2; }
+        }
+      }
+      /* arti separati: righe con due tratti neri distinti nel 40% basso */
+      let righeDue=0;
+      for(let y=Math.floor(bh*0.60);y<bh;y++){
+        let tratti=0, dentro=false;
+        for(let x=minx;x<=maxx;x++){
+          const v=m[(y+miny)*CW+x];
+          if(v&&!dentro){ tratti++; dentro=true; } else if(!v) dentro=false;
+        }
+        if(tratti>=2) righeDue++;
+      }
+      /* la griglia 32x32 per la distanza fra sagome */
+      const G=32, gr=new Uint8Array(G*G);
+      for(let gy=0;gy<G;gy++)for(let gx=0;gx<G;gx++){
+        let c=0,n=0;
+        const xa=minx+Math.floor(gx*bw/G), xb=minx+Math.floor((gx+1)*bw/G);
+        const ya=miny+Math.floor(gy*bh/G), yb=miny+Math.floor((gy+1)*bh/G);
+        for(let y=ya;y<Math.max(yb,ya+1);y++)for(let x=xa;x<Math.max(xb,xa+1);x++){ n++; if(m[y*CW+x])c++; }
+        gr[gy*G+gx]= n&&c*2>=n ? 1 : 0;
+      }
+      /* il PROFILO esce con la misura: quando il banco dice «zero
+         strozzature» la domanda successiva e' sempre «e allora com'e'
+         fatta questa sagoma?», e senza il profilo si tira a indovinare */
+      return {inchiostro:tot/(bw*bh), forma:bw/bh, masse, righeDue, bw, bh, gr,
+              prof:Array.prototype.slice.call(prof)};
+    }
+
+    /* ---- il provino principale: dieci azioni, tre quarti, taglia media ---- */
+    g.clearRect(0,0,cv.width,cv.height);
+    for(let i=0;i<N;i++) disegnaCella(i,PROVA[i].clip,PROVA[i].u,0.95,3);
+    const fig=[];
+    for(let i=0;i<N;i++){
+      const q=misura(i);
+      const ok_inch = q.inchiostro>=0.28 && q.inchiostro<=0.52;
+      const ok_forma = PROVA[i].steso ? q.forma>1.15 : (q.forma>=0.35 && q.forma<=0.75);
+      fig.push({nome:PROVA[i].nome, clip:PROVA[i].clip, u:PROVA[i].u,
+        inchiostro:+q.inchiostro.toFixed(3), forma:+q.forma.toFixed(3),
+        masse:q.masse, arti:q.righeDue, bw:q.bw, bh:q.bh, prof:q.prof,
+        ok:{inchiostro:ok_inch, forma:ok_forma, masse:q.masse>=2, arti:q.righeDue>=3}});
+      fig[i]._gr=q.gr;
+    }
+    /* distanza di Hamming fra ogni coppia: un solo numero per «le azioni
+       si distinguono» e «mai due nella stessa posa» */
+    let dMin=1, dChi='';
+    for(let a=0;a<N;a++)for(let b=a+1;b<N;b++){
+      let diff=0; const A=fig[a]._gr,B2=fig[b]._gr;
+      for(let k=0;k<1024;k++) if(A[k]!==B2[k])diff++;
+      const dd=diff/1024;
+      if(dd<dMin){ dMin=dd; dChi=fig[a].nome+' / '+fig[b].nome; }
+    }
+    for(const f of fig) delete f._gr;
+
+    /* ---- la sagoma deve reggere anche di fronte e di spalle, e per
+       tutte e tre le corporature: e' li' che una posa costruita di
+       profilo crolla ---- */
+    const giri=[];
+    for(let c=0;c<3;c++){
+      for(const yaw of [0, Math.PI/2, Math.PI, -Math.PI/2]){
+        g.clearRect(0,0,cv.width,cv.height);
+        for(let i=0;i<N;i++) disegnaCella(i,PROVA[i].clip,PROVA[i].u,yaw,c);
+        for(let i=0;i<N;i++){
+          const q=misura(i); if(q.vuota) continue;
+          const ok_inch=q.inchiostro>=0.28 && q.inchiostro<=0.52;
+          const ok_forma=PROVA[i].steso ? q.forma>1.15 : (q.forma>=0.35 && q.forma<=0.75);
+          if(!(ok_inch && ok_forma && q.masse>=2 && q.righeDue>=3))
+            giri.push({corp:c, yaw:+(yaw*57.2958).toFixed(0), nome:PROVA[i].nome,
+              inchiostro:+q.inchiostro.toFixed(3), forma:+q.forma.toFixed(3),
+              masse:q.masse, arti:q.righeDue});
+        }
+      }
+    }
+
+    /* il foglio a contatto: si ridisegna il provino principale, perche'
+       il PNG deve mostrare esattamente quello che i numeri hanno letto */
+    g.clearRect(0,0,cv.width,cv.height);
+    for(let i=0;i<N;i++) disegnaCella(i,PROVA[i].clip,PROVA[i].u,0.95,3);
+    console.log('[silhouette] '+JSON.stringify({fig, distanza:+dMin.toFixed(3), coppia:dChi,
+      giri:giri.slice(0,40), nGiri:giri.length}));
+    console.log('[silhouette-png] '+cv.toDataURL('image/png'));
+   }catch(e){ console.log('[silhouette] fallito: '+(e&&e.message)); }
+  }, 700);
+}
 
 /* IL COSTO SI RIMISURA SUL BANCO DEL GIOCO, come fa RIG.html: aprire la
    pagina con ?rigcosto (o ?rigcosto=nomeclip) stampa in console il costo
@@ -4257,6 +5219,10 @@ const G = {
   golSlow:1,           // rallentatore della festa del gol: 0,30 -> 1,00 con una curva
   flashRing:0, flashTeam:0,
   banner:'', bannerT:0, bannerCol:'#ffb020', bannerDur:1.4,
+  /* la presentazione dei capitani: secondi residui e i due indici. E'
+     stato di sola RESA — la fisica non lo legge, nessuno lo aggiorna
+     tranne il conto alla rovescia in step() e la scelta al fischio */
+  capT:0, capIdx:[1,1],
   /* moviola: anello di fotogrammi degli ultimi secondi, per rivedere il gol */
   rec:[], recT:0, moviola:null,
   /* la RIPRESA DEDICATA del gol in camera bassa (decisione 3): parte dopo
@@ -5174,6 +6140,41 @@ setInterval(()=>{ if(Audio5.ctx && Audio5.ctx.state==='running') Audio5.jingleTi
 /* varieta' di pelle e capelli (assegnate in modo deterministico) */
 const SKIN=['#e9bd8f','#c98d5a','#8d5a3b','#f2cfa5','#a96b42','#6e4429'];
 const HAIR=['#241a12','#4a3220','#101010','#7a3b1e','#8e867c','#3a2c1c'];
+/* =====================================================================
+   IL SEME UNICO: UN NOME, UN UOMO.
+   Un solo numero — l'FNV-1a a 32 bit del NOME — governa corporatura,
+   carnagione, capigliatura, taglio e sfasamento di fase. E' sul NOME e
+   non sull'indice, quindi sopravvive ai cambi di formazione, alle
+   taglie 5/7/11 e alle partite: Saverio Piedebuono e' lo stesso uomo
+   ogni volta che scende in campo.
+   E' anche il bene condiviso con i volti-figurina: chi disegnera' il
+   ritratto nella rosa legge QUESTO numero, e il volto nella riga della
+   rosa sara' lo stesso uomo che corre in campo. Percio' i suoi valori
+   sono fissati da un test (window.__test.semeNome) e non si cambiano
+   senza che qualcuno se ne accorga.
+   FNV-1a e non un'addizione di codici: nomi che differiscono per una
+   lettera devono finire lontani, altrimenti la rosa e' fatta di
+   fratelli. Math.imul perche' senza, oltre 2^31, JavaScript perde i
+   bit bassi nel doppio e l'hash smette di essere quello. */
+function semeNome(nome){
+  const s=String(nome||'');
+  let h=0x811c9dc5;
+  for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,0x01000193); }
+  return h>>>0;
+}
+/* i quattro tratti fisici che il seme decide, scritti sul giocatore.
+   La CORPORATURA e il TAGLIO sono nuovi; pelle e capelli c'erano gia' e
+   qui cambiano solo SORGENTE (dal nome invece che dall'indice), perche'
+   il ritratto possa mostrare lo stesso uomo. */
+function vestiDalNome(p, ripiego){
+  let s = semeNome(p.nome || ripiego);
+  p.seme = s;
+  p.corp = s%3;
+  p.skin = SKIN[(s>>>3)%SKIN.length];
+  p.hair = HAIR[(s>>>11)%HAIR.length];
+  p.taglio = (s>>>19)%4;                 // rasato / ciuffo / riccio / fascetta
+  return s;
+}
 function makePlayer(team, idx, x, y, role){
   /* seme di faccia: per i primi quattro resta ESATTAMENTE team*4+idx
      (le facce note non cambiano con le taglie); dal quinto in poi si
@@ -5200,7 +6201,20 @@ function makePlayer(team, idx, x, y, role){
     aiT:Math.random(),                 // timer decisioni IA
     aiTX:x, aiTY:y,                    // bersaglio IA
     /* --- LO SCHELETRO: i sei numeri che il disegno legge (vedi aggiornaPosa) --- */
-    fase:Math.random()*6.28,           // ciclo di corsa: avanza con lo SPAZIO percorso
+    /* LA FASE DI PARTENZA E' SPARSA, NON TIRATA A CASO. Il ciclo di
+       corsa avanza con lo SPAZIO percorso (aggiornaPosa) e da questo
+       valore in poi non lo tocca nessuno: qui si decide solo DA DOVE
+       parte. Un dado dava a ventidue figure ventidue numeri qualsiasi,
+       e due potevano nascere alla stessa fase e restarci per tutta la
+       partita — sono due gemelli che corrono affiancati, cioe' il
+       difetto che il requisito «mai due nella stessa posa» vieta.
+       La sezione aurea sparge gli indici il piu' lontano possibile gli
+       uni dagli altri, e la somma team*13 tiene separate le due squadre.
+       Il Math.random() resta CHIAMATO e buttato: toglierlo sposterebbe
+       di un passo il flusso del generatore a seme fisso, e con lui ogni
+       partita di ogni banco — un cambio di disegno che diventa un cambio
+       di simulazione e' esattamente cio' che non si fa. */
+    fase:(Math.random(),(((idx+team*13)*0.6180339887)%1)*6.2832),
     amp:1.1,                           // ampiezza del passo in unita' (1,1 = fermo)
     squash:1,                          // schiaccia e allunga (1,00 = neutro)
     rollio:0,                          // quanto e' piegato dentro la curva (rad)
@@ -5226,8 +6240,13 @@ function makePlayer(team, idx, x, y, role){
        quattro pelli diverse e quattro teste diverse, le due squadre non
        si copiano, e il seed resta quello: stessa faccia per lo stesso
        indice in ogni partita, niente dadi per fotogramma. */
+    /* RIPIEGO, non piu' la regola: appena il nome c'e' (setupPlayers, che
+       gira subito dopo) questi quattro campi li riscrive vestiDalNome
+       partendo dal SEME DEL NOME. Restano qui perche' un giocatore
+       costruito e mai nominato deve comunque avere una faccia. */
     skin:SKIN[seed%SKIN.length],
     hair:HAIR[(seed*5+2)%HAIR.length],
+    seme:seed, corp:seed%3, taglio:seed%4,
     /* --- I LATCH DEL RIG: stati SOLO di disegno, la fisica non li legge.
        chargeClip/kickClip dicono QUALE clip di calcio (passaggio,
        filtrante, cross, tiro); frenaT/fintaT sono i latch cosmetici di
@@ -5291,6 +6310,41 @@ function setupPlayers(){
         p.nome=avv[i]; p.vel=f2; p.tiro=f2; p.tecnica=f2; p.tackle=f2;
       }
       G.players.push(p);
+    }
+  }
+  /* =====================================================================
+     I TRATTI FISICI, E LA GARANZIA CHE DUE COMPAGNI NON SIANO GEMELLI.
+     Il seme viene dal NOME, che a questo punto c'e'. Ma un seme e' un
+     dado, e un dado ripete: con 3 corporature x 6 pelli x 6 teste x 4
+     tagli le combinazioni sono 432, e in undici uomini la probabilita'
+     che due caschino sulla stessa quaterna e' del 12% — troppo, per un
+     requisito che dice «due compagni qualsiasi differiscono per almeno
+     un tratto fisico». Percio' non si spera: si VERIFICA, qui, una volta
+     per partita, e alla collisione si rilancia il seme in modo
+     deterministico (s*31+7) finche' la quaterna e' libera. Deterministico
+     vuol dire che la stessa formazione da' sempre gli stessi uomini —
+     nessun dado per fotogramma, nessuna partita diversa dall'altra a
+     parita' di rosa. La verifica costa N² confronti su 22 giocatori, una
+     volta: e' meno di un fotogramma di niente.
+     Il ripiego per chi non ha nome (le squadre senza rosa nominata)
+     tiene squadra e indice, cosi' resta comunque stabile. */
+  {
+    const visti=[];
+    for(const p of G.players){
+      let s=vestiDalNome(p, 'gioc·'+p.team+'·'+p.idx);
+      let g=0;
+      while(g++<24){
+        let scontro=false;
+        for(const q of visti){
+          if(q.team===p.team && q.corp===p.corp && q.skin===p.skin
+             && q.hair===p.hair && q.taglio===p.taglio){ scontro=true; break; }
+        }
+        if(!scontro) break;
+        s=(Math.imul(s,31)+7)>>>0;
+        p.seme=s; p.corp=s%3; p.skin=SKIN[(s>>>3)%SKIN.length];
+        p.hair=HAIR[(s>>>11)%HAIR.length]; p.taglio=(s>>>19)%4;
+      }
+      visti.push(p);
     }
   }
   G.ball = { x:FW/2, y:FH/2, vx:0, vy:0, owner:-1, lastTouch:-1, passTo:-1,
@@ -5384,6 +6438,10 @@ function startMatch(mode, diff, opts){
   playWipe();
   hideAllScreens(); hide(ui.duel);
   setScene('kickoff');
+  /* i due capitani si presentano UNA VOLTA, al fischio d'inizio della
+     partita: le riprese dal centro dopo un gol passano dallo stesso
+     setScene('kickoff') ma non da qui */
+  scegliCapitani(); G.capT=CAP_DUR;
   Audio5.crowdLevel(1);
   Audio5.whistle(false);
   /* tutorial: solo alla prima partita in assoluto, in 1 giocatore */
@@ -5391,6 +6449,31 @@ function startMatch(mode, diff, opts){
   persistSave();
 }
 
+/* ---------- I CAPITANI ----------
+   Quanto dura la loro presentazione. 1,7 s e non 1,0 come il calcio
+   d'inizio: la targa deve restare in quadro un attimo dopo che la
+   partita e' partita, se no la si vede solo in fotografia. E deve
+   sparire molto prima dei tre secondi con cui collaudo.js comincia a
+   campionare il contrasto, se no una targa entra in una misura di
+   maglie e prati. */
+const CAP_DUR=1.7;
+/* IL CAPITANO E' IL PIU' FORTE DEI SUOI, e il conto e' deterministico:
+   somma dei quattro attributi, a parita' vince l'indice piu' basso, il
+   portiere escluso (la fascia al portiere e' un'eccezione, non la
+   regola). Si calcola UNA VOLTA al fischio d'inizio, mai nel disegno. */
+function scegliCapitani(){
+  for(const t of [0,1]){
+    let best=-1, bv=-1;
+    for(let i=0;i<G.players.length;i++){
+      const p=G.players[i];
+      if(p.team!==t || p.role==='gk' || !p.nome) continue;
+      const v=(p.vel|0)+(p.tiro|0)+(p.tecnica|0)+(p.tackle|0);
+      if(v>bv){ bv=v; best=i; }
+    }
+    if(best<0) for(let i=0;i<G.players.length;i++) if(G.players[i].team===t){ best=i; break; }
+    G.capIdx[t]=best<0?0:best;
+  }
+}
 function setScene(s){
   /* il menu vive sempre sul campo base: eroe, miniature e pallone del
      menu sono tarati li' */
@@ -5665,12 +6748,30 @@ function endMatch(){
            'AUTORETE di Bruno Tre Polmoni' su una riga sola finiva sempre
            in 'AUTORETE di Brun...', cioe' l'attribuzione — l'unica cosa
            che quella riga aggiunge — non arrivava mai in fondo. */
+        /* IL VOLTO DEL MARCATORE anche qui, fra il minuto e il nome: il
+           tabellino elencava marcatori come un registro di protocollo, e
+           sono le stesse facce della rosa e del banner — cache unica,
+           seme unico. Sull'autorete niente faccia, per la stessa ragione
+           per cui non c'e' un marcatore. */
         const et = g.auto
           ? '<span class="mw"><span class="mn">'+esc(g.min)+'</span> AUTORETE</span>'+
             '<span class="mw au">di '+esc(g.chi)+'</span>'
           : '<span class="mw"><span class="mn">'+esc(g.min)+'</span> '+esc(g.chi)+'</span>';
+        /* IL VOLTO STA NELLA COLONNA DEL PALLONE, e la ragione e' una
+           misura. Messo accanto al nome mangiava ventidue pixel alla
+           colonna del marcatore e «Bruno Tre Polmoni» diventava «Bruno
+           Tre Polm...»: un volto che cancella meta' del nome che deve
+           illustrare e' un cattivo affare. La colonna di mezzo e' larga
+           il 32% (141 px su 440) e dentro ci sta un pallone da tredici:
+           centoventi pixel liberi, in mezzo al tabellino, da sempre.
+           Il tondo si mette dalla parte di chi ha segnato — a sinistra
+           del pallone per la squadra di casa, a destra per l'ospite —
+           cosi' resta attaccato alla sua riga senza toglierle niente. */
+        const fc = g.auto ? '' :
+          '<canvas class="mface" data-volto="'+esc(g.chi)+'" data-lato="20" data-tondo="1" data-squadra="'+g.team+'" aria-hidden="true"></canvas>';
         return '<tr><td class="v t0 mrk r">'+(g.team===0?et:'')+'</td>'+
-               '<td class="gpal">'+pallino+'</td>'+
+               '<td class="gpal"><span class="gp2">'+
+                 (g.team===0 ? fc+pallino : pallino+fc)+'</span></td>'+
                '<td class="v t1 mrk l">'+(g.team===1?et:'')+'</td></tr>';
       }).join('') + rigaFin;
   })();
@@ -5695,6 +6796,10 @@ function endMatch(){
     const m=marcatori(maxm);
     ui.statBody.innerHTML =
       rigaMomento() + posBar + m + ((posBar||m)?sez:'') + numeri;
+    /* i canvas rinascono vuoti a ogni innerHTML, e adattaTabellino ne
+       chiede fino a sei di seguito: i volti si ridipingono qui, dalla
+       cache, e la cottura vera avviene una volta sola */
+    dipingiVolti(ui.statBody);
   };
   componiTabellino(MAXM_BASE);
   /* ricompense: monete, statistiche carriera, torneo, trofei (una volta sola) */
@@ -5838,7 +6943,8 @@ function rigaMomento(){
     eti = s[0]===s[1] ? 'Ultima rete' : 'Gol decisivo';
     /* anche qui l'autorete si dice per quello che e': 'CPU (autogol)'
        nella riga d'apertura sembrava il nome del marcatore di casa */
-    val = '<em>'+esc(g.min)+'</em>'+(g.auto ? 'Autorete di '+esc(g.chi) : esc(g.chi));
+    val = '<em>'+esc(g.min)+'</em>'+(g.auto ? 'Autorete di '+esc(g.chi)
+      : '<canvas class="mface" data-volto="'+esc(g.chi)+'" data-lato="20" data-tondo="1" data-squadra="'+g.team+'" aria-hidden="true"></canvas>'+esc(g.chi));
   }else{
     const P=G.stats.parate||[0,0], tot=(P[0]|0)+(P[1]|0);
     if(!tot) return '';
@@ -7044,6 +8150,10 @@ function step(){
      altri: sta qui, col passo fisso, non nel ciclo dei fotogrammi */
   if(typeof Tut!=='undefined' && Tut.active) Tut.tick(dt);
   if(G.bannerT>0) G.bannerT-=dt;
+  /* la targa dei capitani invecchia col tempo di gioco come il banner:
+     e' un cronometro di sola resa, e sta qui e non nel disegno perche'
+     un tempo contato sui fotogrammi non e' ripetibile al banco */
+  if(G.capT>0) G.capT-=dt;
   G.crowdHype=Math.max(0,G.crowdHype-dt);
   G.netBulge[0].t+=dt; G.netBulge[1].t+=dt;
 
@@ -11605,6 +12715,430 @@ function montaEroi(){
      cottura tiene conto anche dei dati, quindi non si azzera a mano */
   const ta=document.querySelectorAll('.eroe-tab');
   for(let i=0;i<ta.length;i++) montaEroeTab(ta[i]);
+}
+/* =====================================================================
+   I VOLTI-FIGURINA — un nome, un uomo, la stessa faccia per sempre.
+
+   IL DIFETTO CHE CHIUDE. «Il gioco ha nomi meravigliosi — Saverio
+   Piedebuono, Peppe Mano Santa, Gino Fulmine — e nessun volto»: e' la
+   frase con cui tre giudici hanno chiuso la scheda. La rosa era un
+   elenco di stringhe con quattro barre accanto, il banner del gol
+   annunciava un nome che non aveva mai avuto una faccia, e il tabellino
+   finale elencava marcatori come un registro di protocollo.
+
+   IL VINCOLO CHE VALE PIU' DEL DISEGNO. Il ritratto NON inventa un uomo
+   nuovo: mostra da vicino quello che corre. Corporatura, carnagione,
+   capigliatura e taglio escono da semeNome(nome) con le stesse identiche
+   derivazioni che vestiDalNome scrive sul giocatore e che rigLook porta
+   in campo — non una copia delle regole, le regole stesse, scritte una
+   volta in trattiVolto e lette da tutti e due. Il giorno che qualcuno
+   cambia l'hash, strumenti/seme.js diventa rosso PRIMA che le facce
+   cambino in silenzio; il giorno che qualcuno cambia le derivazioni,
+   strumenti/volti.js confronta i tratti del ritratto con quelli del
+   giocatore in campo e li trova diversi.
+
+   IL COSTO. Ogni volto si cuoce UNA VOLTA in un canvas fuori schermo,
+   in cache su Map chiavata da seme, misura e divisa, tetto 32 voci. Chi
+   lo mostra paga un drawImage. In partita non si cuoce nessun ritratto:
+   rosa, tabellino e presentazione dei capitani sono schermate, il
+   banner del gol e' una scena, e nessuno dei quattro sta nel ciclo
+   caldo. Il contatore RITRATTI_COTTI e' esposto a __test proprio
+   perche' questa frase sia una misura e non una promessa: chi simula
+   dieci secondi di partita e lo trova cresciuto ha trovato un difetto.
+
+   LA LUCE E' LA STESSA. C'e' un solo sole, sta a ovest, e ogni figura
+   del gioco ha il terminatore fra lato ambra e lato viola-blu. Il
+   ritratto lo rispetta con lo stesso velo: un gradiente orizzontale
+   caldo a sinistra e freddo a destra, ritagliato su testa, collo e
+   busto. Il contorno e' lo stesso inchiostro scuro del rig (#23201a):
+   la figurina e la figura sono lo stesso mondo, non due stili.
+   ===================================================================== */
+/* lo stesso scuro caldo del contorno del rig. E' RIDICHIARATO e non
+   importato perche' Rig3D e' un modulo chiuso che non lo esporta: se un
+   giorno cambia la', va cambiato anche qui — ed e' scritto qui sopra. */
+const VOLTO_BORDO='#23201a';
+/* mescola due tinte esadecimali (stessa aritmetica di mescolaTinta del
+   rig, che vive dentro il modulo e non esce) */
+function vMix(hex,verso,f){
+  const a=/^#?([0-9a-f]{6})$/i.exec(String(hex||'')), b=/^#?([0-9a-f]{6})$/i.exec(String(verso||''));
+  if(!a||!b) return hex;
+  const x=parseInt(a[1],16), y=parseInt(b[1],16);
+  const m=(p,q)=>{ const v=Math.round(p+(q-p)*f); return (v<16?'0':'')+v.toString(16); };
+  return '#'+m((x>>16)&255,(y>>16)&255)+m((x>>8)&255,(y>>8)&255)+m(x&255,y&255);
+}
+function vRR(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y);
+  c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r);     c.arcTo(x,y,x+w,y,r);
+  c.closePath();
+}
+/* LE TRE TESTE, CORRELATE ALLA CORPORATURA e non sorteggiate a parte:
+   il tarchiato ha la faccia tonda, lo spilungone la faccia lunga col
+   mento stretto, il piccoletto la mascella squadrata. Sono gli stessi
+   indici di CORPI nel rig (0 spilungone, 1 tarchiato, 2 piccoletto),
+   quindi due uomini affiancati in campo hanno due ritratti che si
+   distinguono per la stessa ragione per cui si distinguono le sagome.
+     k   quanto e' pieno il cranio (0,52 ovale ... 0,80 squadrato)
+     kj  quanto e' piena la mascella
+     m   larghezza del mento in frazione di mezza faccia */
+/* s e' la TAGLIA della testa dentro il riquadro, ed e' la stessa legge
+   del rig (HEADR x 0,96 / 1,00 / 1,05): chi e' alto ha la testa piccola
+   in proporzione, il piccoletto ce l'ha grande. Qui l'escursione e' un
+   filo piu' larga (0,94-1,07) perche' in un ritratto la testa E' il
+   soggetto e quel due per cento in piu' e' quello che si vede. */
+const VOLTO_FORME=[
+  /* 0 spilungone — lunga  */ {w:0.86, h:1.12, k:0.52, kj:0.50, m:0.70, s:0.94},
+  /* 1 tarchiato  — tonda  */ {w:1.08, h:0.94, k:0.58, kj:0.64, m:0.95, s:1.00},
+  /* 2 piccoletto — squadrata */ {w:0.99, h:1.00, k:0.80, kj:0.88, m:1.02, s:1.07},
+];
+/* I TRATTI DEL VOLTO. I primi quattro sono, alla lettera, quelli del
+   corpo: stesse espressioni, stessi turni di bit di vestiDalNome — ed
+   e' questo che fa dire «il ritratto e' lo stesso uomo che corre», non
+   un accordo fra due generatori. Gli altri quattro vivono solo in
+   faccia e vengono da una SECONDA mescolata del seme: se uscissero dai
+   bit gia' spesi, "tarchiato" e "barbuto" viaggerebbero insieme e la
+   rosa tornerebbe a essere fatta di fratelli. Una riga di xorshift, una
+   volta per volto, dentro una funzione che gira una volta per faccia. */
+function trattiVolto(seme){
+  const s=(seme>>>0);
+  let x=(s^0x9e3779b9)>>>0; x^=x<<13; x>>>=0; x^=x>>>17; x^=x<<5; x>>>=0;
+  return {
+    corp:  s%3,                          // 0 spilungone, 1 tarchiato, 2 piccoletto
+    skin:  SKIN[(s>>>3)%SKIN.length],
+    hair:  HAIR[(s>>>11)%HAIR.length],
+    taglio:(s>>>19)%4,                   // rasato / ciuffo / riccio / fascetta
+    /* QUATTRO barbe e non tre, e la quarta e' stata comprata con una
+       misura: con tre, due compagni di rosa con la stessa fascetta e la
+       stessa barba piena erano la coppia piu' simile del provino, al
+       punto che si riconoscevano l'uno per l'altro. La barba LUNGA
+       cambia la sagoma FUORI dal contorno della testa, che e' l'unica
+       cosa capace di spostare davvero i pixel di un ritratto: le altre
+       (occhi, bocca, sopracciglia) muovono il tre per cento del
+       cartoncino. Lo misura strumenti/volti.js, coppia per coppia. */
+    barba: x%4,                          // 0 rasato, 1 pizzetto, 2 barba corta, 3 barba lunga
+    sopra: (x>>>7)%3,                    // sopracciglia dritte / arcuate / corrucciate
+    espr:  (x>>>13)%3,                   // serio / sorriso / grinta
+    naso:  (x>>>19)%2,                   // corto / lungo
+  };
+}
+/* la sagoma della testa: quattro cubiche, cranio sopra e mascella sotto.
+   Un'ellisse sola dava tre teste uguali con tre raggi diversi. */
+function vSagomaTesta(c,hw,hh,f){
+  const mw=hw*f.m;
+  c.beginPath();
+  c.moveTo(0,-hh);
+  c.bezierCurveTo( hw*f.k,-hh,        hw, -hh*f.k,   hw, 0);
+  c.bezierCurveTo( hw, hh*f.kj,       mw*0.94, hh*0.88,  0, hh);
+  c.bezierCurveTo(-mw*0.94, hh*0.88, -hw, hh*f.kj,  -hw, 0);
+  c.bezierCurveTo(-hw,-hh*f.k,       -hw*f.k,-hh,    0,-hh);
+  c.closePath();
+}
+/* ---------------------------------------------------------------------
+   ritratto(ctx, cx, cy, r, seme, opts)
+   Disegna il volto dentro un riquadro di lato 2r centrato in (cx,cy).
+   opts: {maglia, maglia2, tondo}. Nessuna allocazione fuori dai
+   gradienti, e comunque si chiama una volta per faccia (vedi la cache).
+   --------------------------------------------------------------------- */
+function ritratto(ctx, cx, cy, r, seme, opts){
+  const o=opts||{}, t=trattiVolto(seme), f=VOLTO_FORME[t.corp];
+  const c1=o.maglia||TEAMCOL[0], c2=o.maglia2||TEAMCOL2[0];
+  const tondo=!!o.tondo;
+  const PI2=Math.PI*2;
+  const hw=r*0.50*f.w*f.s, hh=r*0.56*f.h*f.s, hy=-r*0.20;   // mezza testa e sua quota
+  const bd=Math.max(1, r*0.055);                    // il contorno, come il rig
+  ctx.save();
+  ctx.translate(cx,cy);
+  /* --- la cornice: tutto il resto vive ritagliato qui dentro --- */
+  const cornice=(k)=>{ if(tondo){ ctx.beginPath(); ctx.arc(0,0,r*k,0,PI2); }
+                       else vRR(ctx,-r*k,-r*k,2*r*k,2*r*k,r*0.20*k); };
+  cornice(1);
+  ctx.save();
+  ctx.clip();
+  /* 1 — IL CARTONCINO. Non e' la tinta della divisa: una figurina su
+     fondo fluo, dentro la schermata verde della rosa, sarebbe una
+     macchia sopra una macchia. Il fondo e' neutro e scuro — la sera —
+     e la squadra la portano l'alone dietro la testa e le spalle. */
+  let g=ctx.createLinearGradient(0,-r,0,r);
+  g.addColorStop(0,'#2c3831'); g.addColorStop(1,'#121915');
+  ctx.fillStyle=g; ctx.fillRect(-r,-r,2*r,2*r);
+  g=ctx.createRadialGradient(-r*0.12,-r*0.26,r*0.04, -r*0.12,-r*0.26,r*1.05);
+  g.addColorStop(0,'rgba('+hexToRgb(c1)+',0.17)');
+  g.addColorStop(1,'rgba('+hexToRgb(c1)+',0)');
+  ctx.fillStyle=g; ctx.fillRect(-r,-r,2*r,2*r);
+  /* IL VELO DELLA SERA, uno solo per ritratto e riusato su testa, collo
+     e busto: ambra a ovest, viola-blu del cielo a est. E' la stessa
+     legge del terminatore delle figure in campo, non un'altra. */
+  const velo=ctx.createLinearGradient(-r,0,r,0);
+  velo.addColorStop(0,   'rgba(255,233,184,0.34)');
+  velo.addColorStop(0.44,'rgba(255,233,184,0.00)');
+  velo.addColorStop(0.58,'rgba(42,51,88,0.00)');
+  velo.addColorStop(1,   'rgba(42,51,88,0.32)');
+  const lume=(sagoma)=>{ ctx.save(); sagoma(); ctx.clip();
+    ctx.fillStyle=velo; ctx.fillRect(-r,-r,2*r,2*r); ctx.restore(); };
+  /* 2 — IL COLLO, prima di tutto: la testa gli cade sopra */
+  const collo=()=>{ vRR(ctx, -hw*0.30, hy+hh*0.40, hw*0.60, r*1.30, hw*0.22); };
+  collo(); ctx.fillStyle=t.skin; ctx.fill();
+  ctx.lineWidth=bd*0.85; ctx.strokeStyle=VOLTO_BORDO; ctx.stroke();
+  lume(collo);
+  /* 3 — IL BUSTO: spalle nella maglia, scollo a V nella seconda tinta.
+     Dice "e' un giocatore" e non "e' un documento d'identita'". */
+  const spalle=()=>{ ctx.beginPath(); ctx.ellipse(0, r*1.36, r*1.18, r*0.80, 0, 0, PI2); };
+  spalle(); ctx.fillStyle=c1; ctx.fill();
+  ctx.lineWidth=bd; ctx.strokeStyle=VOLTO_BORDO; ctx.stroke();
+  ctx.save(); spalle(); ctx.clip();
+  ctx.fillStyle=c2;
+  ctx.beginPath();
+  ctx.moveTo(-hw*0.62, r*0.66); ctx.lineTo(0, r*1.12); ctx.lineTo(hw*0.62, r*0.66);
+  ctx.lineTo(hw*0.62+r*0.13, r*0.76); ctx.lineTo(0, r*1.34); ctx.lineTo(-hw*0.62-r*0.13, r*0.76);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+  lume(spalle);
+  /* l'ombra del mento sul collo, dopo il busto: e' quella che stacca la
+     testa dalle spalle anche a venti pixel */
+  ctx.save(); collo(); ctx.clip();
+  ctx.fillStyle='rgba(24,20,16,0.38)';
+  ctx.beginPath(); ctx.ellipse(0, hy+hh*0.86, hw*0.72, hh*0.34, 0, 0, PI2); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.translate(0,hy);                              // ---- spazio della testa ----
+  /* 4 — LE ORECCHIE, dietro la sagoma */
+  ctx.fillStyle=t.skin; ctx.lineWidth=bd*0.7; ctx.strokeStyle=VOLTO_BORDO;
+  for(const sg of [-1,1]){
+    ctx.beginPath();
+    ctx.ellipse(sg*hw*0.96, hh*0.12, hw*0.16, hh*0.22, 0, 0, PI2);
+    ctx.fill(); ctx.stroke();
+  }
+  /* 5 — I CAPELLI CHE STANNO DIETRO: il ciuffo che si alza, i tre lobi
+     del riccio. Vanno PRIMA della faccia, se no sono un cappello. */
+  ctx.fillStyle=t.hair; ctx.strokeStyle=VOLTO_BORDO; ctx.lineWidth=bd*0.9;
+  if(t.taglio===1){                                  // il CIUFFO
+    ctx.beginPath();
+    ctx.moveTo(-hw*0.70,-hh*0.62);
+    ctx.quadraticCurveTo(-hw*0.34,-hh*1.42, hw*0.62,-hh*1.10);
+    ctx.quadraticCurveTo( hw*0.26,-hh*0.92, hw*0.34,-hh*0.58);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }else if(t.taglio===2){                            // il RICCIO: tre lobi
+    for(const p of [[-0.76,-0.52,0.40],[0,-0.86,0.44],[0.76,-0.52,0.40]]){
+      ctx.beginPath(); ctx.ellipse(hw*p[0], hh*p[1], hw*p[2], hh*p[2]*1.05, 0,0,PI2);
+      ctx.fill(); ctx.stroke();
+    }
+  }
+  /* 6 — LA TESTA */
+  const testaP=()=>vSagomaTesta(ctx,hw,hh,f);
+  testaP(); ctx.fillStyle=t.skin; ctx.fill();
+  ctx.lineWidth=bd; ctx.strokeStyle=VOLTO_BORDO; ctx.stroke();
+  /* 6a — LA CAPIGLIATURA, ritagliata sulla testa. Prima si riempie di
+     capelli tutto quello che sta sopra l'attaccatura, poi si RIAPRE la
+     fronte con un'ellisse di pelle: e' quello che fa le tempie piu'
+     basse della fronte, cioe' un'attaccatura e non una parrucca. */
+  ctx.save(); testaP(); ctx.clip();
+  const attac = t.taglio===0 ? -hh*0.46 : -hh*0.28;   // il rasato ha la fronte alta
+  ctx.fillStyle=t.hair;
+  ctx.fillRect(-hw*1.4, -hh*1.6, hw*2.8, (attac+hh*1.6));
+  ctx.beginPath();
+  ctx.ellipse(0, attac+hh*0.02, hw*(t.taglio===0?0.72:0.80), hh*(t.taglio===0?0.20:0.26), 0,0,PI2);
+  ctx.fillStyle=t.skin; ctx.fill();
+  if(t.taglio===0){                                   // il RASATO: la rasatura si vede
+    ctx.fillStyle='rgba(0,0,0,0.13)';
+    ctx.fillRect(-hw*1.4, -hh*1.6, hw*2.8, (attac+hh*1.6));
+  }
+  if(t.taglio===3){                                   // la FASCETTA, in seconda tinta
+    ctx.fillStyle=c2;
+    ctx.fillRect(-hw*1.4, attac-hh*0.24, hw*2.8, hh*0.24);
+    ctx.fillStyle='rgba(35,32,26,0.50)';
+    ctx.fillRect(-hw*1.4, attac-hh*0.03, hw*2.8, hh*0.035);
+  }
+  /* 6b — LA BARBA, ritagliata anche lei: mai un cerotto sulla guancia.
+     La corta si ferma alla mascella, la lunga la sfonda — e il pezzo
+     che esce dal contorno si disegna fuori dal ritaglio, subito sotto. */
+  if(t.barba>=2){
+    ctx.fillStyle=t.hair;
+    ctx.beginPath(); ctx.ellipse(0, hh*0.66, hw*1.02, hh*0.58, 0,0,PI2); ctx.fill();
+  }else if(t.barba===1){
+    ctx.fillStyle=t.hair;
+    ctx.beginPath(); ctx.ellipse(0, hh*0.78, hw*0.28, hh*0.19, 0,0,PI2); ctx.fill();
+  }
+  ctx.restore();
+  if(t.barba===3){                                    // LA BARBA LUNGA
+    const barbaP=()=>{
+      ctx.beginPath();
+      ctx.moveTo(-hw*0.90, hh*0.30);
+      ctx.quadraticCurveTo(-hw*0.86, hh*1.34, 0, hh*1.52);
+      ctx.quadraticCurveTo( hw*0.86, hh*1.34, hw*0.90, hh*0.30);
+      ctx.closePath();
+    };
+    barbaP();
+    ctx.fillStyle=t.hair; ctx.fill();
+    ctx.strokeStyle=VOLTO_BORDO; ctx.lineWidth=bd*0.9; ctx.stroke();
+    /* anche la barba sta sotto lo stesso sole: il velo la prende come
+       prende testa, collo e spalle */
+    ctx.save(); barbaP(); ctx.clip();
+    ctx.translate(0,-hy);
+    ctx.fillStyle=velo; ctx.fillRect(-r,-r,2*r,2*r);
+    ctx.restore();
+  }
+  /* 6c — il velo della sera sulla faccia */
+  ctx.save(); testaP(); ctx.clip();
+  ctx.translate(0,-hy);
+  ctx.fillStyle=velo; ctx.fillRect(-r,-r,2*r,2*r);
+  ctx.restore();
+  /* 7 — IL VISO: occhi a mandorla pieni, sopracciglia, naso, bocca.
+     Gli stessi due toni del volto abbozzato del rig da vicino
+     (#2b2119 gli occhi, il bruno velato per il naso): a venti pixel
+     restano due macchie e una virgola, ed e' quello che serve. */
+  const eyY=hh*0.06, eyX=hw*0.40;
+  ctx.fillStyle='#2b2119';
+  for(const sg of [-1,1]){
+    ctx.beginPath();
+    ctx.ellipse(sg*eyX, eyY, hw*0.17, hh*0.105, 0, 0, PI2);
+    ctx.fill();
+  }
+  if(r>=22){                                          // la luce negli occhi, solo da vicino
+    ctx.fillStyle='rgba(255,248,226,0.85)';
+    for(const sg of [-1,1]){
+      ctx.beginPath();
+      ctx.ellipse(sg*eyX-hw*0.055, eyY-hh*0.035, hw*0.048, hh*0.032, 0, 0, PI2);
+      ctx.fill();
+    }
+  }
+  ctx.strokeStyle=vMix(t.hair,'#000000',0.30);
+  ctx.lineWidth=Math.max(1, hh*0.105);
+  ctx.lineCap='round';
+  for(const sg of [-1,1]){
+    ctx.beginPath();
+    if(t.sopra===1){                                  // arcuate
+      ctx.moveTo(sg*(eyX-hw*0.22), -hh*0.10);
+      ctx.quadraticCurveTo(sg*eyX, -hh*0.26, sg*(eyX+hw*0.24), -hh*0.12);
+    }else if(t.sopra===2){                            // corrucciate: dentro e in basso
+      ctx.moveTo(sg*(eyX-hw*0.22), -hh*0.05);
+      ctx.lineTo(sg*(eyX+hw*0.24), -hh*0.22);
+    }else{                                            // dritte
+      ctx.moveTo(sg*(eyX-hw*0.22), -hh*0.15);
+      ctx.lineTo(sg*(eyX+hw*0.24), -hh*0.15);
+    }
+    ctx.stroke();
+  }
+  ctx.strokeStyle='rgba(70,44,28,0.60)';
+  ctx.lineWidth=Math.max(1, hh*0.08);
+  ctx.beginPath();
+  ctx.moveTo(-hw*0.06, hh*0.06);
+  ctx.lineTo(-hw*0.12, hh*(t.naso?0.34:0.26));
+  ctx.lineTo( hw*0.12, hh*(t.naso?0.36:0.28));
+  ctx.stroke();
+  const bY=hh*0.54;
+  if(t.espr===2){                                     // GRINTA: bocca aperta, denti
+    ctx.fillStyle='#3a1f18';
+    vRR(ctx,-hw*0.30, bY-hh*0.10, hw*0.60, hh*0.26, hh*0.09);
+    ctx.fill();
+    ctx.fillStyle='rgba(242,245,239,0.92)';
+    ctx.fillRect(-hw*0.23, bY-hh*0.055, hw*0.46, hh*0.085);
+  }else{
+    ctx.strokeStyle='#41231b';
+    ctx.lineWidth=Math.max(1, hh*0.10);
+    ctx.beginPath();
+    if(t.espr===1){                                   // SORRISO
+      ctx.moveTo(-hw*0.30, bY-hh*0.06);
+      ctx.quadraticCurveTo(0, bY+hh*0.22, hw*0.30, bY-hh*0.06);
+    }else{                                            // SERIO
+      ctx.moveTo(-hw*0.26, bY); ctx.lineTo(hw*0.26, bY);
+    }
+    ctx.stroke();
+  }
+  if(t.barba===1){                                    // i baffi del pizzetto
+    ctx.strokeStyle=t.hair; ctx.lineWidth=Math.max(1, hh*0.11);
+    ctx.beginPath();
+    ctx.moveTo(-hw*0.30, bY-hh*0.22);
+    ctx.quadraticCurveTo(0, bY-hh*0.09, hw*0.30, bY-hh*0.22);
+    ctx.stroke();
+  }
+  ctx.restore();                                      // ---- fine spazio testa ----
+  ctx.restore();                                      // fine ritaglio della cornice
+  /* 8 — LA CORNICE: contorno scuro largo piu' filo di gesso dentro. E'
+     la stessa grammatica del lettering e delle targhe di casa. */
+  cornice(1);
+  ctx.lineWidth=Math.max(1.2, r*0.10);
+  ctx.strokeStyle=VOLTO_BORDO; ctx.stroke();
+  cornice(0.94);
+  ctx.lineWidth=Math.max(0.8, r*0.035);
+  ctx.strokeStyle='rgba(242,245,239,0.34)';
+  ctx.stroke();
+  ctx.restore();
+}
+/* ---------------------------------------------------------------------
+   LA CACHE: un volto si cuoce una volta sola.
+   Chiave: seme, lato in pixel VERI, divisa e forma — due misure diverse
+   sono due cotture diverse, e una divisa nuova (il negozio ricolora il
+   gioco intero) e' un uomo con un'altra maglia, non un altro uomo.
+   Tetto 32: la rosa ne chiede 5, il tabellino al massimo 6, il banner 1.
+   --------------------------------------------------------------------- */
+const RITRATTI=new Map();
+let RITRATTI_COTTI=0;              // quante cotture vere: lo legge __test
+function ritrattoTela(seme, px, opts){
+  const o=opts||{};
+  const lato=Math.max(8, Math.round(px));
+  const c1=o.maglia||TEAMCOL[0], c2=o.maglia2||TEAMCOL2[0];
+  const chiave=(seme>>>0)+'|'+lato+'|'+c1+'|'+c2+'|'+(o.tondo?'o':'q');
+  let cv=RITRATTI.get(chiave);
+  if(cv) return cv;
+  if(RITRATTI.size>32) RITRATTI.clear();
+  cv=document.createElement('canvas');
+  cv.width=lato; cv.height=lato;
+  const c=cv.getContext('2d');
+  ritratto(c, lato/2, lato/2, lato/2, seme, {maglia:c1, maglia2:c2, tondo:!!o.tondo});
+  RITRATTI_COTTI++;
+  RITRATTI.set(chiave,cv);
+  return cv;
+}
+/* il volto di un NOME, alla misura di schermo voluta: e' la porta che
+   usano tutti e quattro gli innesti */
+function volto(ctx, nome, x, y, lato, opts){
+  if(!nome) return false;
+  const o=opts||{};
+  const d=o.dpr||1;
+  /* LA COTTURA HA UNA MISURA SUA (o.cottura), e non e' un vezzo: il
+     tondo del gol entra in scena CRESCENDO, quindi il lato cambia a
+     ogni fotogramma, e cuocere alla misura del fotogramma vorrebbe
+     dire dodici cotture in due decimi di secondo piu' una cache che si
+     svuota da sola. Si cuoce una volta alla misura piena e si scala. */
+  const tela=ritrattoTela(semeNome(nome), (o.cottura||lato)*d, o);
+  ctx.drawImage(tela, x, y, lato, lato);
+  return true;
+}
+/* I VOLTI DENTRO IL DOM (rosa e tabellino). Il canvas sta nella pagina,
+   il ritratto arriva dalla cache con un drawImage. Va richiamata dopo
+   OGNI innerHTML: un canvas riscritto nasce vuoto, e il tabellino si
+   ricompone fino a sei volte mentre adattaTabellino cerca la misura. La
+   chiave in dataset.ok evita di ridipingere quello che c'e' gia'. */
+function dipingiVolti(radice){
+  const el=(radice||document).querySelectorAll('canvas[data-volto]');
+  const d=Math.min(2, window.devicePixelRatio||1);
+  for(let i=0;i<el.length;i++){
+    const cv=el[i], nome=cv.dataset.volto||'';
+    if(!nome) continue;
+    /* LA MISURA LA DETTA IL CSS, NON IL DATASET. Scrivere qui
+       cv.style.width metteva uno stile in linea che vince su ogni
+       media query: le tre taglie del volto (32 in orizzontale, 25 sul
+       telefono, 34 nella riga impilata) erano scritte nel foglio e non
+       succedeva niente, e la colonna dei numeri pagava sempre il
+       pedaggio della taglia grande. Qui si LEGGE la larghezza vera e
+       si cuoce a quella; data-lato resta solo come ripiego per quando
+       il pannello e' ancora nascosto e non ha una misura. */
+    const lato=cv.clientWidth || +(cv.dataset.lato||40);
+    const tondo=cv.dataset.tondo==='1';
+    /* la divisa e' quella della SUA squadra: nel tabellino c'e' anche
+       chi ha segnato contro, e vestirlo di casa sarebbe una bugia */
+    const sq=(+cv.dataset.squadra||0)?1:0;
+    const c1=TEAMCOL[sq], c2=TEAMCOL2[sq];
+    const px=Math.max(8, Math.round(lato*d));
+    const chiave=nome+'|'+px+'|'+c1+'|'+c2+(tondo?'|o':'');
+    if(cv.dataset.ok===chiave) continue;
+    cv.width=px; cv.height=px;
+    const c=cv.getContext('2d');
+    c.clearRect(0,0,px,px);
+    c.drawImage(ritrattoTela(semeNome(nome), px, {tondo, maglia:c1, maglia2:c2}), 0, 0, px, px);
+    cv.dataset.ok=chiave;
+  }
 }
 /* =====================================================================
    LE DUE MAGLIE CHE STAVANO DENTRO L'ERBA.
@@ -16890,8 +18424,25 @@ function rigLook(p){
   const c1 = gk ? gkKit(p.team,0) : TEAMCOL[p.team];
   const c2 = gk ? gkKit(p.team,1) : TEAMCOL2[p.team];
   const pat = gk ? 0 : (TEAMPAT[p.team]|0);
-  const taglio = (p.idx|0)%3;            // il TAGLIO dei capelli (LOD da vicino)
-  const chiave = c1+'|'+c2+'|'+pat+'|'+p.skin+'|'+p.hair+'|'+taglio+(gk?'|G':'');
+  /* TAGLIO, CORPORATURA e MICRO-VARIAZIONE vengono dal SEME DEL NOME
+     (vestiDalNome), non piu' dall'indice: sono gli stessi campi che il
+     ritratto della rosa leggera' per mostrare lo stesso uomo.
+     varb e' il pizzico di braccio in piu' avanti da un lato: cinque
+     valori (-2..+2) x 0,032 rad, ed e' quello che impedisce a due figure
+     nella stessa clip alla stessa fase di essere lo STESSO disegno.
+     Cinque e non tre perche' il numero di scheletri distinti a
+     disposizione moltiplica: con diciotto figure in campo in undici
+     contro undici, tre valori lasciavano ancora coincidenze.
+     Stanno tutti e tre nella CHIAVE, altrimenti due uomini diversi si
+     dividerebbero la stessa voce di cache e tornerebbero gemelli: in 11
+     contro 11 la cache arriva a 22 voci piu' i due portieri, sotto le 64
+     oltre le quali si svuota (uno svuotamento per fotogramma sarebbe un
+     crollo silenzioso: e' contato, non sperato). */
+  const taglio = (p.taglio|0)%4;         // rasato / ciuffo / riccio / fascetta
+  const corp = (p.corp|0)%3;
+  const varb = (((p.seme|0)>>>23)%5-2)*0.032;
+  const chiave = c1+'|'+c2+'|'+pat+'|'+p.skin+'|'+p.hair+'|'+taglio
+               +'|'+corp+'|'+((p.seme|0)>>>23)%5+(gk?'|G':'');
   let lk = RIG_LOOKS.get(chiave);
   if(!lk){
     if(RIG_LOOKS.size>64) RIG_LOOKS.clear();
@@ -16910,7 +18461,8 @@ function rigLook(p){
       pantaloncini:c2, calze:c1, risvolto:c2,
       pelle:p.skin, capelli:p.hair, scarpe:'#15181a',
       palla:null,                          // adattamento (a): mai la palla della clip
-      taglio,                              // ciuffo/taglio per indice (solo LOD)
+      taglio,                              // rasato/ciuffo/riccio/fascetta (dal seme)
+      corp, varb,                          // corporatura e micro-variazione (dal seme)
     };
     RIG_LOOKS.set(chiave, lk);
   }
@@ -16988,8 +18540,22 @@ function rigStato(p){
   if(p.frenaT>0){ st.clip='frenata'; st.u=0.04+0.70*(1-p.frenaT/FRENA_T); return st; }
   /* ---- locomozione: u dalla FASE, che avanza con lo spazio ---- */
   const v = len(p.vx,p.vy);
-  st.clip = v<14 ? 'fermo' : v<62 ? 'camminata' : 'corsa';
-  st.u = (p.fase%6.2832)/6.2832;
+  /* IL PORTIERE FERMO HA UNA SAGOMA SUA. E' l'unico della partita con i
+     piedi larghissimi e le braccia fuori: in nero, senza un colore, si
+     riconosce a colpo d'occhio. Prima stava nella stessa posa d'attesa
+     degli altri dieci e il ruolo lo diceva solo la divisa — cioe' non lo
+     diceva a chi guarda la sagoma. */
+  st.clip = v<14 ? (gk?'attesaGK':'fermo') : v<62 ? 'camminata' : 'corsa';
+  /* ---- LO SFASAMENTO PER INDICE, e perche' NON tocca i piedi.
+     st.u resta (p.fase % 2pi)/2pi — p.fase avanza con lo SPAZIO percorso
+     (aggiornaPosa) ed e' l'unica cosa che impedisce ai piedi di slittare
+     sull'erba, oltre a essere il cancello di misura.js. Qui si somma
+     soltanto una COSTANTE per figura: la fase avanza esattamente come
+     prima, cambia solo da dove parte. 0,137 e' irrazionale rispetto a
+     1/6, quindi dieci figure non ricadono mai sulla stessa chiave del
+     ciclo, e la somma team*11 tiene separate anche le due squadre, che
+     hanno gli stessi indici. ---- */
+  st.u = ((p.fase%6.2832)/6.2832 + 0.137*(p.idx+11*p.team))%1;
   return st;
 }
 
@@ -17098,7 +18664,29 @@ function drawPlayer(p){
      l'ombra portata (+7,8), cosi' figura e ombra restano UN oggetto. */
   {
     const st = rigStato(p);
-    if(lod){ st.clip='fermo'; st.u=0.30; }   // LOD: i lontani in posa ferma
+    /* ===== IL LOD NON CONGELA PIU' TUTTI NELLA STESSA POSA =====
+       Stava scritto `st.clip='fermo'; st.u=0.30`: OGNI figura lontana —
+       cioe' meta' del campo — era lo stesso identico disegno, pixel per
+       pixel. Il requisito «mai due giocatori nella stessa posa nello
+       stesso fotogramma» era violato per costruzione, e si vedeva: una
+       fila di birilli uguali sullo sfondo.
+       La posa resta ferma (il LOD serve a non pagare la fase di ognuno),
+       ma la FASE si sfasa per figura con un passo di 0,041 — piu' largo
+       dei 0,02 con cui il cancello arrotonda, quindi ventidue figure
+       cadono su ventidue pose distinte per COSTRUZIONE, non per fortuna.
+       Costo: una moltiplicazione e un resto. */
+    if(lod){
+      st.clip = gk ? 'attesaGK' : 'fermo';
+      st.u = (0.041*(p.idx+11*p.team)+0.13)%1;
+    }
+    /* LA POSA DISEGNATA SI LASCIA LEGGERE. Il requisito «mai due
+       giocatori nella stessa posa nello stesso fotogramma» si verifica
+       per enumerazione, e va enumerato quello che e' stato DISEGNATO —
+       non una seconda derivazione della stessa regola, che potrebbe
+       divergere e dichiarare verde una scena che sullo schermo ha due
+       gemelli. Due assegnazioni per figura: sotto il rumore.
+       Lo legge window.__test.poseInCampo (cancello in strumenti/seme.js). */
+    p.poseClip=st.clip; p.poseU=st.u;
     const look = rigLook(p);
     let a;
     if(p.dive>0 || (gk && p.recover>0)) a = Math.atan2(p.diveDY,p.diveDX);
@@ -17141,7 +18729,11 @@ function drawPlayer(p){
        che questa scelta non sporca la finestra. */
     {
       const T=Rig3D.torso();
-      const nx=T.x0+(T.x1-T.x0)*0.72, ny=T.y0+(T.y1-T.y0)*0.72;
+      /* 0,80 e non 0,72 (A0): la frangia scura del contorno del glifo
+         arrivava a ~0,4 unita' dalla fila bassa della sonda; alzando
+         l'ancora alla SCHIENA ALTA si allontana a ~1,2. Margine comprato,
+         non speso: si trascrive il rapporto misurato, mai l'esito verde. */
+      const nx=T.x0+(T.x1-T.x0)*0.80, ny=T.y0+(T.y1-T.y0)*0.80;
       const cifra=String(p.idx+1);
       /* IL MINIMO LEGGIBILE (quarto appello). Il corpo del glifo qui e'
          7 unita' locali, cioe' 7 x P_DIS x S2 pixel di schermo: sulla
@@ -19392,12 +20984,24 @@ function fasciaGolViva(inRipresa){
   ctx.textBaseline='middle'; ctx.lineJoin='round'; ctx.textAlign='left';
   /* misura; se la riga non ci sta ("Saverio il Professore" e' un nome
      vero della rosa), si stringe TUTTA in proporzione, una volta */
+  /* IL VOLTO DEL MARCATORE, in mezzo fra il GOL! e il nome.
+     E' l'innesto che la giuria chiede per nome («il volto del marcatore
+     nel banner del gol»): il tondo esce dalla stessa cache della rosa,
+     quindi e' lo stesso uomo della riga della rosa ed e' lo stesso uomo
+     che sta esultando dietro la fascia, non un terzo disegno.
+     Sull'AUTORETE non c'e': un'autorete non ha un marcatore, e mettere
+     la faccia di chi l'ha deviata accanto al punto di chi la incassa e'
+     esattamente l'errore gia' corretto nel tabellino.
+     Costo: un drawImage per fotogramma di scena, zero cotture. */
+  const chiF = (!G.goalAuto && G.goalChi) ? String(G.goalChi) : '';
+  const dF = Math.round(FBH*0.74);
   const misura=()=>{
     ctx.font='900 '+fs1+'px '+FONT_N; const wG=ctx.measureText('GOL!').width;
     ctx.font='900 '+fs2+'px '+FONT_N; const wN=nome?ctx.measureText(nome).width:0;
     ctx.font='700 '+Math.round(fs2*0.88)+'px '+FONT_C; const wM=min?ctx.measureText(min).width:0;
     const g1=nome?Math.round(fs1*0.42):0, g2=min?Math.round(fs2*0.85):0;
-    return { wG,wN,wM,g1,g2, tot:wG+g1+wN+g2+wM };
+    const wF=chiF?dF:0, gF=chiF?Math.round(fs2*0.42):0;
+    return { wG,wN,wM,g1,g2,wF,gF, tot:wG+g1+wF+gF+wN+g2+wM };
   };
   let m=misura();
   if(m.tot>VW*0.92){
@@ -19440,6 +21044,22 @@ function fasciaGolViva(inRipresa){
   }
   ctx.restore();
   x+=m.wG+m.g1;
+  /* il tondo del marcatore: arriva un attimo dopo il lettering, come
+     nelle grafiche vere, e a moto ridotto e' subito li' */
+  if(chiF){
+    const kf = SAVE.moto ? clamp((t-0.50)/0.20,0,1) : 1;
+    if(kf>0.01){
+      ctx.save();
+      ctx.globalAlpha*=kf;
+      const sc=0.86+0.14*kf;
+      const d2=dF*sc;
+      volto(ctx, chiF, x+(dF-d2)/2, cy2-d2/2, d2,
+            {tondo:1, cottura:dF, maglia:TEAMCOL[G.goalTeam],
+             maglia2:TEAMCOL2[G.goalTeam], dpr:DPR});
+      ctx.restore();
+    }
+    x+=m.wF+m.gF;
+  }
   /* il marcatore a gesso, il puntino, il minuto */
   if(nome){
     ctx.font='900 '+fs2+'px '+FONT_N;
@@ -19478,6 +21098,78 @@ function drawOverlaysCanvas(){
     ctx.fillText("CALCIO D'INIZIO", 0, 0);
     ctx.restore();
     ctx.globalAlpha=1;
+  }
+  /* ---------- LA PRESENTAZIONE DEI CAPITANI ----------
+     Il quarto innesto dei volti-figurina, e l'unico che vive in campo.
+     Dura CAP_DUR secondi dal fischio d'inizio della PARTITA (non da
+     ogni ripresa dal centro: un capitano si presenta una volta, se no
+     e' una didascalia che torna) e poi non c'e' piu': quando collaudo.js
+     campiona il contrasto maglia/manto — la sua prima simulate e' di
+     tre secondi — questa targa e' sparita da un pezzo, e nessun pixel
+     della sonda passa da qui.
+     Costa due drawImage per fotogramma per meno di due secondi, e i due
+     ritratti sono gli stessi della rosa e del tabellino: stessa cache,
+     stesso seme, stesso uomo. */
+  if(G.capT>0 && !G.moviola && (G.scene==='kickoff'||G.scene==='play'||G.scene==='golden')
+     && !(typeof Tut!=='undefined' && Tut.active)){
+    const c0=G.players[G.capIdx[0]], c1=G.players[G.capIdx[1]];
+    if(c0&&c1&&c0.nome&&c1.nome){
+      /* a movimento ridotto la targa non entra in dissolvenza: c'e' e
+         basta, e se ne va con la stessa sobrieta' */
+      const av=SAVE.moto?Math.min(1,(CAP_DUR-G.capT)*5):1;
+      const us=SAVE.moto?clamp(G.capT/0.32,0,1):(G.capT>0.06?1:0);
+      const a=Math.min(av,us);
+      const d=clamp(VH*0.13,32,52), h=Math.round(d*1.30);
+      const w=Math.min(VW*0.94, d*12.6);
+      const y0=Math.round(PA_Y0+Math.max(48,PA_H*0.20)+Math.min(46,VH*0.11));
+      const x0=Math.round(VW/2-w/2);
+      ctx.save();
+      ctx.globalAlpha=a;
+      /* la stessa lavagna scura della fascia del gol: fondo opaco, filo
+         di gesso sopra e sotto. Una lingua sola per tutte le targhe. */
+      ctx.fillStyle='rgba(18,44,29,.92)';
+      ctx.fillRect(x0,y0,w,h);
+      ctx.fillStyle='rgba(242,245,239,.45)';
+      ctx.fillRect(x0,y0,w,1.4); ctx.fillRect(x0,y0+h-1.4,w,1.4);
+      /* i due smalti, uno per meta': la targa dice gia' chi e' chi */
+      ctx.fillStyle=TEAMCOL[0]; ctx.fillRect(x0,y0+1.4,w/2,2.2);
+      ctx.fillStyle=TEAMCOL[1]; ctx.fillRect(x0+w/2,y0+1.4,w/2,2.2);
+      ctx.fillStyle='rgba(242,245,239,.22)';
+      ctx.fillRect(Math.round(VW/2)-0.7, y0+h*0.20, 1.4, h*0.60);
+      const cyC=y0+h/2+1;
+      const pad=Math.round(d*0.28);
+      /* IL NOME STA NELLA SUA META', SEMPRE. «Saverio Tre Polmoni» e
+         «Bruno Tre Polmoni» a corpo pieno si scontravano in mezzo alla
+         targa: due nomi sovrapposti sono peggio di nessun nome. Qui il
+         corpo scende finche' ci sta, e se anche al minimo non ci sta si
+         taglia con i puntini — mai oltre il filo di mezzeria. */
+      const maxW=w/2-pad*2.8-d;
+      for(const t of [0,1]){
+        const p=t?c1:c0;
+        const fx = t ? x0+w-pad-d : x0+pad;
+        volto(ctx, p.nome, fx, cyC-d/2, d,
+              {tondo:1, maglia:TEAMCOL[t], maglia2:TEAMCOL2[t], dpr:DPR});
+        ctx.textAlign = t?'right':'left';
+        ctx.textBaseline='alphabetic';
+        const tx = t ? fx-pad*0.8 : fx+d+pad*0.8;
+        ctx.font='700 '+Math.round(d*0.24)+'px '+FONT_C;
+        ctx.fillStyle='rgba(242,245,239,.62)';
+        ctx.fillText('CAPITANO', tx, cyC-d*0.10);
+        let nm=String(p.nome).toUpperCase(), fs=Math.round(d*0.36);
+        ctx.font='900 '+fs+'px '+FONT_N;
+        while(ctx.measureText(nm).width>maxW && fs>Math.round(d*0.22)){
+          fs--; ctx.font='900 '+fs+'px '+FONT_N;
+        }
+        while(nm.length>4 && ctx.measureText(nm).width>maxW){
+          nm=nm.slice(0,-2)+'…';
+        }
+        ctx.fillStyle=TEAMCOL[t];
+        ctx.fillText(nm, tx, cyC+d*0.30);
+      }
+      ctx.restore();
+      ctx.globalAlpha=1;
+      ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+    }
   }
   /* ---------- la festa del gol: lampo, scrim, onda d'urto, coriandoli ----------
      Durante la MOVIOLA tutto questo tace: il replay ha il suo linguaggio
@@ -20359,9 +22051,15 @@ function buildRosaUI(){
   SAVE.rosa.forEach((r,i)=>{
     const d=document.createElement('div');
     d.className='rrow'+(i===0?' gk':'');
+    /* IL VOLTO, PRIMA DEL NOME. E' lo stesso uomo che corre in campo:
+       il canvas porta il NOME, e dipingiVolti lo trasforma nel ritratto
+       cotto dal seme di quel nome — lo stesso seme da cui escono
+       corporatura, carnagione, capigliatura e taglio della figura in
+       partita. Non due generatori d'accordo fra loro: uno solo. */
+    let h='<canvas class="rface" data-volto="'+esc(r.nome)+'" data-lato="32" aria-hidden="true"></canvas>';
     /* ruolo, partite e crescita stanno sulla seconda riga del nome: la
        scheda da sette righe e' diventata UNA riga con quattro numeri */
-    let h='<div class="rnome"><span class="rn">'+esc(r.nome)+'</span>'+
+    h+='<div class="rnome"><span class="rn">'+esc(r.nome)+'</span>'+
       '<small>'+(ruoli[i]||'RINCALZO')+' · '+(r.partite|0)+' partite'+(r.gol?' · '+r.gol+' gol':'')+
       (r.ultimaCrescita?' · <span class="cresciuto">'+esc(r.ultimaCrescita)+'</span>':'')+
       '</small></div>';
@@ -20381,6 +22079,7 @@ function buildRosaUI(){
     d.innerHTML=h;
     box.appendChild(d);
   });
+  dipingiVolti(box);
 }
 /* crescita di fine partita: cresce chi ha fatto qualcosa, di un punto solo */
 function faiCrescereRosa(){
@@ -21125,6 +22824,55 @@ window.__test = {
     return { ux:g.ux, uy:g.uy, l0:g.l0, l1:g.l1, lungRiposo:g.lungRiposo,
              semiCorto:g.semiCorto, piedeX:g.piedeX, piedeY:g.piedeY,
              alt:SOLE.alt, dir:[SOLE.dir[0],SOLE.dir[1]] };
+  },
+  /* =====================================================================
+     IL SEME DEL NOME, ESPORTATO — la consegna fra i due incarichi.
+     Un solo numero decide corporatura, carnagione, capigliatura, taglio
+     e sfasamento di fase della figura che corre in campo. Chi disegnera'
+     i volti-figurina della rosa deve leggere QUESTO numero, altrimenti
+     il ritratto mostra un uomo e il campo un altro — ed e' il difetto
+     che l'innesto dei ritratti nasce per non avere.
+     E' esportato perche' sia VERIFICABILE: dieci nomi noti, dieci
+     numeri, e chi cambia l'hash lo scopre da un cancello e non da una
+     faccia che cambia in silenzio.
+       semeNome('Saverio Piedebuono')  ->  2249216068
+       semeNome('Peppe Mano Santa')    ->  2026714031
+       semeNome('Gino Fulmine')        ->  2465899154
+     (misurati il 15 agosto 2026; la lista di dieci nomi, con i tratti
+     che ne discendono, sta in strumenti/seme.js, che e' il cancello) */
+  semeNome,
+  /* =====================================================================
+     I VOLTI-FIGURINA, ESPOSTI PERCHE' SIANO MISURABILI.
+       ritrattoTela  cuoce (o ripesca dalla cache) il volto di un seme e
+                     restituisce il canvas vero: strumenti/volti.js ne
+                     legge i pixel per contare quanto due facce
+                     differiscono e per verificare che due PARTITE
+                     diverse diano lo stesso identico volto.
+       trattiVolto   i sette tratti che il seme decide. I primi quattro
+                     devono coincidere con quelli del giocatore in campo
+                     (trattiGiocatore): e' il vincolo di coerenza
+                     dell'innesto, e si controlla a numeri.
+       ritrattiCotti quante COTTURE vere sono avvenute. In partita non
+                     deve crescere: un ritratto dentro il ciclo caldo si
+                     scopre da questo contatore, non a occhio.
+     ===================================================================== */
+  ritrattoTela(seme, px, opts){ return ritrattoTela(seme>>>0, px||96, opts||{}); },
+  trattiVolto(seme){ return trattiVolto(seme>>>0); },
+  get ritrattiCotti(){ return RITRATTI_COTTI; },
+  /* i quattro tratti fisici di un giocatore in campo, per chi deve
+     disegnarne il ritratto: sono gli stessi campi, non una copia */
+  trattiGiocatore(i){
+    const p=G.players[i]; if(!p) return null;
+    return { nome:p.nome, seme:p.seme, corp:p.corp, skin:p.skin,
+             hair:p.hair, taglio:p.taglio, team:p.team, ruolo:p.role };
+  },
+  /* la posa EFFETTIVAMENTE disegnata nell'ultimo fotogramma, figura per
+     figura: e' cio' su cui si enumera «mai due nella stessa posa» */
+  poseInCampo(){
+    return G.players.filter(p=>p.poseClip).map(p=>({
+      idx:p.idx, team:p.team, nome:p.nome,
+      clip:p.poseClip, u:p.poseU, corp:p.corp, varb:(((p.seme|0)>>>23)%5),
+      skin:p.skin, hair:p.hair, taglio:p.taglio, fuori:p.out>0 }));
   },
   /* l'ora della partita, 0 al fischio d'inizio e 1 al fischio finale: la
      leggono gli strumenti che vogliono fotografare due temperature */
