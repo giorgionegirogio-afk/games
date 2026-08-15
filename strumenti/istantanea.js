@@ -33,32 +33,63 @@
      5. PRATO        il gradiente termico: differenza di tinta fra due
                      zone opposte del quadro.            >= 12 gradi
 
-   COSA DICE OGGI — 15 agosto 2026, otto istanti, seme 20260728, telefono
-   in orizzontale 915x412 a due punti per pixel: 24 misure su 40.
-     · ERBA VUOTA  55,6-66,0% del quadro contro un tetto del 50%: NO in
-       tutti e otto gli istanti. È la prima riga di undici schede della
-       giuria («il 60-70% del fotogramma d'azione è erba vuota») e il
-       numero misurato è esattamente il loro.
-     · OMBRE  NO in tutti e otto: lunghezza 0,73-0,96 volte la figura
-       contro 1,2, direzioni disperse fra 4,8 e 58,8 gradi contro 5. Il
-       gioco getta ELLISSI SOTTO I PIEDI — drawOmbreGiocatori le posa a
-       (+4,2; +7,8) unità con semiassi 18,4 x 9,1 — invece di ombre lunghe
-       e parallele; e quel verso (62 gradi) non è nemmeno quello della
-       luce che il gioco stesso dichiara (LUCI.oratorio.dir = 0,94/0,34,
-       cioè 20 gradi). È la misura chiave del tema 1, ed è rossa.
-     · PALLA  OK: 2,9-3,4 volte la mediana del quadro, diametro 2,13-2,30%
-       della larghezza (misurato 39-42 px contro i 40,1-40,6 che lo stato
-       dichiara: il disegno mantiene la promessa). La giuria però chiede
-       il 2,5%, e a quella soglia sarebbe rossa: --pallaDiamMin 0.025.
-     · FIGURA  OK e larga: 11,8-15,1% dell'altezza contro il 6%.
-     · PRATO  OK, 18-21 gradi di tinta fra le due zone opposte contro 12.
-       Non era previsto che passasse: il velo caldo/freddo di
-       buildVignette e la luce del manto ci sono già. Tiene anche a 15,
-       che è la soglia scritta dalla giuria.
-   Uno strumento che dicesse OK sulle ombre sarebbe cieco; uno che dicesse
-   NO sul prato per compiacere l'aspettativa lo sarebbe due volte. Dopo
-   l'onda della luce questo file dovrà dire OK senza cambiare una riga, ed
-   è quello il collaudo del collaudo.
+   DUE BUGIE DEL BANCO, TROVATE E RIPARATE (15 agosto sera). Vanno lette
+   prima dei numeri, perché sono la ragione per cui i numeri di stamattina
+   erano da buttare — e perché è la stessa trappola che questa cartella ha
+   già pagato otto volte, in una forma nuova:
+
+     1. LA FOTOGRAFIA NON ERA DEL GIOCO. Le misure leggono la TELA con
+        getImageData; la fotografia la scatta Playwright sulla PAGINA. Lo
+        splash che sfuma (mezzo secondo di transizione CSS) e le bande
+        diagonali della transizione fra schermate (#wipe) coprivano il PNG
+        salvato mentre la tela sotto era perfetta: numeri veri, prove
+        false. Adesso si aspetta che gli strati si tolgano (come fa
+        scatta.js), si congelano le animazioni, e a ogni scatto lo
+        strumento ENUMERA gli strati del DOM grandi e visibili: se ce n'è
+        uno, lo dice e la corsa fallisce. Una prova falsa è peggio di una
+        misura falsa, perché nessuno la controlla.
+     2. MISURAVO FOTOGRAMMI CHE NESSUNO VEDE. In questo gioco la camera
+        vive dentro render() — updateCamera(rdt) è la prima riga — e
+        __test.simulate fa avanzare i corpi SENZA disegnare. Ventisette
+        secondi di sola fisica lasciavano l'inquadratura ferma al fischio
+        d'inizio: azione al bordo, palla sotto i pulsanti, erba vuota
+        gonfiata di quindici punti. Adesso la partita corre a fotogrammi
+        veri (__banco.passo), un disegno per ogni passo di fisica, come in
+        partita. Costa un minuto e mezzo per otto istanti, e vale ogni
+        secondo: senza, il freeze-frame test giudicava una regia che il
+        giocatore non ha mai davanti.
+
+   COSA DICE OGGI — 15 agosto 2026 sera, dopo l'onda della luce; otto
+   istanti, seme 20260728, telefono in orizzontale 915x412 a due punti per
+   pixel: 31 misure su 40 (erano 24 su 40 prima dell'onda, con un banco
+   che per giunta guardava dalla parte sbagliata).
+     · OMBRE  3 istanti su 8. La DIREZIONE è perfetta dappertutto: 20-24
+       gradi misurati, deviazione fra le figure 0,2-0,7 gradi contro un
+       tetto di 5, e il gioco ne dichiara 20 — scarto misurato-dichiarato
+       0-4 gradi. Le ellissi sotto i piedi non ci sono più. Cade la
+       LUNGHEZZA: 1,14-1,75 volte la figura, cioè a cavallo del cancello
+       di 1,2 — contro i ~1,9 che il gioco DICHIARA (230-248 px di capsula
+       su ~125 px di figura). Non è un errore di misura: è la punta,
+       schiarita al 40%, che sotto il 15% di stacco dal manto non si
+       distingue più dalle strisce di rasatura. Chi vuole il cancello
+       verde con margine deve SCURIRE la punta, non allungarla. In un
+       istante su otto, per giunta, le figure misurabili sono meno di due:
+       con la camera stretta si accavallano, e lo strumento preferisce
+       dire «non si può dare» che dare un numero inventato.
+     · ERBA VUOTA  31,3-69,1%, quattro istanti su otto sotto il 50%.
+       Resta il difetto più caro: nei fotogrammi larghi il quadro è ancora
+       due terzi di manto.
+     · PALLA  OK in tutti e otto: 3,35-3,81 volte la mediana del quadro,
+       diametro 1,80-2,51% (misurato contro i 41,7-43,2 px che lo stato
+       dichiara). La giuria chiede il 2,5% e a quella soglia cadrebbe
+       quasi sempre: si controlla con --pallaDiamMin 0.025.
+     · FIGURA  OK: 12,5-16,3% dell'altezza contro il 6%.
+     · PRATO  OK: 14-21 gradi di tinta fra due zone opposte contro 12.
+   Dopo l'onda della luce questo file doveva dire OK senza cambiare una
+   riga sulle direzioni, e lo dice. Le soglie non sono state toccate per
+   farlo: quella dell'ombra è stata ALZATA da 0,72 a 0,85 perché la
+   capsula nuova è più tenue, e il numero è misurato sui pixel (vedi
+   ombraSu), non scelto per far passare il gioco.
 
    Ogni istante produce anche una SILHOUETTE (figure di nero puro su
    fondo bianco): serve al test del tema 2, in cui un estraneo deve poter
@@ -73,6 +104,12 @@
    prende in mano l'orologio del disegno, così la partita, gli istanti e
    i pixel sono identici a ogni esecuzione. Un cancello che lancia i dadi
    prima o poi copre una regressione vera con una finestra fortunata.
+   Verificato su tre esecuzioni di fila: uscita identica al carattere e
+   tutti i numeri identici. Quindici PNG su sedici sono uguali al byte; in
+   uno differiscono 79 pixel su un milione e mezzo (lo 0,005%, sul filo
+   inferiore del tabellone), che è rumore di rasterizzazione fra processi
+   diversi di Chromium e non tocca nessuna misura: la stessa pagina,
+   fotografata due volte, dà due file identici.
 
    uso:
      node strumenti/istantanea.js
@@ -84,12 +121,17 @@
 
    --controllo è la prova che lo strumento non sta attestando. Rifà lo
    STESSO istante altre due volte e ci dipinge sopra due falsi dichiarati:
-   uno IN MEGLIO (ombre lunghe due volte la figura, tutte a 145 gradi, con
-   i corpi ridisegnati sopra perché l'ombra stia sotto la figura come nel
-   vero, più un gradiente termico marcato) e uno IN PEGGIO (ogni pixel di
-   manto portato alla stessa tinta: un campo senza alcuna legge di luce).
-   Le due misure della luce devono dire OK sul primo e NO sul secondo. Se
-   non cambiano, non stanno misurando niente, e il banco lo dice.
+     · IL SOLE SPOSTATO — si spiana il manto e si ridipingono ombre lunghe
+       tutte a 145 gradi, con i corpi ridisegnati sopra perché l'ombra
+       stia sotto la figura come nel vero, più un gradiente termico
+       marcato. Il gioco continua a DICHIARARE 20 gradi: la misura deve
+       dire 145, se dicesse 20 starebbe copiando la risposta.
+     · IL PRATO SPIANATO — ogni pixel di manto portato alla stessa tinta:
+       un campo senza alcuna legge di luce. Le ombre non si devono più
+       trovare e il gradiente deve cadere a zero.
+   Il banco è verde solo se: la direzione misurata segue i pixel (145),
+   il disaccordo col dichiarato viene gridato, e sul prato spianato tutte
+   e due le misure sanno dire NO.
    ===================================================================== */
 const fs = require('fs');
 const path = require('path');
@@ -125,7 +167,14 @@ const SOGLIE = {
      prima misura, e peggio, come OMBRA nella quarta — la marcia lo
      risaliva per duecentotrenta pixel e assegnava alla figura sotto il
      tabellone un'ombra lunga il doppio, nella direzione sbagliata. */
-  hueMin: 80, hueMax: 175, satMin: 0.12, valMin: 0.18,
+  /* La finestra di tinta è misurata, non scelta: sul gioco del 15 agosto
+     sera il manto sta fra 119 e 146 gradi (quinto e novantacinquesimo
+     percentile al centro del quadro, tre istanti), mentre i pulsanti
+     TIRA/FILTRANTE sono oliva a 73-81 gradi. Sotto i 90 gradi non c'è
+     prato, ci sono i comandi: con la finestra aperta a 80 il pulsante
+     contava come manto — cella di erba vuota nella prima misura e,
+     peggio, campitura piatta buona per la marcia nella quarta. */
+  hueMin: 90, hueMax: 175, satMin: 0.12, valMin: 0.18,
 
   /* --- la palla: fin dove si cerca e quanto buio si perdona ---
      il disegno della palla ha pentagoni scuri e un contorno nero: un
@@ -138,9 +187,45 @@ const SOGLIE = {
      le due soglie sono frazioni del prato ILLUMINATO LI' ATTORNO (terzo
      quartile di un blocco di tre celle per tre, vedi la misura 4), non
      di una mediana unica del quadro: sopra la banda è manto al sole,
-     sotto è contorno nero o oggetto scuro, e nessuno dei due è ombra. */
-  ombraGiu: 0.25, ombraSu: 0.72,
+     sotto è contorno nero o oggetto scuro, e nessuno dei due è ombra.
+
+     QUANTO E' TENUE LA PUNTA CHE ACCETTO: 0,85, cioè un manto imbrunito
+     del 15%. Non è un numero scelto a occhio, è misurato sul gioco del
+     15 agosto sera (capsula d'ombra schiarita al 40% per costo) su
+     quattro istanti, campionando due popolazioni sullo stesso fotogramma:
+       · DENTRO la capsula DICHIARATA da __test.ombraCapsula, fra il 35%
+         e il 100% della lunghezza: decimo 0,75, mediana 0,85-0,90;
+       · FUORI da ogni ombra e da ogni figura — cioè le strisce di
+         rasatura, che sono la trappola: quinto 0,75-0,85, DECIMO 0,90,
+         mediana 0,95.
+     Le due popolazioni si sovrappongono: non esiste una soglia che prenda
+     tutta l'ombra senza prendere anche un po' di manto. A 0,85 si prende
+     circa metà della capsula (la parte vicino all'asse, dove l'ombra è
+     davvero ombra) e solo il 6-8% del manto, sparso e mai in bande
+     coerenti; a 0,90 entrerebbero le strisce scure INTERE e la marcia le
+     seguirebbe per tutto il campo — è il difetto già pagato una volta.
+     Margine reale fra la punta accettata (0,85) e la striscia scura
+     (0,90): cinque centesimi. Chi schiarisce ancora l'ombra sotto il 15%
+     di stacco deve saperlo: da lì in giù nessuno strumento la distingue
+     dalla rasatura, e nemmeno un occhio. */
+  ombraGiu: 0.25, ombraSu: 0.85,
+  /* di quanti gradi la direzione MISURATA può discostarsi da quella
+     DICHIARATA dal gioco (__test.ombraCapsula): oltre, uno dei due mente
+     e lo strumento non sa quale — ma sa dire che c'è una bugia */
+  ombraScartoDich: 12,
   ombraPixelMin: 150,     // meno di così e l'ombra non c'è: figura scartata
+  /* UN'OMBRA HA UNA LARGHEZZA. Quanti pixel scuri deve avere il cono per
+     ogni pixel di lunghezza: una capsula vera ne porta 14-17 (misurato),
+     un graffio scuro qualsiasi — il bordo di una striscia di rasatura, la
+     riga d'ombra di un'altra figura vista di taglio — ne porta 3-4, e
+     senza questa regola vinceva lui: una figura a -76 gradi dove tutte le
+     altre stavano a 22. */
+  ombraDensita: 8,
+  /* quanto il corridoio vincente deve battere il migliore degli altri
+     (a più di sessanta gradi da lui) per essere DAVVERO il suo: sotto
+     questo rapporto la figura ha due ombre addosso, o la sua è tagliata,
+     e in ogni caso non si può dire quale sia la sua */
+  ombraDominanza: 0.65,
   ombraFigureMin: 2,      // meno di così e la misura non si può dare
   ombraCorsaMax: 4.0,     // fin dove si insegue la punta dell'ombra
   ombraFinestra: 0.12,    // semilarghezza della finestra di marcia (altezze figura)
@@ -201,6 +286,25 @@ function dado(seme) {
     s ^= s << 5; s >>>= 0;
     return (s >>> 0) / 4294967296;
   };
+}
+
+/* Le animazioni CSS si fermano e si portano a un istante FISSO (copia di
+   scatta.js): quelle che finiscono alla fine, quelle infinite all'inizio.
+   Senza, fra il disegno e lo scatto continua a muoversi il DOM. */
+function congelaAnimazioni() {
+  const st = document.createElement('style');
+  st.textContent = '*,*::before,*::after{animation-play-state:paused !important;' +
+    'transition:none !important;caret-color:transparent !important}';
+  document.head.appendChild(st);
+  if (!document.getAnimations) return;
+  for (const an of document.getAnimations()) {
+    try {
+      const c = an.effect && an.effect.getComputedTiming ? an.effect.getComputedTiming() : null;
+      const infinita = !c || c.iterations === Infinity || !isFinite(c.endTime);
+      an.pause();
+      an.currentTime = infinita ? 0 : c.endTime;
+    } catch (e) { /* un'animazione che non si lascia spostare non ferma il collaudo */ }
+  }
 }
 
 /* ====================================================== BANCO DI PROVA ===
@@ -356,6 +460,17 @@ function misuraInPagina(arg) {
         x0: x0 + ox, y0: y0 + oy, x1: x1 + ox, y1: y1 + oy,
         h: (y1 - y0) + 1, w: (x1 - x0) + 1,
         piedeX: (x0 + x1) / 2 + ox, piedeY: y1 + oy,
+        /* il punto del corpo da cui il gioco DICHIARA di gettare l'ombra
+           (__test.ombraCapsula: piedeX/piedeY in unità di campo dal centro
+           del giocatore). E' l'ancora giusta per la marcia: partendo dal
+           pixel nero più basso — un piede in falcata, anche quindici unità
+           più avanti — il corridoio nasce di lato alla capsula e la
+           manca, perché la capsula è semilarga diciannove pixel su
+           duecentoventi di lunghezza. Misurato: la marcia sulla direzione
+           dichiarata dava 0 px su cinque figure su sei; con l'ancora
+           giusta le trova tutte. */
+        ancoraX: null, ancoraY: null,
+        px: p.x, py: p.y,
       });
     }
   }
@@ -372,19 +487,46 @@ function misuraInPagina(arg) {
   }
 
   /* ============================================ I FALSI DICHIARATI
-     Solo con --controllo, e mai per conto loro. Servono a dimostrare che
-     le due misure della luce non sono costanti travestite da misure:
+     Solo con --controllo, e mai per conto loro. Da quando il gioco le
+     ombre lunghe ce le ha davvero, il banco serve a dimostrare due cose
+     diverse e più difficili della prima versione:
 
-       controllo 1 — IL FOTOGRAMMA COME SARA' DOPO L'ONDA DELLA LUCE:
-         ombre lunghe due volte la figura, tutte parallele, e un prato con
-         un gradiente caldo/freddo marcato. Le due misure DEVONO dire OK.
+       controllo 1 — IL SOLE SPOSTATO. Si spiana il manto (via ogni ombra
+         vera) e si ridipingono ombre lunghe tutte a 145 gradi, dove il
+         gioco continua a DICHIARARNE 20. La misura deve seguire i PIXEL
+         e dire 145, non la dichiarazione: se dicesse 20 starebbe
+         copiando la risposta invece di misurarla. E il confronto col
+         dichiarato deve accendersi e gridare che uno dei due mente.
        controllo 2 — IL PRATO SPIANATO: ogni pixel di manto portato alla
-         stessa identica tinta, cioè un campo senza alcuna legge di luce,
-         ombre comprese. Le due misure DEVONO dire NO.
+         stessa tinta, cioè un campo senza alcuna legge di luce. Le ombre
+         non si devono più trovare e il gradiente deve cadere a zero.
 
      Se una misura non cambia fra i due falsi, non sta misurando niente. */
+  const spianaPrato = () => {
+    const im = cx.getImageData(0, 0, W, H), q = im.data;
+    let sr = 0, sg = 0, sb = 0, ng = 0;
+    const verde = j => {
+      const r = q[j], g = q[j + 1], b = q[j + 2];
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b), dl = mx - mn;
+      if (!dl) return false;
+      let hh;
+      if (mx === r) hh = 60 * (((g - b) / dl) % 6);
+      else if (mx === g) hh = 60 * ((b - r) / dl + 2);
+      else hh = 60 * ((r - g) / dl + 4);
+      if (hh < 0) hh += 360;
+      return hh >= par.hueMin && hh <= par.hueMax && dl / mx >= par.satMin && mx / 255 >= par.valMin;
+    };
+    for (let j = 0; j < q.length; j += 4) if (verde(j)) { sr += q[j]; sg += q[j + 1]; sb += q[j + 2]; ng++; }
+    if (!ng) return;
+    const mr = Math.round(sr / ng), mg = Math.round(sg / ng), mb = Math.round(sb / ng);
+    for (let j = 0; j < q.length; j += 4) if (verde(j)) { q[j] = mr; q[j + 1] = mg; q[j + 2] = mb; }
+    cx.save(); cx.setTransform(1, 0, 0, 1, 0, 0);
+    cx.putImageData(im, 0, 0);
+    cx.restore();
+  };
   if (controllo === 1) {
-    const ang = 145 * Math.PI / 180;      // sole alto a destra, ombre a sinistra-giù
+    const ang = 145 * Math.PI / 180;      // sole spostato: ombre a sinistra-giù
+    spianaPrato();                        // prima si toglie di mezzo la luce vera
     cx.save();
     cx.setTransform(1, 0, 0, 1, 0, 0);
     for (const f of figure) {
@@ -415,27 +557,7 @@ function misuraInPagina(arg) {
     cx.fillStyle = g; cx.fillRect(0, 0, W, H);
     cx.restore();
   } else if (controllo === 2) {
-    const im = cx.getImageData(0, 0, W, H), q = im.data;
-    let sr = 0, sg = 0, sb = 0, ng = 0;
-    const verde = j => {
-      const r = q[j], g = q[j + 1], b = q[j + 2];
-      const mx = Math.max(r, g, b), mn = Math.min(r, g, b), dl = mx - mn;
-      if (!dl) return false;
-      let hh;
-      if (mx === r) hh = 60 * (((g - b) / dl) % 6);
-      else if (mx === g) hh = 60 * ((b - r) / dl + 2);
-      else hh = 60 * ((r - g) / dl + 4);
-      if (hh < 0) hh += 360;
-      return hh >= par.hueMin && hh <= par.hueMax && dl / mx >= par.satMin && mx / 255 >= par.valMin;
-    };
-    for (let j = 0; j < q.length; j += 4) if (verde(j)) { sr += q[j]; sg += q[j + 1]; sb += q[j + 2]; ng++; }
-    if (ng) {
-      const mr = Math.round(sr / ng), mg = Math.round(sg / ng), mb = Math.round(sb / ng);
-      for (let j = 0; j < q.length; j += 4) if (verde(j)) { q[j] = mr; q[j + 1] = mg; q[j + 2] = mb; }
-      cx.save(); cx.setTransform(1, 0, 0, 1, 0, 0);
-      cx.putImageData(im, 0, 0);
-      cx.restore();
-    }
+    spianaPrato();
   }
 
   /* ================================================== I PIXEL DEL QUADRO
@@ -707,14 +829,54 @@ function misuraInPagina(arg) {
     const L = Lm[i];
     return (L >= lo2 && L <= hi2) ? (hi2 - L) : 0;
   };
+  /* LA LUCE DICHIARATA DAL GIOCO. Da agosto il gioco espone la geometria
+     della propria ombra (__test.ombraCapsula), l'ora della partita e i
+     fari accesi: sono la seconda campana. Lo strumento misura per conto
+     suo e poi confronta — non li usa per misurare, li usa per smentire. */
+  let dichiarata = null;
+  try {
+    if (t.ombraCapsula) {
+      const c = t.ombraCapsula();
+      dichiarata = {
+        dir: Math.atan2(c.uy, c.ux) * 180 / Math.PI,
+        lungPx: c.lungRiposo * S2 * dpr,
+        lungMaxPx: c.l1 * S2 * dpr,
+        semiPx: c.semiCorto * S2 * dpr,
+        ora: t.ora !== undefined ? +t.ora.toFixed(3) : null,
+        fari: t.fari ? t.fari.map(x => +x.toFixed(2)) : null,
+      };
+    } else mancanti.push('__test.ombraCapsula');
+  } catch (e) { mancanti.push('__test.ombraCapsula'); }
+
+  /* l'ancora dell'ombra, figura per figura: quella dichiarata dal gioco
+     se c'è, il pixel nero più basso della sagoma se non c'è */
+  let ancoraDichiarata = false;
+  try {
+    if (t.ombraCapsula) {
+      const c = t.ombraCapsula();
+      for (const f of figure) {
+        f.ancoraX = sx(f.px + c.piedeX);
+        f.ancoraY = sy(f.py + c.piedeY);
+      }
+      ancoraDichiarata = true;
+    }
+  } catch (e) { /* niente hook: si resta sul pixel nero più basso */ }
+  for (const f of figure) {
+    if (f.ancoraX == null) { f.ancoraX = f.piedeX; f.ancoraY = f.piedeY; }
+  }
+
   const ombre = [];
   for (const f of figure) {
-    const ax = Math.round(f.piedeX), ay = Math.round(f.piedeY), h = f.h;
-    /* CHI STA SUL BORDO NON SI GIUDICA. Se il disco attorno ai piedi esce
-       dal quadro, metà dell'ombra non c'è per motivi di inquadratura e il
-       baricentro punta sempre verso l'interno: si scarterebbe una figura
-       sana o si assolverebbe una malata, a seconda di dove sta. */
-    if (ax < 1.0 * h || ay < 1.0 * h || ax > W - 1.0 * h || ay > H - 1.0 * h) {
+    const ax = Math.round(f.ancoraX), ay = Math.round(f.ancoraY), h = f.h;
+    /* CHI HA I PIEDI FUORI DAL QUADRO NON SI GIUDICA — ma solo lui. Il
+       margine era di un'altezza intera di figura e con la camera stretta
+       (figure da 120 px su 824) buttava via quattro sagome su otto: la
+       misura restava senza popolazione proprio nei fotogrammi più pieni,
+       cioè i migliori. Adesso il margine copre l'ancora e il primo tratto
+       d'ombra; se poi la marcia esce dal quadro, la LUNGHEZZA di quella
+       figura si dichiara troncata e non entra nella media, mentre la sua
+       DIREZIONE — che si legge nel tratto vicino ai piedi — resta buona. */
+    if (ax < 0.55 * h || ay < 0.55 * h || ax > W - 0.55 * h || ay > H - 0.55 * h) {
       ombre.push({ idx: f.idx, pixel: 0, ombra: false, bordo: true, x: ax, y: ay });
       continue;
     }
@@ -726,7 +888,7 @@ function misuraInPagina(arg) {
     let vicino = false;
     for (const g of figure) {
       if (g === f) continue;
-      if (Math.hypot(g.piedeX - f.piedeX, g.piedeY - f.piedeY) < 0.7 * h) { vicino = true; break; }
+      if (Math.hypot(g.ancoraX - f.ancoraX, g.ancoraY - f.ancoraY) < 0.7 * h) { vicino = true; break; }
     }
     if (vicino) { ombre.push({ idx: f.idx, pixel: 0, ombra: false, duello: true, x: ax, y: ay }); continue; }
     /* E NEMMENO CHI HA L'OMBRA FUORI DAL MANTO. Un'ombra si legge come
@@ -771,10 +933,10 @@ function misuraInPagina(arg) {
        passa sopra di noi la contiamo tutt'e due — e siccome quando sono
        parallele contarle insieme non sposta la direzione, va bene così. */
     const mio = (x, y) => {
-      const d0 = (x - f.piedeX) * (x - f.piedeX) + (y - f.piedeY) * (y - f.piedeY);
+      const d0 = (x - f.ancoraX) * (x - f.ancoraX) + (y - f.ancoraY) * (y - f.ancoraY);
       for (const g of figure) {
         if (g === f) continue;
-        const d1 = (x - g.piedeX) * (x - g.piedeX) + (y - g.piedeY) * (y - g.piedeY);
+        const d1 = (x - g.ancoraX) * (x - g.ancoraX) + (y - g.ancoraY) * (y - g.ancoraY);
         if (d0 > 4 * d1) return false;      // 4 = (il doppio)²
       }
       return true;
@@ -786,9 +948,11 @@ function misuraInPagina(arg) {
        compare per la sua larghezza e poi finisce. */
     const win = Math.max(3, par.ombraFinestra * h);
     const buchiMax = Math.max(4, Math.round(par.ombraBuco * h / 2));
-    const marcia = (ux, uy) => {
+    let bordoTocco = false, primoBuio = -1;
+    const marcia = (ux, uy, segna) => {
       const px = -uy, py = ux;
       let lung = 0, buchi = 0;
+      if (segna) primoBuio = -1;
       for (let d = 2; d <= par.ombraCorsaMax * h; d += 2) {
         let tot = 0, om = 0;
         for (let q = -4; q <= 4; q++) {
@@ -800,14 +964,14 @@ function misuraInPagina(arg) {
              pescare il buio della barra dell'HUD dall'altra parte,
              regalando due altezze di ombra a una figura che non ce
              l'aveva (misurato: 2,31x nella direzione sbagliata). */
-          if (!dentro(x, y)) { tot++; continue; }
+          if (!dentro(x, y)) { tot++; if (segna) bordoTocco = true; continue; }
           const i = y * W + x;
           if (corpo[i]) continue;           // coperto da un corpo: si sospende il giudizio
           tot++;
           if (buio(i) && mio(x, y)) om++;
         }
         if (tot < 3) continue;
-        if (om / tot >= par.ombraFrazione) { lung = d; buchi = 0; }
+        if (om / tot >= par.ombraFrazione) { lung = d; buchi = 0; if (segna && primoBuio < 0) primoBuio = d; }
         else if (++buchi >= buchiMax) break;
       }
       return lung;
@@ -818,12 +982,44 @@ function misuraInPagina(arg) {
        distanza portava via la direzione — la sua ombra passa sopra di noi
        ed è tanto buio quanto la nostra. Con la marcia no: quella del
        vicino attraversa la striscia e finisce, la nostra continua. */
-    let miglior = -1, mAng = 0; const profilo = [];
+    let miglior = -1, mAng = 0, lunghi = 0; const profilo = [];
     for (let g = 0; g < 36; g++) {
       const th = g * Math.PI / 18;
       const s = marcia(Math.cos(th), Math.sin(th));
       profilo.push(Math.round(s));
+      if (s >= 0.8 * h) lunghi++;
       if (s > miglior) { miglior = s; mAng = th; }
+    }
+    /* DUE OMBRE, UNA FIGURA: NON SI GIUDICA. Se oltre al corridoio
+       vincente ce n'è un altro quasi altrettanto lungo in una direzione
+       lontana più di sessanta gradi, la figura ha addosso anche l'ombra
+       di qualcun altro — tipicamente quella del compagno controsole, che
+       le passa sopra — e non c'è modo di dire quale delle due è sua.
+       Misurato: una figura dava -175 gradi (154 px) contro i 23 gradi
+       della sua (128 px), e da sola portava la deviazione da 0,3 a 56,6.
+       Dichiararlo è l'unica cosa onesta: assegnarle la direzione più
+       vicina a quella delle altre sarebbe fabbricare il risultato. */
+    {
+      let secondo = 0;
+      for (let g = 0; g < 36; g++) {
+        let d = Math.abs(g * 10 - mAng * 180 / Math.PI); if (d > 180) d = 360 - d;
+        if (d >= 60 && profilo[g] > secondo) secondo = profilo[g];
+      }
+      if (miglior > 0 && secondo >= par.ombraDominanza * miglior) {
+        ombre.push({ idx: f.idx, pixel: 0, ombra: false, ambigua: true, x: ax, y: ay });
+        continue;
+      }
+    }
+    /* CHI STA GIA' NEL BUIO NON SI GIUDICA. Da quando esistono le ombre
+       lunghe delle strutture, una figura può trovarsi dentro la macchia
+       scura di una porta o della recinzione: lì il manto è imbrunito in
+       OGNI direzione e la marcia trova un corridoio lungo dovunque, così
+       la direzione la decide il rumore (misurato: una figura a -76 gradi
+       dove tutte le altre stavano a 22). Se più di due quinti delle
+       trentasei direzioni danno un'ombra lunga, non è la sua: si scarta. */
+    if (lunghi > 36 * 0.40) {
+      ombre.push({ idx: f.idx, pixel: 0, ombra: false, buioAttorno: true, x: ax, y: ay });
+      continue;
     }
     /* (b) SI AFFINA al grado, sempre con la marcia. Il massimo non è un
        punto ma un altopiano largo qualche grado (l'ombra ha una sua
@@ -844,7 +1040,7 @@ function misuraInPagina(arg) {
       sc += Math.cos(q.th) * q.s; ss += Math.sin(q.th) * q.s; sp += q.s;
     }
     const pAng = sp ? Math.atan2(ss, sc) : mAng;
-    const lung = mx;
+    const lung = mx;      // il massimo dell'altopiano: serve alla densità
     /* (c) L'ASSE DELL'OMBRA. L'altopiano della marcia dà la direzione a
        un paio di gradi; l'ultimo grado lo dà il baricentro del buio
        DENTRO il corridoio appena trovato (cono stretto, e non oltre la
@@ -869,11 +1065,64 @@ function misuraInPagina(arg) {
       }
     }
     const dir = sw > 0 ? Math.atan2(vy, vx) : pAng;
+    let larghezza = 0;
+    bordoTocco = false;
+    const lungFin = marcia(Math.cos(dir), Math.sin(dir), true);
+    /* UN'OMBRA E' PIU' LUNGA CHE LARGA. A metà del corridoio si misura
+       quanto è larga la macchia scura, di traverso, fino a un'altezza e
+       mezza di figura per lato. La capsula del gioco è larga quaranta
+       pixel su duecentocinquanta di lunghezza; una POZZA di buio — la
+       proiezione della recinzione, l'ombra della porta, la penombra oltre
+       la linea — è larga quanto il campo, e prima di questa regola una
+       figura che ci stava dentro dichiarava un'ombra a -88 gradi lunga
+       2,35 volte la figura, con ottomila pixel di buio attorno. Sopra
+       sei decimi della lunghezza non è più un'ombra portata: è una zona
+       in ombra, e non dice niente sulla direzione della luce. */
+    if (lungFin > 0) {
+      const ux2 = Math.cos(dir), uy2 = Math.sin(dir), px2 = -uy2, py2 = ux2;
+      const mx2 = ax + ux2 * lungFin * 0.5, my2 = ay + uy2 * lungFin * 0.5;
+      let larg = 0;
+      for (const verso of [1, -1]) {
+        let vuoti = 0;
+        for (let q = 1; q <= 1.5 * h; q += 2) {
+          const x = Math.round(mx2 + px2 * q * verso), y = Math.round(my2 + py2 * q * verso);
+          if (!dentro(x, y)) break;
+          const i2 = y * W + x;
+          if (corpo[i2]) continue;
+          if (buio(i2)) { larg = Math.max(larg, q); vuoti = 0; }
+          else if (++vuoti > 4) break;
+        }
+      }
+      larghezza = larg * 2;
+      if (larghezza > 0.6 * lungFin) {
+        ombre.push({ idx: f.idx, pixel: n, ombra: false, pozza: true, x: ax, y: ay });
+        continue;
+      }
+    }
+    /* UN'OMBRA E' ATTACCATA AI PIEDI CHE LA GETTANO. Se il corridoio
+       comincia a essere scuro solo dopo mezza figura, quella macchia non
+       nasce da qui: è l'ombra del compagno controsole che passa di là, e
+       misurarla vorrebbe dire attribuire a una figura la luce di un'altra.
+       Misurato: è l'ultimo caso che portava una direzione a 79 gradi dalle
+       altre in un fotogramma dove il gioco le disegna tutte a 20. */
+    if (primoBuio < 0 || primoBuio > 0.5 * h) {
+      ombre.push({ idx: f.idx, pixel: n, ombra: false, staccata: true, x: ax, y: ay });
+      continue;
+    }
+    /* la stessa marcia lungo la direzione DICHIARATA dal gioco: se qui
+       l'ombra arriva piu' lontano che nella direzione trovata, non e' il
+       gioco a sbagliare, e' la ricerca */
+    const lungDich = dichiarata
+      ? marcia(Math.cos(dichiarata.dir * Math.PI / 180), Math.sin(dichiarata.dir * Math.PI / 180)) : -1;
     if (n < par.ombraPixelMin) { ombre.push({ idx: f.idx, pixel: n, ombra: false }); continue; }
+    if (lung > 0 && n < par.ombraDensita * lung) {
+      ombre.push({ idx: f.idx, pixel: n, ombra: false, sottile: true, x: ax, y: ay });
+      continue;
+    }
     ombre.push({
-      idx: f.idx, pixel: n, ombra: true, x: ax, y: ay, profilo,
+      idx: f.idx, pixel: n, ombra: true, x: ax, y: ay, profilo, lungDich,
       dir: dir * 180 / Math.PI,
-      lung, h, rapporto: lung / h,
+      lung: lungFin, h, rapporto: lungFin / h, troncata: bordoTocco, larghezza,
     });
   }
 
@@ -917,8 +1166,34 @@ function misuraInPagina(arg) {
   const dLR = (hSin != null && hDes != null) ? Math.abs(hSin - hDes) : null;
   const dAB = (hAlt != null && hBas != null) ? Math.abs(hAlt - hBas) : null;
 
+  /* ============================== GLI STRATI DEL DOM SOPRA LA TELA
+     LA LEZIONE PIU' CARA DI QUESTO FILE. Le misure leggono la TELA con
+     getImageData; la fotografia la scatta Playwright sulla PAGINA. Sono
+     due cose diverse, e per un giro intero non lo sono state per me: lo
+     splash che sfuma (mezzo secondo di transizione CSS) e le bande
+     diagonali della transizione fra schermate (#wipe) coprivano il
+     fotogramma salvato mentre la tela sotto era perfetta. I numeri erano
+     giusti e le prove no — cioè lo strumento produceva prove false pur
+     misurando bene, che è il modo peggiore di sbagliare perché nessuno
+     lo controlla. Adesso lo strumento GUARDA CHI HA DAVANTI: enumera gli
+     strati grandi, visibili e non trasparenti sopra la tela, e se ce
+     n'è uno lo dice e fallisce. Costa una passata sul DOM. */
+  const strati = [];
+  for (const el of document.body.querySelectorAll('*')) {
+    if (el === cv) continue;
+    const st = getComputedStyle(el);
+    if (st.position !== 'fixed' && st.position !== 'absolute') continue;
+    if (st.display === 'none' || st.visibility === 'hidden') continue;
+    const op = +st.opacity;
+    if (!(op > 0.02)) continue;
+    const r = el.getBoundingClientRect();
+    const quota = (r.width * r.height) / (innerWidth * innerHeight);
+    if (quota < 0.20) continue;
+    strati.push({ id: el.id || el.className || el.tagName, op: +op.toFixed(2), quota: +quota.toFixed(2) });
+  }
+
   return {
-    mancanti,
+    mancanti, strati,
     vista: { W, H, dpr, S2: +S2.toFixed(3) },
     scena: t.state, punteggio: G.score.slice(), tempo: +G.timeLeft.toFixed(1),
     erba: { vuote: celleVuote, celle, frazione: celleVuote / celle, mappa: mappaCelle },
@@ -926,6 +1201,16 @@ function misuraInPagina(arg) {
       Lpalla, Lquadro, Lintorno, rapporto: Lquadro ? Lpalla / Lquadro : 0,
       diamPx: rMis * 2, diamFraz: (rMis * 2) / W, rAtteso: rAtteso * 2,
       z: +(b.z || 0).toFixed(1), fuori: !dentro(Math.round(bx), Math.round(by)),
+      /* SE LA PALLA NON C'E', COS'E' CHE C'E'? Senza questa riga la
+         misura diceva solo "0,00x" e sembrava rotta; invece la palla era
+         finita sotto il pulsante TIRA, che la copre — un difetto vero,
+         del gioco, non della misura. */
+      sotto: (() => {
+        const x = Math.round(bx), y = Math.round(by);
+        if (!dentro(x, y)) return null;
+        const i = y * W + x, j = i * 4;
+        return { r: dati[j], g: dati[j + 1], b: dati[j + 2], erba: !!erba[i], corpo: !!corpo[i] };
+      })(),
     },
     figura: attivo ? {
       idx: attivo.idx, altPx: attivo.h, altFraz: attivo.h / H,
@@ -933,6 +1218,10 @@ function misuraInPagina(arg) {
     } : null,
     figure: figure.length,
     ombre,
+    /* CIO' CHE IL GIOCO DICHIARA sulla propria luce, per confrontarlo con
+       cio' che si vede nei pixel: se le due cose non coincidono, uno dei
+       due mente e il numero da solo non basta piu' */
+    luce: dichiarata,
     prato: { hSin, hDes, hAlt, hBas, dLR, dAB, delta: Math.max(dLR || 0, dAB || 0) },
     Lprato,
     silhouette: sil.toDataURL('image/png'),
@@ -976,7 +1265,11 @@ function cancelli(m, S) {
     ok: okLum && okDia && !p.fuori,
     testo: `palla ${p.rapporto.toFixed(2)}x la mediana del quadro (min ${S.pallaLumMin}), diametro ${(p.diamFraz * 100).toFixed(2)}% della larghezza (min ${(S.pallaDiamMin * 100).toFixed(1)}%)`,
     nota: p.fuori ? 'la palla è fuori dal quadro'
-      : `luminanza palla ${p.Lpalla.toFixed(0)}, quadro ${p.Lquadro.toFixed(0)}, intorno ${p.Lintorno.toFixed(0)}; ${p.diamPx.toFixed(1)} px misurati contro ${p.rAtteso.toFixed(1)} attesi dallo stato`,
+      : (p.diamPx > 0
+        ? `luminanza palla ${p.Lpalla.toFixed(0)}, quadro ${p.Lquadro.toFixed(0)}, intorno ${p.Lintorno.toFixed(0)}; ${p.diamPx.toFixed(1)} px misurati contro ${p.rAtteso.toFixed(1)} attesi dallo stato`
+        : `dove lo stato mette la palla non c'è nessuna palla: c'è rgb(${p.sotto ? p.sotto.r + ',' + p.sotto.g + ',' + p.sotto.b : '?'})` +
+        (p.sotto && !p.sotto.erba && !p.sotto.corpo ? ' — la palla è finita SOTTO UN ELEMENTO DELL\'HUD, che la copre' :
+          p.sotto && p.sotto.corpo ? ' — la palla è coperta da un corpo' : '')),
   });
   /* 3 */
   const f = m.figura;
@@ -991,22 +1284,45 @@ function cancelli(m, S) {
   const con = m.ombre.filter(o => o.ombra);
   const dirs = con.map(o => o.dir);
   const st = con.length ? statisticaCircolare(dirs) : { dev: 999, media: 0, peggio: 999 };
-  const lungMedia = con.length ? con.reduce((a, o) => a + o.rapporto, 0) / con.length : 0;
+  /* la media della lunghezza si fa sulle ombre INTERE: una troncata dal
+     bordo del quadro dice solo "almeno tanto", e mediarla abbasserebbe il
+     numero per un motivo d'inquadratura, non di luce */
+  const intere = con.filter(o => !o.troncata);
+  const lungMedia = intere.length ? intere.reduce((a, o) => a + o.rapporto, 0) / intere.length : 0;
   const abbastanza = con.length >= S.ombraFigureMin;
   const scartate = m.ombre.filter(o => !o.ombra);
   const perche = (k, t) => { const q = scartate.filter(o => o[k]).length; return q ? q + ' ' + t : null; };
   const motivi = [perche('bordo', 'sul bordo del quadro'), perche('duello', 'in duello'),
-  perche('fuoriManto', 'con i piedi fuori dal manto')].filter(Boolean).join(', ');
+  perche('fuoriManto', 'con i piedi fuori dal manto'),
+  perche('buioAttorno', 'già dentro un altro cono d ombra'),
+  perche('sottile', 'con una traccia troppo sottile per essere un ombra'),
+  perche('ambigua', 'con due ombre addosso e nessuna attribuibile'),
+  perche('staccata', 'con la macchia scura staccata dai piedi'),
+  perche('pozza', 'dentro una pozza di buio larga quanto lunga')].filter(Boolean).join(', ');
+  /* LA SECONDA CAMPANA: quanto dista la direzione MISURATA da quella che
+     il gioco DICHIARA. Se le due non coincidono, o la luce non fa quello
+     che dice o la misura non vede quello che c'è: in un caso o nell'altro
+     il fotogramma non è quello promesso, e il cancello resta rosso. */
+  let scartoDich = null;
+  if (abbastanza && m.luce) {
+    let d = Math.abs(st.media - m.luce.dir); if (d > 180) d = 360 - d;
+    scartoDich = d;
+  }
+  const dichOk = scartoDich === null || scartoDich <= S.ombraScartoDich;
   out.push({
     nome: 'ombre parallele',
-    ok: abbastanza && st.dev <= S.ombreDevMax && lungMedia >= S.ombreLungMin,
+    ok: abbastanza && intere.length > 0 && st.dev <= S.ombreDevMax && lungMedia >= S.ombreLungMin && dichOk,
     testo: abbastanza
-      ? `ombre: deviazione delle direzioni ${st.dev.toFixed(1)}° (tetto ${S.ombreDevMax}°), lunghezza media ${lungMedia.toFixed(2)}x l'altezza della figura (min ${S.ombreLungMin}x)`
+      ? `ombre: deviazione delle direzioni ${st.dev.toFixed(1)}° (tetto ${S.ombreDevMax}°), lunghezza media ${intere.length ? lungMedia.toFixed(2) + 'x' : 'non misurabile (tutte troncate dal bordo)'} l'altezza della figura (min ${S.ombreLungMin}x)`
       : `ombre: solo ${con.length} figure su ${m.ombre.length} hanno un'ombra misurabile — con meno di ${S.ombraFigureMin} la misura non si dà`,
-    nota: abbastanza
+    nota: (abbastanza
       ? `direzione media ${st.media.toFixed(0)}°, scarto massimo ${st.peggio.toFixed(0)}°, su ${con.length} figure` +
-      (motivi ? '; scartate: ' + motivi : '')
-      : (motivi ? 'scartate: ' + motivi : 'nessuna figura ha ombra attorno ai piedi'),
+      (con.length - intere.length ? ` (${con.length - intere.length} con l'ombra troncata dal bordo: contano per la direzione, non per la lunghezza)` : '')
+      : (motivi ? 'scartate: ' + motivi : 'nessuna figura ha ombra attorno ai piedi')) +
+      (abbastanza && motivi ? '; scartate: ' + motivi : '') +
+      (m.luce ? `\n         il gioco dichiara ${m.luce.dir.toFixed(0)}° e ${(m.luce.lungPx).toFixed(0)} px di ombra a riposo` +
+        (scartoDich !== null ? `: scarto misurato-dichiarato ${scartoDich.toFixed(0)}° (tetto ${S.ombraScartoDich}°)` +
+          (dichOk ? '' : ' — UNO DEI DUE MENTE') : '') : ''),
   });
   /* 5 */
   const pr = m.prato;
@@ -1094,6 +1410,7 @@ function cancelli(m, S) {
 
   const esiti = [];
   let mancantiVisti = [];
+  let coperti = 0;
   try {
     await pag.goto(`http://127.0.0.1:${srv.porta}/CALCETTO-il-gioco.html`, { waitUntil: 'load' });
     await pag.waitForFunction('window.__test !== undefined', null, { timeout: 20000 });
@@ -1111,12 +1428,40 @@ function cancelli(m, S) {
       t.setCpuVsCpu && t.setCpuVsCpu(true);
     }, o.taglia ? +o.taglia : 0);
 
+    /* ============================ SI ASPETTA CHE IL DOM SI TOLGA DI MEZZO
+       Lo splash sfuma in mezzo secondo e la transizione fra schermate
+       (#wipe) spazza lo schermo con bande diagonali: sono animazioni CSS,
+       che corrono sull'orologio VERO e non sul banco. Scattando subito
+       dopo startMatch si fotografano LORO — la tela sotto è perfetta e la
+       fotografia è di un sipario. E' costato un giro intero di lavoro e
+       una diagnosi sbagliata («la tela è vuota»): la tela non era vuota,
+       era coperta. Qui si aspetta la condizione, non l'orologio, e poi si
+       congelano le animazioni perché non ne partano altre. */
+    try {
+      await pag.waitForFunction(() => {
+        const w = document.getElementById('wipe');
+        if (w && getComputedStyle(w).display !== 'none') return false;
+        const s = document.getElementById('splash');
+        if (s) { const cs = getComputedStyle(s); if (cs.display !== 'none' && +cs.opacity > 0.02) return false; }
+        return document.getAnimations().every(an => {
+          const c = an.effect && an.effect.getComputedTiming ? an.effect.getComputedTiming() : null;
+          return !c || c.iterations === Infinity || !isFinite(c.endTime) || an.playState === 'finished';
+        });
+      }, null, { polling: 60, timeout: 15000 });
+    } catch (e) {
+      console.log('  ATTENZIONE: gli strati del DOM non si sono tolti in 15 s; le fotografie potrebbero essere coperte.');
+    }
+    await pag.evaluate(congelaAnimazioni);
+
     console.log(`\n=== FREEZE-FRAME TEST — ${n} istanti fra il secondo ${da} e il secondo ${a}, seme ${seme} ===`);
     console.log(`quadro ${vista.w}x${vista.h}@${vista.dpr}  (tela ${vista.w * vista.dpr}x${vista.h * vista.dpr} px)`);
     if (controllo) {
       console.log('\n!!! BANCO DI PROVA DELLO STRUMENTO — I FOTOGRAMMI SONO FALSIFICATI !!!');
-      console.log('    ombre lunghe parallele e prato a gradiente dipinti sopra la scena vera:');
-      console.log('    serve solo a verificare che le misure sappiano dire anche OK.\n');
+      console.log('    il sole spostato a 145 gradi e il prato spianato, dipinti sopra la scena');
+      console.log('    vera: serve a verificare che la misura segua i PIXEL, non la dichiarazione.');
+      console.log('    Nota: qui ogni istante costa due disegni in più (si ridipinge per');
+      console.log('    falsificare) e la camera vive dentro render(), quindi la colonna');
+      console.log('    "gioco vero" può differire di poco da quella della corsa normale.\n');
     }
 
     let orologio = 0;
@@ -1124,9 +1469,21 @@ function cancelli(m, S) {
       const bersaglio = istanti[i];
       /* si porta la partita all'istante voluto un pezzo per volta */
       const avanti = Math.max(0, bersaglio - orologio);
+      /* LA PARTITA SI FA CORRERE A FOTOGRAMMI VERI, non a sola fisica.
+         __test.simulate fa avanzare i corpi e NON disegna; ma in questo
+         gioco la camera vive dentro render() — updateCamera(rdt) è la
+         prima riga di render — quindi ventisette secondi di sola fisica
+         lasciano l'inquadratura ferma dov'era al fischio d'inizio, e al
+         primo disegno la camera ha fatto UN sessantesimo di strada verso
+         il pallone. Le misure erano vere ma di un fotogramma che nessun
+         giocatore vede mai: azione al bordo, palla sotto i pulsanti,
+         erba vuota gonfiata. Con __banco.passo() ogni passo di fisica ha
+         il suo disegno, esattamente come in partita, e resta
+         deterministico perché l'orologio è ancora il nostro. Costa: sono
+         sessanta render al secondo di gioco. */
       const stato = await pag.evaluate(sec => {
-        const t = window.__test;
-        t.simulate(sec);
+        const t = window.__test, banco = window.__banco;
+        banco.passo(Math.round(sec * 60));
         /* se l'istante cade dentro una celebrazione o una moviola si
            aspetta il ritorno in gioco: il freeze-frame test è sull'AZIONE,
            e uno scatto sulla festa direbbe di un'altra scena. Quanto si è
@@ -1141,10 +1498,10 @@ function cancelli(m, S) {
           const s = t.state;
           if ((s === 'play' || s === 'golden') && !t.moviola) break;
           if (s === 'menu' || s === 'end') break;
-          t.simulate(0.12); extra += 0.12;
+          banco.passo(7); extra += 7 / 60;
         }
         if (extra > 0 && (t.state === 'play' || t.state === 'golden')) {
-          t.simulate(1.2); extra += 1.2;
+          banco.passo(72); extra += 1.2;
         }
         return { scena: t.state, extra: +extra.toFixed(2) };
       }, avanti);
@@ -1154,12 +1511,11 @@ function cancelli(m, S) {
         break;
       }
 
-      /* si disegna UN fotogramma a mano: simulate fa avanzare lo stato ma
-         non ridipinge, e senza questa riga si misurerebbe il fotogramma
-         di prima */
+      /* NIENTE disegno in più qui: l'ultimo fotogramma del banco è già
+         sulla tela, ed è quello che si misura e si fotografa. Ridisegnare
+         farebbe fare alla camera un altro sessantesimo di strada, e la
+         fotografia non sarebbe più il fotogramma misurato. */
       const nn = String(i + 1).padStart(2, '0');
-      await pag.evaluate(() => { window.__test.disegna(); });
-
       const m = await pag.evaluate(misuraInPagina, { par: S, controllo: 0 });
       if (m.mancanti.length) mancantiVisti = mancantiVisti.concat(m.mancanti);
 
@@ -1169,9 +1525,19 @@ function cancelli(m, S) {
 
       const c = cancelli(m, S);
       const passate = c.filter(x => x.ok).length;
+      const luce = m.luce
+        ? `  ora ${(m.luce.ora * 100).toFixed(0)}%  fari ${m.luce.fari ? m.luce.fari.filter(x => x > 0.5).length : '?'}/4`
+        : '';
       console.log(`\n--- istante ${i + 1}: t=${orologio.toFixed(1)}s  scena ${m.scena}  ` +
         `${m.punteggio[0]}-${m.punteggio[1]}  ${m.figure} figure in quadro  ` +
-        `zoom ${m.vista.S2}${stato.extra ? '  (spostato di ' + stato.extra.toFixed(1) + 's per uscire dalla scena del gol)' : ''}`);
+        `zoom ${m.vista.S2}${luce}${stato.extra ? '  (spostato di ' + stato.extra.toFixed(1) + 's per uscire dalla scena del gol)' : ''}`);
+      /* la fotografia è del gioco o di un sipario? */
+      if (m.strati.length) {
+        coperti++;
+        console.log('  NO   LA FOTOGRAFIA E\' COPERTA da uno strato del DOM: ' +
+          m.strati.map(s => `${s.id} (opacità ${s.op}, ${Math.round(s.quota * 100)}% del quadro)`).join(', '));
+        console.log('       le misure leggono la TELA e restano valide, ma il PNG non è del gioco.');
+      }
       for (const x of c) {
         console.log((x.ok ? '  OK   ' : '  NO   ') + x.testo + (x.nota ? '\n         ' + x.nota : ''));
       }
@@ -1186,7 +1552,7 @@ function cancelli(m, S) {
         for (const r2 of m.erba.mappa) console.log('           ' + r2);
         for (const ob of m.ombre) {
           console.log('           fig ' + String(ob.idx).padStart(2) +
-            (ob.ombra ? `  dir ${ob.dir.toFixed(0).padStart(5)}°  lung ${ob.rapporto.toFixed(2)}x  (${ob.lung} px su ${ob.h} di figura, ${ob.pixel} pixel d'ombra)`
+            (ob.ombra ? `  dir ${ob.dir.toFixed(0).padStart(5)}°  lung ${ob.rapporto.toFixed(2)}x  (${ob.lung} px su ${ob.h} di figura, ${ob.pixel} pixel d'ombra; sulla dichiarata ${ob.lungDich} px)`
               : `  nessuna ombra trovata (${ob.pixel} pixel)`));
         }
       }
@@ -1217,7 +1583,11 @@ function cancelli(m, S) {
           }
         }
         const d = x => (x.ok ? 'OK' : 'NO');
-        console.log(`   banco   ombre:  gioco vero ${d(c[3])}   ombre lunghe dipinte ${d(cA[3])}   prato spianato ${d(cB[3])}`);
+        /* la direzione media misurata sul falso: è LEI la prova che la
+           misura guarda i pixel e non la dichiarazione */
+        const vA = mA.ombre.filter(y => y.ombra);
+        riga.dirA = vA.length ? statisticaCircolare(vA.map(y => y.dir)).media : null;
+        console.log(`   banco   ombre:  gioco vero ${d(c[3])}   sole spostato a 145° ${d(cA[3])} (misurata ${riga.dirA === null ? '—' : riga.dirA.toFixed(0) + '°'})   prato spianato ${d(cB[3])}`);
         const dirdi = x => {
           const v = x.ombre.filter(y => y.ombra);
           if (!v.length) return '—';
@@ -1251,6 +1621,11 @@ function cancelli(m, S) {
   console.log('  su ' + esiti.length + '    ' +
     nomi.map((_, k) => (esiti.filter(e => e.c[k].ok).length + '/' + esiti.length).padEnd(10)).join(''));
   console.log(`\n${passate} misure passate su ${tot}.  I PNG stanno in ${dir}`);
+  if (coperti) {
+    console.log(`\nPROVE NON VALIDE: ${coperti} fotografie su ${esiti.length} sono coperte da uno`);
+    console.log('strato del DOM. Le misure leggono la tela e restano vere, ma quei PNG non');
+    console.log('mostrano il gioco: chi giudica guarderebbe un sipario.');
+  }
   if (mancantiVisti.length) {
     console.log('\nHOOK MANCANTI (la misura ha usato un ripiego): ' +
       Array.from(new Set(mancantiVisti)).join(', '));
@@ -1258,25 +1633,34 @@ function cancelli(m, S) {
   if (errori.length) console.log('ERRORI IN PAGINA: ' + errori.slice(0, 3).join(' | '));
 
   if (controllo) {
-    /* il banco di prova ha un compito solo: dimostrare che le due misure
-       della luce non sono costanti travestite. Devono dire OK sul
-       fotogramma che le soddisfa e NO su quello che le nega, sullo stesso
-       identico istante di partita. Se non cambiano, non misurano. */
+    /* IL BANCO, sul gioco che le ombre lunghe ce le ha davvero. Tre cose
+       da dimostrare, tutte sullo stesso istante di partita:
+         1. la misura SEGUE I PIXEL: col sole spostato a 145 gradi deve
+            dire 145, non i 20 che il gioco continua a dichiarare;
+         2. la seconda campana suona: quel disaccordo dev'essere segnalato;
+         3. la misura SA FALLIRE: col prato spianato non deve trovare
+            nessuna ombra e il gradiente deve cadere sotto la soglia. */
     const n2 = esiti.length;
-    const omA = esiti.filter(e => e.cA[3].ok).length, omB = esiti.filter(e => !e.cB[3].ok).length;
+    const dirA = esiti.map(e => e.dirA).filter(x => x !== null && x !== undefined);
+    const segue = dirA.filter(d => { let x = Math.abs(d - 145); if (x > 180) x = 360 - x; return x <= 12; }).length;
+    const grida = esiti.filter(e => !e.cA[3].ok).length;
+    const omB = esiti.filter(e => !e.cB[3].ok).length;
     const prA = esiti.filter(e => e.cA[4].ok).length, prB = esiti.filter(e => !e.cB[4].ok).length;
     console.log('\n=== BANCO DI PROVA DELLO STRUMENTO ===');
-    console.log(`  ombre     sa dire OK su ${omA}/${n2} fotogrammi con le ombre lunghe,  ` +
-      `sa dire NO su ${omB}/${n2} col prato spianato`);
-    console.log(`  prato     sa dire OK su ${prA}/${n2} fotogrammi col gradiente,        ` +
-      `sa dire NO su ${prB}/${n2} col prato spianato`);
-    const sano = omA === n2 && omB === n2 && prA === n2 && prB === n2;
+    console.log(`  1. segue i pixel      col sole dipinto a 145°, la misura dice 145° in ${segue}/${dirA.length} fotogrammi`);
+    console.log(`     (se dicesse i 20° dichiarati dal gioco starebbe copiando la risposta)`);
+    console.log(`  2. la seconda campana il disaccordo col dichiarato è segnalato in ${grida}/${n2}`);
+    console.log(`  3. sa fallire         col prato spianato: ombre NO in ${omB}/${n2}, prato NO in ${prB}/${n2}`);
+    console.log(`  4. sa passare         col gradiente dipinto: prato OK in ${prA}/${n2}`);
+    const sano = dirA.length >= n2 * 0.6 && segue === dirA.length && grida === n2 &&
+      omB === n2 && prB === n2 && prA === n2;
     console.log(sano
-      ? '  OK   le due misure seguono il fotogramma: sanno passare e sanno fallire.'
-      : '  NO   una misura non cambia col fotogramma: non sta misurando niente.');
+      ? '  OK   la misura segue il fotogramma e non la dichiarazione: sa passare e sa fallire.'
+      : '  NO   il banco non torna: la misura non segue i pixel o non sa fallire.');
     process.exit(sano ? 0 : 1);
   }
 
+  if (coperti) process.exit(1);
   if (passate < tot) {
     console.log('\nOgni misura fallita è una riga della scheda della giuria: la luce delle');
     console.log('sette di sera, la palla protagonista, la regia del quadro. Il fotogramma');
