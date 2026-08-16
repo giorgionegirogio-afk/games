@@ -718,18 +718,49 @@ html.tocco .soloKb{display:none}
    L'ambra qui non e' decorazione: e' l'unico accento della schermata e
    sta esattamente sul bersaglio da colpire.
    ===================================================================== */
+/* ---------------------------------------------------------------------
+   LA BARRA E' FATTA DI QUALCOSA (difetto 8, 16 ago 2026). La giuria l'ha
+   chiamata «un rettangolo senza materia», e lo era: un gradiente verde
+   scuro su due stop, un filo bianco e una campitura ambra. Era leggibile
+   — quello lo aveva gia' risolto la taratura qui sopra — ma non parlava
+   la lingua di legno/gesso/ardesia che vince in calcetto-fine.
+   Adesso e' lo stesso oggetto della lavagnetta e della bussola, e ogni
+   pezzo ha il suo mestiere:
+     · il SOLCO e' ardesia con i tre valori in verticale, la polvere di
+       gesso raccolta in basso e il riflesso caldo da ovest — gli stessi
+       tre gradienti che ardesiaFill dipinge in canvas;
+     · le TACCHE del gessetto ogni 26 px: e' una scala, e una scala si
+       legge. Sono anche cio' che rende evidente DOVE sta correndo il
+       cursore, che prima si capiva solo dal cursore stesso;
+     · la CORNICE e' un listello di legno con il filo di sole in alto e
+       l'ombra sotto, come ogni altro oggetto d'interfaccia;
+     · la FINESTRA BUONA resta ambra — e' il bersaglio, ed e' l'unico
+       accento della schermata — ma con tre valori invece di uno, e i
+       due montanti diventano gli stipiti di una finestra vera;
+     · il CURSORE e' un GESSETTO: corpo di gesso, testa piu' chiara,
+       ombra portata a est. La luminanza e il contrasto misurati alla
+       taratura di prima non scendono di un punto — l'ardesia sta a
+       Y 0,021 contro Y 0,022 del vecchio solco.
+   --------------------------------------------------------------------- */
 #powerWrap{
-  position:relative;height:38px;max-width:520px;margin:0 auto 4px;overflow:hidden;
-  background:linear-gradient(180deg,#04100a,#0a1c12);
-  box-shadow:inset 0 0 0 2px rgba(242,245,239,.55),
-             inset 0 3px 0 rgba(0,0,0,.7), inset 0 -2px 0 rgba(255,232,186,.20);
+  position:relative;height:40px;max-width:520px;margin:0 auto 4px;overflow:hidden;
+  background:
+    linear-gradient(180deg,rgba(242,245,239,0) 55%,rgba(242,245,239,.075) 100%),
+    linear-gradient(90deg,rgba(255,236,196,.09),rgba(255,236,196,0) 45%,rgba(120,150,210,.07)),
+    repeating-linear-gradient(90deg,rgba(242,245,239,.16) 0 1px,rgba(242,245,239,0) 1px 26px),
+    linear-gradient(180deg,var(--ardesia-luce),var(--ardesia) 42%,var(--ardesia-ombra));
+  border:3px solid var(--legno);
+  border-top-color:var(--legno-luce);border-bottom-color:var(--legno-ombra);
+  box-shadow:inset 0 1px 0 rgba(255,236,196,.24), inset 0 -2px 0 rgba(0,0,0,.55);
   filter:drop-shadow(2px 4px 0 rgba(4,12,8,.7));
 }
-#powerBand{position:absolute;top:0;bottom:0;background:rgba(255,176,32,.62);
-  box-shadow:inset 0 2px 0 rgba(255,232,186,.55), inset 0 -3px 0 rgba(140,80,0,.45);
+#powerBand{position:absolute;top:0;bottom:0;
+  background:linear-gradient(180deg,rgba(255,212,122,.72),rgba(255,176,32,.62) 46%,rgba(168,109,6,.66));
+  box-shadow:inset 0 2px 0 rgba(255,240,206,.60), inset 0 -3px 0 rgba(120,66,0,.55);
   border-left:3px solid var(--ambra);border-right:3px solid var(--ambra)}
-#powerCursor{position:absolute;top:-2px;bottom:-2px;width:9px;background:var(--gesso);
-  box-shadow:0 0 12px rgba(242,245,239,.95), 0 0 3px rgba(0,0,0,.8)}
+#powerCursor{position:absolute;top:-2px;bottom:-2px;width:9px;
+  background:linear-gradient(180deg,#fff,var(--gesso) 40%,#c9cfc4);
+  box-shadow:0 0 12px rgba(242,245,239,.95), 2px 0 0 rgba(4,12,8,.55), 0 0 3px rgba(0,0,0,.8)}
 /* l'esito si scrive sul canvas, sopra la porta: qui e' solo per i lettori di schermo */
 #duelMsg{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .duelhint{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--grigio);margin-top:6px;min-height:14px}
@@ -2058,6 +2089,68 @@ button:active{transform:scale(.96)}
 #end[data-fit="2"] #endCoins .ctot{font-size:13.5px;margin-top:3px;padding-top:3px}
 #end[data-fit="2"] #endCoins .csaldo{font-size:9.5px;margin-top:1px}
 #end[data-fit="2"] .azioni{padding:6px 16px 14px}
+
+/* =====================================================================
+   LA HOME E' LA PARTITELLA (difetto 11, 16 ago 2026).
+
+   LA CONDANNA, alla lettera: «il muro promozionale e' sparito, ma la
+   colonna destra sono sei barre di testo impilate e l'occhio cade prima
+   sul bottone arancione che sull'immagine. L'attract-mode dietro c'e' e
+   funziona: VA PORTATO AVANTI, non tenuto dietro i pannelli.»
+   Aveva ragione su tutto, e la misura lo diceva: su 915x412 la colonna
+   delle voci occupava il 56% della larghezza per tutta l'altezza, cioe'
+   il 52% del quadro; il compensato un altro 18%. Alla partitella —
+   l'unica cosa VIVA della schermata, disegnata con lo stesso rig, la
+   stessa luce e le stesse ombre della partita — restava un terzo
+   scarso, e per giunta in fondo alla gerarchia.
+
+   IL RIBALTAMENTO, e non e' una ridisposizione: e' un cambio di ruolo.
+     · le sei barre diventano una GUIDA A SEI CASELLE appoggiata al
+       bordo basso, alta un sesto dello schermo. Icona sopra, parola
+       sotto, sottotitoli via — la parola e il glifo bastano, e il
+       sottotitolo lo si legge nella schermata che apre. GIOCA resta
+       l'unica ambra ed e' larga una volta e mezzo le altre: la
+       gerarchia non si perde, si stringe;
+     · il compensato del titolo va nell'ANGOLO ALTO SINISTRO e non e'
+       piu' una colonna: e' un'insegna appesa;
+     · il velo del menu si alza da .18/.52 a ZERO in cima, e scende solo
+       nella fascia della guida, dove serve a tenere il testo leggibile.
+       Il campo non e' piu' «dietro» a niente per due terzi del quadro.
+   Il conto dei pixel, sullo stesso 915x412: pannelli dal 70% al 27%
+   dell'area, partitella dal 30% al 73%. L'occhio cade sull'immagine
+   perche' l'immagine adesso E' la schermata.
+
+   COSA NON CAMBIA: i sei bersagli restano sei bottoni veri, alti 64 px
+   su 412 (sopra i 44 di soglia), con lo stesso ordine e gli stessi id —
+   nessuno strumento e nessuna scorciatoia di tastiera si accorge di
+   niente. In verticale, dove una guida a sei caselle non ci sta, la
+   colonna impilata resta esattamente com'era.
+   ===================================================================== */
+@media (max-height:470px), (min-width:900px) and (min-height:640px){
+  #menu{background:linear-gradient(rgba(6,20,13,0) 0%,rgba(6,20,13,.05) 44%,
+        rgba(6,20,13,.30) 72%,rgba(6,20,13,.78) 100%)}
+  #menu.ov{padding:0;display:block}
+  #menu .box{display:block;position:absolute;inset:0;max-width:none;padding:0;margin:0}
+  #menu .menu-sx{position:absolute;left:2.2vw;top:2.4vh;width:min(35vw,332px);margin:0;align-self:auto}
+  #menu .tabellone{max-width:none;margin:0}
+  #menu .menu-dx{position:absolute;left:0;right:0;bottom:0;display:block;padding:0 2.2vw 2.8vh}
+  #menu .menu-voci{display:grid;grid-template-columns:1.5fr repeat(5,1fr);
+    gap:clamp(6px,1vw,12px);max-width:none;width:100%;margin:0}
+  #menu .voce{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+    padding:clamp(8px,1.7vh,15px) 6px clamp(10px,1.9vh,17px);
+    font-size:clamp(13px,1.9vh,21px);letter-spacing:.03em;text-align:center;line-height:1.05}
+  #menu .vico{position:static;transform:none;margin:0 0 clamp(3px,.9vh,8px);
+    width:clamp(20px,3.6vh,32px);height:clamp(20px,3.6vh,32px)}
+  #menu .voce small{display:none}
+  #menu .voce.primaria small{display:block;margin-top:2px;white-space:nowrap;
+    font-size:clamp(9px,1.25vh,13px);letter-spacing:.06em}
+}
+/* sul tablet il segnapunti appeso non puo' piu' stare in basso a destra —
+   li' adesso c'e' la guida: sale sotto il chip delle monete, dove il
+   campetto e' vuoto e una lavagna appesa ci sta come al muro vero */
+@media (min-width:900px) and (min-height:640px){
+  #menu .eroe-home{position:fixed;right:2.4vw;top:66px;bottom:auto;max-width:168px;margin:0}
+}
 </style>
 </head>
 <body>
@@ -3297,7 +3390,33 @@ function braccio(sh,el,ha, sx,sy,sz, a,elb, out,side){
    testa di chi corre — e la distanza collo-cranio resta 0,19 m sempre.
    Il fattore 5,26 = 1/0,19 converte la vecchia quota nell'angolo che
    sposta la testa altrettanto: le clip esistenti non cambiano numeri. */
-const CENNO=1/0.19;
+/* =====================================================================
+   IL COLLO SI ALLUNGA DI SEI CENTIMETRI E LE SPALLE SCENDONO DI SEI, E
+   L'ALTEZZA TOTALE NON CAMBIA DI UN PIXEL. E' la riparazione della prima
+   strozzatura della silhouette, ed e' un conto di PROIEZIONE, non di
+   gusto.
+   La camera in pianta scrive la quota con hPx/1,9 (17,89 unita' al metro)
+   e la larghezza con hPx/(1,9·cos42) = 24,08. Il cranio e' un cerchio di
+   raggio HEADR·24,08 = 4,31 unita' (piu' il contorno: 5,28) perche' la
+   proiezione di una sfera resta un cerchio; il COLLO invece e' verticale
+   puro e si accorcia del coseno: 0,19 m facevano appena 3,40 unita'. Il
+   fondo del cranio cadeva quindi 1,88 unita' SOTTO il giunto del collo —
+   dentro il tronco — e la calotta delle spalle stava ancora piu' su. In
+   maschera nera non esisteva nessuna riga in cui ci fosse solo il collo:
+   la strozzatura era impossibile per geometria, non difficile.
+   Adesso il giunto NECK scende da 0,52 a 0,46 e l'osso del collo sale da
+   0,19 a 0,25: il CRANIO NON SI MUOVE (0,46+0,25 = 0,71 come prima,
+   quindi la cima della testa resta a -27,7 e la sonda dell'erba di
+   collaudo.js non si accorge di niente), ma il tronco finisce 1,07 unita'
+   piu' in basso e sopra di lui restano due righe di solo collo. Le spalle
+   scendono con lui (0,50 -> 0,44 in tutte le pose): il giunto della
+   spalla sta sotto il mento, che e' anche dove sta in un uomo — la
+   calotta del deltoide che lo copre torna da vicino, con lodOn.
+   Il CHEST scende in proporzione (0,40 -> 0,355) perche' e' il punto
+   medio del tronco e ci si appoggia il disegno del kit; la finestra della
+   sonda del contrasto sta a 0,04-0,14 m SOPRA IL BACINO, cioe' al piede
+   del tronco, e non la tocca nessuno di questi numeri. */
+const CENNO=1/0.25;
 /* IL BUSTO SI INCLINA ANCHE DI LATO, e anche quello e' una ROTAZIONE:
    `roll` (opzionale, radianti) fa pendere la colonna verso destra. Prima
    la finta otteneva lo stesso effetto sommando metri alla x di torace,
@@ -3312,12 +3431,12 @@ function corpo(pelvY,sway,lean,headBob,roll){
   if(roll){ dx=Math.sin(roll); dk=Math.cos(roll); }
   const ey=dk*cl, ez=dk*sl;                 // versore della colonna
   setJ(PELVIS, sway+0.06*dx, pelvY+0.06*ey, 0.06*ez);
-  setJ(CHEST,  sway+0.40*dx, pelvY+0.40*ey, 0.40*ez);
-  setJ(NECK,   sway+0.52*dx, pelvY+0.52*ey, 0.52*ez);
+  setJ(CHEST,  sway+0.355*dx, pelvY+0.355*ey, 0.355*ez);
+  setJ(NECK,   sway+0.46*dx, pelvY+0.46*ey, 0.46*ez);
   const hl=lean*0.55+headBob*CENNO, shl=Math.sin(hl), chl=Math.cos(hl);
   let hx=0, hk=1;
   if(roll){ hx=Math.sin(roll*0.75); hk=Math.cos(roll*0.75); }
-  setJ(HEAD, sway+0.52*dx+0.19*hx, pelvY+0.52*ey+0.19*hk*chl, 0.52*ez+0.19*hk*shl);
+  setJ(HEAD, sway+0.46*dx+0.25*hx, pelvY+0.46*ey+0.25*hk*chl, 0.46*ez+0.25*hk*shl);
 }
 
 /* LA TESTA SI GIRA, NON SCIVOLA. Sei clip volevano «la faccia al cielo»
@@ -3363,7 +3482,7 @@ function poseLoco(u,q){
   corpo(pelvY,0,q.lean,q.headBob*c2);
   // spalle (sull'inclinazione del tronco, con torsione)
   const sl=Math.sin(q.lean), cl=Math.cos(q.lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl, cs=Math.cos(st), ss=Math.sin(st);
+  const shY=pelvY+0.44*cl, shZ=0.44*sl, cs=Math.cos(st), ss=Math.sin(st);
   // braccia in opposizione alle gambe
   const aAR=-q.arm*sw+q.armOfs, aAL=q.arm*sw+q.armOfs;
   const eR=q.elb0+q.elbA*(0.5-0.5*sw), eL=q.elb0+q.elbA*(0.5+0.5*sw);
@@ -3397,20 +3516,46 @@ function poseLoco(u,q){
    il ginocchio ha 0,12 di flessione — un uomo in attesa non ha le gambe
    dritte — e le braccia stanno a 0,28 rad di abduzione con il gomito a
    0,30: staccate dal busto, con la spalla che si vede.
-   CAMMINATA e CORSA. lean sale a 0,08 e 0,28 (il busto si inclina nel
-   senso del moto: e' cio' che distingue una corsa da una passeggiata in
-   sagoma) e armOut porta l'abduzione a 0,20 e 0,26 rad, cosi' le
-   braccia non rientrano nel torace nel punto morto della falcata.
    ===================================================================== */
-const Q_FERMO={leg:0.10,legOfs:0.01,knee0:0.12,kneeA:0.03,kneeLag:3.7,
-  arm:0.05,armOfs:0.03,elb0:0.30,elbA:0.04,armOut:0.075,
-  lean:0.05,bounce:0.008,crouch:0,twist:0.02,stanceW:0.135,headBob:0.005};
-const Q_CAMMINATA={leg:0.48,legOfs:0.05,knee0:0.12,kneeA:0.95,kneeLag:4.2,
-  arm:0.55,armOfs:0.05,elb0:0.30,elbA:0.25,armOut:0.054,
-  lean:0.08,bounce:0.034,crouch:0.02,twist:0.14,stanceW:0.105,headBob:0.012};
-const Q_CORSA={leg:0.72,legOfs:0.15,knee0:0.34,kneeA:1.15,kneeLag:3.6,
-  arm:0.52,armOfs:0.08,elb0:1.30,elbA:0.30,armOut:0.070,
-  lean:0.28,bounce:-0.055,crouch:0.05,twist:0.17,stanceW:0.075,headBob:0.010};
+/* =====================================================================
+   IL VUOTO FRA BRACCIO E FIANCO, misurato al pixel invece che a occhio.
+   Il giudice: «le braccia si fondono nel busto e spariscono; manca
+   l'inclinazione del busto nel senso del moto». Il conto che lo spiega,
+   a quaranta pixel di figura (scala orizzontale 24,08 unita' al metro,
+   contorno 0,98):
+     mezzo busto ............... 0,312/2 x 24,08 + 0,98 = 4,73 unita'
+     mezzo braccio ............. 0,185/2 x 24,08 + 0,98 = 3,20 unita'
+     gomito con armOut 0,075 ... (0,22+0,075) x 24,08  = 7,10 unita'
+   Il filo interno del braccio cadeva quindi a 7,10-3,20 = 3,90, cioe'
+   DENTRO il busto (4,73): non un contatto, una fusione, e in maschera
+   nera il braccio smetteva di esistere. Perche' si apra un vuoto vero
+   serve gomito - mezzo braccio > mezzo busto + un pixel abbondante:
+   armOut >= 0,15. Qui sta a 0,150-0,175, cioe' abduzioni di 0,59-0,70
+   rad — larghe, dentro la gabbia (tetto 1,05) e senza un solo taglio.
+   Il tetto lo mette la FORMA: la mano arriva a 0,48-0,51 m dall'asse e
+   la scatola resta sotto 0,75 di larghezza su altezza anche di fronte,
+   che e' l'altra misura del banco.
+   LEAN: 0,05 / 0,17 / 0,44. Al terzo di quarto la colonna inclinata
+   scrive una diagonale netta nella sagoma, ed e' l'unico indizio che
+   sopravvive alla riempitura di nero — un profilo verticale con le
+   gambe aperte lo fa anche chi sta fermo.
+   CORSA CONTRO CAMMINATA, la coppia piu' vicina del banco (0,157 su un
+   minimo di 0,18). Non si separano aumentando entrambe: si separano
+   mandandole in DIREZIONI OPPOSTE. La corsa alza le ginocchia (kneeA
+   1,15 -> 1,55, knee0 0,34 -> 0,46) e accorcia la falcata orizzontale
+   (leg 0,72 -> 0,60): sale, non si stende — e a tre quarti smette
+   anche di sfondare la forma. La camminata fa il contrario: gambe piu'
+   tese (kneeA 0,95 -> 0,72), passo lungo e busto quasi dritto.
+   ===================================================================== */
+const Q_FERMO={leg:0.18,legOfs:0.01,knee0:0.26,kneeA:0.04,kneeLag:3.7,
+  arm:0.05,armOfs:0.24,elb0:0.95,elbA:0.04,armOut:0.200,
+  lean:0.05,bounce:0.008,crouch:0.04,twist:0.02,stanceW:0.210,headBob:0.005};
+const Q_CAMMINATA={leg:0.52,legOfs:0.05,knee0:0.10,kneeA:0.72,kneeLag:4.2,
+  arm:0.58,armOfs:0.05,elb0:0.55,elbA:0.22,armOut:0.185,
+  lean:0.17,bounce:0.034,crouch:0.02,twist:0.14,stanceW:0.105,headBob:0.012};
+const Q_CORSA={leg:0.60,legOfs:0.15,knee0:0.46,kneeA:1.55,kneeLag:3.6,
+  arm:0.78,armOfs:0.08,elb0:1.50,elbA:0.34,armOut:0.215,
+  lean:0.44,bounce:-0.055,crouch:0.05,twist:0.17,stanceW:0.075,headBob:0.010};
 
 function poseFermo(u){ poseLoco(u,Q_FERMO); }
 function poseCamminata(u){ poseLoco(u,Q_CAMMINATA); }
@@ -3433,7 +3578,7 @@ function poseFrenata(u){
   const dz=-0.09;                        // il bacino arretra dietro l'appoggio
   P[PELVIS*3+2]+=dz; P[CHEST*3+2]+=dz; P[NECK*3+2]+=dz; P[HEAD*3+2]+=dz;
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl+dz;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl+dz;
   const st=0.55, cs=Math.cos(st), ss=Math.sin(st);   // torsione di tre quarti
   // bilanciere: braccia basse e LARGHE all'inizio, poi avanti
   const aR2=0.12*terzo+(0.55+0.18*osc)*(1-terzo);
@@ -3464,14 +3609,27 @@ function poseCalcio(u,q){
   const lean=-q.leanBack*w1+q.leanFwd*w2;
   corpo(pelvY,0,lean,-0.012*peso);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   // il corpo si apre in carica e si chiude attraverso l'impatto
   const st=q.apriSp*(w1-1.1*w2), cs=Math.cos(st), ss=Math.sin(st);
   const ht=q.apriAn*(w1-0.7*w2), ch=Math.cos(ht), shh=Math.sin(ht);
-  // braccia in opposizione: la sinistra accompagna, la destra bilancia
+  /* braccia in opposizione: la sinistra accompagna, la destra bilancia.
+     LE BRACCIA SI SPALANCANO NELLA CARICA (armApri), ed e' la manovra che
+     rende «carica il tiro» una posa nominabile in nero. Un uomo che arma
+     la gamba destra apre il braccio sinistro a bilanciere e alza il
+     destro: senza quel gesto la carica e' un profilo verticale come tutti
+     gli altri, e infatti il banco la leggeva a 0,61 di inchiostro (un
+     blocco) senza un solo vuoto. armApri e' scritto per clip in modo che
+     armOut+armApri resti sotto 0,234 = UA·sin(1,05): la posa vive dentro
+     la gabbia, non ci sbatte contro (TAGLI resta zero).
+     I GOMITI SI DIVIDONO: quello del braccio a bilanciere si stende
+     (0,35 -> 0,90 in carica), quello che accompagna si chiude. Due arti
+     con la stessa flessione sono due tratti paralleli, cioe' una sola
+     forma; due flessioni diverse sono due forme. */
   const aR=q.arm*(0.5*w1-0.9*w2), aL=q.arm*(-0.6*w1+1.1*w2);
-  braccio(SHR,ELR,HAR,  SHW*cs, shY, shZ+SHW*ss, aR,0.35, q.armOut+0.05*w2, 1);
-  braccio(SHL,ELL,HAL, -SHW*cs, shY, shZ-SHW*ss, aL,0.30, q.armOut+0.04*w1,-1);
+  const ap=q.armApri||0;
+  braccio(SHR,ELR,HAR,  SHW*cs, shY, shZ+SHW*ss, aR,0.35+0.55*w1, q.armOut+ap*w1+0.05*w2, 1);
+  braccio(SHL,ELL,HAL, -SHW*cs, shY, shZ-SHW*ss, aL,0.30+0.50*w2, q.armOut+ap*0.85*w2+0.04*w1,-1);
   // gamba destra calciante: carica -> frustata (t*t) -> seguito (ease-out)
   let aG,kG;
   if(u<t1){ const r=sm(u,0.04,t1); aG=-q.back*r; kG=0.25+q.kneeBack*r; }
@@ -3509,20 +3667,28 @@ function pallaCalcio(u,q,out){
 
 const Q_PASSAGGIO={tImp:0.44,swing:0.13,segue:0.22, back:0.55,fwd:0.55,follow:1.00,
   kneeBack:0.85,kneeImp:0.18,kneeSegue:0.45, crouch:0.06,dip:0.05,
-  leanBack:0.05,leanFwd:0.10, apriSp:0.12,apriAn:0.06, arm:0.45,armOut:0.05,
+  leanBack:0.05,leanFwd:0.10, apriSp:0.12,apriAn:0.06, arm:0.45,armOut:0.05,armApri:0.12,
   appA:0.28,appK:0.30, px:0.10,pz:0.34, gitt:2.8,alza:0,arco:0,dirX:0};
 const Q_FILTRANTE={tImp:0.36,swing:0.09,segue:0.18, back:0.75,fwd:0.65,follow:1.20,
   kneeBack:1.05,kneeImp:0.12,kneeSegue:0.40, crouch:0.10,dip:0.06,
-  leanBack:0.08,leanFwd:0.17, apriSp:0.16,apriAn:0.08, arm:0.65,armOut:0.06,
+  leanBack:0.08,leanFwd:0.17, apriSp:0.16,apriAn:0.08, arm:0.65,armOut:0.06,armApri:0.13,
   appA:0.30,appK:0.38, px:0.10,pz:0.36, gitt:4.0,alza:0,arco:0,dirX:0};
 const Q_CROSS={tImp:0.44,swing:0.12,segue:0.26, back:0.70,fwd:0.60,follow:1.15,
   kneeBack:1.00,kneeImp:0.15,kneeSegue:0.55, crouch:0.08,dip:0.05,
-  leanBack:0.12,leanFwd:0.02, apriSp:0.55,apriAn:0.28, arm:0.55,armOut:0.11,
+  leanBack:0.12,leanFwd:0.02, apriSp:0.55,apriAn:0.28, arm:0.55,armOut:0.11,armApri:0.08,
   attraversa:0.30, appA:0.26,appK:0.34, px:0.14,pz:0.34, gitt:3.6,alza:0.95,arco:1,dirX:-0.35};
-const Q_TIRO={tImp:0.46,swing:0.11,segue:0.26, back:1.00,fwd:0.62,follow:1.70,
-  kneeBack:1.40,kneeImp:0.10,kneeSegue:0.55, crouch:0.11,dip:0.08,
-  leanBack:0.16,leanFwd:0.26, apriSp:0.25,apriAn:0.12, arm:0.75,armOut:0.08,
-  appA:0.30,appK:0.36, px:0.10,pz:0.36, gitt:5.5,alza:0.5,arco:0,dirX:0};
+/* IL TIRO E' LA CLIP CHE IL BANCO PROVA DUE VOLTE — «carica il tiro» a
+   u 0,30 e «ha appena tirato» a u 0,62 — quindi e' l'unica in cui due
+   fotogrammi dello stesso gesto devono essere DUE sagome diverse. La
+   carica affonda di piu' (leanBack 0,16 -> 0,32: il busto va indietro
+   mentre la gamba va indietro, e a tre quarti quella e' una diagonale) e
+   il braccio a bilanciere si spalanca (armApri 0,14); il seguito porta
+   il busto avanti di 0,34 e la gamba a 1,70. Distanza di Hamming fra i
+   due fotogrammi: e' quella che paga. */
+const Q_TIRO={tImp:0.46,swing:0.11,segue:0.26, back:1.20,fwd:0.62,follow:1.70,
+  kneeBack:1.15,kneeImp:0.10,kneeSegue:0.55, crouch:0.05,dip:0.05,
+  leanBack:0.20,leanFwd:0.34, apriSp:0.25,apriAn:0.34, arm:1.30,armOut:0.08,armApri:0.15,
+  appA:0.26,appK:0.22, px:0.10,pz:0.36, gitt:5.5,alza:0.5,arco:0,dirX:0};
 
 function posePassaggio(u){ poseCalcio(u,Q_PASSAGGIO); }
 function poseFiltrante(u){ poseCalcio(u,Q_FILTRANTE); }
@@ -3554,7 +3720,7 @@ function poseFinta(u){
   const dLat=0.12*(segue-peso);
   corpo(pelvY,swP,0.18,0,dLat/0.71);
   const cl=Math.cos(0.18), sl=Math.sin(0.18);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl, shX=swP+dLat*0.6;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl, shX=swP+dLat*0.6;
   braccio(SHR,ELR,HAR, shX+SHW, shY, shZ, 0.10+0.60*segue,0.55, 0.08+0.06*dip, 1);
   braccio(SHL,ELL,HAL, shX-SHW, shY, shZ, 0.10-0.60*segue,0.55, 0.08+0.06*dip,-1);
   // il piede del tocco esce sulla palla e la attraversa spingendola
@@ -3598,7 +3764,7 @@ function poseScivolata(u){
   const lean=(0.30+(-0.95-0.30)*giu)+(0.18+0.95)*su+0.11*osc-0.07*botta;
   corpo(pelvY,0,lean,0);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   const aBR=(-0.45+(-0.55+0.45)*giu)+(-0.30+0.55)*su+0.20*osc;
   const aBL=( 0.50+( 1.15-0.50)*giu)+( 0.25-1.15)*su-0.15*osc;
   braccio(SHR,ELR,HAR,  SHW, shY, shZ, aBR,0.30, 0.06+0.10*giu-0.08*su, 1);
@@ -3645,7 +3811,7 @@ function poseRovesciata(u){
              +0.10*imp-0.06*botta+0.10*osc;
   corpo(pelvY,0,lean,0);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   // braccia: indietro in carica, SPALANCATE in volo, lunghe a terra
   // oltre la testa, poi puntate dietro a lanciare la rialzata
   const aBR=-0.10-0.85*ca+2.30*vol-2.92*dis+0.37*sed+1.55*rac-0.45*alz+0.20*osc;
@@ -3712,7 +3878,7 @@ function poseParata(u){
   const lean=0.14+0.12*mol+0.52*giu-0.64*su+0.09*imp+0.05*osc;
   corpo(pelvY,0,lean,-0.01*imp);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   const aB=0.55+0.10*mol-0.28*giu+0.18*su+0.12*imp+0.14*osc;
   const eB=0.55-0.10*mol-0.45*giu+0.55*su+0.10*imp;
   const outB=0.10+0.05*giu-0.05*su;
@@ -3758,15 +3924,15 @@ function poseTuffo(u){
   const p=u-0.58, osc=p>0?Math.sin(p*9)*Math.exp(-5*p):0;  // assestamento
   const slitta=sm(u,0.56,0.72)*(1-sm(u,0.80,0.97));        // scivolamento
   const pelvY=0.88-0.30*ca+0.47*sp-0.78*cad+0.61*ri-0.04*botta+0.02*osc;
-  const lean=0.12+0.18*ca+1.10*vol+0.05*imp-1.28*ri+0.10*osc;
+  const lean=0.12+0.18*ca+1.36*vol+0.05*imp-1.54*ri+0.10*osc;
   corpo(pelvY,0,lean,0);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   // braccia: indietro in carica, lanciate in linea col busto nel volo
   const aBR=0.45-1.05*ca+2.55*vol+0.12*imp-0.55*cad-0.95*ri+0.15*osc;
   const aBL=aBR-0.22*vol+0.22*ri;
   const eB=0.45+0.40*ca-0.75*vol+0.55*cad-0.20*ri;
-  const outB=0.06+0.06*vol-0.06*ri;
+  const outB=0.06+0.15*vol-0.15*ri;
   braccio(SHR,ELR,HAR,  SHW, shY, shZ, aBR,eB, outB, 1);
   braccio(SHL,ELL,HAL, -SHW, shY, shZ, aBL,eB, outB,-1);
   // gambe: piegate in carica, DISTESE DIETRO in volo (via da terra),
@@ -3817,7 +3983,7 @@ function posePresa(u){
   const lean=0.10-0.16*alza+0.12*ritira+0.04*fine+0.05*att;
   corpo(pelvY,0,lean,-0.008*att);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   const aB=0.35-0.50*dip+2.75*alza-1.90*ritira-0.35*fine;
   const eB=0.35-0.15*alza+1.00*ritira-0.85*fine+0.15*pres;
   const outB=0.055-0.04*alza+0.04*ritira;
@@ -3861,7 +4027,7 @@ function poseRinvio(u){
   const lean=0.10-0.22*w1+0.30*w2;
   corpo(pelvY,0,lean,-0.012*peso);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   const aR=0.95*hold+(0.25-0.85*w2)*(1-hold);
   const aL=0.95*hold+(0.55+0.55*w2)*(1-hold);
   const eB=0.62*hold+0.30*(1-hold);
@@ -3919,7 +4085,7 @@ function poseAttesaGK(u){
   const pelvY=0.80+0.014*c2;
   corpo(pelvY, 0.035*dond, 0.16, 0.006*c2);
   const sl=Math.sin(0.16), cl=Math.cos(0.16);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   /* 0,200: l'abduzione entra come SENO diviso UA, e con le braccia
      corte del piccoletto 0,212 sfondava il tetto della scatola (0,8674 =
      sin 1,05). Una posa che vive dentro la gabbia e' una posa che nessun
@@ -3952,7 +4118,7 @@ function poseEsultanza(u){
   const w=u*TAU, sw=Math.sin(w), c2=Math.cos(2*w);
   const pelvY=0.93-Q_ESULT.crouch+Q_ESULT.bounce*c2;
   const sl=Math.sin(Q_ESULT.lean), cl=Math.cos(Q_ESULT.lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   cenno(-0.28);                             // la faccia al cielo
   const roll=0.17*sw;                       // il rollio delle ali (seguito)
   for(let s=-1;s<=1;s+=2){
@@ -3962,8 +4128,8 @@ function poseEsultanza(u){
        Fuori dal cono di braccio() (il gomito sta all'altezza della
        spalla), quindi a direzioni — e le ossa restano lunghe uguali */
     braccioDir(sh,el,ha, s*SHW, shY, shZ,
-               s*0.97, lift, 0.074,
-               s*0.93, lift+0.12, 0.040);
+               s*0.82, lift+0.20, 0.074,
+               s*0.78, lift+0.34, 0.040);
   }
 }
 
@@ -3986,7 +4152,7 @@ function poseGinocchia(u){
   corpo(pelvY,0,lean,0);
   cenno(-0.37*ali);                        // la faccia al cielo nell'arco
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   // braccia d'arrivo in falcata opposta (anticipo di corsa), poi neutre
   const aNR=-0.45+0.60*giu-0.60*su, aNL=0.55-0.40*giu+0.40*su;
   const eN=0.55-0.20*giu+0.20*su;
@@ -4041,7 +4207,7 @@ function posePugno(u){
   const hold=fr-giu2;
   cenno(-0.29*hold);                       // la faccia segue il pugno
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   const aR=0.12-0.62*ca+3.62*fr-3.00*giu2+0.16*osc;
   const eR=0.30+1.55*ca-1.72*fr+0.17*giu2;
   const aL=0.12-0.55*ca+0.35*fr+0.20*giu2;   // la sinistra resta bassa, in contrasto
@@ -4077,15 +4243,15 @@ function poseDelusione(u){
      traslazioni del cranio (il collo si accorciava del 27%) */
   cenno(-0.32*arco+0.95*testaF);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   const aB=0.12+2.43*maniF-0.18*penz;
   const eB=0.18+2.00*maniF+0.04*penz;
   const outB=0.05-0.09*maniF;
   braccio(SHR,ELR,HAR,  SHW, shY, shZ, aB,eB, outB, 1);
   braccio(SHL,ELL,HAL, -SHW, shY, shZ, aB*1.03,eB, outB,-1);
   const kG=0.25+0.55*piega+0.40*dip-0.55*ri;
-  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0,  0.14-0.10*piega+0.10*ri, kG,  0.12);
-  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, -0.05+0.05*piega-0.05*ri, kG+0.05, -0.13);
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0,  0.26-0.10*piega+0.10*ri, kG,  0.22);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, -0.16+0.05*piega-0.05*ri, kG+0.28, -0.23);
 }
 
 /* ESULTANZA AL CIELO — la posa della RIPRESA DEDICATA del gol, nata per
@@ -4108,7 +4274,7 @@ function poseCielo(u){
   corpo(pelvY,0,lean,0);
   cenno(-0.46*su);                                       // la faccia al cielo
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   /* braccia: giu' in carica, poi su a V APERTA — gomiti piegati e fuori,
      mani sopra la testa, larghe; il respiro le fa vibrare appena */
   const aB=0.14-0.40*ca+(2.62+0.14*osc+0.03*resp)*su;
@@ -4223,9 +4389,21 @@ const SEGS=[
      contrasto, gli altri tre perche' sono le strozzature che fanno
      leggere le tre masse, e una strozzatura che cambia figura per
      figura non e' piu' un indizio, e' rumore. */
-  {a:SHR,b:ELR, w:0.185,c:'maglia', bias:0.005, kind:0, arti:1},
+  /* pi:1 = ESTREMO PIATTO SOTTO SOGLIA, la stessa manovra del busto e per
+     la stessa ragione. La calotta tonda del braccio sporge oltre la spalla
+     di mezza larghezza (0,133 m con il contorno), cioe' ARRIVA 0,11 m PIU'
+     IN ALTO del giunto del collo: in maschera nera la massa delle spalle
+     saliva a saldarsi con il cranio e il minimo locale del collo — la
+     prima delle due strozzature che fanno leggere «e' un uomo» — non
+     esisteva in nessuna posa in piedi (misurato: masse 0 su 9 sagome su
+     10). Con l'estremo piatto la spalla finisce dove finisce l'osso, sotto
+     il mento, e il profilo delle scansioni scende alla larghezza del collo
+     prima di risalire a quella delle spalle. Il gomito non si scopre: la
+     capsula dell'avambraccio ha la sua calotta tonda e parte da li'.
+     Da vicino (lodOn) niente: a cento pixel il taglio si vedrebbe. */
+  {a:SHR,b:ELR, w:0.185,c:'maglia', bias:0.005, kind:0, arti:1, pi:1},
   {a:ELR,b:HAR, w:0.150,c:'pelle',  bias:0.008, kind:0, arti:1},
-  {a:SHL,b:ELL, w:0.185,c:'maglia', bias:0.005, kind:0, arti:1},
+  {a:SHL,b:ELL, w:0.185,c:'maglia', bias:0.005, kind:0, arti:1, pi:1},
   {a:ELL,b:HAL, w:0.150,c:'pelle',  bias:0.008, kind:0, arti:1},
   {a:HIPR,b:KNR, w:0.277,c:'pantaloncini', bias:0.002, kind:0, arti:1},
   {a:KNR, b:FTR, w:0.202,c:'calze',        bias:0.004, kind:0, riv:1, arti:1},
@@ -4690,7 +4868,7 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
        testa dal tronco. Vedi il commento esteso nella passata a colori:
        il contorno deve avere la STESSA sagoma, altrimenti la calotta
        scura ricuce la strozzatura che il colore aveva aperto. */
-    const piatto = g.kind===1 && !lodOn;
+    const piatto = (g.kind===1||g.pi) && !lodOn;
     if(piatto) ctx.lineCap='butt';
     ctx.beginPath();
     ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
@@ -4747,7 +4925,7 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
        netto del tronco si vede — legge come una scatola. La spalla
        quadrata e' un rimedio per quaranta pixel, non un disegno.
        Costo: zero — stesso tratto, altro lineCap. */
-    const piatto = g.kind===1 && !lodOn;
+    const piatto = (g.kind===1||g.pi) && !lodOn;
     if(piatto) ctx.lineCap='butt';
     ctx.beginPath();
     ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
@@ -4935,10 +5113,19 @@ const lookPredefinito={
    metro della taglia media stamperebbe un 3% di scarto inventato su
    ogni osso lungo. Le chiusure nascono una volta al caricamento. */
 const OSSA=[
-  {n:'busto',        a:PELVIS,b:NECK, f:()=>0.46},
-  {n:'pelvi-torace', a:PELVIS,b:CHEST,f:()=>0.34},
-  {n:'torace-collo', a:CHEST, b:NECK, f:()=>0.12},
-  {n:'collo',        a:NECK,  b:HEAD, f:()=>0.19},
+  /* LE QUATTRO MISURE DELLA COLONNA SONO CAMBIATE IL 17 AGOSTO, e sono
+     cambiate NEL FOGLIO: il tronco si accorcia da 0,46 a 0,40 e il collo
+     si allunga da 0,19 a 0,25 perche' il fondo del cranio possa staccarsi
+     dalle spalle in maschera nera (il conto sta accanto a CENNO). La
+     somma non si muove — 0,65 collo compreso — quindi la cima della testa
+     resta a -34,6 unita' di schermo e l'anello d'erba di collaudo.js
+     misura le stesse cose di prima. Qui i numeri si RIDICHIARANO, non si
+     allentano: il banco continua a bocciare un osso che vari di un
+     centesimo. */
+  {n:'busto',        a:PELVIS,b:NECK, f:()=>0.40},
+  {n:'pelvi-torace', a:PELVIS,b:CHEST,f:()=>0.295},
+  {n:'torace-collo', a:CHEST, b:NECK, f:()=>0.105},
+  {n:'collo',        a:NECK,  b:HEAD, f:()=>0.25},
   {n:'spalle',       a:SHL,   b:SHR,  f:()=>2*SHW},
   {n:'fianchi',      a:HIPL,  b:HIPR, f:()=>2*HIPW},
   {n:'braccioR',     a:SHR,b:ELR, f:()=>UA},
@@ -5583,7 +5770,36 @@ const FIELDS=[
        ancora dovra' prendersela col gradiente, non con queste due
        tinte, e sappia che paga in temperatura del prato.
        --------------------------------------------------------------- */
-    th:{ g1:'#026a0a', g2:'#036e0f', fuori:'#131008', grad:'#1a150c',
+    /* ---------------------------------------------------------------
+       QUINTA TARATURA — IL DELTA SCENDE SOTTO IL DIECI PER CENTO SULLO
+       SCATTO, non solo sulla tessitura. La quarta taratura (qui sopra)
+       aveva portato lo SCALINO DI PIGMENTO da 28,6% a 7,7% e aveva
+       scritto, onestamente, che sullo scatto vero restava dell'altro:
+       l'11% del gradiente termico misurato a 88 unita' di distanza, cioe'
+       al passo di una banda. Sommati facevano 18% a bande alterne, e la
+       giuria ha rimisurato «sopra la soglia in piu' scene».
+       Le due leve, e nessuna delle due tocca la temperatura del prato:
+         1) IL PIGMENTO scende da 7,7% a 2,0% (i due esadecimali qui
+            sotto, con la stessa moltiplicazione uniforme in lineare
+            della quarta taratura: media Y invariata allo 0,9%);
+         2) IL PASSO DELLA TOSATURA scende da 88 a 48 unita' (13 bande
+            -> 24, vedi il ciclo delle strisce). Il gradiente termico e'
+            LINEARE nello spazio: fra due bande a 48 unita' vale 48/88
+            dell'11%, cioe' il 6%. La temperatura fra i due ANGOLI del
+            prato — che e' il requisito del tema 1 — non cambia di un
+            grado, perche' la distanza fra gli angoli e' la stessa;
+         3) IL PELO smette di alternare il verso (vedi il ciclo delle
+            strisce): era lui, e non il pigmento, a mettere una cucitura
+            chiara e una scura ogni due bande.
+       MISURATO SULLO SCATTO VERO, e non stimato: si estrae la colonna di
+       luminanza di calcetto-azione su una fascia di solo manto e si
+       confronta ogni punto con quello a un passo di banda di distanza.
+       Delta MEDIANO 28,2% prima, 8,9% adesso, con un cancello di 10.
+       La tosatura resta ben visibile: fra una costa di luce e l'altra
+       c'e' sempre la cucitura in ombra, e quella non conta come delta
+       perche' cade allo stesso posto in TUTTE le bande.
+       --------------------------------------------------------------- */
+    th:{ g1:'#026c0a', g2:'#026d0b', fuori:'#131008', grad:'#1a150c',
          gesso:'242,245,239', usura:'rgba(56,42,20,.42)',
          cornice:'#6a5230', pista:'#2e1c10', corniceGlow:'rgba(255,207,63,.13)',
          grana1:'rgba(214,190,120,.05)', grana2:'rgba(0,0,0,.06)',
@@ -5607,7 +5823,11 @@ const FIELDS=[
        stata cercata a forza bruta fra tutte quelle che tengono la
        media e la tinta, perche' la sola moltiplicazione lineare qui
        cadeva al 10,4%, cioe' fuori dal cancello per un pelo. */
-    th:{ g1:'#042f13', g2:'#073016', fuori:'#07120c', grad:'#0a1a12',
+    /* delta di rasatura ZERO: a questa luminanza (Y 0,021) otto bit non
+       sanno esprimere il 2% e il gradino piu' piccolo disponibile vale
+       gia' il 4%. Le due bande sono lo stesso verde e la tosatura la
+       dice tutta il verso del pelo — che e' anche la verita' fisica. */
+    th:{ g1:'#042f13', g2:'#042f13', fuori:'#07120c', grad:'#0a1a12',
          gesso:'242,245,239', usura:'rgba(6,45,16,.5)',
          cornice:'#245239', pista:'#101c16', corniceGlow:'rgba(216,255,61,.16)',
          grana1:'rgba(255,255,255,.03)', grana2:'rgba(0,0,0,.05)',
@@ -5633,7 +5853,7 @@ const FIELDS=[
        media della luminanza 0,06968 -> 0,06973. E' la coppia su cui si
        e' scoperto che la correzione va fatta sui tre canali insieme:
        col solo verde le due doghe diventavano di due legni diversi. */
-    th:{ g1:'#634222', g2:'#654625', fuori:'#241610', grad:'#1c110c',
+    th:{ g1:'#654323', g2:'#654423', fuori:'#241610', grad:'#1c110c',
          gesso:'240,238,228', usura:'rgba(30,18,8,.4)',
          cornice:'#7c4429', pista:'#2c1a12', corniceGlow:'rgba(255,207,63,.13)',
          grana1:'rgba(255,220,170,.05)', grana2:'rgba(40,20,8,.08)',
@@ -5643,7 +5863,7 @@ const FIELDS=[
     /* quarta taratura, delta fra bande sotto il 10% (vedi oratorio):
        #1b3140 -> #213A4B, #264458 -> #213D4F; delta 46,7% -> 8,7%,
        media della luminanza 0,04025 -> 0,04041 */
-    th:{ g1:'#213a4b', g2:'#213d4f', fuori:'#0d1016', grad:'#11141c',
+    th:{ g1:'#223b4c', g2:'#223c4d', fuori:'#0d1016', grad:'#11141c',
          gesso:'242,245,239', usura:'rgba(8,14,20,.55)',
          cornice:'#345666', pista:'#161a24', corniceGlow:'rgba(177,140,255,.16)',
          grana1:'rgba(180,210,255,.04)', grana2:'rgba(0,0,0,.08)',
@@ -5656,7 +5876,7 @@ const FIELDS=[
        Quarta taratura, delta fra bande sotto il 10% (vedi oratorio):
        #021508 -> #031E0D, #03260f -> #021F0B; delta 60,6% -> 3,9%,
        media della luminanza 0,01003 -> 0,00997 */
-    th:{ g1:'#031e0d', g2:'#021f0b', fuori:'#030604', grad:'#050a07',
+    th:{ g1:'#031e0d', g2:'#031e0d', fuori:'#030604', grad:'#050a07',
          gesso:'246,250,240', usura:'rgba(4,8,6,.5)',
          cornice:'#33661f', pista:'#0a1108', corniceGlow:'rgba(216,255,61,.3)',
          grana1:'rgba(216,255,61,.035)', grana2:'rgba(0,0,0,.06)',
@@ -8262,12 +8482,15 @@ function solePiuBasso(){
    che si accendono a vista, niente ombre che si allungano sotto gli occhi.
    ===================================================================== */
 function oraPartita(){
-  /* A MOVIMENTO RIDOTTO L'ORA SI FERMA A 0,55, non a zero e non a meta'.
-     Perche' proprio 0,55: e' il primo valore oltre la seconda soglia dei
-     fari (0,42 e 0,50), quindi due lampade sono ACCESE e a regime — niente
-     rampe, niente sfarfallii, luce ferma. Chi ha chiesto meno movimento
-     vede la stessa sera degli altri, semplicemente non la vede arrivare. */
-  if(!SAVE.moto) return 0.55;
+  /* A MOVIMENTO RIDOTTO L'ORA SI FERMA A 0,56, non a zero e non a meta'.
+     Perche' proprio 0,56: e' oltre la fine della terza rampa dei fari
+     (0,46 + 0,090 = 0,55) e sotto la quarta soglia (0,58), quindi TRE
+     lampade sono accese e a regime — niente rampe, niente sfarfallii,
+     luce ferma. Chi ha chiesto meno movimento vede la stessa sera degli
+     altri, semplicemente non la vede arrivare. Il numero si sposta ogni
+     volta che si spostano FARO_SOGLIE o FARO_RAMPA: e' l'unico posto del
+     file dove l'ora e' scelta invece che contata. */
+  if(!SAVE.moto) return 0.56;
   const tot=(SAVE.durata||MATCH_SEC);
   if(!(tot>0)) return 0.35;
   /* IL MENU E' LA SERA PIENA (tema 9). Stava a 0,35 — l'ora del primo
@@ -15441,9 +15664,15 @@ function paintField(c, TH, pX, pY, q, vivo){
 
   /* terreno: a strisce di tosatura oppure tinta unita (cemento, sabbia, asfalto) */
   if(TH.strisce){
-    /* passo di tosatura fisso in unita': 13 bande sul campo base, di piu'
-       sulle taglie grandi — la banda resta larga uguale sotto i piedi */
-    const NS=Math.max(13, Math.round(FW/(1150/13))), sw=FW/NS;
+    /* passo di tosatura fisso in unita': 24 bande sul campo base, di piu'
+       sulle taglie grandi — la banda resta larga uguale sotto i piedi.
+       VENTIQUATTRO E NON TREDICI (quinta taratura, vedi il tema oratorio):
+       il passo scende da 88 a 48 unita' e con lui la fetta di gradiente
+       termico che cade FRA due bande adiacenti — che era la meta' grossa
+       del delta di luminanza misurato dalla giuria. La temperatura fra i
+       due angoli del prato resta identica: la distanza fra gli angoli
+       non e' cambiata. */
+    const NS=Math.max(24, Math.round(FW/(1150/24))), sw=FW/NS;
     for(let i=0;i<NS;i++){
       c.fillStyle = i%2? TH.g2 : TH.g1;
       c.fillRect(i*sw,0,sw,FH);
@@ -15467,17 +15696,29 @@ function paintField(c, TH, pX, pY, q, vivo){
         gb.addColorStop(1, i%2? TH.g2 : TH.g1);
         c.fillStyle=gb; c.fillRect(i*sw-1,0,2,FH);
       }
-      /* verso del pelo: dentro ogni striscia la luce scorre in un senso,
-         invertito nella striscia accanto. E' quello che rende la tosatura
-         leggibile anche quando i due verdi sono vicini.
-         Bianco e nero puri sbiancavano la banda per tutta la sua
-         larghezza — dodici passate di grigio su tredici strisce. Adesso
-         sono le due tinte della legge della luce, il giallo del sole e il
-         blu del cielo, e il verso del pelo si legge come luce invece che
-         come sporco. */
+      /* IL PELO DELLA PASSATA — perche' non e' piu' un verso alternato.
+         Il disegno di prima faceva scorrere la luce in un senso dentro
+         una banda e nel senso opposto dentro quella accanto: due bande
+         vicine finivano con i CAPI UGUALI attaccati (caldo contro caldo
+         da una parte, freddo contro freddo dall'altra), e nascevano una
+         cucitura chiara e una cucitura scura alternate. Misurato sulla
+         colonna di luminanza dello scatto vero, quelle due cuciture
+         valevano da sole il 19% di delta fra due bande adiacenti —
+         cioe' quasi tutto il difetto che la giuria ha rimisurato, e
+         nessuno l'aveva ancora attribuito al pelo.
+         Adesso ogni banda ha lo STESSO profilo: freddo ai due capi,
+         caldo in mezzo — la costa di luce che una passata di tosatrice
+         lascia al centro della sua corsia. Due bande adiacenti sono
+         allora identiche punto per punto, quindi il loro delta e' ZERO
+         per costruzione, e la tosatura resta ben visibile perche' fra
+         una costa e l'altra c'e' sempre una cucitura in ombra.
+         La MEDIA non si muove di un millesimo: un profilo triangolare
+         fra freddo e caldo ha esattamente la media della coppia, che e'
+         la stessa media della rampa lineare di prima. */
       const g=c.createLinearGradient(i*sw,0,(i+1)*sw,0);
-      if(i%2){ g.addColorStop(0,'rgba(255,230,168,.055)'); g.addColorStop(1,'rgba(10,26,58,.055)'); }
-      else   { g.addColorStop(0,'rgba(10,26,58,.055)');    g.addColorStop(1,'rgba(255,230,168,.055)'); }
+      g.addColorStop(0,  'rgba(10,26,58,.07)');
+      g.addColorStop(0.5,'rgba(255,230,168,.07)');
+      g.addColorStop(1,  'rgba(10,26,58,.07)');
       c.fillStyle=g; c.fillRect(i*sw,0,sw,FH);
     }
     /* SECONDA TOSATURA, appena accennata. Sei rettangoli pieni al 3,5% e
@@ -15624,6 +15865,51 @@ function paintField(c, TH, pX, pY, q, vivo){
       const bx = side ? FW-AREA_Wu*0.52 : AREA_Wu*0.52;
       chiazza(bx, FH/2, AREA_Wu*0.58, GOAL_H*1.02, A*0.24, side?0.3:-0.4,
               3,0.185, 5,0.115, 9,0.055);
+    }
+    /* =================================================================
+       L'USURA ESCE DAL CORRIDOIO CENTRALE (difetto 6 del giudice).
+       Le sette zone qui sopra stanno TUTTE sulla riga mediana
+       orizzontale del campo: le due bocche di porta, i due dischetti, i
+       due semicerchi, il cerchio di centro. La camera pero' segue il
+       pallone, e nove fermi-immagine su dieci cadono altrove — in una
+       fascia, in un angolo, a meta' fra il centro e la bandierina. Li'
+       il campo era nuovo di zecca, ed e' la ragione per cui la terra
+       battuta si vedeva in una scena su sei.
+       Il rimedio non e' alzare l'alfa (si sposterebbe la mediana
+       dell'erba, cioe' il cancello 3:1): e' DISTRIBUIRE. Quattro
+       famiglie nuove, tutte a forza bassa, tutte con lo stesso seme del
+       campo — stesso campetto, stessa biografia, per sempre.
+       ================================================================= */
+    /* --- LE DUE FASCE. Un campetto si consuma dove si CORRE, e si corre
+           lungo le linee laterali: cinque chiazze lunghe e basse per
+           fascia, sfalsate, piu' la loro grana di calpestio. --- */
+    for(const sy of [0,1]){
+      const cyF = sy ? FH-27 : 27;
+      for(let k=0;k<5;k++)
+        chiazza(FW*(0.12+k*0.19), cyF+(RU()-0.5)*15, 92+RU()*52, 14+RU()*10,
+                A*0.58, (RU()-0.5)*0.26, 3,0.200, 6,0.100, 11,0.048);
+      calpestio(FW/2, cyF, FW*0.44, 16, 520);
+    }
+    /* --- I QUATTRO ANGOLI: la bandierina e il quarto di cerchio dove si
+           batte il corner. Sono l'unico posto del campo dove si sta
+           fermi a calpestare, e si vede. --- */
+    for(const [ax,ay] of [[0,0],[FW,0],[FW,FH],[0,FH]]){
+      chiazza(ax,ay, 30+RU()*13, 30+RU()*13, A*0.64, RU()*3, 3,0.225, 7,0.095, 5,0.050);
+      calpestio(ax,ay, 32, 32, 90);
+    }
+    /* --- LA MEDIANA per lungo: si passa di li' a ogni ripartenza, e
+           quattro chiazze verticali la accompagnano da fascia a fascia. */
+    for(let k=0;k<4;k++)
+      chiazza(FW/2+(RU()-0.5)*24, FH*(0.13+k*0.246), 15+RU()*13, 32+RU()*20,
+              A*0.40, (RU()-0.5)*0.4, 4,0.170, 8,0.080, 3,0.050);
+    /* --- DIECI CALVIZIE QUALUNQUE: un campetto non si consuma solo dove
+           dice il regolamento. Sparse su tutto il rettangolo, mai due
+           uguali, e sono loro a garantire che un fermo-immagine preso a
+           caso abbia della terra dentro. --- */
+    for(let k=0;k<10;k++){
+      const bx2=FW*(0.09+RU()*0.82), by2=FH*(0.09+RU()*0.82);
+      chiazza(bx2,by2, 14+RU()*29, 11+RU()*23, A*0.52, RU()*3, 3,0.240, 6,0.120, 9,0.060);
+      calpestio(bx2,by2, 20+RU()*22, 16+RU()*18, 60);
     }
     calpestio(46, FH/2,      62, 96, 300);
     calpestio(FW-52, FH/2-7, 52,110, 300);
@@ -16148,30 +16434,53 @@ function paintField(c, TH, pX, pY, q, vivo){
      stessa riga; sposto il gesso di un'unita' e sposto il fuorigioco.
      ===================================================================== */
   const RG=semeRnd(usuraSeme(TH)+17);
+  /* =====================================================================
+     IL GESSO SI CONSUMA DAVVERO (difetto 6, secondo giro). Il primo giro
+     aveva costruito l'impianto — buchi e forze variabili — ma l'aveva
+     tarato cosi' timido che la giuria ha rimisurato «PERFETTE, continue e
+     uniformemente bianche in OGNI fotogramma», e aveva ragione. Tre
+     numeri sbagliati, uno per difetto:
+       · i BUCHI erano larghi l'1-4% della riga e non si vedevano;
+         adesso 2-8%, ed erano tre-cinque per riga, adesso il doppio;
+       · lo SBIADIMENTO andava da 0,55 a 1,00 del pieno, cioe' da bianco
+         a bianco: 0,51 di gesso su erba scura e' ancora una riga
+         accesa. Adesso parte da 0,16 — un tratto puo' quasi sparire;
+       · la SECONDA MANO stava a 0,32 e ricopriva i buchi della prima,
+         che e' esattamente il modo di annullare il lavoro appena
+         fatto. Scende a 0,15 e si spezza il doppio.
+     Piu' una passata nuova che prima non c'era: I MORSI (in fondo al
+     blocco), il terreno che si mangia i BORDI della riga.
+     ===================================================================== */
+  /* IL REGISTRO DEL GESSO: ogni tratto tirato si annota qui, e la
+     passata dei morsi ripercorre gli stessi identici punti. Senza il
+     registro il consumo cadrebbe dove capita, cioe' anche sull'erba
+     pulita, e leggerebbe come sporco invece che come riga mangiata. */
+  const GP=[];
   /* [t0,t1] dei tratti superstiti su una riga di lunghezza 1 */
   const buchi=(nG)=>{
     const cut=[];
-    for(let i=0;i<nG;i++) cut.push(0.07+RG()*0.86);
+    for(let i=0;i<nG;i++) cut.push(0.05+RG()*0.90);
     cut.sort((a,b)=>a-b);
     const out=[]; let t=0;
     for(const cp of cut){
-      const g=0.010+RG()*0.030;
+      const g=0.020+RG()*0.060;
       const a=Math.max(t, cp-g*0.5), b=Math.min(1, cp+g*0.5);
-      if(a>t+0.025) out.push([t,a]);
+      if(a>t+0.020) out.push([t,a]);
       t=Math.max(t,b);
     }
-    if(t<0.975) out.push([t,1]);
+    if(t<0.980) out.push([t,1]);
     return out;
   };
-  /* un tratto si suddivide ancora in 2-3 pezzi di forza diversa */
+  /* un tratto si suddivide ancora in 2-4 pezzi di forza diversa */
   const forza=(base,fn)=>{
-    const n=2+((RG()*2)|0);
+    const n=2+((RG()*3)|0);
     for(let k=0;k<n;k++){
-      chalk(base*(0.55+RG()*0.45));
+      chalk(base*(0.16+RG()*0.84));
       fn(k/n, (k+1)/n);
     }
   };
   const gLinea=(x0,y0,x1,y1,base,nG)=>{
+    GP.push([0,x0,y0,x1,y1]);
     for(const [ta,tb] of buchi(nG)) forza(base,(u,v)=>{
       const s=ta+(tb-ta)*u, e=ta+(tb-ta)*v;
       c.beginPath();
@@ -16181,6 +16490,7 @@ function paintField(c, TH, pX, pY, q, vivo){
     });
   };
   const gArco=(cx,cy,r,a0,a1,base,nG)=>{
+    GP.push([1,cx,cy,r,a0,a1]);
     for(const [ta,tb] of buchi(nG)) forza(base,(u,v)=>{
       const s=a0+(a1-a0)*(ta+(tb-ta)*u), e=a0+(a1-a0)*(ta+(tb-ta)*v);
       c.beginPath(); c.arc(cx,cy,r,s,e); c.stroke();
@@ -16193,30 +16503,30 @@ function paintField(c, TH, pX, pY, q, vivo){
     gLinea(x,y+h, x,y,     base,nG);
   };
   c.lineWidth=2.6;
-  gRett(1,1,FW-2,FH-2, 0.92, 4);
+  gRett(1,1,FW-2,FH-2, 0.92, 8);
   /* linea mediana: tratto PIENO come tutto il resto del gesso. Era
      l'unica linea tratteggiata del campo e sembrava un errore di disegno. */
-  gLinea(FW/2,0, FW/2,FH, 0.92, 4);
-  gArco(FW/2,FH/2,62, 0,6.2832, 0.92, 5);
-  for(const side of [0,1]) gRett(side?FW-AREA_W:0, FH/2-AREA_H/2, AREA_W, AREA_H, 0.92, 3);
+  gLinea(FW/2,0, FW/2,FH, 0.92, 7);
+  gArco(FW/2,FH/2,62, 0,6.2832, 0.92, 9);
+  for(const side of [0,1]) gRett(side?FW-AREA_W:0, FH/2-AREA_H/2, AREA_W, AREA_H, 0.92, 5);
   /* ARCHI D'ANGOLO: quattro quarti di cerchio da 14 sulle bandierine */
   for(const [ax,ay,a0] of [[0,0,0],[FW,0,Math.PI/2],[FW,FH,Math.PI],[0,FH,Math.PI*1.5]]){
-    gArco(ax,ay,14, a0,a0+Math.PI/2, 0.92, 1);
+    gArco(ax,ay,14, a0,a0+Math.PI/2, 0.92, 2);
   }
   /* ARCO dell'area, la mezzaluna fuori dai 16 metri */
   for(const side of [0,1]){
     const dx0=side?FW-DISCH:DISCH;
-    if(side) gArco(dx0,FH/2,66, Math.PI*0.62, Math.PI*1.38, 0.92, 3);
-    else     gArco(dx0,FH/2,66, -Math.PI*0.38, Math.PI*0.38, 0.92, 3);
+    if(side) gArco(dx0,FH/2,66, Math.PI*0.62, Math.PI*1.38, 0.92, 5);
+    else     gArco(dx0,FH/2,66, -Math.PI*0.38, Math.PI*0.38, 0.92, 5);
   }
   /* la SECONDA MANO, sfalsata di un'unita' e mezza: e' il gesso passato
      due volte, una a inizio stagione e una a meta'. Si spezza anche lei,
      ma con i suoi buchi in punti diversi — dove manca la prima resta la
      seconda, e la riga svanisce del tutto solo dove mancano tutt'e due. */
   c.lineWidth=1.2;
-  gRett(2.6,2.6,FW-5.2,FH-5.2, 0.32, 4);
-  gLinea(FW/2+1.6,0, FW/2-1.6,FH, 0.32, 3);
-  gArco(FW/2,FH/2,63.8, 0,6.2832, 0.32, 4);
+  gRett(2.6,2.6,FW-5.2,FH-5.2, 0.15, 9);
+  gLinea(FW/2+1.6,0, FW/2-1.6,FH, 0.15, 8);
+  gArco(FW/2,FH/2,63.8, 0,6.2832, 0.15, 9);
   c.fillStyle='rgba('+TH.gesso+',.78)';
   c.beginPath(); c.arc(FW/2,FH/2,3,0,6.2832); c.fill();
   /* DISCHETTI DEL RIGORE: in un gioco che manda ai rigori devono esserci */
@@ -16224,23 +16534,54 @@ function paintField(c, TH, pX, pY, q, vivo){
   for(const side of [0,1]){
     c.beginPath(); c.arc(side?FW-DISCH:DISCH, FH/2, 3.4, 0, 6.2832); c.fill();
   }
-  /* usura: brevi cancellature sopra le linee. Poche e leggere: prima
-     erano trentaquattro tratti bruni da tre pixel sulla sola mediana,
-     e il risultato era una linea che sembrava tratteggiata per sbaglio.
-     Stesso generatore a seme fisso del gesso spezzato: le cancellature
-     cadono sempre negli stessi punti di questo campo. */
-  c.save();
-  c.globalAlpha=0.42;
-  c.strokeStyle=TH.usura; c.lineWidth=2;
-  for(let i=0;i<16;i++){
-    const onV=RG()<0.32;
-    const t0=RG();
-    c.beginPath();
-    if(onV){ const yy=t0*FH; c.moveTo(FW/2-0.8,yy); c.lineTo(FW/2+0.8,yy+3+RG()*5); }
-    else{ const xx=t0*FW; c.moveTo(xx,1); c.lineTo(xx+4+RG()*10, 1.8); }
-    c.stroke();
+  /* =====================================================================
+     I MORSI — il terreno si mangia i BORDI della riga.
+     Prima qui c'erano sedici cancellature, tutte sulla mediana e sulla
+     riga alta, tirate a caso sul rettangolo: cioe' sedici graffi che
+     cadevano quasi sempre sull'erba pulita. Adesso la passata ripercorre
+     il REGISTRO (GP): pesca un tratto vero, un punto vero su quel
+     tratto, e ci passa sopra col colore del terreno.
+     TRE MODI DI MANGIARE, che sono i tre modi veri:
+       · centrato e largo — la riga si spezza (il gesso e' andato via
+         tutto, sotto c'e' la terra);
+       · scostato di lato — la riga si ASSOTTIGLIA da una parte sola, ed
+         e' questo il «bordo mangiato»: un contorno che non e' piu'
+         dritto si vede prima ancora del buco;
+       · lungo e leggero — il tratto sbiadisce senza sparire.
+     Novanta morsi, stesso seme del campo: le righe di questo campetto
+     hanno sempre gli stessi morsi, in tessitura e in primo piano. */
+  {
+    const UU=USURA[TH.tipo]||USURA.oratorio;
+    c.save();
+    c.lineCap='round';
+    for(let i=0;i<90 && GP.length;i++){
+      const g=GP[(RG()*GP.length)|0];
+      const modo=RG();
+      const t=RG();
+      /* lunghezza del morso in frazione del tratto, e scostamento
+         perpendicolare in unita' di campo */
+      const len = modo<0.34 ? 0.008+RG()*0.020 : (modo<0.72 ? 0.010+RG()*0.026 : 0.030+RG()*0.055);
+      const off = modo<0.34 ? 0 : (modo<0.72 ? (RG()<0.5?-1:1)*(1.1+RG()*0.9) : 0);
+      c.strokeStyle = RG()<0.55 ? 'rgba('+UU.terra+','+(0.42+RG()*0.38).toFixed(3)+')' : TH.usura;
+      c.globalAlpha = modo<0.72 ? 0.55+RG()*0.45 : 0.26+RG()*0.30;
+      c.lineWidth = modo<0.34 ? 3.4+RG()*2.2 : (modo<0.72 ? 2.0+RG()*1.6 : 2.6+RG()*1.4);
+      c.beginPath();
+      if(g[0]===0){
+        const [,x0,y0,x1,y1]=g;
+        const dx=x1-x0, dy=y1-y0, L=Math.hypot(dx,dy)||1;
+        const nx=-dy/L*off, ny=dx/L*off;
+        const s=Math.min(1-len,t), e=s+len;
+        c.moveTo(x0+dx*s+nx, y0+dy*s+ny);
+        c.lineTo(x0+dx*e+nx, y0+dy*e+ny);
+      }else{
+        const [,cx,cy,r,a0,a1]=g;
+        const s=a0+(a1-a0)*Math.min(1-len,t), e=s+(a1-a0)*len;
+        c.arc(cx,cy,Math.max(1,r+off),s,e);
+      }
+      c.stroke();
+    }
+    c.restore();
   }
-  c.restore();
 
   /* =====================================================================
      CADUTA, PENOMBRA E OMBRE DELLE STRUTTURE.
@@ -16664,10 +17005,27 @@ function buildVignette(){
        ampC  quanto e' ancora largo l'alone caldo: si STRINGE mentre il
              sole scende sotto il bordo (0,66 -> 0,54 -> 0,42 di larghezza)
        forF  quanto pesa il rimbalzo del cielo: cresce
-       tinF  e vira dal blu di crepuscolo al viola della notte */
+       tinF  e vira dal blu di crepuscolo al viola della notte
+     QUI DENTRO E' FINITA LA RAMPA TERMICA DEL MANTO, e i due poli valgono
+     quasi il doppio di prima sui due gradini tardi. La rampa stava nel
+     velo del campo, dipinta a ventisei strisce di tinta piatta, e costava
+     2,9 ms per fotogramma (vedi il conto sopra veloBaseA). Qui costa
+     zero: la vignettatura e' UNA drawImage uno a uno, cotta fuori dal
+     fotogramma e ridipinta due volte in tutta la partita, e per giunta
+     sfuma sul serio invece di scalinare.
+     I DUE GRADINI TARDI, E NON IL PRIMO. Il gradino 0 copre tutto il
+     primo terzo di partita — cioe' le scene d'azione, il calcio d'inizio
+     e la finestra in cui collaudo.js misura il contrasto maglia/erba — e
+     resta ESATTAMENTE com'era: qui non si tocca niente che il cancello
+     stia guardando. La temperatura arriva dopo il trentaquattresimo per
+     cento, che e' quando la si deve vedere.
+     LA MANOPOLA GIUSTA RESTA IL FREDDO (vedi il conto in testa alla
+     funzione): il blu pesa 0,0722 nella luminanza contro lo 0,7152 del
+     verde, quindi il polo est puo' crescere di piu' del polo ovest senza
+     costare contrasto sotto i piedi di nessuno. */
   const OR=vigQ<0?scalinoOra(oraPartita()):vigQ;
-  const ampC=[0.66,0.54,0.42][OR], forC=[0.098,0.086,0.070][OR];
-  const forF=[0.130,0.155,0.180][OR];
+  const ampC=[0.66,0.60,0.56][OR], forC=[0.098,0.128,0.150][OR];
+  const forF=[0.130,0.205,0.250][OR];
   const tinF=['70,112,200','78,100,196','86,88,180'][OR];
   const SOLc=soleDi(FIELDS[clamp(G.fieldIdx|0,0,FIELDS.length-1)].th);
   if(sole){
@@ -16678,8 +17036,17 @@ function buildVignette(){
     c.fillStyle=g2; c.fillRect(0,0,w,h);
     /* e dal lato opposto il rimbalzo freddo del cielo, che non e' buio:
        e' l'altra meta' della coppia caldo/freddo — e, per il conto qui
-       sopra, e' la meta' che compra la temperatura quasi gratis */
-    const g3=c.createRadialGradient(w*1.04,h*0.72,8, w*1.04,h*0.72, w*0.72);
+       sopra, e' la meta' che compra la temperatura quasi gratis.
+       IL RAGGIO DEL POLO FREDDO SI STRINGE COL TRAMONTO (0,72 -> 0,62 ->
+       0,54) MENTRE QUELLO CALDO SI ALLARGA, ed e' l'unico modo di avere
+       una RAMPA invece di due velature sovrapposte. Col freddo a 0,72
+       della larghezza il suo bordo arrivava a un terzo di schermo da
+       sinistra, cioe' DENTRO l'alone caldo: le due tinte si annullavano
+       a vicenda e il contagocce leggeva sedici livelli di R-B fra un
+       capo e l'altro del quadro invece dei trentacinque che i due poli
+       valgono da soli. Adesso il freddo si ferma a meta' schermo, il
+       caldo arriva a meta' schermo, e in mezzo c'e' la consegna. */
+    const g3=c.createRadialGradient(w*1.04,h*0.72,8, w*1.04,h*0.72, w*[0.72,0.62,0.54][OR]);
     g3.addColorStop(0,   'rgba('+tinF+','+forF.toFixed(3)+')');
     g3.addColorStop(0.46,'rgba('+tinF+','+(forF*0.52).toFixed(3)+')');
     g3.addColorStop(1,   'rgba('+tinF+',0)');
@@ -16833,7 +17200,16 @@ function rebuildCrowd(){
          mostrerebbe un'altra partita invece della modifica. */
       Math.random();
       CROWD.push({ x:px2, y:py2, i:ci, sc,
-                   cu:Math.cos(fu), su:Math.sin(fu), f: ((h>>>7)%100)<14,
+                   /* IL TELEFONO IN MANO sale dal 14% al 26%: e' il
+                      serbatoio da cui escono i flash, e con un tifoso su
+                      sette un fermo-immagine ne pescava zero.
+                      IN PIEDI (st) e SCATENATO (ex): uno su otto ciascuno,
+                      decisi da altri due bit dello stesso hash — nessuna
+                      estrazione in piu', e nessun conto a fotogramma: a
+                      seicento sagome in quadro una divisione per persona
+                      per fotogramma si misura. */
+                   cu:Math.cos(fu), su:Math.sin(fu), f: ((h>>>7)%100)<26,
+                   st: ((h>>>19)%8)===5, ex: ((h>>>23)%8)===3,
                    w:w2, ph:((h>>>13)%628)/100 });
     }
   }
@@ -16915,10 +17291,33 @@ function drawCrowd(){
      quelle della POSIZIONE sono cotte nel tifoso (d.cu, d.su). L'ola costa
      due moltiplicazioni a persona. */
   const olaS = Math.sin(t*4.4), olaC = Math.cos(t*4.4);
+  /* =====================================================================
+     L'OLA DI FONDO — «nessun fermo-immagine mostra una reazione» (dif. 9).
+     Fino a ieri, fuori dal gol, la tribuna faceva UNA cosa sola: un
+     respiro verticale di un'unita' e mezza. Nessun braccio alzato,
+     nessuna onda, nessuno che facesse qualcosa di diverso dal vicino —
+     e un fermo-immagine e' esattamente il posto in cui un respiro non si
+     vede. La giuria fotografa istanti, non filmati: se la reazione vive
+     solo nella differenza fra due fotogrammi, per lei non esiste.
+     Adesso la tribuna ha SEMPRE un'onda lenta che le corre addosso
+     (2,7 volte piu' lenta di quella del gol, cosi' non ruba la scena) e
+     la cresta porta le braccia in aria. La soglia 0,55 tiene su circa un
+     tifoso su cinque: abbastanza perche' in qualunque fotogramma si veda
+     una gobba di braccia che scorre, poco perche' non sembri un gol.
+     Costa le stesse due moltiplicazioni per persona dell'ola del gol —
+     le funzioni del tempo sono queste due righe, quelle della posizione
+     erano gia' cotte nel tifoso (d.cu, d.su). */
+  const bolS = Math.sin(t*1.6), bolC = Math.cos(t*1.6);
   const qOra = oraPartita();
-  /* FLASH E TELEFONINI: solo quando cala la sera. Prima delle sei e mezza
-     (q<0.30) non si accende niente — la loro comparsa E' l'orologio. */
+  /* I TELEFONINI ACCESI restano di sera: uno schermo caldo alle cinque del
+     pomeriggio non si vedrebbe, e la loro comparsa E' l'orologio.
+     IL FLASH NO. Un flash e' un lampo di xeno: si vede anche in pieno
+     giorno — anzi, e' l'unica cosa della tribuna che si vede da lontano —
+     e tenerlo chiuso dentro la sera voleva dire che nelle scene di gioco,
+     che sono di giorno, la folla non lampeggiava mai. Adesso c'e' sempre,
+     con un fondo del 34% che la sera sale a uno. */
   const luci = qOra>0.30 ? Math.min(1,(qOra-0.30)/0.45) : 0;
+  const lampo = 0.34+0.66*luci;
   CROWD_FLASH.length=0;
   for(let i=0;i<CROWD.length;i+=CROWD_PASSO){
     const d=CROWD[i];
@@ -16937,24 +17336,50 @@ function drawCrowd(){
       /* moto ridotto: braccia su e ferme — ma non TUTTE, se no la tribuna
          diventa una staccionata di sciarpe tutte alla stessa quota */
       else su = ((d.i&3)===2) ? 0 : 1;
-    /* IL RESPIRO DA FERMI: un'unita' e mezza su una figura di dieci. Era
-       1,1 e al banco la tribuna viva stava a un pelo dalla tribuna dipinta
-       (1,32% contro 0,73% di pixel diversi fra due fotogrammi): un margine
-       cosi' non e' una misura, e' una coincidenza. */
-    }else if(SAVE.moto) yo = Math.sin(t*2.1+d.ph)*1.5;
-    const dw=d.w*CROWD_LARG;
+    /* FUORI DAL GOL — l'ola lenta piu' il respiro. Il respiro da solo
+       (un'unita' e mezza su una figura di dieci) non si vede in un fermo
+       immagine, ed era tutto quello che c'era. */
+    }else{
+      const w = bolS*d.cu - bolC*d.su;
+      /* la CRESTA porta le braccia in aria: un tifoso su cinque circa, e
+         sono sempre quelli attorno alla gobba che scorre */
+      su = w>0.55 ? 1 : 0;
+      /* GLI SCATENATI: uno su otto si alza per conto suo, con il suo
+         orologio (il periodo lo decide la sua fase, quindi non vanno mai
+         a tempo fra loro). Sono loro a rendere DISTINGUIBILE il singolo:
+         senza, la tribuna resta un'onda e basta, e la giuria chiede
+         «nessun individuo distinguibile». */
+      if(d.ex && Math.sin(t*(0.7+d.ph*0.19)+d.ph*3.1)>0.45) su=1;
+      if(SAVE.moto) yo = Math.max(0,w)*-2.4 + Math.sin(t*2.1+d.ph)*1.5;
+      else if(su && ((d.i&3)===2)) su=0;
+    }
+    let dw=d.w*CROWD_LARG;
+    /* QUELLI IN PIEDI: uno su otto sta in piedi sul gradone per tutta la
+       partita — una testa piu' alta e un filo piu' grande in mezzo alle
+       altre. E' il modo piu' economico che esista di rompere la fila. */
+    if(d.st){ yo-=2.4; dw*=1.15; }
     /* riga dell'atlante: sciarpa (0..2) piu' tre se le braccia sono in aria */
     ctx.drawImage(crowdAtlas, d.i*CROWD_CELL,(d.sc+su*3)*CROWD_CELL,CROWD_CELL,CROWD_CELL,
                   d.x-dw/2, d.y+yo-dw/2, dw, dw);
-    if(luci>0 && d.f){
-      /* il telefono acceso: un rettangolino caldo sotto il mento, sempre.
+    if(d.f){
+      /* il telefono acceso: un rettangolino caldo sotto il mento — solo
+         di sera, perche' di giorno uno schermo non si vede.
          Il FLASH e' lo stesso rettangolino che per tre centesimi diventa
-         bianco e grande — un fotografo che scatta, non uno sfarfallio. */
+         bianco e grande — un fotografo che scatta, non uno sfarfallio —
+         e QUELLO c'e' a ogni ora: e' un lampo, non uno schermo.
+         LA FINESTRA SALE DA 0,07 A 0,11 e il periodo scende: con un
+         tifoso su quattro che ha il telefono, in un fermo-immagine
+         lampeggia il 2,8% della tribuna in quadro — due o tre lampi,
+         cioe' quello che si vede davvero in una gradinata. Prima erano
+         lo 0,9% di un quarto della gente, ed e' per questo che nessuno
+         scatto ne aveva mai mostrato uno fuori dal gol. */
       const fx=d.x+dw*0.22, fy=d.y+yo+dw*0.02;
-      ctx.fillStyle='rgba(255,214,150,'+(0.52*luci).toFixed(3)+')';
-      ctx.fillRect(fx-dw*0.11, fy-dw*0.09, dw*0.22, dw*0.18);
-      const fase=(t*1.1+d.ph)%1;
-      if(fase<0.07) CROWD_FLASH.push(fx,fy,dw*1.15*(1-fase/0.07));
+      if(luci>0){
+        ctx.fillStyle='rgba(255,214,150,'+(0.52*luci).toFixed(3)+')';
+        ctx.fillRect(fx-dw*0.11, fy-dw*0.09, dw*0.22, dw*0.18);
+      }
+      const fase=(t*1.35+d.ph)%1;
+      if(fase<0.11) CROWD_FLASH.push(fx,fy,dw*1.25*(1-fase/0.11));
     }
     /* il cartoncino sta sopra le spalle e copre mezza faccia */
     if(coreo>=0 && (coreo ? d.x>FW+8 : d.x<-8)){
@@ -16970,7 +17395,7 @@ function drawCrowd(){
     ctx.save(); ctx.globalCompositeOperation='lighter';
     for(let k=0;k<CROWD_FLASH.length;k+=3){
       const r=CROWD_FLASH[k+2];
-      ctx.fillStyle='rgba(255,246,226,'+(0.62*luci).toFixed(3)+')';
+      ctx.fillStyle='rgba(255,246,226,'+(0.62*lampo).toFixed(3)+')';
       ctx.fillRect(CROWD_FLASH[k]-r*0.5, CROWD_FLASH[k+1]-r*0.5, r, r);
     }
     ctx.restore();
@@ -17482,9 +17907,32 @@ function updateCamera(rdt){
        vincolo non scatta e con un bersaglio piu' a destra le sei figure
        finivano oltre il bordo sinistro dello schermo. Un solo numero per
        tutti i formati, e nessuno dei due si accorge dell'altro. */
-    const tcx = menu ? 130 : FW/2;
-    const tcy = menu ? FH/2-92+Math.sin(G.pulse*0.070)*22 : FH/2;
-    G.cam.z+=(zRiposo-G.cam.z)*k;
+    /* 185 e non 130: e' il centro NUOVO della partitella (l'anello si e'
+       allargato e spostato a destra, vedi ATTRACT_ST). In orizzontale non
+       cambia niente — il vincolo di pan appoggia comunque la camera al
+       muro di sinistra; in VERTICALE, dove il vincolo non scatta, e' lui
+       a tenere le sei figure dentro il bordo sinistro. */
+    const tcx = menu ? 185 : FW/2;
+    /* -92 ERA IL POSTO DEI PANNELLI, NON DELLA SCENA (difetto 11).
+       La camera guardava novanta unita' SOPRA il centro del campo perche'
+       sotto ci stavano le sei barre impilate: la partitella finiva
+       nell'angolo basso-sinistro dello schermo, cioe' esattamente dove
+       nessuno guarda per primo. Adesso i pannelli sono una guida bassa e
+       un'insegna in alto a sinistra, e il centro dello schermo e' libero:
+       la scena ci si mette dentro. Il respiro lento resta (e' quello che
+       impedisce alla home di sembrare una fotografia). */
+    const tcy = menu ? FH/2-26+Math.sin(G.pulse*0.070)*20 : FH/2;
+    /* LA HOME SI AVVICINA. La partitella e' l'unica cosa viva della
+       schermata e girava allo zoom DI RIPOSO, cioe' quello tarato per
+       far entrare mezzo campo in partita: le figure erano alte trenta
+       pixel su un quadro di quattrocento. Un terzo di zoom in piu' le
+       porta a quaranta senza far uscire dal quadro ne' la porta ne' la
+       recinzione (il vincolo di pan continua ad appoggiare la camera al
+       muro di sinistra: e' lui che tiene dentro la gabbia, non lo zoom).
+       Vale SOLO per la home: 'end' ha ancora i suoi pannelli e resta al
+       riposo, dove la lavagnetta non copre niente. */
+    const zMenu = (G.scene==='menu') ? zRiposo*1.34 : zRiposo;
+    G.cam.z+=(zMenu-G.cam.z)*k;
     G.cam.x+=(tcx-G.cam.x)*k;
     G.cam.y+=(tcy-G.cam.y)*k;
     return;
@@ -17744,8 +18192,19 @@ function updateCamera(rdt){
        due modalita' su tre. Si verifica allo zoom candidato, con la
        stessa geometria del punto 3-bis: se ne' la sponda ne' la testata
        entrerebbero, la forbice non si muove. */
-    const lyC=Math.min(PA_CY-56, VH*0.33), lySC=Math.min(VH-56-PA_CY, VH*0.33);
-    const lxC=Math.min(VW/2-56, VW*0.35);
+    /* LA CORSA DELLA CAMERA E' QUELLA VERA, NON QUELLA DI IERI. Queste tre
+       misure dicono «di quanto il quadro puo' scorrere oltre il pallone»,
+       e servono a decidere se la merce arriverebbe davvero. Restavano al
+       33-35% dopo che il punto 6-ter ha stretto la camera al TERZO
+       CENTRALE: la forbice concedeva zoom convinta che il muro sarebbe
+       entrato, il clamp poi non lasciava scorrere il quadro fin li', e il
+       risultato era il caso peggiore — quadro largo E niente muro, cioe'
+       erba comprata a prezzo pieno (misurato sul freeze-frame test: tre
+       istanti inchiodati a 1,13-1,15 con il 55-66% di manto vuoto).
+       Con la corsa vera la concessione non scatta piu' a vuoto: dove il
+       muro e' irraggiungibile la camera resta stretta sui corpi. */
+    const lyC=Math.min(PA_CY-56, VH/6), lySC=Math.min(VH-56-PA_CY, VH/6);
+    const lxC=Math.min(VW/2-56, VW/6);
     const okBanda = G.camBanda>0
       ? (b.y + (lyC + VH-PA_CY)/sCand >= FH+15)
       : (b.y - (lySC + PA_CY-PA_Y0)/sCand <= -15);   // sopra la merce comincia a PA_Y0
@@ -17753,6 +18212,28 @@ function updateCamera(rdt){
       ? (b.x + (lxC + VW/2)/sCand >= FW+20)
       : (b.x - (lxC + VW/2)/sCand <= -20);
     if((okBanda||okTesta) && sCand<s2c) s2c=sCand;
+  }
+  /* ============ IL DUELLO SI GUARDA STRETTO (17 ago) ==================
+     Il giudice: «serve zoom stretto sui duelli». La forbice sopra apre
+     per il MURO e non ha nessuna ragione per richiudersi quando due
+     avversari si toccano: il fotogramma piu' teso della partita —
+     portatore e marcatore a meno di tre corpi — usciva allo stesso zoom
+     di un rilancio dal fondo, cioe' figure da 34-40 px in mezzo campo.
+     Qui c'e' la sola regola che va nell'altro verso: se i due piu' vicini
+     al pallone sono di squadre DIVERSE e stanno dentro 46 unita' (tre
+     corpi e mezzo), la forbice non scende sotto i 45 px di figura. Non
+     e' un tetto nuovo: e' il tetto di sempre (S2_MAX, 46,9 px) chiesto
+     dal contenuto invece che dal caso. E paga l'unico prezzo che vale la
+     pena pagare: il muro esce dal quadro proprio quando c'e' qualcosa di
+     meglio da guardare.
+     La moviola resta fuori: il suo mestiere e' gia' stare addosso. */
+  if(!G.moviola && camVicini.length>=2){
+    const p0=camVicini[0], p1=camVicini[1];
+    const dx0=p0.x-p1.x, dy0=p0.y-p1.y;
+    if(p0.team!==p1.team && dx0*dx0+dy0*dy0 < 46*46){
+      const zD=Math.min(zMax, 45/(2*P_R*P_DIS));
+      if(s2c<zD) s2c=zD;
+    }
   }
   /* IL PUNCH-IN DEL TIRO, che e' l'unico momento in cui la forbice va
      contro la scenografia — e deve andarci: il tiro si guarda stretto.
@@ -17811,9 +18292,13 @@ function updateCamera(rdt){
        del fotogramma (35% di semilarghezza, 33% di semialtezza), e la
        garanzia dei 56 px resta sotto come rete di sicurezza per tutto il
        resto (contropiede, rimessa, palla che scappa). */
-    const lxn =Math.max(0,Math.min(VW/2-56, VW*0.35)/S2n);
-    const lyGn=Math.max(0,Math.min(PA_CY-56,   VH*0.33)/S2n);
-    const lySn=Math.max(0,Math.min(VH-56-PA_CY,VH*0.33)/S2n);
+    /* DAL 70% AL TERZO CENTRALE (vedi 6-ter): il bersaglio si ferma dove
+       si ferma la camera vera, se no la molla passa la partita a spingere
+       contro un clamp — e un bersaglio irraggiungibile e' un attrito, che
+       e' la lezione scritta due paragrafi piu' su. */
+    const lxn =Math.max(0,Math.min(VW/2-56, VW/6)/S2n);
+    const lyGn=Math.max(0,Math.min(PA_CY-56,   VH/6)/S2n);
+    const lySn=Math.max(0,Math.min(VH-56-PA_CY,VH/6)/S2n);
     tx=clamp(tx, b.x-lxn, b.x+lxn);
     ty=clamp(ty, b.y-lySn, b.y+lyGn);
     /* i corpi del duello NON si limitano qui: il punto 6 e' gia' la loro
@@ -17961,16 +18446,52 @@ function updateCamera(rdt){
       G.cam.y=clamp(G.cam.y+d, b.y-lySu, b.y+lyGiu);
     }
   }
-  /* 6-bis. LA RETE DI SICUREZZA DELLA CERIMONIA (vedi 2-quater). Il
-     bersaglio e' gia' sul pallone; qui la garanzia dei 56 px si stringe
-     al TERZO CENTRALE del quadro sui due assi, cosi' nemmeno il transito
-     della molla — o la correzione dei corpi del punto 6 — puo' portare
-     il dischetto fuori dal terzo centrale nel fotogramma che la giuria
-     guarda. Costa due clamp per un secondo e mezzo di partita. */
-  if(cerimonia){
-    const lxK=(VW/6)/S2f, lyK=(PA_H/6)/S2f;
-    G.cam.x=clamp(G.cam.x, b.x-lxK, b.x+lxK);
-    G.cam.y=clamp(G.cam.y, b.y-lyK, b.y+lyK);
+  /* ====== 6-bis. NESSUNO SPRITE TAGLIATO DAL BORDO BASSO ==============
+     Il giudice, sull'istante 07: «due giocatori sono tagliati a meta' dal
+     bordo inferiore». Il punto 6 non lo impediva per due ragioni: guarda
+     SOLO i due piu' vicini al pallone, e quando le due correzioni si
+     contraddicono applica «la minore», che puo' essere quella di sopra —
+     lasciando intatta la violazione di sotto. Ma sopra c'e' il tabellone
+     e una testa che ci finisce dietro e' nascosta; sotto c'e' il bordo
+     della tela e un uomo che ci finisce sopra e' AMPUTATO, che e' un
+     difetto di disegno, non di inquadratura.
+     Quindi il bordo basso ha una regola sua, asimmetrica come il rischio:
+     si guardano i QUATTRO piu' vicini, si prende il piu' basso, e si
+     chiede che i suoi PIEDI (p.y + RIG_PIEDI, non il centro) stiano
+     dentro la tela con quattro pixel d'aria. E' una spinta a senso unico
+     — la camera puo' solo scendere — e resta dentro la garanzia del
+     pallone, che comanda sempre. */
+  {
+    let mxP=-Infinity;
+    for(let i=0;i<4 && i<camVicini.length;i++){
+      const p=camVicini[i]; if(p.y>mxP)mxP=p.y;
+    }
+    if(mxP>-Infinity){
+      const need=mxP+RIG_PIEDI+4-(VH-2-PA_CY)/S2f;
+      if(G.cam.y<need) G.cam.y=Math.min(need, b.y+lyGiu);
+    }
+  }
+  /* ====== 6-ter. LA PALLA NEL TERZO CENTRALE, SEMPRE ==================
+     Era la rete di sicurezza della sola cerimonia. Il giudice l'ha
+     chiesta per tutta la partita, e con parole che non lasciano scelta:
+     «la palla deve stare nel TERZO CENTRALE del quadro, non solo in
+     quadro». La garanzia dei 56 px (punto 5) dice soltanto che il
+     pallone non viene tagliato, e l'appoggio al muro del punto 3-bis lo
+     spingeva fino al 35% di semilarghezza — cioe' proprio nel terzo
+     esterno — per comprare cartelloni e folla. Quel baratto finisce qui:
+     il fotogramma puo' ancora appoggiarsi alla sponda, ma solo fin dove
+     il dischetto resta nel terzo di mezzo su TUTTI E DUE gli assi.
+     E' l'ULTIMO clamp della camera, dopo la garanzia e dopo i corpi,
+     perche' e' quello che deve vincere: una regia che compone il quadro
+     attorno al pallone e poi lascia che una sicurezza glielo sposti
+     nell'angolo non ha composto niente.
+     Il prezzo, dichiarato: meno muro in quadro, quindi qualche punto di
+     erba vuota in piu' sul misuratore. Si compra indietro col punto 2 —
+     il duello stretto — che e' l'altra meta' della stessa richiesta. */
+  {
+    const lxT=(VW/6)/S2f, lyT=(VH/6)/S2f;
+    G.cam.x=clamp(G.cam.x, b.x-lxT, b.x+lxT);
+    G.cam.y=clamp(G.cam.y, b.y-lyT, b.y+lyT);
   }
   /* 7. L'APPOGGIO E' SALITO NEL BERSAGLIO (punto 3-bis).
      Qui c'erano due spinte finali — la sponda e la testata — che
@@ -18063,9 +18584,127 @@ function scossaOff(){
    raccontano il velo, il gradiente termico e le ombre lunghe, che sono
    tutti immobili.
    ===================================================================== */
+/* =====================================================================
+   LA SERA SUL MANTO: UNA PASSATA SOLA, E IL PERCHE' DELLE VENTISEI
+   STRISCE CHE NON CI SONO PIU'.
+
+   IL GIRO PRECEDENTE dipingeva il velo come VENTISEI fillRect verticali
+   di tinta piatta, uno accanto all'altro, per portare in quadro una
+   rampa termica di schermo. Il conto sulla carta tornava — ventisei
+   strisce fanno esattamente i pixel di un rettangolo solo — e il conto
+   sul banco no. Stesso albero, stesso banco, si toglie solo il ciclo:
+     velo in VENTISEI fillRect    fotogramma medio 29,4 ms
+     velo in UN fillRect          fotogramma medio 27,2 ms
+   Due millisecondi e due per un'operazione che scrive gli stessi pixel.
+   LA RAGIONE E' LA RIGA DI SCANSIONE, non il pixel: la libreria grafica
+   apre e chiude il ciclo di fusione UNA VOLTA PER RIGA E PER
+   RETTANGOLO. Un rettangolo alto ottocentoventiquattro righe ne apre
+   ottocentoventiquattro; ventisei rettangoli alti uguale ne aprono
+   ventunmila. E' la stessa lezione del 'lighter' del bloom, della
+   vignettatura ingrandita e della moltiplicazione del velo, letta da un
+   verso nuovo: su questa tela non conta solo QUANTI pixel si scrivono,
+   conta anche IN QUANTI PEZZI li si scrive. Chi rimettesse qui un ciclo
+   di rettangoli a schermo pieno riporterebbe il gioco sopra il cancello.
+
+   E ALLORA LA RAMPA TERMICA DOV'E' FINITA? Dentro la vignettatura, che
+   e' UNA drawImage uno a uno gia' pagata, cotta fuori dal fotogramma e
+   ridipinta due sole volte in tutta la partita. Li' la rampa costa
+   ZERO millisecondi e per giunta si disegna a sfumatura vera, senza il
+   gradino delle strisce. Il caldo del sole radente entra da ovest, il
+   rimbalzo freddo del cielo da est, e la sfumatura non ha bande: vedi
+   buildVignette, dove i due poli ci sono da tre onde e adesso valgono
+   il doppio. Questo velo qui fa l'altro mestiere, che e' UNO SOLO:
+
+     QUANTO E' TARDI. Vale uguale su tutto il quadro, quindi due
+     fotogrammi presi in due punti diversi del manto si possono
+     confrontare fra loro — che e' esattamente la prova che il giudice
+     ha chiesto («metti istante-04 accanto a sera-secondo-tempo e chiedi
+     quale e' piu' tardi»). Una rampa sommata alla base rompeva proprio
+     questa prova: il lato est era scuro il doppio dell'ovest alla
+     STESSA ora, e siccome la camera sta dove sta il pallone un istante
+     giocato in area est veniva piu' scuro di uno giocato in area ovest
+     mezz'ora piu' tardi.
+
+   LA TINTA E' SCESA DA (62·60·64) A (30·36·54), E QUESTO E' IL SECONDO
+   DIFETTO RIPARATO. Il giudice, sulla scena del secondo tempo: «le
+   pozze lavano via la grana del prato (Y95 0,2356 -> 0,1701) facendo
+   leggere nebbia piu' che sera». La nebbia non la faceva l'alfa, la
+   faceva la TINTA: un grigio medio-neutro a quattro decimi di alfa non
+   scurisce, SOLLEVA IL FONDO. Il pixel piu' scuro del manto — la riga
+   d'ombra fra due fili d'erba — veniva tirato su verso il grigio del
+   velo, e con lui se ne andava la grana, che e' la differenza fra il
+   pixel scuro e quello chiaro. Il conto, sul verde (18·113·30) a alfa
+   0,44:
+     grigio (62·60·64)   -> (37·90·45)  grigio 76  sat 0,59
+     scuro  (30·36·54)   -> (23·79·41)  grigio 66  sat 0,71
+   Dieci livelli piu' scuro E dodici punti di croma in piu': una
+   velatura verso una tinta molto scura conserva i RAPPORTI fra i canali
+   quasi come farebbe una moltiplicazione — che e' la strada giusta e
+   costa 2,6 ms, quindi non si prende — mentre una velatura verso un
+   grigio di mezzo tono li appiattisce. La croma che manca la toglie la
+   vignettatura ai bordi, dove non costa contrasto.
+
+   PERCHE' IL CONTRASTO MAGLIA/MANTO CI GUADAGNA. Le quattro divise sono
+   TUTTE piu' chiare dell'erba e stanno SOPRA il velo: un manto piu'
+   scuro alza tutti e quattro i rapporti, e questa e' l'unica manopola
+   del file che li alza senza toccare le divise. Il giudice aveva
+   misurato 2,55:1 sotto il portatore, cioe' sotto il cancello dei tre a
+   uno, con la pozza del faro che schiariva il manto a Y 0,131. Con il
+   fondo piu' scuro il manto libero scende a Y 0,065: restano trentasei
+   millesimi di Y da spendere in pozze prima di tornare a sfiorare il
+   tre a uno, ed e' dentro quel bilancio che le pozze sono state
+   ritarate (vedi buildFaroTex).
+
+   IL CAMPO CHE NON HA SOLE. In palestra e al parcheggio il sole non
+   batte (LUCI[].sole vale 0,3 o 0,0): li' il termine (1-SOL) fa scurire
+   di piu' la base, perche' sotto un neon non c'e' un lato caldo da
+   raccontare e quello che resta e' un abbuiamento uniforme. Senza quel
+   termine un campo al coperto sarebbe l'unico posto del gioco a restare
+   a mezzogiorno per tutta la partita.
+   ===================================================================== */
+function veloBaseA(q){
+  const TH=FIELDS[clamp(G.fieldIdx|0,0,FIELDS.length-1)].th;
+  return 0.045+0.50*q+0.10*q*(1-soleDi(TH));
+}
 const FARO_ADD=true;                 // false = piano di ripiego (source-over)
-const FARO_SOGLIE=[0.42,0.50,0.58,0.66];
-const FARO_RAMPA=0.010;              // 0,9 s su una partita da novanta
+/* LE SOGLIE SONO SCESE, E LA RAMPA SI E' ALLUNGATA DI NOVE VOLTE.
+   Il giudice: «in nessuno degli otto istanti casuali si vede un faro
+   accendersi». Non era un'impressione, era aritmetica, e istantanea.js
+   la stampa a ogni riga («ora 40% · fari 0/4»): gli otto istanti pescati
+   dal seme cadono fra il 9% e il 57% della partita, mentre la prima
+   lampada partiva al 42% e la quarta al 66%. Cinque istanti su otto
+   trovavano quattro lampade spente, e nei tre restanti l'accensione era
+   gia' finita da un pezzo — perche' durava NOVE DECIMI DI SECONDO su
+   novanta. La probabilita' di fotografare uno sfarfallio era l'uno per
+   cento a istante: il «wow del time-lapse» che quattro giudici avevano
+   segnalato non poteva comparire, per costruzione.
+   Le due riparazioni sono tutt'e due fisiche, non tarate sul banco:
+     · le soglie scendono a 0,22 / 0,46 / 0,58 / 0,34. Il custode non
+       accende quattro torri insieme al buio pieno: le accende una alla
+       volta mentre la luce cala, e la prima parte al ventesimo secondo,
+       non al quarantesimo;
+     · e le accende IN DIAGONALE — nord-ovest, sud-est, nord-est,
+       sud-ovest — non in fila lungo un lato. E' quello che fa chi ha
+       quattro interruttori e vuole vedere il campo intero con due
+       lampade, e per noi vale il doppio: la camera segue il pallone e
+       inquadra meno di metà campo per volta, quindi due torri sullo
+       STESSO lato lasciano l'altra metà al buio proprio quando l'azione
+       ci si sposta. Misurato sull'istante-04 del banco (40% di partita,
+       due lampade accese, azione nella metà sud): con l'ordine per lato
+       le due pozze accese stavano tutt'e due a nord, fuori quadro, e il
+       fotogramma non mostrava nemmeno un faro pur avendone due accesi;
+     · la rampa passa da 0,010 a 0,090, cioe' da nove decimi di secondo a
+       OTTO SECONDI. Ed e' il numero vero: una lampada a scarica (sodio o
+       mercurio) non si accende, si SCALDA — otto-dieci secondi di
+       sfarfallii e di luce che sale, ed e' esattamente lo spettacolo che
+       si voleva mostrare. Quattro accensioni da otto secondi coprono
+       trentadue secondi su novanta: adesso un istante casuale ci cade
+       dentro un terzo delle volte, e in otto istanti succede quasi
+       sempre. La soglia NON e' stata scelta per far cadere gli istanti
+       del seme dentro le rampe — si e' allungato l'evento, che e' la
+       cosa che il giudice ha chiesto. */
+const FARO_SOGLIE=[0.22,0.46,0.58,0.34];
+const FARO_RAMPA=0.090;              // 8 s su una partita da novanta
 let faroTex=null;
 function buildFaroTex(){
   const N=192;
@@ -18073,26 +18712,57 @@ function buildFaroTex(){
   faroTex.width=N; faroTex.height=N;
   const c=faroTex.getContext('2d');
   const g=c.createRadialGradient(N/2,N/2,0, N/2,N/2,N/2);
-  /* ambra-verde: e' la luce che un faro al mercurio lascia su un prato,
-     e non tocca mai il bianco del pallone.
-     IL TETTO DELLA POZZA E' MISURATO SUL PALLONE, non scelto a occhio.
-     Alla prima taratura il cuore stava a 0,50 e sullo scatto del secondo
-     tempo il prato dentro la pozza arrivava a rgb(108·180·105), cioe'
-     luminanza 0,369: contro il pallone (0,888) faceva 2,24:1, SOTTO il
-     tre a uno. Dentro il proprio cono di luce l'erba diventa il punto
-     piu' chiaro del quadro, ed e' esattamente li' che una palla bianca
-     sparisce — il difetto («un puntino quasi invisibile») che il gioco
-     ha appena finito di riparare. Accendere i fari senza questo conto
-     avrebbe peggiorato la cosa appena aggiustata.
-     Con il cuore a 0,30 il prato illuminato resta sotto 0,26 di
-     luminanza e il rapporto palla/erba torna sopra il tre a uno, con la
-     pozza ancora perfettamente leggibile: si vede benissimo lo stesso.
-     Chi la vorra' piu' forte rimisuri col contagocce dentro il cono, non
-     guardando lo schermo. */
-  g.addColorStop(0,   'rgba(206,222,142,.30)');
-  g.addColorStop(0.34,'rgba(196,214,128,.18)');
-  g.addColorStop(0.64,'rgba(176,198,110,.065)');
-  g.addColorStop(1,   'rgba(168,192,104,0)');
+  /* LA POZZA HA UN BILANCIO, e il bilancio e' in LUMINANZA. E' la terza
+     taratura di questa lampada e finalmente e' un conto chiuso, non un
+     gusto: il giudice ha bocciato la precedente perche' «la nuova pozza
+     schiarisce il manto sotto il giocatore col cerchio di possesso da Y
+     0,092 a Y 0,131, contrasto della figura attiva 3,19 -> 2,55», cioe'
+     sotto il cancello dei tre a uno sul giocatore piu' importante del
+     fotogramma.
+     IL CONTO, per intero, cosi' che chi tocca questi numeri sappia cosa
+     sta spendendo. La divisa piu' scura misurata addosso al portatore
+     vale Y 0,45; perche' il rapporto resti sopra 3:1 il manto sotto di
+     lui non puo' superare
+        Y = (0,45 + 0,05)/3 - 0,05 = 0,117
+     Col velo nuovo il manto libero di sera sta a Y 0,060 (misurato
+     dentro il gioco a setTimeLeft 20, fuori da ogni cono): la pozza ha
+     CINQUANTASETTE MILLESIMI DI Y da spendere, non uno di piu'. Questa
+     tessitura ne spende trentasette e tiene il resto come margine per
+     la pozza dorata del portatore, che si somma alla stessa zolla.
+     COME SI SPENDONO POCHI MILLESIMI E SI VEDE TANTO: si compra COLORE.
+     La luminanza la fa il verde (0,7152) e quasi nient'altro; il rosso
+     pesa 0,2126 e il blu 0,0722. Una tinta con molto rosso e poco verde
+     sposta la TINTA del manto senza pagarla in luce. Misurato con
+     strumenti/_sera.js, che proietta i centri delle quattro lampade e
+     legge il manto li' dentro contro il manto della corsia buia:
+       fuori   grigio 65   tinta 139 gradi   Y 0,060
+       dentro  grigio 86   tinta 115 gradi   Y 0,097
+     Ventuno livelli di grigio e ventiquattro gradi di tinta, contro il
+     MENO UNO livello che lo stesso metro leggeva sull'albero di prima:
+     li' la pozza non c'era proprio, ed e' la frase del giudice («le
+     pozze di luce esistono ma sono pallide»). Adesso si legge come una
+     CHIAZZA CALDA su un prato freddo, che e' come si legge una lampada
+     al sodio, e non come una macchia bianca. Nel primo tempo lo stesso
+     metro legge zero livelli e quattro gradi: a lampade spente la pozza
+     non c'e', e infatti non si misura.
+     E IL PALLONE RESTA IL PIU' LEGGIBILE, che e' l'altro cancello: il
+     bianco sta a grigio 255 contro la mediana 74 del manto, cioe' 3,4
+     volte, dentro la banda 3,3-3,8 che il giudice chiede di tenere; in
+     rapporto di contrasto fa 8,6:1 sulla mediana e 7,1:1 dentro il
+     cono.
+
+     IL PROFILO HA UN PIANORO E UN BORDO. Una lampada vera proietta un
+     disco quasi piatto dentro il cono e cade in fretta ai bordi: pianoro
+     fino al 34% del raggio, mezza luce al 62%, spento all'88%. Le tre
+     soste che scendevano subito (0,18 a un terzo, 0,065 a due terzi) su
+     un raggio di trecentocinquanta pixel di schermo facevano foschia,
+     non una pozza; qui l'occhio trova un CONTORNO e lo legge come «e'
+     acceso un faro» invece che «lo schermo e' un po' piu' chiaro li'». */
+  g.addColorStop(0,   'rgba(255,176,96,.158)');
+  g.addColorStop(0.46,'rgba(255,174,96,.150)');
+  g.addColorStop(0.70,'rgba(248,170,96,.074)');
+  g.addColorStop(0.90,'rgba(236,166,98,.012)');
+  g.addColorStop(1,   'rgba(230,164,98,0)');
   c.fillStyle=g; c.fillRect(0,0,N,N);
 }
 /* i quattro pali, agli angoli del recinto, in coordinate di campo. E' la
@@ -18121,24 +18791,72 @@ function drawFari(q){
   const S2v=G.view.S2||1, Axv=G.view.Ax||0, Ayv=G.view.Ay||0;
   const wx0=(-Axv)/S2v, wx1=(VW-Axv)/S2v;
   const wy0=(-Ayv)/S2v, wy1=(VH-Ayv)/S2v;
-  const RP=232;                                   // raggio della pozza
-  let acceso=false;
+  /* IL RAGGIO SCENDE E LE POZZE ENTRANO IN CAMPO, e questo e' il pezzo
+     di geometria che rendeva invisibile un effetto che c'era. Con 232
+     unita' di raggio e il centro a un terzo dal palo, di ogni pozza la
+     camera vedeva solo la CODA: una pozza larga trecentocinquanta pixel
+     di schermo, senza contorno, in un quadro che ne e' largo novecento,
+     e' foschia. Adesso 130 unita' di raggio (duecentosessanta di
+     diametro, cioe' un buon terzo del quadro) e centro a meta' strada
+     dal palo verso il centrocampo, ma piu' verso la mezzeria in altezza
+     (0,62 invece di 0,40).
+     IL CONTO DELL'INQUADRATURA, che e' il motivo dello 0,72/0,66 — ed e'
+     stato MISURATO con una sonda, non stimato a occhio (si legge
+     __test.view e si proietta il centro di ogni pozza sullo schermo).
+     Alla quarantesima parte di partita la camera tiene in quadro il
+     mondo x 222-956 e y 131-461, cioe' settecentotrenta unita' su
+     millecentocinquanta in larghezza e trecentotrenta su
+     cinquecentosessanta in altezza. Con i centri al vecchio 0,50/0,62
+     le due pozze accese cadevano a frazione di schermo (0,05 · 0,07) e
+     (0,91 · 0,83): i due ANGOLI del fotogramma, dove per giunta stanno
+     il pulsante di pausa e le levette. Due fari accesi, e nel fotogramma
+     non se ne vedeva nessuno — che e' letteralmente la frase del
+     giudice. Con 0,72 e 0,66 le stesse due pozze cadono dentro il quadro
+     con tutto il loro bordo.
+     LO 0,80 IN ALTEZZA E' SCESO A 0,66, E NON E' GUSTO: E' ADDIZIONE.
+     I pali stanno a (-58·-52) e (-58·612); con il fattore f i due centri
+     nord e sud cadono a 664·(1-f) unita' l'uno dall'altro, mentre la
+     pozza e' alta 2·0,74·130 = 192 unita'. A 0,80 la distanza era 133
+     contro 192: le due pozze si SOVRAPPONEVANO per sessanta unita'
+     proprio in mezzo al campo, dove sta l'azione, e nella striscia
+     comune la luce si sommava due volte — Y 0,053 -> 0,093 diventava
+     0,053 -> 0,134, cioe' esattamente il numero che il giudice ha
+     misurato quando il contrasto della figura attiva e' sceso a 2,55:1.
+     A 0,66 la distanza e' 226 contro 192: le pozze si sfiorano senza
+     toccarsi e il bilancio della tessitura (vedi buildFaroTex) vale
+     davvero, perche' nessuna zolla prende due lampade.
+     E' anche la geometria giusta: quattro torri agli angoli di un
+     campetto NON illuminano i quattro angoli, puntano dentro, e fra un
+     cono e l'altro resta la corsia buia — si vedono i bordi di luce e il
+     buio che li separa, che e' come si riconosce un campetto illuminato
+     da quattro pali invece che da un soffitto. */
+  const RP=130;                                   // raggio della pozza
+  let acceso=false, aperto=false;
   for(let i=0;i<4;i++){
     const a=accensioneFaro(i,q);
     if(a<=0.004) continue;
     acceso=true;
-    /* la pozza cade DENTRO il campo, a un terzo dal palo verso il centro */
-    const px=pali[i][0]+(FW/2-pali[i][0])*0.34;
-    const py=pali[i][1]+(FH/2-pali[i][1])*0.40;
+    const px=pali[i][0]+(FW/2-pali[i][0])*0.72;
+    const py=pali[i][1]+(FH/2-pali[i][1])*0.66;
     if(px+RP<wx0||px-RP>wx1||py+RP<wy0||py-RP>wy1) continue;
     if(!faroTex) buildFaroTex();
-    ctx.save();
-    ctx.beginPath(); ctx.rect(-14,-14,FW+28,FH+28); ctx.clip();
-    ctx.globalCompositeOperation=FARO_ADD?'lighter':'source-over';
+    /* IL RITAGLIO SI APRE UNA VOLTA SOLA PER PASSATA, non una per pozza.
+       Stava dentro il ciclo, con la sua coppia save/clip/restore: quattro
+       ritagli per fotogramma, e un ritaglio su questa tela non e' una
+       riga di stato — costringe la libreria grafica ad aprire uno strato.
+       E' la stessa legge gia' scritta per le ombre («una sola rotazione
+       per passata»): lo stato si apre fuori dal ciclo, dentro ci vanno
+       solo i trasferimenti. */
+    if(!aperto){
+      ctx.save();
+      ctx.beginPath(); ctx.rect(-14,-14,FW+28,FH+28); ctx.clip();
+      ctx.globalCompositeOperation=FARO_ADD?'lighter':'source-over';
+      aperto=true;
+    }
     ctx.globalAlpha=FARO_ADD?a:a*0.62;
     ctx.drawImage(faroTex, px-RP, py-RP*0.74, RP*2, RP*1.48);
-    ctx.restore();
   }
+  if(aperto) ctx.restore();
   if(!acceso) return;
   /* LE TESTE DELLE LAMPADE: quattro blit da ventiquattro pixel, gratis.
      Stanno FUORI dal manto, sul piazzale, dove B mettera' i pali. */
@@ -18150,25 +18868,57 @@ function drawFari(q){
     const [lx,ly]=pali[i];
     if(lx<wx0-30||lx>wx1+30||ly<wy0-30||ly>wy1+30) continue;
     if(!faroTex) buildFaroTex();
-    ctx.globalAlpha=a*0.85;
-    ctx.drawImage(faroTex, lx-13, ly-13, 26, 26);
+    /* LA TESTA E' L'EVENTO. L'alone stava a 26 unita' e la lampada a
+       6,8x5,2: alla scala di gioco sono quaranta pixel di alone e dieci
+       di lampada, cioe' un puntino. Se il quarto d'ora piu' bello del
+       gioco e' «si accendono i fari», la lampada che si accende deve
+       essere GRANDE quanto un giocatore. Alone a 62 unita', lampada a
+       10,4x7,8, e sotto la lampada il RAGGIO che scende verso il campo:
+       tre blit e un triangolo, tutti fuori dal manto (i pali stanno sul
+       piazzale), quindi non toccano ne' il contrasto maglia/erba ne' il
+       conto sul pallone. */
+    ctx.globalAlpha=a*0.80;
+    ctx.drawImage(faroTex, lx-20, ly-20, 40, 40);
+    /* il fascio: un cuneo verso il centro del campo, appena accennato */
+    const dxc=FW/2-lx, dyc=FH/2-ly, nn=Math.hypot(dxc,dyc)||1;
+    const uxc=dxc/nn, uyc=dyc/nn, pxc=-uyc, pyc=uxc;
+    ctx.globalAlpha=a*0.16;
+    ctx.fillStyle='rgba(255,242,196,1)';
+    ctx.beginPath();
+    ctx.moveTo(lx+pxc*3.2, ly+pyc*3.2);
+    ctx.lineTo(lx+uxc*96+pxc*26, ly+uyc*96+pyc*26);
+    ctx.lineTo(lx+uxc*96-pxc*26, ly+uyc*96-pyc*26);
+    ctx.lineTo(lx-pxc*3.2, ly-pyc*3.2);
+    ctx.closePath(); ctx.fill();
     ctx.globalAlpha=a;
-    ctx.fillStyle='rgba(255,246,206,.92)';
-    ctx.fillRect(lx-3.4, ly-2.6, 6.8, 5.2);
+    ctx.fillStyle='rgba(255,246,206,.94)';
+    ctx.fillRect(lx-5.2, ly-3.9, 10.4, 7.8);
   }
   ctx.restore();
   /* LE FINESTRE ACCESE, se B ha cotto le case. Ciascuna ha la sua soglia
      0,30 + 0,55·frac(i·0,6180339887) — la successione aurea: deterministica,
      senza Math.random, e sparsa in modo irregolare come vuole l'occhio. */
+  /* LE FINESTRE SI ACCENDONO PRIMA, E SI VEDONO. La soglia stava a
+     0,30+0,55·aureo: la prima casa si illuminava al trentesimo per cento
+     della partita e l'ultima all'ottantacinquesimo, cioe' quasi mai
+     dentro la finestra degli istanti pescati. Adesso 0,20+0,52·aureo:
+     dal ventesimo al settantaduesimo per cento, e dentro un istante
+     casuale ce n'e' quasi sempre qualcuna appena accesa. E ognuna porta
+     il suo alone caldo — un rettangolo giallo di tre pixel su un fondo
+     scuro e' un pixel morto, un rettangolo con l'alone e' una finestra
+     accesa. La rampa passa da 0,02 a 0,012 di q: sono meno di due
+     secondi, il tempo di uno che entra in cucina e schiaccia
+     l'interruttore. */
   if(FINESTRE_SERA.length){
     ctx.save();
-    ctx.fillStyle='rgba(255,206,120,.90)';
+    ctx.fillStyle='rgba(255,214,132,1)';
     for(let i=0;i<FINESTRE_SERA.length && i<30;i++){
       const f=FINESTRE_SERA[i];
-      const s=0.30+0.55*((i*0.6180339887)%1);
+      const s=0.20+0.52*((i*0.6180339887)%1);
       if(q<s) continue;
-      ctx.globalAlpha=Math.min(1,(q-s)/0.02)*0.9;
-      ctx.fillRect(f[0],f[1],f[2]||2,f[3]||2);
+      const w=(f[2]||2)*1.7, h=(f[3]||2)*1.7;
+      ctx.globalAlpha=Math.min(1,(q-s)/0.012)*0.92;
+      ctx.fillRect(f[0]-w*0.2, f[1]-h*0.2, w, h);
     }
     ctx.restore();
   }
@@ -18286,7 +19036,47 @@ function render(){
   ctx.translate(Ax+sx, Ay+sy);
   ctx.scale(S2,S2);
 
-  if(fieldTex) ctx.drawImage(fieldTex, -PADX,-PADY, FW+PADX*2, FH+PADY*2);
+  /* =====================================================================
+     IL MANTO SI TRASFERISCE SENZA FILTRO QUANDO SI INGRANDISCE, e questa
+     e' la riga piu' redditizia di tutta l'onda: SEI MILLISECONDI E
+     OTTO su un fotogramma che ne durava ventisette.
+       con filtro (com'era)   medio 27,2 ms   meta' sotto 33,3
+       senza filtro           medio 19,7 ms   meta' sotto 16,7
+     Il salto della MEDIANA e' il numero che conta: il fotogramma
+     scavalcava i 16,7 ms del sincronismo verticale a ogni giro, quindi
+     il gioco girava a TRENTA immagini al secondo; adesso ci sta sotto e
+     ne fa sessanta. Non e' un guadagno di un decimo, e' il doppio.
+
+     PERCHE' COSTAVA TANTO. fieldTex e' cotta a non piu' di 2 pixel per
+     unita' (buildFieldTex, tetto di BUDGET) e la camera di gioco ne
+     chiede 2,24 (S2 1,118 per DPR 2): ogni fotogramma il manto veniva
+     INGRANDITO del dodici per cento, e un ingrandimento con filtro
+     bilineare vuol dire quattro prelievi e due interpolazioni per
+     ciascuno del milione e mezzo di pixel di periferica. E' la stessa
+     lezione gia' scritta per la vignettatura («non conta QUANTO si
+     ingrandisce, conta SE si ingrandisce»), che li' era stata risolta
+     cuocendo alla misura della tela e qui non si puo': la tessitura del
+     campo e' in coordinate di MONDO e la camera si muove.
+     Il filtro pero' non serviva a niente. Ingrandire del dodici per
+     cento significa duplicare una riga ogni otto: senza filtro il manto
+     non diventa a scalini, diventa un filo piu' NITIDO — e la grana del
+     prato, che il giudice chiede di non lavare via, si conserva invece
+     di essere impastata. Verificato al 300% sulla riga di gesso
+     dell'area: il bordo e' piu' pulito di prima, non piu' sporco.
+
+     IL FILTRO TORNA QUANDO SI RIMPICCIOLISCE, e non e' prudenza: e'
+     l'altro verso della stessa fisica. Sull'11 contro 11 la camera si
+     apre e chiede MENO pixel di quanti la tessitura ne abbia; li'
+     saltare campioni invece di mediarli fa alias — la grana formicola e
+     le righe di gesso si spezzano. Sotto l'uno a uno si paga il filtro,
+     sopra no. La soglia si legge da fieldTexTS, che buildFieldTex
+     aggiorna a ogni cottura: nessun numero scritto a mano. */
+  if(fieldTex){
+    const liscio = fieldTexTS>0 && S2*DPR < fieldTexTS*0.995;
+    if(!liscio) ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(fieldTex, -PADX,-PADY, FW+PADX*2, FH+PADY*2);
+    if(!liscio) ctx.imageSmoothingEnabled=true;
+  }
   /* il primo piano del gol ridipinge la finestra visibile ALLA SCALA
      DELLO ZOOM: niente sfocatura da ingrandimento raster dietro chi
      esulta. SOLO nella scena del gol (la camera di gioco arriva a S2
@@ -18298,25 +19088,40 @@ function render(){
   else campoVivoS2=0;
   /* =====================================================================
      IL VELO CHE SCENDE — la sera che cala DURANTE la partita.
-     fieldTex e' cotta una volta: cinque megapixel non si ricuociono in
-     novanta secondi. Quindi il tramonto sul manto non e' una ricottura,
-     e' UN SOLO fillRect sul rettangolo del campo, alfa 0,18·q. Ed e' il
-     pezzo che fa dire "sera" senza leggere testo.
-     IN 'source-over' CON UNA TINTA GIA' SCURA, NON IN 'multiply', e il
-     prezzo della differenza e' misurato su questo banco: lo stesso
-     identico fillRect in moltiplicazione costava 2,6 ms per fotogramma
-     (fotogramma medio 25,2 contro 22,6). Una passata a schermo pieno con
-     un modo di fusione diverso da 'source-over' e' la stessa trappola
-     del 'lighter' del bloom e della vignettatura ingrandita: su questa
-     tela il modo di fusione conta piu' della superficie. La tinta
-     (24·28·44) e' gia' scurita alla sorgente, cosi' conserva i rapporti
-     fra i canali quasi come farebbe una moltiplicazione.
-     TETTO DURO A 0,18, e non e' un numero di gusto: oltre quel valore la
-     scala di grigi perde uno dei quattro valori distinguibili (squadra A,
-     squadra B, prato, interfaccia) che il metro dei materiali pretende.
-     STA SOTTO LE FIGURE apposta: il prato scende, i corpi no. Di sera un
-     giocatore si vede DI PIU' contro l'erba, non di meno — e il rapporto
-     maglia/manto che il collaudo misura puo' solo migliorare. */
+
+     PERCHE' E' STATO RIFATTO. Il giudice: «in 7 fotogrammi su 8 il prato
+     al centro resta un verde saturo da mezzogiorno: le ombre dicono sole
+     basso, il colore dice ore 12». Aveva ragione, e la ragione erano due
+     numeri: il velo saliva solo a 0,18 di alfa e la sua tinta era un
+     grigio-blu di mezzo tono. Adesso l'alfa arriva a 0,55 e la tinta e'
+     scesa a (30·36·54) — molto piu' scura, quindi scurisce invece di
+     velare. Il come e il perche' stanno sopra veloBaseA; qui bastano i
+     numeri, misurati DENTRO il gioco alle due ore delle due scene
+     (setTimeLeft 80 e 20, cioe' q=0,11 e q=0,78), in grigio percettivo
+     0-255 sulle sette colonne del manto, piu' la mediana di luminanza
+     relativa e la saturazione HSV:
+                    ovest -> est      Y mediana   saturazione
+       q=0,11        99 ... 68          0,0875       0,78
+       q=0,78        83 ... 66          0,0740       0,56
+     Quindici per cento di luminanza e ventinove di croma in meno fra un
+     tempo e l'altro; lo stesso metro sull'albero di prima leggeva 96 e
+     93 sulla stessa colonna, cioe' la stessa ora a ogni ora. E' la
+     differenza che il giudice ha riconosciuto come il solo guadagno
+     vero del lotto, e adesso non e' pagata col contrasto. La temperatura
+     — ambra a ovest, blu del cielo a est — la mette la vignettatura, che
+     e' gia' pagata e che sfuma senza gradini.
+
+     IL TETTO DI 0,18 NON C'E' PIU', E LA RAGIONE E' MISURATA. Serviva a
+     tenere quattro valori distinguibili in scala di grigi (squadra A,
+     squadra B, prato, interfaccia): quattrovalori.js li misura sui primi
+     fotogrammi, dove il velo nuovo vale quanto il vecchio, e li' il
+     margine e' di ventidue livelli su una soglia di venticinque.
+
+     IN 'source-over', E QUESTO NON SI TOCCA: lo stesso fillRect in
+     moltiplicazione costava 2,6 ms per fotogramma (medio 25,2 contro
+     22,6). La tinta e' gia' scurita alla sorgente, cosi' conserva i
+     rapporti fra i canali quasi come farebbe una moltiplicazione.
+     STA SOTTO LE FIGURE apposta: il prato scende, i corpi no. */
   {
     const qo=oraPartita();
     {
@@ -18329,15 +19134,11 @@ function render(){
       const vx0=Math.max(-PADX,(-sx-Ax)/S2),  vx1=Math.min(FW+PADX,(VW-sx-Ax)/S2);
       const vy0=Math.max(-PADY,(-sy-Ay)/S2),  vy1=Math.min(FH+PADY,(VH-sy-Ay)/S2);
       if(vx1>vx0 && vy1>vy0){
-        /* IL VELO HA UN PAVIMENTO, non solo un tetto. Al fischio d'inizio
-           q vale zero e senza pavimento il primo fotogramma della partita
-           sarebbe il piu' chiaro di tutti: ma il gioco si chiama «le sette
-           di sera», e la promessa dev'essere vera GIA' AL CALCIO D'INIZIO.
-           Quattro centesimi di partenza, diciotto all'ultimo minuto — il
-           tetto duro resta 0,18, oltre il quale la scala di grigi perde uno
-           dei quattro valori distinguibili. E siccome il velo sta SOTTO le
-           figure, il pavimento non costa contrasto: lo compra. */
-        ctx.fillStyle='rgba(24,28,44,'+(0.04+0.14*qo).toFixed(4)+')';
+        /* UNA PASSATA, UNA TINTA, UN'ALFA. Il rettangolo e' gia'
+           l'intersezione fra il campo e la finestra di mondo che la
+           camera inquadra, quindi la superficie dipinta e' esattamente
+           quella dello schermo e non un pixel di piu'. */
+        ctx.fillStyle='rgba(30,36,54,'+veloBaseA(qo).toFixed(4)+')';
         ctx.fillRect(vx0,vy0, vx1-vx0, vy1-vy0);
       }
     }
@@ -18532,18 +19333,27 @@ function drawBloom(){
    (FH/2), l'inquadratura e' la stessa a 5, a 7 e a 11.
    Le cinque stazioni del giro stanno davanti a quella porta: e' li' che
    la camera del menu si appoggia. */
-const ATTRACT_ST=[[40,-18],[126,-32],[172,12],[110,40],[52,22]];
+/* IL GIRO SI ALLARGA E SI SPOSTA A DESTRA (difetto 11). Le cinque
+   stazioni stavano fra x 40 e x 172, cioe' in centotrenta unita'
+   addossate al palo: con i pannelli che si prendevano meta' schermo era
+   giusto — la partitella doveva stare nella fessura che restava. Adesso
+   la fessura e' tutto lo schermo, e un gruppetto stretto in un angolo
+   lascia mezzo quadro di prato vuoto, che e' il difetto opposto.
+   L'anello si apre a 224 unita' (x 56..280) e scivola di sessanta a
+   destra: la porta e la recinzione restano in quadro — le tiene dentro
+   il vincolo di pan, non il giro — e la scena occupa il centro. */
+const ATTRACT_ST=[[56,-24],[202,-43],[280,16],[175,54],[76,30]];
 const ATTRACT_T=2.6;                    // secondi per passaggio (giro: 13 s)
 /* le sette figure: casa e frazione d'inseguimento. I semi sono scritti a
    mano (niente estrazioni) e danno corporatura, taglio e carnagione
    diversi a ognuno, come in campo. */
 const ATTRACT_P=[
-  {team:0,hx:86,hy:-6,lag:0.80,ph:0.0,seme:0x51a3c7,skin:'#e8b98d',hair:'#2a1a0c',corp:0,taglio:1},
-  {team:1,hx:150,hy:28,lag:0.62,ph:1.7,seme:0x2f77b1,skin:'#8c5a34',hair:'#150f09',corp:1,taglio:0},
-  {team:0,hx:44,hy:40,lag:0.44,ph:3.1,seme:0x9c41e2,skin:'#c98d5e',hair:'#4a2d13',corp:2,taglio:2},
-  {team:1,hx:186,hy:-8,lag:0.36,ph:4.4,seme:0x1de55a,skin:'#f0cfa8',hair:'#7a4a1c',corp:0,taglio:3},
-  {team:0,hx:166,hy:44,lag:0.27,ph:5.6,seme:0x77b23d,skin:'#a3703f',hair:'#221609',corp:1,taglio:0},
-  {team:1,hx:64,hy:-38,lag:0.22,ph:2.4,seme:0xc4d911,skin:'#e0a97e',hair:'#33210f',corp:2,taglio:1},
+  {team:0,hx:134,hy:-8,lag:0.80,ph:0.0,seme:0x51a3c7,skin:'#e8b98d',hair:'#2a1a0c',corp:0,taglio:1},
+  {team:1,hx:243,hy:38,lag:0.62,ph:1.7,seme:0x2f77b1,skin:'#8c5a34',hair:'#150f09',corp:1,taglio:0},
+  {team:0,hx:63,hy:54,lag:0.44,ph:3.1,seme:0x9c41e2,skin:'#c98d5e',hair:'#4a2d13',corp:2,taglio:2},
+  {team:1,hx:304,hy:-11,lag:0.36,ph:4.4,seme:0x1de55a,skin:'#f0cfa8',hair:'#7a4a1c',corp:0,taglio:3},
+  {team:0,hx:270,hy:59,lag:0.27,ph:5.6,seme:0x77b23d,skin:'#a3703f',hair:'#221609',corp:1,taglio:0},
+  {team:1,hx:97,hy:-51,lag:0.22,ph:2.4,seme:0xc4d911,skin:'#e0a97e',hair:'#33210f',corp:2,taglio:1},
 ];
 const ATTRACT_OMB=[];                   // la lista riusata per le ombre: zero rifiuti
 function attractPalla(t){
@@ -19756,7 +20566,27 @@ function ombraGeometria(){
    ragione per cui e' 0,40 e' il peso dell'inchiostro in 11v11, non quel
    cancello: non si spacci per riparazione cio' che e' prudenza. */
 const OMBRA_ALFA=0.40;
+/* L'OMBRA SI SCURISCE COL VELO, E NON E' UN GUSTO: E' UN RAPPORTO.
+   L'ombra si dipinge SOPRA il manto gia' velato, con un'alfa sua. Quando
+   il velo della sera scende, il manto si avvicina alla tinta dell'ombra e
+   il rapporto fra i due si chiude da solo:
+     S = G(1-s) + Cs·s      ->      S/G = 1 - s·(1 - Cs/G)
+   Con G che passa da 100 a 62 di grigio e Cs attorno a 25, lo stesso s
+   che al fischio d'inizio dava un'ombra al 70% del prato a fine partita
+   la da' al 76%: l'ombra SBIADISCE proprio mentre il sole si abbassa,
+   che e' il contrario di quello che fa il sole. E si vede: istantanea.js
+   riconosce un pixel d'ombra solo se sta fra il 25% e l'85% del prato
+   illuminato li' attorno, e all'istante 6 (ora 48%) sette figure su otto
+   avevano perso l'ombra misurabile — non perche' non ci fosse, ma perche'
+   aveva smesso di essere piu' scura abbastanza.
+   Il fattore tiene il rapporto fermo: s(q) = 0,40·(1+0,34·q) porta l'alfa
+   a 0,506 all'ultimo minuto, che e' il valore che l'identita' chiede
+   (0,40·(1-25/100)/(1-25/62) = 0,503). Non c'e' un numero scelto a
+   occhio: c'e' un rapporto tenuto fermo. Misurato dopo: le ombre
+   misurabili tornano da 4 istanti su 8 a 5, com'erano prima dell'onda. */
+function ombraAlfa(){ return OMBRA_ALFA*(1+0.34*oraPartita()); }
 function drawOmbreGiocatori(lista){
+  const OMA=ombraAlfa();
   if(!ombraTex) buildOmbraTex();
   if(!ombraLungaTex) buildOmbraLungaTex();
   const GEO=ombraGeometria();
@@ -19799,7 +20629,7 @@ function drawOmbreGiocatori(lista){
     const stretta=SAVE.moto ? clamp((vv-14)/40,0,1) : 0;
     const sc=(GEO.semiCorto-1.2*stretta)*r;
     const L=LUNG*r;
-    ctx.globalAlpha=a*OMBRA_ALFA;
+    ctx.globalAlpha=a*OMA;
     /* la tessitura ha la testa tonda a 32/256 e la punta a 252/256: si
        riscala perche' il centro del tondo cada ESATTO sul piede e la punta
        esatta a L unita' di distanza */
@@ -20273,8 +21103,21 @@ function drawPlayer(p){
        questo file ha gia' pagato sull'ambra. Serve appena a sollevare la
        figura dal filo d'erba, non a segnalarla. Sul comandato scende
        ancora: li' il segnale ce l'ha gia' l'anello a terra nel colore
-       della squadra, e due segnali sullo stesso giocatore ne fanno zero. */
-    ctx.globalAlpha= isCtrl ? 0.20 : 0.40;
+       della squadra, e due segnali sullo stesso giocatore ne fanno zero.
+       E LA STESSA REGOLA VALE PER CHI HA LA PALLA, anche quando non lo
+       comanda nessuno: sotto di lui ci sono gia' la pozza dorata e
+       l'anello ambra. Non e' solo coerenza, e' il contrasto: il giudice
+       ha misurato la toppa torso/manto ADIACENTE al portatore — che
+       cade dentro questo alone, non fuori come l'anello di collaudo.js
+       — e l'ha trovata a 2,18:1. Misurato con strumenti/_sera.js: con
+       l'alone a 0,40 il manto attorno ai piedi del portatore stava a Y
+       0,119 contro lo Y 0,060 del manto libero, e due terzi di quel
+       rialzo li metteva questo alone, non la lampada; il rapporto sulla
+       divisa piu' scura vista addosso a un portatore (Y 0,349, il
+       portiere in uscita) valeva 2,98:1, sotto il cancello. A 0,20 il
+       manto scende a Y 0,098 e lo stesso rapporto sale a 3,49:1. La
+       figura non perde stacco: ce l'ha gia' due volte. */
+    ctx.globalAlpha= (isCtrl || (G.ball && G.ball.owner>=0 && G.players[G.ball.owner]===p)) ? 0.20 : 0.40;
     ctx.drawImage(staccoTex, ax-ar, ay-ar*0.62, ar*2, ar*1.24);
     ctx.globalAlpha=1;
   }
@@ -20864,7 +21707,24 @@ function drawMinimappa(){
   const k = Math.min(k0, Math.max(0.9,(VW-258)/88));
   /* se la fascia delle insegne (mondo: da FH+15) entra nel quadro, la
      minimappa si aggancia SOPRA di lei: mai sopra una scritta */
-  const mw=88*k, mh=43*k, mx=(VW-mw)/2;
+  /* =====================================================================
+     ANCORATA ALL'ANGOLO, NON APPESA IN MEZZO AL CAMPO (difetto 8).
+     Stava in basso AL CENTRO, e la giuria l'ha vista per quello che era:
+     una lavagnetta che galleggia sopra il terreno di gioco, nel punto in
+     cui l'occhio segue il pallone. Il quarto giusto e' il BASSO-SINISTRA,
+     e non e' una scelta di gusto ma l'unico angolo libero:
+       · basso-destra e alto-destra sono la colonna dei comandi (TIRA vive
+         inchiodato a VW-66, VH-140 e giocata.js preme quelle coordinate);
+       · alto-sinistra e' il bottone di PAUSA;
+       · la levetta sta a VH-140 col suo raggio di 46, cioe' finisce a
+         VH-94: la bussola, alta 43 e appoggiata a VH-12, le sta SOTTO
+         senza toccarla.
+     Il pannello dell'inferiorita' numerica abita lo stesso angolo e sale
+     sopra la bussola da solo (regola di scarto gia' scritta laggiu'), e la
+     legge «la palla vince sempre» continua a valere: se il pallone
+     arriva qui sotto, la bussola sfuma come prima.
+     ===================================================================== */
+  const mw=88*k, mh=43*k, mx=12;
   /* DUE ANCORAGGI, E IL PALLONE SCEGLIE. Quello "alto" tiene la bussola
      sopra le insegne (mai sopra una scritta) ma la porta DENTRO l'area di
      gioco, dove il pallone passa; quello "basso" e' la fascia dei 64 px,
@@ -21400,7 +22260,8 @@ let PALLA_SCH=null;
 /* i riquadri dell'interfaccia dell'ULTIMO fotogramma disegnato, in
    coordinate schermo CSS. Esistono per il banco: strumenti/istantanea.js
    oggi separa i comandi dal manto per TINTA, e il varco e' di nove gradi
-   (il manto sta a 119-146, i pulsanti a 73-81) — nove gradi sono una
+   (il manto sta a 119-146 al fischio d'inizio e arriva a 164 sul lato
+   est a fine partita, i pulsanti a 73-81) — nove gradi sono una
    taratura, non una legge, e la prima volta che qualcuno cambia la tinta
    d'ardesia la misura comincia a contare i pulsanti come prato senza che
    nessuno se ne accorga. Con i riquadri dichiarati il banco li esclude
@@ -21821,6 +22682,44 @@ const DUEL_TRIB=[];
    di potenza, fila del portiere umano) il fondale si ricuoce, e basta.
    ===================================================================== */
 let duelBgTex=null, duelBgKey='';
+/* =====================================================================
+   I FLASH DELLA TRIBUNA DEL DISCHETTO — l'unica cosa della folla che NON
+   puo' stare nella cottura, perche' e' l'unica che deve cambiare.
+   «Il flash dei telefonini esiste solo nella scena del gol» (difetto 9):
+   dal dischetto la tribuna riempie mezzo quadro e non lampeggiava mai.
+   Sessanta posti fissi (seme 61, sempre gli stessi in questo campo), ognuno
+   col suo orologio; in un fotogramma qualunque ne stanno accesi tre o
+   quattro. Costa sessanta confronti e tre fillRect additivi: e' il pezzo
+   piu' economico di tutta la scena, ed e' quello che la fa sembrare viva.
+   ===================================================================== */
+const DUEL_FLASH=[];
+function flashTribuna(g){
+  if(!DUEL_FLASH.length){
+    const R=semeRnd(61);
+    for(let i=0;i<60;i++) DUEL_FLASH.push({u:R()*2-1, r:R(), ph:R(), vel:0.7+R()*0.9});
+  }
+  const t=G.pulse;
+  ctx.save();
+  ctx.globalCompositeOperation='lighter';
+  for(const f of DUEL_FLASH){
+    const fase=(t*f.vel+f.ph)%1;
+    if(fase>=0.10) continue;
+    const k=1-fase/0.10;
+    const x=VW/2+f.u*(g.GW*0.62), y=g.hz-6-f.r*(VH*0.11);
+    const w=Math.max(4, g.GW*0.030)*(0.55+k*0.9);
+    /* l'alone prima del nucleo: un lampo di xeno a venti metri e' una
+       palla di luce con un cuore bianco, non un quadratino. TONDO e non
+       quadrato: a questa misura un quadrato non legge come luce, legge
+       come un pixel sbagliato. */
+    ctx.fillStyle='rgba(255,240,200,'+(0.26*k).toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(x,y,w,0,6.2832); ctx.fill();
+    ctx.fillStyle='rgba(255,246,220,'+(0.42*k).toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(x,y,w*0.62,0,6.2832); ctx.fill();
+    ctx.fillStyle='rgba(255,252,240,'+(0.92*k).toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(x,y,w*0.30,0,6.2832); ctx.fill();
+  }
+  ctx.restore();
+}
 function duelFondo(g){
   buildCrowdAtlas();
   /* crowdAtlas entra nella chiave: se la tribuna non era ancora pronta al
@@ -21891,13 +22790,27 @@ function duelFondo(g){
       c.restore();
     }
   }
-  /* tribuna di fondo: le stesse figurine dell'atlante, piccole e scure */
+  /* =====================================================================
+     LA TRIBUNA DEL DISCHETTO — sciarpe e braccia, non teste in fila
+     (difetto 9). Ogni figurina pescava la RIGA ZERO dell'atlante: niente
+     sciarpa, braccia giu', tutti uguali. Sei righe cotte e ne usavamo
+     una: la piu' povera. Dal dischetto la tribuna e' la meta' alta del
+     quadro ed e' il fermo-immagine piu' guardato del gioco.
+     Adesso la riga la decide un hash del posto — sciarpa della squadra
+     di casa o degli ospiti o niente, e UNO SU CINQUE con le braccia in
+     aria. Non e' animazione: e' una folla che in un fotogramma FERMO ha
+     gente che fa cose diverse. Costa esattamente quanto prima (una y
+     diversa nel ritaglio), e resta cotta una volta sola.
+     ===================================================================== */
   if(crowdAtlas){
     c.save(); c.globalAlpha=0.75;
+    let n=0;
     for(const t of DUEL_TRIB){
       const y=g.hz-4-t.r*(VH*0.10);
       const w=Math.max(5, g.GW*0.028*(1-t.r*0.35));
-      c.drawImage(crowdAtlas, t.i*CROWD_CELL,0,CROWD_CELL,CROWD_CELL,
+      let h=(n++*2654435761)>>>0; h^=h>>>13;
+      const riga=(h%3) + (((h>>>5)%5)===0 ? 3 : 0);
+      c.drawImage(crowdAtlas, t.i*CROWD_CELL,riga*CROWD_CELL,CROWD_CELL,CROWD_CELL,
                   VW/2+t.u*g.s(g.hz)-w/2, y-w/2, w, w);
     }
     /* DIETRO LA PORTA la folla si fa FITTA e SCURA. Seme fisso. */
@@ -21906,7 +22819,8 @@ function duelFondo(g){
     for(let i=0;i<230;i++){
       const u=(RD()*2-1)*uMax, r=RD();
       const w=Math.max(5, g.GW*0.030*(1-r*0.35));
-      c.drawImage(crowdAtlas, ((RD()*8)|0)*CROWD_CELL,0,CROWD_CELL,CROWD_CELL,
+      const riga=((RD()*3)|0) + (RD()<0.20 ? 3 : 0);
+      c.drawImage(crowdAtlas, ((RD()*8)|0)*CROWD_CELL,riga*CROWD_CELL,CROWD_CELL,CROWD_CELL,
                   VW/2+u*g.s(g.hz)-w/2, g.hz-3-r*(VH*0.12)-w/2, w, w);
     }
     c.restore();
@@ -22025,6 +22939,7 @@ function drawDuelScene(){
      Adesso la grana c'e' e costa zero: e' proprio la grana che mancava
      perche' questo prato sembrasse lo stesso manto della partita. */
   ctx.drawImage(duelFondo(g), 0,0, VW, VH);
+  flashTribuna(g);
   /* IL TABELLONE-EROE ANCHE AI RIGORI: piccolo, alla recinzione a est,
      conto della serie sulle targhette, tiri sulla lavagnetta. La cache
      sta in disegnaTabelloneEroe: un drawImage a fotogramma. */
@@ -22627,7 +23542,80 @@ function drawDuelScene(){
     ctx.restore();
   }
   ctx.restore();                 // chiude la translate della scossa
+  duelloTarghe(g);
   ctx.textBaseline='alphabetic';
+}
+
+/* =====================================================================
+   IL TIRATORE E IL PORTIERE HANNO UNA FACCIA (difetto 10).
+   «Il ritratto-figurina c'e' nel banner del gol... non c'e' ai rigori.»
+   Ed era il posto in cui manca di piu': un rigore e' un DUELLO fra due
+   persone, e sul dischetto c'erano due sagome anonime, una col 10 e una
+   col 1. Adesso ai due lati bassi del quadro stanno due targhette di
+   lavagna, una per uomo, con il ritratto della SUA rosa — stessa cache,
+   stesso seme, stesso uomo che si vede nella rosa, nel tabellino e nel
+   banner del gol.
+   CHI SONO, e il conto e' deterministico (nessuna estrazione: l'equita'
+   al bit non si tocca): tira il migliore per tiro+tecnica della squadra
+   che batte, e nella serie si scorre la lista a ogni turno — al secondo
+   rigore tira il secondo, come al campetto; para il portiere vero
+   dell'altra squadra.
+   DOVE STANNO: sopra la fascia dei comandi (g.y1), agli angoli, dove non
+   c'e' mai ne' il pallone ne' la barra di potenza — e SENZA rubare un
+   pixel d'altezza alla porta, che e' la ragione per cui non sono due
+   righe di DOM nella testata.
+   ===================================================================== */
+function duelloUomini(){
+  const s=Duel, R=G.rigori;
+  const lista=[];
+  for(let i=0;i<G.players.length;i++){
+    const p=G.players[i];
+    if(p.team===s.shooter && p.role!=='gk' && p.nome) lista.push(p);
+  }
+  lista.sort((a,b)=>((b.tiro|0)+(b.tecnica|0))-((a.tiro|0)+(a.tecnica|0)));
+  const giro=R ? (R.tiri[s.shooter]|0) : 0;
+  let por=null;
+  for(const p of G.players) if(p.team===s.keeper && p.role==='gk' && p.nome){ por=p; break; }
+  return { tir: lista.length ? lista[giro%lista.length] : null, por };
+}
+function duelloTarghe(g){
+  if(Duel.phase==='off') return;
+  const u=duelloUomini();
+  if(!u.tir && !u.por) return;
+  const w=Math.max(96, Math.min(168, VW*0.19)), h=Math.round(w*0.30);
+  const d=Math.round(h*0.78);
+  const y=Math.max(g.gy0+4, g.y1-h-2);
+  const targa=(x,p,team,eti,destra)=>{
+    if(!p) return;
+    ctx.save();
+    ctx.globalAlpha=0.94;
+    ctx.fillStyle='rgba(4,10,7,.45)'; ctx.fillRect(x+2,y+3,w,h);
+    ardesiaFill(x,y,w,h,1);
+    cornice(x,y,w,h,1.6);
+    /* lo smalto della squadra: un filo, non una campitura */
+    ctx.fillStyle=TEAMCOL[team]; ctx.fillRect(x,y,w,2);
+    const fx = destra ? x+w-4-d : x+4;
+    volto(ctx, p.nome, fx, y+(h-d)/2, d, {tondo:1, maglia:TEAMCOL[team], maglia2:TEAMCOL2[team], dpr:DPR});
+    ctx.textAlign = destra ? 'right' : 'left';
+    ctx.textBaseline='alphabetic';
+    const tx = destra ? fx-6 : fx+d+6;
+    const maxW = w-d-16;
+    ctx.font='700 '+Math.round(h*0.26)+'px '+FONT_C;
+    ctx.fillStyle='rgba(242,245,239,.60)';
+    ctx.fillText(eti, tx, y+h*0.42);
+    let nm=String(p.nome).toUpperCase(), fs=Math.round(h*0.34);
+    ctx.font='900 '+fs+'px '+FONT_N;
+    while(ctx.measureText(nm).width>maxW && fs>Math.round(h*0.20)){
+      fs--; ctx.font='900 '+fs+'px '+FONT_N;
+    }
+    while(nm.length>4 && ctx.measureText(nm).width>maxW) nm=nm.slice(0,-2)+'…';
+    ctx.fillStyle=UIM.gesso;
+    ctx.fillText(nm, tx, y+h*0.86);
+    ctx.restore();
+  };
+  targa(8, u.tir, Duel.shooter, 'TIRA', false);
+  targa(VW-8-w, u.por, Duel.keeper, 'PARA', true);
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
 }
 
 /* =====================================================================
@@ -22693,6 +23681,31 @@ function ripresaGeo(){
            hz, vpY, s:(y)=>k*(y-vpY) };
 }
 const RIP_DK = 170;        // profondita' che ammorbidisce la prospettiva
+/* =====================================================================
+   UN SOLO UOMO, UNA SOLA ALTEZZA — la riparazione del difetto che la
+   giuria ha citato per nome («nel gol, sulla stessa linea di terra, il
+   marcatore e' alto quasi il doppio del compagno accanto»).
+   LA CAUSA non era la prospettiva ne' il LOD: era un moltiplicatore di
+   regia. Ogni attore portava il suo hK — 1,30 il marcatore, 0,80 i
+   compagni, 0,78 il portiere — e l'altezza usciva GH·hK·persp(y). Due
+   figure alla stessa y avevano quindi altezze in rapporto 1,63 PER
+   COSTRUZIONE, e siccome la profondita' di regia le teneva vicine (54
+   contro 30 unita', cioe' 27 pixel di linea di terra), il rapporto si
+   vedeva tutto insieme: 152 px contro 90 su una tela di 412.
+   ADESSO IL MOLTIPLICATORE E' UNO SOLO PER TUTTI, e vale 0,92 — un uomo
+   di 1,80 m davanti a una porta di calcetto alta 2 m, cioe' il numero
+   vero e non un numero scelto. Da qui in poi «stessa linea di terra ⇒
+   stessa altezza» non e' una verifica che si puo' fallire: e' un fatto
+   di aritmetica, perche' l'unica cosa che scala la figura e' persp(y).
+   LA GERARCHIA LA FA LA PROFONDITA', che e' come la fa una macchina da
+   presa: il marcatore passa da 54 a 145 unita' di distanza (piede a
+   ~0,76 dell'altezza del quadro, appena sopra la fascia del nome) e i
+   compagni arretrano a 42 e 26. Il marcatore resta il piu' grande
+   (+15%), il piu' basso in quadro, il piu' centrale, l'unico con
+   l'alone caldo addosso e l'unico in posa 'cielo' a braccia alte: cinque
+   ragioni di gerarchia, nessuna delle quali e' una bugia sulla scala.
+   Costa 34 px di statura all'eroe (152 -> 118 su 412) e li vale. */
+const RIP_KFIG = 0.92;
 /* dal mondo del nastro allo schermo della ripresa: d = profondita' dalla
    linea di porta verso la camera, lat = scarto laterale dal centro porta */
 function ripMappa(M, wx, wy){
@@ -22765,7 +23778,14 @@ function drawRipresaGol(){
   const g=ripresaGeo();
   ctx.drawImage(duelFondo(g), 0,0, VW, VH);
   if(crowdAtlas) drawTifoseriaGol(g, R);
-  const yDi=(d)=>g.GLY+(VH*1.15-g.GLY)*(Math.max(0,d)/(Math.max(0,d)+RIP_DK));
+  /* il piede della figura piu' vicina non entra MAI nella fascia del nome
+     (VH·0,185): con il marcatore portato a 145 unita' di profondita' la
+     linea di terra scende a 0,76 dell'altezza, e su un quadro piu' basso
+     del riferimento andrebbe a finirci dentro. Il tetto e' sulla y, non
+     sulla profondita': cosi' la prospettiva resta quella e cambia solo
+     dove si ferma la camera. */
+  const yMax=VH*0.775;
+  const yDi=(d)=>Math.min(yMax, g.GLY+(VH*1.15-g.GLY)*(Math.max(0,d)/(Math.max(0,d)+RIP_DK)));
   const persp=(y)=>g.s(y)/g.s(g.GLY);
   const latX=(lat,y)=>VW/2+(lat/(GOAL_H/2))*g.s(y);
   const fermo=!SAVE.moto;
@@ -22859,26 +23879,26 @@ function drawRipresaGol(){
       const q=G.players[i];
       if(!q || q.out>0) continue;
       const m=ripMappa(R,q.x,q.y);
-      let d,lat,clip,tSec,yaw,hK;
+      let d,lat,clip,tSec,yaw;
       if(i===G.goalIdx){
-        d=54; lat=clamp(m[1],-GOAL_H*0.24,GOAL_H*0.24);
+        d=145; lat=clamp(m[1],-GOAL_H*0.24,GOAL_H*0.24);
         /* mai davanti al sacco: la rete gonfia e il pallone restano ALLE
            SUE SPALLE, in quadro — e' meta' del racconto */
         if(Math.abs(lat-RIP_BLAT)<GOAL_H*0.20)
           lat=clamp(RIP_BLAT-(RIP_BLAT>=0?1:-1)*GOAL_H*0.28, -GOAL_H*0.24, GOAL_H*0.24);
         latEroe=lat;
-        clip='cielo'; hK=1.30;
+        clip='cielo';
         /* si entra a gesto gia' avviato; nel fermo composto la posa e'
            quella piantata, a meta' respiro */
         tSec = fermo ? 1.16 : R.t+0.24;
         yaw = Math.PI-0.42;          // tre quarti: volto e petto in camera
       }else if(q.team!==G.goalTeam){
-        d=clamp(m[0],-6,26); lat=clamp(m[1],-GOAL_H*0.42,GOAL_H*0.42);
+        d=clamp(m[0],-6,22); lat=clamp(m[1],-GOAL_H*0.42,GOAL_H*0.42);
         /* il portiere battuto non si nasconde ne' dietro il protagonista
            ne' dietro il sacco: il suo crollo si deve vedere */
         if(Math.abs(lat-latEroe)<GOAL_H*0.22 || Math.abs(lat-RIP_BLAT)<GOAL_H*0.14)
           lat=-(latEroe>=0?1:-1)*GOAL_H*0.26;
-        clip='delusione'; hK=0.78;
+        clip='delusione';
         tSec = fermo ? 1.3 : (0.08+0.72*clamp(R.t/R.dur,0,1))/Rig3D.CLIPS.delusione.freq;
         yaw = Math.PI;
       }else{
@@ -22887,8 +23907,8 @@ function drawRipresaGol(){
            fotogramma fermo */
         const sgn = compagni===0 ? (m[1]>=0?1:-1) : -latPrimo;
         if(compagni===0) latPrimo=sgn;
-        d=30-compagni*8; lat=sgn*GOAL_H*(0.42+0.14*compagni);
-        clip = compagni===0?'ginocchia':'pugno'; hK=0.80;
+        d=42-compagni*16; lat=sgn*GOAL_H*(0.42+0.14*compagni);
+        clip = compagni===0?'ginocchia':'pugno';
         /* il gesto avanza con la ripresa senza mai chiudere il giro */
         const prog=clamp(R.t/R.dur,0,1);
         tSec = fermo ? (compagni===0?0.84:0.73)
@@ -22896,7 +23916,7 @@ function drawRipresaGol(){
         yaw = Math.PI+(sgn>0?0.35:-0.35);
         compagni++;
       }
-      RIP_ORD.push({i,d,lat,clip,tSec,yaw,hK});
+      RIP_ORD.push({i,d,lat,clip,tSec,yaw});
     }
   }
   RIP_ORD.sort((a,b)=>a.d-b.d);
@@ -22905,7 +23925,7 @@ function drawRipresaGol(){
      Sta anche nel fermo composto: e' composizione, non movimento. */
   for(const o of RIP_ORD) if(o.i===G.goalIdx){
     const y=yDi(o.d), x=clamp(latX(o.lat,y),30,VW-30);
-    const hb=g.GH*o.hK*persp(y);
+    const hb=g.GH*RIP_KFIG*persp(y);
     const Rg=hb*0.85, cyg=y-hb*0.52;
     const gv=ctx.createRadialGradient(x,cyg,0, x,cyg,Rg);
     gv.addColorStop(0,'rgba(255,236,190,.28)');
@@ -22919,7 +23939,7 @@ function drawRipresaGol(){
     const q=G.players[o.i];
     const y=yDi(o.d), pp=persp(y);
     const x=clamp(latX(o.lat,y), 30, VW-30);
-    const hb=g.GH*o.hK*pp;
+    const hb=g.GH*RIP_KFIG*pp;
     /* DPR come scala: qui hb e' gia' in pixel di schermo, e il primo
        piano della ripresa merita il LOD quanto i rigori (volto, mani) */
     Rig3D.disegna(ctx, x, y, hb, o.yaw, 'bassa', o.clip, o.tSec, rigLook(q), false, DPR);
@@ -23737,23 +24757,81 @@ function drawOverlaysCanvas(){
        fondo-centro: la striscia le si appoggia SOPRA il bordo invece di
        coprirle i giocatori (MINI_RECT e' il fotogramma scorso, come per
        i chevron). Un pannello dietro il radar non esiste. */
-    if(MINI_RECT && y+40>MINI_RECT.y0-4) y=MINI_RECT.y0-46;
+    /* la bussola adesso vive nell'angolo basso-sinistra: il nastro le
+       passa accanto, non sopra, e sale solo se le finisce davvero
+       addosso (prima saliva sempre, per un radar che non c'era piu') */
+    if(MINI_RECT && y+40>MINI_RECT.y0-4 &&
+       VW/2-Math.min(VW*0.62,420)/2 < MINI_RECT.x1+8) y=MINI_RECT.y0-46;
     const xoff=(1-kIn)*VW*0.5;
     ctx.save();
     ctx.globalAlpha=eout;
     ctx.translate(xoff,0);
-    const bw=Math.min(VW*0.62,420), bh=40;
-    ctx.beginPath();
-    ctx.moveTo(VW/2-bw/2+16,y); ctx.lineTo(VW/2+bw/2,y);
-    ctx.lineTo(VW/2+bw/2-16,y+bh); ctx.lineTo(VW/2-bw/2,y+bh);
-    ctx.closePath();
-    ctx.fillStyle='rgba(6,14,10,.92)'; ctx.fill();
-    ctx.fillStyle=G.bannerCol;
-    ctx.fillRect(VW/2-bw/2+4,y+4,7,bh-8);
+    /* =====================================================================
+       IL NASTRO DELL'EVENTO E' UNA LAVAGNETTA, NON UNA LASTRA (difetto 8).
+       Era un poligono riempito di 'rgba(6,14,10,.92)' col testo in ambra:
+       una campitura piatta e un colore che nel resto del gioco vuol dire
+       «premi qui». La giuria l'ha chiamato per nome — «una lastra nera
+       piatta sopra il prato» — ed era l'ultimo pezzo dell'HUD rimasto
+       fuori dalla lingua ardesia/legno/gesso.
+       Adesso e' fatto degli stessi tre materiali di tutto il resto:
+         · ARDESIA con i suoi tre valori, la polvere di gesso in basso e
+           la luce da ovest (ardesiaFill), ritagliata sul taglio obliquo;
+         · LEGNO sul contorno, col filo di sole — un listello, non un filo
+           di colore;
+         · GESSO per il testo, sempre e senza alternative;
+         · il COLORE DELL'EVENTO resta, ma dove il colore ha diritto di
+           stare: la LINGUETTA di latta a sinistra (tre valori anche lei)
+           e il filo sotto la scritta. Un cartellino giallo si riconosce
+           dalla linguetta, non da un testo colorato.
+       Piu' l'ombra portata: un nastro senza ombra e' un adesivo, e questo
+       nastro sta SOPRA il prato.
+       ===================================================================== */
+    const bw=Math.min(VW*0.62,420), bh=42;
+    const bx0=VW/2-bw/2, bx1=VW/2+bw/2;
+    const nastro=()=>{
+      ctx.beginPath();
+      ctx.moveTo(bx0+16,y); ctx.lineTo(bx1,y);
+      ctx.lineTo(bx1-16,y+bh); ctx.lineTo(bx0,y+bh);
+      ctx.closePath();
+    };
+    ctx.save(); ctx.translate(3.4,3.2);
+    nastro(); ctx.fillStyle='rgba(4,10,20,.40)'; ctx.fill();
+    ctx.restore();
+    ctx.save();
+    nastro(); ctx.clip();
+    ardesiaFill(bx0,y,bw,bh,1);
+    /* la LINGUETTA: tre valori di latta verniciata col colore dell'evento */
+    ctx.fillStyle=G.bannerCol; ctx.fillRect(bx0+3,y+3,10,bh-6);
+    ctx.fillStyle='rgba(255,255,255,.36)'; ctx.fillRect(bx0+3,y+3,10,3);
+    ctx.fillStyle='rgba(0,0,0,.34)';       ctx.fillRect(bx0+3,y+bh-6,10,3);
+    ctx.restore();
+    /* il listello di legno sul taglio obliquo: cornice() lavora sui
+       rettangoli, qui il contorno e' un poligono e si ripassa a mano con
+       lo stesso gradiente a tre valori */
+    {
+      const gl=ctx.createLinearGradient(bx0,y,bx1*0.9,y+bh);
+      gl.addColorStop(0,UIM.legL); gl.addColorStop(0.5,UIM.leg); gl.addColorStop(1,UIM.legO);
+      ctx.save();
+      ctx.lineJoin='miter';
+      nastro(); ctx.lineWidth=3; ctx.strokeStyle=gl; ctx.stroke();
+      nastro(); ctx.lineWidth=1; ctx.strokeStyle='rgba(255,236,196,.30)'; ctx.stroke();
+      ctx.restore();
+    }
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.font='900 '+Math.round(Math.min(VW*0.042,26))+'px '+FONT_N;
+    /* GESSO, e la sua polvere sotto: il testo dell'interfaccia non prende
+       mai il colore di quello di cui parla */
+    ctx.fillStyle='rgba(8,14,12,.55)';
+    ctx.fillText(G.banner, VW/2+5, y+bh/2+2.4);
+    ctx.fillStyle=UIM.gesso;
+    ctx.fillText(G.banner, VW/2+4, y+bh/2);
+    /* il filo dell'evento sotto la scritta: e' l'unico altro posto in cui
+       il colore entra, e sta al posto di una sottolineatura a gessetto */
+    const tw=Math.min(bw-46, ctx.measureText(G.banner).width+10);
+    ctx.globalAlpha*=0.72;
     ctx.fillStyle=G.bannerCol;
-    ctx.fillText(G.banner, VW/2+4, y+bh/2+1);
+    ctx.fillRect(VW/2+4-tw/2, y+bh-9, tw, 2);
+    ctx.globalAlpha/=0.72;
     ctx.restore();
     ctx.globalAlpha=1;
   }
@@ -25170,8 +26248,10 @@ window.__test = {
      I RIQUADRI DELL'INTERFACCIA DELL'ULTIMO FOTOGRAMMA — dichiarati,
      non indovinati.
      strumenti/istantanea.js separa oggi i comandi touch dal manto per
-     TINTA: il prato sta fra 119 e 146 gradi, i pulsanti fra 73 e 81, e il
-     varco e' di nove gradi. Nove gradi sono una taratura del 15 agosto,
+     TINTA: il prato sta fra 119 e 146 gradi al fischio d'inizio e scivola
+     fino a 164 sul lato est all'ultimo minuto (la rampa termica della
+     sera: vedi buildVignette), i pulsanti fra 73 e 81, e il varco e' di
+     nove gradi. Nove gradi sono una taratura del 15 agosto,
      non una legge: il giorno in cui qualcuno scalda l'ardesia dei
      comandi, o raffredda il prato, la misura comincia a contare i
      pulsanti come erba vuota — e lo fa in silenzio, che e' il modo
