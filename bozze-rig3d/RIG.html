@@ -461,7 +461,7 @@ function braccio(sh,el,ha, sx,sy,sz, a,elb, out,side){
    testa di chi corre — e la distanza collo-cranio resta 0,19 m sempre.
    Il fattore 5,26 = 1/0,19 converte la vecchia quota nell'angolo che
    sposta la testa altrettanto: le clip esistenti non cambiano numeri. */
-const CENNO=1/0.19;
+const CENNO=1/0.25;
 /* IL BUSTO SI INCLINA ANCHE DI LATO, e anche quello e' una ROTAZIONE:
    `roll` (opzionale, radianti) fa pendere la colonna verso destra. Prima
    la finta otteneva lo stesso effetto sommando metri alla x di torace,
@@ -476,12 +476,12 @@ function corpo(pelvY,sway,lean,headBob,roll){
   if(roll){ dx=Math.sin(roll); dk=Math.cos(roll); }
   const ey=dk*cl, ez=dk*sl;                 // versore della colonna
   setJ(PELVIS, sway+0.06*dx, pelvY+0.06*ey, 0.06*ez);
-  setJ(CHEST,  sway+0.40*dx, pelvY+0.40*ey, 0.40*ez);
-  setJ(NECK,   sway+0.52*dx, pelvY+0.52*ey, 0.52*ez);
+  setJ(CHEST,  sway+0.355*dx, pelvY+0.355*ey, 0.355*ez);
+  setJ(NECK,   sway+0.46*dx, pelvY+0.46*ey, 0.46*ez);
   const hl=lean*0.55+headBob*CENNO, shl=Math.sin(hl), chl=Math.cos(hl);
   let hx=0, hk=1;
   if(roll){ hx=Math.sin(roll*0.75); hk=Math.cos(roll*0.75); }
-  setJ(HEAD, sway+0.52*dx+0.19*hx, pelvY+0.52*ey+0.19*hk*chl, 0.52*ez+0.19*hk*shl);
+  setJ(HEAD, sway+0.46*dx+0.25*hx, pelvY+0.46*ey+0.25*hk*chl, 0.46*ez+0.25*hk*shl);
 }
 
 /* LA TESTA SI GIRA, NON SCIVOLA. Sei clip volevano «la faccia al cielo»
@@ -527,7 +527,7 @@ function poseLoco(u,q){
   corpo(pelvY,0,q.lean,q.headBob*c2);
   // spalle (sull'inclinazione del tronco, con torsione)
   const sl=Math.sin(q.lean), cl=Math.cos(q.lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl, cs=Math.cos(st), ss=Math.sin(st);
+  const shY=pelvY+0.44*cl, shZ=0.44*sl, cs=Math.cos(st), ss=Math.sin(st);
   // braccia in opposizione alle gambe
   const aAR=-q.arm*sw+q.armOfs, aAL=q.arm*sw+q.armOfs;
   const eR=q.elb0+q.elbA*(0.5-0.5*sw), eL=q.elb0+q.elbA*(0.5+0.5*sw);
@@ -566,15 +566,15 @@ function poseLoco(u,q){
    sagoma) e armOut porta l'abduzione a 0,20 e 0,26 rad, cosi' le
    braccia non rientrano nel torace nel punto morto della falcata.
    ===================================================================== */
-const Q_FERMO={leg:0.10,legOfs:0.01,knee0:0.12,kneeA:0.03,kneeLag:3.7,
-  arm:0.05,armOfs:0.03,elb0:0.30,elbA:0.04,armOut:0.075,
-  lean:0.05,bounce:0.008,crouch:0,twist:0.02,stanceW:0.135,headBob:0.005};
-const Q_CAMMINATA={leg:0.48,legOfs:0.05,knee0:0.12,kneeA:0.95,kneeLag:4.2,
-  arm:0.55,armOfs:0.05,elb0:0.30,elbA:0.25,armOut:0.054,
-  lean:0.08,bounce:0.034,crouch:0.02,twist:0.14,stanceW:0.105,headBob:0.012};
-const Q_CORSA={leg:0.72,legOfs:0.15,knee0:0.34,kneeA:1.15,kneeLag:3.6,
-  arm:0.52,armOfs:0.08,elb0:1.30,elbA:0.30,armOut:0.070,
-  lean:0.28,bounce:-0.055,crouch:0.05,twist:0.17,stanceW:0.075,headBob:0.010};
+const Q_FERMO={leg:0.18,legOfs:0.01,knee0:0.26,kneeA:0.04,kneeLag:3.7,
+  arm:0.05,armOfs:0.24,elb0:0.95,elbA:0.04,armOut:0.200,
+  lean:0.05,bounce:0.008,crouch:0.04,twist:0.02,stanceW:0.210,headBob:0.005};
+const Q_CAMMINATA={leg:0.52,legOfs:0.05,knee0:0.10,kneeA:0.72,kneeLag:4.2,
+  arm:0.58,armOfs:0.05,elb0:0.55,elbA:0.22,armOut:0.185,
+  lean:0.17,bounce:0.034,crouch:0.02,twist:0.14,stanceW:0.105,headBob:0.012};
+const Q_CORSA={leg:0.60,legOfs:0.15,knee0:0.46,kneeA:1.55,kneeLag:3.6,
+  arm:0.78,armOfs:0.08,elb0:1.50,elbA:0.34,armOut:0.215,
+  lean:0.44,bounce:-0.055,crouch:0.05,twist:0.17,stanceW:0.075,headBob:0.010};
 
 function poseFermo(u){ poseLoco(u,Q_FERMO); }
 function poseCamminata(u){ poseLoco(u,Q_CAMMINATA); }
@@ -597,7 +597,7 @@ function poseFrenata(u){
   const dz=-0.09;                        // il bacino arretra dietro l'appoggio
   P[PELVIS*3+2]+=dz; P[CHEST*3+2]+=dz; P[NECK*3+2]+=dz; P[HEAD*3+2]+=dz;
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl+dz;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl+dz;
   const st=0.55, cs=Math.cos(st), ss=Math.sin(st);   // torsione di tre quarti
   // bilanciere: braccia basse e LARGHE all'inizio, poi avanti
   const aR2=0.12*terzo+(0.55+0.18*osc)*(1-terzo);
@@ -628,14 +628,15 @@ function poseCalcio(u,q){
   const lean=-q.leanBack*w1+q.leanFwd*w2;
   corpo(pelvY,0,lean,-0.012*peso);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   // il corpo si apre in carica e si chiude attraverso l'impatto
   const st=q.apriSp*(w1-1.1*w2), cs=Math.cos(st), ss=Math.sin(st);
   const ht=q.apriAn*(w1-0.7*w2), ch=Math.cos(ht), shh=Math.sin(ht);
   // braccia in opposizione: la sinistra accompagna, la destra bilancia
   const aR=q.arm*(0.5*w1-0.9*w2), aL=q.arm*(-0.6*w1+1.1*w2);
-  braccio(SHR,ELR,HAR,  SHW*cs, shY, shZ+SHW*ss, aR,0.35, q.armOut+0.05*w2, 1);
-  braccio(SHL,ELL,HAL, -SHW*cs, shY, shZ-SHW*ss, aL,0.30, q.armOut+0.04*w1,-1);
+  const ap=q.armApri||0;
+  braccio(SHR,ELR,HAR,  SHW*cs, shY, shZ+SHW*ss, aR,0.35+0.55*w1, q.armOut+ap*w1+0.05*w2, 1);
+  braccio(SHL,ELL,HAL, -SHW*cs, shY, shZ-SHW*ss, aL,0.30+0.50*w2, q.armOut+ap*0.85*w2+0.04*w1,-1);
   // gamba destra calciante: carica -> frustata (t*t) -> seguito (ease-out)
   let aG,kG;
   if(u<t1){ const r=sm(u,0.04,t1); aG=-q.back*r; kG=0.25+q.kneeBack*r; }
@@ -673,20 +674,20 @@ function pallaCalcio(u,q,out){
 
 const Q_PASSAGGIO={tImp:0.44,swing:0.13,segue:0.22, back:0.55,fwd:0.55,follow:1.00,
   kneeBack:0.85,kneeImp:0.18,kneeSegue:0.45, crouch:0.06,dip:0.05,
-  leanBack:0.05,leanFwd:0.10, apriSp:0.12,apriAn:0.06, arm:0.45,armOut:0.05,
+  leanBack:0.05,leanFwd:0.10, apriSp:0.12,apriAn:0.06, arm:0.45,armOut:0.05,armApri:0.12,
   appA:0.28,appK:0.30, px:0.10,pz:0.34, gitt:2.8,alza:0,arco:0,dirX:0};
 const Q_FILTRANTE={tImp:0.36,swing:0.09,segue:0.18, back:0.75,fwd:0.65,follow:1.20,
   kneeBack:1.05,kneeImp:0.12,kneeSegue:0.40, crouch:0.10,dip:0.06,
-  leanBack:0.08,leanFwd:0.17, apriSp:0.16,apriAn:0.08, arm:0.65,armOut:0.06,
+  leanBack:0.08,leanFwd:0.17, apriSp:0.16,apriAn:0.08, arm:0.65,armOut:0.06,armApri:0.13,
   appA:0.30,appK:0.38, px:0.10,pz:0.36, gitt:4.0,alza:0,arco:0,dirX:0};
 const Q_CROSS={tImp:0.44,swing:0.12,segue:0.26, back:0.70,fwd:0.60,follow:1.15,
   kneeBack:1.00,kneeImp:0.15,kneeSegue:0.55, crouch:0.08,dip:0.05,
-  leanBack:0.12,leanFwd:0.02, apriSp:0.55,apriAn:0.28, arm:0.55,armOut:0.11,
+  leanBack:0.12,leanFwd:0.02, apriSp:0.55,apriAn:0.28, arm:0.55,armOut:0.11,armApri:0.08,
   attraversa:0.30, appA:0.26,appK:0.34, px:0.14,pz:0.34, gitt:3.6,alza:0.95,arco:1,dirX:-0.35};
-const Q_TIRO={tImp:0.46,swing:0.11,segue:0.26, back:1.00,fwd:0.62,follow:1.70,
-  kneeBack:1.40,kneeImp:0.10,kneeSegue:0.55, crouch:0.11,dip:0.08,
-  leanBack:0.16,leanFwd:0.26, apriSp:0.25,apriAn:0.12, arm:0.75,armOut:0.08,
-  appA:0.30,appK:0.36, px:0.10,pz:0.36, gitt:5.5,alza:0.5,arco:0,dirX:0};
+const Q_TIRO={tImp:0.46,swing:0.11,segue:0.26, back:1.20,fwd:0.62,follow:1.70,
+  kneeBack:1.15,kneeImp:0.10,kneeSegue:0.55, crouch:0.05,dip:0.05,
+  leanBack:0.20,leanFwd:0.34, apriSp:0.25,apriAn:0.34, arm:1.30,armOut:0.08,armApri:0.15,
+  appA:0.26,appK:0.22, px:0.10,pz:0.36, gitt:5.5,alza:0.5,arco:0,dirX:0};
 
 function posePassaggio(u){ poseCalcio(u,Q_PASSAGGIO); }
 function poseFiltrante(u){ poseCalcio(u,Q_FILTRANTE); }
@@ -718,7 +719,7 @@ function poseFinta(u){
   const dLat=0.12*(segue-peso);
   corpo(pelvY,swP,0.18,0,dLat/0.71);
   const cl=Math.cos(0.18), sl=Math.sin(0.18);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl, shX=swP+dLat*0.6;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl, shX=swP+dLat*0.6;
   braccio(SHR,ELR,HAR, shX+SHW, shY, shZ, 0.10+0.60*segue,0.55, 0.08+0.06*dip, 1);
   braccio(SHL,ELL,HAL, shX-SHW, shY, shZ, 0.10-0.60*segue,0.55, 0.08+0.06*dip,-1);
   // il piede del tocco esce sulla palla e la attraversa spingendola
@@ -762,7 +763,7 @@ function poseScivolata(u){
   const lean=(0.30+(-0.95-0.30)*giu)+(0.18+0.95)*su+0.11*osc-0.07*botta;
   corpo(pelvY,0,lean,0);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   const aBR=(-0.45+(-0.55+0.45)*giu)+(-0.30+0.55)*su+0.20*osc;
   const aBL=( 0.50+( 1.15-0.50)*giu)+( 0.25-1.15)*su-0.15*osc;
   braccio(SHR,ELR,HAR,  SHW, shY, shZ, aBR,0.30, 0.06+0.10*giu-0.08*su, 1);
@@ -809,7 +810,7 @@ function poseRovesciata(u){
              +0.10*imp-0.06*botta+0.10*osc;
   corpo(pelvY,0,lean,0);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   // braccia: indietro in carica, SPALANCATE in volo, lunghe a terra
   // oltre la testa, poi puntate dietro a lanciare la rialzata
   const aBR=-0.10-0.85*ca+2.30*vol-2.92*dis+0.37*sed+1.55*rac-0.45*alz+0.20*osc;
@@ -876,7 +877,7 @@ function poseParata(u){
   const lean=0.14+0.12*mol+0.52*giu-0.64*su+0.09*imp+0.05*osc;
   corpo(pelvY,0,lean,-0.01*imp);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   const aB=0.55+0.10*mol-0.28*giu+0.18*su+0.12*imp+0.14*osc;
   const eB=0.55-0.10*mol-0.45*giu+0.55*su+0.10*imp;
   const outB=0.10+0.05*giu-0.05*su;
@@ -922,15 +923,15 @@ function poseTuffo(u){
   const p=u-0.58, osc=p>0?Math.sin(p*9)*Math.exp(-5*p):0;  // assestamento
   const slitta=sm(u,0.56,0.72)*(1-sm(u,0.80,0.97));        // scivolamento
   const pelvY=0.88-0.30*ca+0.47*sp-0.78*cad+0.61*ri-0.04*botta+0.02*osc;
-  const lean=0.12+0.18*ca+1.10*vol+0.05*imp-1.28*ri+0.10*osc;
+  const lean=0.12+0.18*ca+1.36*vol+0.05*imp-1.54*ri+0.10*osc;
   corpo(pelvY,0,lean,0);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   // braccia: indietro in carica, lanciate in linea col busto nel volo
   const aBR=0.45-1.05*ca+2.55*vol+0.12*imp-0.55*cad-0.95*ri+0.15*osc;
   const aBL=aBR-0.22*vol+0.22*ri;
   const eB=0.45+0.40*ca-0.75*vol+0.55*cad-0.20*ri;
-  const outB=0.06+0.06*vol-0.06*ri;
+  const outB=0.06+0.15*vol-0.15*ri;
   braccio(SHR,ELR,HAR,  SHW, shY, shZ, aBR,eB, outB, 1);
   braccio(SHL,ELL,HAL, -SHW, shY, shZ, aBL,eB, outB,-1);
   // gambe: piegate in carica, DISTESE DIETRO in volo (via da terra),
@@ -981,7 +982,7 @@ function posePresa(u){
   const lean=0.10-0.16*alza+0.12*ritira+0.04*fine+0.05*att;
   corpo(pelvY,0,lean,-0.008*att);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   const aB=0.35-0.50*dip+2.75*alza-1.90*ritira-0.35*fine;
   const eB=0.35-0.15*alza+1.00*ritira-0.85*fine+0.15*pres;
   const outB=0.055-0.04*alza+0.04*ritira;
@@ -1025,7 +1026,7 @@ function poseRinvio(u){
   const lean=0.10-0.22*w1+0.30*w2;
   corpo(pelvY,0,lean,-0.012*peso);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   const aR=0.95*hold+(0.25-0.85*w2)*(1-hold);
   const aL=0.95*hold+(0.55+0.55*w2)*(1-hold);
   const eB=0.62*hold+0.30*(1-hold);
@@ -1083,7 +1084,7 @@ function poseAttesaGK(u){
   const pelvY=0.80+0.014*c2;
   corpo(pelvY, 0.035*dond, 0.16, 0.006*c2);
   const sl=Math.sin(0.16), cl=Math.cos(0.16);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   /* 0,200: l'abduzione entra come SENO diviso UA, e con le braccia
      corte del piccoletto 0,212 sfondava il tetto della scatola (0,8674 =
      sin 1,05). Una posa che vive dentro la gabbia e' una posa che nessun
@@ -1116,7 +1117,7 @@ function poseEsultanza(u){
   const w=u*TAU, sw=Math.sin(w), c2=Math.cos(2*w);
   const pelvY=0.93-Q_ESULT.crouch+Q_ESULT.bounce*c2;
   const sl=Math.sin(Q_ESULT.lean), cl=Math.cos(Q_ESULT.lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   cenno(-0.28);                             // la faccia al cielo
   const roll=0.17*sw;                       // il rollio delle ali (seguito)
   for(let s=-1;s<=1;s+=2){
@@ -1126,8 +1127,8 @@ function poseEsultanza(u){
        Fuori dal cono di braccio() (il gomito sta all'altezza della
        spalla), quindi a direzioni — e le ossa restano lunghe uguali */
     braccioDir(sh,el,ha, s*SHW, shY, shZ,
-               s*0.97, lift, 0.074,
-               s*0.93, lift+0.12, 0.040);
+               s*0.82, lift+0.20, 0.074,
+               s*0.78, lift+0.34, 0.040);
   }
 }
 
@@ -1150,7 +1151,7 @@ function poseGinocchia(u){
   corpo(pelvY,0,lean,0);
   cenno(-0.37*ali);                        // la faccia al cielo nell'arco
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   // braccia d'arrivo in falcata opposta (anticipo di corsa), poi neutre
   const aNR=-0.45+0.60*giu-0.60*su, aNL=0.55-0.40*giu+0.40*su;
   const eN=0.55-0.20*giu+0.20*su;
@@ -1205,7 +1206,7 @@ function posePugno(u){
   const hold=fr-giu2;
   cenno(-0.29*hold);                       // la faccia segue il pugno
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   const aR=0.12-0.62*ca+3.62*fr-3.00*giu2+0.16*osc;
   const eR=0.30+1.55*ca-1.72*fr+0.17*giu2;
   const aL=0.12-0.55*ca+0.35*fr+0.20*giu2;   // la sinistra resta bassa, in contrasto
@@ -1241,15 +1242,15 @@ function poseDelusione(u){
      traslazioni del cranio (il collo si accorciava del 27%) */
   cenno(-0.32*arco+0.95*testaF);
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   const aB=0.12+2.43*maniF-0.18*penz;
   const eB=0.18+2.00*maniF+0.04*penz;
   const outB=0.05-0.09*maniF;
   braccio(SHR,ELR,HAR,  SHW, shY, shZ, aB,eB, outB, 1);
   braccio(SHL,ELL,HAL, -SHW, shY, shZ, aB*1.03,eB, outB,-1);
   const kG=0.25+0.55*piega+0.40*dip-0.55*ri;
-  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0,  0.14-0.10*piega+0.10*ri, kG,  0.12);
-  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, -0.05+0.05*piega-0.05*ri, kG+0.05, -0.13);
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0,  0.26-0.10*piega+0.10*ri, kG,  0.22);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, -0.16+0.05*piega-0.05*ri, kG+0.28, -0.23);
 }
 
 /* ESULTANZA AL CIELO — la posa della RIPRESA DEDICATA del gol, nata per
@@ -1272,7 +1273,7 @@ function poseCielo(u){
   corpo(pelvY,0,lean,0);
   cenno(-0.46*su);                                       // la faccia al cielo
   const sl=Math.sin(lean), cl=Math.cos(lean);
-  const shY=pelvY+0.50*cl, shZ=0.50*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
   /* braccia: giu' in carica, poi su a V APERTA — gomiti piegati e fuori,
      mani sopra la testa, larghe; il respiro le fa vibrare appena */
   const aB=0.14-0.40*ca+(2.62+0.14*osc+0.03*resp)*su;
@@ -1387,9 +1388,9 @@ const SEGS=[
      contrasto, gli altri tre perche' sono le strozzature che fanno
      leggere le tre masse, e una strozzatura che cambia figura per
      figura non e' piu' un indizio, e' rumore. */
-  {a:SHR,b:ELR, w:0.185,c:'maglia', bias:0.005, kind:0, arti:1},
+  {a:SHR,b:ELR, w:0.185,c:'maglia', bias:0.005, kind:0, arti:1, pi:1},
   {a:ELR,b:HAR, w:0.150,c:'pelle',  bias:0.008, kind:0, arti:1},
-  {a:SHL,b:ELL, w:0.185,c:'maglia', bias:0.005, kind:0, arti:1},
+  {a:SHL,b:ELL, w:0.185,c:'maglia', bias:0.005, kind:0, arti:1, pi:1},
   {a:ELL,b:HAL, w:0.150,c:'pelle',  bias:0.008, kind:0, arti:1},
   {a:HIPR,b:KNR, w:0.277,c:'pantaloncini', bias:0.002, kind:0, arti:1},
   {a:KNR, b:FTR, w:0.202,c:'calze',        bias:0.004, kind:0, riv:1, arti:1},
@@ -1854,7 +1855,7 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
        testa dal tronco. Vedi il commento esteso nella passata a colori:
        il contorno deve avere la STESSA sagoma, altrimenti la calotta
        scura ricuce la strozzatura che il colore aveva aperto. */
-    const piatto = g.kind===1 && !lodOn;
+    const piatto = (g.kind===1||g.pi) && !lodOn;
     if(piatto) ctx.lineCap='butt';
     ctx.beginPath();
     ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
@@ -1911,7 +1912,7 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
        netto del tronco si vede — legge come una scatola. La spalla
        quadrata e' un rimedio per quaranta pixel, non un disegno.
        Costo: zero — stesso tratto, altro lineCap. */
-    const piatto = g.kind===1 && !lodOn;
+    const piatto = (g.kind===1||g.pi) && !lodOn;
     if(piatto) ctx.lineCap='butt';
     ctx.beginPath();
     ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
