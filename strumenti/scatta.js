@@ -308,6 +308,47 @@ K('rigori', TELEFONO_O, VIA + `
   window.__test.rigori && window.__test.rigori();
   ` + F(1400), 300);
 
+/* LA MIRA COL DITO (tema 11): il duello non ha piu' i tre bottoni, quindi
+   la scena che lo racconta e' quella col DITO APPOGGIATO sulla porta e il
+   mirino acceso dove sta il dito. Duel.start(0) mette a tirare la squadra
+   umana — senza, il primo rigore della serie puo' toccare alla CPU e il
+   mirino (che non tradisce mai la mira di chi tira) non si vedrebbe. */
+K('rigori-mira', TELEFONO_O, VIA + `
+  window.__test.startMatch(1,1);
+  window.__test.rigori && window.__test.rigori();
+  ` + F(900) + `
+  window.__test.Duel.start(0);
+  document.getElementById('duel').dispatchEvent(new PointerEvent('pointerdown',
+    {pointerId:1, clientX:Math.round(innerWidth*0.405), clientY:Math.round(innerHeight*0.35), bubbles:true}));
+  ` + F(260), 300);
+
+/* L'ISTANTE DELL'IMPATTO: rete che si gonfia nel punto mirato, lampo,
+   flash dei fotografi in tribuna, portiere in volo. E' il fotogramma su
+   cui il tema 11 si giudica, e prima non lo fotografava nessuno. La
+   sequenza e' tutta pilotata (mira -> barra fermata a mano -> tuffo della
+   CPU) perche' un tiro lasciato al caso non e' una fotografia ripetibile. */
+K('rigori-rete', TELEFONO_O, VIA + `
+  window.__test.startMatch(1,1);
+  window.__test.rigori && window.__test.rigori();
+  ` + F(900) + `
+  window.__test.Duel.start(0);
+  {
+    const el=document.getElementById('duel');
+    const p=(k,x,y)=>el.dispatchEvent(new PointerEvent(k,{pointerId:1,clientX:x,clientY:y,bubbles:true}));
+    const x=Math.round(innerWidth*0.585), y=Math.round(innerHeight*0.36);
+    p('pointerdown',x,y); p('pointerup',x,y);
+  }
+  ` + F(300) + `
+  {
+    /* la barra si ferma DENTRO la banda e il portiere si tuffa DALLA PARTE
+       SBAGLIATA, a comando: un tiro debole finisce fuori sei volte su
+       dieci e un tuffo sorteggiato para quando gli pare — e la scena da
+       fotografare e' la rete che si gonfia, non la roulette */
+    const D=window.__test.Duel; D.cursor=(D.band0+D.band1)/2;
+    D.stopPower(); D.pickKeeper(0);
+  }
+  ` + F(300), 300);
+
 /* la serie a meta': serve a vedere il tabellone dei tiri, non lo
    striscione d'apertura. Senza questa scena i rigori restavano una
    modalita' che non aveva mai guardato nessuno. */
