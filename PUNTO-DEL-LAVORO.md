@@ -1,117 +1,136 @@
 # Dove siamo, e cosa manca
 
-Aggiornato al 15 agosto 2026, dopo la notte delle grandi onde (rose, rig 3D,
-comandi, regia) e sei appelli della giuria a 26. Questo file serve a
-riprendere senza rileggere niente altro.
+Aggiornato al 17 agosto 2026, durante l'Onda 6. Questo file serve a riprendere
+senza rileggere niente altro.
 
-**Ramo:** `main`. **Ultimo lavoro:** CALCETTO — trasformazione completa.
+**Ramo:** `main`. **Ultimo commit:** `9bea188` (Onda 5). L'Onda 6 è in volo:
+se trovi modifiche non committate in `CALCETTO-il-gioco.html`, `bozze-rig3d/RIG.html`
+e `strumenti/istantanea.js`, sono sue — verifica coi cancelli prima di committare.
 
 ---
 
-## Il verdetto della giuria a 26, e cosa dice davvero
+## Il verdetto, e come si muove
 
-Il committente ha chiesto: giuria di 26 giudici, il nostro almeno 8-9 e i
-competitor a 3-4 in confronto diretto. Misurato SEI volte su scene fresche,
-dopo ondate di lavoro fra un appello e l'altro:
+Il committente ha chiesto: **giuria di 26 giudici, il nostro 8-9 e i competitor 3-4.**
 
-| appello | noi | FIFA/eFootball |
+La prima serie di sei appelli aveva dato un voto piatto a 6,4 contro 8,0. Allora
+la giuria è stata **interrogata** invece che consultata (`riferimenti/VERSO-IL-9.md`):
+zero giudici su 26 ritengono il 9 precluso a un gioco stilizzato, l'ancoraggio al
+3D vale 0,2-0,4 punti su 2,6, e la frattura vera era una sola — *il gioco promette
+le sette di sera e disegna un mezzogiorno*.
+
+Da lì il voto si è mosso, per la prima volta:
+
+| momento | voto | note |
 |---|---|---|
-| 1° | 6,39 | 7,98 |
-| 2° | 6,38 | 7,87 |
-| 3° | 6,42 | 8,02 |
-| 4° | 6,41 | 7,94 |
-| 5° | 6,42 | 8,00 |
-| 6° | 6,43 | 8,01 |
+| sei appelli piatti | 6,4 | prima dell'interrogatorio |
+| dopo 4 onde | 7,1 | luce, figure, leggibilità, scene madri |
+| dopo la correttiva | **7,3** | 6 difetti su 10 spariti |
+| Onda 6 in volo | obiettivo **8,3-8,5** | le tre cose che il giudice ha quantificato |
 
-**Il voto è congelato (±0,05) mentre il gioco è stato trasformato.** Ogni
-appello i giudici confermano le riparazioni precedenti e trovano difetti
-nuovi allo stesso voto. La ragione è strutturale, non di qualità: ogni
-giudice si àncora al fotorealismo 3D dei riferimenti («vertice visivo
-assoluto» → ~8) e tetta un gioco stilizzato su canvas a ~6,5, per quanto
-rifinito. Con questo disegno di giuria l'obiettivo 8-9 contro 3-4 non è
-raggiungibile iterando la qualità: sei appelli piatti lo dimostrano.
-
-**Il confronto che invece si vince** (misurato il 3 agosto, giudice che pesa
-insieme esperienza e visivo): **noi 8, FIFA Mobile 3** — si apre in un
-secondo da 1 MB, zero account/pubblicità/attese, equità misurata al bit,
-contro gigabyte, account, casse premio e pay-to-win.
-
-Le tre strade possibili, da decidere col committente:
-1. accettare il verdetto d'esperienza (8 vs 3) come il confronto che conta;
-2. rifare la giuria nella categoria giusta (stilizzati mobile: Soccer Stars,
-   Mini Football) dove il confronto è alla pari;
-3. continuare le onde visive sapendo che il numero della giuria attuale non
-   si muoverà.
+La dichiarazione del giudice, presa in parola: *«fatti (a) il colore della sera,
+(b) il foglio pose alla scala di gioco, (c) riempire il quadro, scrivo 8,3-8,5;
+il resto è la coda che porta al 9»*.
 
 ---
 
-## Cosa è stato costruito nella notte (commit da `2c7ad5f` a `6e01d2d`)
+## Il metodo: il freeze-frame test
 
-- **Le rose 5/7/11**: tre taglie selezionabili, campi scalati, moduli
-  1-2-2 / 1-3-3 / 1-4-4-2, culling, collaudo a 20 controlli CALCETTO.
-- **Il rig pseudo-3D a 360°** (`bozze-rig3d/RIG.html`, incollato nel gioco):
-  18 giunti proiettati, due camere (alto/bassa), TUTTE le azioni: corsa,
-  camminata, frenata, passaggio, filtrante, cross, tiro, finta, scivolata,
-  rovesciata, 4 clip del portiere, 3 esultanze, delusione. Costo 0,3-0,5 ms
-  per 22 figure. LOD da primo piano (volto, mani, maglia ombreggiata).
-- **I comandi**: stick + due pulsanti contestuali (TIRA/FILTRANTE ↔
-  CONTRASTA/CAMBIO), cross col flick trasversale (z balistica), cura del
-  tiro «lunatico», anello ambra con freccia SOLO sul comandato.
-  `giocata.js` a 8 giocate misurate col dito (4-63 ms).
-- **La regia del gol**: fascia unica a tutta larghezza + ripresa dedicata
-  in camera bassa dietro la porta (marcatore di tre quarti, rete, folla,
-  portiere deluso), saltabile, composta a moto ridotto.
-- **Il colpo d'occhio**: camera a figure ~40px col bordo di scenografia
-  sempre intero in quadro, insegne mai a mezza lettera (testo vivo solo se
-  la fascia è intera), minimappa discreta al centro-basso, tutorial onesto
-  che muore al gesto riuscito, palla l'oggetto più chiaro della mischia.
-- **Studio dei competitor col connettore Chrome** (`riferimenti/AZIONI.md`):
-  i due poli dei comandi (eFootball / Mini Football) e il trucco degli
-  storyboard di i.ytimg.com per leggere i gameplay senza player.
+Il collaudo con cui la giuria ha promesso di riscrivere il voto è diventato uno
+strumento: `strumenti/istantanea.js`. Otto fermi immagine in istanti **casuali ma
+deterministici** di una partita vera, con misure sui pixel — erba vuota, palla
+trovabile, altezza della figura, ombre parallele, temperatura del prato, e (dall'Onda 6)
+il colore del **centro** campo. Le silhouette sono lo stesso rig con la divisa nera,
+così la sagoma è quella vera.
 
-## I difetti aperti (dal sesto appello, tutti riparabili)
+Traiettoria: **24/40 → 31 → 33 → 36 →** (Onda 6 in corso).
 
-1. LOD del primo piano ancora sotto la scena: pallone a disco piatto da
-   vicino (servono spicchi+riflesso oltre soglia), mani/volti minimi,
-   stacco maglia/pantaloncino/calzettoni nel ravvicinato, numero in schiena
-   nella ripresa.
-2. Pulsanti TIRA/FILTRANTE percepiti mimetici: la giuria chiede il bordo
-   AMBRA (la tinta d'interazione) al posto del lime di squadra.
-3. Pose d'attesa al kickoff: «birilli» — serve una posa di attesa con
-   braccia staccate e spalle.
-4. In 7v7/11v11 il bordo di scenografia esce ancora dal quadro in certe
-   posizioni; la minimappa 11v11 è affollata.
-5. Groviglio degli arti a metà falcata a 30px (tetto agli angoli estremi).
+Ha già trovato due bugie che nessuno cercava:
+1. i suoi PNG fotografavano il **sipario** (`#wipe`, animazione CSS sull'orologio vero
+   mentre il banco governa il tempo simulato): *i numeri erano veri, le prove erano false*;
+2. `simulate` avanza la fisica **senza disegnare** e la camera vive dentro il disegno —
+   ventisette secondi di partita lasciavano l'inquadratura ferma al fischio d'inizio.
 
-## I cancelli (tutti verdi all'ultima esecuzione)
+---
 
-collaudo 32/32 (20 CALCETTO + 12 CIRCOLO, seme fisso) · misura 7/7 ·
-prestazione 3/3 (medio −27%, p95 −50%) · senza-rete 6/6 · giocata 8/8
-(sa fallire: 8 NO in pausa) · equità 0,000 su partite appaiate al bit ·
-APK 32/32. File ~1049 kB su tetto 1500.
+## Cosa è stato costruito nelle sei onde
+
+- **Onda 1 — la sera.** Una sola sorgente costituzionale (SOLE: direzione, caldo,
+  freddo) valida su tutte le scene e tutti gli otto campi. Ombre a capsula lunghe
+  2,2 volte la figura, parallele per costruzione. Prato con gradiente termico vero
+  (scoperto che overlay e multiply su un verde saturo non spostano la tinta: serve
+  un'additiva). Quattro fari che si accendono durante i 90 secondi.
+- **Onda 2 — le figure.** La scatola degli angoli legali, *convessa*, quindi
+  l'interpolazione fra due pose legali resta legale per costruzione. Tre corporature
+  e quattro tagli dal **seme del nome**; gemelli azzerati per enumerazione.
+- **Onda 3 — la leggibilità.** HUD e pulsanti nella lingua di casa (contrasto da
+  2,9:1 a 12,8:1), palette dichiarata in testa al file, la palla al 2,7% con scia,
+  ombra staccata e squash.
+- **Onda 4 — le scene madri.** Folla con atlante a sei righe che reagisce al gol
+  (scoppio + ola), insegne dipinte, gol coreografato, menu come luogo con la
+  partitella in loop, rigori mirati col dito.
+- **Onda 5 — la correttiva.** Sei difetti su dieci chiusi. Due sprechi trovati nel
+  rasterizzatore: un ciclo di 26 rettangoli apriva 21.000 fusioni invece di 824, e
+  il manto veniva ingrandito del 12% con filtro bilineare a ogni fotogramma —
+  spegnendolo, la mediana passa da 33,3 a 16,7 ms (da 30 a 60 immagini al secondo).
+- **Onda 6 — in volo.** Il colore della sera al centro campo, le pose che dicono il
+  verbo in nero pieno, il quadro pieno.
+
+---
+
+## I cancelli (tutti verdi all'ultima esecuzione completa)
+
+```
+collaudo 36/36 · misura 7/7 · prestazione -10,7% · senza-rete 6/6
+giocata 8/8 (sa fallire: 8 NO in pausa) · equità 0,000 al bit
+istantanea 36/40 · silhouette · folla · APK 32/32
+```
+
+Nove strumenti, e ognuno ha dovuto dimostrare di **saper fallire** prima di essere
+creduto. Otto sono stati colti a mentire almeno una volta.
+
+**Attenzione al peso:** il file è a ~1,48 MB su un tetto di casa di 1,5 MB. Il tetto
+è una convenzione nostra (alzata da 900 kB il 3 agosto): il vincolo vero è che il
+gioco si apra in un secondo. Prima della prossima onda va deciso se alzarlo ancora
+o cominciare a comprimere.
+
+---
+
+## Cosa resta per il 9, in ordine di resa (parole del giudice)
+
+Fatte (a), (b), (c) — l'Onda 6 — resta la coda:
+- (d) un HUD che non mangi mai il protagonista;
+- (e) una sola palla, una sola scala (in home e nei rigori è 3-4 volte fuori misura);
+- (f) il primo piano vestito (pantaloncini, calzettoni, scarpe, esultanze diverse)
+  e la rete che si gonfia dove la palla la colpisce;
+- (g) i rigori mirati col dito sulla porta.
+
+---
 
 ## Come si riprende
 
 ```bash
 cd C:/Users/Utenteee/Desktop/GitHub/games
 node strumenti/collaudo.js && node strumenti/misura.js && node strumenti/prestazione.js
+node strumenti/istantanea.js --dir istantanee   # il freeze-frame test
+node strumenti/silhouette.js && node strumenti/folla.js
 node strumenti/giocata.js --tutte
 node strumenti/equita.js --partite 200 --conf-b "window.__test.attivaOggetti('tutti')"
-node strumenti/scatta.js --tutte calcetto --dir foto-oggi   # 30 scene
+node strumenti/scatta.js --tutte calcetto --dir foto-oggi
 python android/costruisci.py && python android/verifica.py
 ```
 
-## Le regole pagate (aggiornate)
+## Le regole pagate
 
 1. Le passate correttive rendono più di quelle creative.
 2. Un solo «peggio» è bloccante.
 3. I cancelli li esegue chi giudica, non chi lavora.
-4. Uno strumento che attesta invece di misurare è peggio di nessuno
-   strumento — SETTE casi trovati (l'ultimo: foto.js del rig copiava un
-   file invece di scattare, MD5 identici).
+4. **Uno strumento che attesta invece di misurare è peggio di nessuno strumento** —
+   nove casi finora. L'ultimo: il banco fotografava il sipario e nessuno controllava
+   le prove.
 5. Un agente morto non è un via libera: i workflow si fermano su null.
 6. Il metro si rettifica con data e fonte quando la realtà lo supera.
-7. **Una giuria ancorata a un riferimento irraggiungibile congela il voto:
-   se sei appelli non muovono la media mentre il prodotto si trasforma,
-   il problema è il metro, non il lavoro.** Prima di iterare ancora,
-   ridiscutere il metro col committente.
+7. Una giuria ancorata a un riferimento irraggiungibile congela il voto. **Ma prima
+   di accusare il metro, interrogalo**: qui l'interrogatorio ha rivelato che il metro
+   era giusto e mancava il lavoro — sei appelli piatti erano il sintomo di rifiniture
+   fatte al posto della frattura vera.
