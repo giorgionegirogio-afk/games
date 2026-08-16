@@ -523,6 +523,47 @@ async function calcetto(browser, srv) {
     }
   }
 
+  /* =====================================================================
+     IL DUELLO DAL DISCHETTO SI MIRA COL DITO (tema 11, 16 ago 2026).
+     I tre bottoni SIN/CEN/DES non esistono piu': si trascina sulla porta
+     e si rilascia. Un comando che si tocca e' esattamente la cosa che si
+     rompe in silenzio — il gesto non arriva, il rigore non parte, e
+     nessuna fotografia se ne accorge perche' la scena resta identica.
+     Qui si controlla la catena intera: il gesto entra, il terzo di porta
+     che ne esce e' quello mirato (sinistra -> 0, centro -> 1, destra ->
+     2), la fase avanza alla barra del tempismo, e nel duello non e'
+     rimasto NESSUN bottone.
+     Il rigore lo si apre con Duel.start, che e' l'hook gia' esposto: non
+     serve mandare una partita ai supplementari per collaudare un tocco.
+     ===================================================================== */
+  const duello = await pag.evaluate(() => {
+    const t = window.__test;
+    t.startMatch(1, 1);                 // squadra 0 umana: il tiro e' del giocatore
+    const D = t.Duel, el = document.getElementById('duel');
+    const tocco = (x, y) => {
+      for (const k of ['pointerdown', 'pointerup'])
+        el.dispatchEvent(new PointerEvent(k, { pointerId: 1, clientX: x, clientY: y, bubbles: true }));
+    };
+    const esiti = [];
+    for (const [fx, atteso] of [[0.30, 0], [0.50, 1], [0.70, 2]]) {
+      D.start(0);
+      const fasePrima = D.phase;
+      tocco(Math.round(innerWidth * fx), Math.round(innerHeight * 0.42));
+      esiti.push({ fx, atteso, zona: D.zone, fasePrima, fase: D.phase, aim: +D.aimU.toFixed(2) });
+    }
+    const bottoni = document.querySelectorAll('#duel button').length;
+    D.phase = 'off'; el.classList.add('hidden');
+    return { esiti, bottoni };
+  });
+  for (const e of duello.esiti) {
+    verifica(e.fasePrima === 'zone' && e.zona === e.atteso && e.fase === 'power',
+      `rigore: il tocco a ${Math.round(e.fx * 100)}% dello schermo mira il terzo ${e.atteso} e passa alla barra`,
+      JSON.stringify(e));
+  }
+  verifica(duello.bottoni === 0,
+    'rigore: nel duello non e\'  rimasto nessun bottone (via SIN/CEN/DES)',
+    `bottoni trovati: ${duello.bottoni}`);
+
   /* pausa e tasto Indietro */
   const ind = await pag.evaluate(() => {
     const t = window.__test;
