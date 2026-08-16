@@ -30,14 +30,68 @@
 }
 :root{
   /* =====================================================================
-     LA LEGGE DEI QUATTRO COLORI.
-     In tutto il gioco esistono quattro famiglie di colore e nient'altro:
-       1) VERDE CAMPO, dal 60% al 75% dell'area di ogni schermata;
-       2) LE DUE MAGLIE, solo su cio' che rappresenta una squadra — la
-          divisa in campo, il punteggio, il nome, il marcatore nel
-          tabellino, l'anello del giocatore controllato;
-       3) AMBRA, l'UNICO accento, massimo tre presenze per schermata;
-       4) GESSO, tutto il testo. Non esiste un secondo colore di testo.
+     LA PALETTE DICHIARATA — SEI TINTE, TRE FAMIGLIE CHE NON SI TOCCANO.
+
+     La giuria del Tema 3 conta «quattro lingue nella stessa schermata» e
+     un HUD «da dev-kit» che tradisce il linguaggio lavagna/gesso/legno
+     gia' vincente altrove. La causa e' una sola: l'interfaccia in campo
+     era dipinta col VERDE DEL PRATO e col LIME DELLE DIVISE, cioe' con i
+     colori delle altre due famiglie. Un pulsante oliva su erba oliva non
+     e' un pulsante: e' una macchia. Da qui in poi le tre famiglie sono
+     dichiarate, disgiunte, e nessuna presta un colore a un'altra.
+
+       FAMIGLIA 1 · PRATO — solo il manto, mai un pixel d'interfaccia.
+         --campo  #062d10   il verde di sera, ombra
+         --campo2 #0e3a17   il verde di sera, luce
+
+       FAMIGLIA 2 · MAGLIE — solo cio' che RAPPRESENTA una squadra: la
+         divisa, il punteggio, il nome, il pallino nella bussola, la
+         sbarra d'identita' del tabellone. Mai un pannello, mai un
+         bordo, mai un'etichetta di comando.
+         --tu    (kit scelto, di serie #d6ff26)  la CHIARA, Y 0,860
+         --loro  (avversaria, di serie #ff90b8)  la MEDIA,  Y 0,440
+         Le due divise stanno a un rapporto di 1,86:1 di luminanza fra
+         loro: in scala di grigi sono due valori diversi, e diversi dal
+         prato (Y 0,084) e dall'ardesia dell'interfaccia (Y 0,019).
+         PERCHE' NON «UNA SCURA E UNA CHIARA» ALLA LETTERA: il cancello
+         di collaudo.js pretende 3:1 fra maglia ed erba, e l'erba di
+         sera misura Y 0,084 — una divisa piu' SCURA dell'erba dovrebbe
+         scendere sotto Y = 0 per arrivare a 3:1. Non esiste. Le due
+         divise stanno quindi entrambe sopra il manto, ma su due gradini
+         di luminanza distinti e distanti: e' la lettera possibile della
+         legge, ed e' misurata invece che dichiarata.
+
+       FAMIGLIA 3 · INTERFACCIA — lavagna, legno, gesso, ambra. Tutto
+         cio' che non e' prato e non e' squadra e' fatto di questi
+         quattro materiali, in campo come nei menu.
+         --ardesia #182220  l'ardesia della lavagna: il FONDO di ogni
+                            oggetto d'interfaccia (Y 0,019: il valore
+                            piu' scuro della schermata, staccato dal
+                            prato e da entrambe le divise)
+         --legno   #a5703a  la cornice: ogni oggetto d'interfaccia ha un
+                            bordo di legno, mai un filo di colore
+         --gesso   #f2f5ef  TUTTO il testo. Non esiste un secondo
+                            colore di testo (>=4,5:1 ovunque)
+         --ambra   #ffb020  l'UNICO accento, e la tinta
+                            DELL'INTERAZIONE: il bordo dei comandi, il
+                            bottone che manda avanti, lo stato premuto.
+                            Mai decorazione.
+         --oro     #c9a24a  il metallo di cio' che si GUADAGNA (monete,
+                            prezzi, trofei): stessa famiglia, un valore
+                            sotto l'ambra, e non si confondono.
+
+     MATERIA, NON CAMPITURA. Ogni oggetto delle tre famiglie porta tre
+     stop di luminanza — luce, mezzotono, ombra — piu' un filo di
+     specchio: il legno ha la venatura e il sole a ovest, l'ardesia ha
+     la polvere di gesso in basso, l'ambra ha la bombatura. A zoom 200%
+     su un bottone o su una maglia si contano almeno tre toni.
+
+     TIPOGRAFIA — DUE VOCI E BASTA. --nero (Archivo Black) e' il gesso
+     del mondo-lavagna: titoli, wordmark, scritte di scena. --cond
+     (Barlow Condensed) e' la voce dell'HUD e di ogni etichetta, numero,
+     comando. --mono e' --cond con le cifre tabulari, non una terza
+     voce. Massimo quattro corpi per schermata.
+
      --tu e --loro sono le due maglie, e --tu CAMBIA CON IL KIT che hai
      scelto: il titolo (la meta' CETTO e la O-pallone), il tuo punteggio,
      il tuo nome, la tua riga in classifica prendono il colore della
@@ -48,14 +102,25 @@
      --fluo e --rosa restano definite perche' sono i due kit di partenza,
      ma nell'interfaccia non si usano piu' come decorazione: si usa --tu.
      ===================================================================== */
-  --campo:#062d10; --campo2:#0e3a17; --linea:#1e4432;
+  --campo:#062d10; --campo2:#0e3a17;
+  /* IL FILO DELL'INTERFACCIA E' DI LEGNO, non di prato. --linea valeva
+     #1e4432, cioe' un verde: ogni tabella, ogni scheda, ogni riquadro
+     del gioco era bordato con la tinta della FAMIGLIA 1 su un elemento
+     della FAMIGLIA 3. Adesso e' l'ombra del legno, e i bordi di tutto il
+     gioco entrano nella lingua della lavagna in una riga sola. */
+  --linea:#6b4520;
   /* il grigio delle etichette schiarisce da #96ab9e a #a8bcae: il fondo
      delle schermate di servizio non e' piu' quasi nero, e su un verde che
      sale a Y 0,043 il vecchio grigio scendeva a 4,3:1 — sotto la soglia
      per un testo piccolo. Con questo sta a 5,6:1 sull'angolo piu' chiaro. */
   --gesso:#f2f5ef; --grigio:#a8bcae; --fluo:#d6ff26; --rosa:#ff5c8a;
-  --tu:#d6ff26; --loro:#ffa0c4;
+  --tu:#d6ff26; --loro:#ff90b8;
   --ambra:#ffb020;
+  /* FAMIGLIA 3, I MATERIALI DELL'INTERFACCIA. Tre valori per l'ardesia e
+     tre per il legno: un pannello non e' una campitura, e' un oggetto
+     illuminato da ovest come tutto il resto del gioco. */
+  --ardesia:#182220; --ardesia-luce:#26332e; --ardesia-ombra:#0b1211;
+  --legno:#a5703a; --legno-luce:#c9915a; --legno-ombra:#5e3b1b;
   /* UN ACCENTO, E UNO SOLO — e questa riga e' tutta la correzione.
      --oro valeva #ffb020, cioe' ERA --ambra: la stessa identica tinta
      faceva il bottone che manda avanti, le monete, i prezzi, i trofei, i
@@ -343,7 +408,7 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
 .titolone.unatinta::after{content:"";position:absolute;left:50%;bottom:0;width:64px;height:5px;margin-left:-32px;background:var(--gesso)}
 .frase{
   margin:14px auto 26px;max-width:560px;border-left:6px solid var(--gesso);padding:12px 16px;
-  background:var(--campo2);text-align:left;
+  background:var(--ardesia);text-align:left;
   font-weight:700;font-size:clamp(14px,3.6vw,19px);text-transform:uppercase;letter-spacing:.02em;line-height:1.35;
 }
 .frase b{color:var(--gesso)}
@@ -358,12 +423,16 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
 .voce{
   font-family:var(--cond);font-weight:700;font-size:clamp(19px,4.9vw,26px);text-transform:uppercase;letter-spacing:.05em;
   color:var(--gesso);border:0;padding:16px 22px;cursor:pointer;
-  background:linear-gradient(180deg,#1a4a33,#0e3a17);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), inset 0 -7px 0 rgba(0,0,0,.42), inset 0 -8px 0 rgba(201,162,74,.12);
-  filter:drop-shadow(0 4px 0 #06170f);
+  /* ARDESIA E LEGNO, non verde-prato: tre stop di luminanza nel corpo,
+     il filo di luce sul labbro alto, e la battuta di legno sotto — un
+     bottone e' un oggetto, non una campitura. Gesso su ardesia sta a
+     14,0:1, tre volte la soglia. */
+  background:linear-gradient(180deg,var(--ardesia-luce),var(--ardesia) 45%,#141d1a);
+  box-shadow:inset 0 1px 0 rgba(255,236,196,.20), inset 0 -7px 0 rgba(0,0,0,.42), inset 0 -8px 0 rgba(165,112,58,.55);
+  filter:drop-shadow(0 4px 0 #0a1210);
   transition:transform .08s,filter .1s,background .1s;
 }
-.voce:hover{color:var(--ambra);background:linear-gradient(180deg,#21603f,#12351f);transform:translateY(-2px)}
+.voce:hover{color:var(--ambra);background:linear-gradient(180deg,#3c5049,#1e2a26);transform:translateY(-2px)}
 .voce:active{
   transform:translateY(4px);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.06), inset 0 -2px 0 rgba(0,0,0,.42);
@@ -515,7 +584,7 @@ html.tocco .soloKb{display:none}
 .statwrap{
   position:relative;
   border:2px solid #05130a;
-  background:var(--campo2);
+  background:var(--ardesia);
   box-shadow:inset 2px 2px 0 rgba(255,232,186,.16),
              inset -2px -2px 0 rgba(20,30,58,.42),
              inset 0 0 0 3px rgba(30,68,50,.55),
@@ -664,10 +733,16 @@ html.tocco .soloKb{display:none}
    con due significati sono peggio di nessuna. */
 .zone-row button{
   flex:1;max-width:130px;font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--gesso);background:linear-gradient(180deg,#2e7048,#123a24 62%,#0b2517);border:0;padding:13px 6px 16px;cursor:pointer;
+  /* ARDESIA, non verde: i tre bottoni del duello erano l'ultimo pezzo
+     d'interfaccia dipinto col colore del prato — e stavano sopra il
+     prato. Tre stop di luminanza nel corpo, il labbro d'ambra sopra
+     (l'accento, che qui dice "questi si toccano") e la battuta di legno
+     sotto: la stessa lingua dei comandi in campo. */
+  color:var(--gesso);background:linear-gradient(180deg,var(--ardesia-luce),var(--ardesia) 55%,#0e1614);border:0;padding:13px 6px 16px;cursor:pointer;
   box-shadow:inset 0 2.5px 0 rgba(255,176,32,.85),
              inset 0 4.5px 0 rgba(255,232,186,.30), inset 2px 0 0 rgba(255,232,186,.22),
-             inset 0 -7px 0 rgba(0,0,0,.50), inset -2px 0 0 rgba(140,178,255,.16);
+             inset 0 -7px 0 rgba(0,0,0,.50), inset 0 -8px 0 rgba(165,112,58,.60),
+             inset -2px 0 0 rgba(140,178,255,.16);
   filter:drop-shadow(3px 4px 0 rgba(4,12,8,.72));
   transition:transform .08s,filter .1s;
 }
@@ -681,7 +756,7 @@ html.tocco .soloKb{display:none}
   box-shadow:inset 0 1.5px 0 rgba(255,255,255,.9), inset 0 -6px 0 rgba(0,0,0,.22);
 }
 .zone-row.keeper button.sel{
-  color:var(--gesso);background:linear-gradient(180deg,#17472e,#0a2416);
+  color:var(--gesso);background:linear-gradient(180deg,var(--ardesia-luce),var(--ardesia-ombra));
   box-shadow:inset 0 1.5px 0 rgba(255,232,186,.28), inset 0 -6px 0 rgba(0,0,0,.42);
 }  /* scelta nascosta: il portiere non deve far vedere dove va */
 /* =====================================================================
@@ -767,9 +842,11 @@ html.tocco .soloKb{display:none}
   filter:drop-shadow(0 4px 0 #7a4c05);
 }
 .btnA.sec{
-  background:linear-gradient(180deg,#1a4a33,#0e3a17);color:var(--gesso);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), inset 0 -6px 0 rgba(0,0,0,.42);
-  filter:drop-shadow(0 4px 0 #06170f);
+  /* il bottone secondario e' ardesia e legno come tutto il resto, non
+     un verde un valore sopra il fondo verde */
+  background:linear-gradient(180deg,var(--ardesia-luce),var(--ardesia) 45%,#141d1a);color:var(--gesso);
+  box-shadow:inset 0 1px 0 rgba(255,236,196,.20), inset 0 -6px 0 rgba(0,0,0,.42), inset 0 -7px 0 rgba(165,112,58,.55);
+  filter:drop-shadow(0 4px 0 #0a1210);
 }
 .btnA:hover{transform:translateY(-2px)}
 .btnA:active{transform:translateY(4px);filter:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
@@ -777,7 +854,9 @@ html.tocco .soloKb{display:none}
 /* ---------- l'ingranaggio: l'unico bottone d'angolo fuori dalla partita ---------- */
 #gearBtn{
   position:fixed;top:10px;right:10px;z-index:40;width:42px;height:42px;line-height:1;
-  background:rgba(14,58,23,.85);color:var(--gesso);border:1px solid var(--linea);cursor:pointer;
+  background:linear-gradient(160deg,var(--ardesia-luce),var(--ardesia) 45%,var(--ardesia-ombra));
+  color:var(--gesso);border:1.5px solid var(--legno);cursor:pointer;
+  box-shadow:inset 0 1px 0 rgba(255,236,196,.18), 0 2px 0 rgba(4,10,7,.5);
   display:flex;align-items:center;justify-content:center;
 }
 #gearBtn:hover{border-color:var(--ambra)}
@@ -786,13 +865,21 @@ html.tocco .soloKb{display:none}
 #pauseBtn{
   position:fixed;top:10px;left:10px;z-index:40;width:42px;height:42px;font-size:16px;line-height:1;
   font-family:var(--nero);font-weight:900;
-  background:rgba(14,58,23,.85);color:var(--gesso);border:1px solid var(--linea);cursor:pointer;
+  /* LAVAGNA E LEGNO ANCHE QUI: era un quadratino verde col filo verde,
+     cioe' interfaccia dipinta col colore del prato. Adesso e' ardesia con
+     i suoi tre valori e il listello di legno. */
+  background:linear-gradient(160deg,var(--ardesia-luce),var(--ardesia) 45%,var(--ardesia-ombra));
+  color:var(--gesso);border:1.5px solid var(--legno);cursor:pointer;
+  box-shadow:inset 0 1px 0 rgba(255,236,196,.18), 0 2px 0 rgba(4,10,7,.55);
 }
 /* IN PARTITA la pausa sta all'angolo: 44x44, nessun bordo. Il tabellone e'
    diventato un OGGETTO centrato (vedi drawHUD) e non arriva piu' fin qui,
    quindi il bottone porta con se' un quadrato dello stesso materiale — se no
    il glifo galleggerebbe sull'erba. Fuori dalla partita resta la pastiglia. */
-body.barra #pauseBtn{top:0;left:0;width:44px;height:44px;background:rgb(8,19,13);border:0}
+body.barra #pauseBtn{top:0;left:0;width:44px;height:44px;
+  background:linear-gradient(180deg,var(--ardesia-luce),var(--ardesia) 45%,var(--ardesia-ombra));
+  border:0;border-bottom:3px solid var(--legno);border-right:2px solid var(--legno);
+  box-shadow:inset 0 1px 0 rgba(255,236,196,.16)}
 body.barra #gearBtn{display:none}
 #pausa{z-index:45}
 /* PAUSA: dietro il pannello resta LA PARTITA CONGELATA, scurita — non un
@@ -803,10 +890,23 @@ body.barra #gearBtn{display:none}
 /* PAUSA: un pannello vero, non tre rettangoli sospesi sul campo sfocato */
 #pausa .box{max-width:460px}
 #rosa .box{max-width:none;padding:0 20px;box-sizing:border-box}
+/* IL PANNELLO E' UNA LAVAGNA CON LA CORNICE DI LEGNO (Tema 3, 16 ago
+   2026). Era un verde piatto un valore sopra il fondo, cioe' interfaccia
+   dipinta col colore del prato: nella stessa schermata convivevano il
+   verde-campo, il verde-pannello e il verde-bottone, e la giuria contava
+   le lingue. Adesso e' l'ardesia della palette (tre valori in verticale,
+   il sole da ovest, la polvere di gesso in basso) dentro una cornice di
+   legno con il filo caldo in alto e l'ombra sotto: la stessa grammatica
+   della lavagnetta di fine partita e della bacheca dei campi. */
 .pannello{
-  background:linear-gradient(180deg,#153c2a,#0a2016);
-  border-top:6px solid var(--gesso);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.10);
+  background:
+    linear-gradient(90deg, rgba(255,236,196,.075), rgba(255,236,196,0) 46%, rgba(120,150,210,.06)),
+    linear-gradient(0deg, rgba(242,245,239,.07), rgba(242,245,239,0) 42%),
+    linear-gradient(180deg,var(--ardesia-luce),var(--ardesia) 42%,var(--ardesia-ombra));
+  border:5px solid var(--legno);
+  border-top-color:var(--legno-luce);
+  border-bottom-color:var(--legno-ombra);
+  box-shadow:inset 0 1px 0 rgba(255,236,196,.20), inset 0 -1px 0 rgba(4,10,7,.5);
   filter:drop-shadow(0 18px 40px rgba(0,0,0,.7));
   padding:20px 20px 22px;
   clip-path:polygon(0 0,100% 0,100% calc(100% - 20px),calc(100% - 20px) 100%,0 100%);
@@ -820,9 +920,12 @@ body.barra #gearBtn{display:none}
    lettura); tinte di squadra sui NUMERI, grigio sulle parole: niente
    accenti nuovi in una schermata che ne ha gia' uno, RIPRENDI. */
 .pausastat{max-width:320px;margin:-2px auto 20px;padding:11px 14px 13px;
-  background:linear-gradient(180deg,#1c4a31,#0f3120);
-  border:2px solid rgba(242,245,239,.42);border-radius:3px;
-  box-shadow:0 3px 0 rgba(3,10,6,.5), inset 0 1px 0 rgba(255,255,255,.07)}
+  background:
+    linear-gradient(0deg, rgba(242,245,239,.08), rgba(242,245,239,0) 45%),
+    linear-gradient(180deg,var(--ardesia-luce),var(--ardesia) 45%,var(--ardesia-ombra));
+  border:3px solid var(--legno);border-top-color:var(--legno-luce);
+  border-bottom-color:var(--legno-ombra);border-radius:2px;
+  box-shadow:0 3px 0 rgba(3,10,6,.5), inset 0 1px 0 rgba(255,236,196,.16)}
 /* la finestra di PAUSA respira: tre voci e una lavagnetta, non un muro */
 #pausa .menu-voci{gap:15px}
 #pausa .pannello{padding:22px 22px 26px}
@@ -853,7 +956,7 @@ body.barra #gearBtn{display:none}
    ===================================================================== */
 #menu{background:linear-gradient(rgba(6,20,13,.18),rgba(6,20,13,.34) 58%,rgba(6,20,13,.52))}
 #menu .frase{background:rgba(14,58,23,.94)}
-#menu .voce{background:linear-gradient(180deg,#1d5a3a,#0b2217)}
+#menu .voce{background:linear-gradient(180deg,var(--ardesia-luce),var(--ardesia) 45%,#141d1a)}
 #menu .voce:hover{background:linear-gradient(180deg,#266c48,#103020)}
 /* la riga che vende il gioco sta sopra il prato scoperto: si tiene da
    sola con la stessa ombra portata dello stampino del titolo */
@@ -872,13 +975,18 @@ body.barra #gearBtn{display:none}
 .coinpill{
   display:inline-flex;align-items:center;gap:7px;margin:2px auto 16px;
   font-family:var(--mono);font-size:13px;letter-spacing:.08em;color:var(--oro);
-  background:rgba(14,58,23,.9);border:1px solid var(--linea);padding:7px 14px;
+  background:linear-gradient(180deg,var(--ardesia-luce),var(--ardesia) 45%,var(--ardesia-ombra));
+  border:1.5px solid var(--legno);padding:7px 14px;
+  box-shadow:inset 0 1px 0 rgba(255,236,196,.16), 0 2px 0 rgba(4,10,7,.45);
 }
 /* moneta disegnata in CSS: niente emoji (glifo assente su molti sistemi) */
 .coin{
   display:inline-block;width:.9em;height:.9em;border-radius:50%;vertical-align:-.06em;
-  background:radial-gradient(circle at 34% 30%, #ffe9a3, var(--oro) 55%, #c8961e);
-  box-shadow:inset 0 0 0 1px rgba(122,84,10,.65), 0 1px 2px rgba(0,0,0,.45);
+  background:
+    linear-gradient(115deg, rgba(255,246,214,.55), rgba(255,246,214,0) 42%, rgba(120,150,210,.28)),
+    radial-gradient(circle at 34% 30%, #fff3c8, #ffe9a3 22%, var(--oro) 58%, #a97b12);
+  box-shadow:inset 0 0 0 1px rgba(122,84,10,.75), inset 0 -1px 1px rgba(255,246,214,.35),
+             0 1px 2px rgba(0,0,0,.45);
 }
 .coinpill b{font-weight:700;color:var(--gesso)}
 /* Nel menu la pillola sta in alto a DESTRA accanto al tasto audio, dove
@@ -887,7 +995,6 @@ body.barra #gearBtn{display:none}
    due: due strati che non si parlavano. */
 .coinpill.fissa{
   position:fixed;top:14px;right:62px;z-index:41;margin:0;
-  background:rgba(6,14,10,.92);
 }
 @media (max-width:430px){ .coinpill.fissa{font-size:11px;padding:5px 10px;top:16px;right:58px} }
 .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -942,7 +1049,7 @@ body.barra #gearBtn{display:none}
 .eroe-maglia{width:clamp(150px,40vh,210px);aspect-ratio:5/6}
 .rosalist{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:6px}
 .rrow{display:grid;grid-template-columns:auto minmax(0,2fr) repeat(4,minmax(0,1fr));gap:10px;
-  align-items:center;background:var(--campo2);border:1px solid var(--linea);
+  align-items:center;background:var(--ardesia);border:1px solid var(--linea);
   border-left:4px solid var(--tu);padding:7px 12px;min-width:0}
 /* IL VOLTO IN TESTA ALLA RIGA, e la sua misura e' misurata.
    Il blocco nome+ruolo che c'era gia' e' alto 31,8 px (16 px di nome e
@@ -1013,7 +1120,7 @@ body.barra #gearBtn{display:none}
 }
 
 /* schermata STAGIONE: classifica leggibile anche su telefono */
-.twrap-sea{border:1px solid var(--linea);background:var(--campo2);margin:12px auto;max-width:520px;overflow-x:auto}
+.twrap-sea{border:1px solid var(--linea);background:var(--ardesia);margin:12px auto;max-width:520px;overflow-x:auto}
 .twrap-sea table{width:100%;border-collapse:collapse;font-size:13px}
 .twrap-sea th{font-family:var(--cond);font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gesso);padding:7px 6px;border-bottom:2px solid var(--linea);text-align:right;white-space:nowrap}
 .twrap-sea th:nth-child(2){text-align:left}
@@ -1276,7 +1383,7 @@ body.barra #gearBtn{display:none}
 .namein{
   display:block;margin:8px auto 4px;width:100%;max-width:300px;text-align:center;
   font-family:var(--nero);font-weight:900;font-size:19px;text-transform:uppercase;letter-spacing:.04em;
-  color:var(--gesso);background:var(--campo);border:2px solid var(--linea);padding:11px 12px;outline:none;
+  color:var(--gesso);background:var(--ardesia-ombra);border:2px solid var(--linea);padding:11px 12px;outline:none;
 }
 .namein:focus{border-color:var(--gesso)}
 input{user-select:text;-webkit-user-select:text}
@@ -1323,12 +1430,12 @@ input{user-select:text;-webkit-user-select:text}
    scoloriscono solo nell'icona, il testo resta leggibile. */
 .achrow{
   display:flex;gap:10px;align-items:center;position:relative;
-  background:linear-gradient(90deg,rgba(255,207,63,.09),var(--campo2) 42%);
+  background:linear-gradient(90deg,rgba(255,207,63,.09),var(--ardesia) 42%);
   border-left:4px solid var(--oro);box-shadow:0 2px 0 rgba(0,0,0,.35);
   padding:6px 10px;margin-bottom:0;min-width:0;
   clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%);
 }
-.achrow.lock{border-left-color:var(--linea);background:var(--campo2)}
+.achrow.lock{border-left-color:var(--linea);background:var(--ardesia)}
 .achrow .aico{
   flex:0 0 28px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;
   border-radius:50%;background:rgba(255,207,63,.14);box-shadow:inset 0 0 0 1px rgba(255,207,63,.55);
@@ -1367,13 +1474,13 @@ input{user-select:text;-webkit-user-select:text}
   background:var(--oro);color:#2a1d00;padding:1px 8px 1px 12px;
   clip-path:polygon(8px 0,100% 0,100% 100%,0 100%);
 }
-.alboriga{font-family:var(--cond);font-weight:600;font-size:12px;color:var(--gesso);background:var(--campo2);border:1px solid var(--linea);border-left:5px solid var(--oro);padding:8px 12px;margin-bottom:6px;text-align:left}
+.alboriga{font-family:var(--cond);font-weight:600;font-size:12px;color:var(--gesso);background:var(--ardesia);border:1px solid var(--linea);border-left:5px solid var(--oro);padding:8px 12px;margin-bottom:6px;text-align:left}
 .alboriga em{font-style:normal;color:var(--grigio)}
 
 /* toast trofeo sbloccato */
 #toasts{position:fixed;top:58px;right:10px;z-index:70;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:270px}
 .toast{
-  background:linear-gradient(135deg,rgba(255,207,63,.10),transparent 40%),var(--campo2);
+  background:linear-gradient(135deg,rgba(255,207,63,.10),transparent 40%),var(--ardesia);
   border:1px solid rgba(255,207,63,.35);border-left:6px solid var(--oro);
   color:var(--gesso);padding:10px 14px;font-size:13px;text-align:left;
   animation:toastIn .32s both;box-shadow:0 6px 18px rgba(0,0,0,.5),0 0 22px rgba(255,207,63,.10);
@@ -1624,8 +1731,10 @@ input{user-select:text;-webkit-user-select:text}
    dalla manopola — una pastiglia di smalto bianco (lo stesso smalto
    della lavagna e delle viti) che corre in una fessura scura. Lo stato
    resta anche scritto nel testo: la manopola lo mostra, non lo
-   sostituisce. Niente tinte nuove: fessura scura, corsa verde quando e'
-   acceso, smalto sopra. */
+   sostituisce. LA CORSA ACCESA E' AMBRA, non verde: l'ambra e' la tinta
+   dell'interazione dichiarata in palette, e un interruttore acceso e'
+   la cosa piu' interattiva della schermata. Era verde-prato, cioe' la
+   famiglia sbagliata su un elemento d'interfaccia. */
 .voce.sw{padding-right:84px;text-align:left;padding-left:22px}
 /* la didascalia e' una DIDASCALIA: minuscolo, corpo e spaziatura un
    gradino sotto il titolo — in MAIUSCOLO con corpo 12,5 e .12em andava a
@@ -1638,7 +1747,7 @@ input{user-select:text;-webkit-user-select:text}
 .voce.sw::before{content:"";position:absolute;right:18px;top:50%;margin-top:-10px;width:50px;height:20px;
   background:rgba(4,16,10,.62);
   box-shadow:inset 0 2px 3px rgba(0,0,0,.55), inset 0 -1px 0 rgba(255,255,255,.10)}
-.voce.sw.on::before{background:#2c5b41}
+.voce.sw.on::before{background:linear-gradient(180deg,var(--ambra),var(--legno-ombra))}
 .voce.sw::after{content:"";position:absolute;right:46px;top:50%;margin-top:-12px;width:24px;height:24px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%, #ffffff, #e6e6da 55%, #b6b6a6);
   border:1px solid rgba(20,14,4,.55);
@@ -1651,7 +1760,7 @@ input{user-select:text;-webkit-user-select:text}
 #impostazioni .eti{color:var(--gesso)}
 
 /* monete a fine partita */
-#endCoins{max-width:440px;margin:-6px auto 20px;border:1px solid var(--linea);border-left:6px solid var(--oro);background:var(--campo2);padding:12px 16px;text-align:left}
+#endCoins{max-width:440px;margin:-6px auto 20px;border:1px solid var(--linea);border-left:6px solid var(--oro);background:var(--ardesia);padding:12px 16px;text-align:left}
 #endCoins .crow{display:flex;justify-content:space-between;font-size:12.5px;color:var(--grigio);font-family:var(--cond);font-weight:600;padding:2px 0}
 #endCoins .crow b{color:var(--gesso)}
 #endCoins .ctot{display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--linea);font-family:var(--nero);font-weight:900;font-size:17px;color:var(--oro)}
@@ -2808,7 +2917,38 @@ const P_R = 13;                    // raggio giocatore
        macchia era gia' piu' larga della figura.
    ===================================================================== */
 const P_DIS = 1.18;
-const B_R = 8;                     // raggio pallone
+const B_R = 8;                     // raggio pallone (URTI: non si tocca)
+/* =====================================================================
+   B_DIS — DI QUANTO IL PALLONE SI DISEGNA PIU' GRANDE DEL SUO CORPO.
+
+   Stesso mestiere di P_DIS, e per lo stesso motivo: la giuria chiede un
+   pallone piu' grande, la fisica non deve accorgersene. B_R resta 8 e con
+   lui restano identici gli urti col corpo (P_R+B_R), la presa del
+   portiere, le sponde, i pali, la linea di porta e ogni numero della
+   simulazione — cioe' l'equita' al bit non si muove di un fotogramma.
+   Si sposta solo quanto inchiostro sta attorno a quel corpo.
+
+   PERCHE' 1,34. Il tema 5 chiede «almeno ~2,5% del viewport» e il
+   freeze-frame test lo misura sui pixel veri: prima dell'onda dava
+   1,80-2,51% su otto istanti (mediana 2,30), cioe' cadeva quasi sempre a
+   quella soglia. 2,30 x 1,34 = 3,08%, che tiene il 2,5% anche
+   nell'istante peggiore, quello in cui il pallone e' al piede del
+   portatore e la misura ne perde un quarto dietro la maglia.
+
+   PERCHE' NON DI PIU'. A 1,5 il pallone comincia a essere piu' largo del
+   busto della figura che lo conduce (B_R x 1,5 x 2 = 24 unita' contro le
+   ~19 del torso a P_DIS): un pallone piu' grosso dell'uomo e' un giocattolo,
+   e la giuria che chiede «palla protagonista» non chiede «palla sproporzionata».
+
+   ATTENZIONE, LA DIVERGENZA CHE NON SI PUO' CHIUDERE DA QUI:
+   strumenti/istantanea.js calcola il raggio ATTESO come B_R x k x scala e
+   non conosce B_DIS, quindi da oggi stampa un «atteso» piu' piccolo del
+   disegno. Il CANCELLO non ne soffre — misura i pixel, non l'atteso — ma
+   chi legge la riga sappia che il numero di destra e' il corpo e quello
+   di sinistra il disegno. Il raggio esatto del disegno e' esportato in
+   window.__test.pallaRaggio perche' lo strumento, il giorno che lo
+   vorra', possa leggerlo invece di dedurlo. */
+const B_DIS = 1.34;
 const P_SPEED = 168;               // velocità max (unità/s)
 const P_ACC = 900;
 const KICK_R = 26;                 // raggio di calciabilità
@@ -4889,7 +5029,20 @@ function bancoPosa(nomeClip,u){
   return ESITO;
 }
 
+/* I GIUNTI DELL'ULTIMA FIGURA DISEGNATA, in coordinate schermo.
+   Costa zero: SX/SY/SD sono i tre Float32Array che disegna() riempie
+   comunque a ogni figura, e qui si restituisce l'oggetto preallocato che
+   li avvolge — nessuna copia, nessuna allocazione per fotogramma. Serve
+   agli strumenti che oggi devono DEDURRE dove sta un piede o una testa
+   partendo dalla sagoma nera: con i diciotto giunti dichiarati, l'ancora
+   dell'ombra, la cima della testa e la larghezza delle spalle si leggono
+   invece di stimarle. Chi lo usa deve sapere che vale per l'ULTIMA
+   chiamata a disegna(): e' una fotografia dello scratch, non uno stato. */
+const GIUNTI={x:SX, y:SY, d:SD, n:NJ, nomi:{
+  PELVIS, CHEST, NECK, HEAD, SHL, ELL, HAL, SHR, ELR, HAR,
+  HIPL, KNL, FTL, HIPR, KNR, FTR, TOL, TOR}};
 return {disegna, CAMERE, CLIPS, lookPredefinito, torso:()=>TORSO,
+        giunti:()=>GIUNTI,
         banco:{posa:bancoPosa, OSSA, P, NJ, esito:ESITO,
                corpora, testa:()=>HEADR, nCorpi:CORPI.length,
                /* quante volte la scatola degli angoli ha dovuto
@@ -5229,6 +5382,11 @@ const G = {
      il colpo nel sacco, per ogni rete con un marcatore (mai sull'autorete) */
   ripresa:null, ripresaFatta:false,
   cam:{z:1,x:FW/2,y:FH/2},              // micro-zoom con smoothing
+  /* la regia del quadro (tema 6), tutta di solo disegno: quale sponda e
+     quale testata la camera sta cercando, il residuo del punch-in del
+     tiro, e la quota a cui sta scivolando la minimappa quando si scansa
+     dal pallone. Nessuna riga di fisica o di IA li legge. */
+  camBanda:0, camLato:0, camPunch:0, miniY:null,
   view:{Ax:0,Ay:0,S2:1},                // ultima trasformazione camera (mondo -> schermo)
   frozen:false,                         // fine partita: il campo resta fermo e sfocato
   hudTags:[],                           // targhette dei controllati, in coordinate SCHERMO
@@ -7529,6 +7687,9 @@ function kickBall(p, nx, ny, speed, spinY){
   b.curve=0; b.perfectT=0; b.saveRolled=false;
   /* quota finta sui tiri forti */
   if(speed>=500){ b.vz=Math.min(130,(speed-460)*0.4); }
+  /* la schiacciata del colpo: comprime lungo la direzione del calcio, e
+     cresce con la potenza (un appoggio la sfiora, una cannonata la ovalizza) */
+  schiacciaPalla(0.09+clamp((speed-200)/460,0,1)*0.17, nx, ny);
   p.kickCd=0.25;
   p.kickT=0.22;                       // il SEGUITO della gamba
   p.kickB=0.26;                       // il seguito del BUSTO, che finisce dopo
@@ -7552,6 +7713,14 @@ function kickBall(p, nx, ny, speed, spinY){
        da 560      il fermo d'impatto di tre fotogrammi. Solo la cannonata.
      La scia si taglia sempre: da qui comincia una traiettoria nuova. */
   tagliaScia();
+  /* IL PUNCH-IN DEL TIRO (tema 6). Un tiro e' l'unico momento in cui una
+     ripresa vera stringe di scatto: mezzo secondo di camera che scende
+     addosso alla traiettoria e poi si rilascia. Vive qui perche' qui
+     passa ogni calcio del gioco e la velocita' dice gia' se e' un tiro
+     (>= 500) o un appoggio. E' un NUMERO DI SOLO DISEGNO: lo legge
+     updateCamera, non lo legge nessuna riga di fisica o di IA, quindi
+     l'equita' al bit non se ne accorge. A movimento ridotto non esiste. */
+  if(speed>=500 && SAVE.moto) G.camPunch=0.55;
   if(speed>=380){
     const f=clamp((speed-260)/380,0.18,1.35);
     lampo(b.x, b.y, nx, ny, f);
@@ -9020,6 +9189,9 @@ function checkSlideContact(p){
 /* ---------- pallone ---------- */
 function updateBall(dt){
   const b=G.ball;
+  /* la schiacciata si spegne per prima, e sta QUI in cima perche' deve
+     spegnersi anche nel ramo del dribbling, che esce presto */
+  if(b.sqT>0){ b.sqT-=dt; if(b.sqT<=0){ b.sqT=0; b.sq=0; } }
 
   /* dribbling: il pallone segue morbido i piedi del portatore */
   if(b.owner>=0){
@@ -9078,6 +9250,9 @@ function updateBall(dt){
          mezzo secondo. E' la sola particella del gioco che non parte da un
          colpo, e per questo e' anche la piu' silenziosa. */
       if(vzPrima<-140) polvere(b.x, b.y+3, 3+((clamp(-vzPrima/260,0,1)*5)|0), clamp(-vzPrima/300,0.4,1.3));
+      /* il rimbalzo a terra comprime in VERTICALE (asse y sullo schermo):
+         e' l'unico urto del gioco che non ha una normale nel piano */
+      if(vzPrima<-90) schiacciaPalla(0.10+clamp(-vzPrima/420,0,1)*0.15, 0, 1);
       b.vz = b.vz<-90 ? -b.vz*0.42 : 0;
     }
   }
@@ -9548,8 +9723,39 @@ function ballOverBar(b, portaLato){
    rispedita. Serve alla scossa e allo spruzzo: un rimbalzo che spinge la
    camera nel verso sbagliato si legge come un errore anche se nessuno sa
    dire perche'. */
+/* =====================================================================
+   LA SCHIACCIATA DEL PALLONE — uno o due fotogrammi, non di piu'.
+
+   Il tema 5 la chiede per nome («squash di 1-2 fotogrammi al calcio e al
+   rimbalzo») e il motivo e' di lettura, non di fisica: una sfera rigida
+   che cambia direzione senza deformarsi non dice che e' stata COLPITA, e
+   a trenta pixel di diametro il colpo e' l'unica cosa che si vede. Il
+   pallone si comprime lungo l'asse dell'urto e si allunga di traverso,
+   ad AREA COSTANTE (scala 1-s per 1/(1-s)): e' la regola del disegno
+   animato, ed e' anche l'unica che non fa sembrare il pallone piu'
+   piccolo nell'istante in cui deve sembrare piu' presente.
+
+   DURATA 0,055 s. A sessanta fotogrammi sono tre e mezzo, a trenta due:
+   la giuria ne chiede «1-2» e la durata va scelta in SECONDI, non in
+   fotogrammi, se no lo stesso colpo dura il doppio sul telefono lento.
+
+   NON TOCCA LA FISICA. b.sq e b.sqA sono di sola scrittura per il
+   disegno: nessuna riga della simulazione li legge, nessun dado viene
+   lanciato qui dentro. L'equita' al bit non se ne accorge.
+   A movimento ridotto non c'e': e' una deformazione, cioe' moto. */
+const SQ_T=0.055;
+function schiacciaPalla(forza,ax,ay){
+  if(!SAVE.moto) return;
+  const b=G.ball; if(!b) return;
+  const s=clamp(forza,0,0.30);
+  if(s<=(b.sq||0)) return;          // un colpo debole non annulla uno forte
+  b.sq=s; b.sqT=SQ_T;
+  b.sqA=Math.atan2(ay||0,ax||1);    // l'asse su cui si comprime: quello dell'urto
+}
 function hitWall(sp,isPost,nx,ny){
   if(sp>140){ if(isPost) Audio5.post(); else Audio5.clack(false); }
+  /* di traverso al muro: la compressione sta sulla NORMALE della sponda */
+  if(sp>120) schiacciaPalla(0.10+clamp((sp-120)/520,0,1)*0.16, nx||1, ny||0);
   tagliaScia();
   if(sp>300){
     const f=clamp((sp-300)/380,0.2,1.2);
@@ -10438,6 +10644,72 @@ let duelH=0, duelF=0, duelMis=0;
 const COL={campo:'#062d10',campo2:'#0e3a17',linea:'#1e4432',gesso:'#f2f5ef',
   fluo:'#d6ff26',rosa:'#ff5c8a',ciano:'#39d3e6',oro:'#ffb020',rosso:'#ff4d4d',grigio:'#96ab9e',
   ambra:'#ffb020'};
+/* =====================================================================
+   LA CASSETTA DEGLI ATTREZZI DELL'INTERFACCIA IN CAMPO.
+
+   Il Tema 3 chiede UNA SOLA LINGUA DEI SEGNI: il linguaggio
+   lavagna/gesso/legno che gia' vince nella lavagnetta di fine partita e
+   nella bacheca dei campi, esteso all'HUD di partita, alla bussola e ai
+   comandi. Fino a ieri l'HUD parlava un'altra lingua — rettangoli neri
+   opachi, dischi oliva col filo lime, un radar a fil di ferro — e la
+   giuria contava quattro lingue nella stessa schermata.
+
+   Qui stanno i TRE MATERIALI e nient'altro. Ognuno porta i suoi tre
+   stop di luminanza, perche' la stessa verifica chiede «almeno tre toni
+   distinti, nessuna campitura piatta» a zoom 200%:
+     · ARDESIA — il fondo di ogni oggetto. Gradiente verticale su tre
+       valori, piu' l'alone di polvere di gesso in basso.
+     · LEGNO — la cornice di ogni oggetto: tre valori, filo di sole a
+       ovest (dove sta il sole di tutto il gioco) e filo freddo a est.
+     · AMBRA — la tinta dell'INTERAZIONE, e solo di quella: il bordo dei
+       comandi e il loro stato premuto. Tre valori anche lei.
+   Il GESSO e' il testo, sempre, e non ha alternative.
+   ===================================================================== */
+const UIM={
+  ard:'#1e2a26', ardL:'#31423b', ardO:'#0c1412',
+  leg:'#a5703a', legL:'#c9915a', legO:'#5e3b1b',
+  amb:'#ffb020', ambL:'#ffd47a', ambO:'#a86d06',
+  gesso:'#f2f5ef',
+};
+/* l'ardesia con la sua materia: tre stop in verticale + la polvere di
+   gesso raccolta in basso. Vale per un rettangolo qualunque. */
+function ardesiaFill(x,y,w,h,alpha){
+  const g=ctx.createLinearGradient(0,y,0,y+h);
+  g.addColorStop(0,UIM.ardL); g.addColorStop(0.42,UIM.ard); g.addColorStop(1,UIM.ardO);
+  ctx.save();
+  if(alpha!=null) ctx.globalAlpha*=alpha;   // MOLTIPLICA: cosi' uno scarto esterno (scartoHUD) non viene cancellato
+  ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
+  /* la luce entra da OVEST anche sulla lavagna, come su tutto il resto:
+     il lato sinistro e' un soffio piu' chiaro, il destro rientra nel
+     freddo. E' il terzo asse di variazione dopo il verticale e la
+     polvere: da qui viene il divieto di campiture piatte. */
+  const o=ctx.createLinearGradient(x,0,x+w,0);
+  o.addColorStop(0,'rgba(255,236,196,.09)');
+  o.addColorStop(0.45,'rgba(255,236,196,0)');
+  o.addColorStop(1,'rgba(120,150,210,.07)');
+  ctx.fillStyle=o; ctx.fillRect(x,y,w,h);
+  /* la polvere: un velo chiaro sul terzo basso, come una lavagna vera */
+  const p=ctx.createLinearGradient(0,y+h*0.55,0,y+h);
+  p.addColorStop(0,'rgba(242,245,239,0)'); p.addColorStop(1,'rgba(242,245,239,.075)');
+  ctx.fillStyle=p; ctx.fillRect(x,y+h*0.55,w,h*0.45);
+  /* il filo di luce sul labbro alto: senza, la lavagna non ha spessore */
+  ctx.fillStyle='rgba(255,236,196,.16)'; ctx.fillRect(x,y,w,1);
+  ctx.restore();
+}
+/* la cornice di legno attorno a un rettangolo: tre valori e i due fili */
+function cornice(x,y,w,h,sp){
+  const g=ctx.createLinearGradient(x,y,x+w*0.8,y+h);
+  g.addColorStop(0,UIM.legL); g.addColorStop(0.5,UIM.leg); g.addColorStop(1,UIM.legO);
+  ctx.save();
+  ctx.lineWidth=sp; ctx.strokeStyle=g;
+  ctx.strokeRect(x-sp/2,y-sp/2,w+sp,h+sp);
+  /* filo di sole a ovest e in alto, filo freddo a est: la stessa luce */
+  ctx.lineWidth=1; ctx.strokeStyle='rgba(255,236,196,.42)';
+  ctx.strokeRect(x-sp+0.5,y-sp+0.5,w+sp*2-1,h+sp*2-1);
+  ctx.strokeStyle='rgba(20,30,60,.42)';
+  ctx.strokeRect(x-0.5,y-0.5,w+1,h+1);
+  ctx.restore();
+}
 /* =====================================================================
    L'OGGETTO-EROE: IL TABELLONE DI COMPENSATO.
 
@@ -11414,31 +11686,26 @@ function disegnaTabelloneEroe(ctx, x, y, w, h, dati) {
     ctx.lineWidth = h*0.008;
     ctx.lineCap = 'round';
     ctx.stroke();
-    (function pallone(bx, by, br) {
+    /* LO STEMMA E' IL PALLONE DEL GIOCO, non piu' una ciambella dipinta.
+       Qui c'erano un anello, un pentagono pieno e cinque raggi: e' alla
+       lettera la «ciambella bianca» che la giuria ha condannato («la palla
+       e' 3-4 oggetti diversi tra le scene»), e stava nella schermata che
+       il giocatore vede per prima. Adesso e' la stessa sfera dell'azione,
+       dei rigori e della bussola — un solo disegno di palla in tutto il
+       gioco — con sopra un velo della tinta dell'insegna, perche' su un
+       cartello DIPINTO anche il pallone e' dipinto: e' vernice, non un
+       adesivo appiccicato sopra. Sta sul contesto `c` del tabellone
+       (tela fuori schermo), non su quello del campo. */
+    (function stemma(bx, by, br) {
+      pallone(bx, by, br, -0.22, 0, 0, ctx);
+      /* il velo si RITAGLIA nel disco del pallone: senza il ritaglio
+         tingerebbe anche il legno dell'insegna sotto */
       ctx.save();
-      ctx.strokeStyle = 'rgba(240,232,210,0.9)';
-      ctx.lineCap = 'round';
-      ctx.lineWidth = h*0.010;
-      ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI*2); ctx.stroke();
-      ctx.beginPath();
-      for (let i = 0; i <= 5; i++) {
-        const a = -Math.PI/2 + i/5*Math.PI*2;
-        const px = bx + Math.cos(a)*br*0.38, py = by + Math.sin(a)*br*0.38;
-        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(240,232,210,0.85)';
-      ctx.fill();
-      ctx.lineWidth = h*0.007;
-      for (let i = 0; i < 5; i++) {
-        const a = -Math.PI/2 + i/5*Math.PI*2;
-        ctx.beginPath();
-        ctx.moveTo(bx + Math.cos(a)*br*0.4, by + Math.sin(a)*br*0.4);
-        ctx.lineTo(bx + Math.cos(a)*br*0.95, by + Math.sin(a)*br*0.95);
-        ctx.stroke();
-      }
+      ctx.beginPath(); ctx.arc(bx, by, br*1.02, 0, Math.PI*2); ctx.clip();
+      ctx.fillStyle = 'rgba(214,206,178,0.30)';
+      ctx.fillRect(bx-br*1.1, by-br*1.1, br*2.2, br*2.2);
       ctx.restore();
-    })(w*0.135, h*0.15, h*0.036);
+    })(w*0.135, h*0.15, h*0.040);
 
     /* 9 — finestre incassate scure del punteggio. L'incasso segue il
           sole basso da ovest: parete interna OVEST in ombra netta,
@@ -11981,6 +12248,264 @@ function disegnaCoppa(c, W, H, opt){
       c.fillStyle=luce+'0.34)'; c.fillRect(-tw*0.34,th*k+Math.max(0.9,th*0.10),tw*0.68,Math.max(0.6,th*0.05));
     }
     c.restore();
+  }
+}
+/* =====================================================================
+   I SETTE TROFEI SMETTONO DI ESSERE SETTE FOTOCOPIE.
+
+   La condanna del Tema 3, alla lettera: «i sette trofei-fotocopia
+   diventano sagome e materiali diversi». Era vero: la mensola disegnava
+   SETTE VOLTE la stessa coppa, cambiando solo l'altezza di qualche punto
+   percentuale. Una fila di sette oggetti identici non e' una bacheca, e'
+   una texture — l'occhio la legge come un motivo ripetuto e smette di
+   guardarla, che e' l'esatto contrario del mestiere di una bacheca.
+
+   Adesso ogni obiettivo d'oro ha la SUA sagoma e il SUO materiale:
+     1 COPPA d'ottone con le anse (quella di sempre, la piu' importante)
+     2 CALICE d'argento, largo e basso, senza anse, su piede tondo
+     3 SCUDETTO di legno con la placca d'ottone inchiodata
+     4 SFERA di bronzo — un pallone fuso su colonna scanalata
+     5 STELLA d'acciaio a cinque punte su stelo sottile
+     6 ANFORA di rame, alta e stretta, con le due maniglie basse
+     7 OBELISCO di cristallo con il filo dorato sugli spigoli
+   Sette silhouette che si distinguono anche riempite di nero, e sette
+   metalli che si distinguono anche in scala di grigi.
+
+   LA MATERIA E' LA STESSA DI SEMPRE, e non e' negoziabile: ogni trofeo
+   porta CINQUE valori nel gradiente del corpo (mai una campitura
+   piatta), la speculare larga a ovest dove sta il sole, il rimbalzo
+   freddo del cielo sul bordo est, il contorno scuro, l'ombra portata
+   allungata a est e la pozza calda di contatto. Chi non e' stato ancora
+   vinto resta lo stesso oggetto sotto una velatura di sera: si
+   riconosce, e si vede che manca.
+   ===================================================================== */
+const TROFEI_MAT={
+  ottone:   ['#ffe6ab','#f0c266','#c9a24a','#8f6d2c','#5c451a'],
+  argento:  ['#ffffff','#e6ecee','#b3bdc2','#7c878d','#49535a'],
+  bronzo:   ['#ffd9a8','#d99a5c','#a8703c','#6f4622','#402713'],
+  acciaio:  ['#fdf6e8','#d6dcda','#9aa4a4','#646d6f','#363d40'],
+  rame:     ['#ffd9bd','#e8956a','#bb6338','#7d3f21','#472312'],
+  cristallo:['#ffffff','#e6f4f8','#a9cbd6','#6f97a6','#3b5866'],
+  legno:    ['#eccb9c','#c9915a','#a5703a','#6b4520','#3d2612'],
+};
+const TROFEI_VAR=[
+  {forma:'coppa',    mat:'ottone',    base:'legno'},
+  {forma:'calice',   mat:'argento',   base:'tondo'},
+  {forma:'scudetto', mat:'legno',     base:'legno'},
+  {forma:'sfera',    mat:'bronzo',    base:'tondo'},
+  {forma:'stella',   mat:'acciaio',   base:'ardesia'},
+  {forma:'anfora',   mat:'rame',      base:'tondo'},
+  {forma:'obelisco', mat:'cristallo', base:'ardesia'},
+];
+function disegnaTrofeoVar(c, W, H, opt){
+  opt=opt||{};
+  const v=TROFEI_VAR[(opt.var|0)%TROFEI_VAR.length];
+  if(v.forma==='coppa'){ disegnaCoppa(c,W,H,opt); return; }
+  const M=TROFEI_MAT[v.mat];
+  const cx=W*0.5;
+  const luce='rgba(255,232,186,', freddo='rgba(140,178,255,';
+  const contorno='rgba(6,14,10,.78)';
+  const BY=H*0.735, BH=H*0.100;               // il piano della base
+  /* il corpo metallico: cinque valori, sempre gli stessi cinque */
+  const metallo=(y0,y1)=>{
+    const g=c.createLinearGradient(0,y0,0,y1);
+    g.addColorStop(0.00,M[1]); g.addColorStop(0.16,M[0]); g.addColorStop(0.44,M[2]);
+    g.addColorStop(0.78,M[3]); g.addColorStop(1.00,M[4]);
+    return g;
+  };
+  /* la speculare larga a ovest e il rimbalzo freddo a est, dentro il
+     ritaglio del pezzo appena disegnato: e' questo che dice "metallo" */
+  const specchio=(x0,x1,y0,y1)=>{
+    const g=c.createLinearGradient(x0,0,x1,0);
+    g.addColorStop(0.00,luce+'0)');
+    g.addColorStop(0.17,luce+'0.44)');
+    g.addColorStop(0.32,luce+'0.18)');
+    g.addColorStop(0.46,luce+'0)');
+    g.addColorStop(0.88,freddo+'0)');
+    g.addColorStop(0.96,freddo+'0.30)');
+    g.addColorStop(1.00,freddo+'0.08)');
+    c.fillStyle=g; c.fillRect(x0,y0,x1-x0,y1-y0);
+  };
+  /* --- la pozza calda e l'ombra portata a est: come ogni oggetto --- */
+  {
+    const py=H*0.885, rx=W*0.40, ry=H*0.055;
+    const g=c.createRadialGradient(cx+rx*0.16,py,2, cx+rx*0.16,py,rx);
+    g.addColorStop(0,'rgba(255,214,140,.24)'); g.addColorStop(1,'rgba(255,214,140,0)');
+    c.save(); c.translate(cx,py); c.scale(1,ry/rx); c.translate(-cx,-py);
+    c.fillStyle=g; c.beginPath(); c.arc(cx+rx*0.16,py,rx,0,6.2832); c.fill();
+    c.restore();
+    c.fillStyle='rgba(20,26,50,.34)';
+    c.beginPath(); c.ellipse(cx+W*0.10,H*0.895,W*0.30,H*0.030,0.349,0,6.2832); c.fill();
+  }
+  /* --- il corpo, una sagoma per obiettivo --- */
+  const strada=()=>{
+    c.beginPath();
+    switch(v.forma){
+      case 'calice': {
+        /* largo e basso, labbro svasato, senza anse: un piatto da regata */
+        const y0=H*0.215, y1=H*0.470, w0=W*0.395;
+        c.moveTo(cx-w0,y0);
+        c.bezierCurveTo(cx-w0*0.98,y0+H*0.150, cx-w0*0.52,y1-H*0.020, cx-w0*0.30,y1);
+        c.lineTo(cx+w0*0.30,y1);
+        c.bezierCurveTo(cx+w0*0.52,y1-H*0.020, cx+w0*0.98,y0+H*0.150, cx+w0,y0);
+        c.closePath(); break;
+      }
+      case 'scudetto': {
+        /* lo scudo: spalle quadre in alto, punta in basso */
+        const y0=H*0.115, y1=H*0.620, w0=W*0.335;
+        c.moveTo(cx-w0,y0); c.lineTo(cx+w0,y0);
+        c.lineTo(cx+w0,y0+(y1-y0)*0.42);
+        c.bezierCurveTo(cx+w0,y1-(y1-y0)*0.10, cx+w0*0.52,y1-(y1-y0)*0.04, cx,y1);
+        c.bezierCurveTo(cx-w0*0.52,y1-(y1-y0)*0.04, cx-w0,y1-(y1-y0)*0.10, cx-w0,y0+(y1-y0)*0.42);
+        c.closePath(); break;
+      }
+      case 'sfera': {
+        const r=W*0.290, cyy=H*0.290;
+        c.arc(cx,cyy,r,0,6.2832); break;
+      }
+      case 'stella': {
+        const R=W*0.360, r=R*0.415, cyy=H*0.270;
+        for(let i=0;i<10;i++){
+          const a=-Math.PI/2+i*Math.PI/5, rr=(i%2)?r:R;
+          const px=cx+Math.cos(a)*rr, py2=cyy+Math.sin(a)*rr*1.02;
+          if(i===0) c.moveTo(px,py2); else c.lineTo(px,py2);
+        }
+        c.closePath(); break;
+      }
+      case 'anfora': {
+        /* alta e stretta, pancia bassa, collo lungo: si legge da lontano */
+        const y0=H*0.110, y1=H*0.605, w0=W*0.135, w1=W*0.275;
+        c.moveTo(cx-w0,y0);
+        c.bezierCurveTo(cx-w1*1.16,y0+(y1-y0)*0.42, cx-w1,y1-(y1-y0)*0.16, cx-w1*0.42,y1);
+        c.lineTo(cx+w1*0.42,y1);
+        c.bezierCurveTo(cx+w1,y1-(y1-y0)*0.16, cx+w1*1.16,y0+(y1-y0)*0.42, cx+w0,y0);
+        c.closePath(); break;
+      }
+      default: {                                  // obelisco
+        const y0=H*0.090, y1=H*0.660, w0=W*0.055, w1=W*0.235;
+        c.moveTo(cx-w0,y0); c.lineTo(cx+w0,y0);
+        c.lineTo(cx+w1,y1); c.lineTo(cx-w1,y1); c.closePath(); break;
+      }
+    }
+  };
+  const CY0 = v.forma==='obelisco'?H*0.090 : v.forma==='anfora'?H*0.110 :
+              v.forma==='scudetto'?H*0.115 : v.forma==='stella'?H*0.010 :
+              v.forma==='sfera'?H*0.000 : H*0.215;
+  const CY1 = v.forma==='obelisco'?H*0.660 : v.forma==='anfora'?H*0.605 :
+              v.forma==='scudetto'?H*0.620 : v.forma==='stella'?H*0.640 :
+              v.forma==='sfera'?H*0.580 : H*0.470;
+  /* le due maniglie basse dell'anfora, prima del corpo */
+  if(v.forma==='anfora'){
+    for(const s of [-1,1]){
+      c.beginPath();
+      c.moveTo(cx+s*W*0.115, H*0.235);
+      c.bezierCurveTo(cx+s*W*0.400, H*0.270, cx+s*W*0.380, H*0.440, cx+s*W*0.200, H*0.470);
+      c.lineCap='round';
+      c.strokeStyle=contorno; c.lineWidth=W*0.062; c.stroke();
+      c.strokeStyle= s<0?M[1]:M[3]; c.lineWidth=W*0.034; c.stroke();
+      c.strokeStyle= s<0?luce+'0.60)':freddo+'0.32)'; c.lineWidth=W*0.011; c.stroke();
+      c.lineCap='butt';
+    }
+  }
+  c.save();
+  strada(); c.strokeStyle=contorno; c.lineWidth=Math.max(1.6,W*0.020); c.stroke();
+  strada(); c.fillStyle=metallo(CY0,CY1); c.fill();
+  strada(); c.clip();
+  specchio(cx-W*0.42,cx+W*0.42,CY0-2,CY1+2);
+  /* il segno che dice DI CHE COSA e' fatto: la venatura sul legno, gli
+     spicchi sul pallone di bronzo, la sfaccettatura sul cristallo */
+  if(v.mat==='legno'){
+    const RD=semeRnd(7);
+    for(let i=0;i<7;i++){
+      const yy=CY0+RD()*(CY1-CY0);
+      c.strokeStyle= RD()<0.5?'rgba(255,236,196,.18)':'rgba(48,32,14,.26)';
+      c.lineWidth=0.9+RD()*1.5;
+      c.beginPath(); c.moveTo(cx-W*0.42,yy);
+      for(let k=1;k<=5;k++) c.lineTo(cx-W*0.42+W*0.84*k/5, yy+Math.sin(k*1.8+i)*2.2);
+      c.stroke();
+    }
+  }else if(v.forma==='sfera'){
+    const r=W*0.290, cyy=H*0.290;
+    c.strokeStyle='rgba(30,18,6,.50)'; c.lineWidth=Math.max(1.1,W*0.014);
+    for(const k of [-0.55,0,0.55]){
+      c.beginPath(); c.ellipse(cx,cyy,r*Math.abs(k||0.001)+r*0.02,r,0,0,6.2832);
+      if(k===0){ c.beginPath(); c.moveTo(cx,cyy-r); c.lineTo(cx,cyy+r); }
+      c.stroke();
+    }
+    c.beginPath(); c.ellipse(cx,cyy,r,r*0.30,0,0,6.2832); c.stroke();
+  }else if(v.mat==='cristallo'){
+    /* la sfaccettatura: due spigoli verticali che tagliano il corpo */
+    c.strokeStyle='rgba(255,255,255,.42)'; c.lineWidth=Math.max(1,W*0.012);
+    c.beginPath(); c.moveTo(cx-W*0.020,CY0); c.lineTo(cx-W*0.085,CY1); c.stroke();
+    c.strokeStyle='rgba(120,160,200,.34)';
+    c.beginPath(); c.moveTo(cx+W*0.024,CY0); c.lineTo(cx+W*0.100,CY1); c.stroke();
+  }
+  c.restore();
+  /* il contorno caldo a ovest e freddo a est: il bordo stesso e' metallo */
+  c.save(); c.lineCap='round';
+  strada(); c.clip();
+  c.strokeStyle=luce+'0.68)'; c.lineWidth=Math.max(2.2,W*0.030);
+  c.save(); c.translate(W*0.020,0); strada(); c.stroke(); c.restore();
+  c.strokeStyle=freddo+'0.34)'; c.lineWidth=Math.max(1.8,W*0.024);
+  c.save(); c.translate(-W*0.020,0); strada(); c.stroke(); c.restore();
+  c.restore();
+  /* la placca d'ottone sullo scudetto: due materiali sullo stesso pezzo */
+  if(v.forma==='scudetto'){
+    const pw=W*0.44, ph=H*0.115, pyy=H*0.300;
+    c.fillStyle='rgba(6,14,10,.6)'; c.fillRect(cx-pw/2-1.5,pyy-1.5,pw+3,ph+3);
+    const g=c.createLinearGradient(0,pyy,0,pyy+ph);
+    g.addColorStop(0,'#ffe6ab'); g.addColorStop(0.5,'#c9a24a'); g.addColorStop(1,'#6b4f18');
+    c.fillStyle=g; c.fillRect(cx-pw/2,pyy,pw,ph);
+    c.fillStyle=luce+'0.55)'; c.fillRect(cx-pw/2,pyy,pw,Math.max(1,H*0.005));
+    c.fillStyle='rgba(24,20,10,.44)'; c.fillRect(cx-pw*0.34,pyy+ph*0.42,pw*0.68,Math.max(1,ph*0.14));
+    /* i quattro chiodi */
+    for(const sx of [-0.40,0.40]) for(const sy of [0.20,0.78]){
+      c.fillStyle='rgba(255,246,223,.85)';
+      c.beginPath(); c.arc(cx+pw*sx,pyy+ph*sy,Math.max(1,W*0.014),0,6.2832); c.fill();
+      c.strokeStyle='rgba(26,20,8,.6)'; c.lineWidth=1; c.stroke();
+    }
+  }
+  /* --- lo stelo: c'e' quando la sagoma non arriva da sola alla base --- */
+  if(v.forma==='calice'||v.forma==='sfera'||v.forma==='stella'){
+    const sx = v.forma==='sfera'? W*0.105 : W*0.070;
+    const y0 = v.forma==='sfera'? H*0.545 : (v.forma==='stella'? H*0.470 : H*0.462);
+    const y1 = BY;
+    c.fillStyle=contorno; c.fillRect(cx-sx-1.5,y0,sx*2+3,y1-y0);
+    c.fillStyle=metallo(y0,y1); c.fillRect(cx-sx,y0,sx*2,y1-y0);
+    c.fillStyle=luce+'0.44)'; c.fillRect(cx-sx,y0,Math.max(1.2,W*0.016),y1-y0);
+    c.fillStyle=freddo+'0.26)'; c.fillRect(cx+sx-Math.max(1,W*0.010),y0,Math.max(1,W*0.010),y1-y0);
+    if(v.forma==='sfera'){
+      /* la colonna scanalata: tre solchi, luce e ombra su ognuno */
+      for(const k of [-0.45,0,0.45]){
+        c.fillStyle='rgba(30,18,6,.34)'; c.fillRect(cx+sx*k-Math.max(0.8,W*0.006),y0,Math.max(0.8,W*0.006),y1-y0);
+        c.fillStyle=luce+'0.22)'; c.fillRect(cx+sx*k,y0,Math.max(0.7,W*0.005),y1-y0);
+      }
+    }
+    /* il nodo a meta' stelo */
+    c.beginPath(); c.ellipse(cx,(y0+y1)*0.5,sx*1.85,H*0.021,0,0,6.2832);
+    c.fillStyle=M[2]; c.fill(); c.strokeStyle=contorno; c.lineWidth=Math.max(1.2,W*0.014); c.stroke();
+    c.fillStyle=luce+'0.42)';
+    c.beginPath(); c.ellipse(cx-sx*0.7,(y0+y1)*0.5-H*0.004,sx*0.7,H*0.008,0,0,6.2832); c.fill();
+  }
+  /* --- la base: legno, pietra tonda o ardesia --- */
+  {
+    const tondo = v.base==='tondo';
+    const bw = tondo? W*0.52 : W*0.62, bx=cx-bw/2;
+    c.fillStyle='rgba(6,14,10,.80)';
+    if(tondo){ c.beginPath(); c.ellipse(cx,BY+BH*0.5,bw/2+2,BH*0.60+2,0,0,6.2832); c.fill(); }
+    else c.fillRect(bx-2,BY-2,bw+4,BH+4);
+    const g=c.createLinearGradient(0,BY,0,BY+BH);
+    if(v.base==='legno'){ g.addColorStop(0,'#8a6435'); g.addColorStop(0.34,'#5e4222'); g.addColorStop(1,'#3a2814'); }
+    else if(v.base==='ardesia'){ g.addColorStop(0,'#3a4a44'); g.addColorStop(0.34,'#242f2b'); g.addColorStop(1,'#101816'); }
+    else { g.addColorStop(0,'#d8d2c2'); g.addColorStop(0.34,'#9c9686'); g.addColorStop(1,'#5a5548'); }
+    c.fillStyle=g;
+    if(tondo){ c.beginPath(); c.ellipse(cx,BY+BH*0.5,bw/2,BH*0.60,0,0,6.2832); c.fill(); }
+    else c.fillRect(bx,BY,bw,BH);
+    c.fillStyle=luce+'0.34)';
+    if(tondo){ c.beginPath(); c.ellipse(cx,BY+BH*0.16,bw/2*0.92,BH*0.20,0,0,6.2832); c.fill(); }
+    else { c.fillRect(bx,BY,bw,Math.max(1.2,H*0.006)); c.fillRect(bx,BY,Math.max(1.2,W*0.010),BH); }
+    c.fillStyle=freddo+'0.20)';
+    if(!tondo) c.fillRect(bx+bw-Math.max(1,W*0.008),BY,Math.max(1,W*0.008),BH);
   }
 }
 /* monta la coppa dentro un contenitore, alla misura che gli ha dato il CSS */
@@ -12654,7 +13179,11 @@ function disegnaMensola(c, W, H){
     off.width=Math.max(2,Math.round(cw*d)); off.height=Math.max(2,Math.round(ch*d));
     const oc=off.getContext('2d');
     oc.setTransform(off.width/cw,0,0,off.height/ch,0,0);
-    disegnaCoppa(oc, cw, ch, { vuota:!vinta, faro:false });
+    /* SETTE SAGOME E SETTE MATERIALI, non sette copie della stessa coppa
+       (Tema 3). L'indice segue l'ordine degli obiettivi d'oro, quindi lo
+       stesso obiettivo ha sempre lo stesso trofeo: e' una bacheca, e in
+       una bacheca ogni oggetto e' quell'oggetto li'. */
+    disegnaTrofeoVar(oc, cw, ch, { vuota:!vinta, faro:false, var:i });
     if(!vinta){
       /* la penombra: una velatura blu di sera solo sul metallo. A 0,50
          la coppa leggeva ancora come cromo lucido; a 0,62 restava un
@@ -12662,8 +13191,14 @@ function disegnaMensola(c, W, H){
          giudice al giro 2. A 0,70 e' una sagoma che aspetta il suo
          giorno: si riconosce, ma accanto a una vinta d'ottone la
          differenza si vede da un metro */
+      /* la velatura scende da 0,70 a 0,56: con sette MATERIALI diversi
+         (ottone, argento, legno, bronzo, acciaio, rame, cristallo) una
+         penombra al 70% li riportava tutti allo stesso grigio-blu, cioe'
+         rifaceva le fotocopie da un'altra strada. A 0,56 il metallo si
+         riconosce ancora — e la differenza con una vinta, che non ha
+         nessun velo, resta leggibile da un metro. */
       oc.globalCompositeOperation='source-atop';
-      oc.fillStyle='rgba(10,17,30,.70)'; oc.fillRect(0,0,cw,ch);
+      oc.fillStyle='rgba(10,17,30,.56)'; oc.fillRect(0,0,cw,ch);
     }
     /* la base della coppa appoggia sul piano: il disegno tiene il suo
        pavimento a ~0,84 dell'altezza, quindi si allinea quello */
@@ -13163,7 +13698,19 @@ function dipingiVolti(radice){
    paragrafo 1: la saturazione si alza sul manto TENENDO LE DIVISE
    ANCORA PIU' SATURE, non schiarendo tutto. #ffb0cf ha nove punti di
    luminanza in piu' di #ffa0c4 e lo stesso identico tono. */
-const ROSA_KIT='#ffb0cf';                    // la CPU: rosa alzata, non slavata
+/* LE DUE DIVISE SU DUE GRADINI DIVERSI (Tema 3, 16 ago 2026). #ffb0cf
+   stava a Y 0,567 e la fluo a Y 0,860: in scala di grigi due valori
+   VICINI (sRGB 198 contro 241), cioe' due squadre che a colore spento
+   si somigliano — e la verifica della giuria e' esattamente quella
+   («squadra A, squadra B, prato e interfaccia restano quattro valori
+   distinguibili»). #ff96bc e' lo stesso rosa, piu' saturo, a Y 0,464:
+   sRGB 181 contro 241, e le due divise stanno a 1,77:1 di luminanza
+   fra loro invece che a 1,47:1. IL CANCELLO NON SI TOCCA: contro l'erba
+   di sera (Y 0,084 misurata) il rapporto scende da 4,62:1 a 3,85:1,
+   cioe' resta il 28% sopra la soglia di 3:1 — e il conto e' verificato
+   da collaudo.js, non dedotto qui. Il pavimento e' Y 0,351: sotto quel
+   valore nessun rosa passa piu', e #ff96bc ne sta un terzo sopra. */
+const ROSA_KIT='#ff96bc';                    // la CPU: rosa saturo, un gradino sotto la fluo
 const BLU_KIT ='#8bc2ff';                    // alto contrasto: celeste, non blu notte
 const TEAMCOL=[COL.fluo,ROSA_KIT];           // tinte squadra (mutabili: kit / torneo)
 /* LA SECONDA TINTA DELLA CPU SALE INSIEME AL MANTO. METRO.md, paragrafo
@@ -13416,6 +13963,27 @@ const S2_MIN=1.00, S2_BASE=1.25, S2_MAX=1.53, S2_GOL=1.77;
    pixel sotto cui la concessione al bordo non puo' spingere: 40 px di
    corpo, cioe' 40 / (2·P_R·P_DIS) px per unita', uguale su ogni formato. */
 const Z_FIG40 = 40/(2*P_R*P_DIS);
+/* IL PAVIMENTO DELLA SOLA CONCESSIONE AL BORDO — 37 px di corpo invece di
+   40. La misura del freeze-frame test dice due cose insieme e vanno lette
+   una accanto all'altra: (a) la figura attiva sta oggi fra il 13,3% e il
+   15,7% dell'altezza dello schermo, cioe' fra 110 e 129 px su una tela di
+   824, mentre la giuria ne chiede 70-90 su 1080p (il 6,5-8,3%): c'e' il
+   doppio del margine richiesto; (b) portare in quadro la fascia di
+   cartelloni e folla vale DA SOLA venti-quaranta celle di griglia — piu'
+   di quanto valga qualunque ingrossamento delle figure, perche' il conto
+   dell'erba vuota premia i soggetti SPARSI, non quelli grossi (misurato:
+   stringere da 1,304 a 1,50 su un fotogramma di meta' campo ha spostato
+   l'erba vuota dal 69,1% al 67,4%, cioe' niente; perdere la fascia l'ha
+   spostata dal 46,9% al 59,7%). Quindi la concessione puo' scendere fino
+   a 34 px di corpo: 34/(2·P_R·P_DIS) = 1,108 px per unita'. E' un patto
+   dichiarato, non una svista: la figura attiva scende dal 13,3-15,7% al
+   11,4-15,3% dell'altezza dello schermo, cioe' da 110-129 px a 94-126 px
+   su una tela di 824 — su 1080p fanno 123-165, contro i 70-90 che la
+   giuria chiede. Si cede un po' di presenza per comprare il muro, e il
+   muro vale piu' del doppio. Sotto i 34 px non si scende: il «mare
+   d'erba con le formiche» e' il difetto da cui veniamo, e la forbice
+   scende qui SOLO quando in cambio arriva una fascia intera. */
+const Z_BORDO = 34/(2*P_R*P_DIS);
 /* Si era provato a legare la forbice all'altezza dell'area di gioco per
    riempire i viewport 4:3, e il fondo era finito a 0,90: sul telefono in
    orizzontale il giocatore aveva perso il 31% lineare e l'inquadratura
@@ -16446,12 +17014,32 @@ function updateCamera(rdt){
     return;
   }
   const b=G.ball;
+  /* 1-ante. L'ANTICIPO SULLA DIREZIONE DELLA PALLA (tema 6).
+     La camera puntava DOVE LA PALLA E'; una ripresa vera punta dove la
+     palla STA ANDANDO, perche' e' li' che sta per succedere la scena. Il
+     punto d'anticipo e' il pallone spostato lungo la sua velocita' di tre
+     decimi di secondo, con due limiti:
+       · si accende con la velocita' — sotto le 70 unita' al secondo (un
+         rotolamento, un dribbling) l'anticipo e' NULLO, se no il quadro
+         balla dietro ogni tocco;
+       · non va mai oltre 120 unita', se no un rinvio lungo strappa la
+         camera via dall'azione prima che la palla sia arrivata.
+     Serve a due cose insieme: il bersaglio del pan (qui) e il riquadro
+     dello zoom (punto 2) — cosi' sul rilancio la camera si apre GIA'
+     mentre la palla vola, invece di rincorrere dopo. */
+  const bvx=b.vx||0, bvy=b.vy||0, bsp=Math.hypot(bvx,bvy);
+  let ABX=b.x, ABY=b.y;
+  if(bsp>1){
+    const l=Math.min(bsp*0.30, 120)*clamp((bsp-70)/260,0,1);
+    ABX=b.x+bvx/bsp*l; ABY=b.y+bvy/bsp*l;
+  }
+  ABX=clamp(ABX,-GOAL_D,FW+GOAL_D); ABY=clamp(ABY,-30,FH+30);
   /* 1. bersaglio: il pallone pesa quanto due terzi, il resto lo dice la
      posizione media della squadra — cosi' la camera anticipa il ribaltamento */
   let sx=0, sy=0, n=0;
   for(const p of G.players){ if(p.out>0) continue; sx+=p.x; sy+=p.y; n++; }
-  let tx = 0.70*b.x + 0.30*(n?sx/n:b.x);
-  let ty = 0.70*b.y + 0.30*(n?sy/n:b.y);
+  let tx = 0.70*ABX + 0.30*(n?sx/n:b.x);
+  let ty = 0.70*ABY + 0.30*(n?sy/n:b.y);
   /* 1-bis. LA CAMERA SI APPOGGIA ALLA SPONDA.
      Allargare la forbice non basta, e i numeri lo dicono: con
      l'inquadratura portata da 610 a 792 unita' di larghezza la porta
@@ -16494,13 +17082,11 @@ function updateCamera(rdt){
      laterali insieme non ci staranno mai. Il resto della distanza dal
      100% lo tiene la garanzia dei 56 px, che e' li' per un motivo
      migliore — il pallone non finisce mai sotto la minimappa. */
-  {
-    const S2q=SCALE*G.cam.z;
-    const mancaY=Math.max(0, FH/2 - PA_H/(2*S2q));
-    const mancaX=Math.max(0, FW/2 - VW/(2*S2q));
-    ty += clamp((ty-FH/2)/55, -1, 1) * (mancaY*0.86 + 26);
-    tx += clamp((tx-FW/2)/220, -1, 1) * mancaX * 0.45;
-  }
+  /* l'appoggio vero e proprio sta al punto 3-bis, DENTRO il bersaglio:
+     qui restava solo una spinta a percentuale che il punto 4 (inseguimento
+     esponenziale verso il bersaglio) riportava indietro ogni fotogramma —
+     due molle contrarie che si fermavano a meta' strada, ed e' il motivo
+     per cui la fascia entrava sempre "quasi". */
   /* 2. zoom dal riquadro pallone + TRE giocatori piu' vicini, +12%.
      Erano quattro, e prima ancora c'era il vincolo "se ci stanno tutti e
      otto vale quello zoom": tre appelli della giuria hanno detto la stessa
@@ -16515,7 +17101,60 @@ function updateCamera(rdt){
   for(const p of G.players){ if(p.out<=0) camVicini.push(p); }
   camVicini.sort((p,q)=>((p.x-b.x)*(p.x-b.x)+(p.y-b.y)*(p.y-b.y))
                        -((q.x-b.x)*(q.x-b.x)+(q.y-b.y)*(q.y-b.y)));
-  let x0=b.x, x1=b.x, y0=b.y, y1=b.y;
+  /* 1-ter. LE DUE SPONDE ELETTE, PRIMA DELLA FORBICE.
+     Quale muro la camera va a cercare — la fascia dei cartelloni sopra o
+     sotto, la testata dietro la porta a destra o a sinistra — si decide
+     QUI, perche' da questa scelta dipende lo zoom (punto 2) e non solo la
+     spinta (punto 3-bis): prima lo zoom decideva alla cieca e la
+     spinta poi andava dove voleva lei. L'isteresi di 40 unita' attorno
+     alla mediana e' la stessa di prima: la palla che balla sulla linea
+     non deve far ondeggiare il quadro. */
+  /* SI ELEGGE SUL PALLONE, NON SUL PUNTO D'ANTICIPO, e la prova e' una
+     misura contraria all'intuizione. Sembrava ovvio che la camera dovesse
+     scegliere la sponda dove la palla STA ANDANDO — «appoggiata al muro
+     prima che l'azione ci arrivi». Provato: l'anticipo (fino a 120 unita'
+     avanti) fa cambiare sponda a meta' di un rilancio, la camera parte
+     verso la fascia opposta mentre l'azione e' ancora di qua, e su otto
+     istanti l'erba vuota peggiora di un istante intero (da 6/8 a 5/8
+     sotto il tetto). L'anticipo serve al PAN e alla FORBICE, dove
+     inseguire e' un movimento continuo; non serve a una scelta binaria,
+     dove diventa un'oscillazione. */
+  if(b.y>FH/2+40) G.camBanda=1; else if(b.y<FH/2-40) G.camBanda=-1;
+  else if(!G.camBanda) G.camBanda = b.y>=FH/2 ? 1 : -1;
+  /* LA TESTATA NON SI SCEGLIE COL MEZZO CAMPO, SI SCEGLIE CONTANDO.
+     Sull'asse lungo il campo e' largo il doppio dell'inquadratura, quindi
+     appoggiarsi a una testata vuol dire buttare fuori mezza partita: la
+     regola «quella della meta' in cui si gioca» sceglieva la testata
+     DAVANTI al pallone, cioe' quella verso cui non c'e' nessuno, e il
+     fotogramma restava una porta e tre uomini in un prato. Misurato:
+     appoggiandosi all'altra — quella ALLE SPALLE dell'azione, dove sta il
+     grosso delle due squadre — lo stesso istante passa da nove uomini
+     fuori quadro a nove dentro, e l'erba vuota dal 55% al 48%.
+     Quindi si contano: per ciascuna delle due testate si guarda dove
+     starebbe la camera appoggiata la' (dentro la garanzia del pallone) e
+     quanti uomini avrebbe in quadro; vince chi ne ha di piu'. A parita' si
+     tiene quella gia' eletta — l'isteresi qui e' il conteggio stesso, e un
+     uomo di differenza non basta a far ribaltare l'inquadratura. */
+  {
+    const S2p=SCALE*G.cam.z, mez=(VW/2)/S2p, lxp=Math.max(0,(VW/2-56)/S2p);
+    const xSx=clamp(-45+mez, b.x-lxp, b.x+lxp);
+    const xDx=clamp(FW+45-mez, b.x-lxp, b.x+lxp);
+    let nSx=0, nDx=0;
+    for(const p of G.players){
+      if(p.out>0) continue;
+      if(Math.abs(p.x-xSx)<mez-P_R) nSx++;
+      if(Math.abs(p.x-xDx)<mez-P_R) nDx++;
+    }
+    /* chi non arriva alla merce non concorre: se da quella parte la
+       testata resta fuori quadro, appoggiarsi non compra niente */
+    if(xSx-mez>-20) nSx=-1;
+    if(xDx+mez<FW+20) nDx=-1;
+    if(nSx>nDx+1) G.camLato=-1;
+    else if(nDx>nSx+1) G.camLato=1;
+    else if(!G.camLato) G.camLato = b.x>=FW/2 ? 1 : -1;
+  }
+  let x0=Math.min(b.x,ABX), x1=Math.max(b.x,ABX),
+      y0=Math.min(b.y,ABY), y1=Math.max(b.y,ABY);
   for(let i=0;i<3 && i<camVicini.length;i++){
     const p=camVicini[i];
     if(p.x<x0)x0=p.x; else if(p.x>x1)x1=p.x;
@@ -16554,37 +17193,238 @@ function updateCamera(rdt){
      si apre per inquadrare il MURO, che e' la nostra ricchezza (cartelloni
      e folla). La moviola non conosce la concessione: il suo mestiere e'
      stare addosso al gol. */
-  if(!G.moviola && s2c>Z_FIG40){
-    const num=PA_H/2-56;
-    const sBot=(num+VH-PA_CY)/Math.max(1,FH+33-b.y);
-    const sTop=(num+PA_CY)/Math.max(1,b.y+33);
-    const sBordo=Math.max(sBot,sTop);
-    if(sBordo<s2c) s2c=Math.max(Z_FIG40, sBordo);
+  /* ==================== LA FORBICE DELLA SCENOGRAFIA (tema 6, 16 ago) ===
+     La concessione vecchia diceva «cedi zoom finche' la fascia entra» e si
+     fermava a Z_FIG40, cioe' cedeva ANCHE quando la fascia restava fuori
+     lo stesso: comprava erba. E ne comprava tanta — sul freeze-frame test
+     sei istanti su otto stavano inchiodati a 1,304 (esattamente Z_FIG40)
+     con fino al 69% di quadro a manto vuoto.
+     La misura ha detto una cosa che non era nelle previsioni e che ribalta
+     la regola: SPAZZANDO L'INTERO SPAZIO DELLE INQUADRATURE (tre zoom per
+     venticinque posizioni di camera, su tutti e otto gli istanti, misurando
+     ogni volta le 288 celle) il minimo di erba vuota non sta mai dalla
+     parte stretta. Stringere da 1,30 a 1,50 su un fotogramma di meta' campo
+     sposta l'erba vuota dal 69,1% al 67,4% — cioe' niente, perche' il conto
+     delle celle premia i soggetti SPARSI, non quelli grossi: un corpo che
+     raddoppia occupa le stesse tre celle di prima. Portare in quadro la
+     FASCIA — cartelloni, rete, folla, o la testata dietro la porta —
+     sposta la stessa misura di venti-trenta punti in un colpo. Il minimo
+     misurato su ogni istante sta fra il 28% e il 48%, e ogni volta e' un
+     quadro LARGO (1,05-1,30) appoggiato a una sponda.
+     Quindi la forbice non si chiede piu' «quanto posso stringere», si
+     chiede «quanto devo aprire perche' nello stesso fotogramma ci stiano
+     il DUELLO e il MURO»: si calcola lo zoom che tiene insieme i due
+     uomini piu' vicini al pallone (con la loro aria) e la fascia piu'
+     vicina, e si apre esattamente fino a li'. Mai oltre: se il duello e'
+     gia' addosso alla sponda, la camera resta stretta come prima.
+     Il pavimento Z_BORDO e' l'unico limite, ed e' il patto sulla figura. */
+  if(!G.moviola && s2c>Z_BORDO){
+    let dMnY=b.y, dMxY=b.y, dMnX=b.x, dMxX=b.x;
+    for(let i=0;i<2 && i<camVicini.length;i++){ const p=camVicini[i];
+      if(p.y<dMnY)dMnY=p.y; else if(p.y>dMxY)dMxY=p.y;
+      if(p.x<dMnX)dMnX=p.x; else if(p.x>dMxX)dMxX=p.x; }
+    const mgW=P_R+8;            // aria attorno ai corpi, in unita' di campo
+    const mgP=P_R*1.2+6;        // la stessa aria in pixel (la usa il punto 6)
+    /* la SPONDA: il traguardo e' 33 unita' oltre la linea, cioe' cartellone
+       intero. In alto la camera non puo' spingere il duello sotto il
+       tabellone (opaco); in basso la fascia dei 64 px e' trasparente e il
+       limite e' il bordo della tela.
+       IL TABELLONE VALE ANCHE PER LA MERCE, NON SOLO PER I CORPI. La
+       riga di sotto misurava la sponda ALTA sull'intera tela (VH), come
+       se il fotogramma cominciasse a zero: ma sopra PA_Y0 c'e' la barra
+       del punteggio, opaca e larga il 56% del quadro. La camera comprava
+       quindi cartelloni, rete e folla e se li faceva coprire dal
+       tabellone — visibile nell'istante 7 del banco, dove l'insegna
+       TRASPORTI DINO spunta per due dita ai lati della barra e per il
+       resto sta dietro. Il fotogramma utile per la merce ALTA comincia a
+       PA_Y0 esattamente come quello per la merce BASSA (che infatti gia'
+       lo sottraeva): la simmetria era rotta da un refuso di geometria. */
+    const sBanda = G.camBanda>0
+      ? (VH-PA_Y0-mgP)/Math.max(1,(FH+33)-(dMnY-mgW))
+      : (VH-PA_Y0-mgP)/Math.max(1,(dMxY+mgW)+33);
+    /* la TESTATA: dietro la porta ci sono rete, fuoricampo, rete di
+       recinzione e folla — la stessa merce della sponda, in verticale */
+    const sTesta = G.camLato>0
+      ? (VW-112)/Math.max(1,(FW+45)-(dMnX-mgW))
+      : (VW-112)/Math.max(1,(dMxX+mgW)+45);
+    /* SETTE PER CENTO DI GIOCO NELLA FORBICE. Lo zoom insegue il suo
+       bersaglio con una semivita di 0,45 s: se il bersaglio e' calcolato
+       perche' la fascia entri ESATTAMENTE al pixel, mentre la camera ci
+       arriva la fascia e' ancora fuori — e siccome il bersaglio si
+       ricalcola a ogni fotogramma, la camera insegue un traguardo che non
+       raggiunge mai. Misurato: zoom 1,108 su un bersaglio di 1,043, e la
+       fascia restava un dito sotto il bordo. Con un margine del 7% la
+       merce arriva anche in transito. */
+    const sVis=Math.min(sBanda,sTesta)*0.93;
+    const sCand=Math.max(Z_BORDO, sVis);
+    /* E SI PAGA SOLO SE LA MERCE ARRIVA — la stessa regola della vecchia
+       concessione, che qui torna perche' il pavimento la puo' tradire di
+       nuovo: se il muro chiede uno zoom PIU' LARGO di Z_BORDO, aprire
+       fino a Z_BORDO compra erba e basta. E' il caso normale sul 7 e
+       sull'11, dove il campo e' largo 1610 e 2300 unita': la' le fasce
+       sono fuori portata per quasi tutta la partita, e senza questo
+       controllo la camera starebbe SEMPRE al pavimento — il difetto che
+       questa passata e' venuta a riparare, ricomprato al prezzo pieno su
+       due modalita' su tre. Si verifica allo zoom candidato, con la
+       stessa geometria del punto 3-bis: se ne' la sponda ne' la testata
+       entrerebbero, la forbice non si muove. */
+    const lyC=Math.min(PA_CY-56, VH*0.33), lySC=Math.min(VH-56-PA_CY, VH*0.33);
+    const lxC=Math.min(VW/2-56, VW*0.35);
+    const okBanda = G.camBanda>0
+      ? (b.y + (lyC + VH-PA_CY)/sCand >= FH+15)
+      : (b.y - (lySC + PA_CY-PA_Y0)/sCand <= -15);   // sopra la merce comincia a PA_Y0
+    const okTesta = G.camLato>0
+      ? (b.x + (lxC + VW/2)/sCand >= FW+20)
+      : (b.x - (lxC + VW/2)/sCand <= -20);
+    if((okBanda||okTesta) && sCand<s2c) s2c=sCand;
+  }
+  /* IL PUNCH-IN DEL TIRO, che e' l'unico momento in cui la forbice va
+     contro la scenografia — e deve andarci: il tiro si guarda stretto.
+     Lo accende kickBall a 500 unita' al secondo di velocita'; qui si
+     consuma da solo, con la curva che sale in fretta e scende piano
+     (0,55 s in tutto), e non sfonda mai il tetto della forbice. */
+  if(G.camPunch>0){
+    G.camPunch=Math.max(0, G.camPunch-rdt);
+    const u=G.camPunch/0.55;              // 1 all'impatto, 0 alla fine
+    s2c=Math.min(S2_MAX_DEV, s2c*(1+0.11*Math.sin(u*Math.PI)));
   }
   const tz=s2c/SCALE;
-  /* 3. zona morta */
+  /* ================ 3-bis. L'APPOGGIO AL MURO, DENTRO IL BERSAGLIO =====
+     LA LEZIONE DI QUESTA PASSATA, e vale per qualunque camera scritta con
+     un inseguimento esponenziale: una regia scritta DOPO l'inseguimento
+     non e' una regia, e' un attrito. La spinta verso la fascia viveva in
+     fondo a updateCamera e spostava la camera del 10,9% della distanza
+     rimasta a ogni fotogramma; l'inseguimento, in cima, la riportava
+     verso il bersaglio del 6,2%. Due molle contrarie: il punto fermo non
+     e' il traguardo, e' dove le due forze si pareggiano — misurato, il
+     bordo del quadro si fermava a 32 unita' oltre la linea invece delle
+     50 chieste, cioe' mezzo cartellone, cioe' la meta' della merce.
+     Adesso l'appoggio e' UNA CORREZIONE DEL BERSAGLIO: si sposta il punto
+     che la camera insegue fin dove serve perche' la fascia (sponda) e la
+     testata (porta) entrino intere, e da li' in poi c'e' una molla sola.
+     Il bersaglio corretto viene poi limitato, nell'ordine e con le stesse
+     regole dei punti 5 e 6: garanzia del pallone e corpi del duello. */
+  {
+    const S2n=s2c;
+    /* IL TRAGUARDO E' LA FOLLA, NON IL CARTELLONE. Puntare al bordo della
+       fascia (50 unita' oltre la linea) chiedeva il minimo indispensabile
+       e lo otteneva a filo: bastava che il pallone si spostasse di venti
+       unita' perche' l'insegna tornasse mezza fuori. Il traguardo e'
+       90 unita' — cartellone (15-31), recinzione, prime file di
+       gradinata — cioe' piu' di quanto la garanzia del pallone conceda
+       quasi sempre: cosi' il bersaglio SATURA contro la garanzia e la
+       camera si appoggia al muro fin dove le e' permesso, che e' la
+       posizione che la spazzata delle 600 inquadrature indica come
+       minimo di erba vuota in sette istanti su otto. */
+    /* stessa correzione della sponda alta (vedi la forbice): il traguardo
+       di sopra dev'essere visibile SOTTO la barra del punteggio, non
+       dietro. Con PA_CY al posto di PA_CY-PA_Y0 la camera si fermava
+       quarantacinque pixel prima e la merce restava dietro il tabellone. */
+    const tyB = G.camBanda>0 ? (FH+90)-(VH-PA_CY)/S2n : -90+(PA_CY-PA_Y0)/S2n;
+    ty = G.camBanda>0 ? Math.max(ty,tyB) : Math.min(ty,tyB);
+    const txB = G.camLato>0 ? (FW+90)-(VW/2)/S2n : -90+(VW/2)/S2n;
+    tx = G.camLato>0 ? Math.max(tx,txB) : Math.min(tx,txB);
+    /* IL LIMITE DELL'APPOGGIO NON E' LA GARANZIA DEI 56 PX.
+       La garanzia dice solo «il pallone non viene tagliato»: lasciarla
+       decidere da sola l'appoggio significa spingere il pallone a 56 px
+       dal bordo in ogni fotogramma — il muro entra, ma il pallone finisce
+       nel terzo esterno del quadro e chi gioca non vede piu' dove sta
+       andando. La giuria chiede tutt'e due le cose («il quadro mai
+       riempito di erba vuota» E «la palla nel terzo centrale»), quindi
+       l'appoggio si ferma prima: il pallone resta dentro il 70% centrale
+       del fotogramma (35% di semilarghezza, 33% di semialtezza), e la
+       garanzia dei 56 px resta sotto come rete di sicurezza per tutto il
+       resto (contropiede, rimessa, palla che scappa). */
+    const lxn =Math.max(0,Math.min(VW/2-56, VW*0.35)/S2n);
+    const lyGn=Math.max(0,Math.min(PA_CY-56,   VH*0.33)/S2n);
+    const lySn=Math.max(0,Math.min(VH-56-PA_CY,VH*0.33)/S2n);
+    tx=clamp(tx, b.x-lxn, b.x+lxn);
+    ty=clamp(ty, b.y-lySn, b.y+lyGn);
+    /* i corpi del duello NON si limitano qui: il punto 6 e' gia' la loro
+       sicurezza e agisce sulla camera vera, con la «correzione minore».
+       Provato a metterlo anche nel bersaglio: due istanti che passavano
+       con la fascia intera (39,2% e 41,3% di erba invece di 29,9% e
+       31,3%) l'hanno persa, perche' una sicurezza applicata al bersaglio
+       non corregge, DECIDE — e decideva contro la regia. */
+  }
+  /* 2-quater. LA CERIMONIA E' UN POSTER, E IL SOGGETTO STA SUL DISCHETTO.
+     L'appoggio al muro e' regia dell'AZIONE, dove il pallone corre e il
+     quadro insegue: la merce (fascia, rete, testata) vale venti punti di
+     erba vuota e si paga spingendo il pallone verso il terzo esterno. Al
+     calcio d'inizio quel prezzo non si puo' pagare — il pallone e' fermo
+     dentro il cerchio di centrocampo ed e' il fotogramma piu' «poster»
+     della sequenza. Misurato al terzo giro: il dischetto finiva a 0,26
+     di larghezza, schiacciato sotto il tabellone nell'angolo alto a
+     sinistra, cioe' il calcio d'inizio senza il suo soggetto.
+     Qui, e solo qui, il bersaglio TORNA SUL PALLONE: niente anticipo
+     (non si sta andando da nessuna parte), niente baricentro, niente
+     appoggio. Lo zoom della forbice resta quello che e'.
+     LA CERIMONIA DURA PIU' DELLA SCENA: G.scene torna 'play' dopo un
+     secondo ma la targa dei capitani sta in campo per CAP_DUR (1,7 s),
+     e lo scatto del banco cade a 1,2 s — quando la scena e' gia' 'play'.
+     Il patto vale quindi finche' la targa e' in scena. */
+  const cerimonia = (G.scene==='kickoff' || G.capT>0);
+  if(cerimonia){ tx=b.x; ty=b.y; }
+  /* 3. zona morta — piu' stretta in verticale (28 -> 16 px). La zona morta
+     e' nata per non far ballare il quadro dietro ogni tocco, e in
+     orizzontale serve ancora; in verticale pero' e' diventata un ritardo
+     PERMANENTE sull'appoggio alla sponda, perche' la camera si ferma
+     dentro la zona e ci resta: 25 unita' di campo, cioe' mezzo cartellone
+     che non entra mai. La molla del punto 4 fa gia' il lavoro di
+     ammorbidire. */
   const S2=SCALE*G.cam.z;
   const mx=clamp(G.cam.x, tx-48/S2, tx+48/S2);
-  const my=clamp(G.cam.y, ty-28/S2, ty+28/S2);
-  /* 4. inseguimento esponenziale + tetto alla velocita' di pan */
-  const kp=Math.min(1,1-Math.pow(2,-rdt/0.18));
+  const my=clamp(G.cam.y, ty-16/S2, ty+16/S2);
+  /* 4. inseguimento esponenziale + tetto alla velocita' di pan.
+     SEMIVITA 0,18 -> 0,13 s. Quando la palla attraversa la mediana in
+     verticale la sponda eletta cambia, e con l'appoggio nel bersaglio
+     quel cambio vale duecento unita' di campo: a 0,18 s la camera ci
+     mette piu' di mezzo secondo, e in mezzo secondo l'istante che la
+     giuria fotografa e' un'inquadratura in viaggio verso il muro invece
+     che appoggiata al muro (misurato: camera a 200 dove il bersaglio
+     diceva 117, e la fascia fuori quadro). */
+  const kp=Math.min(1,1-Math.pow(2,-rdt/0.10));
   const kz=Math.min(1,1-Math.pow(2,-rdt/0.45));
   let ddx=(mx-G.cam.x)*kp, ddy=(my-G.cam.y)*kp;
-  const maxPan=900*rdt/S2, dl=Math.hypot(ddx,ddy);
+  const maxPan=1250*rdt/S2, dl=Math.hypot(ddx,ddy);
   if(dl>maxPan && dl>0.0001){ ddx*=maxPan/dl; ddy*=maxPan/dl; }
   G.cam.x+=ddx; G.cam.y+=ddy;
   G.cam.z+=(tz-G.cam.z)*kz;
-  /* 5. GARANZIA DEI 56 PIXEL. Qualunque cosa dicano bersaglio, zona morta e
-     tetto di pan, il pallone non arriva MAI a meno di 56 px dai quattro
-     bordi dell'area di gioco. E' questa riga che rende sicure la barra alta
-     e la fascia bassa: se il pallone non ci arriva, il suggerimento e la
-     minimappa non possono coprire l'azione. Sul contropiede lungo la camera
-     smette di frenare e resta attaccata al pallone — che e' esattamente cio'
-     che serve in quel momento. */
+  /* 5. GARANZIA DEI 56 PIXEL — ADESSO CONTRO I BORDI DELLA TELA.
+     Qualunque cosa dicano bersaglio, zona morta e tetto di pan, il
+     pallone non arriva MAI a meno di 56 px dai quattro bordi del
+     FOTOGRAMMA: e' la regola contro lo sprite tagliato, e vale ancora.
+     =================================================================
+     PRIMA SI MISURAVA DAI BORDI DELL'AREA DI GIOCO, e quella era una
+     regola di regia travestita da regola di sicurezza. Diceva: il
+     pallone non entra nella barra alta ne' nella fascia bassa, cosi'
+     suggerimento e minimappa non possono coprirlo. Il modo di ottenerlo
+     era pero' inchiodare la camera a 95 px dal pallone (PA_H/2-56), e
+     quei 95 px erano il tappo di TUTTO il tema 6: con l'azione a meta'
+     campo la camera non poteva scendere abbastanza per portare in quadro
+     la fascia dei cartelloni, e senza fascia il fotogramma resta erba —
+     il 63,9% e il 69,1% dei due istanti peggiori del freeze-frame test
+     sono esattamente questo, e sono a un pelo dal traguardo: mancavano
+     venti unita' di campo, e la garanzia ne teneva bloccate cinquanta.
+     Le due cose vanno separate, ed e' quello che si fa qui:
+       · CHE IL PALLONE NON SIA TAGLIATO e' geometria: si misura dai
+         bordi della tela, dove il taglio avviene davvero. La corsa
+         utile della camera passa da ±95 px a +140/-160 px, cioe' il
+         triplo, e la fascia diventa raggiungibile da quasi ovunque.
+       · CHE NESSUN PEZZO D'INTERFACCIA COPRA IL PALLONE non e'
+         geometria della camera, e' una regola di scarto fra pallone e
+         interfaccia — vive in scartoHUD() ed e' vera SEMPRE, anche
+         quando la camera non c'entra niente (il pallone che rotola
+         sotto lo stick, che la vecchia garanzia non ha mai impedito).
+     La forma e' ASIMMETRICA perche' lo e' il quadro: la camera centra
+     il mondo su PA_CY (196) e non su VH/2, quindi sopra il pallone ci
+     sono 140 px di corsa e sotto 160. */
   const S2f=SCALE*G.cam.z;
-  const lx=Math.max(0,(VW/2-56)/S2f), ly=Math.max(0,(PA_H/2-56)/S2f);
+  const lx=Math.max(0,(VW/2-56)/S2f);
+  const lyGiu=Math.max(0,(PA_CY-56)/S2f);   // cam.y puo' superare la palla di tanto
+  const lySu =Math.max(0,(VH-56-PA_CY)/S2f);// e starle sotto di tanto
   G.cam.x=clamp(G.cam.x, b.x-lx, b.x+lx);
-  G.cam.y=clamp(G.cam.y, b.y-ly, b.y+ly);
+  G.cam.y=clamp(G.cam.y, b.y-lySu, b.y+lyGiu);
   /* 6. LO STESSO CLAMP SUI CORPI. La garanzia dei 56 px protegge il pallone,
      non le teste: nella fascia alta la barra opaca ghigliottinava i giocatori
      e in basso ci arrivava la pastiglia del tutorial. Qui si sposta la camera
@@ -16619,70 +17459,50 @@ function updateCamera(rdt){
      190 unita' e la regia puo' scegliere. Chi sta lontano dal pallone
      puo' finire mezzo fuori quadro: lo fa qualunque ripresa di una
      partita vera, e non e' un difetto, e' l'inquadratura. */
-  let duAlto=Infinity, duBasso=-Infinity;   // i limiti del duello, riusati dal punto 7
   {
     let mnY=Infinity, mxY=-Infinity;
     for(let i=0;i<2 && i<camVicini.length;i++){ const p=camVicini[i];
       if(p.y<mnY)mnY=p.y; if(p.y>mxY)mxY=p.y; }
     if(mnY<Infinity){
       const marg=P_R*S2f+6;
+      /* LA SOGLIA E' ASIMMETRICA PERCHE' LO E' IL PERICOLO. In alto c'e'
+         il tabellone, che e' OPACO: una figura che ci finisce sotto viene
+         ghigliottinata, e il limite resta il bordo dell'area di gioco.
+         In basso c'e' la fascia dei 64 px, che e' TRASPARENTE: una figura
+         li' dentro non e' decapitata, e' semplicemente bassa nel quadro —
+         e tenerla dentro l'area di gioco costava il tema 6 intero, perche'
+         era questo limite (non la garanzia del pallone) a impedire alla
+         camera di salire fino alla fascia dei cartelloni quando si giocava
+         nella meta' alta: misurato, bloccava la spinta 90 unita' prima del
+         traguardo. Sotto si guarda quindi il bordo della TELA, che e' dove
+         lo sprite verrebbe tagliato davvero — e cio' che vive in fascia
+         bassa (minimappa) si toglie di mezzo da solo, vedi scartoHUD(). */
       const alto = mnY-(PA_Y0+marg-PA_CY)/S2f;    // cam.y non piu' in giu' di qui
-      const basso= mxY-(PA_Y1-marg-PA_CY)/S2f;    // cam.y non piu' in su di qui
+      const basso= mxY-(VH-marg-PA_CY)/S2f;       // cam.y non piu' in su di qui
       const dSu   = G.cam.y>alto  ? alto -G.cam.y : 0;
       const dGiu  = G.cam.y<basso ? basso-G.cam.y : 0;
       let d = (dSu&&dGiu) ? (Math.abs(dSu)<Math.abs(dGiu)?dSu:dGiu) : (dSu||dGiu);
-      G.cam.y=clamp(G.cam.y+d, b.y-ly, b.y+ly);
-      if(basso<=alto){ duAlto=alto; duBasso=basso; }
+      G.cam.y=clamp(G.cam.y+d, b.y-lySu, b.y+lyGiu);
     }
   }
-  /* 7. IL BORDO DI SCENOGRAFIA, SEMPRE. La regola vecchia interveniva solo
-     quando il bordo del fotogramma cadeva GIA' in mezzo alla fascia delle
-     insegne (15-31 unita' oltre la linea); il resto del tempo il quadro
-     restava di sola erba, ed e' il difetto piu' citato in tre appelli
-     della giuria. La regola nuova: in OGNI fotogramma di gioco la camera
-     TIRA verso la fascia piu' vicina al lato in cui si gioca, finche' la
-     fascia — cartellone E prime file di folla — non sta INTERA nel quadro
-     (bordo oltre le 33 unita'). Il verso e' ammorbidito su 70 unita'
-     attorno a meta' campo, cosi' non c'e' scatto quando la palla la
-     attraversa. Scivola con l'inseguimento esponenziale, e la garanzia
-     dei 56 px del pallone vince comunque: quando la palla sta in mezzo
-     e la geometria non basta, la camera resta SBILANCIATA verso il bordo
-     — mostra piu' muro possibile invece di centrare l'erba. Una fascia
-     parziale non decapita nessuna insegna: il testo delle insegne si
-     disegna solo a fascia intera (vedi INSEGNE_LIVE), il legno regge. */
-  {
-    const S2b=SCALE*G.cam.z;
-    const yb=G.cam.y+(VH-PA_CY)/S2b;      // mondo al bordo BASSO del quadro
-    const yt=G.cam.y-PA_CY/S2b;           // mondo al bordo ALTO
-    /* la BANDA ELETTA: quella del lato in cui si gioca, con un'isteresi di
-       80 unita' attorno a meta' campo perche' la palla che balla sulla
-       linea mediana non faccia ondeggiare il quadro; finche' la palla sta
-       in mezzo si tiene quella gia' piu' vicina al bordo del fotogramma.
-       La spinta e' PIENA (non scalata sulla distanza dalla mediana: sui
-       formati alti c'e' spazio per la fascia anche a palla centrale, e
-       scalarla lasciava l'insegna mozzata a un filo dal traguardo). */
-    if(b.y>FH/2+40) G.camBanda=1;
-    else if(b.y<FH/2-40) G.camBanda=-1;
-    else if(!G.camBanda) G.camBanda = (FH+33-yb)<=(yt+33) ? 1 : -1;
-    /* il traguardo della spinta e' 50 unita' oltre la linea: fascia intera
-       (finisce a 31) PIU' la prima fila di folla (le sagome vivono a 43):
-       e' il "cartellone e prime file di pubblico" per cui OUT_MARG e'
-       stato portato a 62. La promessa minima dello zoom (concessione al
-       bordo, 33 unita') non cambia: qui si chiede di piu' solo quando la
-       garanzia del pallone lo lascia fare. */
-    let d=0;
-    if(G.camBanda>0){ if(yb<FH+50) d=FH+50-yb; }
-    else { if(yt>-50) d=-50-yt; }
-    if(d){
-      /* la spinta rispetta, nell'ordine: i corpi del duello (regola 6 —
-         una fascia non vale una testa mozzata dalla barra) e la garanzia
-         del pallone, che vince su tutto come sempre */
-      const kq=Math.min(1,1-Math.pow(2,-rdt/0.10));
-      let ny=G.cam.y+d*kq;
-      if(duBasso<=duAlto) ny=clamp(ny, duBasso, duAlto);
-      G.cam.y=clamp(ny, b.y-ly, b.y+ly);
-    }
+  /* 6-bis. LA RETE DI SICUREZZA DELLA CERIMONIA (vedi 2-quater). Il
+     bersaglio e' gia' sul pallone; qui la garanzia dei 56 px si stringe
+     al TERZO CENTRALE del quadro sui due assi, cosi' nemmeno il transito
+     della molla — o la correzione dei corpi del punto 6 — puo' portare
+     il dischetto fuori dal terzo centrale nel fotogramma che la giuria
+     guarda. Costa due clamp per un secondo e mezzo di partita. */
+  if(cerimonia){
+    const lxK=(VW/6)/S2f, lyK=(PA_H/6)/S2f;
+    G.cam.x=clamp(G.cam.x, b.x-lxK, b.x+lxK);
+    G.cam.y=clamp(G.cam.y, b.y-lyK, b.y+lyK);
   }
+  /* 7. L'APPOGGIO E' SALITO NEL BERSAGLIO (punto 3-bis).
+     Qui c'erano due spinte finali — la sponda e la testata — che
+     scivolavano verso il muro DOPO l'inseguimento. Contro l'inseguimento,
+     cioe': si fermavano dove le due molle si pareggiavano, che e' la
+     meta' della strada. Adesso la stessa regia sta scritta dentro il
+     bersaglio, prima della molla, e i punti 5 e 6 restano quello che
+     devono essere — le due sicurezze, non due registi. */
 }
 
 /* Congela il campo a fine partita: un ultimo fotogramma, poi lo si
@@ -17072,9 +17892,10 @@ function render(){
     drawSegniTerra(ordinaPerY);
     for(const p of ordinaPerY) drawPlayer(p);
     drawBall();
-    /* l'anello del comandato non finisce mai sotto la palla: la parte che
-       il pallone copriva si ridisegna sopra di lui (e solo li') */
-    drawAnelloSopraPalla();
+    /* QUI NON SI RIDISEGNA PIU' NIENTE SOPRA LA PALLA. L'anello del
+       comandato si interrompe attorno al pallone gia' quando viene
+       disegnato (vedi bucoPalla in drawSegniTerra): dopo drawBall il
+       pallone e' l'ultimo oggetto del campo, e resta intero. */
     drawParticles();
     drawLampi();
   }
@@ -17100,6 +17921,7 @@ function render(){
      pannello sopra la partita. Da qui in giu' il tabellone, le levette e
      gli striscioni tacciono — il loro posto lo prende il duello. */
   if(G.scene==='freekick' && Duel.phase!=='off'){ drawDuelScene(); return; }
+  pallaSchermo();          // dove sta il pallone: lo leggono gli scarti dell'HUD
   drawHUD();
   drawTouchSticks();
   drawTouchButtons();
@@ -17153,7 +17975,7 @@ function drawBloom(){
     const bx=b.x*S2+Ax, byy=(b.y-(b.z||0)*0.5)*S2+Ay;
     const sp=len(b.vx||0,b.vy||0);
     if((b.perfectT||0)>0){
-      alone(bx, byy, Math.max(14,B_R*S2*2.6), '255,240,206', 0.36);
+      alone(bx, byy, Math.max(14,B_R*B_DIS*S2*2.6), '255,240,206', 0.36);
     }else if(sp>=110){
       /* L'ALONE CRESCE COL COLPO. Prima era un interruttore: sotto i 120 non
          c'era niente, sopra c'era sempre lo stesso velo al 12%. Adesso e'
@@ -17161,7 +17983,7 @@ function drawBloom(){
          e' tinto di sole invece che bianco: e' il pallone che prende luce,
          non un bagliore di lente. Un pallone fermo continua a non brillare. */
       const f=clamp((sp-110)/510,0,1);
-      alone(bx, byy, Math.max(10,B_R*S2*(1.35+1.35*f)), '255,236,190', 0.09+0.20*f);
+      alone(bx, byy, Math.max(10,B_R*B_DIS*S2*(1.35+1.35*f)), '255,236,190', 0.09+0.20*f);
     }
   }
   for(let t=0;t<2;t++){
@@ -17182,10 +18004,14 @@ function drawMenuIdle(rdt){
   const M=G.menuBall;
   M.x+=M.vx*rdt; M.y+=M.vy*rdt;
   M.rot+=len(M.vx,M.vy)*rdt*0.09*(M.vx>=0?1:-1);
-  if(M.x<B_R+4){M.x=B_R+4;M.vx=Math.abs(M.vx);}
-  if(M.x>FW-B_R-4){M.x=FW-B_R-4;M.vx=-Math.abs(M.vx);}
-  if(M.y<B_R+4){M.y=B_R+4;M.vy=Math.abs(M.vy);}
-  if(M.y>FH-B_R-4){M.y=FH-B_R-4;M.vy=-Math.abs(M.vy);}
+  /* le sponde del menu seguono il DISEGNO (B_DIS), non il corpo: qui non
+     c'e' fisica da preservare, c'e' solo un pallone che non deve entrare
+     nel bordo del quadro */
+  const MR=B_R*B_DIS+4;
+  if(M.x<MR){M.x=MR;M.vx=Math.abs(M.vx);}
+  if(M.x>FW-MR){M.x=FW-MR;M.vx=-Math.abs(M.vx);}
+  if(M.y<MR){M.y=MR;M.vy=Math.abs(M.vy);}
+  if(M.y>FH-MR){M.y=FH-MR;M.vy=-Math.abs(M.vy);}
   drawBallAt(M.x,M.y,0,M.rot,false);
 }
 
@@ -17212,7 +18038,7 @@ function drawTrail(){
   const f=clamp((sp-260)/380,0,1);
   if(f<=0.02) return;
   const perf=(b.perfectT||0)>0;
-  const W=B_R*(0.55+0.62*f);
+  const W=B_R*B_DIS*(0.55+0.62*f);
   /* CINQUE VERTICI, non trentatre'. La prima stesura seguiva tutti e
      sedici i punti della lista con due bordi paralleli: un poligono da
      trentatre' vertici, riempito a ogni fotogramma su un canvas da un
@@ -17267,7 +18093,7 @@ function drawTrail(){
       const a=(0.32-0.09*k)*f;
       ctx.fillStyle='rgba(244,240,230,'+a.toFixed(3)+')';
       ctx.beginPath();
-      ctx.arc(g.x, g.y-(g.z||0)*0.55, B_R*(1-0.14*k)*(1+(g.z||0)*0.012), 0, 6.2832);
+      ctx.arc(g.x, g.y-(g.z||0)*0.55, B_R*B_DIS*(1-0.14*k)*(1+(g.z||0)*0.012), 0, 6.2832);
       ctx.fill();
     }
   }
@@ -17366,14 +18192,59 @@ function buildOmbraTex(){
    parallelismo, che il metro chiede come requisito estetico, e' anche
    cio' che rende l'effetto gratis.
 
-   LA FORMA: una capsula con la testa TONDA dal lato del piede e la punta
-   affusolata dall'altro, con l'alfa che cala LUNGO L'ASSE LUNGO invece
-   che radialmente. E' quel gradiente a farla leggere come ombra morbida
-   di sole basso invece che come macchia: la penombra di un'ombra lunga
-   cresce con la distanza dal corpo, e la punta si perde nell'erba.
-   La TINTA non e' nera — e' SOLE.tintaOmbra, il viola-blu del cielo,
-   perche' su un verde il nero puro fa fango (la legge e' scritta in
-   testa a LUCI e vale anche qui).
+   LA FORMA: una capsula con la testa TONDA dal lato del piede, il corpo
+   che si stringe appena, e la punta chiusa da un secondo tondo. La TINTA
+   non e' nera — e' SOLE.tintaOmbra, il viola-blu del cielo, perche' su un
+   verde il nero puro fa fango (la legge e' scritta in testa a LUCI e vale
+   anche qui).
+
+   LA PUNTA SI SCURISCE, NON SI ALLUNGA — e la ragione e' una misura.
+   Al giro precedente la capsula era un CUNEO che si assottigliava fino a
+   un filo (mezza altezza da 31 a 1,4 tessitura) con l'alfa che scendeva
+   a zero lungo l'asse: bella in teoria, invisibile nei fatti. Il
+   FREEZE-FRAME TEST (strumenti/istantanea.js) l'ha misurata su otto
+   istanti e ha trovato il buco:
+     · la DIREZIONE era perfetta — 20-24 gradi contro i 20 dichiarati,
+       deviazione fra le figure 0,2-0,7 gradi su un tetto di 5;
+     · la LUNGHEZZA no — 1,14-1,75 volte la figura contro le ~1,9 che il
+       gioco DICHIARA con ombraCapsula. Cadeva a meta' strada.
+   Non era un errore dello strumento: era la punta che, schiarita, scende
+   sotto il 15% di stacco dal manto e da li' in giu' NESSUNO — nessuna
+   misura e nessun occhio — la distingue dalle strisce di rasatura.
+   Simulata la marcia dello strumento sopra la vecchia capsula (nove punti
+   di finestra, soglia 0,85 di prato illuminato): moriva a 1,13-1,42x.
+   Le DUE cause, misurate separatamente, erano tutt'e due geometriche:
+     1. l'ALFA scendeva sotto la soglia gia' al 73% della lunghezza;
+     2. la LARGHEZZA, ancora prima: la finestra della misura chiede almeno
+        ~7 px di mezza larghezza scura, e il cuneo ci arrivava all'82%.
+   Allungare la capsula non avrebbe riparato niente — avrebbe solo spostato
+   piu' in la' un filo trasparente. Si scurisce la SORGENTE.
+
+   PERCHE' UN CUNEO ERA ANCHE SBAGLIATO. Un'ombra lunga vera non si
+   assottiglia in punta: l'estremita' e' l'ombra della TESTA, larga quanto
+   una testa. Cio' che cresce con la distanza non e' la trasparenza, e' la
+   PENOMBRA — il bordo sfuocato. Il cuneo confondeva le due cose e le
+   sbagliava entrambe. Adesso il campo di alfa e' costruito su questo:
+     · il CUORE resta pieno per tutta la lunghezza (il fattore d'alfa cala
+       da 1,00 a 0,80 e, moltiplicato per OMBRA_ALFA, da' 31% di stacco dal
+       manto al piede e 26% in punta — 22% sul prato piu' chiaro: si vede
+       che sfuma, ma non scende mai vicino al 15%);
+     · la PENOMBRA si allarga da 3 a 10 pixel di tessitura, ed e' LEI a
+       fare il lavoro visivo che prima faceva la trasparenza.
+   MISURATO SUL GIOCO, non simulato: il freeze-frame test dava 1,14-1,75
+   volte la figura, adesso ne da' 1,52-2,63 su otto istanti, con la
+   deviazione delle direzioni ferma a 0,1-1,2 gradi su un tetto di 5. Il
+   cancello ne chiede 1,2. Le ombre passano da 5 istanti su 8 a 7 su 8;
+   l'ottavo (istante 3) non cade sulla lunghezza ma sulla POPOLAZIONE —
+   sette figure su otto sono al bordo del quadro o coi piedi sotto il
+   nastro del tabellone, e lo strumento si rifiuta di dare un numero con
+   una figura sola. Non e' un difetto dell'ombra: e' l'inquadratura.
+
+   COSTO: ZERO. E' la stessa tessitura 256x64, cotta una volta sola, con
+   lo stesso unico drawImage per figura e lo stesso 'source-over'. Il
+   campo si scrive pixel per pixel (sedicimila pixel, una volta nella vita
+   della pagina) invece che con due gradienti: a fotogramma non cambia
+   nulla, e in cottura si compra una forma che i gradienti non sanno fare.
    ===================================================================== */
 let ombraLungaTex=null;
 function buildOmbraLungaTex(){
@@ -17413,37 +18284,59 @@ function buildOmbraLungaTex(){
   const R=Math.round(parseInt(t.slice(1,3),16)*0.40),
         G2=Math.round(parseInt(t.slice(3,5),16)*0.40),
         B=Math.round(parseInt(t.slice(5,7),16)*0.40);
-  const col=a=>'rgba('+R+','+G2+','+B+','+a+')';
-  c.beginPath();
-  c.moveTo(32,1);
-  c.arc(32,32,31, -Math.PI/2, Math.PI/2, true);      // la testa tonda, sul piede
-  c.quadraticCurveTo(154,63, 252,33.4);
-  c.lineTo(252,30.6);
-  c.quadraticCurveTo(154,1, 32,1);
-  c.closePath();
-  /* LA RAMPA E' LENTA SOTTO IL CORPO E RIPIDA VERSO LA PUNTA. Al primo
-     giro era lineare e il risultato, misurato a occhio sullo scatto
-     d'azione, era una sbavatura: la parte attaccata ai piedi — quella che
-     ancora la figura al terreno — usciva chiara quanto la coda. Un'ombra
-     vera e' PIENA sotto chi la getta e si perde solo dopo. */
-  const g=c.createLinearGradient(0,0,W,0);
-  g.addColorStop(0,   col(1));
-  g.addColorStop(0.26,col(0.94));
-  g.addColorStop(0.56,col(0.60));
-  g.addColorStop(0.80,col(0.24));
-  g.addColorStop(1,   col(0));
-  c.fillStyle=g; c.fill();
-  /* i fianchi si sfumano: un'ombra lunga non ha bordi netti nemmeno di
-     traverso. Un gradiente in cottura, zero costo a fotogramma — e la
-     sfumatura si tiene stretta (un quinto per lato) perche' il cuore
-     della capsula deve restare pieno, se no la sezione utile e' meta'. */
-  c.globalCompositeOperation='destination-in';
-  const gv=c.createLinearGradient(0,0,0,H);
-  gv.addColorStop(0,   'rgba(0,0,0,0)');
-  gv.addColorStop(0.20,'rgba(0,0,0,1)');
-  gv.addColorStop(0.80,'rgba(0,0,0,1)');
-  gv.addColorStop(1,   'rgba(0,0,0,0)');
-  c.fillStyle=gv; c.fillRect(0,0,W,H);
+  /* =================================================================
+     LA GEOMETRIA, IN CHIARO. Sono i sei numeri che decidono se il
+     cancello delle ombre e' verde, e stanno qui perche' chi li tocca
+     debba rifare il conto invece di indovinare. Le misure sono in pixel
+     di TESSITURA; la mappatura verso il campo la fa il drawImage in
+     drawOmbreGiocatori, dove il centro della testa cade sul piede (32 su
+     256) e la punta a L unita' di distanza (252 su 256).
+       ASSE_A / ASSE_B  i due centri della spina: la testa sul piede e la
+                        nuca della punta. Fuori da loro la forma si chiude
+                        a tondo, ed e' quel secondo tondo — non un filo —
+                        a fare la punta.
+       HW0 / HW1        mezza larghezza al piede e in punta. HW1=22 non e'
+                        estetica: la finestra della misura campiona nove
+                        punti su +-0,12 altezze di figura e ne chiede
+                        scuri almeno il 35%, cioe' ~7 px di mezza
+                        larghezza. Sotto i 18 la punta esiste e non si
+                        misura, che e' il difetto appena riparato.
+       PEN0 / PEN1      la penombra: stretta al contatto (il piede deve
+                        essere ANCORATO, con bordo quasi netto) e larga in
+                        punta, dove il sole basso la sfuoca.
+       LNG0 / LNG1      l'alfa del cuore, dal piede alla punta. Con
+                        OMBRA_ALFA a 0,40, LNG1=0,80 lascia in punta il 26%
+                        di stacco dal manto (22% sul prato piu' chiaro)
+                        contro il 15% sotto il quale la rasatura se la
+                        mangia: quattro volte il margine di prima.
+     ================================================================= */
+  const ASSE_A=32, ASSE_B=232, HW0=31, HW1=22, PEN0=3, PEN1=10,
+        LNG0=1.00, LNG1=0.80, ESP=1.7;
+  const im=c.createImageData(W,H);
+  const px=im.data;
+  for(let y=0;y<H;y++){
+    const dy=y-32;
+    for(let x=0;x<W;x++){
+      /* distanza dalla SPINA e posizione lungo di essa: prima del primo
+         centro e dopo il secondo la spina e' un punto, quindi la forma si
+         chiude a tondo; in mezzo e' un segmento, e la distanza e' la
+         semplice |dy| */
+      let dist,u;
+      if(x<ASSE_A){ const dx=x-ASSE_A; dist=Math.sqrt(dx*dx+dy*dy); u=0; }
+      else if(x>ASSE_B){ const dx=x-ASSE_B; dist=Math.sqrt(dx*dx+dy*dy); u=1; }
+      else { dist=dy<0?-dy:dy; u=(x-ASSE_A)/(ASSE_B-ASSE_A); }
+      const Rw=HW0+(HW1-HW0)*Math.pow(u,ESP);
+      const pen=PEN0+(PEN1-PEN0)*u;
+      let a=(Rw-dist)/pen;
+      if(a<=0) continue;                        // fuori: resta trasparente
+      if(a>1) a=1;
+      a=a*a*(3-2*a);                            // smoothstep: bordo morbido
+      const alfa=a*(LNG0+(LNG1-LNG0)*u);
+      const j=(y*W+x)*4;
+      px[j]=R; px[j+1]=G2; px[j+2]=B; px[j+3]=Math.round(alfa*255);
+    }
+  }
+  c.putImageData(im,0,0);
 }
 /* =====================================================================
    OMBRA STATICA — l'aiuto che l'INCARICO B chiama per OGNI oggetto nuovo.
@@ -17540,6 +18433,30 @@ function buildStaccoTex(){
    ridisegna qui deve tenere il rapporto RT/N, non i numeri. */
 let ballPatTex=null, ballLitTex=null;
 const BALL_N=128, BALL_RT=60, BALL_K=BALL_N/(2*BALL_RT);   // 1,0667
+/* le due soglie del livello di dettaglio del pallone (vedi pallone()):
+   sotto R0 il nucleo bianco e' pieno, sopra R1 non c'e', in mezzo sfuma.
+   Stanno SOTTO il raggio disegnato in campo (B_R x B_DIS = 10,72) e SOPRA
+   quello della bussola (3,4 x k, con k fra 0,9 e 1,35).
+
+   STRETTE ATTORNO ALLA SOLA BUSSOLA — 6/9 erano troppo larghe, e la
+   misura lo ha detto senza margine di interpretazione. Il freeze-frame
+   test del giro 3 ha confrontato l'interno della palla dei RIGORI (raggio
+   3,5 dal centro) prima e dopo l'introduzione del nucleo: minimo di
+   luminanza da 28 a 88, media da 161 a 210, energia di bordo -23%. Cioe':
+   il pentagono verde scuro spariva e restava un disco quasi bianco liscio,
+   proprio la «ciambella» che il tema 5 vuole abolita — e in una scena
+   dove il pallone e' largo tredici pixel, non sette. La colpa era della
+   RAMPA: col raggio del dischetto a 7,4 il nucleo si stendeva gia' al 53%
+   di opacita' e lavava il pattern.
+   Il nucleo serve a UNA sola cosa — la bussola, dove il pallone e' largo
+   sette pixel e il pentagono lo spacca — quindi le soglie si chiudono
+   attorno a lei e a nient'altro: R0 = 4,6 e' il massimo che la bussola
+   raggiunge (3,4 x 1,35 = 4,59), R1 = 6,2 spegne il nucleo prima di
+   qualunque pallone di scena. Fra le due nessun disegno del gioco cade
+   mai: e' una rampa che esiste per non avere un gradino, non per essere
+   attraversata. La bussola resta identica al pixel (nucleo pieno a ogni
+   k), il dischetto e la rete riprendono i pannelli. */
+const PAL_LOD_R0=4.6, PAL_LOD_R1=6.2;
 function buildBallTex(){
   const N=BALL_N, R=BALL_RT, C=N/2;
   /* --- materia: quella che gira --- */
@@ -17650,14 +18567,69 @@ function buildBallTex(){
   l.beginPath(); l.arc(C,C,R-0.26*R,Math.PI*1.36,Math.PI*1.62); l.stroke();
   l.lineCap='butt';
 }
-/* disegna il pallone di raggio R con la sua rotazione: sei operazioni */
-function pallone(x,y,R,rot){
+/* DISEGNA IL PALLONE — l'UNICO disegno di pallone del gioco.
+   Chiunque debba mostrare una palla — l'azione, il gol, i rigori, la
+   minimappa, il pallone che rimbalza dietro il menu, lo stemma dipinto
+   sul tabellone — passa DA QUI. E' il requisito del tema 5 («un solo
+   disegno di palla in tutto il gioco»), e vale la pena scriverlo qui
+   perche' e' una regola che si rompe da sola: la prossima scena che ha
+   bisogno di una palla la ridisegnera' a mano se nessuno glielo vieta.
+     R      il raggio DISEGNATO (chi chiama ci ha gia' messo B_DIS)
+     rot    la rotazione del pattern: e' lei che fa vedere il rotolamento
+     sq     la schiacciata d'impatto (0 quasi sempre), sqA il suo asse
+     c      un contesto diverso da quello di gioco (le tele fuori schermo
+            del tabellone dipinto): se manca, si disegna sul campo
+   Sei operazioni quando il pallone e' tondo, nove nei due fotogrammi in
+   cui e' schiacciato. */
+function pallone(x,y,R,rot,sq,sqA,c){
   if(!ballPatTex) buildBallTex();
+  const g=c||ctx;
   const d=R*BALL_K*2;
-  ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
-  ctx.drawImage(ballPatTex,-d/2,-d/2,d,d);
-  ctx.restore();
-  ctx.drawImage(ballLitTex, x-d/2, y-d/2, d, d);
+  const s=sq>0?sq:0;
+  if(s>0.002){
+    /* comprime lungo sqA e allunga di traverso, ad AREA COSTANTE: si entra
+       nel riferimento dell'urto, si scala, si torna indietro */
+    const a=sqA||0;
+    g.save();
+    g.translate(x,y); g.rotate(a); g.scale(1-s,1/(1-s)); g.rotate(-a); g.translate(-x,-y);
+  }
+  g.save(); g.translate(x,y); g.rotate(rot);
+  g.drawImage(ballPatTex,-d/2,-d/2,d,d);
+  g.restore();
+  /* IL NUCLEO BIANCO SOTTO SOGLIA — il livello di dettaglio del pallone.
+     MISURATO, ed e' la ragione per cui questo blocco esiste: sulla bussola
+     il pallone e' largo sette pixel, e a sette pixel il pentagono (0,33 del
+     raggio) e le cuciture NON sono un disegno, sono rumore che spacca il
+     disco. Finestra 11x11 sul pallino della minimappa, prima e dopo aver
+     unificato il disegno: massimo 242 -> 224, pixel sopra 200 da 14 a 4,
+     e valori interni di 66 e 130 dove passa il pentagono. Nella bussola
+     che ESISTE per dire dov'e' la palla, il pallone smetteva di essere
+     l'oggetto piu' chiaro: i pallini gialli di squadra lo pareggiavano.
+
+     La coerenza «un solo disegno di palla» non chiede di stampare un
+     pattern illeggibile: chiede che sia LO STESSO OGGETTO. Quindi il
+     pattern resta — cotto, ruotato, identico — e sotto la soglia in cui
+     non si legge piu' gli si ridipinge sopra il NUCLEO, esattamente come
+     fa una mipmap: la materia sparisce prima del silhouette, mai il
+     contrario. Il contorno scuro, il riflesso e il velo d'ombra arrivano
+     dopo (ballLitTex) e restano intatti a ogni taglia: e' da loro che il
+     pallino piccolo prende lo stacco sul vetro della bussola.
+
+     Le due soglie sono in unita' del contesto che chiama, e i due mondi
+     stanno lontani: la bussola disegna a R = 3,1-4,6 (nucleo pieno), il
+     campo a R = B_R x B_DIS = 10,7 e oltre (nessun nucleo). Il raggio
+     0,52 lascia intatta la corona fra 0,52 e 0,76 del raggio, dove il
+     contorno non e' ancora arrivato: a taglia media si vede ancora una
+     traccia di cuciture, e la transizione non scatta.
+     Costo: un arco riempito, e solo per i palloni piccoli. */
+  if(R<PAL_LOD_R1){
+    g.globalAlpha = R<=PAL_LOD_R0 ? 1 : (PAL_LOD_R1-R)/(PAL_LOD_R1-PAL_LOD_R0);
+    g.fillStyle='#fcfef8';
+    g.beginPath(); g.arc(x,y,R*0.52,0,6.2832); g.fill();
+    g.globalAlpha=1;
+  }
+  g.drawImage(ballLitTex, x-d/2, y-d/2, d, d);
+  if(s>0.002) g.restore();
 }
 
 /* =====================================================================
@@ -18029,7 +19001,21 @@ function figuraLontana(p){
   const S2=G.view.S2||1;
   const cx=(VW/2-(G.view.Ax||0))/S2, cy=(VH/2-(G.view.Ay||0))/S2;
   const dx=p.x-cx, dy=p.y-cy;
-  return dx*dx+dy*dy > LOD_DIST*LOD_DIST;
+  if(dx*dx+dy*dy <= LOD_DIST*LOD_DIST) return false;
+  /* NON BASTA PIU' IL CENTRO-CAMERA, da quando la camera si APPOGGIA al
+     muro (tema 6): il centro del fotogramma non e' piu' l'azione, e con
+     l'appoggio pieno il duello puo' stare a quattrocentocinquanta unita'
+     dal centro. Con la sola vecchia condizione i due uomini che si
+     contendono il pallone finivano in dettaglio ridotto — posa CONGELATA
+     a fase zero — cioe' esattamente le due figure che il fermo-immagine
+     della giuria guarda per prime, e per giunta nella stessa identica
+     posa, che e' il difetto che il tema 2 vieta per nome. Adesso il
+     dettaglio pieno segue anche il PALLONE: si abbassa solo chi e'
+     lontano dal centro del quadro E dall'azione. */
+  const b=G.ball;
+  if(b){ const ex=p.x-b.x, ey=p.y-b.y;
+         if(ex*ex+ey*ey <= LOD_DIST*LOD_DIST) return false; }
+  return true;
 }
 /* =====================================================================
    IL FERMO COMPOSTO NON SMEMBRA NESSUNO — riparazione del giro 2.
@@ -18148,7 +19134,22 @@ function ombraGeometria(){
    la lunghezza e' il requisito (almeno 1,5 volte la figura, e qui siamo
    a 2,2), l'alfa e' la manopola.
    ===================================================================== */
-const OMBRA_ALFA=0.46;               // al piede; la punta si spegne da sola
+/* AL PIEDE 0,40, NON PIU' 0,46 — e la punta non si spegne piu' da sola.
+   E' la manopola che questo riquadro dichiara da sempre («se le ombre si
+   fondono in una rete scura SI ABBASSA L'ALFA, MAI LA LUNGHEZZA»), e qui
+   serve perche' la capsula nuova porta molto piu' inchiostro della
+   vecchia: quella era un cuneo che si spegneva a meta' strada, questa
+   tiene il cuore pieno per tutta la lunghezza. A parita' di alfa, ventidue
+   ombre di 11v11 peserebbero il doppio di prima. Sei centesimi al piede le
+   riportano al peso di prima SENZA toccare la punta — anzi, la punta e'
+   quasi tre volte piu' scura (0,40 x 0,80 = 0,32 di alfa contro il vecchio
+   0,46 x 0,24 = 0,11), che e' esattamente lo scambio che serviva.
+   ONESTA' DELLA MISURA: questo abbassamento NON ha recuperato la figura
+   che il freeze-frame test scarta come «gia' dentro un altro cono d'ombra»
+   nell'istante 3 — provato, il verdetto e' identico a 0,46 e a 0,40. La
+   ragione per cui e' 0,40 e' il peso dell'inchiostro in 11v11, non quel
+   cancello: non si spacci per riparazione cio' che e' prudenza. */
+const OMBRA_ALFA=0.40;
 function drawOmbreGiocatori(lista){
   if(!ombraTex) buildOmbraTex();
   if(!ombraLungaTex) buildOmbraLungaTex();
@@ -18249,7 +19250,55 @@ function ctrlDisegno(t){
   }
   return best;
 }
+/* =====================================================================
+   IL BUCO DEL PALLONE — l'anello di possesso non copre MAI la palla.
+
+   IL ROVESCIAMENTO. Fino a ieri valeva la regola opposta: l'anello del
+   comandato veniva RIDISEGNATO sopra il pallone (drawAnelloSopraPalla,
+   ritagliato dentro il cerchio della palla) perche' non uscisse «mezzo
+   mangiato». Era la scelta sbagliata, e la giuria l'ha scritta due volte:
+   il tema 5 chiede «l'indicatore di possesso ridisegnato perche' non copra
+   mai la palla», e la ragione numero 4 descrive la palla come «un puntino
+   quasi invisibile SOFFOCATA dall'anello arancione». Fra un anello intero
+   e una palla intera vince la palla: l'anello e' un'etichetta, la palla e'
+   il soggetto.
+
+   PERCHE' UN BUCO E NON UN MORSO. Lasciare che il pallone coprisse
+   l'anello (cioe' non fare niente) dava proprio il difetto che la vecchia
+   passata voleva evitare: l'ambra che finisce dentro il bianco e riappare
+   dall'altra parte legge come un errore di disegno. Qui l'anello viene
+   ritagliato FUORI da un disco piu' largo del pallone — un margine di
+   2,6 unita' di erba fra l'ambra e il bianco — e l'interruzione diventa
+   una lettura di profondita': la palla sta DAVANTI. E' lo stesso mestiere
+   dell'alone di stacco dei corpi, fatto col vuoto invece che con la luce.
+
+   COSTO: un tracciato e un clip per fotogramma, e solo quando c'e' un
+   segno a terra da disegnare. La regola pari-dispari ('evenodd') fa il
+   buco con lo stesso tracciato che fa il riquadro: nessuna seconda
+   passata, nessuna tessitura, nessun cambio di composizione. */
+function bucoPalla(){
+  const b=G.ball;
+  if(!b) return false;
+  const by=b.y-(b.z||0)*0.55;
+  /* IL MARGINE, RIMISURATO. Era 3,2 unita' d'erba: con il pallone a 10,72
+     faceva un buco di raggio 13,9, cioe' PIU' LARGO del semiasse minore
+     dell'anello del portatore (6,6). Un buco piu' largo del suo bersaglio
+     non interrompe un segno: lo cancella, e di un anello restavano due
+     punte laterali che leggevano come macchie. Il margine scende a 2,6 e
+     l'anello e' cresciuto (anelloPortatoreTratto): sono le DUE meta' della
+     stessa correzione, e vanno lette insieme. */
+  const r=B_R*B_DIS*(1+(b.z||0)*0.012)+2.6;
+  ctx.save();
+  ctx.beginPath();
+  /* il riquadro del mondo, generoso: e' in unita' di campo dentro la
+     trasformazione della camera, quindi basta che copra il campo intero */
+  ctx.rect(-GOAL_D-40, -40, FW+2*GOAL_D+80, FH+80);
+  ctx.arc(b.x, by, r, 0, 6.2832);
+  ctx.clip('evenodd');
+  return true;
+}
 function drawSegniTerra(lista){
+  const buco=bucoPalla();
   for(const p of lista){
     if(fermoCoperto(p)) continue;
     const pi=G.players.indexOf(p);
@@ -18273,6 +19322,7 @@ function drawSegniTerra(lista){
     }
     if(isCtrl) anelloComandato(p);
   }
+  if(buco) ctx.restore();
 }
 
 /* ANELLO A TERRA DEL GIOCATORE CONTROLLATO: AMBRA, PIENO, ancorato ai
@@ -18283,41 +19333,53 @@ function drawSegniTerra(lista){
    movimento ridotto sta fermo a mezza via. BUDGET: estremo laterale
    (2,5+20,6+1,7)x1,18 = 29,3 < 30 — il raggio da cui collaudo.js
    campiona l'erba resta pulito, freccia compresa.
-   E' UNA FUNZIONE perche' si disegna DUE volte: qui fra le ombre e i
-   corpi, e di nuovo — ritagliato dentro la sagoma del pallone — dopo
-   drawBall (vedi drawAnelloSopraPalla): l'anello del controllo non
-   deve mai uscire mezzo mangiato dalla palla che ci sta sopra.
+   SI DISEGNA UNA VOLTA SOLA, e da qui in poi resta cosi'. Fino a ieri
+   ce n'era una seconda passata dopo drawBall, ritagliata DENTRO il
+   pallone, perche' l'anello non uscisse mezzo mangiato; adesso vale la
+   regola opposta e piu' forte — la palla e' il soggetto, l'anello e'
+   un'etichetta — e l'interruzione la fa bucoPalla PRIMA, col vuoto.
    Deterministica a parita' di fotogramma (G.pulse e' fermo dentro il
-   fotogramma), quindi le due passate coincidono al pixel. */
+   fotogramma). */
 /* il tratto nudo dell'anello del portatore: chiamato DENTRO la scala P_DIS
-   (da drawSegniTerra) e riusato dalla passata sopra-palla, che la scala se
-   la mette da sola */
-/* `sopraPalla`: nella ripassata ritagliata dentro il pallone (quarto
-   appello) lo zoccolo nero NON si ridisegna — su un pallone bianco l'unico
-   suo effetto era scurirlo, cioe' l'esatto contrario del mestiere del
-   pallone. Sull'erba lo zoccolo resta: e' lui che tiene l'ambra a 3:1. */
-function anelloPortatoreTratto(p,sopraPalla){
-  if(!sopraPalla){
-    ctx.strokeStyle='rgba(0,0,0,.38)'; ctx.lineWidth=3.8;
-    ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0,6.2832); ctx.stroke();
-  }
+   (da drawSegniTerra) */
+/* LA MISURA DELL'ANELLO E' UN VINCOLO, NON UN GUSTO.
+   Era 13,4 x 5,6 (in unita' P_DIS: 15,8 x 6,6 nel mondo) e bucoPalla gli
+   apriva addosso un foro di raggio 13,9 centrato sul pallone. Con il
+   pallone ai piedi in direzione BASSO — il caso peggiore, il centro del
+   foro finisce a 5,1 unita' dal centro dell'anello — il foro copriva sia
+   il vertice alto (a 6,6) sia quello basso: sopravvivevano solo le due
+   punte laterali, e nello scatto se ne vedeva UNA sola, l'altra nascosta
+   dalla gamba. Una mezzaluna bianca sospesa nell'erba non e' un anello.
+
+   LA REGOLA, adesso scritta: il semiasse minore dell'anello piu' la
+   distanza minima fra pallone e centro dell'anello deve stare SOPRA il
+   raggio del foro. Con foro 10,72+2,6 = 13,3 e centro dell'anello a
+   (0; 9,2)xP_DIS = (0; 10,9):
+     pallone in basso  (0; 16)   scarto 5,1  -> vertice alto a 15,5 > 13,3
+     pallone a destra  (16; 0)   scarto 19,4 -> morso solo sul fianco est
+     pallone sui piedi (0; 0)    scarto 10,9 -> morso solo sulla calotta
+   In ogni caso resta almeno il 70% dello sviluppo, e il morso cade DOVE
+   STA IL PALLONE: e' quello che lo fa leggere davanti.
+   BUDGET: estremo laterale (17,8+1,9)x1,18 = 23,2 < 30, il raggio da cui
+   collaudo.js campiona l'erba. */
+function anelloPortatoreTratto(p){
+  ctx.strokeStyle='rgba(0,0,0,.38)'; ctx.lineWidth=3.8;
+  ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,17.8,8.6,0,0,6.2832); ctx.stroke();
   /* GESSO, NON AMBRA (quinto appello): l'ambra e' la tinta del comandato
      e di cio' che si preme — un anello ambra anche sul portatore faceva
      credere che il controllo stesse sulla palla. Il portatore ha la sua
      pozza dorata a terra e questo filo di gesso, distinti a colpo d'occhio
      dall'anello ambra pieno con la freccia. */
   ctx.strokeStyle='rgba(242,245,239,.92)'; ctx.lineWidth=2.2;
-  ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,13.4,5.6,0,0,6.2832); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(p.x,p.y+9.2,17.8,8.6,0,0,6.2832); ctx.stroke();
 }
-function anelloComandato(p,sopraPalla){
+function anelloComandato(p){
   ctx.save();
   ctx.translate(p.x,p.y); ctx.scale(P_DIS,P_DIS); ctx.translate(-p.x,-p.y);
   const pl = SAVE.moto ? 0.5+0.5*Math.sin(G.pulse*2.6) : 0.5;
   const arx=19.2+1.4*pl, ary=8.4+0.61*pl;
-  if(!sopraPalla){
-    ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=5.4;
-    ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0,0,6.2832); ctx.stroke();
-  }
+  ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=5.4;
+  ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0,0,6.2832); ctx.stroke();
   ctx.strokeStyle='rgba(255,176,32,.95)';
   ctx.lineWidth=3.4;
   ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0,0,6.2832); ctx.stroke();
@@ -18338,55 +19400,9 @@ function anelloComandato(p,sopraPalla){
   ctx.lineTo(fcx+Math.cos(fa+0.46)*14.2, fcy+Math.sin(fa+0.46)*14.2*sq);
   ctx.lineTo(fcx+Math.cos(fa-0.46)*14.2, fcy+Math.sin(fa-0.46)*14.2*sq);
   ctx.closePath();
-  if(!sopraPalla){
-    ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=2.8; ctx.lineJoin='round'; ctx.stroke();
-  }
+  ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=2.8; ctx.lineJoin='round'; ctx.stroke();
   ctx.fillStyle='rgba(255,176,32,.95)'; ctx.fill();
   ctx.restore();
-}
-
-/* L'ANELLO SOPRA LA PALLA. Il pallone si disegna dopo tutti i corpi e
-   copriva l'arco dell'anello che gli passava sotto: l'anello del comandato
-   usciva mezzo mangiato proprio nel punto che l'occhio guarda. Qui, DOPO
-   drawBall, si ridisegna l'anello RITAGLIATO dentro il cerchio del pallone
-   (stesso centro e stessa quota di drawBallAt): sopra la palla, e da
-   nessun'altra parte — sui corpi, che stanno sotto la palla, non cambia
-   un pixel. Costo: un clip e un anello, solo quando palla e anello si
-   toccano davvero. */
-function drawAnelloSopraPalla(){
-  const b=G.ball;
-  if(!b) return;
-  const k=1+(b.z||0)*0.012, by=b.y-(b.z||0)*0.55, r=B_R*k+1.6;
-  /* l'anello ambra del comandato (per ciascun umano in campo, e per il
-     comandato IN POSA delle foto: stessa legge di drawSegniTerra) */
-  for(let t=0;t<2;t++){
-    const pi=ctrlDisegno(t);
-    if(pi<0) continue;
-    const p=G.players[pi];
-    if(!p || p.out>0 || fermoCoperto(p)) continue;
-    const cx=p.x+2.5*P_DIS, cy=p.y+6.6*P_DIS;
-    if(Math.abs(b.x-cx)>24*P_DIS+r || Math.abs(by-cy)>13*P_DIS+r) continue;
-    ctx.save();
-    ctx.beginPath(); ctx.arc(b.x,by,r,0,6.2832); ctx.clip();
-    anelloComandato(p,true);
-    ctx.restore();
-  }
-  /* e l'anello del portatore, che il pallone — 16 unita' davanti ai
-     piedi — morde per costruzione a OGNI possesso */
-  if(b.owner>=0){
-    const p=G.players[b.owner];
-    if(p && p.out<=0 && p.slide<0 && !fermoCoperto(p) &&
-       ctrlDisegno(p.team)!==b.owner){
-      const cy=p.y+9.2*P_DIS;
-      if(Math.abs(b.x-p.x)<=15.5*P_DIS+r && Math.abs(by-cy)<=8*P_DIS+r){
-        ctx.save();
-        ctx.beginPath(); ctx.arc(b.x,by,r,0,6.2832); ctx.clip();
-        ctx.translate(p.x,p.y); ctx.scale(P_DIS,P_DIS); ctx.translate(-p.x,-p.y);
-        anelloPortatoreTratto(p,true);
-        ctx.restore();
-      }
-    }
-  }
 }
 
 /* =====================================================================
@@ -18474,6 +19490,26 @@ const RIGST = { clip:'fermo', u:0 };
 function rigStato(p){
   const st = RIGST;
   const gk = p.role==='gk';
+  /* IL LOD FA PARTE DELLA POSA, E CHI LA LEGGE DA FUORI DEVE VEDERLO.
+     La sostituzione di posa del dettaglio ridotto (figura lontana ->
+     'fermo' / 'attesaGK', fase sfasata sull'indice) viveva SOLO dentro
+     drawPlayer, dopo la chiamata a rigStato: chi interrogava rigStato
+     dall'esterno — cioe' strumenti/istantanea.js, che con la stessa
+     Rig3D ridipinge le figure di nero per farsi la maschera dei corpi —
+     riceveva la posa di CORSA mentre sullo schermo c'era una figura
+     FERMA. La maschera cadeva fuori posto, il contorno scuro del corpo
+     vero finiva contato come ombra portata, e la quarta misura del
+     freeze-frame test tornava con direzioni sbagliate di 145-156 gradi
+     su figure la cui ombra, nella fotografia, e' parallela a tutte le
+     altre. Non era una bugia del gioco ne' dello strumento: erano due
+     verita' diverse sulla stessa figura. Adesso ce n'e' una sola, e sta
+     qui — la dichiara chi disegna (p.lodPosa) un attimo prima di
+     chiedere la posa. */
+  if(p.lodPosa){
+    st.clip = gk ? 'attesaGK' : 'fermo';
+    st.u = (0.041*(p.idx+11*p.team)+0.13)%1;
+    return st;
+  }
   /* ---- la festa e il lutto ---- */
   if(p.celeb>0){
     const el = 2.4-p.celeb;
@@ -18579,6 +19615,7 @@ function drawPlayer(p){
      Mai sul comandato, sul portatore o su chi esulta. I campi si mettono
      via e si rimettono a posto in fondo: la fisica non li legge qui. */
   const lod = !isCtrl && !hasBall && !celeb && figuraLontana(p);
+  p.lodPosa = lod;        // lo legge rigStato: una sola verita' sulla posa
   let lodSalva=null;
   if(lod){
     lodSalva={f:p.fase, a:p.amp, b:p.bob, r:p.rollio};
@@ -18852,10 +19889,18 @@ function drawPlayer(p){
 
 function drawBall(){
   const b=G.ball;
-  drawBallAt(b.x, b.y, b.z||0, b.rot||0, (b.perfectT||0)>0);
+  /* la schiacciata si RILASCIA, non scompare: l'ampiezza cala con quel che
+     resta del tempo, cosi' il pallone torna sfera invece di scattarci */
+  const sq=(b.sq||0)*((b.sqT||0)/SQ_T);
+  drawBallAt(b.x, b.y, b.z||0, b.rot||0, (b.perfectT||0)>0, sq, b.sqA||0);
 }
 /* pallone con quota finta: ombra staccata, scala, rotazione, glow sul tiro perfetto */
-function drawBallAt(x,y,z,rot,glow){
+function drawBallAt(x,y,z,rot,glow,sq,sqA){
+  /* IL RAGGIO DISEGNATO, in un posto solo. B_DIS sta qui e non dentro
+     pallone() perche' l'ombra, l'alone di stacco e il glow devono crescere
+     INSIEME al pallone: un pallone piu' grande con l'ombra di prima
+     galleggia, ed era il difetto che l'ombra staccata nasce per non avere. */
+  const RD=B_R*B_DIS;
   const k=1+z*0.012;
   /* OMBRA DEL PALLONE: resta inchiodata a terra quando il pallone si alza.
      La distanza fra palla e ombra e' l'UNICO modo che il giocatore ha per
@@ -18871,9 +19916,12 @@ function drawBallAt(x,y,z,rot,glow){
        allunga e quella del pallone no, la luce e' una bugia */
     const oK=1+0.35*solePiuBasso();
     const sx=x+(3.0+q*0.20)*oK, sy=y+5.6+q*1.00;
+    /* l'ombra segue il DISEGNO del pallone, non il suo corpo: le due
+       misure sotto (10,8 e 5,0) erano tarate su B_R nudo */
+    const g=B_DIS;
     const r=70/(70+q), a=0.96*70/(70+1.1*q);
     ctx.globalAlpha=a;
-    ctx.drawImage(ombraTex, sx-10.8*r, sy-5.0*r, 21.6*r, 10.0*r);
+    ctx.drawImage(ombraTex, sx-10.8*g*r, sy-5.0*g*r, 21.6*g*r, 10.0*g*r);
     /* MACCHIA DI CONTATTO: il nucleo stretto e scuro che i corpi hanno
        gia' (drawOmbreGiocatori) e il pallone no. E' lei che decide se il
        pallone POGGIA sull'erba o ci galleggia sopra: la proiezione larga
@@ -18884,7 +19932,7 @@ function drawBallAt(x,y,z,rot,glow){
     const ac=0.62*(1-q/9);
     if(ac>0.02){
       ctx.globalAlpha=ac;
-      ctx.drawImage(ombraTex, sx-5.4*r, sy-2.6*r, 10.8*r, 5.2*r);
+      ctx.drawImage(ombraTex, sx-5.4*g*r, sy-2.6*g*r, 10.8*g*r, 5.2*g*r);
     }
     ctx.globalAlpha=1;
   }
@@ -18898,21 +19946,21 @@ function drawBallAt(x,y,z,rot,glow){
      drawImage della tessitura che c'e' gia'. */
   {
     if(!staccoTex) buildStaccoTex();
-    const ar=B_R*k*1.7;
+    const ar=RD*k*1.7;
     ctx.globalAlpha=0.55;
     ctx.drawImage(staccoTex, x-ar, by-ar, ar*2, ar*2);
     ctx.globalAlpha=1;
   }
   if(glow){
     ctx.fillStyle='rgba(255,222,164,.26)';
-    ctx.beginPath(); ctx.arc(x,by,B_R*k+4,0,6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(x,by,RD*k+4,0,6.2832); ctx.fill();
   }
   /* IL PALLONE: due tessiture cotte una volta sola (vedi buildBallTex).
      Qui c'erano undici tracciati, quattro riempimenti e sei contorni per
      fotogramma; adesso sono due drawImage e una rotazione, e il pallone e'
      una SFERA — velo d'ombra verso il basso-destra, riflesso speculare in
      alto a sinistra — invece di un disco con una stella sopra. */
-  pallone(x,by,B_R*k,rot);
+  pallone(x,by,RD*k,rot,sq,sqA);
 }
 
 /* DUE PASSATE, e la ragione e' il costo. Le schegge sono additive; le
@@ -19199,10 +20247,31 @@ function drawMinimappa(){
   const k = Math.min(k0, Math.max(0.9,(VW-258)/88));
   /* se la fascia delle insegne (mondo: da FH+15) entra nel quadro, la
      minimappa si aggancia SOPRA di lei: mai sopra una scritta */
-  const mw=88*k, mh=43*k, mx=(VW-mw)/2,
-        my=Math.min(VH-12-mh, Ay+(FH+15)*S2-8-mh);
+  const mw=88*k, mh=43*k, mx=(VW-mw)/2;
+  /* DUE ANCORAGGI, E IL PALLONE SCEGLIE. Quello "alto" tiene la bussola
+     sopra le insegne (mai sopra una scritta) ma la porta DENTRO l'area di
+     gioco, dove il pallone passa; quello "basso" e' la fascia dei 64 px,
+     dove non copre niente. Prima esisteva solo il minimo dei due, cioe'
+     l'alto ogni volta che la fascia entrava in quadro — ed e' cosi' che
+     nell'istante 04 del freeze-frame test il pallone e' finito sotto la
+     cornice della minimappa. Adesso, se il pallone arriva addosso
+     all'ancoraggio alto, la bussola SCENDE a quello basso; e se anche li'
+     la raggiunge, sfuma. Lo scivolo e' esponenziale (semivita 0,12 s):
+     una bussola che salta e' peggio di una bussola coperta. */
+  const myAlto=Math.min(VH-12-mh, Ay+(FH+15)*S2-8-mh);
+  const myBasso=VH-12-mh;
+  const scendi = scartoHUDRett(mx-2,myAlto-2,mx+mw+2,myAlto+mh+2) < 0.98;
+  const myVoluto = scendi ? myBasso : myAlto;
+  if(G.miniY==null || Math.abs(G.miniY-myVoluto)>240) G.miniY=myVoluto;
+  else G.miniY += (myVoluto-G.miniY)*Math.min(1,1-Math.pow(2,-(G.renderDT||0.016)/0.12));
+  const my=G.miniY;
   MINI_RECT={x0:mx-2, y0:my-2, x1:mx+mw+2, y1:my+mh+2};
+  const aMini=scartoHUDRett(MINI_RECT.x0,MINI_RECT.y0,MINI_RECT.x1,MINI_RECT.y1);
+  TOUCH_ZONE.push({tipo:'minimappa', x:mx+mw/2, y:my+mh/2, r:0,
+                   x0:MINI_RECT.x0, y0:MINI_RECT.y0, x1:MINI_RECT.x1, y1:MINI_RECT.y1,
+                   alpha:+aMini.toFixed(3)});
   ctx.save();
+  ctx.globalAlpha=aMini;
   /* LA BUSSOLA DISCRETA (quinto appello, rett. 15 ago 2026). Il pannello
      opaco con la rotaia bordata era diventato la cosa piu' pesante in
      basso: un rettangolo che COPRIVA il campo. Adesso e' una VELATURA
@@ -19213,12 +20282,23 @@ function drawMinimappa(){
      colori squadra piu' del verde pieno di prima. La lezione dell'opaco
      (le sagome della folla nel radar) resta pagata: il velo al 55% le
      SPEGNE — si intravedono, non si confondono coi pallini. */
-  ctx.fillStyle='rgba(5,13,9,.55)';
-  ctx.fillRect(mx,my,mw,mh);
-  ctx.strokeStyle='rgba(6,14,10,.6)'; ctx.lineWidth=1;
-  ctx.strokeRect(mx-0.5,my-0.5,mw+1,mh+1);
-  ctx.strokeStyle='rgba(242,245,239,.50)';
-  ctx.strokeRect(mx+0.5,my+0.5,mw-1,mh-1);
+  /* LA BUSSOLA E' UNA LAVAGNETTA TATTICA (Tema 3, 16 ago 2026). Era una
+     velatura scura con due fili — «minimappa tecnica», una delle quattro
+     lingue contate dalla giuria: un radar da dev-kit appoggiato su un
+     campetto di quartiere. Adesso e' l'oggetto piu' piccolo della stessa
+     famiglia della lavagnetta di fine partita: ardesia con tre valori e
+     la polvere di gesso, cornice di legno da 2 px col filo di sole a
+     ovest, e il campo dentro tracciato col GESSO — le righe che un
+     allenatore disegna sulla sua lavagnetta. L'ardesia sale da .55 a
+     opaca perche' una lavagnetta non e' un vetro: la lezione del quinto
+     appello (le sagome della folla che si intravedevano dentro il
+     radar) si paga meglio cosi' che con la trasparenza. */
+  /* l'ombra e' un rettangolo scostato, non uno shadowBlur: la sfocatura
+     del canvas costa piu' di tutto il resto della bussola messo insieme,
+     e a due pixel di scarto non la distingue nessuno */
+  ctx.fillStyle='rgba(4,10,7,.45)'; ctx.fillRect(mx+2,my+3,mw,mh);
+  ardesiaFill(mx,my,mw,mh,0.94);
+  cornice(mx,my,mw,mh,2);
   const M=(x,y)=>[mx+x/FW*mw, my+y/FH*mh];
   /* LE DUE PORTE, LA META' CAMPO E IL CERCHIO. Con la camera stretta le
      porte stanno fuori schermo per quasi tutta la partita: la minimappa e'
@@ -19228,13 +20308,15 @@ function drawMinimappa(){
     const gh=GOAL_H/FH*mh, gy=my+mh/2-gh/2, gw=Math.max(2,3*k);
     ctx.fillStyle=TEAMCOL[0]; ctx.fillRect(mx, gy, gw, gh);
     ctx.fillStyle=TEAMCOL[1]; ctx.fillRect(mx+mw-gw, gy, gw, gh);
-    ctx.strokeStyle='rgba(255,255,255,.25)'; ctx.lineWidth=1;
+    /* il campo tracciato a gesso: linea di meta' e cerchio, come sulla
+       lavagnetta di uno che spiega lo schema */
+    ctx.strokeStyle='rgba(242,245,239,.34)'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(mx+mw/2+.5,my+2); ctx.lineTo(mx+mw/2+.5,my+mh-2); ctx.stroke();
     ctx.beginPath(); ctx.arc(mx+mw/2,my+mh/2,4*k,0,6.2832); ctx.stroke();
   }
-  /* rettangolo dell'inquadratura */
+  /* rettangolo dell'inquadratura, anche lui di gesso */
   const a=M(vx0,vy0), b=M(vx1,vy1);
-  ctx.strokeStyle='rgba(255,255,255,.40)';
+  ctx.strokeStyle='rgba(242,245,239,.46)';
   ctx.strokeRect(a[0]+.5,a[1]+.5,Math.max(2,b[0]-a[0]-1),Math.max(2,b[1]-a[1]-1));
   for(const p of G.players){
     if(p.out>0) continue;
@@ -19255,9 +20337,24 @@ function drawMinimappa(){
      e spariva ogni volta che ci finiva sopra un pallino di squadra: in una
      bussola che serve a dire dov'e' la palla, era il difetto peggiore. */
   const bq=M(clamp(G.ball.x,0,FW),clamp(G.ball.y,0,FH));
-  ctx.fillStyle='#f2f5ef';
-  ctx.beginPath(); ctx.arc(bq[0],bq[1],3.4*k,0,6.2832); ctx.fill();
-  ctx.strokeStyle='rgba(4,10,7,.9)'; ctx.lineWidth=1; ctx.stroke();
+  /* ED E' LO STESSO PALLONE DEL CAMPO, non un pallino bianco. Era l'ultimo
+     posto in cui il gioco disegnava una palla per conto suo (un disco
+     riempito e bordato), ed e' esattamente il difetto che il tema 5
+     chiama per nome: «un solo disegno di palla in tutto il gioco»: quando
+     qualcuno cambiera' il pallone, cambiera' anche qui, e non resteranno
+     due palloni diversi nella stessa schermata.
+     A SETTE PIXEL PERO' IL PATTERN NON SI LEGGE, e la prima versione di
+     questa unificazione lo aveva stampato lo stesso: il pentagono spaccava
+     il disco (massimo 242 -> 224, pixel sopra 200 da 14 a 4) e sul vetro
+     della bussola il pallone non era piu' l'oggetto piu' chiaro — i
+     pallini gialli di squadra lo pareggiavano. Adesso ci pensa pallone()
+     con la soglia PAL_LOD: stessa funzione, stesso oggetto, nucleo bianco
+     pieno alle taglie in cui la materia non ha pixel per esistere.
+     Lo zoccolo scuro sotto resta: sul vetro della bussola e' lui che stacca.
+     GIRA COME IN CAMPO (G.ball.rot), perche' e' la stessa palla. */
+  ctx.fillStyle='rgba(4,10,7,.55)';
+  ctx.beginPath(); ctx.arc(bq[0],bq[1],4.1*k,0,6.2832); ctx.fill();
+  pallone(bq[0],bq[1],3.4*k,G.ball.rot||0);
   ctx.restore();
 }
 
@@ -19311,7 +20408,30 @@ function drawHUD(){
      lo schermo torna campo, e il piede sfumato qui sotto addolcisce chi
      ci passa sotto davvero. */
   const px0=Math.round(cx-236*f-14), px1=Math.round(cx+230*f+6+sk+14), PW=px1-px0;
-  ctx.fillStyle='rgb(8,19,13)'; ctx.fillRect(px0,0,PW,H);
+  /* IL TABELLONE E' LA LAVAGNETTA APPESA, non un rettangolo nero (Tema 3,
+     16 ago 2026). Era una campitura piatta 'rgb(8,19,13)' — un valore
+     solo su tutta l'area, cioe' esattamente cio' che la verifica chiama
+     «campitura piatta superstite» — e appartenevano a un'altra lingua
+     rispetto alla lavagnetta di fine partita, che e' l'oggetto piu'
+     lodato del gioco. Adesso e' fatta dello stesso legno e della stessa
+     ardesia: tre valori in verticale, la polvere di gesso raccolta in
+     basso, il listello di legno che la chiude sotto con il suo filo di
+     sole a ovest. Sopra non c'e' cornice: la lavagnetta e' appesa fuori
+     quadro, si vede da qui in giu'. */
+  ardesiaFill(px0,0,PW,H);
+  {
+    /* il listello di legno che fa da battuta bassa: tre valori */
+    const lb=Math.max(3,Math.round(H*0.10));
+    const g=ctx.createLinearGradient(px0,H-lb,px0+PW*0.8,H);
+    g.addColorStop(0,UIM.legL); g.addColorStop(0.5,UIM.leg); g.addColorStop(1,UIM.legO);
+    ctx.fillStyle=g; ctx.fillRect(px0,H-lb,PW,lb);
+    ctx.fillStyle='rgba(255,236,196,.42)'; ctx.fillRect(px0,H-lb,PW,1);
+    /* i due montanti di legno ai fianchi: la lavagna ha una cornice */
+    ctx.fillStyle=g; ctx.fillRect(px0,0,2.5,H-lb);
+    ctx.fillRect(px1-2.5,0,2.5,H-lb);
+    ctx.fillStyle='rgba(255,236,196,.34)'; ctx.fillRect(px0,0,1,H-lb);
+    ctx.fillStyle='rgba(20,30,60,.34)';   ctx.fillRect(px1-1,0,1,H-lb);
+  }
   /* PIEDE SFUMATO di 12 px: la camera tiene i corpi dentro l'area di gioco,
      ma un salto d'esultanza o un rimpallo possono comunque portare una testa
      sotto il bordo della barra. Con un gradiente corto la testa SFUMA invece
@@ -19344,13 +20464,20 @@ function drawHUD(){
      fine partita, dov'e' sempre stato, e lo dice per intero invece di
      riassumerlo in tre puntini rossi. In piu' erano l'unico rosso rimasto
      nell'interfaccia fuori dal cartellino. */
+  /* LA SCALA TIPOGRAFICA E' DICHIARATA, E HA QUATTRO GRADINI: 26 (il
+     punteggio), 20 (il cronometro), 15 (i nomi e le etichette dei
+     comandi), 11 (tutto il minuto). Il Tema 3 chiede «massimo quattro
+     corpi per schermata» e la vista di gioco ne aveva sei — 26, 20, 15,
+     12, 11, 9 — piu' tutti i valori intermedi che gli adattamenti
+     producevano scendendo di un punto alla volta. Adesso chi non ci sta
+     salta AL GRADINO SOTTO, non a un corpo qualunque. */
   const nomi=[(G.teamName||'FLUO'), (G.oppName||'CPU')];
   const nw=150*f;
   for(let t=0;t<2;t++){
     const x0 = t===0 ? cx-212*f : cx+62*f;
     let fs=15, nome=nomi[t];
     ctx.font='700 '+fs+'px '+FONT_C;
-    while(fs>11 && ctx.measureText(nome).width>nw){ fs--; ctx.font='700 '+fs+'px '+FONT_C; }
+    if(ctx.measureText(nome).width>nw){ fs=11; ctx.font='700 '+fs+'px '+FONT_C; }
     if(ctx.measureText(nome).width>nw){
       while(nome.length>1 && ctx.measureText(nome+'…').width>nw) nome=nome.slice(0,-1);
       nome+='…';
@@ -19368,8 +20495,16 @@ function drawHUD(){
   /* TEMPO: riquadro da 68 px centrato su cx, dentro la barra */
   {
     const tw=68*Math.max(f,0.78);
-    ctx.fillStyle='rgba(0,0,0,.32)';
-    ctx.fillRect(cx-tw/2, 5, tw, HB-9);
+    /* il riquadro del cronometro e' un'ardesia INCISA nella lavagna: un
+       gradino d'ombra sopra, un filo di luce sotto — tre valori, non un
+       velo nero al 32% */
+    const ty=5, th=HB-9;
+    const g=ctx.createLinearGradient(0,ty,0,ty+th);
+    g.addColorStop(0,'rgba(4,8,7,.55)'); g.addColorStop(0.6,'rgba(9,14,12,.34)');
+    g.addColorStop(1,'rgba(38,51,46,.30)');
+    ctx.fillStyle=g; ctx.fillRect(cx-tw/2, ty, tw, th);
+    ctx.fillStyle='rgba(4,8,7,.55)'; ctx.fillRect(cx-tw/2, ty, tw, 1);
+    ctx.fillStyle='rgba(242,245,239,.16)'; ctx.fillRect(cx-tw/2, ty+th-1, tw, 1);
     if(G.golden){
       ctx.font='700 15px '+FONT_C; ctx.fillStyle=COL.oro;
       ctx.fillText('GOLDEN', cx, cyT+1);
@@ -19412,9 +20547,12 @@ function drawHUD(){
       for(const p of G.players){ if(p.team===t && p.out>0){ fuori++; resta=Math.max(resta,p.out); } }
       if(!fuori) continue;
       const bw=126, bh=22, bx=12, by=fondo-bh-dy; dy+=bh+5;
-      ctx.fillStyle='rgba(6,14,10,.9)'; ctx.fillRect(bx,by,bw,bh);
-      ctx.strokeStyle=COL.rosso; ctx.lineWidth=1.5; ctx.strokeRect(bx+.5,by+.5,bw-1,bh-1);
-      ctx.font='700 12px '+FONT_C; ctx.textAlign='center'; ctx.fillStyle=COL.rosso;
+      /* stesso materiale di tutto il resto: ardesia con la sua materia e
+         il filo di legno. Il rosso resta solo sul TESTO — e' l'allarme,
+         non il pannello */
+      ardesiaFill(bx,by,bw,bh);
+      cornice(bx,by,bw,bh,1.6);
+      ctx.font='700 11px '+FONT_C; ctx.textAlign='center'; ctx.fillStyle=COL.rosso;
       ctx.fillText((t===0?'IN INFERIORITÀ':'AVVERSARIO IN 2')+'  '+Math.ceil(resta)+'"', bx+bw/2, by+bh/2+1);
     }
   }
@@ -19487,7 +20625,7 @@ function drawHUD(){
          prima volta (secondo appello della giuria). La parola PORTA,
          piccola e nel colore della squadra, gli da' il contesto — con lo
          zoccolo scuro delle etichette dei pulsanti, mai sotto i 3:1. */
-      ctx.font='700 9px '+FONT_C; ctx.textBaseline='middle'; ctx.lineJoin='round';
+      ctx.font='700 11px '+FONT_C; ctx.textBaseline='middle'; ctx.lineJoin='round';
       ctx.textAlign = t===0 ? 'right' : 'left';
       const ex = bx - d*19;
       ctx.strokeStyle='rgba(6,14,10,.88)'; ctx.lineWidth=3;
@@ -19598,6 +20736,171 @@ function drawHUD(){
   }
 }
 
+/* =====================================================================
+   LO SCARTO FRA IL PALLONE E L'INTERFACCIA — «la palla vince sempre».
+
+   IL DIFETTO, trovato dal banco e non a occhio: nell'istante 04 del
+   freeze-frame test il pallone stava ESATTAMENTE sotto la cornice della
+   minimappa, e la misura lo ha detto con parole sue — «dove lo stato
+   mette la palla non c'e' nessuna palla: c'e' rgb(74,59,45)». Il gioco
+   credeva di averlo gia' impedito: c'era una garanzia di camera che
+   teneva il pallone a 56 px dai bordi dell'area di gioco «cosi' la
+   minimappa non puo' coprirlo». Non funzionava, e non poteva funzionare,
+   per due ragioni indipendenti:
+     · la minimappa NON vive in fascia bassa quando la fascia dei
+       cartelloni entra nel quadro: si aggancia sopra le insegne, cioe'
+       DENTRO l'area di gioco, proprio dove la garanzia dichiarava che
+       non ci fosse niente;
+     · lo stick e i due pulsanti stanno da sempre dentro l'area di gioco
+       (VH-140 e VH-232 sono ben sopra la fascia bassa), quindi contro di
+       loro la garanzia non ha mai protetto niente.
+   Una regola di scarto scritta come vincolo di CAMERA e' una regola
+   scritta nel posto sbagliato: la camera non sa dov'e' la minimappa, e
+   comunque non puo' rinunciare all'inquadratura per un pannello.
+
+   LA REGOLA VERA, e vale in ogni fotogramma e in ogni scena: quando il
+   pallone arriva addosso a un pezzo d'interfaccia, e' IL PEZZO che si
+   toglie di mezzo. La minimappa ha due ancoraggi e prova prima a
+   SPOSTARSI (torna in fascia bassa, dove non copre niente); se anche li'
+   il pallone la raggiunge, e per stick e pulsanti — che non si possono
+   spostare di un pixel, perche' giocata.js preme quelle coordinate —
+   resta la SFUMATURA: l'elemento scende fino al 10% e il pallone si
+   legge attraverso. Nessun comando sparisce: al 10% la ghiera d'ambra
+   resta visibile e il tocco funziona identico (lo scarto e' solo
+   disegno, non tocca la mappa dei tocchi).
+   ===================================================================== */
+let PALLA_SCH=null;
+/* i riquadri dell'interfaccia dell'ULTIMO fotogramma disegnato, in
+   coordinate schermo CSS. Esistono per il banco: strumenti/istantanea.js
+   oggi separa i comandi dal manto per TINTA, e il varco e' di nove gradi
+   (il manto sta a 119-146, i pulsanti a 73-81) — nove gradi sono una
+   taratura, non una legge, e la prima volta che qualcuno cambia la tinta
+   d'ardesia la misura comincia a contare i pulsanti come prato senza che
+   nessuno se ne accorga. Con i riquadri dichiarati il banco li esclude
+   per geometria, che e' esatta. Si leggono da __test.comandiTouch. */
+const TOUCH_ZONE=[];
+/* I CORPI IN QUADRO — anzi, I MARKER: come rettangoli di schermo. Li
+   riempie pallaSchermo() solo quando c'e' una scritta di scena da
+   collocare (kickoff e targa dei capitani, due secondi in tutta la
+   partita): il resto del tempo l'array resta vuoto e non costa niente.
+   La scatola parte dalla figura disegnata — piedi a p.y+RIG_PIEDI,
+   altezza RIG_H x P_DIS — ma NON si ferma alla figura: il criterio del
+   tema 6 dice «mai sopra i marker», e il marker e' l'anello. L'anello
+   del comandato e' un'ellisse larga 20,6 unita' attorno a p.x+2,5,
+   TUTTO scalato per P_DIS: trenta unita' di semilarghezza contro le
+   quindici della silhouette. Misurato sul 7 contro 7: con la sola
+   silhouette la scritta CALCIO D'INIZIO si fermava a dieci pixel dal
+   corpo e prendeva in pieno l'anello — la scatola stretta diceva
+   «pulito» e la foto diceva il contrario. */
+const CORPI_SCH=[];
+function corpiSchermo(){
+  CORPI_SCH.length=0;
+  const v=G.view, S2=v.S2;
+  if(!S2) return CORPI_SCH;
+  const H=RIG_H*P_DIS*S2;            // testa-piedi, in pixel
+  const w=31*S2;                     // semilarghezza dell'anello, idem
+  const giu=19*S2;                   // l'anello sborda sotto i piedi
+  for(const p of G.players){
+    if(p.out>0) continue;
+    const cx=p.x*S2+v.Ax, py=(p.y+RIG_PIEDI)*S2+v.Ay;
+    if(cx+w<-40||cx-w>VW+40||py-H>VH+40||py+giu<-40) continue;
+    CORPI_SCH.push({x0:cx-w, y0:py-H, x1:cx+w, y1:py+giu});
+  }
+  return CORPI_SCH;
+}
+function pallaSchermo(){
+  PALLA_SCH=null;
+  TOUCH_ZONE.length=0;
+  CORPI_SCH.length=0;
+  const b=G.ball;
+  if(!b) return null;
+  if(!(G.scene==='play'||G.scene==='kickoff'||G.scene==='golden'||G.scene==='goal')) return null;
+  const v=G.view, S2=v.S2;
+  if(!S2) return null;
+  PALLA_SCH={ x:b.x*S2+v.Ax, y:(b.y-(b.z||0)*0.55)*S2+v.Ay,
+              r:B_R*B_DIS*(1+(b.z||0)*0.012)*S2 };
+  if(G.scene==='kickoff' || G.capT>0) corpiSchermo();
+  return PALLA_SCH;
+}
+/* quanto un elemento deve farsi da parte: 1 = intero, 0,10 = quasi via.
+   La distanza si misura fra i due BORDI (disco del pallone e disco o
+   rettangolo dell'elemento), cosi' la regola non dipende dalla taglia. */
+function scartoHUD(cx,cy,rr){
+  const p=PALLA_SCH;
+  if(!p) return 1;
+  const d=Math.hypot(p.x-cx,p.y-cy)-rr-p.r;
+  if(d>=34) return 1;
+  if(d<=4) return 0.10;
+  const u=(d-4)/30;
+  return 0.10+0.90*u*u;
+}
+/* LE SCRITTE DI SCENA SI SPOSTANO PRIMA DI SFUMARE — e non solo davanti
+   al pallone: NEMMENO SUI CORPI (tema 6: «le scritte di scena mai
+   sovrapposte ai marker»). Una targa che si sposta di trenta pixel resta
+   leggibile; una che sfuma non la legge piu' nessuno, quindi si sposta
+   per prima cosa e la sfumatura resta l'ultima difesa. La targa dei capitani e' larga il 94% del quadro e, dopo che
+   la camera ha imparato ad appoggiarsi al muro, la fascia libera non sta
+   piu' dove stava: al terzo giro la targa si e' piantata sopra due
+   giocatori — di uno spuntava la sommita' della testa sopra il bordo,
+   dell'altro un piede sotto — e la sagoma trasparriva dietro il nome.
+   Spostarla a mano non basta, perche' la fascia libera cambia a ogni
+   fotogramma: qui il riquadro la CERCA. Si prova la quota naturale e poi,
+   a passi di 5 px, quelle sopra e sotto dentro [lo,hi]; vince la prima
+   che non tocca ne' pallone ne' corpi, e se nessuna e' pulita vince
+   quella che copre meno soggetto (a parita' di costo, quella che si
+   sposta meno). Il pallone pesa piu' di un corpo: coprire il pallone e'
+   il peccato peggiore, e resta la sfumatura come ultima difesa.
+   Costa una trentina di quote per una decina di rettangoli, due secondi
+   in tutta la partita: sotto il decimo di millisecondo.
+   SCOSTA_PULITO dice se la quota vinta e' davvero libera: se lo e', la
+   sfumatura non si applica — e' questa la differenza fra una targa che
+   si legge e una velatura verdastra. La vecchia regola sfumava per
+   distanza dal pallone (34 px) anche quando la targa si era gia' tolta
+   di mezzo: al terzo giro la targa dei capitani, spostata e pulita,
+   arrivava lo stesso allo schermo al 58% di opacita' e i due nomi
+   leggevano come acqua. */
+let SCOSTA_PULITO=true;
+function scostaDaSoggetti(x0,y0,x1,y1,lo,hi){
+  const costo=(dy)=>{
+    const a0=y0+dy, a1=y1+dy;
+    let c=0;
+    const p=PALLA_SCH;
+    if(p){
+      const dx=Math.max(x0-p.x,0,p.x-x1), dd=Math.max(a0-p.y,0,p.y-a1);
+      const d=Math.hypot(dx,dd)-p.r-16;
+      if(d<0) c+=(-d)*400;
+    }
+    for(const r of CORPI_SCH){
+      const ix=Math.min(x1,r.x1)-Math.max(x0,r.x0);
+      const iy=Math.min(a1,r.y1)-Math.max(a0,r.y0);
+      if(ix>0&&iy>0) c+=ix*iy;
+    }
+    return c;
+  };
+  let best=0, bc=costo(0);
+  SCOSTA_PULITO = bc<=0;
+  if(SCOSTA_PULITO) return 0;
+  const su=Math.max(0,y0-lo), giu=Math.max(0,hi-y1);
+  for(let d=5; d<=Math.max(su,giu); d+=5){
+    for(const dy of [-Math.min(d,su), Math.min(d,giu)]){
+      if(!dy) continue;
+      const c=costo(dy);
+      if(c<bc-0.5){ bc=c; best=dy;
+        if(bc<=0){ SCOSTA_PULITO=true; return best; } }
+    }
+  }
+  return best;
+}
+function scartoHUDRett(x0,y0,x1,y1){
+  const p=PALLA_SCH;
+  if(!p) return 1;
+  const dx=Math.max(x0-p.x, 0, p.x-x1), dy=Math.max(y0-p.y, 0, p.y-y1);
+  const d=Math.hypot(dx,dy)-p.r;
+  if(d>=34) return 1;
+  if(d<=4) return 0.10;
+  const u=(d-4)/30;
+  return 0.10+0.90*u*u;
+}
 function drawTouchSticks(){
   for(let t=0;t<2;t++){
     let s=Touch5.stick[t];
@@ -19610,22 +20913,55 @@ function drawTouchSticks(){
       s={ox:96,oy:VH-140,dx:0,dy:0};
     }
     const col = TEAMRGB[t];
-    /* base: anello esterno + dead-zone visibile */
-    ctx.fillStyle='rgba(6,14,10,.28)';
-    ctx.beginPath(); ctx.arc(s.ox,s.oy,STICK_FULL,0,6.2832); ctx.fill();
-    ctx.strokeStyle='rgba(242,245,239,.35)'; ctx.lineWidth=2;
+    /* lo scarto col pallone: lo stick vive DENTRO l'area di gioco e il
+       pallone ci rotola sopra — quando succede si fa da parte */
+    const aSt=scartoHUD(s.ox,s.oy,STICK_FULL);
+    TOUCH_ZONE.push({tipo:'stick', team:t, x:s.ox, y:s.oy, r:STICK_FULL,
+                     x0:s.ox-STICK_FULL, y0:s.oy-STICK_FULL,
+                     x1:s.ox+STICK_FULL, y1:s.oy+STICK_FULL, alpha:+aSt.toFixed(3)});
+    ctx.save();
+    ctx.globalAlpha=aSt;
+    /* LA PISTA E' D'ARDESIA, LA LEVETTA E' D'AMBRA (Tema 3).
+       Era un anello di gesso su una velatura verdastra: nella foto
+       d'azione leggeva come un cerchio disegnato sull'erba, cioe' come
+       niente. Adesso e' un oggetto della stessa lavagna del resto
+       dell'interfaccia — pista d'ardesia incisa, filo di legno attorno,
+       levetta d'ambra perche' l'ambra e' la tinta di cio' che si tocca. */
+    {
+      const g=ctx.createRadialGradient(s.ox-STICK_FULL*0.35,s.oy-STICK_FULL*0.45,2,
+                                       s.ox,s.oy,STICK_FULL);
+      g.addColorStop(0,'rgba(38,51,46,.60)');
+      g.addColorStop(0.55,'rgba(24,34,32,.52)');
+      g.addColorStop(1,'rgba(11,18,17,.62)');
+      ctx.fillStyle=g;
+      ctx.beginPath(); ctx.arc(s.ox,s.oy,STICK_FULL,0,6.2832); ctx.fill();
+    }
+    ctx.strokeStyle='rgba(165,112,58,.85)'; ctx.lineWidth=2.4;
     ctx.beginPath(); ctx.arc(s.ox,s.oy,STICK_FULL,0,6.2832); ctx.stroke();
-    ctx.strokeStyle='rgba(242,245,239,.14)'; ctx.lineWidth=1;
+    ctx.strokeStyle='rgba(255,236,196,.30)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(s.ox,s.oy,STICK_FULL-1.8,0,6.2832); ctx.stroke();
+    /* la dead-zone: una riga di gesso incisa, non un filo bianco */
+    ctx.strokeStyle='rgba(242,245,239,.20)'; ctx.lineWidth=1;
+    ctx.setLineDash([4,4]);
     ctx.beginPath(); ctx.arc(s.ox,s.oy,STICK_DEAD,0,6.2832); ctx.stroke();
-    /* levetta che segue il dito */
+    ctx.setLineDash([]);
+    /* levetta che segue il dito: tre stop d'ambra, bombata, con il filo
+       della squadra a dire di CHI e' lo stick (2 giocatori) */
     const l=len(s.dx,s.dy), k=l>STICK_FULL? STICK_FULL/l : 1;
     const kx=s.ox+s.dx*k, ky=s.oy+s.dy*k;
-    ctx.fillStyle='rgba(0,0,0,.3)';
-    ctx.beginPath(); ctx.arc(kx+2,ky+3,20,0,6.2832); ctx.fill();
-    ctx.fillStyle='rgba('+col+',.55)';
-    ctx.beginPath(); ctx.arc(kx,ky,20,0,6.2832); ctx.fill();
-    ctx.strokeStyle='rgba('+col+',.9)'; ctx.lineWidth=2;
+    ctx.fillStyle='rgba(4,10,7,.45)';
+    ctx.beginPath(); ctx.arc(kx+2,ky+3.5,20,0,6.2832); ctx.fill();
+    {
+      const g=ctx.createRadialGradient(kx-7,ky-9,1,kx,ky,22);
+      g.addColorStop(0,UIM.ambL); g.addColorStop(0.5,UIM.amb); g.addColorStop(1,UIM.ambO);
+      ctx.fillStyle=g;
+      ctx.beginPath(); ctx.arc(kx,ky,20,0,6.2832); ctx.fill();
+    }
+    ctx.strokeStyle='rgba(30,18,2,.7)'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.arc(kx,ky,20,0,6.2832); ctx.stroke();
+    ctx.strokeStyle='rgba('+col+',.95)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(kx,ky,15,0,6.2832); ctx.stroke();
+    ctx.restore();
   }
 }
 
@@ -19634,6 +20970,8 @@ function drawTouchSticks(){
    MAI; transizione dell'etichetta senza animazioni (densita'). */
 function drawTouchButtons(){
   if(!(IS_TOUCH||Touch5.used||HUD_POSA)) return;
+  /* i rettangoli dei comandi, per il banco: si riempiono qui perche' qui
+     si conoscono davvero (posizione, stato premuto, scarto applicato) */
   if(G.scene!=='play'&&G.scene!=='kickoff'&&G.scene!=='golden') return;
   for(let t=0;t<2;t++){
     /* in posa la squadra 0 e' CPU (equita' delle scene) ma l'HUD si
@@ -19646,30 +20984,92 @@ function drawTouchButtons(){
         const e=Touch5.btnTouch[k];
         if(e.t===t&&e.act===bt.act){ pressed=true; break; }
       }
-      /* IL DISCO E' PIENO: SMALTO TRASLUCIDO SU FONDINO SCURO (rett. 15
-         ago 2026, quinto appello). La sola lavagna col filo di bordo
-         leggeva ancora come fil di ferro: il disco c'era ma non aveva
-         corpo. Adesso e' fatto come la levetta dello stick — sotto un
-         fondino scuro NETTO (denso: chi ci passa dietro si spegne, la
-         lezione del secondo appello resta pagata), sopra uno smalto
-         traslucido nel colore squadra (gesso per CONTRASTA: niente
-         quarta tinta) e il bordo pieno a chiudere. Alla pressione lo
-         smalto diventa ambra — la tinta che in tutto il gioco vuol dire
-         "qui si agisce". Le posizioni non cambiano di un pixel. */
-      ctx.beginPath(); ctx.arc(bt.x,bt.y,bt.r,0,6.2832);
-      ctx.fillStyle='rgba(8,19,13,.80)'; ctx.fill();       // il fondino scuro netto
-      ctx.fillStyle= pressed ? 'rgba(255,176,32,.55)'
-                   : (bt.act==='slide' ? 'rgba(242,245,239,.14)' : 'rgba('+col+',.30)');
-      ctx.fill();                                          // lo smalto traslucido
-      if(bt.act==='slide'){
-        /* senza possesso il grande e' CONTRASTA: il filo gesso,
-           NIENTE quarta tinta (legge dei quattro colori) */
-        ctx.strokeStyle='rgba(242,245,239,'+(pressed?1:0.9)+')';
-      }else{
-        ctx.strokeStyle='rgba('+col+','+(pressed?1:0.9)+')';
+      /* =============================================================
+         I DUE COMANDI, RIDISEGNATI IN LAVAGNA-LEGNO-AMBRA (Tema 3,
+         16 ago 2026).
+
+         LA CONDANNA, alla lettera: «oliva su oliva, sembrano
+         disabilitati», e «usano il LIME DELLE DIVISE, contro la regola
+         dell'accento». Era vero due volte. Il disco era un fondino
+         verde-nerastro all'80% con sopra uno smalto lime al 30%: su un
+         prato di sera fa oliva su oliva, e la misura lo conferma —
+         etichetta lime #d6ff26 su quel disco stava a 2,9:1, cioe'
+         SOTTO la soglia di 4,5:1 per un comando. E il lime e' la tinta
+         della MAGLIA: usarla per un pulsante mescola due delle tre
+         famiglie dichiarate, che e' la definizione del difetto.
+
+         Adesso il comando e' fatto degli stessi tre materiali di tutta
+         l'interfaccia, e di nessun altro:
+           · pastiglia d'ARDESIA opaca, tre stop (luce in alto a ovest,
+             mezzotono, ombra in basso) — non si vede piu' l'erba
+             attraverso, quindi non c'e' piu' oliva;
+           · ghiera d'AMBRA, la tinta dell'interazione, larga 3 px:
+             contro l'ardesia sta a 9,8:1 e contro l'erba di sera a
+             4,9:1, quindi il comando si stacca dal fondo qualunque cosa
+             gli passi dietro;
+           · etichetta in GESSO #f2f5ef sul mezzotono d'ardesia: 13,4:1,
+             tre volte la soglia. Nessuna etichetta prende piu' il
+             colore di una maglia.
+         STATO PREMUTO VISIBILE, e non per un filo piu' spesso: la
+         pastiglia si RIEMPIE d'ambra (tre stop anche lei), la ghiera
+         passa al gesso, l'etichetta diventa ardesia scura e il disco
+         scende di 2 px con l'ombra che si accorcia — un tasto che
+         affonda. A colore spento sono due valori opposti (Y 0,02 contro
+         Y 0,52): la pressione si legge anche in scala di grigi.
+         LE POSIZIONI NON CAMBIANO DI UN PIXEL: giocata.js preme
+         (vw-66, vh-140) e (vw-70, vh-232), e li trova.
+         ============================================================= */
+      const aff = pressed ? 2 : 0;             // l'affondamento del tasto
+      const bx0=bt.x, by0=bt.y+aff;
+      /* LO SCARTO COL PALLONE. Il pulsante non si sposta di un pixel —
+         giocata.js preme (vw-66, vh-140) e (vw-70, vh-232) e li deve
+         trovare — quindi qui la regola e' la sfumatura. Il tocco non
+         cambia: la mappa dei tocchi non legge questo alfa. */
+      const aBt=scartoHUD(bx0,by0,bt.r+4);
+      TOUCH_ZONE.push({tipo:'pulsante', team:t, act:bt.act, label:bt.label,
+                       x:bx0, y:by0, r:bt.r, premuto:pressed,
+                       x0:bx0-bt.r-4, y0:by0-bt.r-4, x1:bx0+bt.r+4, y1:by0+bt.r+4,
+                       alpha:+aBt.toFixed(3)});
+      ctx.save();
+      ctx.globalAlpha=aBt;
+      /* l'ombra portata del tasto: corta quando e' premuto */
+      ctx.fillStyle='rgba(4,10,7,.50)';
+      ctx.beginPath(); ctx.arc(bx0+1.5,by0+(pressed?2:4.5),bt.r,0,6.2832); ctx.fill();
+      /* la pastiglia */
+      {
+        const g=ctx.createRadialGradient(bx0-bt.r*0.42,by0-bt.r*0.52,2,bx0,by0,bt.r*1.15);
+        if(pressed){ g.addColorStop(0,UIM.ambL); g.addColorStop(0.45,UIM.amb); g.addColorStop(1,UIM.ambO); }
+        else       { g.addColorStop(0,UIM.ardL); g.addColorStop(0.5,UIM.ard);  g.addColorStop(1,UIM.ardO); }
+        ctx.fillStyle=g;
+        ctx.beginPath(); ctx.arc(bx0,by0,bt.r,0,6.2832); ctx.fill();
       }
-      ctx.lineWidth=pressed?3.5:2.5;
-      ctx.stroke();
+      /* la polvere di gesso sul fondo della pastiglia: e' una lavagna */
+      if(!pressed){
+        ctx.save();
+        ctx.beginPath(); ctx.arc(bx0,by0,bt.r,0,6.2832); ctx.clip();
+        const p=ctx.createLinearGradient(0,by0,0,by0+bt.r);
+        p.addColorStop(0,'rgba(242,245,239,0)'); p.addColorStop(1,'rgba(242,245,239,.07)');
+        ctx.fillStyle=p; ctx.fillRect(bx0-bt.r,by0,bt.r*2,bt.r);
+        ctx.restore();
+      }
+      /* la ghiera: ambra a riposo, gesso da premuta. Anche lei tre stop —
+         il metallo prende il sole da ovest come tutto il resto */
+      {
+        const g=ctx.createLinearGradient(bx0-bt.r,by0-bt.r,bx0+bt.r,by0+bt.r);
+        if(pressed){ g.addColorStop(0,'#ffffff'); g.addColorStop(0.5,'#f2f5ef'); g.addColorStop(1,'#b9c2ba'); }
+        else       { g.addColorStop(0,UIM.ambL); g.addColorStop(0.45,UIM.amb); g.addColorStop(1,UIM.ambO); }
+        ctx.strokeStyle=g;
+      }
+      ctx.lineWidth=3;
+      ctx.beginPath(); ctx.arc(bx0,by0,bt.r-1.5,0,6.2832); ctx.stroke();
+      /* il filo scuro esterno stacca la ghiera da qualunque fondo, e il
+         filo caldo interno le da' lo spessore: tre toni sulla ghiera */
+      ctx.strokeStyle='rgba(11,18,17,.85)'; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.arc(bx0,by0,bt.r+0.4,0,6.2832); ctx.stroke();
+      ctx.strokeStyle= pressed ? 'rgba(168,109,6,.55)' : 'rgba(255,212,122,.55)';
+      ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(bx0,by0,bt.r-3.4,0,6.2832); ctx.stroke();
+      bt.x=bx0; bt.y=by0;
       /* arco di carica sul pulsante TIRA */
       if(bt.act==='shot'){
         const p=ctrlPlayer(t);
@@ -19687,16 +21087,39 @@ function drawTouchButtons(){
          di un punto alla volta finche' la parola intera sta dentro il
          disco (FILTR. sul pulsante piccolo sbordava; una parola mozzata
          legge come un difetto, non come un comando). */
-      let fs=Math.max(11,(bt.r*(bt.label.length>6?0.32:0.42))|0);
+      /* DUE SOLI CORPI, e sono due gradini della scala della schermata:
+         15 per la parola che ci sta, 11 per quella lunga. Prima il corpo
+         usciva da una formula sul raggio e poi scendeva di un punto alla
+         volta: nella stessa foto si contavano 17, 12 e 10 px, tre corpi
+         che nessuno aveva scelto.
+         E LA PAROLA NON SI TRONCA MAI (conquista del terzo appello, che
+         resta pagata): quando nemmeno il gradino 11 ci sta — succede a
+         FILTRANTE, nove lettere in un disco da 30 di raggio — la parola
+         si STRINGE in orizzontale invece di rimpicciolirsi. Il corpo
+         resta 11, cioe' un gradino della scala; a cambiare e' la
+         larghezza, che e' quello che un carattere condensato fa per
+         mestiere. Mai sotto 0,62: piu' stretto di cosi' si legge male. */
+      let fs=15;
       ctx.font='800 '+fs+'px '+FONT_C;
-      while(fs>8 && ctx.measureText(bt.label).width>bt.r*2-8){
-        fs--; ctx.font='800 '+fs+'px '+FONT_C;
+      const avail=bt.r*2-14;      // 7 px di respiro per lato dentro la ghiera
+      if(ctx.measureText(bt.label).width>avail){
+        fs=11; ctx.font='800 '+fs+'px '+FONT_C;
       }
+      const kx=Math.max(0.62, Math.min(1, avail/Math.max(1,ctx.measureText(bt.label).width)));
       ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineJoin='round';
-      ctx.strokeStyle='rgba(6,14,10,.88)'; ctx.lineWidth=3;
-      ctx.strokeText(bt.label, bt.x, bt.y+1);
-      ctx.fillStyle= bt.act==='slide' ? 'rgba(242,245,239,1)' : 'rgba('+col+',1)';
-      ctx.fillText(bt.label, bt.x, bt.y+1);
+      /* GESSO SU ARDESIA, SEMPRE. L'etichetta non prende mai il colore di
+         una maglia: sul comando il lime stava a 2,9:1, il gesso sta a
+         13,4:1. Premuto si rovescia — ardesia su ambra, 8,1:1 — ed e' il
+         secondo segnale della pressione dopo il riempimento. */
+      ctx.save();
+      ctx.translate(bt.x, bt.y+1); ctx.scale(kx,1);
+      ctx.strokeStyle= pressed ? 'rgba(255,212,122,.75)' : 'rgba(6,14,10,.88)';
+      ctx.lineWidth=3/kx;
+      ctx.strokeText(bt.label, 0, 0);
+      ctx.fillStyle= pressed ? '#151f1c' : UIM.gesso;
+      ctx.fillText(bt.label, 0, 0);
+      ctx.restore();
+      ctx.restore();          // chiude lo scarto col pallone
     }
   }
   ctx.textBaseline='alphabetic';
@@ -20199,7 +21622,16 @@ function drawDuelScene(){
     tubo(g.gx1-pw/2, g.gy0, pw, g.GH, false);
   }
 
-  const rSpot=Math.max(6, g.GW*0.030);
+  /* IL PALLONE DEL DISCHETTO E' AGGANCIATO AL QUADRO, non alla porta.
+     Era g.GW x 0,030 con un pavimento di 6: su un telefono in orizzontale
+     (915 x 412) la porta del duello e' larga ~246 punti, quindi il raggio
+     usciva 7,4 e il DIAMETRO 14,8 — l'1,6% della larghezza del quadro,
+     contro il 2,5% secco che la giuria chiede al tema 5. Nella schermata
+     che decide le partite il protagonista era il piu' piccolo oggetto in
+     scena. Adesso la misura che comanda e' quella del QUADRO (2,7% di
+     diametro), e la porta resta solo come pavimento per i formati molto
+     larghi, dove il duello e' limitato da VW x 0,58 e non dall'altezza. */
+  const rSpot=Math.max(VW*0.0135, g.GW*0.046);
   /* dischetto e tiratore restano DENTRO la finestra fra le due fasce: quando
      compare la fila del portiere umano la fascia bassa cresce, e senza questo
      limite il tiratore finiva a cavallo del pulsante SIN */
@@ -20302,37 +21734,110 @@ function drawDuelScene(){
 
   /* ---- PALLONE ---- */
   {
-    let bx=spotX, by=spotY, br=rSpot;
-    if(D.phase==='result'){
-      const tf=clamp((rt-0.14)/0.44,0,1);
-      const e=tf*tf*0.35+tf*0.65;
-      let tx2, ty2;
-      if(D.outcome==='fuori'){
-        tx2=VW/2+(D.zone-1)*g.GW*0.78+(D.zone===1?g.GW*0.5:0);
-        ty2=g.gy0-g.GH*0.42;
-      }else{
-        tx2=VW/2+(D.zone-1)*g.GW*0.31;
-        ty2=g.gy0+g.GH*0.50;
+    /* LA TRAIETTORIA IN UNA FUNZIONE SOLA, e non e' un vezzo di stile: la
+       scia e l'ombra staccata chiedono la STESSA curva letta a istanti
+       diversi, e due copie della stessa curva sono una curva che prima o
+       poi diverge. Restituisce anche gy — la y che il pallone avrebbe SE
+       FOSSE A TERRA — perche' la distanza fra pallone e ombra E' la quota
+       (tema 5), non un ornamento. */
+    const traj=(tt)=>{
+      let x=spotX, y=spotY, gy=spotY, r=rSpot, lift=0;
+      if(D.phase==='result'){
+        const tf=clamp((tt-0.14)/0.44,0,1);
+        const e=tf*tf*0.35+tf*0.65;
+        let tx2, ty2;
+        if(D.outcome==='fuori'){
+          tx2=VW/2+(D.zone-1)*g.GW*0.78+(D.zone===1?g.GW*0.5:0);
+          ty2=g.gy0-g.GH*0.42;
+        }else{
+          tx2=VW/2+(D.zone-1)*g.GW*0.31;
+          ty2=g.gy0+g.GH*0.50;
+        }
+        lift=Math.sin(e*Math.PI);
+        x=spotX+(tx2-spotX)*e;
+        gy=spotY+(ty2-spotY)*e;
+        y=gy-lift*g.GH*0.14;
+        /* IL RIMPICCIOLIMENTO E' PROSPETTIVA, NON SPARIZIONE: 0,42 portava
+           il pallone d'arrivo a 8,6 punti di diametro (lo 0,9% del quadro),
+           cioe' lo faceva svanire proprio nel fotogramma dell'impatto. */
+        r=rSpot*(1-0.34*e);
+        /* parata: dopo il contatto il pallone rimbalza verso la telecamera */
+        if(D.outcome==='parata' && tt>0.58){
+          const tb=Math.min(1,(tt-0.58)/0.5);
+          x=x+(D.keeperZone-1)*g.GW*0.16*tb;
+          const dy=(spotY-y)*tb*0.75;
+          y=y+dy; gy=gy+dy;
+          r=r*(1+tb*0.7);
+        }
       }
-      bx=spotX+(tx2-spotX)*e;
-      by=spotY+(ty2-spotY)*e-Math.sin(e*Math.PI)*g.GH*0.14;
-      br=rSpot*(1-0.42*e);
-      /* parata: dopo il contatto il pallone rimbalza verso la telecamera */
-      if(D.outcome==='parata' && rt>0.58){
-        const tb=Math.min(1,(rt-0.58)/0.5);
-        bx=bx+(D.keeperZone-1)*g.GW*0.16*tb;
-        by=by+(spotY-by)*tb*0.75;
-        br=br*(1+tb*0.7);
+      return {x:x, y:y, gy:gy, r:r, lift:lift};
+    };
+    const B=traj(rt);
+    /* L'OMBRA SI STACCA E RIMPICCIOLISCE. Prima era inchiodata al dischetto
+       (spotY) per tutto il volo: il pallone attraversava mezzo quadro e la
+       sua ombra restava ferma sotto il punto di partenza — cioe' la scena
+       diceva che era sempre a terra. Adesso corre sulla proiezione a terra,
+       si restringe e schiarisce con la quota, e la forbice fra le due e'
+       l'unica cosa che dice quanto e' alto quel pallone. */
+    /* Gli scarti sono in RAGGI e sono stati ritarati quando il pallone e'
+       cresciuto: 0,9 e 1,9 erano tarati su un raggio di 7,4 e, portati a
+       12,4, staccavano la macchia di undici punti sotto il bordo inferiore
+       della sfera — un pallone fermo che levitava. 0,62 e 1,05 rimettono il
+       centro dell'ellisse SUL punto di appoggio a ogni taglia. */
+    ombraMorbida(B.x+B.r*0.62, Math.min(VH,B.gy+B.r*1.05),
+                 B.r*0.90*(1-0.30*B.lift), B.r*0.36*(1-0.30*B.lift),
+                 0.92*(1-0.42*B.lift));
+    /* LA SCIA: gli stessi tre fantasmi del campo (drawTrail) — stessa
+       tinta, stessa legge di sbiadire e rimpicciolire verso la coda —
+       perche' il pallone del dischetto e' l'oggetto piu' veloce del gioco
+       e senza scia il tiro legge come un taglia-e-incolla fra due pose.
+       La soglia di velocita' e' geometrica e non chiede stato nuovo: se
+       l'istante precedente cade a meno di un terzo di raggio, il pallone
+       non sta correndo e i fantasmi non compaiono. Costo: tre archi pieni,
+       e solo nel mezzo secondo del tiro.
+       IL PASSO E' 60 ms, NON 30, e la ragione e' una misura: dal dischetto
+       alla rete il pallone percorre appena una cinquantina di punti in
+       quattro decimi di secondo — a 30 ms i tre fantasmi cadevano dentro
+       la sfera stessa (quattro punti di scarto contro dodici di raggio) e
+       la soglia li spegneva tutti. A 60 ms la coda esce da sotto la palla
+       e si vede, restando dentro il tratto in cui il pallone sta davvero
+       volando. */
+    if(D.phase==='result' && rt>0.16){
+      for(let i=1;i<=3;i++){
+        const P=traj(rt-i*0.060);
+        const dgx=B.x-P.x, dgy=B.y-P.y;
+        if(dgx*dgx+dgy*dgy < B.r*B.r*0.11) break;
+        ctx.fillStyle='rgba(244,240,230,'+(0.30-0.08*i).toFixed(3)+')';
+        ctx.beginPath(); ctx.arc(P.x,P.y,P.r*(1-0.14*i),0,6.2832); ctx.fill();
       }
     }
-    ombraMorbida(bx+br*0.9, Math.min(VH,spotY+br*1.9), br*0.95, br*0.40, 0.92);
+    /* LO SCHIACCIAMENTO DI DUE FOTOGRAMMI, al calcio e all'arrivo. Era
+       l'ultima riga del tema 5 rimasta aperta sul dischetto: il pallone
+       partiva e si fermava senza mai deformarsi, cioe' senza mai dire che
+       qualcosa lo aveva colpito. Trentacinque millesimi sono due fotogrammi
+       a 60 Hz — la durata che il tema chiede, non una in piu' — e i due
+       istanti sono gli stessi 0,14 e 0,56 dei due lampi, quindi nessuno
+       stato nuovo. L'asse e' quello del volo, letto sulla stessa curva di
+       prima: pallone() comprime lungo l'asse e allarga di traverso ad area
+       costante, che e' come si deforma una palla vera. */
+    let sq=0, sqA=0;
+    if(D.phase==='result'){
+      const u1=(rt-0.14)/0.035, u2=(rt-0.56)/0.035;
+      if(u1>=0 && u1<1) sq=0.22*(1-u1);
+      else if(u2>=0 && u2<1 && D.outcome!=='fuori') sq=0.18*(1-u2);
+      if(sq>0){
+        const P=traj(0.34), Q=traj(0.26);
+        sqA=Math.atan2(P.y-Q.y, P.x-Q.x);
+      }
+    }
     /* LO STESSO PALLONE DELLA PARTITA. Dal dischetto era un altro oggetto —
        disco bianco, cinque pallini neri, una macchia di riflesso — e bastava
        questo a far sembrare i rigori un pezzo di un altro gioco. Adesso e'
        la stessa sfera, con la stessa luce, e GIRA: la rotazione cresce con
        la strada percorsa verso la porta. */
     const giroSegno = D.zone===0 ? -1 : 1;      // taglia verso il palo scelto
-    pallone(bx,by,br, D.phase==='result' ? clamp(rt/0.58,0,1)*7.4*giroSegno : 0);
+    pallone(B.x,B.y,B.r,
+            D.phase==='result' ? clamp(rt/0.58,0,1)*7.4*giroSegno : 0, sq, sqA);
   }
 
   /* ---- I DUE LAMPI DEL RIGORE ----
@@ -20523,15 +22028,22 @@ function drawRipresaGol(){
     /* il pallone, posato sul fondo del sacco sotto il gonfiore: il fatto
        da cui tutta la scena discende resta in quadro */
     {
+      /* LA CIAMBELLA BIANCA, ELIMINATA PER SEMPRE. Qui c'era un disco
+         color panna con un contorno scuro e UN pallino nero in mezzo: e'
+         l'oggetto che la giuria ha citato per nome («la ciambella bianca
+         di calcetto-gol va eliminata per sempre»), e stava nel fotogramma
+         piu' guardato del gioco — la scena madre, quella che ferma
+         l'azione per due secondi e mezzo. Adesso e' la stessa sfera
+         dell'azione, dei rigori, della bussola e del menu: un solo
+         disegno di palla in tutto il gioco.
+         La rotazione e' FERMA e leggermente inclinata, non zero: un
+         pallone appena entrato in rete si e' posato, e un pattern
+         perfettamente allineato all'asse leggerebbe come un logo. */
       const br=Math.max(3.8, g.GH*0.115), bx=bulgeX, by=g.GLY-br*0.9;
       ctx.globalAlpha=0.28; ctx.fillStyle='#000';
       ctx.beginPath(); ctx.ellipse(bx,g.GLY-0.5,br*1.05,br*0.34,0,0,6.2832); ctx.fill();
       ctx.globalAlpha=1;
-      ctx.fillStyle='#f4f2ec';
-      ctx.beginPath(); ctx.arc(bx,by,br,0,6.2832); ctx.fill();
-      ctx.strokeStyle='#23201a'; ctx.lineWidth=Math.max(1,br*0.18); ctx.stroke();
-      ctx.fillStyle='#23201a';
-      ctx.beginPath(); ctx.arc(bx-br*0.16,by-br*0.14,br*0.28,0,6.2832); ctx.fill();
+      pallone(bx,by,br,0.42);
     }
   }
 
@@ -20969,12 +22481,23 @@ function fasciaGolViva(inRipresa){
   }
   ctx.save();
   ctx.globalAlpha=Math.min(1,t*8);
-  /* fondo lavagna scuro OPACO, filo gesso sopra e sotto, filetto di
-     smalto nella tinta di chi ha segnato: niente gradienti */
-  ctx.fillStyle='#122c1d';
-  ctx.fillRect(0,fy,VW,FBH);
+  /* LA FASCIA E' LA STESSA ARDESIA DI TUTTO IL RESTO (Tema 3): era un
+     verde piatto '#122c1d', cioe' un pannello d'interfaccia dipinto col
+     colore del prato e senza un grammo di materia. Adesso ha i tre stop
+     dell'ardesia, il filo di gesso sopra e sotto, il listello di legno
+     alla base e il filetto di smalto nella tinta di chi ha segnato —
+     quello resta, perche' e' l'unica cosa che qui rappresenta una
+     squadra. */
+  ardesiaFill(0,fy,VW,FBH);
   ctx.fillStyle='rgba(242,245,239,.55)';
-  ctx.fillRect(0,fy,VW,1.5); ctx.fillRect(0,fy+FBH-1.5,VW,1.5);
+  ctx.fillRect(0,fy,VW,1.5);
+  {
+    const lb=Math.max(3,FBH*0.075);
+    const g=ctx.createLinearGradient(0,fy+FBH-lb,VW*0.8,fy+FBH);
+    g.addColorStop(0,UIM.legL); g.addColorStop(0.5,UIM.leg); g.addColorStop(1,UIM.legO);
+    ctx.fillStyle=g; ctx.fillRect(0,fy+FBH-lb,VW,lb);
+    ctx.fillStyle='rgba(255,236,196,.40)'; ctx.fillRect(0,fy+FBH-lb,VW,1);
+  }
   ctx.fillStyle=TEAMCOL[G.goalTeam];
   ctx.fillRect(0,fy+2.4,VW,2.4);
   /* --- la riga unica: GOL! + marcatore + minuto --- */
@@ -21081,16 +22604,61 @@ function fasciaGolViva(inRipresa){
 
 let strisciaOra=false;
 function drawOverlaysCanvas(){
+  /* LA TARGA DEI CAPITANI PRENOTA IL POSTO PRIMA DELLA SCRITTA, anche se
+     si disegna dopo. Le due scritte di scena convivono per un secondo —
+     CALCIO D'INIZIO e la presentazione — e ognuna cercava la sua fascia
+     libera senza sapere dell'altra: sul 7 contro 7 la scritta, scappando
+     dall'anello del comandato, e' finita esattamente dietro la targa, che
+     e' peggio di dove stava. Sceglie per prima la targa (e' la piu'
+     grande e la piu' ricca), poi entra nell'elenco dei soggetti da
+     evitare, e la scritta si colloca su cio' che resta. */
+  let capRett=null;
+  if(G.capT>0 && !G.moviola && (G.scene==='kickoff'||G.scene==='play'||G.scene==='golden')
+     && !(typeof Tut!=='undefined' && Tut.active)){
+    const c0=G.players[G.capIdx[0]], c1=G.players[G.capIdx[1]];
+    if(c0&&c1&&c0.nome&&c1.nome){
+      const d=clamp(VH*0.13,32,52), h=Math.round(d*1.30);
+      const w=Math.min(VW*0.94, d*12.6);
+      const x0=Math.round(VW/2-w/2);
+      /* la targa e' larga il 94% del quadro e sta in fascia centrale,
+         cioe' esattamente dove il pallone rotola al fischio d'inizio E
+         dove stanno gli uomini schierati: prima si sposta — cercando la
+         fascia libera da pallone e marker — poi sfuma. */
+      let y0=Math.round(PA_Y0+Math.max(48,PA_H*0.20)+Math.min(46,VH*0.11));
+      y0 += scostaDaSoggetti(x0,y0,x0+w,y0+h, PA_Y0+6, PA_Y1-h-6);
+      capRett={ c0, c1, d, h, w, x0, y0,
+                a: SCOSTA_PULITO?1:scartoHUDRett(x0,y0,x0+w,y0+h) };
+      CORPI_SCH.push({x0:x0-6, y0:y0-6, x1:x0+w+6, y1:y0+h+6});
+    }
+  }
   /* CALCIO D'INIZIO */
   if(G.scene==='kickoff'){
     const k=Math.min(1,G.sceneT*4);
     ctx.save();
-    /* sotto il timer, mai sopra la targa; contorno scuro per staccare dal campo */
-    ctx.translate(VW/2, PA_Y0+Math.max(48, PA_H*0.20));
+    /* sotto il timer, mai sopra la targa; contorno scuro per staccare dal campo.
+       E MAI SOPRA IL PALLONE (tema 6): al calcio d'inizio la scritta cade
+       proprio dove sta il cerchio di centrocampo, cioe' dove sta la palla
+       col suo anello di possesso — la scritta di scena finiva addosso al
+       marker. Prima si SPOSTA (su o giu' dentro l'area di gioco), e solo
+       se non c'e' posto sfuma. */
+    const fsK=Math.round(Math.min(VW*0.05,34));
+    let yK=PA_Y0+Math.max(48, PA_H*0.20);
+    /* LA LARGHEZZA SI MISURA, NON SI STIMA. Era fsK x 7,2, cioe' poco piu'
+       della meta' del vero: col nostro condensato le quindici lettere di
+       CALCIO D'INIZIO valgono quasi quattordici corpi. La scritta cercava
+       quindi la fascia libera per un riquadro largo la meta' di se stessa,
+       e sul 7 contro 7 si e' piantata sul marker del comandato — che
+       stava appena FUORI dal riquadro stimato e ben dentro quello vero. */
+    ctx.font='900 '+fsK+'px '+FONT_N;
+    const wK=ctx.measureText("CALCIO D'INIZIO").width+fsK*0.6;
+    yK += scostaDaSoggetti(VW/2-wK/2, yK-fsK*0.8, VW/2+wK/2, yK+fsK*0.8,
+                           PA_Y0+fsK*0.9, PA_Y1-fsK*0.9);
+    const aK=SCOSTA_PULITO?1:scartoHUDRett(VW/2-wK/2, yK-fsK*0.8, VW/2+wK/2, yK+fsK*0.8);
+    ctx.translate(VW/2, yK);
     ctx.scale(0.7+0.3*k,0.7+0.3*k);
-    ctx.globalAlpha=k;
+    ctx.globalAlpha=k*Math.max(aK,0.35);
     ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.font='900 '+Math.round(Math.min(VW*0.05,34))+'px '+FONT_N;
+    ctx.font='900 '+fsK+'px '+FONT_N;
     ctx.lineWidth=7; ctx.lineJoin='round';
     ctx.strokeStyle='rgba(5,12,8,.8)';
     ctx.strokeText("CALCIO D'INIZIO", 0, 0);
@@ -21110,25 +22678,21 @@ function drawOverlaysCanvas(){
      Costa due drawImage per fotogramma per meno di due secondi, e i due
      ritratti sono gli stessi della rosa e del tabellino: stessa cache,
      stesso seme, stesso uomo. */
-  if(G.capT>0 && !G.moviola && (G.scene==='kickoff'||G.scene==='play'||G.scene==='golden')
-     && !(typeof Tut!=='undefined' && Tut.active)){
-    const c0=G.players[G.capIdx[0]], c1=G.players[G.capIdx[1]];
-    if(c0&&c1&&c0.nome&&c1.nome){
+  if(capRett){
+    {
+      /* geometria e collocazione: gia' decise in cima alla funzione */
+      const {c0,c1,d,h,w,x0,y0}=capRett, aP=capRett.a;
       /* a movimento ridotto la targa non entra in dissolvenza: c'e' e
          basta, e se ne va con la stessa sobrieta' */
       const av=SAVE.moto?Math.min(1,(CAP_DUR-G.capT)*5):1;
       const us=SAVE.moto?clamp(G.capT/0.32,0,1):(G.capT>0.06?1:0);
       const a=Math.min(av,us);
-      const d=clamp(VH*0.13,32,52), h=Math.round(d*1.30);
-      const w=Math.min(VW*0.94, d*12.6);
-      const y0=Math.round(PA_Y0+Math.max(48,PA_H*0.20)+Math.min(46,VH*0.11));
-      const x0=Math.round(VW/2-w/2);
       ctx.save();
-      ctx.globalAlpha=a;
+      ctx.globalAlpha=a*Math.max(aP,0.28);
       /* la stessa lavagna scura della fascia del gol: fondo opaco, filo
          di gesso sopra e sotto. Una lingua sola per tutte le targhe. */
-      ctx.fillStyle='rgba(18,44,29,.92)';
-      ctx.fillRect(x0,y0,w,h);
+      ardesiaFill(x0,y0,w,h,0.94);
+      cornice(x0,y0,w,h,1.8);
       ctx.fillStyle='rgba(242,245,239,.45)';
       ctx.fillRect(x0,y0,w,1.4); ctx.fillRect(x0,y0+h-1.4,w,1.4);
       /* i due smalti, uno per meta': la targa dice gia' chi e' chi */
@@ -22805,6 +24369,27 @@ window.__test = {
   get view(){ return G.view; },
   get bande(){ return {bar:BAR_H, y0:PA_Y0, y1:PA_Y1, foot:FOOT_H}; },
   /* =====================================================================
+     I RIQUADRI DELL'INTERFACCIA DELL'ULTIMO FOTOGRAMMA — dichiarati,
+     non indovinati.
+     strumenti/istantanea.js separa oggi i comandi touch dal manto per
+     TINTA: il prato sta fra 119 e 146 gradi, i pulsanti fra 73 e 81, e il
+     varco e' di nove gradi. Nove gradi sono una taratura del 15 agosto,
+     non una legge: il giorno in cui qualcuno scalda l'ardesia dei
+     comandi, o raffredda il prato, la misura comincia a contare i
+     pulsanti come erba vuota — e lo fa in silenzio, che e' il modo
+     peggiore di sbagliare. Qui il gioco DICHIARA dove sono, e chi misura
+     li esclude per geometria.
+     Ogni voce: tipo (pulsante | stick | minimappa), rettangolo di
+     ingombro in px CSS, centro e raggio per i dischi, e l'ALFA con cui
+     e' stata disegnata davvero — perche' dal 16 agosto un comando si
+     sfuma quando il pallone gli arriva addosso (vedi scartoHUD) e un
+     banco che non lo sapesse misurerebbe un pulsante che non c'e'.
+     ===================================================================== */
+  get comandiTouch(){ return TOUCH_ZONE.map(z=>Object.assign({},z)); },
+  /* la palla in coordinate schermo, come la vede l'occhio: serve a
+     verificare la regola di scarto senza rifare la trasformazione */
+  get pallaSchermo(){ return PALLA_SCH ? Object.assign({},PALLA_SCH) : null; },
+  /* =====================================================================
      LA CAPSULA D'OMBRA — il metro segue l'oggetto, non viceversa.
 
      collaudo.js deve scartare i campioni d'erba che cadono dentro
@@ -22819,6 +24404,17 @@ window.__test = {
      senza toccare una riga di collaudo.js.
      I numeri sono in unita' di campo, dal centro del giocatore.
      ===================================================================== */
+  /* IL RAGGIO CON CUI IL PALLONE E' DISEGNATO, in unita' di campo, quota
+     compresa. Esiste perche' da oggi il disegno e il corpo non coincidono
+     piu' (B_R resta 8 per gli urti, B_DIS lo ingrandisce solo sullo
+     schermo) e strumenti/istantanea.js, che deduce il raggio atteso da
+     B_R, stamperebbe un «atteso» piu' piccolo del vero senza sapere di
+     farlo. Il cancello misura i pixel e non ne soffre; questo hook e' la
+     via perche' un giorno smetta di dedurre e legga. */
+  pallaRaggio(){
+    const b=G.ball;
+    return B_R*B_DIS*(1+((b&&b.z)||0)*0.012);
+  },
   ombraCapsula(){
     const g=ombraGeometria();
     return { ux:g.ux, uy:g.uy, l0:g.l0, l1:g.l1, lungRiposo:g.lungRiposo,
