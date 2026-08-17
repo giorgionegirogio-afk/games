@@ -89,10 +89,17 @@ istantanea 36/40 · silhouette · folla · APK 32/32
 Nove strumenti, e ognuno ha dovuto dimostrare di **saper fallire** prima di essere
 creduto. Otto sono stati colti a mentire almeno una volta.
 
-**Attenzione al peso:** il file è a ~1,48 MB su un tetto di casa di 1,5 MB. Il tetto
-è una convenzione nostra (alzata da 900 kB il 3 agosto): il vincolo vero è che il
-gioco si apra in un secondo. Prima della prossima onda va deciso se alzarlo ancora
-o cominciare a comprimere.
+**Il tetto in kilobyte è stato abolito (17 agosto).** Il committente ha chiarito il
+vincolo vero: il gioco gira come **APK su smartphone**, dove il file è già dentro il
+telefono — quindi il peso non è tempo di scaricamento, ed è sempre stato un
+surrogato. Quello che conta è il tempo che la WebView impiega a leggere, analizzare
+ed eseguire il file prima che si possa toccare la palla.
+
+Il surrogato è stato sostituito dalla misura: `strumenti/avvio.js` separa lettura,
+primo disegno e «giocabile», misura il peso grezzo e compresso, e taratura a CPU
+rallentata 4x e 6x (la fascia di un telefono medio) più, se `adb` c'è, la misura
+vera sull'APK. **Il cancello nuovo: giocabile entro 2 secondi a 4x.** Il file può
+crescere finché quel numero regge — e lo strumento dice di quanto.
 
 ---
 
