@@ -62,3 +62,36 @@ bozze-rig3d/*.png
 istantanee*/
 _v26-prima/
 foto-v26-prima-gol.png
+
+# =====================================================================
+# I VIDEO DI RIFERIMENTO NON SI PUBBLICANO, e non e' una questione di peso.
+# Sono registrazioni di un gioco commerciale, salvate qui per studiarne la
+# GRAMMATICA dei comandi. Le idee di comando non sono coperte da diritto
+# d'autore e si possono usare liberamente; il filmato si'. Metterlo in un
+# deposito pubblico sarebbe ridistribuirlo, ed e' esattamente cio' che
+# questo progetto non deve fare: CALCETTO deve restare monetizzabile senza
+# dovere niente a nessuno.
+# (Sono anche 1,8 GB, il che basterebbe da solo.)
+videoplayback.mp4
+videoplaybackcontroller.mp4
+_video/*.mp4
+
+# le prove intermedie: si rigenerano, e pesano
+_bisez/
+_provino/
+fuori/_video-tempi-grezzi.json
+strumenti/_z-dati/
+
+# le cartelle di lavoro degli specialisti: rapporti gia' riassunti in
+# _analisi/, e pesano piu' del gioco intero
+_onda0/
+_onda0bis/
+_onda0ter/
+_giudice-seme2/
+_giudice-tardi/
+fuori/
+_forno/
+_forno2/
+_forno3/
+_video/
+_analisi/agente*.md.bak

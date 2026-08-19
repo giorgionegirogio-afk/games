@@ -363,33 +363,39 @@ K('pausa', TELEFONO_O, VIA + `
   ` + F(2500) + `
   window.__test.setPaused(true);`, 500);
 
-/* Tre gol vanno INTERVALLATI. forceGoal accetta la rete solo in gioco, e
-   dopo il primo gol la scena resta 'goal' per qualche secondo: chiamandolo
-   tre volte di fila due gol finivano nel cestino e la schermata finale
-   mostrava 1-0 con zero tiri e zero possesso — una squadra che vince
-   senza mai toccare la palla. Qui si aspetta il ritorno in gioco. */
+/* LA PARTITA SI GIOCA, NON SI RECITA — ed e' una riparazione, non una
+   preferenza di stile.
+
+   Questa scena inietta va la schermata finale, cioe' il TABELLINO: possesso,
+   tiri, tiri nello specchio, precisione. Fin qui li fabbricava: giocava tre
+   secondi e mezzo di calcio vero fra una rete e l'altra e poi chiamava
+   forceGoal, che incrementa tiri e specchio INSIEME al punteggio. Tredici
+   secondi di gioco su novanta, e tre reti su due tiri.
+   Quel tabellino ha ingannato la giuria DUE VOLTE, e in due direzioni
+   opposte. Al primo appello un giudice ci ha letto «due tiri contro uno,
+   tre conclusioni in novanta secondi: la sensazione e' di aver guardato» e
+   ha aperto un'inchiesta sulla densita' d'azione. Al secondo, riparata la
+   densita', un altro ci ha letto «due tiri, due gol, precisione 100%: se
+   ogni tiro entra, la partita non la decide COME tiro ma SE riesco a
+   tirare» e ha tolto tre decimi. Nessuna delle due cose era vera: sulle
+   cinquanta partite misurate da strumenti/_eventi.js i tiri sono dieci e
+   ne entra circa uno.
+   La finzione serviva quando il gioco non segnava mai da solo — e non
+   segnava davvero: zero reti su azione in cinquanta partite. Adesso ne fa
+   1,42, quindi si gioca la partita e si fotografa quello che esce.
+   Il tabellino puo' uscire 0-0 o 3-1: e' il gioco, ed e' il punto. */
 K('fine', TELEFONO_O, VIA + `
   window.__test.startMatch(1,1);
   window.__test.setCpuVsCpu && window.__test.setCpuVsCpu(true);
-  const inGioco = () => {
-    for(let i=0;i<80;i++){
-      const s=window.__test.state;
-      if(s==='play'||s==='kickoff'||s==='golden') return true;
-      ` + F(120) + `
-    }
-    return false;
-  };
-  for(const t of [0,0,1]){
-    inGioco();
-    /* qualche secondo di gioco vero fra un gol e l'altro: se no la
-       tabella finale mostra zero tiri e zero parate */
-    ` + F(3400) + `
-    window.__test.forceGoal(t);
+  /* novanta secondi di partita vera, piu' il margine per il golden goal e
+     gli eventuali rigori: si avanza finche' la schermata finale non arriva
+     da sola, e ci si ferma appena arriva. */
+  for(let i=0;i<240;i++){
+    const s=window.__test.state;
+    if(s==='fine'||s==='over'||s==='end'||s==='finale') break;
+    ` + F(1000) + `
   }
-  inGioco();
-  ` + F(1200) + `
-  window.__test.setTimeLeft(0.6);
-  ` + F(4000), 400);
+  ` + F(600), 400);
 
 /* accessibilita': gli effetti nuovi devono spegnersi quando il giocatore
    chiede movimento ridotto e divise ad alto contrasto. Una scena per

@@ -52,6 +52,29 @@ const { chromium } = require('playwright');
     const DPRc = cv.width / window.innerWidth;
     t.dismissSplash && t.dismissSplash();
     t.posaHUD(true);                     // i comandi si disegnano: sono interfaccia
+    /* BANCO ONESTO: nessun ripiego muto. Questo strumento aveva DUE
+       valori d'archivio, e uno era gia' in atto: i centri dei pulsanti.
+       Si chiedono al gioco, a due sorgenti, o non si misura. */
+    const capsulaGuasta = k => {
+      if (!k || typeof k !== 'object') return "ombraCapsula() non torna un oggetto";
+      for (const n of ['ux', 'uy', 'l0', 'l1', 'semiCorto', 'piedeX', 'piedeY'])
+        if (typeof k[n] !== 'number' || !isFinite(k[n])) return "manca (o non e' un numero) il campo '" + n + "'";
+      const mo = Math.hypot(k.ux, k.uy);
+      if (!(Math.abs(mo - 1) < 0.01)) return "(ux,uy) non e' un versore: modulo " + mo.toFixed(4);
+      if (!(k.l1 > k.l0)) return "l1 non e' oltre l0";
+      if (!(k.semiCorto > 0)) return "semiCorto non e' positivo";
+      return null;
+    };
+    if (typeof t.pulsanti !== 'function')
+      return { errore: "__test.pulsanti non esiste: senza i centri dichiarati campionerei il prato e lo chiamerei interfaccia" };
+    if (!Array.isArray(t.comandiTouch))
+      return { errore: "__test.comandiTouch non esiste: con una sola sorgente non vedrei un export che mente sempre allo stesso modo" };
+    if (typeof t.ombraCapsula !== 'function')
+      return { errore: "__test.ombraCapsula non esiste: con una capsula d'ombra d'archivio scarterei i pixel sbagliati e il grigio del prato uscirebbe falso" };
+    {
+      const g0 = capsulaGuasta(t.ombraCapsula());
+      if (g0) return { errore: '__test.ombraCapsula() non e\' una capsula valida: ' + g0 };
+    }
     t.startMatch(1, 1);
     t.setCpuVsCpu(true);
 
@@ -68,8 +91,11 @@ const { chromium } = require('playwright');
     const FW = 1150, FH = 560;
     const fam = { magliaA: [], magliaB: [], prato: [], ui: [] };
     let fotogrammi = 0;
-    const OMB = (t.ombraCapsula && t.ombraCapsula()) ||
-                { ux: 0.9406, uy: 0.3402, l0: 0, l1: 140, semiCorto: 7.6, piedeX: 4.2, piedeY: 7.8 };
+    /* quanti dischi non sono stati campionati e perche': un numero che
+       nasce da meno campioni del previsto deve dirlo, se no e' una
+       mediana su una popolazione ignota */
+    const uiScarti = { nonDipinti: 0, discordi: 0, peggiore: 0, sfumati: 0, alfaMin: 1, dischi: 0 };
+    const OMB = t.ombraCapsula();
     const dentroOmbra = (qx, qy, wx, wy) => {
       const ax = qx + OMB.piedeX, ay = qy + OMB.piedeY;
       const rx = wx - ax, ry = wy - ay;
@@ -136,7 +162,32 @@ const { chromium } = require('playwright');
          nel disco si campiona la CORONA fra 0,45 e 0,80 del raggio, che
          sta dentro la pastiglia e fuori dall'etichetta di gesso; nel
          tabellone due bande orizzontali lontane da cifre e nomi */
-      const btn = [{ x: VWc - 66, y: VHc - 140, r: 40 }, { x: VWc - 70, y: VHc - 232, r: 30 }];
+      /* DOVE SONO I COMANDI LO DICONO DUE SORGENTI DEL GIOCO. Qui c'erano
+         due centri d'archivio, (VW-66, VH-140) e (VW-70, VH-232). I
+         pulsanti veri stanno a (VW-64, VH-60) e (VW-158, VH-72): 80,0 px
+         e 182,6 px di distanza, cioe' la corona campionata cadeva sul
+         MANTO. Il grigio che questo strumento chiamava interfaccia era il
+         grigio del prato, e la distanza minima fra le due famiglie usciva
+         — prevedibilmente — minuscola.
+         E L'ALFA SI GUARDA. Dal 16 agosto un comando SFUMA quando il
+         pallone o un protagonista gli arriva addosso (scartoHUD): un
+         fotogramma in cui il disco e' al 40% non e' un campione di
+         interfaccia, e' un campione di interfaccia MISCHIATA A ERBA. I
+         fotogrammi sfumati non si campionano e si contano. */
+      const zone = t.comandiTouch.filter(z => z.tipo === 'pulsante' && (z.team | 0) === 0);
+      const ric = t.pulsanti(0);
+      const btn = [];
+      for (const b of ric) {
+        const z = zone.find(q => q.act === b.act) || null;
+        if (!z) { uiScarti.nonDipinti++; continue; }
+        const zy = z.y - (z.premuto ? 2 : 0);        // l'affondamento del tasto premuto
+        const dd = Math.hypot(z.x - b.x, zy - b.y);
+        if (!(dd <= 1)) { uiScarti.discordi++; uiScarti.peggiore = Math.max(uiScarti.peggiore, dd); continue; }
+        const al = z.alpha === undefined ? 1 : z.alpha;
+        if (!(al >= 0.999)) { uiScarti.sfumati++; uiScarti.alfaMin = Math.min(uiScarti.alfaMin, al); continue; }
+        btn.push({ x: z.x, y: z.y, r: z.r });
+      }
+      uiScarti.dischi += btn.length;
       for (const b of btn) {
         for (let rr = 0.45; rr <= 0.80; rr += 0.07) {
           for (let a = 0; a < 360; a += 10) {
@@ -156,9 +207,15 @@ const { chromium } = require('playwright');
 
     const out = {};
     for (const k in fam) out[k] = { n: fam[k].length, grigio: fam[k].length ? grigio(mediana(fam[k])) : null };
-    return { fotogrammi, out };
+    return { fotogrammi, out, uiScarti };
   });
 
+  if (mis.errore) {
+    console.error('BANCO NON VALIDO — ' + mis.errore);
+    console.error('Non misuro con valori d\'archivio: darei quattro grigi che non sono di quello che dico.');
+    await br.close();
+    process.exit(2);
+  }
   const nomi = { magliaA: 'squadra A (maglia)', magliaB: 'squadra B (maglia)', prato: 'prato', ui: 'interfaccia' };
   console.log('=== QUATTRO VALORI IN SCALA DI GRIGI (0-255) ===');
   const vals = [];
@@ -172,6 +229,17 @@ const { chromium } = require('playwright');
   for (let i = 1; i < vals.length; i++) {
     const d = vals[i].g - vals[i - 1].g;
     if (d < peggio) { peggio = d; coppia = nomi[vals[i - 1].k] + ' / ' + nomi[vals[i].k]; }
+  }
+  /* DA QUANTI DISCHI VIENE IL GRIGIO DELL'INTERFACCIA. Senza questa riga
+     "interfaccia 43" e' una mediana su una popolazione ignota. */
+  {
+    const u = mis.uiScarti || {};
+    console.log('  comandi campionati: ' + (u.dischi || 0) + ' dischi su ' + (mis.fotogrammi * 2) +
+      ' (' + mis.fotogrammi + ' fotogrammi x 2)' +
+      (u.nonDipinti ? '  · ' + u.nonDipinti + ' non dipinti' : '') +
+      (u.discordi ? '  · ' + u.discordi + ' scartati perche\' le due sorgenti discordavano (fino a ' + u.peggiore.toFixed(2) + ' px)' : '') +
+      (u.sfumati ? '  · ' + u.sfumati + ' scartati perche\' SFUMATI (alfa minima ' + u.alfaMin.toFixed(2) + ')' : '') +
+      ((!u.nonDipinti && !u.discordi && !u.sfumati) ? '  · tutti opachi e concordi' : ''));
   }
   const SOGLIA = 25;
   console.log('  distanza minima: ' + peggio + ' livelli (' + coppia + '), soglia ' + SOGLIA);

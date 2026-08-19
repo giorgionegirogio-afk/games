@@ -68,6 +68,14 @@ function bancoDiProva() {
    dove finiva il rumore. Misurato il 16 agosto 2026, banco a 915x412@2:
      tribuna viva     2,09% di pixel diversi · +34,6% di sagoma al gol
      tribuna dipinta  0,73% di pixel diversi ·  +0,3% di sagoma al gol
+   RIFATTA IL 17 AGOSTO 2026 (finestra della sagoma 50-108, soglia 380),
+   perche' la vecchia coppia finestra/soglia misurava anche il salto della
+   folla e non solo la sua forma:
+     tribuna viva     1,38% di pixel diversi · +14,3% di sagoma al gol
+     tribuna congelata dall'esterno       ·  -0,1% di sagoma al gol
+   Il congelamento si fa senza toccare il gioco: si intercettano le
+   drawImage dell'atlante della tribuna e si rimettono la riga a braccia
+   giu' e la y di riposo (vedi strumenti/_folla-toppa.js --gela).
    Le soglie stanno in mezzo. Un cancello che non e' stato visto FALLIRE
    non e' un cancello: e' una decorazione. */
 const MIN_DIFF_FRAME = 1.0;   // % di pixel della gradinata diversi fra due fotogrammi
@@ -102,7 +110,30 @@ const MIN_CRESCITA   = 8;     // % di sagoma in piu' con lo scoppio del gol
      striscia di venti: troppo poco per misurare qualcosa.
      La scena resta 'play' per tutta la misura — non si segna mai — e
      quindi la fascia GOL!, che vive nel 18,5% basso dello schermo, non
-     esiste e non puo' inquinare la finestra. */
+     esiste e non puo' inquinare la finestra.
+
+     MA LA FASCIA DEL GOL NON E' L'UNICO CARTELLO, e questo e' costato una
+     giornata. Il 19 agosto 2026 questo cancello e' uscito rosso su un
+     gioco MIGLIORATO: crescita della sagoma da 12,8% a 1,6%, differenza
+     fra fotogrammi da 1,23% a 0,66%. La bisezione ha accusato la toppa
+     che insegna alla CPU a crossare. La toppa era innocente: insegnando
+     alla CPU a crossare, in quei quattro secondi di simulazione la
+     macchina ha cominciato a produrre EVENTI che prima non produceva mai,
+     e uno di questi ha acceso il banner «TIRO PERFETTO!» — bianco su
+     verde, largo mezzo schermo, piantato in mezzo alla finestra di
+     misura. Il banner non e' folla e non si muove, quindi:
+       — aggiunge 14.500 pixel accesi al denominatore della sagoma, e la
+         crescita percentuale crolla anche se le braccia alzate valgono
+         gli stessi 300 pixel di prima (misurato: 2.656 -> 16.944);
+       — copre le sagome che si muovevano, e dimezza il primo controllo.
+     Cioe' il cancello dichiarava morta la tribuna ogni volta che il gioco
+     aveva qualcosa da annunciare. Un cancello che si rompe quando il
+     gioco migliora e' peggio di nessun cancello: manda a rifare del
+     lavoro buono.
+     Si spegne il cartello, come gia' si spengono le luci della sera per
+     il primo controllo, e alla fine si VERIFICA che sia rimasto spento:
+     se il gioco lo riaccende da solo la misura non vale e il cancello lo
+     dice, invece di scriverne un numero storto. */
   await pag.evaluate(() => {
     window.__test.dismissSplash && window.__test.dismissSplash();
     window.__test.startMatch(1, 1);
@@ -118,6 +149,8 @@ const MIN_CRESCITA   = 8;     // % di sagoma in piu' con lo scoppio del gol
   await pag.evaluate(() => window.__test.setPaused(true));
   await pag.evaluate(() => window.__banco.passo(200));
   await pag.evaluate(() => window.__test.setPaused(false));
+  /* il cartello spento: vedi la nota lunga sopra */
+  await pag.evaluate(() => { const G = window.__test.G; G.banner = ''; G.bannerT = 0; });
 
   const R = await pag.evaluate(() => {
     const v = window.__test.view;
@@ -132,11 +165,39 @@ const MIN_CRESCITA   = 8;     // % di sagoma in piu' con lo scoppio del gol
     return (y1 - y0 >= 16) ? { x: 0, y: y0, w: 915, h: y1 - y0 } : null;
   });
 
+  /* LA SAGOMA SI MISURA IN UN'ALTRA FINESTRA, E COMINCIA VENTI UNITA' PIU'
+     IN ALTO. Non e' un capriccio: NELLO SCOPPIO LA FOLLA SALTA. Il salto
+     vale 3,0 + 1,8 x hype unita' di mondo (drawCrowd, riga 17780:
+     yo = -Math.max(0,w)*(3.0+hype*1.8)), cioe' 7,2 a hype 2,35, piu' 2,4
+     per chi sta in piedi (d.st): quasi DIECI delle trentotto unita' della
+     finestra di sopra. Cosi' l'anello di tribuna che sta in cima esce dal
+     bordo alto mentre le braccia entrano dal basso, e la misura addebita
+     alla FORMA cio' che ha perso per TRASLAZIONE.
+     Misurato scomponendo il fotogramma — le drawImage dell'atlante
+     intercettate da fuori, riga dell'atlante e y forzate una alla volta —
+     a 915x412@2, 17 agosto 2026, con la finestra 70-108 e la soglia 430:
+       solo braccia (salto annullato)   +10,5%
+       solo salto  (braccia abbassate)   -5,1%
+       tutt'e due insieme                -1,3%   <- il rosso
+       tribuna congelata (controllo)     -1,1%
+     Con la finestra 50-108 e la soglia 380 il termine di sola traslazione
+     si annulla (-0,0%) e resta la forma: +15,2% contro un controllo
+     negativo di -0,2%.
+     LA FINESTRA DI SOPRA NON SI TOCCA: fra 50 e 70 passano le gambe
+     penzoloni dei ragazzini del muretto (drawSponda a FH+48), che si
+     muovono da sole e regalerebbero il primo controllo. */
+  const RS = await pag.evaluate(() => {
+    const v = window.__test.view;
+    const y0 = Math.max(0, Math.round(v.Ay + (FH + 50) * v.S2));
+    const y1 = Math.min(VH, Math.round(v.Ay + (FH + 108) * v.S2));
+    return (y1 - y0 >= 16) ? { x: 0, y: y0, w: 915, h: y1 - y0 } : null;
+  });
+
   const esiti = [];
   const dice = (ok, testo) => { esiti.push(ok); console.log(`  ${ok ? 'OK  ' : 'NO  '} ${testo}`); };
   console.log('\n=== FOLLA E QUARTIERE ===');
 
-  if (!R) {
+  if (!R || !RS) {
     dice(false, 'la gradinata non entra mai in quadro: non c\'e' + ' niente da misurare');
   } else {
     const pixel = r => pag.evaluate(r => {
@@ -196,27 +257,44 @@ const MIN_CRESCITA   = 8;     // % di sagoma in piu' con lo scoppio del gol
             e questa viene DOPO, perche' forceGoal cambia scena e da li'
             in poi nessuna misura sui pixel vale piu' niente.
        --------------------------------------------------------------- */
-    const A0 = await pixel(R);
+    const A0 = await pixel(RS);
     await pag.evaluate(() => {
       /* 0,25 s dopo il gol: dentro lo scoppio, quando la tribuna e' su */
       window.__test.G.crowdHype = 2.35;
       window.__test.disegna();
     });
-    const A1 = await pixel(R);
+    const A1 = await pixel(RS);
 
     let px0 = 0, px1 = 0;
     for (let i = 0; i < A0.length; i += 4) {
-      /* SOGLIA ALTA, non media: sotto i 430 di somma RGB ci sono anche il
+      /* SOGLIA ALTA, non media: sotto i 380 di somma RGB ci sono anche il
          fondale, la recinzione e le case, che non c'entrano niente e
          diluirebbero il segnale. Sopra restano teste e MANI — e le mani,
          quando le braccia salgono, sono pixel chiari che prima non
-         c'erano da nessuna parte. */
-      if (A0[i] + A0[i + 1] + A0[i + 2] > 430) px0++;
-      if (A1[i] + A1[i + 1] + A1[i + 2] > 430) px1++;
+         c'erano da nessuna parte.
+         DA 430 A 380, e il numero non e' di gusto. 430 era la soglia del
+         16 agosto; da onda 5 la gradinata sta in ombra e la mano, larga
+         quattro pixel dopo la riduzione dell'atlante, cade fra 300 e 430:
+         a 430 restavano fuori proprio i pixel che il gol aggiunge. A 380
+         il termine di sola traslazione si annulla e resta la forma. */
+      if (A0[i] + A0[i + 1] + A0[i + 2] > 380) px0++;
+      if (A1[i] + A1[i + 1] + A1[i + 2] > 380) px1++;
     }
     const cresc = px0 ? 100 * (px1 / px0 - 1) : 0;
     dice(cresc >= MIN_CRESCITA,
       `la sagoma della folla cresce con lo scoppio del gol (braccia su): ${cresc.toFixed(1)}% (minimo ${MIN_CRESCITA}%)`);
+
+    /* LA MISURA VALEVA? Il cartello si spegne prima; se durante le due
+       misure sui pixel il gioco ne ha riacceso uno, i due numeri qui
+       sopra sono spazzatura e vanno dichiarati tali, non pubblicati.
+       Questo controllo va PRIMA di forceGoal, che il banner lo accende
+       per mestiere. */
+    const cartello = await pag.evaluate(() => {
+      const G = window.__test.G;
+      return { testo: G.banner || '', t: +G.bannerT || 0 };
+    });
+    dice(!(cartello.t > 0 && cartello.testo),
+      `nessun cartello dentro la finestra durante la misura${cartello.testo ? ': «' + cartello.testo + '» acceso per ' + cartello.t.toFixed(2) + ' s' : ''}`);
 
     const hypeGol = await pag.evaluate(() => {
       window.__test.G.crowdHype = 0;

@@ -1,0 +1,120 @@
+--- android/Gioco.java	2026-08-19 20:02:56.067107600 +0200
++++ android/_l03/Gioco.java	2026-08-19 19:12:58.828607400 +0200
+@@ -1,6 +1,7 @@
+ package it.dopolavoro.gioco;
+ 
+ import android.app.Activity;
++import android.graphics.Rect;
+ import android.os.Build;
+ import android.os.Bundle;
+ import android.view.View;
+@@ -14,15 +15,18 @@
+ import android.webkit.WebSettings;
+ import android.webkit.WebView;
+ import android.webkit.WebViewClient;
++import java.util.ArrayList;
++import java.util.List;
+ 
+ /**
+  * Un guscio minimo attorno al gioco.
+  *
+  * Il gioco è un unico file HTML dentro gli asset: niente rete, niente
+- * permessi, niente librerie. Questa classe fa tre cose e basta:
++ * permessi, niente librerie. Questa classe fa quattro cose e basta:
+  *   1. apre una WebView a schermo intero sul file del gioco;
+  *   2. tiene lo schermo acceso mentre l'app è in primo piano;
+- *   3. fa funzionare il tasto Indietro come ci si aspetta.
++ *   3. fa funzionare il tasto Indietro come ci si aspetta;
++ *   4. dice al sistema che la fascia dei comandi non è sua (voce L0.3).
+  */
+ public class Gioco extends Activity {
+ 
+@@ -77,6 +81,51 @@
+     vista.setLongClickable(false);
+     vista.setHapticFeedbackEnabled(false);
+ 
++    /* ===================================================================
++       LA FASCIA DEI COMANDI NON E' DEL SISTEMA — voce L0.3.
++
++       Il problema, misurato sul telefono e non dedotto (OnePlus 6,
++       Android 11, navigazione a gesti, dita vere scritte sul dispositivo
++       di ingresso del kernel — strumenti/_p-l03.js): un dito posato
++       dentro la presa del disco grande, a 16 px dal bordo destro, e
++       trascinato verso sinistra non arriva MAI alla pagina. Venti prove
++       su venti. Se lo prende il gesto «indietro» di Android, e in tredici
++       di quelle venti il gioco va anche in pausa da solo, perche' il
++       sistema ha eseguito «indietro» al posto suo. Lo stesso gesto dal
++       centro del disco arriva sempre: 0 su 20.
++
++       setSystemGestureExclusionRects e' il modo che Android da' a
++       un'applicazione per dire «questa striscia la gestisco io». Serve
++       ANCHE se il gioco sposta i comandi verso il centro (toppa
++       strumenti/_t-l03.js), perche' quella toppa puo' allontanarsi solo
++       dalla fascia PREDEFINITA: l'utente puo' allargarla a piacere nelle
++       impostazioni («back sensitivity»: gli overlay gestural_wide_back e
++       gestural_extra_wide_back esistono su questo telefono), e nessuna
++       geometria scritta nel gioco puo' inseguirla. Solo questa chiamata
++       vince a qualunque sensibilita'.
++
++       PERCHE' DUE RETTANGOLI E NON I DUE CERCHI DI PRESA. Il metodo
++       vuole rettangoli, e soprattutto i cerchi si spostano: stanno a
++       destra in un giocatore, su TUTTI E DUE i lati in due giocatori, e
++       cambiano con la misura della finestra. Inseguirli vorrebbe dire
++       chiedere la geometria alla pagina di continuo, cioe' legare il
++       guscio al gioco e pagare una evaluateJavascript a ripetizione. Due
++       bande ai lati, alte quanto la fascia dei comandi, li contengono
++       tutti e in ogni modalita'. Cio' che eccede la striscia dei gesti
++       non ha nessun effetto — il sistema interseca comunque — quindi
++       essere larghi qui non costa niente a nessuno.
++
++       IL TETTO, dichiarato: Android ignora l'esclusione oltre 200 dp per
++       ogni bordo. 140 dp stanno sotto, quindi la richiesta viene
++       esaudita intera e non silenziosamente tagliata.
++
++       CIO' CHE QUESTO NON FA: il gesto «home», che nasce dal fondo dello
++       schermo, NON e' escludibile da nessuna applicazione — Android non
++       lo consente e basta. Contro quello c'e' solo la banda minima di
++       20 px che la toppa del gioco tiene libera in fondo.
++       =================================================================== */
++    if (Build.VERSION.SDK_INT >= 29) vista.addOnLayoutChangeListener(new Bordi());
++
+     setContentView(vista);
+     schermoIntero();
+     vista.loadUrl("file:///android_asset/" + fileDelGioco());
+@@ -168,3 +217,36 @@
+     if (!"1".equals(valore)) schermo.chiediSeUscire();
+   }
+ }
++
++/** Le due bande laterali in fondo, dove stanno i comandi del gioco: il
++    sistema non ci fa nascere i suoi gesti di bordo.
++
++    Sta su un ascoltatore di layout, e non in una riga sola dentro
++    onCreate, per due motivi: in onCreate la vista non ha ancora una
++    misura (0x0, e un rettangolo vuoto non esclude niente), e alla
++    rotazione la misura cambia. Rimetterli a ogni layout e' l'unico modo
++    perche' siano giusti in tutti e due i casi.
++
++    Le misure sono in dp convertiti in px della vista, non in px CSS della
++    pagina: 130 dp di larghezza contengono la presa del disco grande
++    (58 dp dal centro, che sta a 64 dp dal bordo) e 140 dp di altezza
++    contengono la fascia intera dei due dischi (il piu' alto arriva a
++    120 dp dal fondo). Il tetto di Android e' 200 dp per bordo: ci si sta
++    dentro, quindi l'esclusione vale tutta. */
++class Bordi implements View.OnLayoutChangeListener {
++  @Override
++  public void onLayoutChange(View v, int sx, int su, int dx, int giu,
++                             int vsx, int vsu, int vdx, int vgiu) {
++    int larghezza = dx - sx, altezza = giu - su;
++    if (larghezza <= 0 || altezza <= 0) return;
++    float dp = v.getResources().getDisplayMetrics().density;
++    int banda = Math.round(130 * dp);            // quanto entra dal lato
++    int alta = Math.round(140 * dp);             // quanto sale dal fondo
++    if (banda > larghezza / 2) banda = larghezza / 2;
++    if (alta > altezza) alta = altezza;
++    List<Rect> zone = new ArrayList<Rect>();
++    zone.add(new Rect(0, altezza - alta, banda, altezza));
++    zone.add(new Rect(larghezza - banda, altezza - alta, larghezza, altezza));
++    v.setSystemGestureExclusionRects(zone);
++  }
++}

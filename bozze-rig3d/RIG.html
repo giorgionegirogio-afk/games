@@ -567,13 +567,22 @@ function poseLoco(u,q){
    braccia non rientrano nel torace nel punto morto della falcata.
    ===================================================================== */
 const Q_FERMO={leg:0.18,legOfs:0.01,knee0:0.26,kneeA:0.04,kneeLag:3.7,
-  arm:0.05,armOfs:0.24,elb0:0.95,elbA:0.04,armOut:0.200,
-  lean:0.05,bounce:0.008,crouch:0.04,twist:0.02,stanceW:0.210,headBob:0.005};
+  arm:0.05,armOfs:0.24,elb0:1.28,elbA:0.04,armOut:0.200,
+  lean:0.05,bounce:0.008,crouch:0.04,twist:0.02,stanceW:0.255,headBob:0.005};
+/* CORSA CONTRO CAMMINATA, secondo giro: la coppia restava a 0,163 di
+   distanza di Hamming su un minimo di 0,18, cioe' le due sagome erano
+   ancora quasi la stessa. Le GAMBE non le separano piu' — sono gia'
+   andate in direzioni opposte (la corsa alza, la camminata distende) e
+   spingerle oltre le rompe entrambe. Le separano le BRACCIA: la corsa
+   pompa (arm 0,78 -> 1,05, gomito 1,50 quasi chiuso: due triangoli
+   compatti alti sul busto), la camminata le lascia quasi ferme e distese
+   (arm 0,58 -> 0,40, gomito 0,55 -> 0,34). In nero sono due masse alte
+   diverse, ed e' la meta' alta della figura a decidere la distanza. */
 const Q_CAMMINATA={leg:0.52,legOfs:0.05,knee0:0.10,kneeA:0.72,kneeLag:4.2,
-  arm:0.58,armOfs:0.05,elb0:0.55,elbA:0.22,armOut:0.185,
+  arm:0.40,armOfs:0.05,elb0:0.62,elbA:0.16,armOut:0.185,
   lean:0.17,bounce:0.034,crouch:0.02,twist:0.14,stanceW:0.105,headBob:0.012};
 const Q_CORSA={leg:0.60,legOfs:0.15,knee0:0.46,kneeA:1.55,kneeLag:3.6,
-  arm:0.78,armOfs:0.08,elb0:1.50,elbA:0.34,armOut:0.215,
+  arm:1.05,armOfs:0.08,elb0:1.50,elbA:0.34,armOut:0.215,
   lean:0.44,bounce:-0.055,crouch:0.05,twist:0.17,stanceW:0.075,headBob:0.010};
 
 function poseFermo(u){ poseLoco(u,Q_FERMO); }
@@ -646,10 +655,11 @@ function poseCalcio(u,q){
   else if(u<tF){ const t=(u-ti)/q.segue, e=1-(1-t)*(1-t);
     aG=q.fwd+(q.follow-q.fwd)*e; kG=q.kneeImp+(q.kneeSegue-q.kneeImp)*e; }
   else{ const r=sm(u,tF,0.99); aG=q.follow*(1-r); kG=q.kneeSegue+(0.25-q.kneeSegue)*r; }
-  const fxR=HIPW-(q.attraversa||0)*w2;   // il cross taglia attraverso il corpo
+  const ags=(q.aprSeg||0)*w2;            // le gambe si aprono nel seguito
+  const fxR=HIPW-(q.attraversa||0)*w2+ags;   // il cross taglia attraverso il corpo
   gamba(HIPR,KNR,FTR,TOR,  HIPW*ch, pelvY,  HIPW*shh, aG,kG, fxR);
   // gamba d'appoggio piantata accanto alla palla, si piega sotto il peso
-  gamba(HIPL,KNL,FTL,TOL, -HIPW*ch, pelvY, -HIPW*shh, q.appA, q.appK+0.30*peso, -0.13);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW*ch, pelvY, -HIPW*shh, q.appA, q.appK+0.30*peso, -0.13-ags);
 }
 /* palla della clip di calcio: ferma, poi il FOTOGRAMMA DI CONTATTO
    (il collo del piede la tocca e la spinge, schiacciandola) e la
@@ -684,10 +694,29 @@ const Q_CROSS={tImp:0.44,swing:0.12,segue:0.26, back:0.70,fwd:0.60,follow:1.15,
   kneeBack:1.00,kneeImp:0.15,kneeSegue:0.55, crouch:0.08,dip:0.05,
   leanBack:0.12,leanFwd:0.02, apriSp:0.55,apriAn:0.28, arm:0.55,armOut:0.11,armApri:0.08,
   attraversa:0.30, appA:0.26,appK:0.34, px:0.14,pz:0.34, gitt:3.6,alza:0.95,arco:1,dirX:-0.35};
-const Q_TIRO={tImp:0.46,swing:0.11,segue:0.26, back:1.20,fwd:0.62,follow:1.70,
-  kneeBack:1.15,kneeImp:0.10,kneeSegue:0.55, crouch:0.05,dip:0.05,
-  leanBack:0.20,leanFwd:0.34, apriSp:0.25,apriAn:0.34, arm:1.30,armOut:0.08,armApri:0.15,
-  appA:0.26,appK:0.22, px:0.10,pz:0.36, gitt:5.5,alza:0.5,arco:0,dirX:0};
+/* LA CARICA DEL TIRO, RISCRITTA PERCHE' IL VERBO SI POSSA NOMINARE.
+   Il conto che la condannava: in pianta a 42 gradi la profondita' pesa
+   z x sin42 x s, quindi TUTTO CIO' CHE VA INDIETRO SCENDE SULLO SCHERMO.
+   Con back 1,20 il tacco arrivava a 0,70 m dietro e finiva disegnato
+   CINQUE UNITA' SOTTO il bacino: la «gamba arretrata e alta» era alta
+   nel mondo e bassa nel quadro, cioe' non esisteva. La riparazione porta
+   indietro il ginocchio (back 1,25) e piega la gamba di 1,10: coscia e
+   tibia formano un GALLONE che punta in basso a sinistra — ginocchio a
+   -6,8 unita' e sette sotto l'anca, tacco a -12,5 e cinque sotto. E' un
+   arto che ESCE dalla massa invece di ripiegarcisi dentro, ed e' l'unica
+   forma di «arretrata e alta» che questa camera sappia scrivere.
+   Le altre tre righe sono i tre indizi che il giudice elenca:
+   busto RUOTATO (apriSp 0,25 -> 0,45, la torsione che porta la spalla
+   destra dietro), braccia in CONTRAPPESO (armApri 0,20: il bilanciere si
+   spalanca), gamba portante PIANTATA (appA 0,26 -> 0,10, quasi a piombo
+   invece che gia' in falcata).
+   Il seguito apre anche le gambe di lato (aprSeg): a tiro finito le due
+   gambe cadevano su una diagonale sola e il banco contava UNA riga con
+   due tratti su tutta la meta' bassa. */
+const Q_TIRO={tImp:0.46,swing:0.11,segue:0.26, back:1.25,fwd:0.62,follow:1.70,
+  kneeBack:1.10,kneeImp:0.10,kneeSegue:0.55, crouch:0.05,dip:0.05,
+  leanBack:0.20,leanFwd:0.34, apriSp:0.45,apriAn:0.30, arm:1.30,armOut:0.08,armApri:0.14,
+  appA:0.10,appK:0.22, aprSeg:0.15, px:0.10,pz:0.36, gitt:5.5,alza:0.5,arco:0,dirX:0};
 
 function posePassaggio(u){ poseCalcio(u,Q_PASSAGGIO); }
 function poseFiltrante(u){ poseCalcio(u,Q_FILTRANTE); }
@@ -759,8 +788,14 @@ function poseScivolata(u){
      ripiegato sotto, che con le gambe lunghe dello spilungone finiva a
      -0,052 m sotto il manto — oltre il fondo ammesso dal banco. La posa
      e' la stessa; il ginocchio adesso sta sul campo anche per lui. */
+  /* IL BUSTO NON SI SDRAIA: SI PUNTELLA. A -0,95 rad la colonna era gia'
+     a 54 gradi dal filo a piombo e le spalle arrivavano a 56 cm da terra:
+     riempita di nero la figura leggeva «caduto». Una scivolata vera e' un
+     TRIANGOLO — il piede teso avanti, il bacino a terra, il busto tirato
+     su dal braccio d'appoggio dietro: -0,66 rad porta le spalle a 65 cm e
+     l'ipotenusa dal tacco alla testa diventa una diagonale sola. */
   const pelvY=(0.80+(0.32-0.80)*giu)+(0.62-0.32)*su-0.03*botta;
-  const lean=(0.30+(-0.95-0.30)*giu)+(0.18+0.95)*su+0.11*osc-0.07*botta;
+  const lean=(0.30+(-0.66-0.30)*giu)+(0.18+0.66)*su+0.11*osc-0.07*botta;
   corpo(pelvY,0,lean,0);
   const sl=Math.sin(lean), cl=Math.cos(lean);
   const shY=pelvY+0.44*cl, shZ=0.44*sl;
@@ -768,12 +803,15 @@ function poseScivolata(u){
   const aBL=( 0.50+( 1.15-0.50)*giu)+( 0.25-1.15)*su-0.15*osc;
   braccio(SHR,ELR,HAR,  SHW, shY, shZ, aBR,0.30, 0.06+0.10*giu-0.08*su, 1);
   braccio(SHL,ELL,HAL, -SHW, shY, shZ, aBL,0.45, 0.06+0.06*giu,-1);
-  const aR=(0.55+(1.32-0.55)*giu)+(0.20-1.32)*su+0.05*osc;
-  const kR=(0.40+(0.10-0.40)*giu)+(0.60-0.10)*su;
-  const aL=(-0.45+(-0.85+0.45)*giu)+(-0.10+0.85)*su;
-  const kL=(0.90+(1.05-0.90)*giu)+(0.70-1.05)*su;
-  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0, aR,kR,  0.10);
-  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, aL,kL, -0.15);
+  /* la gamba che contrasta si TENDE del tutto (0,10 -> 0,04 di flessione)
+     e le due gambe si aprono di lato (0,10/-0,15 -> 0,26/-0,26): il
+     triangolo ha bisogno di due lati, non di un tubo solo */
+  const aR=(0.55+(1.42-0.55)*giu)+(0.20-1.42)*su+0.05*osc;
+  const kR=(0.40+(0.04-0.40)*giu)+(0.60-0.04)*su;
+  const aL=(-0.45+(-0.80+0.45)*giu)+(-0.10+0.80)*su;
+  const kL=(0.90+(1.15-0.90)*giu)+(0.70-1.15)*su;
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0, aR,kR,  0.10+0.16*giu);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, aL,kL, -0.15-0.11*giu);
 }
 
 /* ROVESCIATA: carica (ANTICIPO: crouch e braccia indietro), stacco,
@@ -937,12 +975,24 @@ function poseTuffo(u){
   // gambe: piegate in carica, DISTESE DIETRO in volo (via da terra),
   // raccolte sotto per la rialzata
   const hz=0.06*sl;
-  const aR=0.22+0.33*ca-1.60*est+0.35*cad+0.35*rac+0.92*ri;
-  const aL=aR+0.25*vol-0.25*ri;
+  /* LE GAMBE IN VOLO STANNO IN LINEA COL BUSTO, e non e' un ritocco: e'
+     il verbo. Con -1,60 la coscia arrivava a -1,05 rad, cioe' 60 gradi
+     dal filo a piombo: i piedi PENZOLAVANO sotto il bacino e la scatola
+     della sagoma leggeva 1,06 di larghezza su altezza — un uomo che
+     cade, non uno che vola. A -2,10 la coscia va a -1,55, orizzontale
+     all'indietro, e la figura diventa la barra che il tuffo deve essere
+     (il banco chiede sopra 1,15). Il termine di caduta sale da 0,35 a
+     0,85 cosi' l'atterraggio sul fianco resta dov'era.
+     E LE DUE GAMBE SI SEPARANO IN VOLO (fx da 0,105 a 0,30): in maschera
+     nera due gambe sovrapposte sono una gamba sola, e il banco conta le
+     righe con due tratti distinti. */
+  const apG=HIPW+0.20*vol;
+  const aR=0.22+0.33*ca-2.10*est+0.85*cad+0.35*rac+0.92*ri;
+  const aL=aR+0.30*vol-0.30*ri;
   const kR=0.40+1.15*ca-1.45*est+0.15*cad+0.90*rac+0.15*ri+0.20*botta;
   const kL=kR+0.15*cad-0.15*ri;
-  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, hz, aR,kR,  HIPW);
-  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, hz, aL,kL, -HIPW);
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, hz, aR,kR,  apG);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, hz, aL,kL, -apG);
   // lo scivolamento sul fianco: tutto il corpo avanza, poi rientra
   if(slitta>0){ const dz2=0.34*slitta; for(let j=0;j<NJ;j++) P[j*3+2]+=dz2; }
 }
@@ -1081,7 +1131,12 @@ function pallaRinvio(u,o){
 function poseAttesaGK(u){
   const w=u*TAU, sw=Math.sin(w), c2=Math.cos(2*w);
   const dond=Math.sin(w*0.5);              // il peso passa da un piede all'altro
-  const pelvY=0.80+0.014*c2;
+  /* PIU' BASSO E PIU' LARGO. A 0,80 di bacino e ±0,40 di piedi il
+     portiere in maschera nera era il gemello di «sta fermo»: la coppia
+     piu' vicina del banco. A 0,72 e ±0,52 il profilo diventa la TENDA
+     che il ruolo promette — e ±0,52 resta dentro la gabbia dell'anca
+     (sin 0,456 contro il tetto 0,751), quindi zero tagli. */
+  const pelvY=0.72+0.014*c2;
   corpo(pelvY, 0.035*dond, 0.16, 0.006*c2);
   const sl=Math.sin(0.16), cl=Math.cos(0.16);
   const shY=pelvY+0.44*cl, shZ=0.44*sl;
@@ -1089,14 +1144,14 @@ function poseAttesaGK(u){
      corte del piccoletto 0,212 sfondava il tetto della scatola (0,8674 =
      sin 1,05). Una posa che vive dentro la gabbia e' una posa che nessun
      clamp deve riscrivere sessanta volte al secondo. */
-  const ab=0.200+0.012*sw;
+  const ab=0.225+0.008*sw;
   braccio(SHR,ELR,HAR,  SHW, shY, shZ, 0.30+0.06*sw, 0.62, ab, 1);
   braccio(SHL,ELL,HAL, -SHW, shY, shZ, 0.30-0.06*sw, 0.62, ab,-1);
   /* la BASE: i piedi vanno dove li vuole la posa, e il ginocchio si
      piega quanto serve per arrivarci (e' la IK a due leve di gamba(),
      non un piede alzato di forza) */
-  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0, 0.14, 0.75,  0.40+0.025*dond);
-  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, 0.14, 0.75, -0.40+0.025*dond);
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0, 0.14, 0.75,  0.52+0.025*dond);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, 0.14, 0.75, -0.52+0.025*dond);
 }
 
 /* ============================================================
@@ -1109,9 +1164,13 @@ function poseAttesaGK(u){
    faccia va al cielo e le braccia si spalancano ad aliante.
    SEGUITO: il rollio alternato delle ali sul passo (l'ala del lato
    d'appoggio scende); PESO: il rimbalzo della falcata (bounce). */
+/* stanceW 0,08 -> 0,17: a gambe unite le due cosce, dall'alto e da
+   vicino, erano UN BLOCCO SOLO di tinta squadra dal bacino alle scarpe —
+   il «monolite» del primo piano. Diciassette centimetri di base bastano
+   perche' fra le gambe passi l'erba. */
 const Q_ESULT={leg:0.58,legOfs:0.08,knee0:0.26,kneeA:0.80,kneeLag:3.6,
   arm:0,armOfs:0,elb0:0.2,elbA:0,armOut:0.05,
-  lean:-0.09,bounce:-0.030,crouch:0.04,twist:0.05,stanceW:0.08,headBob:0.006};
+  lean:-0.09,bounce:-0.030,crouch:0.04,twist:0.05,stanceW:0.24,headBob:0.006};
 function poseEsultanza(u){
   poseLoco(u,Q_ESULT);
   const w=u*TAU, sw=Math.sin(w), c2=Math.cos(2*w);
@@ -1245,7 +1304,12 @@ function poseDelusione(u){
   const shY=pelvY+0.44*cl, shZ=0.44*sl;
   const aB=0.12+2.43*maniF-0.18*penz;
   const eB=0.18+2.00*maniF+0.04*penz;
-  const outB=0.05-0.09*maniF;
+  /* i GOMITI ESCONO. Con outB che CALAVA (0,05 -> -0,04) le mani alla
+     testa portavano le braccia dentro il busto: una massa sola, e il
+     gesto piu' riconoscibile del calcio spariva. Le mani in testa vere
+     hanno i gomiti spalancati — 0,19 di scarto e' un'abduzione di 0,78
+     rad, dentro la gabbia (tetto 1,05). */
+  const outB=0.05+0.14*maniF;
   braccio(SHR,ELR,HAR,  SHW, shY, shZ, aB,eB, outB, 1);
   braccio(SHL,ELL,HAL, -SHW, shY, shZ, aB*1.03,eB, outB,-1);
   const kG=0.25+0.55*piega+0.40*dip-0.55*ri;
@@ -1379,7 +1443,12 @@ const CAMERE={
        locale. A schermo la barra cala del 13,5%, il busto no. */
 const SEGS=[
   {a:PELVIS,b:NECK, w:0.312,c:'maglia',       bias:-0.012, kind:1},
-  {a:HIPL,  b:HIPR, w:0.24, c:'pantaloncini', bias:-0.006, kind:0},
+  /* la BARRA DEI FIANCHI passa da 0,24 a 0,30. E' l'altra meta' della
+     strozzatura in vita: un minimo locale esiste solo se sotto di lui
+     risale una massa, e il bacino era largo 12,5 unita' contro le 15,7
+     della vita — cioe' scendeva invece di risalire. A 0,30 il bacino
+     legge 13,9 e la scansione ha finalmente una V. */
+  {a:HIPL,  b:HIPR, w:0.30, c:'pantaloncini', bias:-0.006, kind:0},
   {a:NECK,  b:HEAD, w:0.085,c:'pelle',        bias:-0.002, kind:0},  // il COLLO: la strozzatura fra le due masse alte
   {a:HEAD,  b:HEAD, w:0,    c:'pelle',        bias: 0.010, kind:2},
   /* arti:1 = lo SPESSORE segue la corporatura (MSP). Solo gli arti: il
@@ -1388,16 +1457,28 @@ const SEGS=[
      contrasto, gli altri tre perche' sono le strozzature che fanno
      leggere le tre masse, e una strozzatura che cambia figura per
      figura non e' piu' un indizio, e' rumore. */
-  {a:SHR,b:ELR, w:0.185,c:'maglia', bias:0.005, kind:0, arti:1, pi:1},
-  {a:ELR,b:HAR, w:0.150,c:'pelle',  bias:0.008, kind:0, arti:1},
-  {a:SHL,b:ELL, w:0.185,c:'maglia', bias:0.005, kind:0, arti:1, pi:1},
-  {a:ELL,b:HAL, w:0.150,c:'pelle',  bias:0.008, kind:0, arti:1},
-  {a:HIPR,b:KNR, w:0.277,c:'pantaloncini', bias:0.002, kind:0, arti:1},
-  {a:KNR, b:FTR, w:0.202,c:'calze',        bias:0.004, kind:0, riv:1, arti:1},
-  {a:FTR, b:TOR, w:0.162,c:'scarpe',       bias:0.006, kind:0, arti:1},
-  {a:HIPL,b:KNL, w:0.277,c:'pantaloncini', bias:0.002, kind:0, arti:1},
-  {a:KNL, b:FTL, w:0.202,c:'calze',        bias:0.004, kind:0, riv:1, arti:1},
-  {a:FTL, b:TOL, w:0.162,c:'scarpe',       bias:0.006, kind:0, arti:1},
+  /* pi:1 = ESTREMO PIATTO SOTTO SOGLIA, la stessa manovra del busto e per
+     la stessa ragione. La calotta tonda del braccio sporge oltre la spalla
+     di mezza larghezza (0,133 m con il contorno), cioe' ARRIVA 0,11 m PIU'
+     IN ALTO del giunto del collo: in maschera nera la massa delle spalle
+     saliva a saldarsi con il cranio e il minimo locale del collo — la
+     prima delle due strozzature che fanno leggere «e' un uomo» — non
+     esisteva in nessuna posa in piedi (misurato: masse 0 su 9 sagome su
+     10). Con l'estremo piatto la spalla finisce dove finisce l'osso, sotto
+     il mento, e il profilo delle scansioni scende alla larghezza del collo
+     prima di risalire a quella delle spalle. Il gomito non si scopre: la
+     capsula dell'avambraccio ha la sua calotta tonda e parte da li'.
+     Da vicino (lodOn) niente: a cento pixel il taglio si vedrebbe. */
+  {a:SHR,b:ELR, w:0.162,c:'maglia', bias:0.005, kind:0, arti:1, pi:1},
+  {a:ELR,b:HAR, w:0.130,c:'pelle',  bias:0.008, kind:0, arti:1},
+  {a:SHL,b:ELL, w:0.162,c:'maglia', bias:0.005, kind:0, arti:1, pi:1},
+  {a:ELL,b:HAL, w:0.130,c:'pelle',  bias:0.008, kind:0, arti:1},
+  {a:HIPR,b:KNR, w:0.240,c:'pantaloncini', bias:0.002, kind:0, arti:1, cos:1},
+  {a:KNR, b:FTR, w:0.176,c:'calze',        bias:0.004, kind:0, riv:1, arti:1},
+  {a:FTR, b:TOR, w:0.150,c:'scarpe',       bias:0.006, kind:0, arti:1},
+  {a:HIPL,b:KNL, w:0.240,c:'pantaloncini', bias:0.002, kind:0, arti:1, cos:1},
+  {a:KNL, b:FTL, w:0.176,c:'calze',        bias:0.004, kind:0, riv:1, arti:1},
+  {a:FTL, b:TOL, w:0.150,c:'scarpe',       bias:0.006, kind:0, arti:1},
   {a:PELVIS,b:PELVIS, w:0, c:'palla', bias:0, kind:3},  // palla (solo clip col pallone)
 ];
 const NS=SEGS.length;
@@ -1408,6 +1489,42 @@ const ORD=new Int32Array(NS); for(let i=0;i<NS;i++)ORD[i]=i;
    palla, cosi' la sagoma legge come un corpo solo (vedi il passaggio di
    sottofondo in disegna) e non tredici rettangoli bordati uno a uno */
 const BORDO='#23201a';
+/* la tinta del FILO DI STACCO fra due corpi: la stessa luce fredda con cui
+   il gioco stacca gia' la palla e i solchi dall'erba, non una quinta tinta */
+const STACCO_FILO='#e7f0da';
+
+/* =====================================================================
+   IL BUSTO E' UN TRAPEZIO: PETTO LARGO, VITA STRETTA.
+   La capsula a larghezza costante dava un profilo che dal collo ai piedi
+   non aveva un solo minimo in mezzo: «tre masse» era una promessa senza
+   la strozzatura che la mantiene, e in nero la figura leggeva come un
+   orsacchiotto. Con la vita a 0,222 contro il petto a 0,345 la scansione
+   orizzontale trova il SECONDO minimo locale (il primo e' il collo).
+   La sonda del contrasto di collaudo.js campiona il busto attorno a
+   t=0,74 del segmento pelvi-collo: li' il trapezio vale 0,313, cioe' la
+   stessa larghezza della capsula di prima. Nessuna differenza dove si
+   MISURA, tutta la differenza dove si GUARDA.
+   f0..f1 e' la banda laterale (0 = filo ovest, 1 = filo est): con 0..1
+   esce la sagoma intera, con le frazioni escono le due mezze capsule del
+   terminatore, che cosi' seguono la rastrematura invece di sbordare.
+   extra allarga per il contorno e allunga SOLO verso il basso: la cima
+   resta piatta al collo, che e' la prima strozzatura. */
+const W_PETTO=0.345, W_VITA=0.195;
+function troncoQuad(ctx,s,extra,f0,f1,t0,t1){
+  const ax=SX[PELVIS],ay=SY[PELVIS],dx=SX[NECK]-ax,dy=SY[NECK]-ay;
+  const L=Math.sqrt(dx*dx+dy*dy); if(L<0.5) return;
+  let nx=-dy/L, ny=dx/L; if(nx>0){nx=-nx;ny=-ny;}      // nx punta a ovest
+  const wa=W_VITA*s*0.5+extra, wb=W_PETTO*s*0.5+extra;
+  const ta=t0-extra/L;
+  ctx.beginPath();
+  for(let k=0;k<4;k++){
+    const t=(k===0||k===3)?ta:t1, f=(k<2)?f0:f1;
+    const w=wa+(wb-wa)*t, X=ax+dx*t, Y=ay+dy*t, o=w*(1-2*f);
+    if(k) ctx.lineTo(X+nx*o,Y+ny*o); else ctx.moveTo(X+nx*o,Y+ny*o);
+  }
+  ctx.closePath(); ctx.fill();
+}
+
 
 /* ============================================================
    IL LIVELLO DI DETTAGLIO DA VICINO (15 ago 2026, 15 giudici su 26).
@@ -1507,13 +1624,17 @@ function motivo(ctx,s,look){
     /* le strisce si misurano sul busto, che e' passato da 0,27 a 0,312:
        stesso rapporto di prima (0,607 della semilarghezza), cosi' le due
        righe restano fuori dalla colonna ±1,5 della sonda del contrasto */
-    const o=0.0948*s, w=0.0717*s;
+    /* l'offset e' una FRAZIONE della semilarghezza locale (0,607), non un
+       numero fisso: sul trapezio le due righe si stringono alla vita
+       insieme al tessuto invece di uscirne */
+    const oa=0.607*W_VITA*0.5*s, ob=0.607*W_PETTO*0.5*s, w=0.0717*s;
+    const o0=oa+(ob-oa)*0.10, o1=oa+(ob-oa)*0.90;
     ctx.lineWidth=w<1?1:w;
     ctx.beginPath();
-    ctx.moveTo(ax+dx*0.10+nx*o, ay+dy*0.10+ny*o);
-    ctx.lineTo(ax+dx*0.90+nx*o, ay+dy*0.90+ny*o);
-    ctx.moveTo(ax+dx*0.10-nx*o, ay+dy*0.10-ny*o);
-    ctx.lineTo(ax+dx*0.90-nx*o, ay+dy*0.90-ny*o);
+    ctx.moveTo(ax+dx*0.10+nx*o0, ay+dy*0.10+ny*o0);
+    ctx.lineTo(ax+dx*0.90+nx*o1, ay+dy*0.90+ny*o1);
+    ctx.moveTo(ax+dx*0.10-nx*o0, ay+dy*0.10-ny*o0);
+    ctx.lineTo(ax+dx*0.90-nx*o1, ay+dy*0.90-ny*o1);
     ctx.stroke();
   }else if(look.disegno==='fascia'){
     /* LA FASCIA SALE E DIMAGRISCE (A0 dell'onda delle figure). Stava al
@@ -1660,7 +1781,7 @@ function disegnaPalla(ctx,s,look){
    cx,cyTerra: punto a terra sotto la figura, in pixel.
    hPx: altezza apparente voluta della figura (30 in partita).
    ============================================================ */
-function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
+function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs,filo){
   const clip=CLIPS[nomeClip], cam=CAMERE[nomeCam];
   /* le tinte caldo/freddo della divisa: si calcolano UNA VOLTA per look e
      restano in cache. Qui in testa e non dentro il ciclo, perche' gli arti
@@ -1833,15 +1954,69 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
      il contorno resta lo stesso NUMERO DI PIXEL di prima. Se ingrassasse
      salderebbe le tre masse; se dimagrisse la sagoma perderebbe il
      perimetro che la stacca dall'erba. */
-  let bd=0.0405*s<0.8?0.8:0.0405*s;
+  let bd=0.0330*s<0.8?0.8:0.0330*s;
   { const mx=1.35/lodK; if(bd>mx)bd=mx; }
-  ctx.strokeStyle=BORDO;
+  /* =====================================================================
+     IL FILO DI STACCO FRA DUE CORPI, e perche' e' una passata e non una
+     tinta. Due figure che si sovrappongono portano lo STESSO contorno
+     scuro: dove si toccano non c'e' nessun confine, le due sagome si
+     saldano e il duello diventa una macchia sola — il «blob» del
+     giudice. L'alone di stacco che il gioco ha gia' non lo risolve: e'
+     un rialzo di luce SULL'ERBA attorno ai piedi, quindi separa il corpo
+     dal prato e non un corpo dall'altro, e per giunta lo disegna la
+     figura DIETRO, sotto quella davanti.
+     Qui il perimetro si disegna DUE VOLTE: prima chiaro e piu' largo,
+     poi scuro alla larghezza di sempre. Il chiaro sporge di filo unita'
+     tutto attorno, e siccome la figura davanti si disegna DOPO quella
+     dietro, quel filo cade sopra il corpo di dietro: un taglio netto
+     esattamente dove serve. Chi non e' in duello non paga niente — il
+     chiamante passa filo=0 e la passata non parte.
+     Costo: una passata di contorno in piu' (13 tratti) sulle sole figure
+     sovrapposte, di norma zero o due per fotogramma.
+     ===================================================================== */
+  const fl = filo>0 ? filo/lodK : 0;
+  /* IL FILO SI DISEGNA IN QUATTRO OPERAZIONI, NON IN TREDICI. Ripetere la
+     passata di contorno segmento per segmento costava, misurato con
+     prestazione.js sulla scena d'azione, il +18% del fotogramma medio:
+     in mischia meta' delle figure e' sopra un'altra, e tredici tratti in
+     piu' a testa sono un terzo del costo di una figura. Il filo pero' non
+     e' una SAGOMA, e' un ALONE: non gli serve la larghezza esatta di ogni
+     osso. Qui gli arti si raggruppano in DUE tracciati soli — i grossi
+     (cosce, barra dei fianchi) e i sottili (braccia, tibie, piedi,
+     collo) — piu' il trapezio del busto e il cerchio della testa. Quattro
+     chiamate al posto di tredici, e il costo torna sotto il rumore.
+     Larghezze arrotondate all'insu' del gruppo: un alone un filo piu'
+     largo del vero e' esattamente quello che deve essere. */
+  if(fl>0){
+    const capV=ctx.lineCap; ctx.lineCap='round';
+    ctx.strokeStyle=STACCO_FILO;
+    for(let k=0;k<2;k++){
+      ctx.lineWidth=(k?0.180:0.250)*MSP*s+2*(bd+fl);
+      ctx.beginPath();
+      for(let i=0;i<NS;i++){
+        const g=SEGS[i];
+        if(g.kind>=2) continue;                 // testa e palla a parte
+        const grosso = g.c==='pantaloncini';    // cosce e barra dei fianchi
+        if((k===0)!==grosso) continue;
+        ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
+      }
+      ctx.stroke();
+    }
+    ctx.fillStyle=STACCO_FILO;
+    troncoQuad(ctx,s,bd+fl,0,1,0,1);
+    ctx.beginPath(); ctx.arc(SX[HEAD],SY[HEAD],HEADR*s+bd+fl,0,TAU); ctx.fill();
+    ctx.lineCap=capV;
+  }
+  {
+  const bp = bd;
+  const tb = BORDO;
+  ctx.strokeStyle=tb;
   for(let i=0;i<NS;i++){
     const g=SEGS[i];
     if(g.kind===3) continue;             // la palla ha gia' il suo bordo
     if(g.kind===2){
-      ctx.fillStyle=BORDO;
-      ctx.beginPath(); ctx.arc(SX[HEAD],SY[HEAD],HEADR*s+bd,0,TAU); ctx.fill();
+      ctx.fillStyle=tb;
+      ctx.beginPath(); ctx.arc(SX[HEAD],SY[HEAD],HEADR*s+bp,0,TAU); ctx.fill();
       continue;
     }
     /* GOMITI RASTREMATI da vicino: l'avambraccio cala del 20% rispetto
@@ -1849,8 +2024,9 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
        essere un tubo unico. Vale anche per il contorno, che deve seguire
        la stessa sagoma. Sotto soglia niente: le pedine a 30px non lo
        leggerebbero. */
+    if(g.kind===1){ ctx.fillStyle=tb; troncoQuad(ctx,s,bp,0,1,0,1); continue; }
     const w=g.w*(g.arti?MSP:1)*s*((lodOn&&(g.b===HAR||g.b===HAL))?0.80:1);
-    ctx.lineWidth=(w<1.1?1.1:w)+2*bd;
+    ctx.lineWidth=(w<1.1?1.1:w)+2*bp;
     /* IL BUSTO NON HA LA CALOTTA IN CIMA — e' la riga che stacca la
        testa dal tronco. Vedi il commento esteso nella passata a colori:
        il contorno deve avere la STESSA sagoma, altrimenti la calotta
@@ -1862,7 +2038,8 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
     ctx.stroke();
     if(piatto) ctx.lineCap='round';
     /* le dita entrano nel perimetro: prima il loro contorno scuro */
-    if(lodOn && (g.b===HAR||g.b===HAL)) mano(ctx,s,g.a,g.b,look,bd);
+    if(lodOn && (g.b===HAR||g.b===HAL)) mano(ctx,s,g.a,g.b,look,bp);
+  }
   }
   // dal piu' lontano al piu' vicino
   for(let i=0;i<NS;i++){
@@ -1887,6 +2064,7 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
     }
     ctx.strokeStyle=tinta;
     ctx.lineWidth=W;
+    if(g.kind===1){ ctx.fillStyle=tinta; troncoQuad(ctx,s,0,0,1,0,1); }
     /* =================================================================
        LA CALOTTA DEL BUSTO E' QUELLA CHE SALDAVA LA TESTA AL TRONCO.
        Misurato sul banco ?banco=silhouette: la maschera nera a 40 px non
@@ -1912,11 +2090,40 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
        netto del tronco si vede — legge come una scatola. La spalla
        quadrata e' un rimedio per quaranta pixel, non un disegno.
        Costo: zero — stesso tratto, altro lineCap. */
-    const piatto = (g.kind===1||g.pi) && !lodOn;
+    const piatto = g.pi && !lodOn;
     if(piatto) ctx.lineCap='butt';
-    ctx.beginPath();
-    ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
-    ctx.stroke();
+    /* =================================================================
+       LA COSCIA NON E' UN PANTALONCINO LUNGO (16 ago 2026).
+       Nel primo piano del gol e dei rigori la figura leggeva come un
+       MONOLITE: dal bacino alle scarpe un blocco solo nella tinta dei
+       calzoncini, perche' il segmento anca-ginocchio e' UNO e portava
+       una tinta sola. Un calciatore vestito ha quattro blocchi sulla
+       gamba, non uno: calzoncino (largo, meta' alta), COSCIA NUDA,
+       calzettone col risvolto, scarpa. Qui si aggiungono i due che
+       mancavano — la coscia si disegna in pelle a larghezza ridotta
+       (0,82: la gamba e' piu' magra del tessuto) e il calzoncino ci va
+       sopra fino al 54%, a larghezza piena.
+       SOLO CON lodOn: a quaranta pixel la coscia e' sei unita' e i due
+       pezzi diventerebbero tre pixel di fango. Sotto soglia il disegno
+       e il costo restano quelli di sempre. */
+    if(lodOn && g.cos){
+      const alt = tinta!==look[g.c] && look._ombS && look._ombS.pelle;
+      ctx.strokeStyle = alt ? look._ombS.pelle : look.pelle;
+      ctx.lineWidth = W*0.82;
+      ctx.beginPath();
+      ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
+      ctx.stroke();
+      ctx.strokeStyle = tinta; ctx.lineWidth = W;
+      const cax=SX[g.a], cay=SY[g.a];
+      ctx.beginPath();
+      ctx.moveTo(cax,cay);
+      ctx.lineTo(cax+(SX[g.b]-cax)*0.54, cay+(SY[g.b]-cay)*0.54);
+      ctx.stroke();
+    }else if(g.kind!==1){
+      ctx.beginPath();
+      ctx.moveTo(SX[g.a],SY[g.a]); ctx.lineTo(SX[g.b],SY[g.b]);
+      ctx.stroke();
+    }
     if(piatto) ctx.lineCap='round';
     /* MANI a dita al posto del bozzolo (solo da vicino) */
     if(lodOn && (g.b===HAR||g.b===HAL)) mano(ctx,s,g.a,g.b,look,-1);
@@ -2015,20 +2222,8 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
              resta ampio (il 22% del busto): la legge della luce vale
              ancora, la misura smette di ballare. */
           const TERM=0.78;
-          const ol=W*(0.5-TERM*0.5), oo=-W*TERM*0.5;
-          const capOld=ctx.lineCap;
-          ctx.lineCap='butt';
-          ctx.lineWidth=W*TERM;
-          ctx.strokeStyle=look._lume;
-          ctx.beginPath();
-          ctx.moveTo(ax+dx*0.06+nx*ol, ay+dy*0.06+ny*ol);
-          ctx.lineTo(ax+dx*0.94+nx*ol, ay+dy*0.94+ny*ol); ctx.stroke();
-          ctx.lineWidth=W*(1-TERM);
-          ctx.strokeStyle=look._ombra;
-          ctx.beginPath();
-          ctx.moveTo(ax+dx*0.06+nx*oo, ay+dy*0.06+ny*oo);
-          ctx.lineTo(ax+dx*0.94+nx*oo, ay+dy*0.94+ny*oo); ctx.stroke();
-          ctx.lineCap=capOld;
+          ctx.fillStyle=look._lume;  troncoQuad(ctx,s,0,0,TERM,0.06,0.94);
+          ctx.fillStyle=look._ombra; troncoQuad(ctx,s,0,TERM,1,0.06,0.94);
         }else{
           /* MAGLIA VERA da vicino: i fili pieni di _lume/_ombra a questa
              scala leggevano come BRETELLE (misurato al primo giro di
@@ -2040,22 +2235,11 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs){
              cancellerebbero. La coppia caldo/freddo e' la stessa della
              legge della luce — ambra a ovest, cielo a est. */
           const TERM=0.72;
-          const ol=W*(0.5-TERM*0.5), oo=-W*TERM*0.5;
-          ctx.lineCap='butt';
-          ctx.lineWidth=W*TERM;
-          ctx.globalAlpha=0.17;
-          ctx.strokeStyle='#ffe9b8';
-          ctx.beginPath();
-          ctx.moveTo(ax+dx*0.06+nx*ol, ay+dy*0.06+ny*ol);
-          ctx.lineTo(ax+dx*0.94+nx*ol, ay+dy*0.94+ny*ol); ctx.stroke();
-          ctx.lineWidth=W*(1-TERM);
-          ctx.globalAlpha=0.30;
-          ctx.strokeStyle=SOLE.tintaOmbra;
-          ctx.beginPath();
-          ctx.moveTo(ax+dx*0.06+nx*oo, ay+dy*0.06+ny*oo);
-          ctx.lineTo(ax+dx*0.94+nx*oo, ay+dy*0.94+ny*oo); ctx.stroke();
+          ctx.globalAlpha=0.17; ctx.fillStyle='#ffe9b8';
+          troncoQuad(ctx,s,0,0,TERM,0.06,0.94);
+          ctx.globalAlpha=0.30; ctx.fillStyle=SOLE.tintaOmbra;
+          troncoQuad(ctx,s,0,TERM,1,0.06,0.94);
           ctx.globalAlpha=1;
-          ctx.lineCap='round';
           /* e il COLLETTO in seconda tinta, appena sotto il collo */
           ctx.strokeStyle=look.maglia2;
           ctx.lineWidth=0.058*s<1?1:0.058*s;

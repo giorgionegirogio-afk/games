@@ -65,6 +65,16 @@ async function apri(browser, srv, file, vista) {
     let s = seme >>> 0 || 1;
     const prossimo = () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s >>> 0; };
     Math.random = () => prossimo() / 4294967296;
+    /* IL SEME SI PUO' RIMETTERE AL PUNTO DI PARTENZA, a comando — quarta
+       volta che si paga la stessa lezione, e stavolta il seme fisso non
+       bastava. Inchiodarlo al CARICAMENTO garantisce che la pagina veda
+       sempre la stessa sequenza; NON garantisce che un controllo lanciato
+       a meta' pagina la veda dallo stesso PUNTO, perche' il ciclo
+       requestAnimationFrame gira sull'orologio vero fra una pag.evaluate()
+       e l'altra e ogni fotogramma disegnato consuma qualche migliaio di
+       numeri (la folla). Chi misura i PIXEL richiama questa funzione e
+       riparte dal punto dichiarato: vedi il contrasto maglia/erba. */
+    window.__risemina = n => { s = (n >>> 0) || 1; };
     if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
       crypto.getRandomValues = a => { for (let i = 0; i < a.length; i++) a[i] = prossimo(); return a; };
     }
@@ -370,15 +380,152 @@ async function calcetto(browser, srv) {
      "DIVISE AD ALTO CONTRASTO (per daltonismo)" e' UNA sola voce, che vale
      insieme da alto contrasto e da modalita' per daltonici — non esistono
      due interruttori separati, e non se ne inventa uno qui.
+
+     =====================================================================
+     PERCHE' QUESTA MISURA NON ERA RIPETIBILE, E COME E' STATA INCHIODATA
+     (17 agosto 2026). Prova d'accusa: tre esecuzioni di fila, stesso
+     codice, niente in mezzo — 2,81/3,10 poi 3,74/3,66 poi di nuovo
+     2,81/3,10. Bimodale, e a cavallo della soglia: lo stesso gioco veniva
+     dichiarato rosso e verde a seconda del giro. Una notte di lavoro sul
+     colore e' stata guidata da questo numero.
+     Non era il seme di Math.random: quello e' inchiodato in addInitScript
+     dal giorno degli autogol. Non era il gioco: lo schiacciamento delle
+     figure non scende mai sotto 0,88 in 36.000 campioni. Erano TRE cose,
+     tutte e tre della stessa famiglia — il banco governa il tempo
+     SIMULATO, mentre il ciclo dei fotogrammi corre sull'orologio VERO.
+
+     (1) IL PUNTO DEL GENERATORE, non il suo seme. Fra una pag.evaluate()
+         e l'altra il requestAnimationFrame del gioco continua a girare, e
+         ogni fotogramma disegnato brucia qualche migliaio di numeri
+         casuali (la folla): misurato, ~3.900 per fotogramma. Quando il
+         controllo del contrasto parte, il generatore e' a un punto che
+         dipende da QUANTI fotogrammi ha fatto in tempo a disegnare la
+         macchina — cioe' dall'orologio. Trentuno di quei numeri li usa
+         startMatch, e il primo e' `G.kickTeam = Math.random()<0.5`: un
+         lancio di moneta che decide chi batte il calcio d'inizio, cioe'
+         DUE partite diverse. Ecco la bimodalita'. Rimedio: il generatore
+         si RIMETTE al punto dichiarato (window.__risemina) appena prima
+         di ogni partita campionata, e il blocco di misura non contiene
+         nessun await, quindi da li' in poi nessun fotogramma dell'orologio
+         puo' infilarsi in mezzo. Misurato dopo il rimedio, con una sonda
+         che ripete la misura infilando attese di 0, 97, 194, 291, 388 e
+         485 ms fra una e l'altra: stesso numero al millesimo tutte le
+         volte, mentre prima le stesse sei corse davano 2,37 2,45 / 5,11
+         3,89 / 2,82 2,70 / 2,67 3,79 / 2,99 2,50 / 2,40 3,98.
+     (2) LO STATO CHE startMatch NON AZZERA. Restano in piedi, fra una
+         partita e l'altra, la sponda e la banda elette dalla camera
+         (G.camLato, G.camBanda), G.pulse, G.possT e G.possOwner. Sono
+         latch di regia: valgono un pelo di zoom e qualche pixel di
+         inquadratura, cioe' quali corpi restano dentro il fotogramma.
+         Misurato con la sonda (schema di campionamento suo, quindi
+         guardare le DUE modalita' e non i valori): la PRIMA misura dopo
+         il caricamento dava 4,79 e tutte le successive 4,89, sempre — e
+         il salto stava tutto nella camera, non nei giocatori, che erano
+         alla stessa posizione al decimo. Rimedio: una partita di
+         RISCALDAMENTO, buttata via, prima di quelle campionate — cosi' i
+         latch partono da uno stato dichiarato invece che dalla storia
+         della pagina, e il numero non dipende piu' da quali controlli
+         sono stati eseguiti prima.
+     (3) LA CAMERA VIVE SUL FOTOGRAMMA, NON SUL PASSO DI FISICA.
+         updateCamera(rdt) e' chiamata da render(), non da step(). Il
+         vecchio schema — simulate(0,6) e poi UN disegna() — faceva
+         avanzare la fisica di 36 passi e la camera di 1: dopo otto
+         campioni la camera aveva integrato 8/60 di secondo di
+         inseguimento e stava ancora praticamente ferma al centro del
+         campo, con l'azione altrove. Il fotogramma misurato non era
+         quello che il gioco avrebbe disegnato in quell'istante, ed e' un
+         punto che conta parecchio: la vignettatura scurisce i bordi del
+         quadro, e dove cadono i corpi decide il manto che si campiona
+         attorno a loro (lo dice gia' updateCamera, alla voce «zona morta
+         contro il muro»: spostare i corpi verso il centro valse mezzo
+         punto di contrasto). Guardati i due fotogrammi appaiati non c'e'
+         bisogno di numeri: col vecchio schema l'azione sta schiacciata
+         sul bordo sinistro, un giocatore e' tagliato a meta' dalla barra
+         del punteggio e l'area di rigore non e' nemmeno in scena; col
+         passo accoppiato la camera ha seguito il pallone e l'inquadratura
+         e' quella del gioco. Rimedio: passo ACCOPPIATO, un disegna() ogni
+         1/60 di simulate(), come il ciclo vero. Costa: il collaudo del
+         calcetto passa da ~15-30 s a ~40 s, ed e' il prezzo giusto per
+         guardare il fotogramma vero invece di uno comodo.
+
+     E UNA QUARTA COSA, che non e' ripetibilita' ma onesta': UNA PARTITA
+     SOLA E' UN SORTEGGIO, per quanto la si inchiodi. Misurato su sei semi
+     diversi con tutto il resto fermo, il rapporto in daltonismo spazia
+     fra 2,65 e 4,59 (scarto 0,59 su P1 e 0,63 su P2) — perche' cambia la
+     partita: dove si gioca, come e' illuminata, quali pose cadono sotto
+     la finestra. Aumentare i fotogrammi DENTRO una partita non serve: a
+     36 fotogrammi invece di 8 la forbice resta (3,07-4,71) e lo scarto
+     scende appena, 0,59 -> 0,57 su P1 e 0,63 -> 0,47 su P2. La
+     dispersione e' FRA partite, non dentro.
+     Inchiodare un seme solo darebbe un cancello ripetibile e arbitrario,
+     che e' esattamente il modo in cui questo numero ha guidato alla cieca:
+     con la moneta del calcio d'inizio libera, la stessa identica grafica
+     poteva presentarsi come 2,81 o come 3,74, e la soglia sta in mezzo.
+     Percio' si campionano TRE partite a semi DICHIARATI e si mette tutto
+     in un solo mucchio: la mediana e' calcolata sui pixel di tutte e tre.
+     Il dettaglio riporta anche le tre partite una per una, cosi' chi tara
+     un colore vede la dispersione invece di indovinarla.
+     I VALORI DI PARTENZA, misurati il 17 agosto 2026 subito dopo questa
+     riparazione (e ripetuti identici in cinque esecuzioni di fila e in due
+     esecuzioni della suite intera, che e' l'altra prova: il numero non
+     dipende piu' da quali controlli sono stati eseguiti prima):
+       vista normale     P1 4,79:1 (5,19 / 3,90 / 5,26)
+                         P2 3,30:1 (3,75 / 3,60 / 2,99)
+       daltonismo        P1 4,36:1 (4,83 / 3,49 / 4,83)
+                         P2 3,74:1 (4,25 / 3,97 / 3,14)
+     Il cancello passa, e l'allarme della notte del 16 era un artefatto
+     della misura, non una regressione del colore. Ma il margine e' sottile
+     e va detto: la squadra 1 in daltonismo scende a 3,14 nella peggiore
+     delle tre partite, e la rosa in vista normale a 2,99. Sono numeri da
+     tenere d'occhio, non da festeggiare.
+
+     RETTIFICA, 19 agosto 2026. "Numeri da tenere d'occhio" era ancora
+     troppo tranquillo, e i valori qui sopra sono scaduti. Rimisurati oggi
+     sullo stesso banco, con le stesse tre partite:
+       vista normale     P1 2,61:1 (2,05 / 4,57 / 2,13)   2 su 3 sotto
+                         P2 4,07:1 (3,26 / 4,79 / 2,79)   1 su 3 sotto
+       daltonismo        P1 3,42:1 (2,84 / 6,09 / 2,98)   2 su 3 sotto
+                         P2 4,82:1 (4,06 / 5,61 / 3,32)   0 su 3 sotto
+     Nessuna modifica ha introdotto il calo: una toppa ha cambiato il
+     consumo dei sorteggi e il gioco ha cominciato a pescare coppie di
+     divise che prima non uscivano mai. Il difetto c'era sempre, e a
+     nasconderlo era il seme — piu' esattamente, il fatto che una MEDIA di
+     tre partite resta verde con due partite rosse dentro. Da qui la riga
+     che il controllo stampa dichiara anche la peggiore delle partite e
+     quante stanno sotto la soglia, e la tabella completa di TUTTE le
+     divise del gioco (non solo le due in campo) la fa
+     strumenti/_sonda-divise.js.
+
+     LA PROVA CHE IL CANCELLO SA ANCORA DIRE NO, dentro lo strumento:
+     `GUASTO=1 node strumenti/collaudo.js calcetto` dipinge le due tinte
+     del kit della squadra 0 con la tinta media del manto (#2f6b22) e la
+     misura DEVE andare rossa. Misurato: P1 scende da 4,79 a 1,95 in vista
+     normale e da 4,36 a 1,95 in daltonismo, P2 non si muove di un
+     millesimo (3,30 e 3,74) perche' la sua maglia non e' stata toccata —
+     ed e' la seconda meta' della prova, quella che dice che il rosso
+     arriva dalla maglia dipinta e non da un guasto generale.
+     E' un interruttore che puo' solo accendere il rosso, mai il verde:
+     non c'e' modo di usarlo per far passare qualcosa. Chi tocca questa
+     misura lo lanci una volta prima di dichiararla sana. L'altra mezza
+     prova, complementare, e' alzare SOGLIA_CONTRASTO sopra il misurato:
+     a 5 tutti e quattro i controlli vanno rossi e il processo esce con 1.
      ===================================================================== */
   const SOGLIA_CONTRASTO = 3;
+  /* i semi delle tre partite campionate: DICHIARATI, non pescati.
+     Cambiarli cambia il numero (vedi la dispersione qui sopra): e' una
+     scelta, e va fatta con gli occhi aperti. */
+  const SEMI_CONTRASTO = [20260728, 20260729, 20260730];
+  /* la tinta con cui GUASTO=1 dipinge la maglia: la mediana del manto
+     misurata da questo stesso controllo, cioe' erba su erba */
+  const TINTA_GUASTO = process.env.GUASTO ? '#2f6b22' : null;
   const MODI_VISTA = [
     { dalt: false, nome: "vista normale" },
     { dalt: true, nome: "divise ad alto contrasto (daltonismo)" },
   ];
 
   for (const modo of MODI_VISTA) {
-    const mis = await pag.evaluate(async (dalt) => {
+    const mis = await pag.evaluate(async (arg) => {
+      const dalt = arg.dalt, SEMI = arg.semi, GUASTO = arg.guasto;
       const t = window.__test;
       const cv = document.getElementById('gioco');
       const c2 = cv.getContext('2d', { willReadFrequently: true });
@@ -387,24 +534,92 @@ async function calcetto(browser, srv) {
       const DPRc = cv.width / window.innerWidth;
 
       t.dismissSplash && t.dismissSplash();
-      t.setDalt(!!dalt);
-      t.startMatch(1, 1);
-      t.setCpuVsCpu(true);
+      /* una partita si apre SEMPRE cosi': stessa scena, stesse impostazioni.
+         Il guasto (se chiesto) si ridipinge dopo ogni startMatch, perche'
+         applyKit() rimette il kit vero a ogni fischio d'inizio. */
+      const avviaPartita = () => {
+        t.setDalt(!!dalt);
+        t.startMatch(1, 1);
+        t.setCpuVsCpu(true);
+        /* tutte e DUE le tinte del kit: dipingerne una sola lasciava il
+           palato e la fascia della seconda tinta dentro la finestra del
+           torso e la mediana usciva a meta' strada (2,19 invece di 1,95).
+           Non scende a 1,00 nemmeno cosi', e va detto: la maglia del rig
+           e' illuminata e ombreggiata, quindi «stessa tinta dell'erba» non
+           vuol dire «stessa luminanza sullo schermo». 1,95 e' comunque
+           meta' della soglia, e il cancello va rosso come deve. */
+        if (GUASTO) { TEAMCOL[0] = GUASTO; TEAMCOL2[0] = GUASTO; refreshTeamRGB(); }
+      };
+      /* PASSO ACCOPPIATO: un fotogramma disegnato ogni passo di fisica,
+         come il ciclo vero del gioco. E' cio' che tiene la camera al
+         passo con l'azione (updateCamera vive in render, non in step). */
+      const avanza = sec => {
+        const n = Math.round(sec * 60);
+        for (let i = 0; i < n; i++) { t.simulate(1 / 60); t.disegna(); }
+      };
 
       const lumin = (r, g, b) => {
         const f = c => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
         return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
       };
       const mediana = a => { const s = a.slice().sort((x, y) => x - y); return s[s.length >> 1]; };
+      /* il colore rappresentativo e' la MEDIANA per canale, e il rapporto
+         e' quello del contrasto del testo: un posto solo, usato sia per la
+         singola partita sia per il mucchio di tutte e tre */
+      const rappr = a => a.length ? [mediana(a.map(c => c[0])), mediana(a.map(c => c[1])), mediana(a.map(c => c[2]))] : null;
+      const rapportoDi = (mm, ee) => {
+        const m = rappr(mm), e = rappr(ee);
+        if (!m || !e) return null;
+        const Lm = lumin(m[0], m[1], m[2]), Le = lumin(e[0], e[1], e[2]);
+        return (Math.max(Lm, Le) + 0.05) / (Math.min(Lm, Le) + 0.05);
+      };
       const FW = 1150, FH = 560;             // campo logico
+      /* il mucchio unico di TUTTE le partite campionate, e il conto
+         partita per partita che serve a dichiarare la dispersione */
       const maglia = [[], []], erba = [[], []];
+      const perPartita = [];
       let fotogrammi = 0;
       /* la capsula d'ombra dichiarata dal GIOCO: versore, lunghezza
-         massima e mezza larghezza. Se un giorno l'hook sparisse si
-         ricade su una capsula generosa invece che su numeri finti. */
-      const OMB = (t.ombraCapsula && t.ombraCapsula()) ||
-                  { ux: 0.9406, uy: 0.3402, l0: 0, l1: 140, semiCorto: 7.6, piedeX: 4.2, piedeY: 7.8 };
-      /* distanza di un punto dal SEGMENTO d'ombra di q: e' la capsula */
+         massima e mezza larghezza. Si rilegge a OGNI fotogramma e non una
+         volta sola: con la sera che scende il sole si abbassa e l'ombra si
+         allunga, e una capsula letta al fischio d'inizio sarebbe di nuovo
+         una copia che diverge. Se un giorno l'hook sparisse si ricade su
+         una capsula generosa invece che su numeri finti. */
+      /* BANCO ONESTO: nessun ripiego muto. Qui c'era una capsula d'archivio
+         (ux 0,9406 · uy 0,3402 · l1 140 · semiCorto 7,6) usata in
+         silenzio se __test.ombraCapsula fosse sparito. Quella capsula
+         serve a NON campionare come erba i pixel in ombra: con una
+         geometria vecchia il rapporto maglia/erba resterebbe verde
+         misurando i pixel sbagliati.
+         E NON BASTA CHIEDERE SE LA FUNZIONE C'E'. Il critico l'ha
+         dimostrato: rinominando due campi del valore di ritorno (ux, uy)
+         e lasciando la funzione al suo posto, uscivano quattro numeri
+         DIVERSI (4,02 / 4,51 / 5,24 / 5,40 contro 3,90 / 4,49 / 5,09 /
+         5,38), tutti verdi e tutti muti — perche' con un versore
+         indefinito il filtro dell'arco a ovest si spegne da solo. Si
+         controlla la FORMA, come fa preso() in istantanea.js: ogni
+         campo, e il versore dev'essere un versore. */
+      const capsulaGuasta = k => {
+        if (!k || typeof k !== 'object') return "ombraCapsula() non torna un oggetto: " + String(k);
+        for (const n of ['ux', 'uy', 'l0', 'l1', 'semiCorto', 'piedeX', 'piedeY'])
+          if (typeof k[n] !== 'number' || !isFinite(k[n])) return "manca (o non e' un numero) il campo '" + n + "'";
+        const mo = Math.hypot(k.ux, k.uy);
+        if (!(Math.abs(mo - 1) < 0.01)) return "(ux,uy) non e' un versore: modulo " + mo.toFixed(4);
+        if (!(k.l1 > k.l0)) return 'l1 non e\' oltre l0: ' + k.l0 + ' -> ' + k.l1;
+        if (!(k.semiCorto > 0)) return 'semiCorto non e\' positivo: ' + k.semiCorto;
+        return null;
+      };
+      let OMB = null, OMB_ASSENTE = true, OMB_MOTIVO = null;
+      if (typeof t.ombraCapsula !== 'function') OMB_MOTIVO = "__test.ombraCapsula non e' una funzione";
+      else {
+        try { OMB = t.ombraCapsula(); }
+        catch (e) { OMB = null; OMB_MOTIVO = "ombraCapsula() e' esplosa: " + e.message; }
+        if (!OMB_MOTIVO) { OMB_MOTIVO = capsulaGuasta(OMB); if (OMB_MOTIVO) OMB = null; }
+      }
+      OMB_ASSENTE = !OMB;
+      /* distanza di un punto dal SEGMENTO d'ombra di q: e' la capsula.
+         Qui dentro OMB e' sempre valida: dove non lo e', non si campiona
+         affatto (vedi il "continue" nel giro dei fotogrammi). */
       const dentroOmbra = (qx, qy, wx, wy) => {
         const ax = qx + OMB.piedeX, ay = qy + OMB.piedeY;
         const rx = wx - ax, ry = wy - ay;
@@ -418,107 +633,203 @@ async function calcetto(browser, srv) {
         return Math.hypot(wx - px, wy - py) < semi;
       };
 
-      /* piu' fotogrammi e piu' giocatori: un solo omino su una sola zolla
-         sarebbe un aneddoto, non una misura */
-      for (let k = 0; k < 8; k++) {
-        t.simulate(k === 0 ? 3.0 : 0.6);
-        for (let i = 0; i < 60 && !(t.state === 'play' || t.state === 'golden'); i++) t.simulate(0.1);
-        if (t.state !== 'play' && t.state !== 'golden') continue;
-        /* disegna() rifa' il fotogramma con la stessa render() del gioco:
-           senza, si leggerebbero i pixel di una partita piu' vecchia di
-           quella appena simulata */
-        t.disegna();
-        fotogrammi++;
-        const img = c2.getImageData(0, 0, cv.width, cv.height).data;
-        const W = cv.width, H = cv.height;
-        const S2 = t.view.S2, Ax = t.view.Ax, Ay = t.view.Ay;
-        const B = t.bande, VWc = W / DPRc, VHc = H / DPRc;
-        const pixel = (sx, sy) => {
-          const x = Math.round(sx * DPRc), y = Math.round(sy * DPRc);
-          if (x < 0 || y < 0 || x >= W || y >= H) return null;
-          const o = (y * W + x) * 4;
-          return [img[o], img[o + 1], img[o + 2]];
-        };
-        const inQuadro = (sx, sy) => sx > 2 && sx < VWc - 2 && sy > B.bar + 2 && sy < VHc - B.foot - 2;
+      /* LA PARTITA DI RISCALDAMENTO, buttata via: porta i latch di regia
+         che startMatch non azzera (G.camLato, G.camBanda, G.pulse, G.possT,
+         G.possOwner) a uno stato dichiarato invece che alla storia della
+         pagina. Senza, la PRIMA misura dopo il caricamento vale 4,79 e
+         tutte le successive 4,89 — cioe' il numero dipende da quanti
+         controlli sono stati eseguiti prima di questo. */
+      window.__risemina(SEMI[0]); avviaPartita(); avanza(1.5);
 
-        for (const p of t.players) {
-          /* solo giocatori di movimento, in piedi, non in esultanza: a terra
-             o in tuffo il torso e' un'altra ellisse e la finestra non tiene */
-          if (p.role === 'gk' || p.out > 0) continue;
-          if (p.slide >= 0 || p.recover > 0 || p.dive > 0 || p.celeb > 0) continue;
-          /* finestra FISSA sullo schermo: il torso del rig sta in piedi
-             sopra il centro comunque sia girato il corpo (vedi il conto
-             nel commento in testa) */
-          for (const av of [-12.5, -11.5, -10.5]) {
-            for (const la of [-1.5, -1.0, -0.5, 0, 0.5, 1.0, 1.5]) {
-              const wx = p.x + la, wy = p.y + av;
-              const sx = wx * S2 + Ax, sy = wy * S2 + Ay;
-              if (!inQuadro(sx, sy)) continue;
-              const c = pixel(sx, sy); if (c) maglia[p.team].push(c);
-            }
+      /* piu' fotogrammi, piu' giocatori e piu' PARTITE: un solo omino su
+         una sola zolla sarebbe un aneddoto, e una sola partita sarebbe un
+         sorteggio (vedi la dispersione dichiarata in testa) */
+      for (const seme of SEMI) {
+        /* si riparte dal punto dichiarato del generatore: da qui in giu' non
+           c'e' nessun await, quindi nessun fotogramma dell'orologio vero puo'
+           infilarsi in mezzo e spostare la sequenza */
+        window.__risemina(seme); avviaPartita();
+        const mP = [[], []], eP = [[], []];
+        for (let k = 0; k < 6; k++) {
+          /* i tre secondi del primo campione non sono un numero tondo a caso:
+             la targa dei capitani dura 1,7 s e non deve entrare in una misura
+             di maglie e prati (vedi CAP_DUR nel gioco) */
+          avanza(k === 0 ? 3.0 : 0.45);
+          for (let i = 0; i < 60 && !(t.state === 'play' || t.state === 'golden'); i++) {
+            /* col passo accoppiato aspettare costa fotogrammi veri: se la
+               partita e' finita non ha senso insistere per sei secondi */
+            if (t.state === 'end' || t.state === 'menu') break;
+            avanza(0.1);
           }
-          for (const r of [30, 34, 38, 42]) {
-            for (let ang = 0; ang < 360; ang += 15) {
-              const rad = ang * Math.PI / 180;
-              const cx = Math.cos(rad), cy = Math.sin(rad);
-              /* SOLO L'ARCO A OVEST, cioe' verso il sole: le ombre vanno
-                 tutte a est per costruzione e a ovest non ne cade nessuna */
-              if (cx * OMB.ux + cy * OMB.uy > 0) continue;
-              const wx = p.x + cx * r, wy = p.y + cy * r;
-              if (wx < 8 || wx > FW - 8 || wy < 8 || wy > FH - 8) continue;
-              let libero = true;
-              for (const q of t.players) {
-                if (q.out > 0) continue;
-                if (q !== p && Math.hypot(q.x - wx, q.y - wy) < 30) { libero = false; break; }
-                /* il riquadro copre il CORPO anche in altezza: la figura
-                   del rig sale fino a ~-24,5 (testa) */
-                if (Math.abs(wx - q.x) < 20 && Math.abs(wy - (q.y + 2)) < 28) { libero = false; break; }
-                /* e la capsula copre l'OMBRA PORTATA di ogni giocatore,
-                   non solo di quello campionato: con ottantotto unita' di
-                   lunghezza le ombre altrui attraversano questo anello */
-                if (dentroOmbra(q.x, q.y, wx, wy)) { libero = false; break; }
+          if (t.state !== 'play' && t.state !== 'golden') continue;
+          /* il fotogramma e' gia' quello giusto: avanza() disegna a ogni
+             passo di fisica, quindi camera e azione sono allo stesso istante */
+          /* la capsula si rilegge a OGNI fotogramma (con la sera che
+             scende il sole si abbassa e l'ombra si allunga) e si
+             RIVALIDA a ogni fotogramma: una capsula che diventa storta a
+             meta' corsa e' peggio di una che manca dall'inizio. */
+          if (!OMB_ASSENTE) {
+            let k = null, guai = null;
+            try { k = t.ombraCapsula(); } catch (e) { guai = "ombraCapsula() e' esplosa: " + e.message; }
+            if (!guai) guai = capsulaGuasta(k);
+            if (guai) { OMB_ASSENTE = true; OMB = null; OMB_MOTIVO = "a meta' corsa: " + guai; }
+            else OMB = k;
+          }
+          /* SENZA CAPSULA VALIDA NON SI CAMPIONA. Non "si campiona
+             lasciando passare tutto": con OMB nulla il filtro dell'arco a
+             ovest si spegnerebbe da solo e i numeri uscirebbero diversi,
+             verdi e muti. Zero fotogrammi campionati e' una risposta
+             onesta; quattro numeri sbagliati no. */
+          if (OMB_ASSENTE) continue;
+          fotogrammi++;
+          const img = c2.getImageData(0, 0, cv.width, cv.height).data;
+          const W = cv.width, H = cv.height;
+          const S2 = t.view.S2, Ax = t.view.Ax, Ay = t.view.Ay;
+          const B = t.bande, VWc = W / DPRc, VHc = H / DPRc;
+          const pixel = (sx, sy) => {
+            const x = Math.round(sx * DPRc), y = Math.round(sy * DPRc);
+            if (x < 0 || y < 0 || x >= W || y >= H) return null;
+            const o = (y * W + x) * 4;
+            return [img[o], img[o + 1], img[o + 2]];
+          };
+          const inQuadro = (sx, sy) => sx > 2 && sx < VWc - 2 && sy > B.bar + 2 && sy < VHc - B.foot - 2;
+
+          for (const p of t.players) {
+            /* solo giocatori di movimento, in piedi, non in esultanza: a terra
+               o in tuffo il torso e' un'altra ellisse e la finestra non tiene */
+            if (p.role === 'gk' || p.out > 0) continue;
+            if (p.slide >= 0 || p.recover > 0 || p.dive > 0 || p.celeb > 0) continue;
+            /* finestra FISSA sullo schermo: il torso del rig sta in piedi
+               sopra il centro comunque sia girato il corpo (vedi il conto
+               nel commento in testa) */
+            for (const av of [-12.5, -11.5, -10.5]) {
+              for (const la of [-1.5, -1.0, -0.5, 0, 0.5, 1.0, 1.5]) {
+                const wx = p.x + la, wy = p.y + av;
+                const sx = wx * S2 + Ax, sy = wy * S2 + Ay;
+                if (!inQuadro(sx, sy)) continue;
+                const c = pixel(sx, sy); if (c) mP[p.team].push(c);
               }
-              if (!libero) continue;
-              if (Math.hypot(t.ball.x - wx, t.ball.y - wy) < 24) continue;
-              const sx = wx * S2 + Ax, sy = wy * S2 + Ay;
-              if (!inQuadro(sx, sy)) continue;
-              const c = pixel(sx, sy); if (c) erba[p.team].push(c);
+            }
+            for (const r of [30, 34, 38, 42]) {
+              for (let ang = 0; ang < 360; ang += 15) {
+                const rad = ang * Math.PI / 180;
+                const cx = Math.cos(rad), cy = Math.sin(rad);
+                /* SOLO L'ARCO A OVEST, cioe' verso il sole: le ombre vanno
+                   tutte a est per costruzione e a ovest non ne cade nessuna */
+                if (cx * OMB.ux + cy * OMB.uy > 0) continue;
+                const wx = p.x + cx * r, wy = p.y + cy * r;
+                if (wx < 8 || wx > FW - 8 || wy < 8 || wy > FH - 8) continue;
+                let libero = true;
+                for (const q of t.players) {
+                  if (q.out > 0) continue;
+                  if (q !== p && Math.hypot(q.x - wx, q.y - wy) < 30) { libero = false; break; }
+                  /* il riquadro copre il CORPO anche in altezza: la figura
+                     del rig sale fino a ~-24,5 (testa) */
+                  if (Math.abs(wx - q.x) < 20 && Math.abs(wy - (q.y + 2)) < 28) { libero = false; break; }
+                  /* e la capsula copre l'OMBRA PORTATA di ogni giocatore,
+                     non solo di quello campionato: con ottantotto unita' di
+                     lunghezza le ombre altrui attraversano questo anello */
+                  if (dentroOmbra(q.x, q.y, wx, wy)) { libero = false; break; }
+                }
+                if (!libero) continue;
+                if (Math.hypot(t.ball.x - wx, t.ball.y - wy) < 24) continue;
+                const sx = wx * S2 + Ax, sy = wy * S2 + Ay;
+                if (!inQuadro(sx, sy)) continue;
+                const c = pixel(sx, sy); if (c) eP[p.team].push(c);
+              }
             }
           }
         }
-      }
+        /* i pixel di questa partita finiscono nel mucchio unico; il suo
+           rapporto si tiene da parte per dichiarare la dispersione */
+        const rP = [];
+        for (let sq = 0; sq < 2; sq++) {
+          for (const c of mP[sq]) maglia[sq].push(c);
+          for (const c of eP[sq]) erba[sq].push(c);
+          rP.push(rapportoDi(mP[sq], eP[sq]));
+        }
+        perPartita.push({ seme, r: rP });
+      }                                     // fine della partita campionata
 
-      const rappr = a => a.length ? [mediana(a.map(c => c[0])), mediana(a.map(c => c[1])), mediana(a.map(c => c[2]))] : null;
       const esa = c => c ? '#' + c.map(v => v.toString(16).padStart(2, '0')).join('') : '?';
       const squadre = [];
       for (let sq = 0; sq < 2; sq++) {
-        const m = rappr(maglia[sq]), e = rappr(erba[sq]);
-        let rapporto = null;
-        if (m && e) {
-          const Lm = lumin(m[0], m[1], m[2]), Le = lumin(e[0], e[1], e[2]);
-          rapporto = (Math.max(Lm, Le) + 0.05) / (Math.min(Lm, Le) + 0.05);
-        }
+        const singole = perPartita.map(p => p.r[sq]).filter(v => v != null);
         squadre.push({
-          sq, rapporto, maglia: esa(m), erba: esa(e),
+          /* regola di casa numero 3: un numero che lo strumento ha gia'
+             dichiarato non valido non si scrive. Senza capsula il
+             rapporto e' nullo, non "quasi giusto". */
+          sq, rapporto: OMB_ASSENTE ? null : rapportoDi(maglia[sq], erba[sq]),
+          maglia: OMB_ASSENTE ? '?' : esa(rappr(maglia[sq])),
+          erba: OMB_ASSENTE ? '?' : esa(rappr(erba[sq])),
           nMaglia: maglia[sq].length, nErba: erba[sq].length,
+          singole: OMB_ASSENTE ? [] : singole,
         });
       }
       t.setDalt(false);                       // si lascia il banco com'era
-      return { fotogrammi, squadre };
-    }, modo.dalt);
+      return { fotogrammi, squadre, partite: perPartita.length, guasto: !!GUASTO,
+               ombraHook: !OMB_ASSENTE, ombraMotivo: OMB_MOTIVO || null };
+    }, { dalt: modo.dalt, semi: SEMI_CONTRASTO, guasto: TINTA_GUASTO });
 
+    if (!mis.ombraHook) {
+      console.log('  (LA CAPSULA D\'OMBRA DEL GIOCO NON E\' UTILIZZABILE: ' + (mis.ombraMotivo || '?') + '.');
+      console.log("   Serve a non campionare come erba i pixel che stanno in ombra: con una capsula");
+      console.log("   d'archivio, o con una storta, il rapporto sarebbe un numero inventato. Non ho");
+      console.log('   campionato nessun fotogramma e non scrivo nessun rapporto: i due controlli qui');
+      console.log('   sotto sono rossi.)');
+    }
     for (const s of mis.squadre) {
       const chi = 'P' + (s.sq + 1);
       /* pochi campioni non sono un esito buono: sarebbe un controllo che
-         passa perche' non ha guardato niente */
-      const abbastanza = s.nMaglia >= 200 && s.nErba >= 200 && mis.fotogrammi >= 4;
-      const ok = abbastanza && s.rapporto >= SOGLIA_CONTRASTO;
+         passa perche' non ha guardato niente. La soglia dei fotogrammi sale
+         con le partite: quattro su tre partite vorrebbe dire che due sono
+         andate quasi tutte perse. */
+      const abbastanza = s.nMaglia >= 200 && s.nErba >= 200 && mis.fotogrammi >= 3 * mis.partite;
+      const ok = mis.ombraHook && abbastanza && s.rapporto >= SOGLIA_CONTRASTO;
+      const disp = s.singole.length
+        ? ` — le ${s.singole.length} partite, una per una: ` + s.singole.map(v => v.toFixed(2)).join(' / ')
+        : '';
+      /* =================================================================
+         IL MUCCHIO NON BASTA A RACCONTARE TRE PARTITE, e il 19 agosto 2026
+         lo ha dimostrato: 2,61:1 di mucchio con le tre partite a 2,05 /
+         4,57 / 2,13, cioe' DUE SU TRE sotto il minimo. Con l'altro seme
+         (quello di prima della toppa sui sorteggi) lo stesso identico
+         gioco stampava 4,13 e il cancello era verde, con lo stesso difetto
+         dentro. Una media regge una partita brillante e due scure senza
+         far rumore: e' il modo in cui questa misura ha guidato alla cieca
+         una notte intera.
+         Da qui in poi la riga porta TRE numeri e li porta SEMPRE, verde o
+         rossa, senza bisogno di DETTAGLI=1: il mucchio, la PEGGIORE delle
+         partite, e quante partite stanno sotto la soglia. Chi legge vede
+         la dispersione invece di doverla immaginare.
+         LA CONDIZIONE DI PROMOZIONE NON E' TOCCATA (vedi la riga di "ok"
+         qui sopra: capsula valida, campioni abbastanza, mucchio sopra la
+         soglia) e SOGLIA_CONTRASTO resta 3. Questa e' informazione, non
+         permesso: non fa passare niente che prima non passasse.
+         PERCHE' NON SI BOCCIA SULLA PEGGIORE, che era l'altra strada.
+         Provata e misurata con strumenti/_sonda-divise.js --cancello, che
+         rifa' questo protocollo su ogni divisa del gioco: DICIASSETTE
+         configurazioni su ventuno hanno almeno una partita sotto 3:1, e
+         restano quindici anche dopo aver alzato le cinque divise piu'
+         scure. La causa non e' il colore ma DOVE cade l'azione nel
+         fotogramma: sulle stesse tre partite la seconda vale il doppio
+         delle altre due a grafica identica. Bocciare sulla peggiore
+         chiederebbe ogni divisa a Y nominale >= 0,70, cioe' solo bianchi,
+         gialli e lime — un cancello che nasce rosso e che per diventare
+         verde chiede di ridipingere il gioco di pastello viene spento la
+         settimana dopo, e allora non misura piu' niente.
+         ================================================================= */
+      const sotto = s.singole.filter(v => v != null && v < SOGLIA_CONTRASTO).length;
+      const peggiore = s.singole.length ? Math.min.apply(null, s.singole.filter(v => v != null)) : null;
       verifica(ok,
         `contrasto maglia/erba, ${chi} in ${modo.nome}: ` +
-        (s.rapporto == null ? 'non misurabile' : s.rapporto.toFixed(2) + ':1') +
-        ` (minimo ${SOGLIA_CONTRASTO}:1)`,
+        (s.rapporto == null ? 'non misurabile' : s.rapporto.toFixed(2) + ':1 nel mucchio') +
+        (peggiore == null || !isFinite(peggiore) ? '' : `, peggiore partita ${peggiore.toFixed(2)}:1`) +
+        (s.singole.length ? `, ${sotto} partite su ${s.singole.length} sotto il minimo` : '') +
+        ` (minimo ${SOGLIA_CONTRASTO}:1)` + (mis.guasto ? ' [GUASTO=1: maglia dipinta color erba]' : ''),
         `maglia ${s.maglia} su erba ${s.erba}; ` +
-        `${s.nMaglia} campioni di maglia e ${s.nErba} d'erba su ${mis.fotogrammi} fotogrammi` +
+        `${s.nMaglia} campioni di maglia e ${s.nErba} d'erba su ${mis.fotogrammi} fotogrammi ` +
+        `in ${mis.partite} partite` + disp +
         (abbastanza ? '' : ' — TROPPO POCHI: la misura non ha guardato abbastanza pixel'));
     }
   }

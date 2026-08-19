@@ -118,7 +118,6 @@ const { execFileSync } = require('child_process');
 const { chromium } = require('playwright');
 
 const RADICE = path.resolve(__dirname, '..');
-const GIOCO = 'CALCETTO-il-gioco.html';
 const APK = path.join(RADICE, 'apk', 'CALCETTO.apk');
 const PACCHETTO = 'it.dopolavoro.calcetto';
 const ATTIVITA = 'it.dopolavoro.gioco.Gioco';
@@ -126,6 +125,22 @@ const ATTIVITA = 'it.dopolavoro.gioco.Gioco';
 function arg(n, d) {
   const i = process.argv.indexOf('--' + n);
   return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : d;
+}
+
+/* --file: QUALE gioco si misura, e perche' l'opzione esiste.
+   Il nome era inchiodato qui dentro, e con un nome solo questo banco puo'
+   dire "diecimila millisecondi" ma non puo' dire SE sono colpa del lavoro
+   di oggi o del computer di oggi. Un tempo assoluto su una macchina che
+   non e' quella di ieri non e' una misura, e' un aneddoto: e' la stessa
+   ferita che prestazione.js ha gia' pagato, quando ha accusato il gioco
+   di aver dimezzato il fotogramma mentre il costo vero era un decimo.
+   Con --file si misurano DUE file uno dopo l'altro sullo stesso banco
+   nello stesso minuto — per esempio la versione dell'ultimo commit
+   contro quella di adesso — e la differenza resta onesta anche quando il
+   numero assoluto non lo e'. */
+const GIOCO = arg('file', 'CALCETTO-il-gioco.html');
+if (!fs.existsSync(path.join(RADICE, GIOCO))) {
+  console.error(`non trovo ${GIOCO} dentro ${RADICE}`); process.exit(2);
 }
 const bandiera = n => process.argv.includes('--' + n);
 

@@ -1,0 +1,56 @@
+{
+  "verbo": "corsa",
+  "modello": "calciatore generato da codice (loft + Subdivision)",
+  "atlante": "corsa2-atlante.png",
+  "maschera": "corsa2-maschera.png",
+  "lato_cella_px": 160,
+  "direzioni": 8,
+  "fotogrammi": 1,
+  "griglia": "colonna = fotogramma, riga = direzione",
+  "appoggio_px": {
+    "x": 80.0,
+    "y": 102.78
+  },
+  "px_per_unita_gioco": 2.04387,
+  "altezza_figura_in_piedi_px": 82.0,
+  "formula_direzione": "k = round(atan2(hx, hy)/(2*pi/N)) mod N, con (hx,hy) versore di marcia in coordinate campo (x a destra, y verso il basso)",
+  "maschera_nota": "R = maglia, G = pantaloncini, B = calzettoni; il valore E' la copertura del pixel (cottura in Raw). Pelle, scarpe e capelli sono neri: non si ricolorano. L'ombra non e' nella maschera.",
+  "colore_neutro": {
+    "maglia": 0.62,
+    "panta": 0.72,
+    "calza": 0.66
+  },
+  "materiali": [
+    "maglia",
+    "panta",
+    "calza",
+    "pelle",
+    "scarpa",
+    "capelli"
+  ],
+  "camera": {
+    "tipo": "ortografica",
+    "elevazione_gradi": 42.0,
+    "ortho_scale_m": 2.6101,
+    "mira_z_m": 0.5
+  },
+  "riquadro_alfa_max": {
+    "x0": 22,
+    "x1": 120,
+    "y0": 18,
+    "y1": 145
+  },
+  "tocca_il_bordo": false,
+  "motore": "CYCLES CPU",
+  "campioni": {
+    "bellezza": 48,
+    "maschera": 8
+  },
+  "tempi_s": {
+    "bellezza_totale": 76.6,
+    "bellezza_per_cella": 9.53,
+    "maschera_totale": 2.6,
+    "maschera_per_cella": 0.24,
+    "tutto": 79.7
+  }
+}

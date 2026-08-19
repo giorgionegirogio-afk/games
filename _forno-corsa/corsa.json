@@ -1,0 +1,67 @@
+{
+  "verbo": "corsa",
+  "atlante": "corsa-atlante.png",
+  "maschera": "corsa-maschera.png",
+  "lato_cella_px": 160,
+  "direzioni": 8,
+  "fotogrammi": 8,
+  "griglia": "colonna = fotogramma, riga = direzione",
+  "appoggio_px": {
+    "x": 80.0,
+    "y": 102.78
+  },
+  "appoggio_nota": "pixel del punto in cui i piedi toccano il campo, misurato dall'angolo in alto a sinistra della cella; il gioco deve disegnare la cella con quel punto sopra la posizione del giocatore",
+  "px_per_unita_gioco": 2.04387,
+  "scala_nota": "la figura in piedi vale RIG_H*P_DIS = 40.12 unita' di gioco. Il gioco disegna la cella con drawImage scalata di k = S2/px_per_unita_gioco: larghezza e altezza a schermo = lato_cella_px*k, e l'angolo alto-sinistro va in (sx - appoggio.x*k ; sy - appoggio.y*k) dove (sx,sy) e' il punto del campo sotto i piedi. A S2 = 2.0439 il fattore e' 1 e lo sprite non si ricampiona.",
+  "yaw_gradi": [
+    0.0,
+    45.0,
+    90.0,
+    135.0,
+    180.0,
+    225.0,
+    270.0,
+    315.0
+  ],
+  "formula_direzione": "k = round(atan2(hx, hy)/(pi/4)) mod 8, con (hx,hy) versore di marcia in coordinate campo (x a destra, y verso il basso dello schermo)",
+  "frequenza_ciclo_hz": 2.6,
+  "frequenza_nota": "CLIPS.corsa.freq del gioco: 2,6 cicli al secondo, cioe' 20,8 fotogrammi di sprite al secondo con 8 fotogrammi per ciclo",
+  "maschera_nota": "R = maglia, G = pantaloncini, B = 0; il valore E' la copertura del pixel (cottura in Raw, senza tono), quindi si usa come peso di miscela. L'ombra ha maschera 0 e non va ricolorata.",
+  "colore_neutro": {
+    "maglia": 0.62,
+    "panta": 0.72
+  },
+  "camera": {
+    "tipo": "ortografica",
+    "elevazione_gradi": 42.0,
+    "ortho_scale_m": 2.6101,
+    "mira_z_m": 0.5
+  },
+  "sole": {
+    "elevazione_gradi": 63.0,
+    "azimut_rz_gradi": 143.13
+  },
+  "riquadro_alfa_max": {
+    "x0": 25,
+    "x1": 127,
+    "y0": 19,
+    "y1": 142
+  },
+  "tocca_il_bordo": false,
+  "altezza_figura_in_piedi_px": 82.0,
+  "altezza_figura_misurata_px": 112,
+  "altezza_nota": "la prima e' l'altezza per cui e' tarata la scala (l'uomo in piedi, cioe' le 40,12 unita' del gioco); la seconda e' il riquadro verticale vero della sagoma in corsa, che e' piu' alto perche' la falcata porta gli arti in profondita' e la profondita' pesa sin(42) sullo schermo",
+  "motore": "CYCLES CPU",
+  "campioni": {
+    "bellezza": 48,
+    "maschera": 8
+  },
+  "tempi_s": {
+    "bellezza_totale": 251.8,
+    "bellezza_per_cella": 3.92,
+    "maschera_totale": 6.6,
+    "maschera_per_cella": 0.08,
+    "impacchettamento": 0.8,
+    "tutto": 259.4
+  }
+}
