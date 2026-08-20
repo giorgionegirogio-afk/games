@@ -50,11 +50,30 @@ function arg(n, d) {
 }
 const DIR = arg('dir', 'foto-figure2-dopo');   // dove finisce il provino a contatto
 
+/* --- IL GIOCO PUO' ARRIVARE DA FUORI: --gioco <file> oppure GIOCO_PROVA.
+   PERCHE': il percorso del gioco era scritto qui dentro, e un percorso
+   cablato ha gia' fatto sbagliare una bisezione — tre misure «prima»
+   erano identiche perche' leggevano tutte lo stesso file. Con --gioco lo
+   stesso cancello misura una copia fuori dal repo (una toppa da provare,
+   la versione di ieri) senza scambiare file a mano. Senza --gioco non
+   cambia un byte: il default resta il file del repo. --- */
+const GIOCO_FUORI = (() => {
+  const v = arg('gioco', process.env.GIOCO_PROVA || '');
+  if (!v) return '';
+  const a = path.resolve(v);
+  /* uscita 3 = prova nulla: non e' il gioco a essere rosso, e' il banco
+     che non ha niente da misurare (codici di casa: 0 verde, 1 rosso,
+     2 banco esploso, 3 prova nulla) */
+  if (!fs.existsSync(a)) { console.error('PROVA NULLA: il gioco indicato non esiste: ' + a); process.exit(3); }
+  return a;
+})();
+const ridirigi = f => (GIOCO_FUORI && /CALCETTO-il-gioco\.html$/i.test(f)) ? GIOCO_FUORI : f;
+
 function servi() {
   return new Promise(ok => {
     const s = http.createServer((rq, rs) => {
       const u = decodeURIComponent(rq.url.split('?')[0]);
-      const f = path.join(RADICE, u === '/' ? 'index.html' : u);
+      const f = ridirigi(path.join(RADICE, u === '/' ? 'index.html' : u));
       fs.readFile(f, (e, d) => {
         if (e) { rs.writeHead(404); rs.end('no'); return; }
         const t = f.endsWith('.html') ? 'text/html'

@@ -1,0 +1,148 @@
+{
+ "quando": "2026-08-20T02:48:52.606Z",
+ "file": "9537eca3a0ba",
+ "nota": "scritto da tutti.js --registra: il riferimento con cui si confrontano gli informativi",
+ "cancelli": {
+  "collaudo": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": [
+    {
+     "ok": 36,
+     "su": 36
+    }
+   ]
+  },
+  "misura": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": [
+    {
+     "ok": 7,
+     "su": 7
+    }
+   ]
+  },
+  "senza-rete": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": [
+    {
+     "ok": 6,
+     "su": 6
+    }
+   ]
+  },
+  "equita": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": [
+    {
+     "ok": 4,
+     "su": 4
+    }
+   ]
+  },
+  "silhouette": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": [
+    {
+     "ok": 8,
+     "su": 10
+    }
+   ]
+  },
+  "folla": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": [
+    {
+     "ok": 5,
+     "su": 5
+    }
+   ]
+  },
+  "seme": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": []
+  },
+  "gabbia": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": []
+  },
+  "diritti": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": []
+  },
+  "eventi": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": [
+    {
+     "ok": 4,
+     "su": 4
+    }
+   ]
+  },
+  "salvataggio": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": [
+    {
+     "ok": 10,
+     "su": 11
+    }
+   ]
+  },
+  "meta": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": [
+    {
+     "ok": 75,
+     "su": 75
+    }
+   ]
+  },
+  "audio": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": [
+    {
+     "ok": 24,
+     "su": 24
+    }
+   ]
+  },
+  "istantanea": {
+   "codice": 3,
+   "classe": "NULLA",
+   "quote": [],
+   "nullo": "prova nulla: il suo totale non valeva, e non fa da riferimento"
+  },
+  "giocata": {
+   "codice": 0,
+   "classe": "OK",
+   "quote": [
+    {
+     "ok": 7,
+     "su": 7
+    }
+   ]
+  },
+  "prestazione": {
+   "codice": 1,
+   "classe": "NO",
+   "quote": [
+    {
+     "ok": 2,
+     "su": 3
+    }
+   ]
+  }
+ }
+}

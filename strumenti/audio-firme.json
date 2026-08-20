@@ -1,0 +1,127 @@
+{
+ "quando": "2026-08-20T00:03:28.346Z",
+ "gioco": "CALCETTO-il-gioco.html",
+ "md5": "30279089de83",
+ "nota": "le impronte del grafo WebAudio, voce per voce. Scritto da strumenti/audio.js --registra. Un'impronta che cambia senza che nessuno l'abbia deciso e' un suono rotto.",
+ "voci": {
+  "whistle-corto": {
+   "impronta": "7608ea001b",
+   "nodi": 4,
+   "auto": 14,
+   "archi": 4,
+   "quando": "fischio d'inizio, punizione, ripresa"
+  },
+  "whistle-lungo": {
+   "impronta": "c751f9b69d",
+   "nodi": 2,
+   "auto": 7,
+   "archi": 2,
+   "quando": "fischio finale"
+  },
+  "kick-piano": {
+   "impronta": "c63896b848",
+   "nodi": 3,
+   "auto": 6,
+   "archi": 3,
+   "quando": "tocco / passaggio corto"
+  },
+  "kick-forte": {
+   "impronta": "0c8c603861",
+   "nodi": 3,
+   "auto": 6,
+   "archi": 3,
+   "quando": "tiro a piena potenza"
+  },
+  "clack-duro": {
+   "impronta": "54bb4958f6",
+   "nodi": 2,
+   "auto": 6,
+   "archi": 2,
+   "quando": "parata, rubata pulita"
+  },
+  "clack-morbido": {
+   "impronta": "9cf8d594ce",
+   "nodi": 2,
+   "auto": 6,
+   "archi": 2,
+   "quando": "sponda, muro del difensore"
+  },
+  "roar": {
+   "impronta": "7421758caa",
+   "nodi": 8,
+   "auto": 23,
+   "archi": 8,
+   "quando": "boato della folla sul gol"
+  },
+  "post": {
+   "impronta": "229fcd6c61",
+   "nodi": 6,
+   "auto": 18,
+   "archi": 6,
+   "quando": "palo e traversa"
+  },
+  "net": {
+   "impronta": "b887c43bca",
+   "nodi": 3,
+   "auto": 5,
+   "archi": 3,
+   "quando": "la palla entra in rete"
+  },
+  "slideS": {
+   "impronta": "af18ce4c77",
+   "nodi": 3,
+   "auto": 7,
+   "archi": 3,
+   "quando": "scivolata"
+  },
+  "swell": {
+   "impronta": "2638214c24",
+   "nodi": 3,
+   "auto": 7,
+   "archi": 3,
+   "quando": "suspense del duello / rigore"
+  },
+  "perfect": {
+   "impronta": "bc3b9fb62b",
+   "nodi": 4,
+   "auto": 12,
+   "archi": 4,
+   "quando": "tiro perfetto"
+  },
+  "coro": {
+   "impronta": "a4595613f9",
+   "nodi": 9,
+   "auto": 42,
+   "archi": 9,
+   "quando": "coro della curva (oggetto del negozio)"
+  },
+  "beep": {
+   "impronta": "3de8a63b84",
+   "nodi": 2,
+   "auto": 5,
+   "archi": 2,
+   "quando": "ritorno dell'interfaccia e degli eventi minori"
+  },
+  "uiTick": {
+   "impronta": "9ea288d97c",
+   "nodi": 2,
+   "auto": 6,
+   "archi": 2,
+   "quando": "click su qualunque bottone"
+  },
+  "tamburo": {
+   "impronta": "210c90b1bb",
+   "nodi": 2,
+   "auto": 7,
+   "archi": 2,
+   "quando": "tamburo della curva (oggetto del negozio)"
+  },
+  "jingle": {
+   "impronta": "82de0e3278",
+   "nodi": 2,
+   "auto": 6,
+   "archi": 2,
+   "quando": "melodia del menu"
+  }
+ }
+}

@@ -17,6 +17,26 @@ const http = require('http');
 const { chromium } = require('playwright');
 
 const RADICE = path.resolve(__dirname, '..');
+/* --- IL GIOCO PUO' ARRIVARE DA FUORI: --gioco <file> oppure GIOCO_PROVA.
+   PERCHE': il percorso del gioco era scritto qui dentro, e un percorso
+   cablato ha gia' fatto sbagliare una bisezione — tre misure «prima»
+   erano identiche perche' leggevano tutte lo stesso file. Con --gioco lo
+   stesso cancello misura una copia fuori dal repo (una toppa da provare,
+   la versione di ieri) senza scambiare file a mano. Senza --gioco non
+   cambia un byte: il default resta il file del repo. --- */
+const GIOCO_FUORI = (() => {
+  const i = process.argv.indexOf('--gioco');
+  const v = i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--')
+    ? process.argv[i + 1] : (process.env.GIOCO_PROVA || '');
+  if (!v) return '';
+  const a = path.resolve(v);
+  /* uscita 3 = prova nulla: non e' il gioco a essere rosso, e' il banco
+     che non ha niente da misurare (codici di casa: 0 verde, 1 rosso,
+     2 banco esploso, 3 prova nulla) */
+  if (!fs.existsSync(a)) { console.error('PROVA NULLA: il gioco indicato non esiste: ' + a); process.exit(3); }
+  return a;
+})();
+const ridirigi = f => (GIOCO_FUORI && /CALCETTO-il-gioco\.html$/i.test(f)) ? GIOCO_FUORI : f;
 const esiti = [];
 function verifica(ok, testo, dettaglio) {
   esiti.push({ ok: !!ok, testo });
@@ -34,8 +54,8 @@ const TIPI = {
 function servi() {
   return new Promise(ok => {
     const s = http.createServer((req, res) => {
-      const f = path.join(RADICE, decodeURIComponent(req.url.split('?')[0]));
-      if (!f.startsWith(RADICE) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) {
+      const f = ridirigi(path.join(RADICE, decodeURIComponent(req.url.split('?')[0])));
+      if ((!f.startsWith(RADICE) && f !== GIOCO_FUORI) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) {
         res.writeHead(404); res.end(); return;
       }
       /* il tipo giusto conta: servendo sw.js come text/html il browser
@@ -894,7 +914,26 @@ async function calcetto(browser, srv) {
 
 /* ------------------------------------------------------------------ main */
 (async () => {
-  const quale = process.argv[2];
+  /* IL NOME DEL GIOCO E' IL PRIMO ARGOMENTO POSIZIONALE, e le bandiere
+     si saltano COL LORO VALORE. PERCHE': quando tutti.js ha cominciato a
+     passare --gioco a ogni cancello, qui process.argv[2] valeva
+     '--gioco' — che non e' ne' 'circolo' ne' 'calcetto' — e NESSUNA
+     suite girava: esiti restava vuoto e il cancello usciva VERDE con
+     «0 controlli, 0 passati, 0 falliti». Visto succedere il 20 agosto
+     2026: una copia con la divisa dipinta color erba (il difetto che il
+     controllo del contrasto di QUESTO file esiste per prendere) ha
+     passato la batteria intera. */
+  let quale = '';
+  for (let i = 2; i < process.argv.length; i++) {
+    const a = process.argv[i];
+    if (a === '--gioco') { i++; continue; }   // la bandiera e il suo valore
+    if (a.startsWith('--')) continue;          // altre bandiere senza valore
+    quale = a; break;
+  }
+  if (quale && quale !== 'circolo' && quale !== 'calcetto') {
+    console.error('COLLAUDO: gioco sconosciuto «' + quale + '» (conosco circolo e calcetto).');
+    process.exit(2);
+  }
   const srv = await servi();
   const browser = await chromium.launch();
   try {
@@ -902,6 +941,14 @@ async function calcetto(browser, srv) {
     if (!quale || quale === 'calcetto') await calcetto(browser, srv);
   } finally {
     await browser.close(); srv.chiudi();
+  }
+  /* ZERO CONTROLLI ESEGUITI NON E' MAI VERDE. E' la seconda meta' della
+     cura qui sopra, e vale da sola: qualunque strada futura porti di
+     nuovo a non eseguire niente (un argomento nuovo, una suite tolta),
+     l'esito e' «il banco e' esploso» (uscita 2), mai un verde regalato. */
+  if (esiti.length === 0) {
+    console.error('COLLAUDO: nessun controllo eseguito. Un cancello che non misura non passa: uscita 2.');
+    process.exit(2);
   }
   const male = esiti.filter(e => !e.ok);
   console.log(`\n${esiti.length} controlli, ${esiti.length - male.length} passati, ${male.length} falliti`);

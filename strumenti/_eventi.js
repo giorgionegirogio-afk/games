@@ -81,6 +81,8 @@
      node strumenti/_eventi.js --taglia 11              la partita 11 contro 11
      node strumenti/_eventi.js --confronta a.json b.json   due fotografie gia' prese
      node strumenti/_eventi.js --no-diagnosi            salta l'autodiagnosi
+     node strumenti/_eventi.js --cancello               da metro a CANCELLO:
+                                                        soglie di pavimento, uscita 0/1
    La variabile d'ambiente GIOCO_PROVA vale come --gioco.
    ===================================================================== */
 const fs = require('fs');
@@ -525,6 +527,49 @@ function confronta(prima, dopo) {
     const prima = JSON.parse(fs.readFileSync(path.resolve(contro), 'utf8'));
     console.log(`\n  --    confronto con ${prima.etichetta} (${prima.partite} partite, seme ${prima.semeBase})`);
     confronta(prima.crudo.map(derivati), d);
+  }
+
+  /* ============================== IL CANCELLO (--cancello) ==============
+     Da metro a cancello, ed e' la voce 7 del §3.8 del censimento del 20
+     agosto: «_eventi.js, l'unico strumento che misura il GIOCO invece
+     dell'immagine, non e' nella batteria». Le soglie sono ANCORATE a una
+     misura, non a un gusto — fotografia del 20 agosto 2026, 20 partite,
+     semi 20260803..822, Normale, 5 contro 5, file md5 30279089de83:
+       tiri mediana 11,0 · MOMENTI DA PORTA mediana 6,0 · partite 0-0 nei
+       90 s: 2 su 20 · EVENTI AL MINUTO mediana 56,0.
+     Le soglie stanno MOLTO sotto il misurato, apposta: questo cancello
+     non giudica il ritmo fine (per quello ci sono il metro e --contro),
+     giudica che la promessa di fondo — «la partita produce eventi, e la
+     porta esiste» — non venga rotta in silenzio. Ogni toppa alla
+     simulazione sposta questi numeri al bit: un cancello stretto qui
+     diventerebbe rumoroso, e un cancello rumoroso viene disattivato la
+     prima volta che sbaglia. Meglio un pavimento largo che regge. */
+  if (haFlag('cancello')) {
+    const med = k => mediana(d.map(x => x[k]));
+    const quotaZero = d.length ? d.filter(x => x.zeroZero).length / d.length * 100 : 100;
+    const SOGLIE_CANCELLO = [
+      /* [nome, valore misurato ora, prova, soglia scritta, ancora del 20 ago] */
+      ['tiri per partita (mediana)', med('tiri'), v => v >= 4, '>= 4', 'misurato 11,0'],
+      ['MOMENTI DA PORTA (mediana)', med('momenti'), v => v >= 2, '>= 2', 'misurato 6,0'],
+      ['partite 0-0 nei 90 s', quotaZero, v => v <= 50, '<= 50%', 'misurato 10%'],
+      ['EVENTI AL MINUTO (mediana)', med('eventiMin'), v => v >= 30, '>= 30', 'misurato 56,0'],
+    ];
+    console.log('\n=== CANCELLO — il pavimento degli eventi ===');
+    let rosse = 0;
+    for (const [nome, val, prova, attesa, ancora] of SOGLIE_CANCELLO) {
+      const ok = prova(val);
+      if (!ok) rosse++;
+      console.log(`  ${ok ? 'OK  ' : 'NO  '} ${nome}: ${val.toFixed(1)}  (soglia ${attesa}, ancora del 20 ago: ${ancora})`);
+    }
+    console.log(`\n${SOGLIE_CANCELLO.length} soglie, ${SOGLIE_CANCELLO.length - rosse} passate, ${rosse} fallite`);
+    /* l'autodiagnosi rotta non e' un rosso del gioco: e' il banco che non
+       si fida di se' stesso. Codici di casa: 2 = il banco e' esploso. */
+    if (!diagOK) {
+      console.log('  ??   la misura non e\' riproducibile: il verdetto qui sopra NON VA LETTO (uscita 2)');
+      process.exit(2);
+    }
+    if (nonFinite.length || A.errori.length) process.exit(1);
+    process.exit(rosse ? 1 : 0);
   }
 
   if (!diagOK || nonFinite.length || A.errori.length) process.exit(1);

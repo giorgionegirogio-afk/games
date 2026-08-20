@@ -31,12 +31,33 @@ const RADICE = path.resolve(__dirname, '..');
 const TIPI = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8',
                '.png':'image/png', '.json':'application/json' };
 
+/* --- IL GIOCO PUO' ARRIVARE DA FUORI: --gioco <file> oppure GIOCO_PROVA.
+   PERCHE': il percorso del gioco era scritto qui dentro (il censimento
+   del 20 agosto lo nomina proprio su questo cancello), e un percorso
+   cablato ha gia' fatto sbagliare una bisezione — tre misure «prima»
+   erano identiche perche' leggevano tutte lo stesso file. Con --gioco lo
+   stesso cancello misura una copia fuori dal repo. Senza --gioco non
+   cambia un byte: il default resta il file del repo. --- */
+const GIOCO_FUORI = (() => {
+  const i = process.argv.indexOf('--gioco');
+  const v = i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--')
+    ? process.argv[i + 1] : (process.env.GIOCO_PROVA || '');
+  if (!v) return '';
+  const a = path.resolve(v);
+  /* uscita 3 = prova nulla: non e' il gioco a essere rosso, e' il banco
+     che non ha niente da misurare (codici di casa: 0 verde, 1 rosso,
+     2 banco esploso, 3 prova nulla) */
+  if (!fs.existsSync(a)) { console.error('PROVA NULLA: il gioco indicato non esiste: ' + a); process.exit(3); }
+  return a;
+})();
+const ridirigi = f => (GIOCO_FUORI && /CALCETTO-il-gioco\.html$/i.test(f)) ? GIOCO_FUORI : f;
+
 function servi() {
   return new Promise(ok => {
     const s = http.createServer((req, res) => {
       const p = decodeURIComponent(req.url.split('?')[0]);
-      const f = path.join(RADICE, p === '/' ? 'index.html' : p);
-      if (!f.startsWith(RADICE) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) {
+      const f = ridirigi(path.join(RADICE, p === '/' ? 'index.html' : p));
+      if ((!f.startsWith(RADICE) && f !== GIOCO_FUORI) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) {
         res.writeHead(404); res.end('no'); return;
       }
       res.writeHead(200, { 'Content-Type': TIPI[path.extname(f)] || 'application/octet-stream',

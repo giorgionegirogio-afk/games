@@ -1,6 +1,36 @@
 /* =====================================================================
    AVVIO — quanto tempo passa fra il tocco sull'icona e il primo tocco
-   sulla palla. La promessa di vendita, finalmente misurata.
+   sulla palla, STIMATO su un banco da tavolo.
+
+   =====================================================================
+   DAL 20 AGOSTO QUESTO FILE E' UNA SONDA: STAMPA E NON BOCCIA.
+   Il cancello dell'avvio e' `strumenti/avvio-telefono.js`, che misura sul
+   telefono vero via adb. Qui i ruoli erano scambiati, ed e' costato caro.
+
+   Il fatto, in tre righe. Questo banco misura dentro un Chromium da tavolo
+   con la CPU rallentata 4x — un SIMULATORE di telefono — e bocciava sopra i
+   2000 ms. Ma il telefono e' attaccato al cavo, e li' l'avvio vero misurato
+   il 20 agosto e' 1215 ms (dispersione 7,9% su 7 avvii a freddo) e 1222 ms
+   (7,0%) alla riesecuzione: il gioco PASSA, e questo file lo bocciava lo
+   stesso. E lo bocciava con un numero che non sapeva ripetersi — il
+   censimento lo ha colto a dichiarare 2083 ms con dispersione 205,1% e poi,
+   sullo stesso identico file, 4018 ms con dispersione 19,2%.
+   La regola 15 di questa casa — «un numero con la dispersione fuori soglia
+   non si scrive da nessuna parte» — era violata proprio dallo strumento che
+   l'aveva insegnata.
+
+   Quindi da qui in poi:
+     — nessuna uscita 1 da questo file: non condanna nessuno;
+     — uscita 3 quando non ha potuto misurare (e' un'informazione, non un
+       verdetto);
+     — la parte adb sta ferma per difetto (--con-adb la riaccende): il
+       telefono ora e' del cancello, e due strumenti che se lo contendono
+       si sfigurano la misura a vicenda.
+   Quello che questo banco continua a fare, e che il telefono non fa, e'
+   il lavoro sulla PENDENZA: quanto costa un kilobyte in piu'. Per quello
+   serve poter servire lo stesso gioco appesantito, e un APK non si
+   appesantisce a comando. E' la ragione per cui questo file resta.
+   =====================================================================
 
    IL PERCHÉ.
    Il gioco si vende dicendo «si apre in un secondo». Per due settimane
@@ -101,14 +131,20 @@
                                                    disegno e l'avvio della
                                                    partita (solo diagnosi)
          node strumenti/avvio.js --sabota 3000     la prova che sa fallire
-         node strumenti/avvio.js --senza-adb       salta la misura sul telefono
+         node strumenti/avvio.js --con-adb         riaccende la misura sul
+                                                   telefono, che ora e' spenta
+                                                   per difetto: il telefono e'
+                                                   del cancello (avvio-telefono.js)
          node strumenti/avvio.js --solo-telefono   SOLO la misura via adb,
                                                    senza browser: un emulatore
                                                    acceso ruba i core e sfigura
                                                    la misura nel browser, le due
                                                    vanno fatte separate
-   Esce con codice 1 se il gioco non è giocabile entro la soglia al freno
-   del cancello, o se la misura balla più del consentito.
+   USCITE: 0 sempre che una misura ci sia stata (anche brutta: e' una sonda,
+   riporta e non condanna); 3 quando non ha potuto misurare — nessun avvio
+   valido, oppure dispersione fuori soglia, che e' il caso in cui il numero
+   NON VA SCRITTO da nessuna parte. Il rosso del gioco lo dice
+   `strumenti/avvio-telefono.js`, e lo dice col telefono in mano.
    ===================================================================== */
 const fs = require('fs');
 const path = require('path');
@@ -138,8 +174,22 @@ function arg(n, d) {
    nello stesso minuto — per esempio la versione dell'ultimo commit
    contro quella di adesso — e la differenza resta onesta anche quando il
    numero assoluto non lo e'. */
-const GIOCO = arg('file', 'CALCETTO-il-gioco.html');
-if (!fs.existsSync(path.join(RADICE, GIOCO))) {
+/* --gioco <percorso> e' il nome di casa per «quale file misuro» e accetta
+   anche un percorso FUORI dal repo (una toppa da provare, la versione di
+   ieri): un percorso cablato ha gia' fatto sbagliare una bisezione.
+   --file resta per compatibilita' e vive dentro RADICE. */
+const GIOCO_FUORI = (() => {
+  const v = arg('gioco', process.env.GIOCO_PROVA || '');
+  if (!v) return '';
+  const a = path.resolve(v);
+  /* uscita 3 = prova nulla: il banco non ha niente da misurare */
+  if (!fs.existsSync(a)) { console.error('PROVA NULLA: il gioco indicato non esiste: ' + a); process.exit(3); }
+  return a;
+})();
+const GIOCO = GIOCO_FUORI ? path.basename(GIOCO_FUORI) : arg('file', 'CALCETTO-il-gioco.html');
+/* il percorso VERO del file misurato: fuori dal repo se --gioco, dentro se --file */
+const FILE_GIOCO = GIOCO_FUORI || path.join(RADICE, GIOCO);
+if (!fs.existsSync(FILE_GIOCO)) {
   console.error(`non trovo ${GIOCO} dentro ${RADICE}`); process.exit(2);
 }
 const bandiera = n => process.argv.includes('--' + n);
@@ -149,6 +199,10 @@ if (bandiera('aiuto') || process.argv.includes('-h')) {
   process.exit(0);
 }
 
+/* le OSSERVAZIONI di una sonda, non i verdetti di un cancello. Restano
+   scritte con OK e NO perche' quelle due sillabe si leggono in mezzo a
+   trecento righe, ma nessuna delle due fa uscire questo file a 1: vedi il
+   riquadro in testa al file. */
 const esiti = [];
 function verifica(ok, testo, dettaglio) {
   esiti.push(!!ok);
@@ -682,7 +736,7 @@ async function adbSuTelefono(giri) {
   const attesa = +arg('attesa', 0);
   if (!freni.includes(cancello)) freni.push(cancello);
 
-  const file = path.join(RADICE, GIOCO);
+  const file = FILE_GIOCO;
   const sorgente = fs.readFileSync(file, 'utf8');
   const grezzo = fs.statSync(file).size;
   const gz = zlib.gzipSync(Buffer.from(sorgente, 'utf8'), { level: 9 }).length;
@@ -853,7 +907,15 @@ async function adbSuTelefono(giri) {
 
   /* --- il telefono vero --- */
   console.log('--- IL TELEFONO VERO (adb) ---');
-  const tel = bandiera('senza-adb') ? (console.log('  --    saltato su richiesta (--senza-adb)'), null) : await adbSuTelefono(Math.min(3, giri));
+  /* SPENTA PER DIFETTO dal 20 agosto. Il telefono e' del cancello
+     (strumenti/avvio-telefono.js), che lo misura a freddo e con la catena
+     di custodia; questa parte qui misurava a WEBVIEW CALDA dopo un reload,
+     e le due, girando insieme, si rubano il dispositivo a vicenda.
+     --con-adb la riaccende per chi vuole confrontarle a mano. */
+  const tel = !bandiera('con-adb')
+    ? (console.log('  --    SPENTA per difetto: il telefono lo misura strumenti/avvio-telefono.js, che e\' il cancello.'),
+      console.log('        Qui si riaccende con --con-adb, sapendo che li\' la misura e\' a webview calda dopo un reload.'), null)
+    : await adbSuTelefono(Math.min(3, giri));
   if (tel) {
     console.log(`  --    TotalTime mediano: ${tel.tot} ms${tel.att >= 0 ? `, WaitTime ${tel.att} ms` : ''}`);
     console.log(`  --    TotalTime e' il tempo fino al PRIMO FOTOGRAMMA dell'attivita': fino a quando la WebView e' in`);
@@ -884,8 +946,10 @@ async function adbSuTelefono(giri) {
   }
   console.log('');
 
-  /* --- il verdetto --- */
-  console.log('--- VERDETTO ---');
+  /* --- quello che la sonda ha visto (non un verdetto: vedi la testa del file) --- */
+  console.log('--- QUELLO CHE LA SONDA HA VISTO ---');
+  console.log('  Queste righe NON bocciano niente: sono osservazioni di un simulatore.');
+  console.log('  Il cancello dell\'avvio e\' strumenti/avvio-telefono.js, sul telefono vero.');
   const c = perFreno[cancello];
   if (soloTelefono) {
     /* nessun cancello senza la misura nel browser: --solo-telefono
@@ -938,9 +1002,27 @@ async function adbSuTelefono(giri) {
   }
 
   const male = esiti.filter(x => !x).length;
-  console.log(`\n${esiti.length} controlli, ${esiti.length - male} passati, ${male} falliti`);
-  if (male) {
-    console.log('\nUn gioco che si vende con «si apre in un secondo» e ci mette il doppio non e\' lento: e\' un gioco che mente.');
-    process.exit(1);
+  console.log(`\n${esiti.length} osservazioni, ${esiti.length - male} verdi, ${male} rosse — e nessuna di queste boccia.`);
+
+  /* LE DUE UNICHE USCITE CHE QUESTA SONDA SI PERMETTE.
+     3 = non ho potuto misurare. Ci finisce anche — e soprattutto — il caso
+     della dispersione fuori soglia: un numero che balla piu' del consentito
+     non si scrive da nessuna parte, ed e' esattamente il difetto per cui
+     questo file e' stato declassato. Dirlo con un'uscita propria e' il modo
+     di non farlo passare per un'assoluzione.
+     0 = ho misurato; il giudizio non e' mio. */
+  if (!c || c.validi < 2) {
+    console.log('\nNON MISURATO (uscita 3): servono almeno due avvii validi a ' + cancello + 'x, ce ne sono ' + (c ? c.validi : 0) + '.');
+    process.exit(3);
   }
-})().catch(e => { console.error('FALLITO:', e.message); process.exit(1); });
+  if (c.dispersione > ballo) {
+    console.log('\nNON MISURATO (uscita 3): dispersione ' + c.dispersione.toFixed(1) + '% oltre il ' + ballo + '% ammesso.');
+    console.log('Il numero (' + c.giocabile.toFixed(0) + ' ms) NON VA SCRITTO da nessuna parte: e\' la regola 15 di questa casa,');
+    console.log('e questo file esiste declassato proprio per averla violata. Rifare a banco scarico.');
+    process.exit(3);
+  }
+  if (male) console.log('\nOsservazione, non condanna: sul telefono vero il verdetto lo da\' strumenti/avvio-telefono.js.');
+})().catch(e => {
+  /* il banco e' esploso: 2, che in questa casa NON e' un rosso del gioco */
+  console.error('IL BANCO E\' ESPLOSO (uscita 2):', e.message); process.exit(2);
+});

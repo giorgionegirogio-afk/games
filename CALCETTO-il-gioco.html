@@ -3071,7 +3071,21 @@ function pallaRD(){
 const P_SPEED = 168;               // velocità max (unità/s)
 const P_ACC = 900;
 const KICK_R = 26;                 // raggio di calciabilità
-const CARRY_DIST = 16;             // pallone davanti ai piedi
+const CARRY_DIST = 16;             // pallone davanti ai piedi (da fermo)
+/* LA SPINTA DELLA CORSA (voce L2.1). Chi corre a tutta si spinge il
+   pallone piu' avanti, quindi e' DAVVERO piu' esposto: l'esposizione
+   passa dal test di distanza avversario-pallone che updateBall fa gia',
+   non da un moltiplicatore su stealP (correzione §0.3 del progetto).
+   Misurato PRIMA (strumenti/_sonda-l21.js --scena dist, 20/8/2026):
+   il pallone insegue il bersaglio con ritardo ~0,055 u per u/s, quindi
+   la distanza VERA era 16,0 u da fermo, 6,9 in corsa (166 u/s) e 3,8 in
+   sprint (223 u/s) — il rischio era INVERTITO: il piu' veloce era il
+   meglio protetto. Sotto CARRY_V0 non cambia un bit rispetto a oggi
+   (chi carica un tiro va a 75 u/s: resta protetto), e la spinta e'
+   quadratica: paga davvero solo chi va a tutta. */
+const CARRY_V0 = 120;              // u/s: sotto, il pallone resta cucito come oggi
+const CARRY_V1 = 225;              // u/s: P_SPEED*1.34, corsa a tutta col fiato pieno
+const CARRY_SPINTA = 18;           // u di bersaglio in piu' a CARRY_V1
 /* IL PRIMO TOCCO PUO SPORCARSI — le quattro grandezze che lo decidono.
    Stanno qui e non dentro updateBall perche sono costanti di gioco, e
    perche chi le vuole cambiare deve trovarle accanto a KICK_R. */
@@ -3089,6 +3103,16 @@ const TOCCO_BRAVO = 0.25;          // fattore a tecnica 80 e sopra
 
 /* timing del tiro: finestra dolce 300ms; sotto TAP_T = tocco corto */
 const SHOT_MIN = 0.50, SHOT_MAX = 0.80, SHOT_HARDCAP = 1.25, TAP_T = 0.15;
+/* L1.3 — LA MIRA NELLA BOCCA (agente28 §3.1): la componente del
+   trascinamento sul disco TIRA lungo l'asse della bocca — che sullo
+   schermo e' VERTICALE, per tutte e due le squadre, perche' le porte
+   stanno ai lati — satura a MIRA_SAT px CSS. E' meno dell'escursione
+   che arma il verbo (R_ARMA arriva a 36 px con la tenuta piena):
+   per mirare bisogna prima ESISTERE come trascinamento, e la mira
+   piena si prende inclinando un gesto gia' armato, non sfiorando il
+   disco. Il valore sotto e' continuo; la tacca sulla bocca annuncia
+   tre stati (ALTO/CENTRO/BASSO). */
+const MIRA_SAT = 26;
 /* scivolata: 200ms attiva. Pulita NON per tempo ma per geometria:
    devi arrivare sul PALLONE (che il portatore tiene 16 unita' davanti a se')
    e non entrargli addosso da dietro. Cosi' il fallo nasce dal gesto sbagliato,
@@ -7662,6 +7686,12 @@ function makePlayer(team, idx, x, y, role){
     chargeDX:0, chargeDY:0,            // verso in cui il gesto era mirato quando e' nato
     aiT:Math.random(),                 // timer decisioni IA
     aiTX:x, aiTY:y,                    // bersaglio IA
+    /* --- LA CHIAMATA (voce L2.3): secondi che restano alla corsa
+       chiamata, la direzione in cui correre (un versore) e il verso in
+       cui scansare gli avversari. A zero il meccanismo non esiste: ogni
+       ramo nuovo sta dietro a chiamata>0, e nessuno li scrive se non
+       chiamaGiocatore. --- */
+    chiamata:0, chiamaUX:0, chiamaUY:0, chiamaS:1,
     /* --- LO SCHELETRO: i sei numeri che il disegno legge (vedi aggiornaPosa) --- */
     /* LA FASE DI PARTENZA E' SPARSA, NON TIRATA A CASO. Il ciclo di
        corsa avanza con lo SPAZIO percorso (aggiornaPosa) e da questo
@@ -7831,6 +7861,8 @@ function resetKickoff(){
     p.kickT=0; p.celeb=0;
     p.mesto=0; p.frenaT=0; p.fintaT=0; p.presaT=0; p.rinvT=0;   // i latch del rig
     p.corsaArea=0;                                              // e la corsa in area
+    p.raddoppio=0;                       // e l'ordine di raddoppio del dito (L1.5)
+    p.chiamata=0;                                               // e la chiamata (L2.3)
     p.rove=-1;                                                  // rovesciata interrotta dal fischio
   }
   G.ball.x=FW/2; G.ball.y=FH/2; G.ball.vx=0; G.ball.vy=0;
@@ -8781,6 +8813,12 @@ function humanSprint(t){
 function aiVuoleSprint(p){
   if(p.fiato<32) return false;
   if(p.corsaArea) return true;      // chi attacca l'area ci va di corsa
+  /* e un chiamato pure: una chiamata al passo non e' una chiamata. La
+     guardia del fiato e' quella qui sopra, la stessa della corsa in area:
+     chi e' a corto di fiato non scatta, nemmeno se chiamato. L'uomo
+     COMANDATO che chiama se stesso non passa di qui — il suo sprint lo
+     decide humanSprint, cioe' il pollice — ed e' giusto cosi'. */
+  if(p.chiamata>0) return true;
   const b=G.ball;
   const d=len(b.x-p.x,b.y-p.y);
   const pi=G.players.indexOf(p);
@@ -9374,12 +9412,54 @@ const Touch5 = {
          nostra», che qui non e' stato misurato.
          ================================================================= */
       const a=this.atti[id];
+      /* L1.3 — LA LETTURA DEL DISTACCO SI FA QUI, PRIMA CHE L'ATTO
+         SPARISCA: trascina(id) legge this.atti[id], e tre righe sotto
+         l'atto non c'e' piu'. E' il campione anteriore di 60 ms — il
+         solo senza la deriva del polpastrello — e viaggia fino a
+         releaseCharge come ARGOMENTO, non come stato: niente campi
+         nuovi, niente da ripulire. Si legge solo se l'atto e' vivo e la
+         carica e' sua: un atto morto o ri-armato non ha mire da dare. */
+      /* RIANCORATO IL 20 AGOSTO, e la ragione va scritta perche' vale per
+         chiunque tocchera' questo blocco dopo di noi.
+         L1.3 (la mira del tiro) e L1.5 (il raddoppio) sono nate in
+         parallelo e leggono TUTTE E DUE il trascinamento al distacco,
+         perche' e' l'unico istante in cui l'atto e' ancora vivo:
+         trascina() lavora su this.atti[id], e la riga del delete
+         lo cancella. Applicate in fila, la seconda trovava il blocco
+         gia' riscritto dalla prima.
+         La cura non e' leggere due volte — sarebbe un anello di otto
+         posizioni percorso due volte per ogni dito che si stacca — ma
+         leggere UNA volta e servire tutti e due i verbi. Il tiro
+         pretende in piu' che la carica sia sua e che l'atto non sia
+         morto, e quelle tre condizioni restano dove stavano: sono sue,
+         non della lettura. */
+      const tr=this.trascina(id,true);
+      const lettura=(bt.act==='shot' && a && !a.morto && a.carica) ? tr : null;
       delete this.atti[id];
       if(bt.act==='shot'){
         if(a && !a.carica){ /* la carica non e' di questo dito: non si tocca */ }
         else if(annulla || (a && a.morto)){ if(a) this.chiudiCarica(a.carica); else this.annullaCarica(bt.t); }
-        else if(!G.paused) releaseCharge(bt.t);
+        else if(!G.paused) releaseCharge(bt.t, lettura);
       }
+      /* =================================================================
+         L1.5 — IL RADDOPPIO, CIOE' CAMBIO PIU' TRASCINAMENTO.
+         Il cambio uomo e' gia' partito alla PRESSIONE e non aspetta
+         niente: qui c'e' soltanto il modificatore, che vive sul rilascio
+         come tutte le mire di questo schema.
+         Le tre guardie sono tre leggi, e nessuna e' un'opinione:
+           · annulla — touchcancel non e' touchend (Legge 4). Il sistema
+             che ti prende il dito non puo' comandare un uomo;
+           · tr.armato — sotto R_ARMA il trascinamento non esiste, quindi
+             un rilascio senza trascinamento non produce niente (P9: fra
+             due verbi vince il meno impegnativo). Dentro «armato» c'e'
+             anche «non morto», cioe' l'annullo per spostamento: chi ha
+             portato il dito oltre R_ANNULLA ha gia' rinunciato, e non si
+             rientra;
+           · G.paused — a gioco fermo nessun dito comanda.
+         Il disco piccolo quando dice PASSAGGIO non ha nessun ramo qui:
+         quel verbo vive sulla pressione e il suo rilascio resta inerte
+         com'era. */
+      else if(bt.act==='swap' && !annulla && !G.paused && tr && tr.armato) comandaRaddoppio(bt.t, tr.ux, tr.uy);
       return;
     }
     /* ===================================================================
@@ -9610,9 +9690,14 @@ const Touch5 = {
      dito?», e la risposta serve dopo un ri-armo, quando il dito tiene un
      verbo che non ha eseguito niente. */
   nasceAtto(id,t,slot,act,x,y){
+    /* «posato» e' il tempo del POLLICE sul vetro, «tenuta» il tempo del
+       VERBO sotto il pollice. Il ri-armo azzera la seconda e non il
+       primo: il rotolamento del polpastrello — la ragione per cui
+       R_ARMA cresce — appartiene al dito, che e' giu' da prima, non al
+       verbo, che e' appena nato. */
     this.atti[id]={ t:t, carica:(act==='shot' ? ctrlPlayer(t) : null),
                     slot:slot, act:act,
-                    posaX:x, posaY:y, x:x, y:y, tenuta:0, morto:false,
+                    posaX:x, posaY:y, x:x, y:y, tenuta:0, posato:0, morto:false,
                     anello:[{x:x,y:y,q:this.tempo}] };
   },
 
@@ -9626,12 +9711,24 @@ const Touch5 = {
     if(n.length>this.ANELLO) n.shift();
   },
 
-  /* R_ARMA CRESCE CON LA TENUTA. Una carica di tiro puo' durare 1,25 s
-     (SHOT_HARDCAP), e in 1,25 s un pollice appoggiato rotola: la soglia
-     che a inizio gesto e' 22 px arriva a 36 px dopo 0,6 s, cosi' il
-     rotolamento non arma da solo un verbo che nessuno ha chiesto. */
+  /* R_ARMA CRESCE COL TEMPO DEL POLLICE SUL VETRO. Una carica di tiro
+     puo' durare 1,25 s (SHOT_HARDCAP), e in 1,25 s un pollice appoggiato
+     rotola: la soglia che a inizio gesto e' 22 px arriva a 36 px dopo
+     0,6 s, cosi' il rotolamento non arma da solo un verbo che nessuno
+     ha chiesto.
+     LEGGE «posato», NON «tenuta», ED E' LA GUARDIA DEL RI-ARMO. Il
+     ri-armo azzera la tenuta a ragione (la tenuta di un verbo non e' la
+     tenuta di un altro), ma azzerando anche la soglia la faceva
+     CROLLARE da 36 a 22 px proprio quando il pollice era giu' da piu'
+     tempo — l'istante in cui il progetto la voleva piu' alta. Misurato
+     (fuori/_crit/X34.txt X3; strumenti/_q-riarmo.js): il dito che
+     tornava al punto di posa dopo una deriva di 30-32 px armava il
+     verbo nuovo nella direzione della correzione — scivolate e raddoppi
+     mai chiesti, 20 su 20 al banco — e con questa riga 0 su 20, mentre
+     il trascinamento voluto di 60 px arma ancora, subito, 8 su 8.
+     Per gli atti mai ri-armati posato==tenuta: qui non cambia un bit. */
   rArma(a){
-    return this.R_ARMA_0 + (this.R_ARMA_1-this.R_ARMA_0)*Math.min(1, a.tenuta/this.ARMA_PIENA);
+    return this.R_ARMA_0 + (this.R_ARMA_1-this.R_ARMA_0)*Math.min(1, a.posato/this.ARMA_PIENA);
   },
 
   /* LA LETTURA. finale (default) = con lo scarto dei 60 ms, ed e' quella
@@ -9740,6 +9837,11 @@ const Touch5 = {
         a.tenuta=0; a.morto=false;
         continue;
       }
+      /* il tempo del pollice avanza SEMPRE, anche su un atto morto: il
+         dito e' fisicamente giu' e continua a rotolare. Quello del verbo
+         avanza solo da vivo, com'era. (Il fotogramma del ri-armo salta
+         entrambi col suo continue: un sessantesimo, ininfluente.) */
+      a.posato+=dt;
       if(!a.morto) a.tenuta+=dt;
     }
   }
@@ -9964,6 +10066,18 @@ function smarcato(p,q,t){
     const dLine=len(px-ax*t2, py-ay*t2);
     if(dLine<40 && t2>0.1 && t2<0.95) openness-=260;
   }
+  /* IL PESO DELLA CHIAMATA (L2.3). Chi e' partito su chiamata vale di
+     piu' come bersaglio, e vale ESATTAMENTE quanto il vantaggio tipico
+     che il primo candidato ha sul secondo: mediana 141,3 misurata sul
+     punteggio vero di eseguiPassUmano, taglia 5, 1944 campioni, sei semi
+     (il conto per intero sta in strumenti/_t-l23.js). Percio' la chiamata
+     ribalta la scelta in circa meta' delle situazioni ordinarie e non la
+     ribalta quando il primo e' avanti di molto: inclina, non sbarra.
+     Non e' una scorciatoia sulla geometria — la linea di passaggio
+     occupata costa 260 e resta piu' cara della chiamata: un compagno con
+     un avversario davanti non diventa il bersaglio solo perche' l'hai
+     chiamato. */
+  if(q.chiamata>0) openness+=CHIAMA_PESO;
   return openness;
 }
 function eseguiPassUmano(p){
@@ -10167,22 +10281,62 @@ function startCharge(t){
      nullo — e' il segno che distingue le due specie. */
   if(p.charge<0){ p.charge=0; p.chargeKind='tiro'; p.chargeT=SHOT_MIN; p.chargeGo=null; p.chargeClip='tiro'; }
 }
-function releaseCharge(t){
+function releaseCharge(t, lettura){
   const p=ctrlPlayer(t);
   if(!p || p.charge<0 || p.chargeGo) return;
   const c=p.charge; chiudiAnticipo(p);
-  /* tap rapido (senza carica): tocco corto / appoggio veloce */
+  /* L1.3 — LA LETTURA DEL DITO ARRIVA DA FUORI, GIA' FATTA.
+     Touch5.chiudi la passa letta sul campione ANTERIORE di 60 ms al
+     distacco: la deriva distale del polpastrello — 6-18 px iniettati
+     nell'istante esatto della decisione — non entra nella mira
+     (misurato da _q-l11 prova A: 14 gradi di errore senza lo scarto,
+     0 con). Tastiera e rilascio del tetto (SHOT_HARDCAP scatta col
+     dito ancora giu') non la passano: si legge l'atto vivo se c'e',
+     altrimenti resta null — nessuna mira, la cosa sicura. */
+  if(lettura===undefined) lettura=letturaTiroViva(t,p);
+  /* L1.3 — LA PIZZATA. Il tap col pallone era un tocco corto a 300
+     fisse: mai un tiro — niente etichetta b.tiroT, niente tabellino —
+     e mai un tuffo, perche' il portiere arma il tuffo dai 300 in su.
+     Il progetto (agente28 §4): «TIRA, tap: il gol da mischia esiste.
+     Direzione dalla levetta». Quindi: se la levetta punta VERSO la
+     porta che si attacca, il tap e' un TIRO VERO in fondo alla rampa
+     continua. Un tap all'indietro o di lato resta il tocco corto di
+     sempre: una spazzata non e' un tiro, non gonfia il tabellino e
+     non accende l'etichetta del tiro in volo. La soglia 0,25 sul
+     coseno e' larga apposta (entro ~75 gradi dall'avanti): nella
+     mischia la levetta e' approssimativa, e sbagliare qui costa un
+     tocco corto, non un fallo (P9). Nessun errore angolare aggiunto:
+     la direzione della pizzata E' la levetta, che e' gia' grossolana
+     di suo — aggiungerci un sorteggio punirebbe due volte. */
   if(c<TAP_T){
     let [mx,my]=humanMove(t);
     if(!mx&&!my){ mx=p.fx; my=p.fy; }
     const l=Math.max(0.001,len(mx,my));
+    if(((t===0?mx:-mx)/l)>0.25){
+      const pw=(G.cpu[t] ? DIFF[G.diff].shotPow : 1)*fatt(p.tiro,0.10);
+      p.chargeClip='tiro';
+      if(kickBall(p, mx/l, my/l, Math.max(300,(340+300*clamp(c/SHOT_MAX,0,1))*pw), 0)){
+        G.stats.tiri[t]++; G.ball.tiroT=t;
+        if(t===0 && !G.cpu[0]) Tut.notify('shot');
+        Audio5.kick(0.4);
+      }
+      return;
+    }
     if(kickBall(p, mx/l, my/l, 300, 0)) Audio5.kick(0.25);
     return;
   }
-  /* la TECNICA allarga la finestra: fino a +-45 ms sui 300 di partenza */
+  /* la TECNICA allarga la finestra: fino a +-45 ms sui 300 di partenza.
+     L1.3 — la finestra NON decide piu' la potenza: decide la PRECISIONE
+     (vedi fireShotMirato). I suoi numeri non si toccano: SHOT_MIN 0,50,
+     SHOT_MAX 0,80, la grazia della tecnica. E' l'anello di sempre. */
   const larg = (p.tecnica-62)/38*0.045;
-  const q = (c>=SHOT_MIN-larg && c<=SHOT_MAX+larg) ? 1 : (c<SHOT_MIN-larg?0:2);
-  /* direzione: verso la porta avversaria, correggibile con l'input */
+  const finestra = (c>=SHOT_MIN-larg && c<=SHOT_MAX+larg);
+  /* il verdetto a tre valori resta SOLO per il pallonetto qui sotto,
+     che questa voce lascia com'era ieri, quota e potenza comprese */
+  const q = finestra ? 1 : (c<SHOT_MIN-larg?0:2);
+  /* direzione del PALLONETTO: verso la porta avversaria, correggibile
+     con l'input. La mira del tiro raso non passa di qui: vive in
+     fireShotMirato, sul trascinamento del disco. */
   const goalX=t===0?FW:0;
   let dx=goalX-p.x, dy=(FH/2)-p.y;
   const [mx,my]=humanMove(t);
@@ -10231,7 +10385,17 @@ function releaseCharge(t){
      flusso della partita: se rifacendoli non tornano, non e' un
      mistero, e' il gioco che si e' mosso. Si rifanno coi due comandi
      citati qui sopra. */
-  fireShot(p, dx/l, dy/l, q, ((t===0 ? -mx : mx) > 0.5) && metaOffensiva(p));
+  /* L1.3 — IL BIVIO. Il pallonetto resta ESATTAMENTE il gesto di ieri
+     (fireShot col suo q): questa voce non lo tocca, e _q-l13 prova E
+     sorveglia che la decisione resti «levetta indietro» e mai lo
+     sprint. Tutti gli altri tiri umani da fermo passano dal tiro
+     MIRATO: rampa continua sulla tenuta, mira dal trascinamento,
+     finestra = precisione. */
+  if(((t===0 ? -mx : mx) > 0.5) && metaOffensiva(p)){
+    fireShot(p, dx/l, dy/l, q, true);
+    return;
+  }
+  fireShotMirato(p, c, finestra, lettura, my);
 }
 
 /* esegue il tiro: q = 0 presto/debole, 1 perfetto, 2 strozzato.
@@ -10394,6 +10558,141 @@ function fireShot(p, nx, ny, q, lob){
   /* IL PALLONE SA DI CHI E' IL TIRO CHE STA VOLANDO. Lo legge chi puo'
      dire se il tiro era nello specchio: addGoal e tentaPresa. Lo azzera
      kickBall, cioe' qualunque altro calcio di chiunque. */
+  G.ball.tiroT=t;
+}
+
+/* =====================================================================
+   L1.3 — IL TIRO MIRATO. E' il rilascio UMANO da fermo; la CPU, la
+   rovesciata, il volo e il pallonetto restano su fireShot, qui sopra,
+   che non cambia di un byte.
+
+   LA RAMPA. base = (340 + 300·min(1, c/SHOT_MAX))·pow congiunge i due
+   valori di ieri: 340 era il «presto», 640 il «perfetto». Il pavimento
+   d'arrivo fa lo stesso: 230 e 330 sono i capi di TIRO_ARRIVO. Nessun
+   numero nuovo e' stato inventato: la rampa INTERPOLA il cancello a tre
+   valori che sostituisce, cosi' il tap resta il tiro debole di ieri e
+   la carica piena il perfetto di ieri, e in mezzo non c'e' piu' il
+   gradino da 300 unita'/s misurato da _q-l13 prova B.
+
+   LA PRECISIONE. Fuori finestra il tiro riceve lo STESSO errore
+   angolare del vecchio «strozzato» (rnd·0,30 ± 0,16, cioe' 9-26 gradi:
+   due sorteggi, la legge di ieri, non una nuova) — presto O tardi,
+   perche' la fretta non e' piu' precisa del ritardo. Dentro la
+   finestra: errore zero, e il giro verso il lato mirato. L'anello
+   compra precisione, non potenza: e' la riga del progetto.
+
+   LA MIRA. f in [-1, +1] dal trascinamento armato (miraTiroF); il
+   bersaglio e' FH/2 + f·(GOAL_H/2-24) sul filo di porta. Il margine 24
+   e' quello del tiro perfetto di ieri, tarato sulla deriva del giro: a
+   mira piena si prende lo stesso incrocio dell'auto-mira. SENZA
+   trascinamento armato il gioco fa quello che faceva ieri: dentro la
+   finestra l'incrocio lontano automatico (il colpo che il gioco chiede
+   di imparare resta buono anche senza mirare), fuori il centro
+   spostato da my·260 — la vecchia correzione della levetta, che cosi'
+   non sparisce a chi gioca di tastiera.
+
+   COSA NON FA: non tocca G.stats se il piede non trova il pallone
+   (kickBall rifiuta oltre KICK_R): ieri il tabellino contava un tiro
+   anche a vuoto nella corona 26-36,4 senza possesso; qui il conteggio
+   segue il calcio vero.
+   ===================================================================== */
+/* l'atto vivo del TIRO di questa squadra, se un dito lo sta tenendo:
+   e' la lettura dell'ANTEPRIMA (finale=false, il campione corrente),
+   usata dalla tacca e dai rilasci che avvengono col dito ancora giu'
+   (SHOT_HARDCAP). Il distacco vero passa invece da Touch5.chiudi, che
+   legge il campione anteriore di 60 ms. La carica deve essere di
+   QUESTO uomo: dopo un ri-armo il dito tiene un verbo che non ha
+   aperto niente, e non ha mire da dare. */
+function letturaTiroViva(t,p){
+  if(typeof Touch5==='undefined' || !Touch5.atti) return null;
+  for(const id in Touch5.atti){
+    const a=Touch5.atti[id];
+    if(a.act==='shot' && a.t===t && !a.morto && (!p || a.carica===p))
+      return Touch5.trascina(id,false);
+  }
+  return null;
+}
+/* la frazione di mira in [-1, +1]: negativa = in alto sullo schermo.
+   Esiste SOLO se il trascinamento e' armato (l >= R_ARMA): sotto, il
+   trascinamento non esiste (§3.1) e la risposta e' null — non zero,
+   perche' «mira al centro» e «nessuna mira» sono due cose diverse e
+   chi le confonde perde l'auto-incrocio del tiro perfetto. */
+function miraTiroF(lettura){
+  if(lettura && lettura.armato) return clamp(lettura.dy/MIRA_SAT,-1,1);
+  return null;
+}
+/* LA TACCA SULLA BOCCA: geometria calcolata in UN posto solo, letta
+   dal disegno (drawPlayer) e da zoneInterfaccia — una scrittura, due
+   letture, quindi dichiarazione e dipinto non possono divergere (la
+   lezione di _t-l04b). Torna null quando non c'e' niente da annunciare:
+   nessuna carica umana di tiro, o trascinamento non armato. Il
+   rettangolo e' in px CSS dello schermo, come tutto zoneInterfaccia. */
+function taccaMira(t){
+  if(G.cpu[t]) return null;
+  const p=ctrlPlayer(t);
+  if(!p || p.charge<0 || p.chargeGo || p.chargeKind!=='tiro') return null;
+  const f=miraTiroF(letturaTiroViva(t,p));
+  if(f===null) return null;
+  const gx=t===0?FW:0, gy=FH/2+f*(GOAL_H/2-24);
+  const v=G.view;
+  if(!v || !v.S2) return null;
+  const sx=gx*v.S2+v.Ax, sy=gy*v.S2+v.Ay;
+  const rx=8*v.S2, ry=9*v.S2;
+  return { gx:gx, gy:gy, f:f, x0:sx-rx, y0:sy-ry, x1:sx+rx, y1:sy+ry };
+}
+function fireShotMirato(p, c, finestra, lettura, my){
+  const t=p.team, pi=G.players.indexOf(p);
+  if(G.ball.owner!==pi && len(G.ball.x-p.x,G.ball.y-p.y)>KICK_R*1.4) return;
+  p.chargeClip='tiro';
+  const pow=(G.cpu[t] ? DIFF[G.diff].shotPow : 1)*fatt(p.tiro,0.10);
+  const goalY=FH/2;
+  const f=miraTiroF(lettura);
+  const gx=t===0?FW-4:4;
+  let gy;
+  if(f!==null) gy=goalY+f*(GOAL_H/2-24);
+  else if(finestra) gy=goalY+(p.y<goalY?1:-1)*(GOAL_H/2-24);
+  else gy=goalY+(my||0)*260;
+  const dx=gx-p.x, dy=gy-p.y, l=Math.max(1,len(dx,dy));
+  /* la velocita' si decide sul punto MIRATO, prima dell'errore: cosi'
+     e' una funzione deterministica della tenuta e della distanza, e la
+     dispersione — che e' il prezzo del fuori-tempo — non tocca mai la
+     potenza. Lo pretende il cancello B (monotona, senza gradini). */
+  const rampa=clamp(c/SHOT_MAX,0,1);
+  const vel=Math.min(TIRO_TETTO, Math.max((340+300*rampa)*pow, 230+100*rampa + TIRO_ATTR*l));
+  let nx=dx/l, ny=dy/l;
+  if(!finestra){
+    /* i due sorteggi del vecchio «strozzato», parola per parola: 9-26
+       gradi, bimodali attorno allo zero. Non un numero nuovo. */
+    const err=rnd(-1,1)*0.30 + (Math.random()<0.5?-0.16:0.16);
+    const a2=Math.atan2(ny,nx)+err;
+    nx=Math.cos(a2); ny=Math.sin(a2);
+  }
+  if(!kickBall(p, nx, ny, vel, 0)) return;
+  G.stats.tiri[t]++;
+  if(t===0 && !G.cpu[0]) Tut.notify('shot');
+  if(finestra){
+    /* il colpo pieno del tiro perfetto, identico a ieri: e' il gesto
+       che il gioco chiede di imparare — se non si sente, non si
+       impara. Cambia solo il verso del giro: segue la mira invece
+       dell'incrocio automatico, e a mira zero il giro e' zero. */
+    G.stats.perfetti[t]++;
+    if(t===0 && !G.cpu[0] && G.stats.perfetti[0]>=5) unlockAch('perfetti5');
+    const fCur=(f!==null)?f:(p.y<goalY?1:-1);
+    G.ball.curve=fCur*150*pow;
+    G.ball.perfectT=0.6;
+    G.flashRing=0.35; G.flashTeam=t;
+    scossa(7.5, 0.30, -nx, -ny);
+    gelo(0.075);
+    lampo(G.ball.x, G.ball.y, nx, ny, 1.25);
+    spruzzo(G.ball.x, G.ball.y, nx, ny, 10, 1.5);
+    showBanner('TIRO PERFETTO!', TEAMCOL[t], 1.1);
+    Audio5.perfect(); Audio5.kick(1);
+    buzz(15);
+  }else{
+    /* il suono cresce con la rampa, come la potenza: 0,45 era il
+       «presto» di ieri, 0,7 poco sotto il perfetto */
+    Audio5.kick(0.45+0.25*rampa);
+  }
   G.ball.tiroT=t;
 }
 
@@ -10647,8 +10946,15 @@ const DIFF = [
   { react:0.25, speed:0.90, shotQ:0.45, shotFreq:0.88, shotPow:0.92,
     save:0.52, mateSave:0.50, passErr:0.12, steal:0.72, mateSteal:0.62,
     lead:0.15, standoff:22, slideP:0.15 },
+  /* Duro: steal era 1,00 e il primo contatto frontale rubava SEMPRE
+     (misurato: 60/60 in sprint E al trotto, _q-l21.js prova B,
+     20/8/2026). A probabilita' satura ne' l'angolo (x0,55 di spalle)
+     ne' l'esposizione della corsa (L2.1) possono spostare l'esito del
+     contatto: qualunque gradiente di rischio muore sul massimo. 0,85 e'
+     il tetto: il pressing resta il piu' cattivo dei tre, ma smette di
+     essere una condanna certa. */
   { react:0.12, speed:1.00, shotQ:0.78, shotFreq:0.96, shotPow:1.00,
-    save:0.74, mateSave:0.28, passErr:0.05, steal:1.00, mateSteal:0.40,
+    save:0.74, mateSave:0.28, passErr:0.05, steal:0.85, mateSteal:0.40,
     lead:0.30, standoff:0,  slideP:0.26 },
 ];
 
@@ -10953,24 +11259,129 @@ function step(){
   else if(G.ball.lastTouch>=0) G.stats.possesso[G.players[G.ball.lastTouch].team]+=0.35;
 }
 
-/* ---------- cambio giocatore MANUALE ----------
+/* =====================================================================
+   L1.5 — L'UOMO CHE STA IN QUELLA DIREZIONE.
+
+   E' l'unica funzione che risponde alla domanda «quale dei miei sta di
+   la'», e la usano in due: il CAMBIO alla pressione, dove la direzione la
+   da' la levetta, e il RADDOPPIO al rilascio, dove la da' il
+   trascinamento sul disco. Una scrittura sola, quindi il dito che sceglie
+   un uomo e il dito che ne comanda un altro non possono litigare.
+
+   COME SCEGLIE: la distanza dalla SEMIRETTA che parte dall'uomo comandato
+   e va nella direzione indicata. Chi ci sta sopra ha zero; chi sta di
+   fianco paga il proprio scostamento; chi sta DIETRO paga tutta la
+   propria distanza, perche' per una semiretta il punto piu' vicino
+   all'indietro e' l'origine. Tre proprieta', e sono la ragione della
+   scelta:
+     · NIENTE SETTORI E NIENTE CONI (§3 del progetto). Non ci sono confini
+       da attraversare, quindi non esiste la classe di errori che nasce
+       quando la spazzata naturale del pollice cade su un confine — ed e'
+       la classe di errori per cui una rosa a quattro settori era stata
+       bocciata sia allineata allo schermo sia ruotata.
+     · LA DIREZIONE INCLINA, NON SBARRA. Un compagno alle spalle resta
+       scegli-bile se e' l'unico che c'e'. Il cono duro che il progetto
+       aveva misurato era VUOTO nel 71% degli stati a 5 contro 5: un
+       ingresso che non seleziona niente e' peggio di uno che seleziona
+       male.
+     · ANGOLO E DISTANZA SI PESANO DA SOLI, senza un numero da tarare,
+       perche' lo scostamento E' distanza per seno dell'angolo. Un
+       compagno a 50 unita' e 40 gradi (scostamento 32) batte uno a 700
+       unita' e 10 gradi (scostamento 121). Nessuna costante nuova entra
+       nel gioco da questa parte.
+
+   SENZA DIREZIONE — levetta ferma, o dentro la sua dead-zone, o tastiera
+   senza frecce — si ricade sul piu' vicino al PALLONE fra gli altri. Non
+   e' un ripiego qualunque: il cambio AUTOMATICO ti tiene gia' incollato
+   al piu' vicino, quindi il manuale senza direzione ti da' il secondo,
+   che e' l'unica risposta che aggiunge qualcosa. E non torna mai
+   «nessuno» finche' un compagno di movimento esiste.
+
+   PAREGGI: vince l'indice piu' basso, perche' il confronto e' stretto.
+   E' un caso di misura nulla in un continuo, ma va detto che esiste: in
+   questo file un ordinamento nascosto ha gia' prodotto un difetto vero
+   una volta (il bestDot di eseguiFiltrante), e un difetto conosciuto
+   scritto vale piu' di un difetto elegante taciuto.
+   ===================================================================== */
+function uomoVersoDirezione(t, dx, dy, escludi){
+  const p0=ctrlPlayer(t);
+  if(!p0) return -1;
+  const dl=len(dx,dy);
+  const ux=dl>0?dx/dl:0, uy=dl>0?dy/dl:0;
+  let best=-1, bs=Infinity;
+  for(let i=0;i<G.players.length;i++){
+    const q=G.players[i];
+    if(i===escludi || q.team!==t || q.out>0 || q.role==='gk') continue;
+    let s;
+    if(dl>0){
+      const vx=q.x-p0.x, vy=q.y-p0.y;
+      const par=vx*ux+vy*uy;
+      s = par>0 ? Math.abs(vx*uy-vy*ux) : len(vx,vy);
+    }else s = len(q.x-G.ball.x, q.y-G.ball.y);
+    if(s<bs){ bs=s; best=i; }
+  }
+  return best;
+}
+
+/* ---------- cambio giocatore MANUALE, ALLA PRESSIONE ----------
    Senza questo non esistono anticipo, raddoppio e copertura: si e' sempre
-   incollati al piu' vicino alla palla. Cicla per angolo rispetto al pallone,
-   cosi' si sceglie DA CHE PARTE aggredire, non solo chi e' piu' vicino. */
+   incollati al piu' vicino alla palla.
+
+   QUI C'ERA UN CICLO per angolo attorno al pallone: premi e ti arriva il
+   prossimo della lista, in un ordine che non ha niente a che vedere con
+   dove stai guardando — e non ce l'ha per costruzione, perche' il ciclo
+   la levetta non la leggeva. Misurato su sei partite a 5 contro 5 col
+   pollice sinistro puntato dove il giocatore stava andando
+   (strumenti/_q-l15.js --misura, 104 cambi): mediana di 42,57 gradi fra
+   la levetta e l'uomo che arrivava, 40 volte su 104 l'uomo arrivava dalla
+   parte OPPOSTA, e 70 volte su 104 non era il piu' vicino al pallone fra
+   quelli disponibili — in media 228 unita' piu' lontano. Con la stessa
+   misura, dopo: 22 su 78 dalla parte opposta e 12 su 78 non i piu'
+   vicini, con 36 unita' invece di 228.
+   Il conto delle pressioni per partita non e' mio: il progetto stima il
+   cambio uomo a 20-30 volte in 90 secondi, secondo verbo dopo il
+   passaggio.
+
+   Adesso la direzione la da' humanMove(t), cioe' ESATTAMENTE la stessa
+   cosa che fa correre il giocatore — levetta oltre la dead-zone, oppure
+   frecce da tastiera. Non c'e' un secondo modo di dire «di la'», e questo
+   e' il punto: la mano non deve imparare niente di nuovo.
+   La latenza non cambia di un fotogramma: questa funzione e' chiamata
+   dove era chiamata prima, alla PRESSIONE del disco. */
 function cambiaGiocatore(t){
   if(G.ctrl[t]<0) return;
-  const b=G.ball;
-  const miei=G.players.map((p,i)=>({p,i})).filter(o=>o.p.team===t && o.p.out<=0 && o.p.role!=='gk');
-  if(miei.length<2) return;
-  const ang=o=>Math.atan2(o.p.y-b.y, o.p.x-b.x);
-  miei.sort((a,c)=>ang(a)-ang(c));
-  const k=miei.findIndex(o=>o.i===G.ctrl[t]);
-  const next=miei[(k+1+miei.length)%miei.length];
-  if(!next || next.i===G.ctrl[t]) return;
-  G.ctrl[t]=next.i;
+  const [mx,my]=humanMove(t);
+  const k=uomoVersoDirezione(t, mx, my, G.ctrl[t]);
+  if(k<0 || k===G.ctrl[t]) return;
+  G.ctrl[t]=k;
   G.swLock[t]=0.75;                        // il cambio automatico non lo ruba subito
   G.swTimer[t]=0;
   Audio5.beep(520);
+}
+
+/* ---------- il RADDOPPIO comandato: CAMBIO piu' trascinamento ----------
+   Il compagno che sta nella direzione del trascinamento va a pressare il
+   portatore avversario. Non e' un ruolo nuovo e non e' un comportamento
+   nuovo: e' il ruolo 'raddoppio' che teamBrain assegna gia', ma solo
+   dalle taglie 7 in su e solo per decisione della squadra. Qui lo puo'
+   chiedere il dito, a ogni taglia.
+
+   SENZA UN PORTATORE AVVERSARIO NON PARTE, e torna false per dirlo: il
+   verbo si chiama raddoppio perche' raddoppia SU UN UOMO. Con il pallone
+   di nessuno — che in questo gioco e' la maggior parte del tempo — il
+   modificatore tace. Mandare il compagno sul pallone libero sarebbe un
+   altro verbo, con un altro bersaglio, e vorrebbe una misura sua.
+
+   L'uomo comandato non si puo' indicare da solo (escludi): quello lo stai
+   gia' muovendo tu. */
+function comandaRaddoppio(t, ux, uy){
+  const b=G.ball;
+  const carrier = b.owner>=0 ? G.players[b.owner] : null;
+  if(!carrier || carrier.team===t) return false;
+  const k=uomoVersoDirezione(t, ux, uy, G.ctrl[t]);
+  if(k<0) return false;
+  G.players[k].raddoppio=RADDOPPIO_T;
+  return true;
 }
 
 /* ---------- cambio giocatore automatico con isteresi ~200ms ---------- */
@@ -11276,6 +11687,12 @@ function updatePlayerFisica(p,dt){
   if(p.out>0){
     p.out-=dt;
     p.vx=0; p.vy=0; p.ax=0; p.ay=0; p.slide=-1; p.recover=0; chiudiAnticipo(p);
+    /* IL CRONOMETRO DELLA CHIAMATA STA PIU' SOTTO, e da qui non ci si
+       arriva: un uomo espulso torna prima. Senza questa riga la sua
+       chiamata resterebbe congelata per tutta l'espulsione e
+       ripartirebbe al rientro, che e' esattamente il latch che non si
+       consuma. */
+    p.chiamata=0;
     /* panchina: fuori dalla sponda lunga, dal lato della propria porta */
     p.x = p.team===0 ? FW*0.22 : FW*0.78;
     p.y = -P_R*2.4;
@@ -11295,6 +11712,41 @@ function updatePlayerFisica(p,dt){
   if(p.celeb>0) p.celeb-=dt;
   if(p.role==='gk'){ updateKeeper(p,dt); return; }
   p.kickCd=Math.max(0,p.kickCd-dt);
+  /* =====================================================================
+     LA CHIAMATA E' UN CRONOMETRO, E STA QUI.
+     Il meccanismo gemello che questo gioco ha gia' — la corsa in area —
+     scala il suo cronometro in aiMove, che gira solo per chi NON e' sotto
+     il dito. Alla chiamata non basta: il progetto la vuole anche «da se'»
+     (§4, contesto NOI: il giocatore che non ha la palla chiede il
+     pallone), cioe' addosso all'uomo COMANDATO, e da aiMove quell'uomo
+     non passa mai. Questo posto invece gira per tutti, ogni fotogramma,
+     e ha gia' accanto il decremento di kickCd.
+     E' un cronometro e non un interruttore per la ragione che sta scritta
+     nel commento di corsaArea: un interruttore che una funzione accende e
+     un'altra deve ricordarsi di spegnere prima o poi resta acceso.
+     DUE COSE LA SPENGONO PRIMA DELLA SCADENZA, e sono le stesse due che
+     spengono la corsa in area:
+       · IL PALLONE E' ARRIVATO. La chiamata ha ottenuto cio' che
+         chiedeva. Senza questa riga il portatore continuerebbe la corsa
+         chiamata col pallone al piede, perche' il ramo della chiamata in
+         aiDecide sta SOPRA quello del portatore e vincerebbe: un uomo che
+         riceve e corre via dalla porta invece di giocare.
+       · IL PALLONE E' IN PIEDI ALL'AVVERSARIO. Una squadra che corre in
+         avanti mentre difende e' il difetto che la corsa in area ha gia'
+         imparato a non fare. Il pallone di NESSUNO — cioe' il volo di un
+         passaggio — non spegne niente: e' proprio il tempo in cui la
+         chiamata deve vivere.
+     ===================================================================== */
+  if(p.chiamata>0){
+    const chi = G.ball.owner>=0 ? G.players[G.ball.owner] : null;
+    if(chi===p || (chi && chi.team!==p.team)) p.chiamata=0;
+    else p.chiamata=Math.max(0, p.chiamata-dt);
+    /* quando scade, l'uomo ridecide SUBITO invece di finire il resto del
+       suo tempo di reazione con addosso il bersaglio della chiamata: se
+       no la corsa dura fino a un settimo di secondo di troppo, e la
+       misura della durata direbbe quel numero li' */
+    if(p.chiamata<=0) p.aiT=0;
+  }
 
   /* rovesciata in corso: il corpo e' inchiodato come nella scivolata,
      e all'istante del colpo (ROVE_IMP) si risolve UNA volta */
@@ -11652,7 +12104,16 @@ function updateBall(dt){
     const o=G.players[b.owner];
     if(o.slide>=0){ b.owner=-1; }
     else{
-      const tx=o.x+o.fx*CARRY_DIST, ty=o.y+o.fy*CARRY_DIST;
+      /* il bersaglio si allontana con la velocita' del portatore (L2.1):
+         a tutta (~223 u/s) sta a 16+17=33 u, che al netto del ritardo
+         dell'inseguitore qui sotto diventano ~21 u VERI dal piede contro
+         i 3,8 di prima (misura: _q-l21.js prova A). Cosi' il difensore
+         DAVANTI arriva sul pallone senza passare dal corpo, e il furto
+         resta un fatto di distanze. */
+      const vP=len(o.vx,o.vy);
+      const slancio=clamp((vP-CARRY_V0)/(CARRY_V1-CARRY_V0),0,1);
+      const avanti=CARRY_DIST+CARRY_SPINTA*slancio*slancio;
+      const tx=o.x+o.fx*avanti, ty=o.y+o.fy*avanti;
       b.vx=(tx-b.x)*14; b.vy=(ty-b.y)*14;
       b.x+=b.vx*dt; b.y+=b.vy*dt;
       b.z*=0.8; b.vz=0; b.curve=0; b.perfectT=0;
@@ -12632,6 +13093,18 @@ function aiMove(p,dt){
      ===================================================================== */
   if(p.corsaArea>0) p.corsaArea=Math.max(0, p.corsaArea-dt);
   if(carrier && carrier.team!==myTeam) p.corsaArea=0;
+  /* L1.5 — L'ORDINE DI RADDOPPIO E' UN CRONOMETRO, per la stessa ragione
+     scritta qui sopra per la corsa in area: un interruttore che una
+     funzione accende e un'altra deve ricordarsi di spegnere prima o poi
+     resta acceso, e un cronometro no. Muore da solo dopo RADDOPPIO_T, e
+     muore SUBITO quando non c'e' piu' un portatore avversario — che e' la
+     condizione stessa dell'ordine, non una precauzione.
+     Sta qui, cioe' dentro il ramo dell'IA: mentre un uomo e' comandato
+     dal dito il suo cronometro non scorre, perche' in quei fotogrammi
+     l'ordine non lo muove nessuno. Se il controllo lo lascia mentre un
+     avversario ha ancora il pallone, l'ordine riprende da dov'era. */
+  if(p.raddoppio>0) p.raddoppio=Math.max(0, p.raddoppio-dt);
+  if(!carrier || carrier.team===myTeam) p.raddoppio=0;
 
   /* ricalcola il bersaglio con un tempo di reazione */
   p.aiT-=dt;
@@ -12811,6 +13284,32 @@ function ruoloDi(p){
 }
 
 /* =====================================================================
+   L1.5 — DOVE SI VA A RADDOPPIARE, E PER QUANTO.
+
+   IL POSTO. Fra il portatore e la PROPRIA porta, un passo piu' largo del
+   pressatore: cosi' i due uomini non finiscono sullo stesso punto e la
+   linea verso la porta resta chiusa. La formula era scritta dentro il
+   ramo del ruolo 'raddoppio' di aiDecide; adesso la leggono in due — il
+   ruolo automatico e l'ordine del dito — e sta scritta una volta sola,
+   perche' due copie che possono divergere sono il modo in cui «comandato»
+   e «automatico» diventerebbero due verbi diversi col nome uguale.
+
+   LA DURATA. Due volte RUOLO_MIN. Non e' un numero nuovo e non e' una
+   taratura: RUOLO_MIN e' quanto dura un incarico in questo gioco, e
+   teamBrain riassegna i ruoli ogni RUOLO_MIN. Un ordine che durasse meno
+   verrebbe scavalcato dalla prima riassegnazione della squadra e sarebbe
+   uno sfarfallio; due incarichi e' la durata piu' corta che sopravvive a
+   un confine di riassegnazione anche nel caso peggiore, cioe' quando
+   l'ordine arriva un istante prima che la squadra ripensi.
+   ===================================================================== */
+function puntoRaddoppio(carrier, myGoalX){
+  const vx=myGoalX-carrier.x, vy=FH/2-carrier.y, vl=Math.max(1,len(vx,vy));
+  const so=64*KPASSO;
+  return [clamp(carrier.x+vx/vl*so, P_R, FW-P_R), clamp(carrier.y+vy/vl*so, P_R, FH-P_R)];
+}
+const RADDOPPIO_T = RUOLO_MIN*2;
+
+/* =====================================================================
    L'ATTACCO DELL'AREA — l'uomo che si stacca e va a farsi trovare.
 
    Senza questa corsa il cross non ha un destinatario, e non per colpa
@@ -12933,6 +13432,147 @@ function attaccaArea(p, carrier){
   return true;
 }
 
+/* =====================================================================
+   LA CHIAMATA — il compagno che parte quando lo chiami. (voce L2.3)
+
+   E' cio' che trasforma il passaggio da «scelgo chi c'e'» a «creo chi non
+   c'e'». Un giocatore chiamato corre in una direzione per 1,6 secondi,
+   indipendentemente dal dito, e mentre corre pesa di piu' nella scelta
+   del ricevente.
+
+   IL MECCANISMO SERVE DUE SENSI, e per questo la porta d'ingresso e' una
+   funzione che prende un GIOCATORE e una DIREZIONE invece di una squadra:
+     · chiamato DA CHI HA LA PALLA — il ricevente candidato parte quando
+       il trascinamento arma (voce L1.4);
+     · chiamato DA SE' — l'uomo che non ha la palla chiede il pallone
+       (contesto NOI del §4).
+   Nessuno dei due ingressi sta qui dentro: li collegano L1.4 e chi fara'
+   il contesto NOI. Finche' non lo fanno, chiamaGiocatore non la chiama
+   nessuno e il gioco si comporta come prima al bit.
+
+   NESSUNA DI QUESTE RIGHE PESCA UN NUMERO CASUALE. Se ne pescasse uno,
+   ogni banco a seme fisso si sfaserebbe per il solo fatto che qualcuno
+   ha chiamato un compagno.
+   ===================================================================== */
+/* PRESCRITTO dal progetto (§4, riga «chiamata»): «Corsa 1,6 s,
+   indipendente dal dito». Non e' un numero misurato e non lo spaccio per
+   tale. Il contesto NOI chiede 1,2 s per la chiamata su di se': la si
+   passa a chiamaGiocatore come quarto argomento, senza toccare qui. */
+const CHIAMA_T = 1.6;
+/* MISURATO: la mediana del divario fra il primo e il secondo candidato
+   nel punteggio vero di eseguiPassUmano, taglia 5, 1944 campioni su sei
+   partite CPU contro CPU a seme fisso (141,3; a 7 e' 89,5 e a 11 e'
+   100,9 — il conto per intero sta in strumenti/_t-l23.js). Chiamare vale
+   quanto il vantaggio tipico del migliore sul secondo: ribalta la scelta
+   in circa meta' delle situazioni ordinarie, e in nessuna di quelle in
+   cui il migliore e' avanti di molto. */
+const CHIAMA_PESO = 140;
+
+/* LO SCANSAMENTO DEGLI AVVERSARI. Non e' una funzione nuova: e' il ciclo
+   che stava dentro il ramo dello smarcato di aiDecide, ESTRATTO. Quel
+   ramo adesso chiama questa, quindi non ci sono due scritture da tenere
+   allineate — che e' il difetto che avrebbe reso inutile una copia.
+   Sposta il bersaglio sull'asse Y, e solo su quello: e' cosi' che il
+   gioco lo faceva, e cosi' resta. */
+function scansaAvversari(t, tx, ty, side){
+  for(const o of G.players){
+    if(o.team===t||o.out>0) continue;
+    if(len(o.x-tx,o.y-ty)<70) ty=clamp(ty+side*70,40,FH-40);
+  }
+  return ty;
+}
+
+/* QUANTO LONTANO GUARDA UN CHIAMATO: lo SLANCIO del ramo dello smarcato,
+   contropiede compreso — 170 unita' di campo, 300 appena l'azione si e'
+   ribaltata. Non e' un numero nuovo, e' quello. */
+function slancioChiamata(t){
+  const B=G.brain[t];
+  return ((B && B.transizione>0) ? 300 : 170)*KPASSO;
+}
+
+/* DOVE CORRE UN CHIAMATO.
+   E' una CAROTA, non un punto d'arrivo: si ricalcola da dove l'uomo si
+   trova ADESSO a ogni ripianificazione, quindi non ci arriva mai e corre
+   per tutti gli 1,6 s. Un punto fisso a 170 unita' se lo mangerebbe in
+   meno di un secondo — un uomo in scatto ne fa piu' di duecento al
+   secondo — e «corre per 1,6 s» sarebbe vero nel codice e falso in
+   campo. Il prezzo e' che contro la linea laterale la carota si schiaccia
+   sul clamp e la corsa finisce prima: e' fisica, ma va saputo.
+   QUI NON SI SCANSA PIU' NIENTE, e la ragione e' misurata. Lo
+   scansamento si fa UNA VOLTA SOLA, in chiamaGiocatore, e finisce dentro
+   la direzione. Rifarlo a ogni giro sulla carota lo accendeva e spegneva
+   di continuo — la carota si allontana dall'avversario prima che l'uomo
+   ci sia passato accanto — e la rotta si raddrizzava a meta' scarto: col
+   franco misurato a 47,35 unita' contro le 64,53 di adesso, sulla stessa
+   scena (strumenti/_q-l23.js, prova B). Una direzione tenuta scansa
+   meglio di una direzione ricalcolata. */
+function puntoChiamata(p){
+  const s=slancioChiamata(p.team);
+  return [ clamp(p.x + p.chiamaUX*s, 60, FW-60),
+           clamp(p.y + p.chiamaUY*s, 50, FH-50) ];
+}
+
+/* LA PORTA D'INGRESSO. Prende un giocatore, una direzione (non serve che
+   sia un versore) e, se si vuole, una durata diversa da quella di casa.
+   Torna true se la chiamata e' nata.
+   TRE RIFIUTI, e ognuno chiude un modo di lasciare un latch appeso:
+     · il PORTIERE non si chiama mai — e non solo perche' non ha senso: il
+       cronometro sta in updatePlayerFisica DOPO il ramo del portiere,
+       quindi una chiamata su un portiere non scadrebbe piu';
+     · un uomo ESPULSO non si chiama: non e' in campo;
+     · CHI HA IL PALLONE non si chiama: la chiamata e' una richiesta di
+       pallone, e il ramo in aiDecide sta sopra quello del portatore —
+       chiamare il portatore vorrebbe dire mandarlo a correre invece di
+       giocare. */
+function chiamaGiocatore(p, dirx, diry, durata){
+  if(!p || p.out>0 || p.role==='gk') return false;
+  if(G.ball && G.ball.owner>=0 && G.players[G.ball.owner]===p) return false;
+  let ux=+dirx||0, uy=+diry||0;
+  const l=len(ux,uy);
+  if(l>0.001){ ux/=l; uy/=l; }
+  /* senza direzione, la chiamata e' «vai avanti»: verso la porta
+     avversaria, che e' cio' che vuol dire chiedere palla quando non si
+     indica un posto (§4, riga «chiedo palla», il tap senza trascinamento) */
+  else { ux=(p.team===0?1:-1); uy=0; }
+  /* da che parte scansare: dalla parte in cui la chiamata gia' punta se
+     ha una componente verticale, se no dal lato che il modulo assegna a
+     quell'uomo — lo stesso ripiego del ramo dello smarcato */
+  p.chiamaS = uy>0.001 ? 1 : (uy<-0.001 ? -1 : (p.lato ? p.lato : (p.y<FH/2?-1:1)));
+  /* =====================================================================
+     LO SCANSAMENTO SI FA QUI, UNA VOLTA SOLA, E FINISCE NELLA DIREZIONE.
+     Si guarda dove porterebbe la chiamata cosi' com'e' chiesta, si lascia
+     che scansaAvversari — la funzione del gioco — sposti quel punto se li'
+     c'e' qualcuno, e poi si tiene la DIREZIONE verso il punto spostato per
+     tutta la corsa.
+     PERCHE' UNA VOLTA SOLA. Rifarlo a ogni ripianificazione sembra piu'
+     prudente ed e' peggio, misurato: la carota si allontana
+     dall'avversario prima che l'uomo gli sia passato accanto, la spinta si
+     spegne, la rotta si raddrizza e l'uomo gli passa piu' vicino di quanto
+     lo scarto prometteva. Sulla scena della prova B di _q-l23.js — la
+     chiamata puntata addosso a un avversario piantato a 170 unita' sulla
+     rotta — il franco minimo misurato e' 47,35 unita' ricalcolando ogni
+     giro contro 64,53 tenendo la direzione. Una direzione tenuta scansa
+     meglio di una direzione ricalcolata, e per giunta e' quello che il
+     progetto dice alla lettera: «corre in una direzione per circa 1,6
+     secondi».
+     COSA SI PERDE, e va detto: un avversario che entra nella rotta a corsa
+     GIA' INIZIATA non viene scansato. La corsa e' una direzione tenuta,
+     non un inseguimento; i corpi non si compenetrano comunque, perche' la
+     separazione rigida del gioco vale per tutti.
+     ===================================================================== */
+  {
+    const s=slancioChiamata(p.team);
+    const tx=clamp(p.x+ux*s, 60, FW-60);
+    const ty=scansaAvversari(p.team, tx, clamp(p.y+uy*s, 50, FH-50), p.chiamaS);
+    const vx=tx-p.x, vy=ty-p.y, vl=len(vx,vy);
+    if(vl>0.001){ ux=vx/vl; uy=vy/vl; }
+  }
+  p.chiamaUX=ux; p.chiamaUY=uy;
+  p.chiamata = +durata>0 ? +durata : CHIAMA_T;
+  p.aiT=0;                    // riparte subito: una chiamata non aspetta il prossimo giro
+  return true;
+}
+
 function aiDecide(p, b, carrier, weHaveBall, myGoalX, opGoalX, isCpuTeam, D){
   /* =====================================================================
      IL PALLONE IN VOLO E' ANCORA DI QUALCUNO.
@@ -12952,6 +13592,25 @@ function aiDecide(p, b, carrier, weHaveBall, myGoalX, opGoalX, isCpuTeam, D){
     p.aiTX=clamp(c[0], 30, FW-30);
     p.aiTY=clamp(c[1], 30, FH-30);
     p.corsaArea=CROSS_CORSA_T;
+    return;
+  }
+  /* =====================================================================
+     LA CHIAMATA (L2.3) VIENE PRIMA DI TUTTO IL RESTO — MA DOPO IL PALLONE
+     CHE STA GIA' VOLANDO ADDOSSO A TE.
+     La precedenza sopra questa riga non e' un dettaglio d'ordine: se un
+     cross e' indirizzato a te, il posto piu' sensato dove correre e' il
+     suo punto di caduta, e non c'e' chiamata che valga di piu' di un
+     pallone che ti sta gia' arrivando. Sotto questa riga invece la
+     chiamata batte tutto — la corsa in area, l'ultimo uomo, lo smarcato,
+     la copertura — perche' e' l'unico bersaglio di questa funzione che
+     nasce da un'intenzione umana esplicita e non da una regola di
+     posizione.
+     Il portatore non ci arriva mai: il cronometro spegne la chiamata
+     nell'istante in cui il pallone diventa suo.
+     ===================================================================== */
+  if(p.chiamata>0){
+    const c=puntoChiamata(p);
+    p.aiTX=c[0]; p.aiTY=c[1];
     return;
   }
   /* =====================================================================
@@ -13001,6 +13660,30 @@ function aiDecide(p, b, carrier, weHaveBall, myGoalX, opGoalX, isCpuTeam, D){
     }
   }
   const ballNearOurGoal = Math.abs(b.x-myGoalX)<FW*0.42;
+
+  /* =====================================================================
+     L1.5 — L'ORDINE DEL DITO VIENE PRIMA DEL RUOLO.
+
+     p.raddoppio e' un cronometro, non un interruttore, e lo scrive
+     comandaRaddoppio quando il dito rilascia il disco CAMBIO con un
+     trascinamento armato. Finche' corre, questo uomo va a pressare il
+     portatore avversario e non fa nient'altro.
+
+     STA IN CIMA, E BATTE ANCHE L'ULTIMO UOMO. Il ramo qui sotto fa uscire
+     l'ultimo uomo prima di ogni altra cosa: se l'ordine stesse dopo,
+     indicare l'ultimo uomo sarebbe un comando che non fa niente, e non
+     fare niente IN SILENZIO e' la bugia che questo schema passa il tempo
+     a togliere dai dischi. Il prezzo e' dichiarato e non e' piccolo: il
+     dito puo' portare fuori posizione l'uomo che copre la porta, ed e'
+     una palla persa che diventa un tiro a porta vuota. Lo paga chi ha
+     dato l'ordine, che e' l'unico modo giusto di farglielo imparare.
+     Quanto costi in gol subiti NON E' MISURATO.
+     ===================================================================== */
+  if(p.raddoppio>0 && carrier && carrier.team!==myTeam){
+    const r=puntoRaddoppio(carrier, myGoalX);
+    p.aiTX=r[0]; p.aiTY=r[1];
+    return;
+  }
 
   if(p===deepest && !weHaveBall){
     /* portiere di fatto: resta sempre sulla linea palla-porta,
@@ -13060,11 +13743,12 @@ function aiDecide(p, b, carrier, weHaveBall, myGoalX, opGoalX, isCpuTeam, D){
       const slancio = ((B && B.transizione>0) ? 300 : 170)*KPASSO;
       const aheadX = clamp(carrier.x + (opGoalX===FW?slancio:-slancio), 60, FW-60);
       let ty = clamp(carrier.y + side*150 + rnd(-30,30), 50, FH-50);
-      /* evita di sovrapporsi agli avversari */
-      for(const o of G.players){
-        if(o.team===myTeam||o.out>0) continue;
-        if(len(o.x-aheadX,o.y-ty)<70) ty=clamp(ty+side*70,40,FH-40);
-      }
+      /* evita di sovrapporsi agli avversari. Le quattro righe che stavano
+         qui adesso hanno un nome, ed e' la stessa funzione che usa la
+         chiamata (L2.3): non e' una copia, e' questa, spostata. Percio'
+         «un compagno che si offre» e «un compagno chiamato» scansano allo
+         stesso modo, e non possono divergere. */
+      ty = scansaAvversari(myTeam, aheadX, ty, side);
       p.aiTX=aheadX; p.aiTY=ty;
     }
   }else{
@@ -13123,11 +13807,14 @@ function aiDecide(p, b, carrier, weHaveBall, myGoalX, opGoalX, isCpuTeam, D){
       p.aiTY = clamp(FH/2 + (b.y-FH/2)*0.45, 60, FH-60);
     }else if(mioRuolo==='raddoppio' && carrier && carrier.team!==myTeam){
       /* seconda pressione (taglie 7/11): chiude il portatore dal lato
-         della propria porta, un passo piu' largo del pressatore */
-      const vx=myGoalX-carrier.x, vy=FH/2-carrier.y, vl=Math.max(1,len(vx,vy));
-      const so=64*KPASSO;
-      p.aiTX=clamp(carrier.x+vx/vl*so, P_R, FW-P_R);
-      p.aiTY=clamp(carrier.y+vy/vl*so, P_R, FH-P_R);
+         della propria porta, un passo piu' largo del pressatore.
+         La formula sta in puntoRaddoppio e non piu' qui, perche' adesso
+         la leggono in due: questo ruolo, che la squadra assegna da sola, e
+         l'ordine del dito in cima a questa funzione (L1.5). Una scrittura
+         sola vuol dire che il raddoppio comandato e quello automatico
+         vanno per forza nello stesso posto. */
+      const r=puntoRaddoppio(carrier, myGoalX);
+      p.aiTX=r[0]; p.aiTY=r[1];
     }else{
       /* copertura: taglia la linea di passaggio verso l'attaccante piu' pericoloso */
       let danger=null, ddg=1e9;
@@ -13523,6 +14210,17 @@ function eseguiAiPass(p, D){
     let s=0;
     for(const o of G.players){ if(o.team!==p.team && o.out<=0) s+=clamp(len(o.x-q.x,o.y-q.y),0,200); }
     s+=(p.team===0?q.x-p.x:p.x-q.x)*0.8;
+    /* LO STESSO PESO DELLA CHIAMATA, e qui non e' simmetria per bellezza.
+       Questo e' il passaggio della CPU, cioe' il passaggio che riceve la
+       meta' «CHIEDO PALLA» del progetto (§4, contesto NOI): li' il
+       portatore e' un compagno guidato dalla macchina, e se il suo
+       punteggio non vedesse la chiamata quella meta' del meccanismo non
+       farebbe niente. Il punteggio di questa funzione NON e' smarcato() —
+       satura a 200 invece che a 220 e non ha la penalita' della linea di
+       passaggio — ma e' della stessa specie e della stessa scala: una
+       somma di distanze in unita' di campo. Il numero e' lo stesso, e
+       vale quanto ci si aspetta che valga. */
+    if(q.chiamata>0) s+=CHIAMA_PESO;
     if(s>bs){bs=s;best=q;}
   }
   if(!best) return;
@@ -26153,6 +26851,35 @@ function drawPlayer(p){
       ctx.strokeStyle='rgba(255,176,32,.8)'; ctx.lineWidth=1.5;
       ctx.beginPath(); ctx.arc(p.x,p.y,R*pl+4,0,6.2832); ctx.stroke();
     }
+    /* L1.3 — LA TACCA SULLA BOCCA DELLA PORTA, all'altezza mirata:
+       la mira si legge alla fine del suo tragitto, mai sotto il dito
+       (Legge 3 — il polpastrello copre cio' che tocca). Compare solo
+       quando un trascinamento ARMATO sta mirando: senza mira non c'e'
+       niente da annunciare, e un segno fisso sarebbe rumore. Gesso
+       fuori finestra, ambra dentro — lo stesso codice colore
+       dell'anello qui sopra. La freccetta nei terzi estremi e'
+       l'annuncio a tre stati (ALTO/CENTRO/BASSO) del progetto; la
+       posizione resta continua. La geometria viene da taccaMira, la
+       stessa funzione che zoneInterfaccia dichiara: il dipinto e la
+       dichiarazione non possono divergere. */
+    {
+      const tk=taccaMira(p.team);
+      if(tk){
+        ctx.save();
+        ctx.strokeStyle= inWin?COL.ambra:COL.gesso;
+        ctx.lineWidth=2.2;
+        ctx.beginPath(); ctx.moveTo(tk.gx-7,tk.gy); ctx.lineTo(tk.gx+7,tk.gy); ctx.stroke();
+        if(tk.f<-0.33 || tk.f>0.33){
+          const sV=tk.f<0?-1:1;
+          ctx.beginPath();
+          ctx.moveTo(tk.gx-3.5,tk.gy+sV*3);
+          ctx.lineTo(tk.gx,tk.gy+sV*7.5);
+          ctx.lineTo(tk.gx+3.5,tk.gy+sV*3);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
   }
 
   /* L'ANELLO DEL FLICK NON C'E' PIU', e non e' una potatura estetica.
@@ -31996,6 +32723,16 @@ window.__test = {
       if(TAB_VELO<0.999 && BAR_CIFRE.x1>BAR_CIFRE.x0)
         z.push({tipo:'cifre', x0:BAR_CIFRE.x0, y0:BAR_CIFRE.y0,
                 x1:BAR_CIFRE.x1, y1:BAR_CIFRE.y1, alfa:1});
+    }
+    /* L1.3 — la tacca di mira sulla bocca della porta: si dichiara
+       RICALCOLANDO taccaMira, la stessa funzione che la disegna — una
+       scrittura sola, quindi dichiarazione e dipinto non possono
+       divergere. E' un segno sul mondo, e questa casa ha gia' pagato
+       un segno semitrasparente sull'erba letto come ombra da
+       istantanea.js: percio' si dichiara, piccolo com'e'. */
+    for(let tq=0;tq<2;tq++){
+      const tk=taccaMira(tq);
+      if(tk) z.push({tipo:'tacca', x0:tk.x0, y0:tk.y0, x1:tk.x1, y1:tk.y1, alfa:0.9});
     }
     /* stick, pulsanti e bussola li tiene gia' TOUCH_ZONE, con la loro
        alfa corrente: si copiano, non si ricalcolano */

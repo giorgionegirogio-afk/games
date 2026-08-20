@@ -566,6 +566,27 @@ const { chromium } = require('playwright');
 
 const RADICE = path.resolve(__dirname, '..');
 
+/* --- IL GIOCO PUO' ARRIVARE DA FUORI: --gioco <file> oppure GIOCO_PROVA.
+   PERCHE': il percorso del gioco era scritto qui dentro, e un percorso
+   cablato ha gia' fatto sbagliare una bisezione — tre misure «prima»
+   erano identiche perche' leggevano tutte lo stesso file. Con --gioco lo
+   stesso cancello misura una copia fuori dal repo (una toppa da provare,
+   la versione di ieri) senza scambiare file a mano. Senza --gioco non
+   cambia un byte: il default resta il file del repo. --- */
+const GIOCO_FUORI = (() => {
+  const i = process.argv.indexOf('--gioco');
+  const v = i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--')
+    ? process.argv[i + 1] : (process.env.GIOCO_PROVA || '');
+  if (!v) return '';
+  const a = path.resolve(v);
+  /* uscita 3 = prova nulla: non e' il gioco a essere rosso, e' il banco
+     che non ha niente da misurare (codici di casa: 0 verde, 1 rosso,
+     2 banco esploso, 3 prova nulla) */
+  if (!fs.existsSync(a)) { console.error('PROVA NULLA: il gioco indicato non esiste: ' + a); process.exit(3); }
+  return a;
+})();
+const ridirigi = f => (GIOCO_FUORI && /CALCETTO-il-gioco\.html$/i.test(f)) ? GIOCO_FUORI : f;
+
 /* =================================================== LE SOGLIE, IN CHIARO
    Una soglia nascosta è una soglia che nessuno può contestare. Qui ci
    sono tutte, cancelli e parametri interni delle misure, e --soglie le
@@ -909,8 +930,8 @@ function servi() {
   return new Promise(ok => {
     const s = http.createServer((req, res) => {
       const p = decodeURIComponent(req.url.split('?')[0]);
-      const f = path.join(RADICE, p === '/' ? 'index.html' : p);
-      if (!f.startsWith(RADICE) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) {
+      const f = ridirigi(path.join(RADICE, p === '/' ? 'index.html' : p));
+      if ((!f.startsWith(RADICE) && f !== GIOCO_FUORI) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) {
         res.writeHead(404); res.end('no'); return;
       }
       res.writeHead(200, {
@@ -3611,7 +3632,12 @@ async function rampaDellaLuce(pag, S) {
   if (coppieVicine) {
     console.log('\nIL BANCO NON HA OTTO CAMPIONI: ' + coppieVicine + ' coppie di istanti sono lo stesso');
     console.log('fotogramma. Il totale qui sopra conta più volte lo stesso voto e non vale.');
-    process.exit(1);
+    /* USCITA 3 E NON 1, ed e' una riparazione del 20 agosto: con l'uscita 1
+       questa autodenuncia era indistinguibile da «il gioco e' rosso», e la
+       batteria la ignorava — il totale non valido veniva letto come un
+       totale. Codici di casa: 0 verde, 1 il gioco e' rosso, 2 il banco e'
+       esploso, 3 la prova e' nulla. Questa e' la 3. */
+    process.exit(3);
   }
   if (passate < tot) {
     console.log('\nOgni misura fallita è una riga della scheda della giuria: la luce delle');

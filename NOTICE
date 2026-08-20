@@ -1,0 +1,268 @@
+NOTICE — l'inventario dei diritti di CALCETTO
+=============================================
+
+Questo file esiste perche' un gioco che si vuole vendere deve poter dire in
+cinque minuti di chi e' ogni suo byte. Ogni riga qui sotto e' stata VERIFICATA
+il 20 agosto 2026 leggendo i binari e il sorgente, non i documenti del
+progetto: la fonte di ogni numero e' il comando che l'ha prodotto.
+
+-----------------------------------------------------------------------
+1. COSA CONTIENE IL GIOCO (CALCETTO-il-gioco.html, md5 30279089de83249e44e66d2247294f5f)
+-----------------------------------------------------------------------
+
+MATERIALE DI TERZI — due soli componenti, entrambi caratteri tipografici:
+
+  a) Archivo Black Regular, versione 1.006
+     Copyright 2017 The Archivo Black Project Authors
+     (https://github.com/Omnibus-Type/ArchivoBlack)
+     Licenza: SIL Open Font License 1.1, SENZA Reserved Font Name.
+     Incorporato come woff2 in base64 (14.332 byte binari), sottoinsieme
+     di 161 glifi il cui intervallo di copertura coincide con il
+     sottoinsieme "latin-ext" distribuito da Google Fonts.
+     Verifica: tabella `name` letta voce per voce con fontTools 4.63.0 —
+     nameID 0 (copyright) e nameID 14 (URL della licenza,
+     http://scripts.sil.org/OFL) presenti; nameID 13 (testo della
+     licenza) ASSENTE nel binario. Percio' il testo viaggia QUI e nella
+     schermata CREDITI del gioco (toppa strumenti/_t-crediti.js).
+
+  b) Barlow Condensed Bold, versione 1.408
+     Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)
+     Licenza: SIL Open Font License 1.1, SENZA Reserved Font Name.
+     Incorporato come woff2 in base64 (7.636 byte binari), sottoinsieme
+     di 140 glifi il cui intervallo di copertura coincide con il
+     sottoinsieme "vietnamese" distribuito da Google Fonts.
+     Stessa verifica, stesso esito: nameID 13 assente dal binario.
+
+  AVVERTENZA MISURATA, non un'opinione: nessuno dei due sottoinsiemi
+  contiene le lettere A-Z, a-z, le cifre 0-9 o le vocali accentate
+  italiane (misurato dalla tabella cmap: Archivo copre U+0100-017F e
+  spiccioli, Barlow copre l'intervallo vietnamita U+1EA0-1EF9 piu'
+  combinanti). Quindi OGGI nessun carattere del testo del gioco esce da
+  questi font: tutto il testo visibile viene dai caratteri di sistema
+  del dispositivo. Gli obblighi OFL restano (si distribuisce comunque il
+  Font Software), ma i due font sono, di fatto, peso morto: la decisione
+  se sostituirli coi sottoinsiemi "latin" veri o rimuoverli spetta al
+  committente (vedi il referto della revisione diritti del 20/8/2026).
+
+TUTTO IL RESTO E' FATTO IN CASA — verificato cosi':
+  - Immagini: le uniche `data:image` sono 2 SVG scritti a mano nel
+    sorgente (favicon con l'emoji del pallone; un'icona di percorso).
+    Zero raster incorporati. (grep "data:image" -> 2, entrambe svg+xml)
+  - Audio: interamente sintetizzato a runtime — 11 createOscillator,
+    zero campioni (grep data:audio|.mp3|.ogg|.wav -> 0).
+  - Librerie: zero. Nessun <script src>, nessun require(), nessun
+    import. (grep -> 0)
+  - Rete: gli unici URL nel testo sono il namespace SVG del W3C (2) e
+    il rimando alla OFL nel commento dei font (1). Nessuna richiesta a
+    runtime (cancello senza-rete).
+  - Nomi: squadre, giocatori, campi, sponsor, trofei e divise sono
+    inventati (nomi di quartiere e mestiere). Il cancello ripetibile e'
+    strumenti/diritti.js; l'inventario completo e' _z-legale-nomi.js.
+
+I caratteri SOLO NOMINATI negli stack CSS/canvas ("Arial Black", "Arial
+Narrow", Impact, "Segoe UI") NON sono distribuiti col gioco: se ci sono,
+vengono dal sistema dell'utente, e nessuna licenza e' dovuta da noi. Ma
+la loro presenza NON e' garantita: sulla WebView Android non esistono, e
+il testo ripiega sul sans-serif di sistema (Roboto).
+
+-----------------------------------------------------------------------
+2. I TESTI INTEGRALI DELLE LICENZE
+-----------------------------------------------------------------------
+La OFL 1.1, condizione 2, chiede che ogni copia distribuita porti con se'
+l'avviso di copyright E la licenza. Qui sotto ci sono tutti e due i file
+di licenza canonici, integrali, uno per famiglia (i corpi sono identici:
+cambia la riga di copyright).
+
+=======================================================================
+2a. ARCHIVO BLACK — OFL.txt integrale
+=======================================================================
+Copyright 2017 The Archivo Black Project Authors (https://github.com/Omnibus-Type/ArchivoBlack)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded, 
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION & CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+
+=======================================================================
+2b. BARLOW CONDENSED — OFL.txt integrale
+=======================================================================
+Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded, 
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION & CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.

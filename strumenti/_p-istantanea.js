@@ -1600,8 +1600,21 @@ function misuraInPagina(arg) {
        che la riparazione ripara qualcosa che esisteva davvero. */
     const bb = G.ball;
     let rd = 0;
-    try { rd = t.pallaRaggio ? +t.pallaRaggio() : 0; } catch (e) { rd = 0; }
-    if (!(rd > 0)) rd = B_R_ * (1 + (bb.z || 0) * 0.012);
+    try { rd = (typeof t.pallaRaggio === 'function') ? +t.pallaRaggio() : 0; } catch (e) { rd = 0; }
+    if (!(rd > 0)) {
+      /* BANCO ONESTO: nessun ripiego muto. Cinque costanti del disegno
+         (P_DIS, RIG_H, RIG_PIEDI, RIG_YAW_K, B_R) passano gia' da
+         preso(), che le DICHIARA quando mancano; questo raggio no:
+         ripiegava su B_R in silenzio. E qui pesa il doppio, perche' il
+         banco 7 posa il falso ATTORNO al pallone: col raggio sbagliato
+         l'anello finisce dove il gioco non lo mette mai, il conto severo
+         non si muove per il motivo sbagliato e il banco dichiara
+         riparato un difetto che non ha messo alla prova.
+         Il lancio lo raccoglie chi chiama (vedi "controllo: 7"): uccide
+         il banco 7, non le altre tredici misure dell'istante. */
+      throw new Error("banco 7: __test.pallaRaggio non c'e'. Senza il raggio dichiarato l'anello falso " +
+        'non si posa dove il gioco lo posa, e il controllo direbbe verde per il motivo sbagliato.');
+    }
     const cxp = sx(bb.x), cyp = sy(bb.y - (bb.z || 0) * 0.55);
     const u = S2 * dpr;                       // unità di campo -> pixel di tela
     /* IL CASO PEGGIORE VERO, e ci sono voluti due tentativi per trovarlo.
@@ -1671,10 +1684,26 @@ function misuraInPagina(arg) {
           l'elemento si è tolto di mezzo e i pixel tornano prato;
        2. la superficie dichiarata si stampa a ogni istante, così nessuno
           la fa crescere in silenzio da un'onda all'altra. */
-  const ifacc = { zone: 0, pixel: 0, frazione: 0, dichiarata: false, tipi: '' };
+  const ifacc = { zone: 0, pixel: 0, frazione: 0, dichiarata: false, tipi: '', perche: '' };
   const sottoUI = new Uint8Array(N);
+  /* BANCO ONESTO: nessun ripiego muto. Tre modi di restare muti,
+     tutti chiusi: la funzione che manca, la funzione che esplode, e —
+     quello che la prima edizione lasciava aperto — la funzione che torna
+     un elenco VUOTO. Succede in menu, fine partita, pausa e moviola,
+     dove TOUCH_ZONE e' vuoto: li' l'esclusione non c'e' e va detto, non
+     lasciato intendere. E il catch adesso avvolge SOLO la chiamata
+     all'hook: prima incolpava zoneInterfaccia di qualunque eccezione
+     nascesse nelle venti righe sotto, che e' la stessa malattia
+     dall'altro lato. */
+  let zz = null;
+  if (typeof t.zoneInterfaccia !== 'function') { mancanti.push('__test.zoneInterfaccia'); ifacc.perche = 'la funzione non esiste'; }
+  else {
+    try { zz = t.zoneInterfaccia(); }
+    catch (e) { mancanti.push('__test.zoneInterfaccia'); ifacc.perche = "la funzione e' esplosa: " + e.message; }
+    if (!ifacc.perche && !Array.isArray(zz)) { mancanti.push('__test.zoneInterfaccia'); ifacc.perche = 'non torna un elenco'; zz = null; }
+    else if (!ifacc.perche && !zz.length) ifacc.perche = "l'elenco e' VUOTO (succede in menu, pausa, moviola e fine partita, dove il gioco non dipinge comandi)";
+  }
   try {
-    const zz = t.zoneInterfaccia ? t.zoneInterfaccia() : null;
     if (zz && zz.length) {
       ifacc.dichiarata = true;
       const usate = zz.filter(z => (z.alfa === undefined ? 1 : z.alfa) >= par.ifaccAlfaMin);
@@ -1691,7 +1720,7 @@ function misuraInPagina(arg) {
       }
       ifacc.frazione = ifacc.pixel / N;
     }
-  } catch (e) { /* nessuna dichiarazione: si misura tutto, esattamente com'era */ }
+  } catch (e) { ifacc.perche = "il conto delle zone e' esploso: " + e.message; }
   const Lm = new Float32Array(N);
   const erba = new Uint8Array(N);
   const Hue = new Float32Array(N);
@@ -3156,6 +3185,8 @@ async function rampaDellaLuce(pag, S) {
       if (m.ifacc && m.ifacc.dichiarata) {
         console.log(`         interfaccia dichiarata: ${m.ifacc.zone} zone (${m.ifacc.tipi}), ` +
           `${(m.ifacc.frazione * 100).toFixed(1)}% del quadro — là non si cerca ombra`);
+      } else if (m.ifacc && m.ifacc.perche) {
+        console.log(`         interfaccia NON dichiarata: ${m.ifacc.perche} — si è misurato tutto il quadro`);
       }
       console.log(`         ${passate}/${c.length} — istante-${nn}.png, silhouette-${nn}.png`);
       /* --rampa: la curva della luce al centro, una volta sola, sul primo
@@ -3290,9 +3321,21 @@ async function rampaDellaLuce(pag, S) {
         const mF = await pag.evaluate(misuraInPagina, { par: S, controllo: 6 });
         await pag.screenshot({ path: path.join(dir, 'controllo-centro-duello-' + nn + '.png') });
         await pag.evaluate(() => { window.__test.disegna(); });
-        const mG = await pag.evaluate(misuraInPagina, { par: S, controllo: 7 });
-        await pag.screenshot({ path: path.join(dir, 'controllo-anello-' + nn + '.png') });
-        const cE = cancelli(mE, S), cF = cancelli(mF, S), cG = cancelli(mG, S);
+        /* BANCO ONESTO: nessun ripiego muto. Il banco 7 puo' rifiutarsi
+           di misurare (se __test.pallaRaggio non c'e' l'anello falso non
+           si posa dove il gioco lo posa). Prima quel rifiuto usciva
+           dall'evaluate, interrompeva il giro sugli istanti e buttava via
+           TUTTE E QUATTORDICI le misure: un banco che si ferma non deve
+           portarsi dietro i tredici risultati che aveva gia' in mano. */
+        let mG = null, mGmotivo = null;
+        try { mG = await pag.evaluate(misuraInPagina, { par: S, controllo: 7 }); }
+        /* il messaggio vero comincia con "page.evaluate: Error: ", non con
+           "Error: ": una cerca ancorata a inizio riga non mordeva e la
+           riga usciva col doppio cappello. Misurato dal critico, corretto
+           qui: si toglie tutto cio' che precede il primo "Error: ". */
+        catch (e) { mGmotivo = String((e && e.message) || e).split('\n')[0].replace(/^.*?Error: /, ''); }
+        if (mG) await pag.screenshot({ path: path.join(dir, 'controllo-anello-' + nn + '.png') });
+        const cE = cancelli(mE, S), cF = cancelli(mF, S), cG = mG ? cancelli(mG, S) : null;
         console.log(`           centro abitato: gioco vero ${d(c[6])}   riquadro sgombrato ${d(cE[6])}   duello al centro ${d(cF[6])}`);
         console.log(`           celle abitate su ${m.centroAbitato.celle}: ${m.centroAbitato.abitate}  ->  ${mE.centroAbitato.abitate}  ->  ${mF.centroAbitato.abitate}` +
           `   (di cui col corpo ${m.centroAbitato.abitateCorpo} -> ${mE.centroAbitato.abitateCorpo} -> ${mF.centroAbitato.abitateCorpo})` +
@@ -3301,10 +3344,15 @@ async function rampaDellaLuce(pag, S) {
         console.log(`           attori spostati: ${mE.scenaFalso ? mE.scenaFalso.spostate : '?'} fuori dal riquadro nel primo falso,` +
           ` ${mF.scenaFalso ? mF.scenaFalso.dentro : '?'} dentro nel secondo;  camera ferma` +
           ` ${mE.scenaFalso && mE.scenaFalso.ferma ? 'sì' : 'NO'}/${mF.scenaFalso && mF.scenaFalso.ferma ? 'sì' : 'NO'}`);
-        console.log(`           palla:  gioco vero ${d(c[1])}   con l'anello di possesso dipinto attorno ${d(cG[1])}`);
-        console.log(`           diametro severo ${m.palla.diamPx.toFixed(1)} -> ${mG.palla.diamPx.toFixed(1)} px;  ` +
-          `permissivo (il conto di ieri) ${m.palla.diamLargo.toFixed(1)} -> ${mG.palla.diamLargo.toFixed(1)} px;  ` +
-          `raggi scappati ${m.palla.raggiScappati} -> ${mG.palla.raggiScappati} su 16`);
+        if (mG) {
+          console.log(`           palla:  gioco vero ${d(c[1])}   con l'anello di possesso dipinto attorno ${d(cG[1])}`);
+          console.log(`           diametro severo ${m.palla.diamPx.toFixed(1)} -> ${mG.palla.diamPx.toFixed(1)} px;  ` +
+            `permissivo (il conto di ieri) ${m.palla.diamLargo.toFixed(1)} -> ${mG.palla.diamLargo.toFixed(1)} px;  ` +
+            `raggi scappati ${m.palla.raggiScappati} -> ${mG.palla.raggiScappati} su 16`);
+        } else {
+          console.log(`           palla:  BANCO 7 NON MISURATO — ${mGmotivo}`);
+          console.log(`           (le altre misure di questo istante restano valide: erano gia' prese)`);
+        }
         riga.cA = cA; riga.cB = cB; riga.cC = cC; riga.cD = cD;
         riga.cE = cE; riga.cF = cF; riga.cG = cG;
         riga.mE = mE; riga.mF = mF; riga.mG = mG;

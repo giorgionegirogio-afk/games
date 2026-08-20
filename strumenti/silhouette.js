@@ -251,6 +251,24 @@ const ROMPI = process.argv.includes('--rompi');
    sola, e chi vuole puo' comunque forzarla con --dir. */
 const DIR = arg('dir', ROMPI ? 'foto-figure2-dopo/_conrottura' : 'foto-figure2-dopo');
 const FILE = arg('file', 'CALCETTO-il-gioco.html');
+/* --- IL GIOCO PUO' ARRIVARE DA FUORI: --gioco <file> oppure GIOCO_PROVA.
+   PERCHE': il percorso del gioco era scritto qui dentro, e un percorso
+   cablato ha gia' fatto sbagliare una bisezione — tre misure «prima»
+   erano identiche perche' leggevano tutte lo stesso file. Con --gioco lo
+   stesso cancello misura una copia fuori dal repo (una toppa da provare,
+   la versione di ieri) senza scambiare file a mano. Senza --gioco non
+   cambia un byte: il default resta il file del repo. --- */
+const GIOCO_FUORI = (() => {
+  const v = arg('gioco', process.env.GIOCO_PROVA || '');
+  if (!v) return '';
+  const a = path.resolve(v);
+  /* uscita 3 = prova nulla: non e' il gioco a essere rosso, e' il banco
+     che non ha niente da misurare (codici di casa: 0 verde, 1 rosso,
+     2 banco esploso, 3 prova nulla) */
+  if (!fs.existsSync(a)) { console.error('PROVA NULLA: il gioco indicato non esiste: ' + a); process.exit(3); }
+  return a;
+})();
+const ridirigi = f => (GIOCO_FUORI && /CALCETTO-il-gioco\.html$/i.test(f)) ? GIOCO_FUORI : f;
 const DIST_MIN = 0.18;      // distanza di Hamming minima fra due sagome
 const NOMINABILI_MIN = 8;   // il requisito della giuria: 8 su 10
 
@@ -301,7 +319,7 @@ function servi(rompi) {
   return new Promise(ok => {
     const s = http.createServer((rq, rs) => {
       const u = decodeURIComponent(rq.url.split('?')[0]);
-      const f = path.join(RADICE, u === '/' ? 'index.html' : u);
+      const f = ridirigi(path.join(RADICE, u === '/' ? 'index.html' : u));
       fs.readFile(f, (e, d) => {
         if (e) { rs.writeHead(404); rs.end('no'); return; }
         const t = f.endsWith('.html') ? 'text/html'
@@ -309,7 +327,9 @@ function servi(rompi) {
         /* la storpiatura vale SOLO sul file in prova: la pagina ne tira
            dietro altri (il service worker, l'altro gioco) e un cancello
            che si mette a rompere anche quelli sbaglia bersaglio */
-        if (rompi && path.resolve(f) === path.resolve(RADICE, FILE)) {
+        /* con --gioco il file in prova e' quello di fuori: la storpiatura
+           deve colpire LUI, non il percorso del repo che non viene servito */
+        if (rompi && path.resolve(f) === ridirigi(path.resolve(RADICE, FILE))) {
           const rotto = storpia(d.toString('utf8'));
           if (rotto === null) {
             console.log('PROVA DI ROTTURA IMPOSSIBILE: nessuna delle ancore dell\'esultanza');
@@ -675,6 +695,20 @@ function quanti(d) {
      posa a un altro angolo; per lo SCAVO quella prova non esiste, perche'
      la spazzata non lo misura — e si dice invece di fingerla. */
   let raggiungibili = 0, mai = 0, senzaProva = 0;
+  /* LE POSE MORTE, e perche' bocciano da sole. La tolleranza degli 8 su
+     10 esiste per le pose A META': quelle che all'angolo di presentazione
+     non reggono ma la proprieta' ce l'hanno — a un altro angolo la
+     spazzata la vede, quindi e' lavoro di disegno, non un muro. Una posa
+     il cui criterio non ricorre MAI, in nessuna delle combinazioni della
+     spazzata, e' un'altra cosa: nessuna camera potra' mai leggerla, e la
+     tolleranza non deve coprirla. E' successo il 20 agosto 2026: il tuffo
+     del portiere appiattito a mano (copia sabotata) e' passato VERDE
+     perche' il tuffo vero stava GIA' fra le due bocciate ammesse — 8/10
+     prima, 8/10 dopo, e il cancello non ha visto una posa diventare un
+     palo. Da oggi: bocciata + irraggiungibile ovunque = ROSSA, anche
+     dentro la tolleranza. Lo scavo resta fuori dalla regola, perche' la
+     spazzata non lo misura e una prova di raggiungibilita' non esiste. */
+  const morte = [];
   if (daFare.length) {
     console.log('\n  cosa manca, posa per posa (e dove la stessa posa ci arriva gia\'):');
     for (const { f, steso, c } of daFare) {
@@ -691,7 +725,7 @@ function quanti(d) {
           .map(g => `${g.yaw}gradi/corp${g.corp}`);
         for (const corp of [0, 1, 2]) for (const yaw of [0, 90, 180, -90])
           if (!bocciate.has(corp + '@' + yaw)) altrove.push(`${yaw}gradi/corp${corp}`);
-        if (altrove.length) raggiungibili++; else mai++;
+        if (altrove.length) raggiungibili++; else { mai++; morte.push(`${f.nome} (${k} ${valore(k, f)}, chiede ${chiede(k, steso)})`); }
         console.log(`     ${f.nome.padEnd(24)} ${k.padEnd(11)} ${valore(k, f)} — ne chiede ${chiede(k, steso)}` +
           (altrove.length ? `   (ci arriva gia' a ${altrove.slice(0, 3).join(', ')})`
             : `   (mai, in nessuna delle ${TOT_SPAZZATA} combinazioni della spazzata)`));
@@ -847,7 +881,7 @@ function quanti(d) {
      IL VERDETTO — solo (a), la distinzione accanto, e (con --rompi) la
      prova di rottura
      ================================================================= */
-  if (giuriaOK && distOK && rotturaOK) {
+  if (giuriaOK && distOK && rotturaOK && morte.length === 0) {
     console.log(`\nVERDE: ${nominabili} azioni su ${d.fig.length} nominabili all'angolo di ` +
       `presentazione (ne servono ${NOMINABILI_MIN}), distinzione ${d.distanza.toFixed(3)}.`);
     console.log('Resta il PROVINO CIECO, che e\' il giudice vero, e VERDE qui non vuol dire');
@@ -857,9 +891,19 @@ function quanti(d) {
     console.log('le quali non puo\' essere letta, e — da adesso — se due sagome stanno');
     console.log('spendendo la stessa parola. Non sa dire se la parola e\' quella giusta.\n');
   } else {
+    /* il conto delle morte e' per POSA, non per criterio: una posa con
+       due criteri irraggiungibili e' UNA posa morta, non due */
+    const poseMorte = [...new Set(morte.map(m => m.split(' (')[0]))];
     console.log(`\nROSSO: ${nominabili} azioni su ${d.fig.length} nominabili (ne servono ` +
       `${NOMINABILI_MIN}), distinzione ${distOK ? 'ok' : 'INSUFFICIENTE'}` +
+      (poseMorte.length ? `, ${poseMorte.length} pos${poseMorte.length > 1 ? 'e' : 'a'} MORT${poseMorte.length > 1 ? 'E' : 'A'} (${poseMorte.join(', ')})` : '') +
       (ROMPI ? `, prova di rottura ${rotturaOK ? 'superata' : 'FALLITA'}` : '') + '.');
+    if (morte.length) {
+      console.log('POSE MORTE — bocciate, e con il criterio irraggiungibile in TUTTE le');
+      console.log('combinazioni della spazzata. La tolleranza degli 8 su 10 copre le pose a');
+      console.log('meta\', non queste: nessuna camera potra\' mai leggerle, quindi bocciano da sole.');
+      for (const m of morte) console.log('  - ' + m);
+    }
     if (!giuriaOK) console.log(`Mancano ${NOMINABILI_MIN - nominabili} pose. L'elenco «cosa manca» qui ` +
       `sopra dice di quanto, criterio per criterio:\n${raggiungibili} di quegli scarti ` +
       'la stessa posa li colma gia\' a un altro angolo — sono lavoro di\ndisegno, non muri. ' +

@@ -373,7 +373,10 @@ function testoDi(spec, quale) {
      occupato sbagliava fino al 9,5%, troppo vicino ai valori che dobbiamo
      saper leggere. Cinque costano quattro minuti e li valgono. */
   const giri = +arg('giri', 5);
-  const oggi = arg('oggi', GIOCO);
+  /* --gioco e' il nome di casa per «quale file misuro»: tutti i cancelli
+     lo capiscono e tutti.js lo propaga. --oggi resta per compatibilita'.
+     testoDi risolve anche un percorso assoluto fuori dal repo. */
+  const oggi = arg('gioco', process.env.GIOCO_PROVA || '') || arg('oggi', GIOCO);
 
   /* ---------------------------------------------- modo APPAIATO e prove */
   if (appaiato) {

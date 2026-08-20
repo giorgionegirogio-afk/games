@@ -484,6 +484,23 @@ async function calcetto(browser, srv) {
      delle tre partite, e la rosa in vista normale a 2,99. Sono numeri da
      tenere d'occhio, non da festeggiare.
 
+     RETTIFICA, 19 agosto 2026. "Numeri da tenere d'occhio" era ancora
+     troppo tranquillo, e i valori qui sopra sono scaduti. Rimisurati oggi
+     sullo stesso banco, con le stesse tre partite:
+       vista normale     P1 2,61:1 (2,05 / 4,57 / 2,13)   2 su 3 sotto
+                         P2 4,07:1 (3,26 / 4,79 / 2,79)   1 su 3 sotto
+       daltonismo        P1 3,42:1 (2,84 / 6,09 / 2,98)   2 su 3 sotto
+                         P2 4,82:1 (4,06 / 5,61 / 3,32)   0 su 3 sotto
+     Nessuna modifica ha introdotto il calo: una toppa ha cambiato il
+     consumo dei sorteggi e il gioco ha cominciato a pescare coppie di
+     divise che prima non uscivano mai. Il difetto c'era sempre, e a
+     nasconderlo era il seme — piu' esattamente, il fatto che una MEDIA di
+     tre partite resta verde con due partite rosse dentro. Da qui la riga
+     che il controllo stampa dichiara anche la peggiore delle partite e
+     quante stanno sotto la soglia, e la tabella completa di TUTTE le
+     divise del gioco (non solo le due in campo) la fa
+     strumenti/_sonda-divise.js.
+
      LA PROVA CHE IL CANCELLO SA ANCORA DIRE NO, dentro lo strumento:
      `GUASTO=1 node strumenti/collaudo.js calcetto` dipinge le due tinte
      del kit della squadra 0 con la tinta media del manto (#2f6b22) e la
@@ -573,9 +590,41 @@ async function calcetto(browser, srv) {
          allunga, e una capsula letta al fischio d'inizio sarebbe di nuovo
          una copia che diverge. Se un giorno l'hook sparisse si ricade su
          una capsula generosa invece che su numeri finti. */
-      const OMB_RIPIEGO = { ux: 0.9406, uy: 0.3402, l0: 0, l1: 140, semiCorto: 7.6, piedeX: 4.2, piedeY: 7.8 };
-      let OMB = (t.ombraCapsula && t.ombraCapsula()) || OMB_RIPIEGO;
-      /* distanza di un punto dal SEGMENTO d'ombra di q: e' la capsula */
+      /* BANCO ONESTO: nessun ripiego muto. Qui c'era una capsula d'archivio
+         (ux 0,9406 · uy 0,3402 · l1 140 · semiCorto 7,6) usata in
+         silenzio se __test.ombraCapsula fosse sparito. Quella capsula
+         serve a NON campionare come erba i pixel in ombra: con una
+         geometria vecchia il rapporto maglia/erba resterebbe verde
+         misurando i pixel sbagliati.
+         E NON BASTA CHIEDERE SE LA FUNZIONE C'E'. Il critico l'ha
+         dimostrato: rinominando due campi del valore di ritorno (ux, uy)
+         e lasciando la funzione al suo posto, uscivano quattro numeri
+         DIVERSI (4,02 / 4,51 / 5,24 / 5,40 contro 3,90 / 4,49 / 5,09 /
+         5,38), tutti verdi e tutti muti — perche' con un versore
+         indefinito il filtro dell'arco a ovest si spegne da solo. Si
+         controlla la FORMA, come fa preso() in istantanea.js: ogni
+         campo, e il versore dev'essere un versore. */
+      const capsulaGuasta = k => {
+        if (!k || typeof k !== 'object') return "ombraCapsula() non torna un oggetto: " + String(k);
+        for (const n of ['ux', 'uy', 'l0', 'l1', 'semiCorto', 'piedeX', 'piedeY'])
+          if (typeof k[n] !== 'number' || !isFinite(k[n])) return "manca (o non e' un numero) il campo '" + n + "'";
+        const mo = Math.hypot(k.ux, k.uy);
+        if (!(Math.abs(mo - 1) < 0.01)) return "(ux,uy) non e' un versore: modulo " + mo.toFixed(4);
+        if (!(k.l1 > k.l0)) return 'l1 non e\' oltre l0: ' + k.l0 + ' -> ' + k.l1;
+        if (!(k.semiCorto > 0)) return 'semiCorto non e\' positivo: ' + k.semiCorto;
+        return null;
+      };
+      let OMB = null, OMB_ASSENTE = true, OMB_MOTIVO = null;
+      if (typeof t.ombraCapsula !== 'function') OMB_MOTIVO = "__test.ombraCapsula non e' una funzione";
+      else {
+        try { OMB = t.ombraCapsula(); }
+        catch (e) { OMB = null; OMB_MOTIVO = "ombraCapsula() e' esplosa: " + e.message; }
+        if (!OMB_MOTIVO) { OMB_MOTIVO = capsulaGuasta(OMB); if (OMB_MOTIVO) OMB = null; }
+      }
+      OMB_ASSENTE = !OMB;
+      /* distanza di un punto dal SEGMENTO d'ombra di q: e' la capsula.
+         Qui dentro OMB e' sempre valida: dove non lo e', non si campiona
+         affatto (vedi il "continue" nel giro dei fotogrammi). */
       const dentroOmbra = (qx, qy, wx, wy) => {
         const ax = qx + OMB.piedeX, ay = qy + OMB.piedeY;
         const rx = wx - ax, ry = wy - ay;
@@ -620,8 +669,24 @@ async function calcetto(browser, srv) {
           if (t.state !== 'play' && t.state !== 'golden') continue;
           /* il fotogramma e' gia' quello giusto: avanza() disegna a ogni
              passo di fisica, quindi camera e azione sono allo stesso istante */
+          /* la capsula si rilegge a OGNI fotogramma (con la sera che
+             scende il sole si abbassa e l'ombra si allunga) e si
+             RIVALIDA a ogni fotogramma: una capsula che diventa storta a
+             meta' corsa e' peggio di una che manca dall'inizio. */
+          if (!OMB_ASSENTE) {
+            let k = null, guai = null;
+            try { k = t.ombraCapsula(); } catch (e) { guai = "ombraCapsula() e' esplosa: " + e.message; }
+            if (!guai) guai = capsulaGuasta(k);
+            if (guai) { OMB_ASSENTE = true; OMB = null; OMB_MOTIVO = "a meta' corsa: " + guai; }
+            else OMB = k;
+          }
+          /* SENZA CAPSULA VALIDA NON SI CAMPIONA. Non "si campiona
+             lasciando passare tutto": con OMB nulla il filtro dell'arco a
+             ovest si spegnerebbe da solo e i numeri uscirebbero diversi,
+             verdi e muti. Zero fotogrammi campionati e' una risposta
+             onesta; quattro numeri sbagliati no. */
+          if (OMB_ASSENTE) continue;
           fotogrammi++;
-          OMB = (t.ombraCapsula && t.ombraCapsula()) || OMB_RIPIEGO;
           const img = c2.getImageData(0, 0, cv.width, cv.height).data;
           const W = cv.width, H = cv.height;
           const S2 = t.view.S2, Ax = t.view.Ax, Ay = t.view.Ay;
@@ -696,16 +761,28 @@ async function calcetto(browser, srv) {
       for (let sq = 0; sq < 2; sq++) {
         const singole = perPartita.map(p => p.r[sq]).filter(v => v != null);
         squadre.push({
-          sq, rapporto: rapportoDi(maglia[sq], erba[sq]),
-          maglia: esa(rappr(maglia[sq])), erba: esa(rappr(erba[sq])),
+          /* regola di casa numero 3: un numero che lo strumento ha gia'
+             dichiarato non valido non si scrive. Senza capsula il
+             rapporto e' nullo, non "quasi giusto". */
+          sq, rapporto: OMB_ASSENTE ? null : rapportoDi(maglia[sq], erba[sq]),
+          maglia: OMB_ASSENTE ? '?' : esa(rappr(maglia[sq])),
+          erba: OMB_ASSENTE ? '?' : esa(rappr(erba[sq])),
           nMaglia: maglia[sq].length, nErba: erba[sq].length,
-          singole,
+          singole: OMB_ASSENTE ? [] : singole,
         });
       }
       t.setDalt(false);                       // si lascia il banco com'era
-      return { fotogrammi, squadre, partite: perPartita.length, guasto: !!GUASTO };
+      return { fotogrammi, squadre, partite: perPartita.length, guasto: !!GUASTO,
+               ombraHook: !OMB_ASSENTE, ombraMotivo: OMB_MOTIVO || null };
     }, { dalt: modo.dalt, semi: SEMI_CONTRASTO, guasto: TINTA_GUASTO });
 
+    if (!mis.ombraHook) {
+      console.log('  (LA CAPSULA D\'OMBRA DEL GIOCO NON E\' UTILIZZABILE: ' + (mis.ombraMotivo || '?') + '.');
+      console.log("   Serve a non campionare come erba i pixel che stanno in ombra: con una capsula");
+      console.log("   d'archivio, o con una storta, il rapporto sarebbe un numero inventato. Non ho");
+      console.log('   campionato nessun fotogramma e non scrivo nessun rapporto: i due controlli qui');
+      console.log('   sotto sono rossi.)');
+    }
     for (const s of mis.squadre) {
       const chi = 'P' + (s.sq + 1);
       /* pochi campioni non sono un esito buono: sarebbe un controllo che
@@ -713,13 +790,47 @@ async function calcetto(browser, srv) {
          con le partite: quattro su tre partite vorrebbe dire che due sono
          andate quasi tutte perse. */
       const abbastanza = s.nMaglia >= 200 && s.nErba >= 200 && mis.fotogrammi >= 3 * mis.partite;
-      const ok = abbastanza && s.rapporto >= SOGLIA_CONTRASTO;
+      const ok = mis.ombraHook && abbastanza && s.rapporto >= SOGLIA_CONTRASTO;
       const disp = s.singole.length
         ? ` — le ${s.singole.length} partite, una per una: ` + s.singole.map(v => v.toFixed(2)).join(' / ')
         : '';
+      /* =================================================================
+         IL MUCCHIO NON BASTA A RACCONTARE TRE PARTITE, e il 19 agosto 2026
+         lo ha dimostrato: 2,61:1 di mucchio con le tre partite a 2,05 /
+         4,57 / 2,13, cioe' DUE SU TRE sotto il minimo. Con l'altro seme
+         (quello di prima della toppa sui sorteggi) lo stesso identico
+         gioco stampava 4,13 e il cancello era verde, con lo stesso difetto
+         dentro. Una media regge una partita brillante e due scure senza
+         far rumore: e' il modo in cui questa misura ha guidato alla cieca
+         una notte intera.
+         Da qui in poi la riga porta TRE numeri e li porta SEMPRE, verde o
+         rossa, senza bisogno di DETTAGLI=1: il mucchio, la PEGGIORE delle
+         partite, e quante partite stanno sotto la soglia. Chi legge vede
+         la dispersione invece di doverla immaginare.
+         LA CONDIZIONE DI PROMOZIONE NON E' TOCCATA (vedi la riga di "ok"
+         qui sopra: capsula valida, campioni abbastanza, mucchio sopra la
+         soglia) e SOGLIA_CONTRASTO resta 3. Questa e' informazione, non
+         permesso: non fa passare niente che prima non passasse.
+         PERCHE' NON SI BOCCIA SULLA PEGGIORE, che era l'altra strada.
+         Provata e misurata con strumenti/_sonda-divise.js --cancello, che
+         rifa' questo protocollo su ogni divisa del gioco: DICIASSETTE
+         configurazioni su ventuno hanno almeno una partita sotto 3:1, e
+         restano quindici anche dopo aver alzato le cinque divise piu'
+         scure. La causa non e' il colore ma DOVE cade l'azione nel
+         fotogramma: sulle stesse tre partite la seconda vale il doppio
+         delle altre due a grafica identica. Bocciare sulla peggiore
+         chiederebbe ogni divisa a Y nominale >= 0,70, cioe' solo bianchi,
+         gialli e lime — un cancello che nasce rosso e che per diventare
+         verde chiede di ridipingere il gioco di pastello viene spento la
+         settimana dopo, e allora non misura piu' niente.
+         ================================================================= */
+      const sotto = s.singole.filter(v => v != null && v < SOGLIA_CONTRASTO).length;
+      const peggiore = s.singole.length ? Math.min.apply(null, s.singole.filter(v => v != null)) : null;
       verifica(ok,
         `contrasto maglia/erba, ${chi} in ${modo.nome}: ` +
-        (s.rapporto == null ? 'non misurabile' : s.rapporto.toFixed(2) + ':1') +
+        (s.rapporto == null ? 'non misurabile' : s.rapporto.toFixed(2) + ':1 nel mucchio') +
+        (peggiore == null || !isFinite(peggiore) ? '' : `, peggiore partita ${peggiore.toFixed(2)}:1`) +
+        (s.singole.length ? `, ${sotto} partite su ${s.singole.length} sotto il minimo` : '') +
         ` (minimo ${SOGLIA_CONTRASTO}:1)` + (mis.guasto ? ' [GUASTO=1: maglia dipinta color erba]' : ''),
         `maglia ${s.maglia} su erba ${s.erba}; ` +
         `${s.nMaglia} campioni di maglia e ${s.nErba} d'erba su ${mis.fotogrammi} fotogrammi ` +

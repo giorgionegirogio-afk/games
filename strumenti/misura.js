@@ -34,11 +34,29 @@ function arg(n, d) {
   const i = process.argv.indexOf('--' + n);
   return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : d;
 }
+/* --- IL GIOCO PUO' ARRIVARE DA FUORI: --gioco <file> oppure GIOCO_PROVA.
+   PERCHE': il percorso del gioco era scritto qui dentro, e un percorso
+   cablato ha gia' fatto sbagliare una bisezione — tre misure «prima»
+   erano identiche perche' leggevano tutte lo stesso file. Con --gioco lo
+   stesso cancello misura una copia fuori dal repo (una toppa da provare,
+   la versione di ieri) senza scambiare file a mano. Senza --gioco non
+   cambia un byte: il default resta il file del repo. --- */
+const GIOCO_FUORI = (() => {
+  const v = arg('gioco', process.env.GIOCO_PROVA || '');
+  if (!v) return '';
+  const a = path.resolve(v);
+  /* uscita 3 = prova nulla: non e' il gioco a essere rosso, e' il banco
+     che non ha niente da misurare (codici di casa: 0 verde, 1 rosso,
+     2 banco esploso, 3 prova nulla) */
+  if (!fs.existsSync(a)) { console.error('PROVA NULLA: il gioco indicato non esiste: ' + a); process.exit(3); }
+  return a;
+})();
+const ridirigi = f => (GIOCO_FUORI && /CALCETTO-il-gioco\.html$/i.test(f)) ? GIOCO_FUORI : f;
 function servi() {
   return new Promise(ok => {
     const s = http.createServer((req, res) => {
-      const f = path.join(RADICE, decodeURIComponent(req.url.split('?')[0]));
-      if (!f.startsWith(RADICE) || !fs.existsSync(f)) { res.writeHead(404); res.end(); return; }
+      const f = ridirigi(path.join(RADICE, decodeURIComponent(req.url.split('?')[0])));
+      if ((!f.startsWith(RADICE) && f !== GIOCO_FUORI) || !fs.existsSync(f)) { res.writeHead(404); res.end(); return; }
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       fs.createReadStream(f).pipe(res);
     });
