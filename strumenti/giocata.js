@@ -611,9 +611,29 @@ function preparaQuiete(opz) {
   }
   if (opz.mira) {
     /* la filtrante senza levetta parte dove GUARDA il corpo, e pretende
-       un compagno con dot > 0,5: la faccia si gira dritta sul compagno
-       di movimento piu' vicino, e il bersaglio esiste per costruzione.
-       Da fermo e senza input la faccia non ruota piu' da sola. */
+       un compagno con dot > 0,5: la faccia si gira dritta su un compagno
+       di movimento, e il bersaglio esiste per costruzione.
+       Da fermo e senza input la faccia non ruota piu' da sola.
+       IL RICEVITORE SI METTE A 100 UNITA', NON DOVE L'HA LASCIATO LA
+       PARTITA. Misurato (strumenti/_p-giocata-rumore.js, 20 ago 2026,
+       15 corse del percorso --tutte): la partita viva lascia il compagno
+       piu' vicino fra 27,4 e 259,9 unita' dal comandato, e a 27 il volo
+       della filtrante dura MENO DI UN CAMPIONE della sonda a 60 Hz —
+       b.passTo nasce e muore fra due campioni (mai visto), il tocco del
+       ricevitore si mescola al nostro (la sua quota z contata come
+       nostra), e un compagno addosso puo' portare via il pallone prima
+       che l'anticipo di 50 ms maturi (contatore fermo). Tre firme, una
+       origine: 3 NO su 12 corse --tutte su gioco sano e invariato.
+       A 100 unita' il volo dura ~10 campioni e le firme si leggono.
+       La velocita' esce intorno a 500 (misurato 503: il gioco mira sul
+       punto di corsa, non sul corpo) e puo' varcare la soglia della
+       quota finta dei calci forti (kickBall, CALCETTO-il-gioco.html:9989)
+       — non importa: eseguiFiltrante forza b.vz=0 DOPO kickBall (:10183),
+       quindi la filtrante resta rasoterra a qualunque velocita'.
+       Il compagno va VERSO IL CENTRO del campo,
+       dove per costruzione non ci sono avversari (stanno a 230 dalla
+       palla). E' la stessa mano che gia' mette palla, portatore e
+       avversari: punto fisso = giocata ripetibile. */
     let mig = null, md = 1e9;
     for (const q of G.players) {
       if (q.team !== 0 || q === p || q.out > 0 || q.role === 'gk') continue;
@@ -621,8 +641,28 @@ function preparaQuiete(opz) {
       if (d < md) { md = d; mig = q; }
     }
     if (!mig) return { errore: 'nessun compagno di movimento a cui filtrare' };
-    const dx = mig.x - p.x, dy = mig.y - p.y, l = Math.max(1, Math.hypot(dx, dy));
-    p.fx = dx / l; p.fy = dy / l;
+    const c = t.campo;
+    let ux = c.FW / 2 - p.x, uy = c.FH / 2 - p.y;
+    const ul = Math.hypot(ux, uy);
+    /* comandato gia' al centro esatto: una direzione vale l'altra,
+       purche' sia sempre la stessa */
+    if (ul < 1) { ux = 1; uy = 0; } else { ux /= ul; uy /= ul; }
+    mig.x = p.x + ux * 100; mig.y = p.y + uy * 100;
+    p.fx = ux; p.fy = uy;
+    /* GLI ALTRI compagni si scostano dalla palla come fa compagniLontani
+       (stessa soglia, stessa distanza), ricevitore escluso: un secondo
+       compagno piu' vicino del ricevitore lungo il cono rimetterebbe in
+       gioco il volo sotto-campione appena tolto — eseguiFiltrante sceglie
+       per dot e, a parita' entro 0,08, per smarcamento, non per nome. */
+    for (const q of G.players) {
+      if (q.team !== 0 || q === p || q === mig || q.role === 'gk') continue;
+      const d = Math.hypot(q.x - b.x, q.y - b.y);
+      if (d < 170) {
+        const l = Math.max(1, d);
+        q.x = b.x + (q.x - b.x) / l * 230;
+        q.y = b.y + (q.y - b.y) / l * 230;
+      }
+    }
   }
   if (opz.miraVuota) {
     /* IL CONTRARIO DELLA MIRA. BANCO ONESTO: nessun ripiego muto.
