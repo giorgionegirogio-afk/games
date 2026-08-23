@@ -2814,7 +2814,7 @@ button:active{transform:scale(.96)}
         <h3>Tastiera</h3>
         <p><span class="pill c">P1</span> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> muovi &middot; <kbd>C</kbd> passa &middot; <kbd>X</kbd> tira &middot; <kbd>E</kbd> filtrante &middot; <kbd>Z</kbd> scivola &middot; <kbd>Shift</kbd> scatto &middot; <kbd>Q</kbd> cambia uomo<br>
         <span class="pill r">P2</span> <kbd>&#8593;</kbd><kbd>&#8595;</kbd><kbd>&#8592;</kbd><kbd>&#8594;</kbd> muovi &middot; <kbd>N</kbd> passa &middot; <kbd>M</kbd> tira &middot; <kbd>,</kbd> filtrante &middot; <kbd>B</kbd> scivola &middot; <kbd>Shift destro</kbd> scatto &middot; <kbd>/</kbd> cambia uomo</p>
-        <p>Su telefono trascini per correre (stick virtuale). <b>Stick a sinistra; a destra quattro dischi che cambiano col possesso: TIRA/CONTRASTA, PASSAGGIO/CAMBIO, PASSA/PRESSA e CROSS/SCIVOLATA</b>. Alzare il dito dalla levetta non fa mai partire niente: i gesti si battono coi due pulsanti. In 2 giocatori lo schermo &egrave; diviso a met&agrave;.</p>
+        <p>Su telefono trascini per correre (stick virtuale). <b>Stick a sinistra; a destra quattro dischi che cambiano col possesso: TIRA/CONTRASTA, PASSAGGIO/CAMBIO, PASSA/PRESSA e CROSS/SCIVOLATA</b>. Alzare il dito dalla levetta non fa mai partire niente: i gesti si battono coi dischi. In 2 giocatori lo schermo &egrave; diviso a met&agrave;.</p>
         <h3>Le regole del campetto</h3>
         <p><b>La squadra pensa.</b> L'ultimo uomo non abbandona mai la sua met&agrave; campo; quando l'azione si ribalta le ali scattano lunghe: &egrave; il contropiede. In vantaggio negli ultimi quindici secondi la CPU porta la palla nell'angolo, come al campetto.</p>
         <p><b>Il portiere &egrave; un giocatore vero.</b> Esce sulla bisettrice, legge il tiro e si tuffa: la parata avviene per contatto. Se lo spiazzi o lo scavalchi, &egrave; gol.</p>
@@ -6758,7 +6758,7 @@ const FIELDS=[
        di un centesimo per causa di questa riga. Quello che li muove e'
        il velo, e li muove in su.
        --------------------------------------------------------------- */
-    th:{ g1:'#1c6a20', g2:'#1c6b21', fuori:'#131008', grad:'#1a150c',
+    th:{ g1:'#0e6e10', g2:'#0e6f11', fuori:'#131008', grad:'#1a150c',
          gesso:'242,245,239', usura:'rgba(56,42,20,.42)',
          cornice:'#6a5230', pista:'#2e1c10', corniceGlow:'rgba(255,207,63,.13)',
          grana1:'rgba(214,190,120,.05)', grana2:'rgba(0,0,0,.06)',
@@ -6786,7 +6786,7 @@ const FIELDS=[
        sanno esprimere il 2% e il gradino piu' piccolo disponibile vale
        gia' il 4%. Le due bande sono lo stesso verde e la tosatura la
        dice tutta il verso del pelo — che e' anche la verita' fisica. */
-    th:{ g1:'#042f13', g2:'#042f13', fuori:'#07120c', grad:'#0a1a12',
+    th:{ g1:'#023008', g2:'#023008', fuori:'#07120c', grad:'#0a1a12',
          gesso:'242,245,239', usura:'rgba(6,45,16,.5)',
          cornice:'#245239', pista:'#101c16', corniceGlow:'rgba(216,255,61,.16)',
          grana1:'rgba(255,255,255,.03)', grana2:'rgba(0,0,0,.05)',
@@ -31880,7 +31880,7 @@ function setPaused(v){
     /* la riga-manifesto dei comandi, secondo l'input davvero in uso */
     { const pc=document.getElementById('pausaCmd');
       if(pc) pc.textContent = InputPref.touch
-        ? 'Stick a sinistra · TIRA/CONTRASTA e PASSAGGIO/CAMBIO cambiano col possesso'
+        ? 'Stick a sinistra · quattro dischi che cambiano col possesso: TIRA, PASSAGGIO, PASSA e CROSS'
         : 'C passa · X tira · E filtrante · Z contrasta · Q cambia · Shift scatto'; }
     Audio5.crowdLevel(0.15);
   }else{
