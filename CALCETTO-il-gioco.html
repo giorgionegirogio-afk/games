@@ -13157,7 +13157,16 @@ function rinvioPortiere(p){
   const ty = best? best.y : FH/2;
   const dx=tx-p.x, dy=ty-p.y, l=Math.max(1,len(dx,dy));
   b.owner=-1; segnaTocco(G.players.indexOf(p));
-  b.vx=dx/l*470; b.vy=dy/l*470; b.vz=90;
+  /* LA VELOCITA' CONOSCE LA DISTANZA (23 ago 2026). 470 fisse coprivano
+     ~600 unita' a 5 e ~1045 a 11 (150 in volo piu' v/attrito a terra),
+     e il bersaglio di questo rinvio — il compagno piu' avanzato — a 11
+     sta anche a 1500: TUTTI i rinvii dell'11 morivano a meta' strada,
+     e la palla non era di nessuno il 77% del tempo (ripresa.md §2).
+     La legge e' quella dei tiri (tiroVelocita): si parte con quel che
+     serve per PRESENTARSI sul bersaglio a velocita' giocabile (180),
+     mai sotto il 470 di ieri, mai sopra il tetto del pallone. */
+  const vr=Math.min(TIRO_TETTO, Math.max(470, 180 + TIRO_ATTR*l));
+  b.vx=dx/l*vr; b.vy=dy/l*vr; b.vz=90;
   if(best) b.passTo=G.players.indexOf(best);
   p.kickCd=0.4;
   p.rinvT=0.9;                    // la clip del rinvio dalle mani (solo disegno)
@@ -14734,7 +14743,15 @@ function eseguiAiPass(p, D){
   const lead = botch ? 0 : 0.3;
   const dx=best.x+best.vx*lead-p.x, dy=best.y+best.vy*lead-p.y, l=Math.max(1,len(dx,dy));
   const a=Math.atan2(dy,dx)+err;
-  const spd=clamp(300+l*0.9,320,500)*(botch?rnd(0.7,1.1):1);
+  /* IL TAPPO A 500 NON SAPEVA QUANT'E' GRANDE IL CAMPO (23 ago 2026):
+     a 11 copre ~950 unita' e il 22% degli appoggi ne chiedeva fino a
+     1500 — il pallone moriva fra i due. Stessa legge del rinvio e dei
+     tiri: si arriva sul compagno a 180, mai sotto la rampa di ieri,
+     mai sopra il tetto. A 5 cambia solo oltre le ~355 unita', dove
+     gia' oggi il passaggio moriva per strada. L'errore umano (botch)
+     moltiplica DOPO, come ieri: un passaggio sbagliato resta sbagliato
+     anche di potenza. */
+  const spd=Math.min(TIRO_TETTO, Math.max(clamp(300+l*0.9,320,500), 180 + TIRO_ATTR*l))*(botch?rnd(0.7,1.1):1);
   kickBall(p, Math.cos(a), Math.sin(a), spd, 0);
   if(!botch) b.passTo=G.players.indexOf(best);
   Audio5.kick(0.35);

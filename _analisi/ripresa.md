@@ -112,7 +112,25 @@ Vincolo che decide tutto: **la risposta si legge sul mondo, mai sotto il dito**
 una passata alfa a schermo intero per fotogramma: per questo la LINEA.
 **Lavoro fermato a meta': `strumenti/_q-linea.js` esiste, la toppa no.**
 
-### 2. L'undici contro undici finisce 0-0 due volte su tre
+### 2. L'undici contro undici — MEZZA ONDA ENTRATA IL 23 AGOSTO 2026
+Le DUE LEGGI DELLA VELOCITA' sono nel gioco (`_t-undici-fisica.js`):
+rinvii del portiere e appoggi della CPU partono con quel che serve per
+ARRIVARE sul compagno a 180 unita'/s (la legge di tiroVelocita, estesa).
+Misurato (30 partite a seme fisso per taglia): appoggi che non arrivano
+dal 22% allo 0,4%, rinvii dal 100% allo 0%; 0-0 a 11 dal 52% al **40%**,
+e migliorano anche il 5 (10% -> 3%) e il 7 (40% -> 20%).
+DUE CURE DELLA DIAGNOSI SONO STATE BOCCIATE CON LA MISURA, e sta scritto
+nella toppa: la zona di tiro stretta a 600 ALZA lo 0-0 al 73% (un tiro
+murato e' comunque un evento: toglierlo toglie piu' di quel che rende);
+la punta a 500 dalla porta lo alza al 50% (piu' tiri, stessi gol, un
+uomo in meno in manovra). Il cancello `_q-meta --tre-taglie` resta
+ROSSO APERTO sull'11 (40% contro 33%), com'e' nato: il residuo e' un
+problema di CONVERSIONE — i tiri arrivano a 210-230 unita'/s, parate in
+piedi (residuo mediano al piano: 230 su 63 tiri) — piu' il gioco aereo
+che nessuno gioca (voce 7). E' un'onda nuova, non una manopola.
+La voce originaria segue per storia.
+
+### 2-bis. Com'era descritta prima della mezza onda
 **63% su 30 partite, 37,5% su una seconda serie di 24, 52% sul mucchio.** Gol
 mediana zero. Era dichiarato CHIUSO in `PUNTO-DEL-LAVORO.md:138`: e' falso per
 meta' (i «momenti da porta al minuto» reggono, 0,78 contro 0,79).
