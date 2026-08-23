@@ -48,7 +48,10 @@
         da _t-l04b al 2%) -> nessuna scivolata nasce (EFFETTO: charge e
         slide restano spenti) e il segno ROSSO del no deve comparire
         entro 2 fotogrammi nei pixel attorno al comandato. 15 pressioni
-        SANE di controllo -> la scivolata nasce e il segno NON compare.
+        SANE di controllo -> il verbo nasce e il segno NON compare
+        (aggiornata per L1.2, 23 ago 2026: il verbo della pressione sana
+        e' il CONTRASTO IN PIEDI, p.contrasto > 0 — non piu' la
+        scivolata, che ora vive sul trascinamento).
         Piu' 6 rilasci di CAMBIO trascinato senza portatore avversario
         (comandaRaddoppio torna false: lo dice il gioco, non l'anteprima)
         -> il segno compare. Ogni riquadro si pre-verifica VUOTO di
@@ -396,7 +399,13 @@ function preparaScena(cfg) {
   };
   const bt = t.pulsanti(0);
   const grande = bt.reduce((a, c) => (c.r || 0) > (a.r || 0) ? c : a, bt[0]);
-  const piccolo = bt.reduce((a, c) => (c.r || 0) < (a.r || 0) ? c : a, bt[0]);
+  /* AGGIORNATO IL 23 AGOSTO 2026 per L1.6: i dischi sono QUATTRO e il
+     piu' piccolo non e' piu' il PASSAGGIO — e' il disco nuovo da r26.
+     Il «piccolo» di questo cancello e' quello STORICO (r30, indice 1
+     del contratto: PASSAGGIO/CAMBIO), che e' il disco di cui parlano le
+     prove B, C e D3. Il ripiego sul minimo resta per un file di ieri. */
+  const piccolo = bt.find(c => (c.r | 0) === 30) ||
+                  bt.reduce((a, c) => (c.r || 0) < (a.r || 0) ? c : a, bt[0]);
   const sotto = document.elementFromPoint(grande.x, grande.y);
   if (!sotto || sotto.id !== 'gioco')
     return { errore: 'sul disco (' + grande.x + ',' + grande.y + ') non c\'e\' la tela ma ' + (sotto ? sotto.tagName + '#' + sotto.id : 'niente') };
@@ -539,6 +548,18 @@ function lcg(seme) { let s = seme >>> 0; return () => { s = (s * 1664525 + 10139
         const b = window.__test.ball, FW2 = window.__pianoX + 2;
         const fh = window.__test.campo.FH;
         const esc = window.__escVivi(36);
+        /* AGGIUNTA DEL 23 AGOSTO 2026, dopo che questo banco e' stato
+           visto accusare l'innocente: le strisce sono rettangoli di
+           MONDO, ma i pixel sono di SCHERMO, e finche' la camera si
+           assesta il piano di porta puo' cadere SOPRA i dischi dei
+           comandi — e il disco TIRA premuto si riempie d'AMBRA, cioe'
+           pixel nuovi della classe della linea (misurato: 13 pressioni
+           su 120 con yProm inchiodata a ~450 mentre la mira variava).
+           I dischi li dichiara il gioco stesso: si escludono come i
+           corpi. */
+        const vv = window.__test.view;
+        for (const d2 of window.__test.pulsanti(0))
+          esc.push({ x: (d2.x - vv.Ax) / vv.S2, y: (d2.y - vv.Ay) / vv.S2, r: (d2.r + 10) / vv.S2 });
         const strisce = [];
         for (const fr of [0.25, 0.40, 0.55, 0.70]) {
           const x = b.x + (FW2 - b.x) * fr;
@@ -605,27 +626,53 @@ function lcg(seme) { let s = seme >>> 0; return () => { s = (s * 1664525 + 10139
         });
         await pag.evaluate(() => { window.__sonda.calci = []; });
         await m.giuR(P.x, P.y);
-        await passo(1);
+        /* LA LETTURA E' A ZERO PASSI DAL TOCCO (23 ago 2026): l'anticipo
+           del passo si apre in modo SINCRONO alla pressione e la lettura
+           chiama disegna() da se'. Prima qui c'era un passo(1), e alla
+           PRIMA pressione della pagina quel passo scaricava il debito di
+           frazioni di fotogramma accumulato dal riscaldamento (simulate
+           a blocchi di 0,1 s): l'anticipo da tre fotogrammi maturava in
+           un colpo, il calcio partiva prima della foto, e la linea
+           risultava «assente» — 1 su 36, sempre la prima. */
         const lettura = await pag.evaluate(dir => {
           window.__test.disegna();
           const b = window.__test.ball;
           /* semiarco di 150 gradi attorno alla direzione chiesta, r 55-65:
              il corpo del portatore sta dall'altra parte; i corpi vivi
-             sono comunque esclusi per geometria */
+             sono comunque esclusi per geometria — e i DISCHI dei comandi
+             pure (23 ago 2026: il disco premuto cambia colore, cioe'
+             pixel nuovi; vedi la nota della prova A) */
           const esc = window.__escVivi(30);
+          {
+            const vv = window.__test.view;
+            for (const d2 of window.__test.pulsanti(0))
+              esc.push({ x: (d2.x - vv.Ax) / vv.S2, y: (d2.y - vv.Ay) / vv.S2, r: (d2.r + 10) / vv.S2 });
+          }
+          /* TRE ANELLI, dal mediano alle due riserve (23 ago 2026,
+             misurato sul primo tocco della pagina): un CORPO fra il
+             pallone e il ricevente copre il tratto mediano della linea
+             — occlusione GIUSTA del disegno, non assenza del segno — e
+             l'esclusione dei corpi svuotava proprio l'anello a 55-65
+             (campioni lungo la linea: dipinta al 5-25% e all'80-100%,
+             zero nel mezzo). Si legge dove la linea riemerge; se manca
+             su tutti e tre gli anelli, allora e' assente davvero. */
           let n = 0, vx = 0, vy = 0;
-          for (let k = -38; k <= 38; k++) {
-            const a2 = dir + k * 0.0345;
-            for (const r of [55, 60, 65]) {
-              const wx = b.x + Math.cos(a2) * r, wy = b.y + Math.sin(a2) * r;
-              const c = window.__leggi(wx - 1.2, wy - 1.2, wx + 1.2, wy + 1.2, 2, esc, true);
-              if (c.n) { n += c.n; vx += Math.cos(a2) * c.n; vy += Math.sin(a2) * c.n; }
+          for (const raggi of [[55, 60, 65], [40, 45, 50], [70, 75, 80]]) {
+            for (let k = -38; k <= 38; k++) {
+              const a2 = dir + k * 0.0345;
+              for (const r of raggi) {
+                const wx = b.x + Math.cos(a2) * r, wy = b.y + Math.sin(a2) * r;
+                const c = window.__leggi(wx - 1.2, wy - 1.2, wx + 1.2, wy + 1.2, 2, esc, true);
+                if (c.n) { n += c.n; vx += Math.cos(a2) * c.n; vy += Math.sin(a2) * c.n; }
+              }
             }
+            if (n) break;
           }
           return { n, ang: n ? Math.atan2(vy, vx) : null };
         }, a);
-        /* fino alla maturazione dell'anticipo (PASS_CAR_U = 3 fotogrammi) */
-        await passo(5);
+        /* fino alla maturazione dell'anticipo (PASS_CAR_U = 3 fotogrammi;
+           uno in piu' perche' la lettura non consuma piu' il primo) */
+        await passo(6);
         const calcio = await pag.evaluate(() => {
           const S = window.__sonda, k = window.__piScena;
           const miei = S.calci.filter(c => c.chi === k);
@@ -715,11 +762,22 @@ function lcg(seme) { let s = seme >>> 0; return () => { s = (s * 1664525 + 10139
            sono esclusi per geometria */
         const FW2 = window.__pianoX + 2, fh = window.__test.campo.FH;
         const gy = fh / 2 + (p2.y < fh / 2 ? 1 : -1) * window.__test.campo.GOAL_H * 0.28;
+        /* QUI I DISCHI NON SI ESCLUDONO, ed e' una decisione misurata
+           (23 ago 2026): la classe letta e' il CIANO, e i dischi non
+           contengono un pixel di ciano in nessuno stato — escluderli
+           accecava la coda dell'arco quando la proiezione dei comandi
+           cadeva sul corridoio del cross (xmax si fermava a ~1030
+           invece che al bordo 1080, e dFine saliva a 77-80). Le
+           esclusioni si scelgono per CLASSE: ambra e gesso vivono sui
+           dischi, il ciano no. */
         const esc = window.__escVivi(36);
         const c = window.__leggi(b.x + 10, Math.min(b.y, gy) - 80, FW2 - 70, Math.max(b.y, gy) + 30, 3, esc, true);
         return { n: c.n, cx: c.n ? c.cx : null, cy: c.n ? c.cy : null,
                  xmax: c.n ? c.xmax : null, ymax: c.n ? c.ymax : null,
-                 bx: b.x, by: b.y };
+                 bx: b.x, by: b.y,
+                 /* il mondo finisce dove finisce la tela: la x di MONDO
+                    del bordo destro del quadro, per il verdetto */
+                 bordo: (innerWidth - window.__test.view.Ax) / window.__test.view.S2 };
       });
       await passo(5);
       const parte = await pag.evaluate(() => {
@@ -737,10 +795,21 @@ function lcg(seme) { let s = seme >>> 0; return () => { s = (s * 1664525 + 10139
       const t2 = (lettura.cx - lettura.bx) / Math.max(1, (att.x - lettura.bx));
       const yCorda = lettura.by + (att.y - lettura.by) * Math.min(1, Math.max(0, t2));
       const alza = (yCorda - lettura.cy) >= 4;
-      /* fine del segno vs atterraggio vero */
+      /* fine del segno vs atterraggio vero — MA il segno vive sui pixel
+         e i pixel finiscono col quadro (23 ago 2026, misurato: cross
+         lanciati da piu' lontano, camera ancora sul pallone, atterraggio
+         oltre il bordo destro — xmax si fermava al bordo, 1030 contro
+         1080, e dFine accusava 77-80). Quando l'atterraggio sta FUORI
+         dal quadro al momento della foto, la promessa giusta e' un segno
+         che ESCE dal quadro verso di lui: si pretende l'ultimo pixel a
+         filo del bordo (o del limite di lettura FW-70), entro 14 u. */
+      const fuoriQuadro = att.x > lettura.bordo - 8;
       const dFine = Math.hypot(lettura.xmax - att.x, lettura.ymax - att.y);
-      if (alza && dFine <= 30) buone++;
-      else dettagli.push('alza=' + alza + ' dFine=' + n2(dFine));
+      const fine = fuoriQuadro ? (lettura.xmax >= Math.min(lettura.bordo, q.FW - 70) - 14)
+                               : (dFine <= 30);
+      if (alza && fine) buone++;
+      else dettagli.push('alza=' + alza + ' dFine=' + n2(dFine) +
+                         (fuoriQuadro ? ' (atterraggio fuori quadro: bordo=' + n2(lettura.bordo) + ' xmax=' + n2(lettura.xmax) + ')' : ''));
     }
     if (tot < 10) { okC = null; stampa('   PROVA NULLA: solo ' + tot + ' cross misurati (' + nulle + ' scene rotte)'); }
     else {
@@ -781,7 +850,10 @@ function lcg(seme) { let s = seme >>> 0; return () => { s = (s * 1664525 + 10139
       for (const k in dp) mx = Math.max(mx, (dp[k] || 0) - (pr[k] || 0));
       return mx;
     };
-    /* D1: 15 rifiutate (recover) — palla LONTANA, disco grande = CONTRASTA */
+    /* D1: 15 rifiutate (recover) — palla LONTANA, disco grande = CONTRASTA.
+       AGGIORNATA IL 23 AGOSTO 2026 per L1.2: la pressione rifiutata non
+       deve aprire NIENTE — ne' scivolata, ne' carica, ne' la finestra
+       del contrasto in piedi (p.contrasto). */
     for (let g = 0; g < 15; g++) {
       const rip = await pag.evaluate(preparaScena,
         { x: q.FW * 0.45, y: q.FH * 0.45, pallaLibera: [q.FW * 0.45 - 260, q.FH * 0.3], recover: 0.7 });
@@ -791,15 +863,19 @@ function lcg(seme) { let s = seme >>> 0; return () => { s = (s * 1664525 + 10139
       await passo(2);
       const st = await pag.evaluate(() => {
         const p2 = window.__test.players[window.__piScena];
-        return { charge: p2.charge, slide: p2.slide };
+        return { charge: p2.charge, slide: p2.slide, contrasto: p2.contrasto || 0 };
       });
       const dopo = await contaRossi();
       await m.suR();
       await passo(24);              // il latch decade (0,30 s = 18 passi)
-      if (st.charge >= 0 || st.slide >= 0) { nulle++; continue; }   // la scivolata e' nata: scena sbagliata
+      if (st.charge >= 0 || st.slide >= 0 || st.contrasto > 0) { nulle++; continue; }   // un verbo e' nato: scena sbagliata
       if (deltaRossi(prima, dopo) >= 10) rifSi++; else rifNo++;
     }
-    /* D2: 15 sane — stessa scena senza recover: la scivolata NASCE, il segno NO */
+    /* D2: 15 sane — stessa scena senza recover. AGGIORNATA IL 23 AGOSTO
+       2026 per L1.2: la pressione sana non stende piu' nessuno — apre la
+       finestra del CONTRASTO IN PIEDI (p.contrasto > 0), ed e' quello
+       il verbo nato che il segno del no NON deve accompagnare. Prima di
+       L1.2 qui nasceva una scivolata: quel contratto non esiste piu'. */
     for (let g = 0; g < 15; g++) {
       const rip = await pag.evaluate(preparaScena,
         { x: q.FW * 0.45, y: q.FH * 0.45, pallaLibera: [q.FW * 0.45 - 260, q.FH * 0.3] });
@@ -809,12 +885,12 @@ function lcg(seme) { let s = seme >>> 0; return () => { s = (s * 1664525 + 10139
       await passo(2);
       const st = await pag.evaluate(() => {
         const p2 = window.__test.players[window.__piScena];
-        return { charge: p2.charge, slide: p2.slide };
+        return { charge: p2.charge, slide: p2.slide, contrasto: p2.contrasto || 0 };
       });
       const dopo = await contaRossi();
       await m.suR();
       await passo(30);
-      if (st.charge < 0 && st.slide < 0) { nulle++; continue; }     // non e' nata: scena sbagliata
+      if (!(st.contrasto > 0)) { nulle++; continue; }     // il contrasto in piedi non e' nato: scena sbagliata
       if (deltaRossi(prima, dopo) >= 10) saneSi++; else saneNo++;
     }
     /* D3: 6 rilasci di CAMBIO trascinato con palla DI NESSUNO: il
@@ -910,13 +986,48 @@ function lcg(seme) { let s = seme >>> 0; return () => { s = (s * 1664525 + 10139
     try {
       const trG = await corsa(GIOCO);
       const trC = await corsa(CONTRO);
-      let primo = -1;
+      const primoDiverso = (a, b) => {
+        const n2b = Math.min(a.length, b.length);
+        for (let i = 0; i < n2b; i++) if (a[i] !== b[i]) return i;
+        return a.length === b.length ? -1 : n2b;
+      };
+      let primo = primoDiverso(trG, trC);
       const n = Math.min(trG.length, trC.length);
-      for (let i = 0; i < n; i++) if (trG[i] !== trC[i]) { primo = i; break; }
-      okE = (primo < 0 && trG.length === trC.length);
+      okE = (primo < 0);
       stampa('   campioni confrontati: ' + n + ' (5 numeri x 1200 passi)' +
              (okE ? ' — IDENTICI' : ' — DIVERGONO al campione ' + primo + ' (passo ' + Math.floor(primo / 5) + ')'));
-      stampa('   ->  ' + (okE ? 'VERDE' : 'ROSSO'));
+      if (!okE) {
+        /* IL BRACCIO DI CONTROLLO (23 agosto 2026, dopo una misura che
+           accusava l'innocente): questa prova e' stata vista dare rosso
+           al passo 299, verde, e rosso al passo 301 su TRE corse dello
+           STESSO paio di file — e divergere perfino con due copie
+           byte-identiche servite da due origini. Il banco spinge le
+           dita col protocollo, e il protocollo non e' un orologio.
+           Percio' il rosso non si crede sulla parola: si RIPETE la
+           corsa sullo stesso file. Se nemmeno due corse dello stesso
+           file coincidono, il banco non sa tenere ferme le proprie
+           mani e la prova e' NULLA — non verde, non rossa, e sta
+           scritto qui il perche'. La proprieta' vera (il disegno non
+           scrive un bit) resta sorvegliata in modo deterministico dai
+           cancelli seme/equita' della batteria, che pilotano il gioco
+           da DENTRO la pagina. */
+        const trG2 = await corsa(GIOCO);
+        const stabile = primoDiverso(trG, trG2) < 0;
+        if (!stabile) {
+          okE = null;
+          stampa('   PROVA NULLA: due corse dello STESSO file divergono (campione ' +
+                 primoDiverso(trG, trG2) + ') — il banco non tiene ferme le proprie mani, e un rosso suo non accusa il gioco');
+        } else {
+          const trC2 = await corsa(CONTRO);
+          if (primoDiverso(trC, trC2) >= 0) {
+            okE = null;
+            stampa('   PROVA NULLA: due corse del file di CONTRO divergono — vedi sopra');
+          } else {
+            stampa('   le corse singole sono stabili: la divergenza fra i due file e\' VERA');
+          }
+        }
+      }
+      stampa('   ->  ' + (okE === null ? 'PROVA NULLA' : (okE ? 'VERDE' : 'ROSSO')));
     } catch (e) { okE = null; stampa('   PROVA NULLA: ' + e.message); }
     esiti.push({ id: 'E', nome: 'il disegno non scrive un bit nella simulazione', ok: okE });
     stampa('');

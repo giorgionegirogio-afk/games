@@ -81,7 +81,26 @@ dichiarati.
 
 ## LE COSE PIU' PESANTI CHE MANCANO, in ordine
 
-### 1. La scoperta — e senza di lei i cinque verbi nuovi non esistono
+### 1. La scoperta — ENTRATA IL 23 AGOSTO 2026 (L3.1)
+La LINEA e' nel gioco: mira del tiro dal pallone al piano della porta
+(gesso fuori finestra, ambra dentro), linea del passaggio al ricevente
+VERO durante l'anticipo, arco di ciano del cross fino all'atterraggio
+vero, e il RIFIUTO rosso sotto il comandato quando un verbo dice no.
+Toppa `_t-linea.js` (11 ancoraggi): tre ESTRAZIONI (scegliSmarcato,
+scegliFiltrante, bersaglioTiroMirato) fanno uscire promessa ed
+esecuzione dallo stesso testo. Cancello `_q-linea.js` 5/5; costo
+misurato: 0,2 ms nel caso peggiore, 0 alla misura diretta (budget 0,5).
+Nel percorso sono stati trovati e curati CINQUE difetti del banco
+(il «piccolo» invecchiato dai 4 dischi, il disco premuto che si riempie
+d'ambra sotto le strisce, il debito di fotogrammi alla prima pressione,
+il corpo che occlude l'anello, l'atterraggio fuori quadro) e UNO della
+toppa (il decadimento del rifiuto sull'orologio del disegno: spostato
+in Touch5.passo). E la prova E e' RUMOROSA per natura (diverge perfino
+con due copie byte-identiche): ora porta un braccio di controllo che
+ripete la corsa sullo stesso file e dichiara PROVA NULLA se il banco
+non tiene ferme le proprie mani. La voce originaria segue per storia.
+
+### 1-bis. La scoperta — com'era descritta prima di entrare
 Il giocatore preme e succede qualcosa, ma **non c'e' nessun segno che gli dica
 cosa sta per succedere**. Il progetto (`_analisi/agente28.md` §5) prevede la
 LINEA che parte dal pallone, il cambio di forma per dire quale verbo, l'arco
@@ -161,16 +180,32 @@ diventato un problema vero, perche' la CPU adesso **crossa davvero** e quei
 cross non li gioca nessuno.
 **Fermato a meta': `_q-aereo.js`, `_sonda-aereo.js` esistono, la toppa no.**
 
-### 8. Due verbi progettati e non entrati
-- **il contrasto / contenimento / scivolata** (`_t-l12.js`, `_q-l12.js` pronti):
-  bloccato dalla riserva sul ri-armo. La guardia e' entrata, ma il suo cancello
-  non ha potuto comporre le altre toppe e ha dichiarato **prova nulla**, non
-  verde. Va rifatto girare adesso che L1.5 e' dentro.
+### 8. Due verbi progettati e non entrati — AGGIORNATO IL 23 AGOSTO 2026
+- **il contrasto / contenimento / scivolata: ENTRATO** (commit `265acba`,
+  gioco `03373e1f7fa3`). `_t-l12.js` riancorato sopra la lettura unica del
+  trascinamento (L1.3/L1.5 avevano riscritto il blocco del rilascio),
+  cancello `_q-l12.js` 9/9, batteria 15/15. La giocata `contrasto` di
+  `giocata.js` e' stata aggiornata al contratto nuovo — era morta perche'
+  il gioco e' migliorato, la stessa specie di `folla` (cieco 23): adesso
+  trascina e rilascia, e misura la scivolata mirata.
+- **la pulsantiera a quattro dischi: ENTRATA** (L1.6, stesso commit, mandato
+  del committente del 23 agosto: «mancano tutti i tasti di un controller»).
+  Attacco TIRA/PASSAGGIO/PASSA/CROSS, difesa CONTRASTA/CAMBIO/PRESSA/
+  SCIVOLATA. Il cross del dito ha un DESTINATARIO (il compagno piu' vicino
+  al punto d'atterraggio) e lavora da ogni meta' campo; PRESSA usa
+  `comandaRaddoppio` (un concetto, un meccanismo) e a pallone libero TACE,
+  dichiarato; SCIVOLATA e' il doSlide secco di ieri. Toppa `_t-l16.js`
+  (9 ancoraggi), cancello nuovo `_q-l16.js` (visto ROSSO prima: 2 dischi)
+  6/6. Sul telefono: build 1390225, quattro dischi dentro gli inserti,
+  foto `fuori/telefono-4dischi.png`.
 - **il passaggio mirato** (`_t-l14.js`, `_q-l14.js` pronti, critica fatta):
-  approvato **con riserva**. Due cose da chiudere prima: dopo un ri-armo non
-  produce un passaggio sbagliato, **non ne produce nessuno** (0 calci su 20); e
-  **duplica** il meccanismo di chiamata gia' entrato con L2.3 — due cronometri e
-  due rami per lo stesso concetto. Va **riscritto sopra `chiamaGiocatore`**.
+  approvato **con riserva**, ancora NON entrato. Due cose da chiudere: dopo
+  un ri-armo non produce un passaggio sbagliato, **non ne produce nessuno**
+  (0 calci su 20); e **duplica** il meccanismo di chiamata gia' entrato con
+  L2.3. Va **riscritto sopra `chiamaGiocatore`**. Nota del 23 agosto: con
+  PASSA e CROSS sui tasti il suo valore residuo e' la MIRA col
+  trascinamento sul disco del passaggio — vale meno di prima, e la
+  scoperta (voce 1) vale piu' di lui.
 
 ---
 
