@@ -60,14 +60,22 @@ anticipo E' l'uso previsto. Il residuo vero e' sotto.
    rosso di L3.1 copre il corpo non in condizione, non la distanza.
    Candidata onesta: il segno del no ALLO SCADERE della finestra a
    vuoto. Da pesare contro il rumore (scatterebbe spessissimo).
-2. **SCIVOLATA: 0 consegne su 9 richieste dal disco.** Sul banco lo
-   stesso disco consegna (cancello `_q-l16` prova E: scivolata al
-   fotogramma 3, verde oggi). L'ipotesi piu' probabile e' la corsa del
-   CONTESTO DEL BANCO STESSO: fra la lettura della posizione del disco
-   e l'arrivo del dito passano 50-150 ms, e se il possesso cambia il
-   disco premuto e' un altro. NON ASSOLTA: va rimisurata con un banco
-   che registri l'atto risolto NEL momento del tocco (la spia c'e':
-   Touch5.btnTouch). Fino ad allora e' un'accusa aperta.
+2. **SCIVOLATA: 0 consegne su 9 richieste dal disco.** ~~Accusa
+   aperta~~ **CHIUSA il 23 agosto: era lo strumento, non il gioco.**
+   La controprova (`fuori/_prova-tackle.js`, spie sui quattro anelli
+   doSlide/puoContrastare/anticipa/startSlide) ha mostrato sul telefono
+   vero: in scena `play` la catena consegna — su 3 pressioni utili,
+   2 scivolate nate (recover 0,23 e 0,45) e 1 rifiutata con ragione da
+   `puoContrastare`; la terza e' maturata e FINITA prima della lettura
+   a +540 ms. Le altre 7 pressioni cadevano in scena `freekick` — che
+   la sonda stessa induceva (la scivolata fa fallo) e congelava
+   (rifacendo palla e possesso a ogni giro, la battuta non arrivava
+   mai): a palla morta l'ingresso e' giustamente sordo E i dischi non
+   sono nemmeno disegnati (`drawTouchButtons` esce se la scena non e'
+   play/kickoff/golden — nessuna disonesta' dello schermo). Lo 0/9
+   della prova dei dieci minuti era la stessa coppia di difetti di
+   misura: finestra di lettura piu' corta della vita della scivolata,
+   e pressioni contate anche a palla morta.
 
 ## Il canale, dichiarato
 
