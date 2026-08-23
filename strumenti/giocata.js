@@ -467,14 +467,32 @@ const GIOCATE = {
     },
   },
   contrasto: {
-    titolo: 'pulsante grande senza pallone (CONTRASTA) vicino al portatore -> scivolata',
-    possesso: false, bersaglio: 'giocatore', comando: 'inizio', portatore: true, compagniLontani: true, richiedeScivolata: true,
+    titolo: 'CONTRASTA trascinato verso il pallone e rilasciato -> scivolata mirata',
+    possesso: false, bersaglio: 'giocatore', comando: 'fine', portatore: true, compagniLontani: true, richiedeScivolata: true,
     async gesto(cdp, pag, info) {
-      /* stesso pulsante della carica, contesto opposto: senza possesso
-         l'atto e' 'slide'. La quiete ha messo il PORTATORE avversario a
-         84 unita' dal comandato: la scivolata si abbassa (0,06 s di
-         anticipo umano) e poi parte, rimirata sul pallone di adesso. */
-      return premiPulsante(cdp, pag, info, 'grande', 80, 'slide');
+      /* AGGIORNATA IL 23 AGOSTO 2026, perche' il gioco e' migliorato e
+         questa giocata misurava il difetto come se fosse il verbo.
+         L1.2: la PRESSIONE del disco difensivo e' il contrasto in piedi
+         e non manda piu' nessun corpo a terra — prima mandava a terra
+         138 pressioni su 140, con 200 falli su 200 gesti senza
+         trascinamento (misura in testa a strumenti/_t-l12.js). La
+         scivolata adesso vive sul TRASCINAMENTO ARMATO: si preme, si
+         trascina verso il pallone, si rilascia. Questo gesto misura quel
+         percorso di dito; il contrasto in piedi e il contenimento hanno
+         il loro cancello dedicato (_q-l12.js, prove A/A2/B/C/E). */
+      const ora = await pag.evaluate(guardaPulsanti,
+        { quale: 'grande', atto: 'slide', toll: TOLL_INCROCIO, aff: AFFONDAMENTO });
+      if (ora.errore) throw Object.assign(new Error(ora.errore), { banco: true });
+      ora.note = [];
+      /* verso il pallone, in coordinate di schermo: la mira e' del dito */
+      let vx = info.palla.x - info.comandato.x, vy = info.palla.y - info.comandato.y;
+      const vl = Math.max(1, Math.hypot(vx, vy)); vx /= vl; vy /= vl;
+      await dito.giu(cdp, ora.x, ora.y);
+      for (let i = 1; i <= 5; i++)
+        await dito.sposta(cdp, Math.round(ora.x + vx * 16 * i), Math.round(ora.y + vy * 16 * i));
+      await attesa(60);
+      await dito.su(cdp);
+      return ora;
     },
   },
 };

@@ -415,66 +415,56 @@ function startSlide(p, nx, ny, mirata){
 /* 7 — il rilascio del disco difensivo */
 {
   nome: '7/12 Touch5.chiudi: il rilascio scivola SOLO se il dito ha trascinato',
+  /* RIANCORATO IL 23 AGOSTO 2026. La stesura originale di questa voce
+     leggeva il trascinamento per conto suo («const tras = ...»), perche'
+     al tempo il blocco del rilascio non aveva una lettura comune. Poi
+     L1.3 e L1.5 sono entrate e hanno pagato lo stesso conto: la lettura
+     adesso e' UNA — «const tr=this.trascina(id,true)» — e serve tutti i
+     verbi. Leggere una seconda volta sarebbe un anello di otto posizioni
+     percorso due volte per ogni dito che si stacca. Il ramo della
+     scivolata si mette in coda alla catena, con le stesse quattro guardie
+     della stesura originale: non annullo di sistema (Legge 4), non atto
+     morto, non a gioco fermo, e ARMATO. */
   cerca:
-`      const a=this.atti[id];
+`      const tr=this.trascina(id,true);
+      const lettura=(bt.act==='shot' && a && !a.morto && a.carica) ? tr : null;
       delete this.atti[id];
       if(bt.act==='shot'){
         if(a && !a.carica){ /* la carica non e' di questo dito: non si tocca */ }
         else if(annulla || (a && a.morto)){ if(a) this.chiudiCarica(a.carica); else this.annullaCarica(bt.t); }
-        else if(!G.paused) releaseCharge(bt.t);
-      }
-      return;`,
+        else if(!G.paused) releaseCharge(bt.t, lettura);
+      }`,
   metti:
-`      const a=this.atti[id];
+`      const tr=this.trascina(id,true);
+      const lettura=(bt.act==='shot' && a && !a.morto && a.carica) ? tr : null;
+      delete this.atti[id];
+      if(bt.act==='shot'){
+        if(a && !a.carica){ /* la carica non e' di questo dito: non si tocca */ }
+        else if(annulla || (a && a.morto)){ if(a) this.chiudiCarica(a.carica); else this.annullaCarica(bt.t); }
+        else if(!G.paused) releaseCharge(bt.t, lettura);
+      }
       /* =================================================================
-         L1.2 — LA LETTURA DEL TRASCINAMENTO SI PRENDE PRIMA CHE L'ATTO
-         SPARISCA, e non e' pignoleria: Touch5.trascina cerca l'atto per
-         identificativo dentro this.atti, e dopo la riga «delete» qui
-         sotto quell'identificativo non esiste piu' — la lettura
-         tornerebbe null e nessuna scivolata partirebbe MAI. E' successo:
-         prima corsa della prova D del cancello, 0 scivolate su 8, con
-         tutto il resto verde. Un difetto che nessuna delle altre prove
-         poteva vedere, perche' tutte le altre pretendono che NON succeda
-         niente.
+         L1.2 — LA SCIVOLATA E' UN TRASCINAMENTO; IL RILASCIO E' SOLTANTO
+         IL SUO ISTANTE. La lettura e' la stessa «tr» presa qui sopra per
+         tutti i verbi — il campione anteriore di 60 ms al distacco, il
+         solo senza la deriva del polpastrello.
          Le quattro condizioni sono tutte necessarie, e ognuna chiude una
-         via per cui un corpo finirebbe a terra senza che nessuno
-         l'avesse chiesto:
+         via per cui un corpo finirebbe a terra senza che nessuno l'avesse
+         chiesto:
            · NON un annullo di sistema. touchcancel non e' touchend, ed
              e' la Legge 4: una notifica che si prende il dito non puo'
              far commettere un fallo. Misurato prima della toppa: dieci
              annulli su dieci scivolavano, e nove facevano fallo.
            · NON un atto morto. Chi ha trascinato oltre R_ANNULLA se n'e'
              andato dal pulsante: ha gia' detto di no.
-           · NON a gioco fermo, come per il tiro qui sotto.
-           · e soprattutto ARMATO (si controlla piu' sotto): sotto
-             R_ARMA non c'e' nessun trascinamento, quindi non c'e' niente
-             da eseguire, quindi non succede NIENTE.
-         La lettura e' quella FINALE — il campione anteriore di 60 ms al
-         distacco — perche' negli ultimi 60 ms il polpastrello rotola
-         verso la punta e sposterebbe la direzione di 6-18 px in un verso
-         fisso, proprio nell'istante della decisione.
-         ================================================================= */
-      const tras = (bt.act==='slide' && !annulla && a && !a.morto && !G.paused)
-                   ? this.trascina(id,true) : null;
-      delete this.atti[id];
-      if(bt.act==='shot'){
-        if(a && !a.carica){ /* la carica non e' di questo dito: non si tocca */ }
-        else if(annulla || (a && a.morto)){ if(a) this.chiudiCarica(a.carica); else this.annullaCarica(bt.t); }
-        else if(!G.paused) releaseCharge(bt.t);
-      }
-      /* =================================================================
-         L1.2 — LA SCIVOLATA E' UN TRASCINAMENTO; IL RILASCIO E' SOLTANTO
-         IL SUO ISTANTE.
-         Qui resta una sola domanda, perche' le altre tre le ha gia'
-         fatte la lettura qui sopra: il trascinamento e' ARMATO?
-         Smettere di contenere e' gratis, e il DISFARE non ha bisogno di
-         una riga — se il dito e' rientrato sotto R_ARMA, «armato» e'
-         falso e da qui non esce niente.
+           · NON a gioco fermo, come per il tiro qui sopra.
+           · e soprattutto ARMATO: sotto R_ARMA non c'e' nessun
+             trascinamento, quindi non c'e' niente da eseguire, quindi non
+             succede NIENTE — e smettere di contenere resta gratis.
          ================================================================= */
       else if(bt.act==='slide'){
-        if(tras && tras.armato) doSlide(bt.t,'scivola',tras);
-      }
-      return;`,
+        if(!annulla && !G.paused && a && !a.morto && tr && tr.armato) doSlide(bt.t,'scivola',tr);
+      }`,
 },
 
 /* 8 — la domanda del contenimento */
@@ -658,7 +648,7 @@ const attesi = [
   ['function nelProprioTerzo(', 1], ['function doSlide(t, fase, L){', 1],
   ['function startSlide(p, nx, ny, mirata){', 1],
   ['contrastoPasso(p)', 3],            // la definizione, la pressione, la finestra che matura
-  ['doSlide(t,\'premi\')', 1], ['doSlide(bt.t,\'scivola\',tras)', 1], ['const tras = (bt.act===\'slide\'', 1],
+  ['doSlide(t,\'premi\')', 1], ['doSlide(bt.t,\'scivola\',tr)', 1],
   ['doSlide(t);', 1],                  // e la tastiera, che resta com'era
   ['Touch5.contiene(p.team)', 1], ['contiene(t){', 1],
   ['p.slideMirata', 4], ['p.contrasto', 5],
