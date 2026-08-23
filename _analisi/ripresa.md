@@ -169,7 +169,18 @@ accenderla in partita costava il doppio del fotogramma. Il compito non e'
 Cancello proposto: rapporto densita' <= 1,05, e la prova sui pixel (oggi 1,52
 in partita contro 1,03 nella scena del gol) <= 1,10.
 
-### 5. La regia non esiste
+### 5. La regia — ENTRATA IL 23 AGOSTO 2026
+Moviola in TRE inquadrature (totale da dove nasce il gol / stretta sul
+pallone dal 55% del nastro / rete composta sul marcatore) e calcio
+d'inizio montato di stacco. Mai uno stacco in gioco attivo. Cancello
+`_q-regia.js` 15/15 dopo due cure: il tetto dello zoom cede al
+pavimento del terzo nell'angolo (misurato con --foto), e il salto
+preesistente della camera in play (il «morsetto», 1/0/1 gia' sulla
+base) e' anti-regressione dichiarata nel cancello — la sua cura resta
+VOCE APERTA (visto al fotogramma 888: zampata verticale di 77 unita' a
+pallone fermo). La voce originaria segue per storia.
+
+### 5-bis. Com'era descritta
 Zero stacchi per partita contro i **2,16 al minuto** misurati su sette ore di
 FC 25, dove il **31,9%** dei fotogrammi non ha nemmeno l'interfaccia. Il gioco
 ha **gia' due camere** (42 gradi e 16) e ne usa una; ha **gia'** una moviola e
@@ -179,7 +190,17 @@ mentre conduci il pallone te lo fa perdere.
 **Lavoro fermato a meta': `_t-regia.js`, `_q-regia.js`, `_p-regia.js` esistono
 ma non sono stati verificati.**
 
-### 6. La figura: due soli livelli di tono, e un dettaglio pagato che non si vede
+### 6. La figura — ENTRATA IL 23 AGOSTO 2026 (prima meta')
+Quattro livelli di tono su busto e coscia (tinte piatte, sagoma
+invariata) e il numero di maglia dentro l'ordine di profondita': mai
+piu' sopra la nuca di spalle. Cancello `_q-figura.js` 6/6. RESTANO
+APERTE le voci grosse della figura: mani/piedi/volto (il provino cieco
+3/10) e il LOD mai raggiunto (dettaglio pagato sopra LOD_PX=120 con
+figure a 94-111 px). E gli INVITI sono entrati (`_q-inviti` 15/15): i
+tre verbi senza etichetta hanno la pastiglia agganciata alla
+situazione, e il tutorial e' tre passi che muoiono da soli.
+
+### 6-bis. Com'era descritta
 Un provino cieco ha dato **3/10** di fattura contro il **9** del riferimento.
 `lumiLook` produce `_lume` e `_ombra` e basta: niente mani, niente piedi, niente
 volto, niente pieghe.
@@ -191,7 +212,21 @@ dall'ordine di profondita'** e finisce sopra la nuca quando la figura e' di
 spalle.
 **Lavoro fermato a meta': `_t-figura.js`, `_q-figura.js` esistono, non verificati.**
 
-### 7. Il gioco aereo e' vietato da una riga sola
+### 7. Il gioco aereo — ENTRATO IL 23 AGOSTO 2026
+Il colpo di testa esiste (`_t-aereo.js`, cancello `_q-aereo.js` 6/6 col
+controllo negativo superato): finestra di quota (26, 46], incornata in
+zona di tiro (conta come tiro), spizzata in avanti fuori zona, zero
+sorteggi; il chiamato del cross attacca il punto dove il pallone SCENDE
+A QUOTA DI TESTA (puntoTesta, 34) invece del punto di caduta — al banco
+39,6% dei cross giocati per aria (chiesto 30%); e la scivolata ha
+imparato la quota (uno steso non spazza piu' un pallone che gli vola
+sopra). Tre cure al banco durante il percorso, tutte dichiarate nel
+cancello: C emendato (giocare un pallone ormai basso e' calcio,
+l'abuso lo sorveglia il tetto di quota 50) e la calamita del controllo
+negativo spostata sopra il tetto, dov'e' l'abuso vero.
+La voce originaria segue per storia.
+
+### 7-bis. Com'era descritta
 Sopra `Z_SOPRA_TESTA = 26` (`:2946`) il pallone passa e basta: **zero occorrenze
 di «colpo di testa» in tutto il file**, niente stop di petto. Ed e' appena
 diventato un problema vero, perche' la CPU adesso **crossa davvero** e quei

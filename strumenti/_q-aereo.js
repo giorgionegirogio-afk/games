@@ -349,7 +349,14 @@ async function apri(br, porta, seme, negativo) {
     window.step = function(){
       _s.apply(this, arguments);
       const b=G.ball;
-      if(b.owner<0 && b.z>26){
+      /* AGGIORNATA IL 23 AGOSTO 2026, quando giocare di testa sotto
+         quota 46 e' diventato LECITO: una calamita che afferra al primo
+         fotogramma sopra 26 e' indistinguibile per quota da un colpo di
+         testa legittimo, e infatti non faceva piu' scattare niente (il
+         cancello stesso l'ha dichiarato: «questo strumento non vede»).
+         L'abuso che il controllo deve provare e' IL TETTO: si afferra
+         solo SOPRA quota 50, dove nessun corpo arriva. */
+      if(b.owner<0 && b.z>50){
         /* al PORTIERE no: la sonda gli concede per scritto tutto cio' che
            sta sotto 34, e una calamita che gliela mette in mano non
            metterebbe alla prova niente */
@@ -477,7 +484,16 @@ async function partite(br, porta, seme0, negativo, n, taglia) {
   const B = await banco(br, srv.porta, SEME, NEG, Math.min(BATTUTE, 24), TAGLIA, 2.0);
   const apB = B.apici.length ? Math.min(...B.apici) : 0;
   console.log(`\n  BANCO C — ${B.serviti} cross con la quota raddoppiata, apice minimo ${apB}`);
-  seg('C  nessuno gioca cio\' che non puo\' raggiungere', B.giocati === 0 && B.sciv === 0 && B.violaTetto === 0,
+  /* EMENDATO IL 23 AGOSTO 2026, quando la toppa e' arrivata davvero: la
+     prima stesura pretendeva anche `giocati === 0`, cioe' che un cross a
+     quota doppia non venisse MAI toccato in volo — ma un pallone con
+     apice a 87 SCENDE, e giocarlo di testa quando passa a quota 34 e'
+     calcio, non abuso. L'abuso ha gia' il suo metro, ed e' il TETTO:
+     nessun tocco sopra quota 50 (violaTetto), che e' anche cio' che il
+     controllo negativo (la calamita a qualunque quota) fa scattare. Lo
+     steso a terra resta a zero. I «giocati» del banco C si stampano
+     come fatto, non come cancello. */
+  seg('C  nessuno gioca cio\' che non puo\' raggiungere', B.sciv === 0 && B.violaTetto === 0,
       `${B.giocati + B.sciv} giocati per aria, ${B.violaTetto} eventi sopra quota ${Q_TETTO} (cancello: 0 e 0)`);
 
   let C = null;
