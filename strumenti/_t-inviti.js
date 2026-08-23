@@ -617,8 +617,15 @@ function verboMancato(k){
        un portatore avversario e il dito non ha trascinato */
 {
   nome: '9/9 Touch5.chiudi: la sonda del raddoppio',
+  /* RIANCORATO IL 23 AGOSTO 2026: L3.1 (la scoperta) aveva gia' avvolto
+     questo rilascio per disegnare il rifiuto quando comandaRaddoppio
+     dice no. La sonda si fonde col rifiuto invece di sostituirlo. */
   cerca:
-`      else if(bt.act==='swap' && !annulla && !G.paused && tr && tr.armato) comandaRaddoppio(bt.t, tr.ux, tr.uy);`,
+`      else if(bt.act==='swap' && !annulla && !G.paused && tr && tr.armato){
+        /* L3.1 — comandaRaddoppio dice no (nessun portatore avversario)
+           e il no si deve VEDERE. */
+        if(!comandaRaddoppio(bt.t, tr.ux, tr.uy)) rifiutoVerbo(bt.t);
+      }`,
   metti:
 `      else if(bt.act==='swap' && !annulla && !G.paused){
         /* ===============================================================
@@ -627,7 +634,8 @@ function verboMancato(k){
            torna false quando non c'e' nessun portatore avversario da
            raddoppiare, e in quel caso il verbo non e' stato usato — non
            e' stato nemmeno possibile. Si registra come USATO solo se
-           l'ordine e' partito davvero.
+           l'ordine e' partito davvero. E il no resta VISIBILE (L3.1):
+           quando l'ordine non parte, rifiutoVerbo lo disegna.
            L'occasione PERSA si conta all'opposto: il dito ha premuto
            CAMBIO senza trascinare MENTRE un avversario portava palla,
            cioe' esattamente la situazione in cui il raddoppio serviva.
@@ -637,7 +645,8 @@ function verboMancato(k){
         const b=G.ball;
         const car = (b && b.owner>=0) ? G.players[b.owner] : null;
         if(tr && tr.armato){
-          if(comandaRaddoppio(bt.t, tr.ux, tr.uy) && bt.t===0 && !G.cpu[0]) verboUsato('raddoppio');
+          if(comandaRaddoppio(bt.t, tr.ux, tr.uy)){ if(bt.t===0 && !G.cpu[0]) verboUsato('raddoppio'); }
+          else rifiutoVerbo(bt.t);
         }else if(bt.t===0 && !G.cpu[0] && car && car.team!==bt.t){
           verboMancato('raddoppio');
         }

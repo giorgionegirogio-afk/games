@@ -277,9 +277,15 @@ const CANCELLI = [
      TOGLIE `--nota-aperta nascosto` DA QUESTA RIGA: da li' in poi chi
      rimuove la sospensione trova il rosso. Misurato: sul file toppato
      (fuori/con-toppa-audio.html) il cancello da' 28 su 28 senza deroghe.
-     Non e' lento e non e' cronometrico: nessun controllo giudica un
-     tempo, quindi puo' correre in compagnia. */
-  { nome: 'audio',       cmd: ['strumenti/audio.js', '--nota-aperta', 'nascosto'],       conta: true, lento: false },
+     LA COMPAGNIA GLI FA MALE, ED E' MISURATO (23 ago 2026): due volte
+     in un giorno rosso dentro la batteria e verde da solo, sempre con
+     lo stesso gioco e lo stesso comando. La frase che stava qui — «non
+     e' cronometrico, puo' correre in compagnia» — era falsa: il
+     cancello misura PICCHI D'USCITA e finestre di costruzione dei nodi
+     («nodi nuovi in 1,6 s»), e sotto carico il tempo di parete di quelle
+     finestre si allunga. Un rosso che va e viene e' il cancello
+     rumoroso di casa: da oggi corre IN FILA. */
+  { nome: 'audio',       cmd: ['strumenti/audio.js', '--nota-aperta', 'nascosto'],       conta: true, lento: true },
   { nome: 'istantanea',  cmd: ['strumenti/istantanea.js', '--dir', 'istantanee-tutti'], conta: false, lento: false },
   { nome: 'volti',       cmd: ['strumenti/volti.js'],                                   conta: true,  lento: true },
   /* da qui in giu': cronometrici, girano da soli */

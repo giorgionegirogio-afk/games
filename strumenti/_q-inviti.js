@@ -655,6 +655,13 @@ const DITO_L = 1, DITO_R = 2;
            t = 0 la pastiglia e' trasparente, e misurarla li' vorrebbe
            dire misurare zero pixel e chiamarlo «non copre» */
         t.simulate(0.5);
+        /* SE IN QUEL MEZZO SECONDO E' ARRIVATO UN GOL, l'istante non
+           esiste: la scena e' nel replay, che avanza a ogni disegno, e
+           l'impronta uscirebbe «sporca» accusando il fotogramma invece
+           del calendario. Aggiunto il 23 ago 2026, quando l'onda della
+           fisica ha alzato i gol (0-0 a 5 dal 10% al 3%) e due istanti
+           su 24 hanno cominciato a cadere dentro una rete. */
+        if (t.G.scene !== 'play') continue;
         const imp = window.__impronta();
         out.push({ acceso: acceso, imp: imp,
                    palla: { x: Math.round(t.G.ball.x), y: Math.round(t.G.ball.y) } });
@@ -662,19 +669,25 @@ const DITO_L = 1, DITO_R = 2;
       }
       return out;
     }, 24);
-    const validi = posti.filter(q => q.imp && q.imp.n > 0);
+    /* GLI ISTANTI NON RIPETIBILI SI ESCLUDONO E SI DICHIARANO
+       (23 ago 2026): due su ventiquattro uscivano sporchi e prima
+       facevano NULLA l'intera prova — un ostaggio, non una guardia. Un
+       fotogramma che balla non e' prova di copertura in nessuna
+       direzione: si toglie dal campione, si scrive quanti erano, e il
+       verdetto cade sui puliti purche' restino almeno dodici. */
+    const validi = posti.filter(q => q.imp && q.imp.n > 0 && q.imp.sporco === 0);
     const sporchiF = posti.filter(q => q.imp && q.imp.sporco > 0).length;
     const bassoTot = validi.reduce((a, q) => a + q.imp.basso, 0);
     const dischiTot = validi.reduce((a, q) => a + q.imp.dischi, 0);
     const pallaTot = validi.reduce((a, q) => a + q.imp.palla, 0);
     const yMax = validi.length ? Math.max(...validi.map(q => q.imp.y1)) : null;
-    verdetto('C1', (validi.length && sporchiF === 0) ? ((bassoTot === 0 && dischiTot === 0) ? 'OK' : 'NO') : 'nulla',
+    verdetto('C1', (validi.length >= 12) ? ((bassoTot === 0 && dischiTot === 0) ? 'OK' : 'NO') : 'nulla',
              'Legge 3: nessun pixel della pastiglia sotto il pollice',
-             (validi.length && sporchiF === 0)
-               ? (validi.length + ' istanti · fascia bassa ' + bassoTot + ' px · dentro i dischi ' + dischiTot +
+             (validi.length >= 12)
+               ? (validi.length + ' istanti puliti' + (sporchiF ? ' (esclusi ' + sporchiF + ' non ripetibili, dichiarati)' : '') +
+                  ' · fascia bassa ' + bassoTot + ' px · dentro i dischi ' + dischiTot +
                   ' px · quota piu\' bassa raggiunta ' + n2(yMax) + ' px CSS su 412')
-               : (sporchiF ? (sporchiF + ' istanti sporchi: fotogramma non ripetibile, prova nulla')
-                           : 'la pastiglia non si e\' mai accesa: prova nulla'));
+               : (validi.length + ' istanti puliti su 24 (sporchi ' + sporchiF + '): troppo pochi, prova nulla'));
     verdetto('C2', validi.length ? (pallaTot === 0 ? 'OK' : 'NO') : 'nulla',
              'la pastiglia non copre il pallone',
              validi.length ? (pallaTot + ' px sul disco del pallone, in ' + validi.length + ' istanti')

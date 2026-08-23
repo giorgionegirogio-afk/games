@@ -107,21 +107,32 @@ const ANCORE = [
     const M=G.moviola;
     if(!M.regia){
       const fr=M.frames, b0=fr[0].b, b1=fr[fr.length-1].b;
-      /* mM e' lo stesso margine di pan che render() concede alla scena
-         del gol (GOAL_D+30): oltre quel muro il quadro non esce, quindi
-         ogni conto di composizione si fa con lui, non con l'infinito */
-      const mM=GOAL_D+30;
+      /* i conti di composizione assumono il muro del pan A MARGINE ZERO
+         (vedi la nota sui pavimenti del terzo, qui sotto) */
       /* lo zoom minimo perche' un punto stia nel terzo centrale: la sua
          distanza dal muro piu' vicino, vista a zoom S, deve valere
-         almeno un terzo del quadro — S >= quadro/(3 x distanza) */
-      const terzoX=function(px){ return Math.max(VW/(3*Math.max(30,FW+mM-px)), VW/(3*Math.max(30,px+mM))); };
-      const terzoY=function(py){ return Math.max(VH/(3*Math.max(30,FH+mM-py)), VH/(3*Math.max(30,py+mM))); };
+         almeno un terzo del quadro — S >= quadro/(3 x distanza).
+         IL MURO SI ASSUME A MARGINE ZERO (23 ago 2026): la prima stesura
+         concedeva GOAL_D+30 di pan oltre il campo, ma il morsetto vero
+         della camera puo' fermarsi prima, e un gol nato rasente la linea
+         usciva dal terzo (misurato: x=0,723 sul quadro d'ingresso).
+         Con margine zero la garanzia regge SOTTO qualunque morsetto:
+         costa un filo di zoom in piu' sui gol nati addosso alla porta. */
+      const terzoX=function(px){ return Math.max(VW/(3*Math.max(30,FW-px)), VW/(3*Math.max(30,px))); };
+      const terzoY=function(py){ return Math.max(VH/(3*Math.max(30,FH-py)), VH/(3*Math.max(30,py))); };
       /* A: tiene la traiettoria intera con la sua aria; non scende sotto
          il 92% dello zoom minimo di gioco (il mare d'erba e' il difetto
          da cui veniamo), non sale oltre lo zoom della festa del gol */
       const fitA=Math.min((VW/2-70)/Math.max(90,Math.abs(b1.x-b0.x)),
                           (VH*0.42-46)/Math.max(70,Math.abs(b1.y-b0.y)));
-      const sA=Math.min(Math.max(fitA, S2_MIN_DEV*0.92, terzoX(b0.x), terzoY(b0.y)), S2_GOL_DEV);
+      /* IL TETTO CEDE AL PAVIMENTO NELL'ANGOLO (23 ago 2026, misurato
+         con --foto): un'azione nata nell'angolo alto ha DUE muri che
+         bloccano il pan, e la garanzia del terzo si paga solo con lo
+         zoom — ma il tetto S2_GOL_DEV la strozzava (soggetto a 0,723
+         del quadro, fuori terzo). Nel caso d'angolo il totale puo'
+         stringere fino al 35% oltre il tetto: un totale un filo piu'
+         stretto e' un quadro; un totale che non inquadra non e' niente. */
+      const sA=Math.min(Math.max(fitA, S2_MIN_DEV*0.92, terzoX(b0.x), terzoY(b0.y)), S2_GOL_DEV*1.35);
       /* B: mai piu' largo del tetto di gioco, il 18% piu' stretto di A
          (e' il salto che rende lo stacco visibile), e abbastanza stretto
          perche' il pallone AL MOMENTO DELLO STACCO (55% del nastro) stia
@@ -135,7 +146,10 @@ const ANCORE = [
          tetto (1,55 volte lo zoom del gol) para il caso degenere del
          nastro quasi tutto oltre la linea. */
       const b55=fr[Math.min(fr.length-1, Math.ceil((fr.length-1)*0.55))].b;
-      const sB=Math.min(Math.max(S2_MAX_DEV, sA*1.18, terzoX(b55.x)*1.06, terzoY(b55.y)*1.06), S2_GOL_DEV*1.55);
+      /* il tetto di B sale di conserva col tetto di A (23 ago 2026): con
+         A fino a GOL*1,35, un tetto a 1,55 lascerebbe meno del 18% di
+         gradino nel caso d'angolo, e lo stacco sparirebbe dal conto */
+      const sB=Math.min(Math.max(S2_MAX_DEV, sA*1.18, terzoX(b55.x)*1.06, terzoY(b55.y)*1.06), S2_GOL_DEV*1.70);
       /* C: il 30% piu' stretto di B, alzato se serve perche' il torso
          del marcatore stia nel terzo centrale anche vicino al muro.
          Il marcatore si legge dall'ULTIMO fotogramma del nastro (la

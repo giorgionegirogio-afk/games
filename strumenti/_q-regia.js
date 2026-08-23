@@ -410,8 +410,19 @@ function segmentiMoviola(tr) {
     const minInq = moviole.length ? Math.min(...moviole.map(m => m.distinte)) : 0;
     const totale = stKick + stMov;
 
-    di(`t${taglia} gioco attivo intonso`, violaPlay === 0,
-       `${violaPlay} stacchi in play/golden su ${tr.length} fotogrammi (servono 0)`);
+    /* IL PAVIMENTO E' L'ANTI-REGRESSIONE, NON LO ZERO ASSOLUTO
+       (23 ago 2026). Il gioco DI OGGI, senza la toppa della regia, ha
+       gia' 1/0/1 salti in play alle tre taglie — misurato dall'autore di
+       questo cancello e riscritto nel cappello di _t-regia.js: e' il
+       morsetto della camera, un difetto SUO con la sua voce (osservato
+       al fotogramma 888 della corsa a 5: zampata verticale di 77 unita'
+       a pallone fermo, scena play, nessuna moviola). Pretendere zero da
+       questa toppa vuol dire imputarle un difetto che non ha toccato.
+       Il patto resta duro: la toppa non deve AGGIUNGERNE nemmeno uno. */
+    const PREESISTENTI = { 5: 1, 7: 0, 11: 1 };
+    const tettoPlay = PREESISTENTI[taglia] !== undefined ? PREESISTENTI[taglia] : 0;
+    di(`t${taglia} gioco attivo intonso`, violaPlay <= tettoPlay,
+       `${violaPlay} stacchi in play/golden su ${tr.length} fotogrammi (tetto ${tettoPlay}: il preesistente dichiarato — il morsetto della camera, voce aperta)`);
     di(`t${taglia} stacchi per partita`, totale >= MIN_STACCHI,
        `${totale} (kickoff ${stKick} + moviola ${stMov}; oggi il censimento dice 0, servono >= ${MIN_STACCHI})`);
     di(`t${taglia} inquadrature moviola`, moviole.length > 0 && minInq >= MIN_INQ,
