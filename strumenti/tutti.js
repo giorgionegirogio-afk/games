@@ -209,15 +209,15 @@ const CANCELLI = [
      negativo visto 6/6 il 20/8/2026 (cinque sabotaggi rossi piu' la
      prova anti-rumore). Statico, niente browser, niente cronometro:
      corre in compagnia.
-     PERCHE' `--nota-aperta ofl`, con la condizione di scadenza scritta:
-     il testo della licenza OFL deve viaggiare col gioco (condizione 2;
-     nameID 13 assente dai woff2, misurato con fontTools) e OGGI non
-     viaggia. La cura e' scritta (strumenti/_t-crediti.js, verificata
-     verde su copia con la sonda browser) ma NON applicabile finche' le
-     toppe dell'onda dei verbi vivono sull'md5 30279089de83. IL GIORNO
-     IN CUI _t-crediti.js ENTRA SI TOGLIE LA DEROGA DA QUESTA RIGA: da
-     li' in poi chi togliesse la schermata CREDITI troverebbe il rosso. */
-  { nome: 'diritti',     cmd: ['strumenti/diritti.js', '--nota-aperta', 'ofl'],         conta: true,  lento: false },
+     LA DEROGA `--nota-aperta ofl` E' STATA TOLTA IL 26 AGOSTO 2026, ed
+     e' il giorno che la riga di ieri aveva gia' scritto: il testo della
+     licenza OFL deve viaggiare col gioco (condizione 2; nameID 13
+     assente dai woff2, misurato con fontTools) e da oggi viaggia —
+     _t-crediti.js e' applicato, la schermata CREDITI porta la OFL per
+     intero e diritti.js esce verde SENZA deroga. Da qui in poi chi
+     togliesse quella schermata trova il rosso, che e' esattamente cio'
+     che la deroga prometteva. */
+  { nome: 'diritti',     cmd: ['strumenti/diritti.js'],                                  conta: true,  lento: false },
   /* eventi: l'unico cancello che misura il GIOCO invece dell'immagine
      (censimento §3.8.7). Deterministico a seme fisso e senza disegno:
      puo' correre in compagnia. Le soglie sono un pavimento largo,
@@ -265,18 +265,15 @@ const CANCELLI = [
      controlli sono verdi oggi e sanno uscire rossi (controllo negativo a
      quattro sabotaggi, `node strumenti/audio.js --controllo-negativo`,
      che li ha visti rossi tutti e quattro il 20 agosto).
-     PERCHE' `--nota-aperta nascosto`, ed e' una deroga con la data e la
-     condizione di scadenza scritte accanto: i tre controlli della parte
-     5 — a gioco nascosto l'audio deve tacere — sono ROSSI oggi su un
-     difetto VERO e gia' capito, e la sua toppa e' scritta e consegnata
-     (strumenti/_toppa-audio-sospendi.js) ma NON e' stata applicata,
-     perche' il 20 agosto sei ancoraggi vivono sull'md5 30279089de83 del
-     gioco. Con la deroga quei tre si stampano come NOTE APERTE sopra il
-     verdetto invece di rendere rossa l'intera batteria per un difetto
-     che nessuno puo' ancora riparare. IL GIORNO IN CUI LA TOPPA ENTRA SI
-     TOGLIE `--nota-aperta nascosto` DA QUESTA RIGA: da li' in poi chi
-     rimuove la sospensione trova il rosso. Misurato: sul file toppato
-     (fuori/con-toppa-audio.html) il cancello da' 28 su 28 senza deroghe.
+     LA DEROGA `--nota-aperta nascosto` E' STATA TOLTA IL 26 AGOSTO 2026,
+     ed e' il giorno che la riga di ieri aveva gia' scritto. I tre
+     controlli della parte 5 — a gioco nascosto l'audio deve tacere —
+     erano rossi su un difetto vero, con la toppa gia' scritta e in
+     attesa che si liberasse il file. La toppa
+     (strumenti/_toppa-audio-sospendi.js) e' applicata, e il cancello da'
+     28 su 28 SENZA deroghe sul gioco vero. Da qui in poi chi rimuove la
+     sospensione del contesto audio trova il rosso, che e' esattamente
+     cio' che la deroga prometteva.
      LA COMPAGNIA GLI FA MALE, ED E' MISURATO (23 ago 2026): due volte
      in un giorno rosso dentro la batteria e verde da solo, sempre con
      lo stesso gioco e lo stesso comando. La frase che stava qui — «non
@@ -285,7 +282,7 @@ const CANCELLI = [
      («nodi nuovi in 1,6 s»), e sotto carico il tempo di parete di quelle
      finestre si allunga. Un rosso che va e viene e' il cancello
      rumoroso di casa: da oggi corre IN FILA. */
-  { nome: 'audio',       cmd: ['strumenti/audio.js', '--nota-aperta', 'nascosto'],       conta: true, lento: true },
+  { nome: 'audio',       cmd: ['strumenti/audio.js'],                                     conta: true, lento: true },
   { nome: 'istantanea',  cmd: ['strumenti/istantanea.js', '--dir', 'istantanee-tutti'], conta: false, lento: false },
   { nome: 'volti',       cmd: ['strumenti/volti.js'],                                   conta: true,  lento: true },
   /* da qui in giu': cronometrici, girano da soli */

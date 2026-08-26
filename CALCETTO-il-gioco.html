@@ -2390,9 +2390,136 @@ button:active{transform:scale(.96)}
     <div class="menu-voci">
       <button class="voce" id="btnImpost">PREFERENZE <small>audio, movimento, contrasto, controlli</small></button>
       <button class="voce" id="btnHow">COME SI GIOCA <small>regole e comandi</small></button>
+      <!-- la porta della licenza: la OFL 1.1 obbliga ogni copia del
+           gioco a portare con se' il testo della licenza dei font
+           incorporati (condizione 2), e i woff2 sottoinsiemizzati non
+           ce l'hanno piu' dentro (nameID 13 assente, misurato). Da qui
+           il testo e' a due tocchi da chiunque, revisori di store
+           compresi. -->
+      <button class="voce" id="btnCrediti">CREDITI E LICENZE <small>i caratteri di terzi e la loro licenza</small></button>
     </div>
     <div style="height:14px"></div>
     <div class="azioni"><button class="btnA sec" id="btnBackExtra">TORNA AL MENU</button></div>
+  </div>
+</div>
+
+<!-- ============ CREDITI E LICENZE ============
+     Tutto nel gioco e' fatto in casa TRANNE due caratteri tipografici,
+     e la loro licenza (SIL OFL 1.1) pretende di viaggiare con ogni
+     copia. Il testo sta qui, non in un file accanto, perche' il gioco
+     E' un file solo: ovunque vada il file, va anche la licenza. -->
+<div id="crediti" class="ov hidden">
+  <div class="box">
+    <h1 class="sotto-titolo">CREDITI E LICENZE</h1>
+    <div class="regole" style="text-align:left">
+      <h3>Il gioco</h3>
+      <p>CALCETTO e' un'opera originale: codice, disegno, animazioni,
+      suoni (interamente sintetizzati), nomi di squadre, giocatori,
+      campi e sponsor sono inventati e fatti in casa. Nessuna immagine,
+      registrazione o libreria di terzi.</p>
+      <h3>Caratteri tipografici di terzi</h3>
+      <p>Gli unici componenti di terzi sono due caratteri, incorporati
+      nel gioco come sottoinsiemi woff2:</p>
+      <p>Archivo Black — Copyright 2017 The Archivo Black Project Authors (https://github.com/Omnibus-Type/ArchivoBlack)</p>
+      <p>Barlow Condensed Bold — Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)</p>
+      <p>Entrambi sono distribuiti sotto la SIL Open Font License 1.1,
+      senza Reserved Font Name. Il testo integrale della licenza,
+      identico per le due famiglie, e' qui sotto.</p>
+    </div>
+    <div style="max-height:44vh;overflow:auto;margin:10px 0;padding:10px 12px;border:1px solid rgba(242,245,239,.25);border-radius:6px">
+      <pre style="white-space:pre-wrap;font-family:var(--mono);font-size:10.5px;line-height:1.45;margin:0">This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded, 
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION &amp; CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
+    </div>
+    <div class="azioni"><button class="btnA sec" id="btnBackCrediti">TORNA AL MENU</button></div>
   </div>
 </div>
 
@@ -2434,8 +2561,8 @@ button:active{transform:scale(.96)}
         </div>
         <div class="eti">Rosa</div>
         <!-- LE TRE TAGLIE. Il 5 e' la base e il default; la scelta persiste
-             nel salvataggio (SAVE.taglia) e vale per l'amichevole. Torneo e
-             stagione restano sul 5: sono bilanciati su quella forza. -->
+             nel salvataggio (SAVE.taglia) e vale per amichevole, TORNEO e
+             STAGIONE: le tre taglie contano anche in progressione. -->
         <div class="diff-row" id="taglieRow">
           <button class="taglia sel" data-t="5">5 contro 5 <small>la gabbia</small></button>
           <button class="taglia" data-t="7">7 contro 7 <small>il campetto</small></button>
@@ -5044,7 +5171,7 @@ const CAMERE={
    ============================================================ */
 /* ARTI CON MASSA (appelli 2026-08): a 40px di figura le vecchie larghezze
    (braccio 0.100, avambraccio 0.075, coscia 0.150, polpaccio 0.110)
-   leggevano come FILI, non capsule — accanto alla pedina di Soccer Stars
+   leggevano come FILI, non capsule — accanto a una pedina piena
    l'omino sembrava a tratto sottile. Su del 50-80%: braccio 0.16,
    avambraccio 0.13, coscia 0.24, polpaccio 0.175, piede 0.14; la barra
    dei fianchi sale a 0.24 per non lasciare le cosce piu' larghe del
@@ -5098,7 +5225,7 @@ const SEGS=[
   /* LE BRACCIA SI ASSOTTIGLIANO DEL 15%, E DISFA A META' LA DECISIONE
      QUI SOPRA — percio' il conto va per esteso.
      «ARTI CON MASSA» aveva alzato braccio e avambraccio perche' a fili
-     sottili la figura non reggeva accanto alla pedina di Soccer Stars.
+     sottili la figura non reggeva accanto a una pedina piena.
      Quella ragione vale ancora e qui NON si rovescia: si torna indietro
      di un sesto, non di tutto. In pixel di RIEMPIMENTO su una figura
      alta quaranta (0,138 x 24,08 x 1,18):
@@ -7663,6 +7790,50 @@ G.teamName = SAVE.teamName;
 G.oppName = 'CPU';
 /* jingle menu: parte dopo lo sblocco audio */
 setInterval(()=>{ if(Audio5.ctx && Audio5.ctx.state==='running') Audio5.jingleTick(); }, 460);
+
+/* =====================================================================
+   IL GIOCO IN TASCA NON DEVE CANTARE.
+
+   Il gioco reagiva gia' al nascondimento — alza le dita, mette in pausa
+   — ma l'audio non lo toccava nessuno: in tutto il file non c'era una
+   chiamata a suspend(), e il contesto restava 'running' a schermo
+   spento. Misurato il 20 agosto con strumenti/audio.js, che ascolta
+   l'uscita vera con un analizzatore piazzato dopo il master:
+     · in partita, nascosto: picco 1,15e-2 su tre corse — e' la folla,
+       che setPaused abbassa a 0,15 invece che a zero;
+     · AL MENU, nascosto: sei-otto oscillatori nuovi ogni 1,6 s e picco
+       3,4e-2, perche' setPaused esce subito fuori dalla partita e la
+       melodia del menu non la ferma nessuno. Per sempre.
+
+   Sospendere il contesto e' meglio che azzerare il master per tre
+   ragioni: ferma il CALCOLO (un master a zero lascia gli oscillatori
+   vivi e la batteria scende lo stesso), ferma l'OROLOGIO audio (un
+   boato da 2,4 s riprende da dove stava invece di essere consumato nel
+   buio), e la melodia del menu si zittisce da sola perche' il suo
+   setInterval qui sopra gia' guarda ctx.state.
+
+   pagehide oltre a visibilitychange: su Android la scheda puo' essere
+   congelata senza passare da visibilitychange, e pagehide e' l'ultimo
+   istante garantito. Tutto in try: nessuna di queste due righe deve
+   poter rompere il gioco se un browser non le conosce.
+   ===================================================================== */
+function audioInTasca(nascosto){
+  if(!Audio5.ctx) return;                  // audio mai sbloccato: non c'e' niente da fermare
+  if(nascosto){
+    /* la coda della folla si chiude PRIMA di sospendere: se no al ritorno
+       riparte da dove stava, cioe' con lo stadio gia' acceso su un gioco
+       che e' ancora in pausa */
+    Audio5.crowdLevel(0);
+    try{ Audio5.ctx.suspend(); }catch(e){}
+  }else{
+    try{ Audio5.ctx.resume(); }catch(e){}
+    /* il livello della folla NON si rialza qui: ci pensa setPaused(false)
+       quando il giocatore riprende davvero, e al menu deve restare zero */
+  }
+}
+document.addEventListener('visibilitychange', ()=>audioInTasca(document.hidden));
+addEventListener('pagehide', ()=>audioInTasca(true));
+addEventListener('pageshow', ()=>audioInTasca(false));
 
 /* =====================================================================
    ENTITA' — giocatori e pallone
@@ -10589,7 +10760,7 @@ function eseguiFiltrante(p){
    palo; tempo di volo T fra 0,5 e 0,75 s; a T=0,7 il picco fa ~34:
    scavalca teste e portiere in uscita, e ricade dove il gate
    b.z<=Z_SOPRA_TESTA della raccolta riconsegna la palla ai piedi.
-   Niente banner: Soccer Stars non ce l'ha, e la densita' e' una legge. */
+   Niente banner: coprirebbe l'azione, e la densita' e' una legge. */
 /* IL SECONDO PALO — dove cade un cross di p quando nessuno dice altro.
    Erano due righe dentro doCross, e questo bastava a renderle un
    segreto: chi doveva ANDARCI non poteva saperle. Non sono cambiate di
@@ -13608,10 +13779,10 @@ function hitWall(sp,isPost,nx,ny){
      polvere()   la terra secca sollevata dal rimbalzo.
      lampo()     l'istante in cui il piede prende il pallone.
 
-   Il metro e' preso dai riferimenti: in Soccer Stars ogni contatto ha una
-   RAGGIERA bianca nel punto d'urto e il pallone si porta dietro una scia
-   affusolata; in Head Ball 2 ogni colpo ha una stella di luce. Nessuno dei
-   due disegna un fotogramma in piu': disegnano LUCE, che e' quattro fill
+   Il metro e' preso dai riferimenti del genere: un contatto che si sente
+   ha una RAGGIERA bianca nel punto d'urto, una scia affusolata dietro il
+   pallone, o una stella di luce sul colpo. Nessuno di questi effetti
+   disegna un fotogramma in piu': disegnano LUCE, che e' quattro fill
    additivi che durano un quinto di secondo.
    ===================================================================== */
 
@@ -13721,9 +13892,9 @@ function polvere(x, y, n, forza){
 
 /* IL LAMPO — l'istante in cui il piede prende il pallone.
    Un nucleo caldo che si allarga e sbianca, e QUATTRO RAGGI affusolati
-   lungo la direzione della botta. E' la raggiera che in Soccer Stars sta
-   nel punto di contatto fra due pedine, ed e' la ragione per cui li' un
-   colpo si SENTE anche in una fotografia ferma. Dura due decimi. */
+   lungo la direzione della botta. E' la raggiera nel punto di contatto,
+   la ragione per cui nei riferimenti un colpo si SENTE anche in una
+   fotografia ferma. Dura due decimi. */
 function lampo(x, y, dx, dy, forza){
   if(!SAVE.moto) return;
   if(G.lampi.length>4) G.lampi.shift();
@@ -23161,7 +23332,7 @@ function updateCamera(rdt){
        puntata sulla bocca della porta per tutta la festa, cioe' su rete,
        portiere a terra e un difensore avversario immobile, mentre i due
        secondi e mezzo di saltelli del marcatore e dei suoi accadevano fuori
-       dal fotogramma. In Score Match e in Rocket League il soggetto e' chi
+       dal fotogramma. Nei riferimenti il soggetto della scena e' chi
        ha segnato, e G.goalIdx lo sa gia' (lo usa la moviola per cerchiarlo).
        Primi 0,85 s alla porta — li' stanno il sacco che si gonfia, la
        scossa e i raggi — poi il bersaglio scivola sul marcatore in mezzo
@@ -23557,8 +23728,8 @@ function updateCamera(rdt){
      Sul tablet — il formato che il critico ha portato come prova del
      peggioramento — la linea laterale passa da mai a quasi sempre e i
      cartelloni delle botteghe da mai a due volte su tre.
-     Quello che il metro chiama "il punto in cui siamo GIA' avanti su
-     Soccer Stars, e va difeso" torna dentro l'inquadratura.
+     Quello che il metro chiama "il punto in cui siamo GIA' avanti sul
+     riferimento, e va difeso" torna dentro l'inquadratura.
      Il tetto non e' 100% e non lo puo' essere: il campo e' alto 560
      unita' e il fotogramma del telefono 292, quindi le due linee
      laterali insieme non ci staranno mai. Il resto della distanza dal
@@ -25643,8 +25814,8 @@ function drawMenuIdle(rdt){
 
 /* LA SCIA — un NASTRO, non una fila di pallini.
    Erano tre cerchi al 26% di opacita' che si sovrapponevano: da fermo
-   sembravano una macchia, in corsa non si vedevano affatto. In Soccer
-   Stars la palla colpita si porta dietro una striscia bianca affusolata —
+   sembravano una macchia, in corsa non si vedevano affatto. Il metro:
+   la palla colpita si porta dietro una striscia bianca affusolata —
    larga come il pallone alla testa, a zero in coda — ed e' quella,
    piu' della velocita' vera, che dice quanto e' stato forte il colpo.
 
@@ -26153,8 +26324,8 @@ function buildBallTex(){
      40% del raggio e il velo d'ombra al 50%, in mischia dentro l'anello
      ambra il pallone leggeva SCURO su erba scura — l'oggetto che deve
      essere il piu' leggibile dello schermo era il meno leggibile. La
-     ricetta di Soccer Stars: base quasi bianca, pentagono piu' piccolo,
-     velo d'ombra dimezzato. Il "dove" lo dice il bianco, il "che cosa"
+     ricetta che si legge alle taglie di gioco: base quasi bianca,
+     pentagono piu' piccolo, velo d'ombra dimezzato. Il "dove" lo dice il bianco, il "che cosa"
      lo dicono pentagono e cuciture. */
   c.fillStyle='#fcfef8';
   c.beginPath(); c.arc(C,C,R,0,6.2832); c.fill();
@@ -26438,8 +26609,8 @@ function kitTex(col,col2,pat,gk,anello){
     /* =============================================================
        L'ALONE DI STACCO, SU OGNI GIOCATORE.
        METRO.md, paragrafo 1, terza delle tre tecniche: "un alone di
-       stacco attorno a cio' che conta — in Soccer Stars la pedina attiva
-       ha un anello ciano che la solleva dal campo". Il nostro l'aveva SOLO
+       stacco attorno a cio' che conta — un anello chiaro che sollevi
+       la pedina attiva dal campo". Il nostro l'aveva SOLO
        il giocatore comandato, e a terra: gli altri sette stavano sul prato
        con un contorno da 2,4 centrato sul profilo, cioe' 1,2 unita' di
        scuro all'esterno.
@@ -27538,8 +27709,8 @@ function drawPlayer(p){
   /* =================================================================
      L'ALONE DI STACCO, per TUTTI e non solo per il comandato.
      Il metro lo chiede per nome — «un alone di stacco attorno a cio' che
-     conta: in Soccer Stars la pedina attiva ha un anello ciano che la
-     solleva dal campo» — e da noi ce l'aveva soltanto il giocatore
+     conta: un anello chiaro che solleva la pedina attiva dal
+     campo» — e da noi ce l'aveva soltanto il giocatore
      comandato, cioe' uno su otto. Gli altri sette erano macchie di
      colore appoggiate sull'erba senza niente sotto che li sollevasse:
      e' la ragione per cui a quattro ingrandimenti la figura leggeva
@@ -28271,7 +28442,7 @@ function drawMinimappa(){
      quota 0,92 non scatta mai) ed e' l'unico orientamento, quindi il
      fattore grande vale anche sotto i 700px */
   const k0 = (Math.min(VW,VH)>=700 || TAGLIA===11) ? 1.35 : 1;
-  /* IN BASSO AL CENTRO, come il radar di eFootball (quarto appello).
+  /* IN BASSO AL CENTRO, come i radar dei riferimenti (quarto appello).
      Nell'angolo destro l'aggancio sopra la fascia delle insegne spingeva
      il radar SOTTO il pulsante TIRA, che vive inchiodato a (VW-66,
      VH-140) — giocata.js preme quelle coordinate e non si spostano. La
@@ -28734,7 +28905,7 @@ function drawHUD(){
      attaccando e' fuori schermo per quasi tutta la partita: un chevron di 14
      px appiccicato al bordo, nel colore della tua squadra e all'altezza del
      centro di quella porta, dice da che parte si segna senza rubare un
-     pixel al campo. E' quello che fanno Head Ball 2 e Rocket League. */
+     pixel al campo. E' la soluzione comune dei riferimenti ad arena. */
   CHEV_POS.length=0;
   if((G.scene==='play'||G.scene==='golden'||G.scene==='kickoff') && G.ball){
     const S2=G.view.S2, Ax=G.view.Ax, Ay=G.view.Ay;
@@ -32230,7 +32401,7 @@ const ui={
 };
 /* tutte le schermate-overlay (per la navigazione) */
 const SCREENS=[ui.menu,ui.howto,ui.end,ui.gioca,ui.torneo,ui.campi,ui.squadra,ui.trofei,ui.statistiche,ui.impostazioni,
-               $('spogliatoio'),$('bacheca'),$('extra'),$('rosa'),$('stagione'),$('negozio')].filter(Boolean);
+               $('spogliatoio'),$('bacheca'),$('extra'),$('rosa'),$('stagione'),$('negozio'),$('crediti')].filter(Boolean);
 function hideAllScreens(){ for(const s of SCREENS) hide(s); }
 /* navigazione fluida: schermata singola attiva */
 function goScreen(el){
@@ -32241,7 +32412,7 @@ function goScreen(el){
      servizio: dentro le sue due voci non serve, sarebbe un comando che
      rimanda a se' stesso */
   const gb=$('gearBtn');
-  if(gb) gb.classList.toggle('hidden', el===$('extra')||el===ui.impostazioni||el===ui.howto);
+  if(gb) gb.classList.toggle('hidden', el===$('extra')||el===ui.impostazioni||el===ui.howto||el===$('crediti'));
   /* il tabellone si ridipinge quando la schermata prende una misura vera:
      a display:none l'elemento e' largo zero e il canvas resterebbe vuoto */
   requestAnimationFrame(()=>{
@@ -32357,9 +32528,34 @@ $('btnQuit').addEventListener('click', ()=>{
   refreshCoinVals();
   setScene('menu'); Audio5.crowdLevel(0);
 });
-/* se la scheda va in background durante la partita, metti in pausa */
+/* se la scheda va in background durante la partita, metti in pausa —
+   E SI SCRIVE IL SALVATAGGIO, perche' su Android un'app in sottofondo
+   puo' essere uccisa in qualunque momento e senza preavviso. Fino al 20
+   agosto 2026 qui si metteva soltanto in pausa: misurato con una
+   sentinella in SAVE, nascondere l'app lasciava il disco IDENTICO
+   (strumenti/salvataggio.js, caso 11). Tutto cio' che stava in memoria e
+   non era ancora passato per persistSave() spariva, e il giocatore lo
+   scopriva soltanto come progresso perso.
+   Tre eventi per tre morti diverse: 'visibilitychange' e' l'unico che una
+   WebView Android consegna con certezza quando l'app va in sottofondo
+   (la pagina non viene scaricata, quindi 'pagehide' spesso non arriva);
+   'pagehide' copre la pagina davvero smontata; 'freeze' e' l'ultimo
+   istante in cui gira codice in una scheda congelata da Chromium.
+   Costo misurato di una scrittura (1123 byte): mediana 0,100 ms su 200
+   ripetizioni, che e' il passo minimo dell'orologio del browser — il
+   vero valore sta sotto. Se ne paga UNA, e solo quando si sparisce.
+   NON si passa da setPaused: quello esce subito fuori dalla partita
+   (riga sopra: «if(v && !inMatch) return;»), e il caso da coprire e'
+   proprio l'utente che chiude l'app stando nel menu dopo un acquisto. */
+function salvaPerSparizione(){
+  try{ persistSave(); }catch(e){}   // mai un'eccezione mentre l'app se ne va
+}
 if(typeof document.addEventListener==='function'){
-  document.addEventListener('visibilitychange', ()=>{ if(document.hidden) setPaused(true); });
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.hidden){ setPaused(true); salvaPerSparizione(); }
+  });
+  document.addEventListener('freeze', salvaPerSparizione);
+  window.addEventListener('pagehide', salvaPerSparizione);
 }
 
 /* =====================================================================
@@ -32447,6 +32643,11 @@ refreshTaglieRow();
 $('btn1p').addEventListener('click', ()=>{ Audio5.unlock(); startMatch(1,G.diff); });
 $('btn2p').addEventListener('click', ()=>{ Audio5.unlock(); startMatch(2,G.diff); });
 $('btnHow').addEventListener('click', ()=>{ Audio5.unlock(); goScreen(ui.howto); });
+/* CREDITI: si apre dall'ingranaggio e torna all'ingranaggio, perche' e'
+   da li' che si arriva — tornare al menu principale butterebbe l'utente
+   due livelli piu' su di dove stava. */
+$('btnCrediti').addEventListener('click', ()=>{ Audio5.unlock(); goScreen($('crediti')); });
+$('btnBackCrediti').addEventListener('click', ()=>{ Audio5.unlock(); goScreen($('extra')); });
 $('btnBackMenu').addEventListener('click', ()=>{ goScreen(ui.menu); });
 $('btnRivincita').addEventListener('click', ()=>{
   Audio5.unlock();
@@ -32960,8 +33161,13 @@ function startSeasonMatch(){
   const opp=S.squadre[oi];
   /* la difficolta' non e' arbitraria: e' la forza dell'avversario */
   const diff = opp.forza>=8 ? 2 : (opp.forza>=5 ? 1 : 0);
-  /* stagione INCHIODATA al 5v5: e' bilanciata sulla forza-squadre attuale */
-  startMatch(1, diff, { tour:true, season:true, opp, size:5 });
+  /* LA TAGLIA DELLA STAGIONE E' QUELLA SCELTA DAL GIOCATORE (5, 7, 11).
+     Era inchiodata al 5 fino all'onda della fisica: il committente
+     chiede le tre taglie anche in progressione (censimento §3.5.1), e
+     l'inchiodo faceva si' che chi gioca a 7 o a 11 non potesse vincere
+     niente. La guardia (7||11) c'e' perche' setTaglia accetta solo
+     5/7/11 e ogni altro valore aprirebbe il 5 in silenzio. */
+  startMatch(1, diff, { tour:true, season:true, opp, size:(SAVE.taglia===7||SAVE.taglia===11)?SAVE.taglia:5 });
 }
 /* chiude la giornata dopo la partita del giocatore e simula le altre */
 function chiudiGiornata(golCasa, golFuori){
@@ -33054,8 +33260,9 @@ function startTourMatch(){
   if(!T||T.out||T.won) return;
   const oi=tourOpponent(T);
   if(oi<0) return;
-  /* torneo INCHIODATO al 5v5: e' bilanciato sulla forza-squadre attuale */
-  startMatch(1, TOUR_DIFF[T.round], { tour:true, opp:T.teams[oi], size:5 });
+  /* LA TAGLIA DEL TORNEO E' QUELLA SCELTA DAL GIOCATORE (5, 7, 11):
+     vedi il verbale gemello in startSeasonMatch. */
+  startMatch(1, TOUR_DIFF[T.round], { tour:true, opp:T.teams[oi], size:(SAVE.taglia===7||SAVE.taglia===11)?SAVE.taglia:5 });
 }
 function openTorneo(){
   goScreen(ui.torneo);
