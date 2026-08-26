@@ -66,45 +66,69 @@
 
    ---------------------------------------------------------------------
    IL VERDETTO, 100 partite per riga, semi 20260803..20260902, 11 contro
-   11, difficolta' Normale (node strumenti/_eventi.js --taglia 11
-   --partite 100 --seme 20260803 --gioco fuori/car-X.html):
+   11, difficolta' Normale, durata 90 s per stare appaiati col baseline
+   (node strumenti/_eventi.js --taglia 11 --partite 100 --seme 20260803
+   --gioco fuori/car-X.html). Tabella RIMISURATA dopo la correzione del
+   sorteggio (vedi la nota qui sotto): la prima non era confrontabile.
 
                 0-0    gol    tiri   GOL   parata  murato  precisione
-                90s    90s                 (da tiro)        VERA
+                       90s                 (da tiro)        VERA
      base       0,50   0,65   11,3   0,24   0,38    4,2      7%
-     A          0,52   0,64   11,0   0,35   0,40    3,9     10%
-     B          0,53   0,56   10,5   0,33   0,35    4,0      9%
-     C          0,51   0,67   11,7   0,28   0,36    4,0      8%
-     D          0,50   0,64   10,4   0,33   0,43    3,8     10%
-     E          0,66   0,40    9,4   0,17   0,34    2,3     10%
-     F          0,65   0,41   10,1   0,16   0,39    2,5      8%
-     G          0,64   0,45    9,6   0,18   0,32    2,4      8%
+     A          0,49   0,60    9,3   0,31   0,49    3,8     11%
+     B          0,51   0,53   10,2   0,29   0,28    4,2      9%
+     D          0,49   0,59    9,7   0,25   0,48    3,9     10%
+     F          0,60   0,48    9,4   0,19   0,41    2,4      9%
+     G          0,61   0,45    8,9   0,16   0,36    2,2      9%
 
-   COSA DICONO QUESTI NUMERI, in due frasi che non si possono confondere.
+   COSA DICONO QUESTI NUMERI, in tre frasi che non si possono confondere.
 
-   PRIMA: A, C e D FANNO QUELLO CHE PROMETTONO. La precisione vera passa
-   dal 7% al 10%, i gol nati da un tiro da 0,24 a 0,35 (+46%), i tiri
-   murati da 4,2 a 3,8. Il tiro dell'11 contro 11 e' un gesto migliore.
+   PRIMA: A e D FANNO QUELLO CHE PROMETTONO. La precisione vera passa dal
+   7% al 10-11%, le PARATE da 0,38 a 0,48-0,49 — cioe' quasi un evento in
+   piu' davanti alla porta a partita, che e' esattamente la cosa che
+   all'11 contro 11 mancava — e i tiri murati da 4,2 a 3,8. Il tiro
+   dell'11 e' un gesto migliore, e si vede.
 
-   SECONDA, ED E' AMARA: LO 0-0 NON SI MUOVE. 0,50 -> 0,50-0,52, cioe'
-   dentro il rumore (100 partite hanno sigma 5 punti su una frequenza del
-   50%). I gol TOTALI restano 0,64-0,67 mentre quelli da tiro salgono di
-   0,11: la differenza esce dall'altra colonna. Meno muri vuol dire meno
-   palloni che schizzano in area, e quei palloni facevano gol. La legge
-   scritta in _t-undici-fisica.js — "un tiro murato e' comunque un
-   evento" — vale anche al rovescio, e adesso e' misurata da tutte e due
-   le parti.
+   SECONDA, ED E' AMARA: LO 0-0 NON SI MUOVE, e nemmeno i gol totali
+   (0,65 -> 0,59, dentro il rumore: 100 partite hanno sigma 5 punti su
+   una frequenza del 50%). Quello che sale sono i gol NATI DA UN TIRO
+   (0,24 -> 0,31); il totale no, perche' la differenza esce dall'altra
+   colonna. Meno muri vuol dire meno palloni che schizzano in area, e
+   quei palloni facevano gol. La legge scritta in _t-undici-fisica.js —
+   "un tiro murato e' comunque un evento" — vale anche al rovescio, e
+   adesso e' misurata da tutte e due le parti. Questa toppa si spedisce
+   per la qualita' del gesto, non per il risultato: il risultato lo ha
+   sbloccato il cronometro (_t-cronometro.js).
 
-   TERZA, E CHIUDE UNA STRADA: E, F e G sono BOCCIATE, e non di poco —
-   0-0 al 64-66% contro il 50 del baseline. La "voglia di tirare che
-   cresce avvicinandosi" sposta il baricentro dei tiri (a 800-950 unita'
-   si passa dal 31% al 10%) ma la squadra NON si avvicina per questo:
-   i tiri crollano da 7,4 a 4,4 a partita (autopsia su 40 partite) e i
-   gol seguono. E' la TERZA cura che muore nello stesso modo, dopo il
+   TERZA, E CHIUDE UNA STRADA: F e G sono BOCCIATE — 0-0 al 60-61% contro
+   il 50 del baseline. La "voglia di tirare che cresce avvicinandosi"
+   sposta il baricentro dei tiri (a 800-950 unita' si passa dal 31% al
+   10%) ma la squadra NON si avvicina per questo: i tiri scendono a 8,9-9,4
+   e i gol seguono. E' la TERZA cura che muore nello stesso modo, dopo il
    tetto della zona a 600 e la punta a 500: a 11 contro 11 togliere tiri
    toglie gol, sempre, perche' la squadra non ha nessun altro modo di
    arrivare davanti alla porta. Chi vorra' riprovarci porti prima la
    prova che la squadra sa avvicinarsi.
+
+   ---------------------------------------------------------------------
+   LA CORREZIONE DEL 26 AGOSTO, TROVATA DA UNA REVISIONE AVVERSARIA e
+   confermata da tre verificatori indipendenti. La prima stesura di
+   questa toppa scriveva la durata in una const PRIMA del guardiano:
+
+     const durCar = 0.08 + respiro*(0.22+Math.random()*0.16);
+     if(p.kickCd<=0 && anticipa(p, 'tiro', durCar, sparaTiroCpu)){
+
+   Nel gioco vergine il sorteggio e' un ARGOMENTO di anticipa, cioe' vive
+   a destra di `p.kickCd<=0 &&` e il corto circuito lo salta quando il
+   piede e' in pausa. Issato in una const si pesca SEMPRE — e il caso e'
+   frequente: misurato, il 12,5% delle decisioni di tiro arriva con
+   kickCd>0 (7 su 56, sei partite a 11). Un numero casuale in piu' non
+   rompe il gioco: rompe il CONFRONTO, perche' i banchi a seme fisso
+   smettono di essere appaiati — e rendeva falsa la riga di commento che
+   giurava "un solo Math.random, come prima". Il sorteggio e' tornato
+   dentro il corto circuito, gli `attesi` adesso ancorano la riga INTERA
+   e vietano `const durCar`, e la tabella qui sopra e' stata rimisurata
+   da zero: le righe della prima stesura sono state buttate, non
+   corrette.
 
    Cancello: node strumenti/_eventi.js --taglia 11 --partite 100
    --seme 20260803 (baseline VERO: 50% di 0-0, 0,65 gol nei 90 s).
@@ -196,11 +220,18 @@ const METTI_A =
        era l'attesa. Adesso la preparazione dura quanto il tempo che c'e'
        — piena da 119 unita' in su, dove la conquista visiva del gesto
        vale ancora tutta, e ridotta al tocco di prima a contatto, che e'
-       esattamente cio' che si vede fare a un calciatore pressato. Un
-       solo Math.random, come prima: il seme scorre uguale. */
+       esattamente cio' che si vede fare a un calciatore pressato.
+       IL SORTEGGIO RESTA DOV'ERA, cioe' DENTRO gli argomenti di anticipa,
+       a destra del guardiano p.kickCd<=0. La prima stesura lo aveva tirato
+       fuori in una const per leggibilita', e cosi' lo pescava anche col
+       piede in pausa, quando il corto circuito lo saltava: misurato, il
+       12,5% delle decisioni di tiro arriva con kickCd>0 (7 su 56, sei
+       partite a 11). Un numero casuale in piu' non rompe il gioco, rompe
+       il CONFRONTO — i banchi a seme fisso smettono di essere appaiati —
+       e rendeva falsa questa stessa riga di commento. La variabile
+       respiro puo' stare fuori: e' un clamp su press, e non pesca. */
     const respiro = clamp((press-24)/95, 0, 1);
-    const durCar = 0.08 + respiro*(0.22+Math.random()*0.16);
-    if(p.kickCd<=0 && anticipa(p, 'tiro', durCar, sparaTiroCpu)){`;
+    if(p.kickCd<=0 && anticipa(p, 'tiro', 0.08 + respiro*(0.22+Math.random()*0.16), sparaTiroCpu)){`;
 
 const METTI_B =
 `    /* LA CARICA CONOSCE LA CORSIA (26 ago 2026). Stessa diagnosi della
@@ -210,12 +241,14 @@ const METTI_B =
        il primo corpo dentro il TUBO verso la porta, cioe' esattamente
        quello che fra un fotogramma potra' respingere il pallone. Piena
        da 200 unita' di varco in su, tocco di prima quando il corpo e'
-       addosso. Un solo Math.random, come prima. */
+       addosso. Il sorteggio resta dentro il corto circuito di
+       del guardiano p.kickCd<=0, per la ragione scritta in A: fuori
+       di li' si pesca anche col piede in pausa e i banchi a seme fisso
+       si sfasano. corsiaTiro non sorteggia niente e puo' stare sopra. */
     const dxCar=opGoalX-p.x, dyCar=FH/2-p.y, lCar=Math.max(1,len(dxCar,dyCar));
     const varco = corsiaTiro(p, dxCar/lCar, dyCar/lCar);
     const respiro = clamp((varco-40)/160, 0, 1);
-    const durCar = 0.08 + respiro*(0.22+Math.random()*0.16);
-    if(p.kickCd<=0 && anticipa(p, 'tiro', durCar, sparaTiroCpu)){`;
+    if(p.kickCd<=0 && anticipa(p, 'tiro', 0.08 + respiro*(0.22+Math.random()*0.16), sparaTiroCpu)){`;
 
 if (['A', 'D', 'F', 'G'].includes(VAR)) ANCORE.push({ nome: '1 la carica scala con la pressione', cerca: CERCA_CARICA, metti: METTI_A });
 if (VAR === 'B') ANCORE.push({ nome: '1 la carica scala con la corsia', cerca: CERCA_CARICA, metti: METTI_B });
@@ -320,8 +353,18 @@ if (mancanti.length) {
 }
 
 const attesi = [['function corsiaTiro(p, ux, uy){', 1]];
-if (['A', 'D', 'F', 'G'].includes(VAR)) attesi.push(['const respiro = clamp((press-24)/95, 0, 1);', 1], ['0.30+Math.random()*0.16, sparaTiroCpu', 0]);
-if (VAR === 'B') attesi.push(['const respiro = clamp((varco-40)/160, 0, 1);', 1], ['0.30+Math.random()*0.16, sparaTiroCpu', 0]);
+/* gli attesi della carica ancorano la RIGA INTERA, non il pezzo comodo: il
+   sorteggio deve stare a destra di `p.kickCd<=0 &&`, dentro gli argomenti
+   di anticipa. Una riscrittura che lo tiri fuori in una const per
+   leggibilita' — com'era la prima stesura — cambia il consumo dei numeri
+   casuali e sfasa i banchi appaiati, e da oggi non passa da qui. */
+if (['A', 'D', 'F', 'G'].includes(VAR)) attesi.push(
+  ["if(p.kickCd<=0 && anticipa(p, 'tiro', 0.08 + respiro*(0.22+Math.random()*0.16), sparaTiroCpu)){", 1],
+  ['const durCar', 0], ['0.30+Math.random()*0.16, sparaTiroCpu', 0]);
+if (VAR === 'B') attesi.push(
+  ['const respiro = clamp((varco-40)/160, 0, 1);', 1],
+  ["if(p.kickCd<=0 && anticipa(p, 'tiro', 0.08 + respiro*(0.22+Math.random()*0.16), sparaTiroCpu)){", 1],
+  ['const durCar', 0], ['0.30+Math.random()*0.16, sparaTiroCpu', 0]);
 if (['C', 'D', 'G'].includes(VAR)) attesi.push(['if(varcoDi(-corner) > varcoDi(corner) + 60) corner = -corner;', 1], ['const corner = (p.y<goalY?1:-1);', 0]);
 if (VAR === 'C' || VAR === 'E') attesi.push(['0.30+Math.random()*0.16, sparaTiroCpu', 1]);
 if (['E', 'F', 'G'].includes(VAR)) attesi.push(['Math.random()<D.shotFreq*voglia', 1], ['Math.random()<D.shotFreq){', 0]);

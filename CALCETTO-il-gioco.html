@@ -14920,11 +14920,18 @@ function aiCarrier(p, opGoalX, D){
        era l'attesa. Adesso la preparazione dura quanto il tempo che c'e'
        — piena da 119 unita' in su, dove la conquista visiva del gesto
        vale ancora tutta, e ridotta al tocco di prima a contatto, che e'
-       esattamente cio' che si vede fare a un calciatore pressato. Un
-       solo Math.random, come prima: il seme scorre uguale. */
+       esattamente cio' che si vede fare a un calciatore pressato.
+       IL SORTEGGIO RESTA DOV'ERA, cioe' DENTRO gli argomenti di anticipa,
+       a destra del guardiano p.kickCd<=0. La prima stesura lo aveva tirato
+       fuori in una const per leggibilita', e cosi' lo pescava anche col
+       piede in pausa, quando il corto circuito lo saltava: misurato, il
+       12,5% delle decisioni di tiro arriva con kickCd>0 (7 su 56, sei
+       partite a 11). Un numero casuale in piu' non rompe il gioco, rompe
+       il CONFRONTO — i banchi a seme fisso smettono di essere appaiati —
+       e rendeva falsa questa stessa riga di commento. La variabile
+       respiro puo' stare fuori: e' un clamp su press, e non pesca. */
     const respiro = clamp((press-24)/95, 0, 1);
-    const durCar = 0.08 + respiro*(0.22+Math.random()*0.16);
-    if(p.kickCd<=0 && anticipa(p, 'tiro', durCar, sparaTiroCpu)){
+    if(p.kickCd<=0 && anticipa(p, 'tiro', 0.08 + respiro*(0.22+Math.random()*0.16), sparaTiroCpu)){
       p.aiShotQ=q;                         // la qualita' si decide adesso, il tiro parte dopo
       p.aiActT=Math.max(p.aiActT, 0.50);   // non decide altro mentre carica
     }
