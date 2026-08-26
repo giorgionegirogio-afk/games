@@ -562,9 +562,10 @@ const mediana = a => { const b = a.slice().sort((x, y) => x - y); const n = b.le
       const m = await pag.evaluate(async () => {
         const t = window.__test;
         t.resetSave(); t.save.tutorialDone = 1;
-        let sulTabellone = 0, senzaIndice = 0;
+        let sulTabellone = 0, senzaIndice = 0, storte = 0, scarto = 0;
         for (let i = 0; i < 12; i++) {
           window.__caso.semina((20260803 + i) >>> 0);
+          const prima = t.save.coins | 0;
           t.startMatch(1, 1);
           t.setCpuVsCpu(true);
           let sim = 0;
@@ -572,10 +573,19 @@ const mediana = a => { const b = a.slice().sort((x, y) => x - y); const n = b.le
           G.cpu[0] = false;
           sulTabellone += G.score[0];
           senzaIndice += (G.golLog || []).filter(g => g.idx === undefined || g.idx === null).length;
-          faiCrescereRosa();
+          /* applyMatchRewards chiama faiCrescereRosa da se': si misurano
+             tutte e due le cose con una chiamata sola, come in partita */
+          const rew = applyMatchRewards();
+          const dopo = t.save.coins | 0;
+          if (rew) {
+            const somma = rew.br.reduce((s, b) => s + b[1], 0);
+            if (!(somma === rew.gain && rew.gain === dopo - prima && rew.saldo === dopo)) {
+              storte++; scarto += Math.abs((dopo - prima) - somma);
+            }
+          }
         }
         const rosa = (t.save.rosa || []).map(r => r.gol | 0);
-        return { rosa, sulTabellone, senzaIndice, inRosa: rosa.reduce((s, x) => s + x, 0) };
+        return { rosa, sulTabellone, senzaIndice, storte, scarto, inRosa: rosa.reduce((s, x) => s + x, 0) };
       });
       const conGol = m.rosa.filter(g => g > 0).length;
       di(m.senzaIndice === 0, 'ogni rete del registro sa chi l\'ha segnata', m.senzaIndice + ' senza indice');
@@ -584,6 +594,14 @@ const mediana = a => { const b = a.slice().sort((x, y) => x - y); const n = b.le
       di(m.rosa.length === 0 || m.sulTabellone === 0 || conGol >= 2,
          'le reti sono di piu\' di un giocatore (non tutte all\'indice 1)',
          conGol + ' marcatori su ' + m.rosa.length + ' in rosa: [' + m.rosa.join(', ') + ']');
+      /* IL CONTO DELLA LAVAGNETTA (§3.5.1 voce 8, curata il 26 agosto con
+         strumenti/_t-lavagnetta.js). La somma delle righe elencate deve
+         valere il totale dichiarato E la variazione vera del saldo: i
+         premi dei trofei e quelli di stagione si pagano fuori dalla somma
+         dell'elenco, e prima della cura 4 partite su 14 mostravano
+         quaranta monete incassandone centoventi. */
+      di(m.storte === 0, 'la lavagnetta somma esattamente quello che il saldo incassa',
+         m.storte + ' partite storte su 12, scarto totale ' + m.scarto + ' monete');
     }
 
     /* --------------- SEZIONE 3 — il pavimento 0-0 alle tre taglie --------------- */
