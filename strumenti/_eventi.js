@@ -295,7 +295,7 @@ function riga(nome, vals, dec) {
 }
 
 /* --------------------------------------------------------------- una passata */
-async function gioca(browser, porta, partite, semeBase, diff, etichetta, taglia) {
+async function gioca(browser, porta, partite, semeBase, diff, etichetta, taglia, durata) {
   const ctx = await browser.newContext({ viewport: { width: 915, height: 412 }, isMobile: true, hasTouch: true, locale: 'it-IT' });
   const pag = await ctx.newPage();
   const errori = [];
@@ -326,10 +326,16 @@ async function gioca(browser, porta, partite, semeBase, diff, etichetta, taglia)
   const out = [];
   const inizio = Date.now();
   for (let i = 0; i < partite; i++) {
-    const r = await pag.evaluate(([seme, diff, taglia]) => {
+    const r = await pag.evaluate(([seme, diff, taglia, durata]) => {
       const t = window.__test;
       window.__caso.semina(seme);
       window.__ev.azzera();
+      /* LA DURATA E' UN'IMPOSTAZIONE DEL GIOCO, non un trucco del banco:
+         il menu la offre a 90, 120 o 180 secondi (SAVE.durata). Il banco
+         la puo' fissare perche' su un campo che raddoppia la stessa
+         domanda — quanti gol in quanti minuti — non si puo' porre allo
+         stesso cronometro. */
+      if(durata && t.save) t.save.durata = durata;
       t.startMatch(1, diff, taglia !== 5 ? { size: taglia } : undefined);
       t.setCpuVsCpu(true);
       let sim = 0;
@@ -337,7 +343,7 @@ async function gioca(browser, porta, partite, semeBase, diff, etichetta, taglia)
       const e = window.__ev.leggi();
       e.scena = t.state; e.simulati = sim;
       return e;
-    }, [(semeBase + i) >>> 0, diff, taglia]);
+    }, [(semeBase + i) >>> 0, diff, taglia, durata]);
     out.push(r);
     if (partite >= 20 && (i + 1) % 10 === 0) console.log(`  --    ${etichetta}: ${i + 1}/${partite} partite`);
   }
@@ -478,6 +484,12 @@ function confronta(prima, dopo) {
   /* la taglia della partita: 5, 7 o 11. La fisica del pallone NON scala
      col campo, quindi il gioco a 11 e' un'altra misura, non la stessa. */
   const taglia = [5, 7, 11].includes(+arg('taglia', 5)) ? +arg('taglia', 5) : 5;
+  /* --durata: 90, 120 o 180 secondi, gli stessi tre che offre il menu del
+     gioco (SAVE.durata). Serve a porre la domanda giusta sulle taglie
+     grandi: un campo largo il doppio non si attraversa nello stesso
+     cronometro, e le voci «nei 90 secondi» qui sotto vanno lette come
+     «nel tempo regolamentare», qualunque sia. */
+  const durata = [90, 120, 180].includes(+arg('durata', 0)) ? +arg('durata', 0) : 0;
   const etichetta = arg('etichetta', 'FOTOGRAFIA');
   const prova = arg('gioco', process.env.GIOCO_PROVA || '');
   const provaAbs = prova ? path.resolve(prova) : '';
@@ -493,7 +505,7 @@ function confronta(prima, dopo) {
   console.log(`\n=== EVENTI — ${partite} partite CPU contro CPU, semi ${semeBase}..${semeBase + partite - 1}, difficolta' ${['Facile', 'Normale', 'Duro'][diff]}, ${taglia} contro ${taglia} ===`);
   console.log('  --    gioco: ' + (provaAbs || 'CALCETTO-il-gioco.html (repo)'));
 
-  const A = await gioca(browser, srv.porta, partite, semeBase, diff, etichetta, taglia);
+  const A = await gioca(browser, srv.porta, partite, semeBase, diff, etichetta, taglia, durata);
   console.log(`  --    ${(A.ms / 1000).toFixed(1)} s in tutto = ${(A.ms / partite / 1000).toFixed(2)} s a partita`);
 
   const nonFinite = A.partite.filter(p => p.scena !== 'end');
@@ -506,7 +518,7 @@ function confronta(prima, dopo) {
   let diagOK = true;
   if (diagnosi) {
     const n = Math.min(3, partite);
-    const B = await gioca(browser, srv.porta, n, semeBase, diff, 'diagnosi', taglia);
+    const B = await gioca(browser, srv.porta, n, semeBase, diff, 'diagnosi', taglia, durata);
     const chiavi = ['tiri', 'specchio', 'gol', 'parate', 'legni', 'muri', 'rubate', 'falli', 'vaganti', 'cambi', 'eventi'];
     const dB = B.partite.map(derivati);
     const diff2 = [];

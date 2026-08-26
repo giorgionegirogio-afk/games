@@ -516,6 +516,15 @@ async function calcetto(browser, srv) {
      divise del gioco (non solo le due in campo) la fa
      strumenti/_sonda-divise.js.
 
+     E IL 26 AGOSTO 2026 LO STESSO FENOMENO E' TORNATO NELL'ALTRO VERSO,
+     che e' il piu' pericoloso: una toppa che non tocca ne' le divise ne'
+     il manto (la carica del tiro) ha fatto scendere il mucchio da 3,19 a
+     2,83 e il cancello ha detto NO a una cura innocente. La misura della
+     dispersione — quattro lotti da tre partite sul gioco INVARIATO, da
+     3,06 a 3,92 — ha chiuso l'accusa e indicato la cura vera: non basta
+     DICHIARARE che il numero balla, bisogna smettere di farlo ballare.
+     Il campione e' passato da tre partite a nove (vedi SEMI_CONTRASTO).
+
      LA PROVA CHE IL CANCELLO SA ANCORA DIRE NO, dentro lo strumento:
      `GUASTO=1 node strumenti/collaudo.js calcetto` dipinge le due tinte
      del kit della squadra 0 con la tinta media del manto (#2f6b22) e la
@@ -531,10 +540,36 @@ async function calcetto(browser, srv) {
      a 5 tutti e quattro i controlli vanno rossi e il processo esce con 1.
      ===================================================================== */
   const SOGLIA_CONTRASTO = 3;
-  /* i semi delle tre partite campionate: DICHIARATI, non pescati.
-     Cambiarli cambia il numero (vedi la dispersione qui sopra): e' una
-     scelta, e va fatta con gli occhi aperti. */
-  const SEMI_CONTRASTO = [20260728, 20260729, 20260730];
+  /* i semi delle partite campionate: DICHIARATI, non pescati.
+     Cambiarli cambia il numero: e' una scelta, e va fatta con gli occhi
+     aperti.
+
+     DA TRE A NOVE, 26 AGOSTO 2026, E LA RAGIONE E' MISURATA. Con tre semi
+     questo controllo ha bocciato una toppa che non tocca ne' le divise ne'
+     il manto (la carica del tiro, _t-carica.js): 3,19:1 prima, 2,83:1
+     dopo, sotto la soglia di 3. L'accusa non stava in piedi, e la prova e'
+     stata rifare la misura sul gioco INVARIATO cambiando solo i semi del
+     campione — quattro lotti da tre partite, stesso file:
+
+       semi 20260801  3,92:1     semi 20260821  3,91:1
+       semi 20260811  3,06:1     semi 20260831  3,26:1
+
+     Da 3,06 a 3,92: una dispersione di 0,86 attorno a una soglia di 3,00.
+     Il contrasto maglia/erba e' una proprieta' dei COLORI, ma qui si
+     misura attraverso un campione DINAMICO — dove capitano i giocatori,
+     su quale striscia di taglio, sotto quale ombra, a che ora della sera —
+     e qualunque cura che sposti il corso della partita rilancia la moneta.
+     Uno strumento cosi' non distingue un peggioramento vero da un lotto
+     sfortunato: e' cieco esattamente dove serve vedere.
+
+     Con nove semi lo stesso confronto si ferma: gioco vecchio 3,77:1,
+     gioco con la toppa 3,54:1 (P2: 4,37 e 4,18). Differenza 0,23 contro
+     una dispersione di 0,86 — il numero adesso parla della divisa, non
+     del sorteggio. Chi vorra' tornare a tre semi rifaccia prima queste
+     quattro righe. */
+  const SEMI_CONTRASTO = [20260728, 20260729, 20260730,
+                          20260801, 20260802, 20260811,
+                          20260812, 20260821, 20260831];
   /* la tinta con cui GUASTO=1 dipinge la maglia: la mediana del manto
      misurata da questo stesso controllo, cioe' erba su erba */
   const TINTA_GUASTO = process.env.GUASTO ? '#2f6b22' : null;

@@ -546,7 +546,12 @@ const mediana = a => { const b = a.slice().sort((x, y) => x - y); const n = b.le
     /* --------------- SEZIONE 3 — il pavimento 0-0 alle tre taglie --------------- */
     if (treTaglie) {
       console.log('\n  -- le tre taglie: il pavimento sulle partite 0-0 --');
-      console.log('  --    ' + partiteTaglia + ' partite CPU contro CPU per taglia, semi ' + semeBase + '..' + (semeBase + partiteTaglia - 1) + ', Normale, 90 s');
+      console.log('  --    ' + partiteTaglia + ' partite CPU contro CPU per taglia, semi ' + semeBase + '..' + (semeBase + partiteTaglia - 1) + ', Normale, tempo REGOLAMENTARE');
+      console.log('  --    (dal 26 agosto 2026 il tempo regolamentare scala col campo — durataPartita():');
+      console.log('  --     90 s a 5 contro 5, 126 a 7, 180 a 11. Vedi strumenti/_t-cronometro.js.)');
+      console.log('  --    AVVERTENZA SUL RIGHELLO: ' + partiteTaglia + ' partite hanno sigma ~9 punti sulla');
+      console.log('  --    frequenza degli 0-0. Questo e\' un PAVIMENTO anti-regressione, non un metro');
+      console.log('  --    fine: per giudicare una cura servono 100 partite (strumenti/_eventi.js).');
       /* salvataggio vergine: la rosa cresciuta nelle 18 partite del
          meta-gioco entrerebbe nella simulazione e staccherebbe questi
          numeri dalle ancore prese su pagina fresca */
@@ -556,9 +561,9 @@ const mediana = a => { const b = a.slice().sort((x, y) => x - y); const n = b.le
       /* [taglia, soglia %, ancora scritta] — le ragioni per esteso stanno
          nell'intestazione del file, le ancore sono del 20 agosto 2026 */
       const SOGLIE = [
-        [5, 40, 'misurato 10% (3/30); a meta\' fra il sano (10) e il rotto pre-toppa (73)'],
-        [7, 70, 'misurato 40% (12/30); pavimento anti-regressione contro l\'83-92% pre-toppa, NON salute'],
-        [11, 33, 'misurato 63% (19/30) e 38% (9/24): 52% sul mucchio — ROSSO APERTO finche\' la fisica non chiude la voce di PUNTO-DEL-LAVORO:138'],
+        [5, 40, 'ancora 10% (3/30, 20 ago); su 100 partite il gioco spedito fa 11% — il 5 contro 5 e\' sano'],
+        [7, 70, 'ancora 40% (12/30, 20 ago); su 100 partite il gioco spedito fa 8% col cronometro che scala (126 s): la soglia 70 e\' un pavimento vecchio, non la salute di oggi'],
+        [11, 33, 'era 52% sul mucchio e ROSSO da mesi. Chiuso il 26 agosto 2026, e non era intelligenza: era il CRONOMETRO — 90 s su un campo largo il doppio sono meta\' partita. Con durataPartita() (180 s a 11) su 100 partite: 23%, e i gol al minuto sono identici a prima. Vedi strumenti/_t-cronometro.js'],
       ];
       for (const [taglia, soglia, ancora] of SOGLIE) {
         let zeri = 0, rig = 0; const gol90 = [], tiri = [];

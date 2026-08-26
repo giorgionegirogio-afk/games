@@ -2743,7 +2743,7 @@ button:active{transform:scale(.96)}
         <button class="diff" data-d="2">Duro</button>
       </div>
       <div class="eti">Partita</div>
-      <button class="voce" id="btnSetTempo">DURATA PARTITA: 90&Prime; <small>90, 120 o 180 secondi</small></button>
+      <button class="voce" id="btnSetTempo">DURATA PARTITA: 90&Prime; <small>90, 120 o 180 secondi &mdash; a 7 e a 11 il campo &egrave; pi&ugrave; grande</small></button>
       <button class="voce sw" id="btnSetMoviola">MOVIOLA DOPO IL GOL: S&Igrave; <small>rivedi la rete al rallentatore</small></button>
       <div class="eti">Dati</div>
       <button class="voce" id="btnReset">AZZERA TUTTI I DATI <small>monete, campi, trofei, statistiche</small></button>
@@ -2946,6 +2946,27 @@ const DT = 1/60;                   // passo fisso
    secondi di gioco a sessanta campioni al secondo */
 const POSSESSO_MIN = 180;
 const MATCH_SEC = 90;
+/* =====================================================================
+   IL CRONOMETRO CONOSCE IL CAMPO (26 agosto 2026).
+
+   Novanta secondi su un campo da 1150 unita' e novanta secondi su un
+   campo da 2300 non sono la stessa partita: le gambe sono le stesse
+   (P_SPEED, e deve restare cosi' — sono gambe umane), quindi
+   l'attraversata costa 6,8 secondi a 5 contro 5 e 13,7 a 11, e in un
+   tempo uguale ci stanno la meta' delle azioni. Misurato su cento
+   partite a semi fissi col gioco spedito: a 90 secondi l'11 contro 11
+   finisce 0-0 nel 50% dei casi, a 180 nel 25% — e i gol AL MINUTO sono
+   gli stessi (0,43 contro 0,42). Non era un difetto del gioco: era la
+   domanda posta al cronometro sbagliato.
+
+   La durata scelta nel menu vale per il 5 contro 5. Le altre due taglie
+   la scalano col campo, come TIRO_ATTR scala l'attrito e KPASSO le
+   distanze. Con la scelta di serie escono 90, 126 e 180 secondi, che
+   sono — a due secondi — i tre valori che il menu gia' offriva.
+   ===================================================================== */
+function durataPartita(){
+  return Math.round((SAVE.durata || MATCH_SEC) * FW / 1150);
+}
 /* quote di riferimento del gioco aereo */
 const Z_SOPRA_TESTA = 26;          // oltre questa quota la palla passa sopra i corpi
 const Z_SOPRA_PORTIERE = 34;       // oltre questa quota il portiere non ci arriva: e' il pallonetto
@@ -7971,7 +7992,7 @@ function startMatch(mode, diff, opts){
   G.cpu=[false, G.mode===2?false:true];
   G.paused=false;
   G.kickTeam = Math.random()<0.5?0:1;
-  G.score=[0,0]; G.timeLeft=(SAVE.durata||MATCH_SEC); G.golden=false;
+  G.score=[0,0]; G.timeLeft=durataPartita(); G.golden=false;
   G.goldenT=0; G.rigori=null;
   G.stats={ tiri:[0,0], perfetti:[0,0], rubate:[0,0], falli:[0,0], parate:[0,0], gialli:[0,0], espulsi:[0,0], pallonetti:[0,0], volee:[0,0], possesso:[0,0], inPorta:[0,0], filtranti:[0,0], cross:[0,0], rovesciate:[0,0] };
   G.roveCPU=0;   // rate-limit: la CPU non tenta due rovesciate a partita, salvo fortuna
@@ -8159,7 +8180,7 @@ function addGoal(team){
     G.goalChi  = (pl && pl.nome) ? pl.nome : sq;
     G.goalNum  = pl ? (pl.numero!=null?pl.numero:pl.idx+1) : 0;
     G.goalIdx  = pl ? G.players.indexOf(pl) : -1;
-    const tot = (SAVE.durata||MATCH_SEC);
+    const tot = durataPartita();
     G.goalMin = G.golden ? 'SUPPL.' : fmtTime(Math.max(0, tot-G.timeLeft));
     G.golLog.push({ team, min:G.goalMin, chi:G.goalChi, num:G.goalNum,
                     auto:G.goalAuto, s0:G.score[0], s1:G.score[1] });
@@ -10907,8 +10928,24 @@ function fireShot(p, nx, ny, q, lob){
     /* perfetto: teso e angolato verso il palo lontano */
     G.stats.perfetti[t]++;
     if(t===0 && !G.cpu[0] && G.stats.perfetti[0]>=5) unlockAch('perfetti5');
-    const corner = (p.y<goalY?1:-1);      // incrocio opposto alla posizione
+    /* LA MIRA SCEGLIE LA CORSIA (26 ago 2026). L'incrocio si prendeva
+       sempre opposto alla propria posizione — il palo lontano, che e' la
+       regola giusta CONTRO IL PORTIERE. Ma prima del portiere ci sono
+       venti gambe, e su 297 tiri misurati il 57,6% moriva su un corpo.
+       Adesso, se l'altro incrocio ha un varco piu' lungo di almeno 60
+       unita' (tre volte il raggio del muro: un margine, non un
+       pareggio), si mira li'. Non toglie ne' aggiunge un solo tiro —
+       cambia la retta, non la decisione — e resta il palo lontano tutte
+       le volte che la differenza non c'e'. Zero sorteggi nuovi. */
+    let corner = (p.y<goalY?1:-1);        // incrocio opposto alla posizione
     const gx=t===0?FW-4:4;
+    {
+      const varcoDi = c => {
+        const dyv=(goalY + c*(GOAL_H/2-24))-p.y, dxv=gx-p.x, lv=Math.max(1,len(dxv,dyv));
+        return corsiaTiro(p, dxv/lv, dyv/lv);
+      };
+      if(varcoDi(-corner) > varcoDi(corner) + 60) corner = -corner;
+    }
     /* LA MIRA RIENTRA, e non e' un ammorbidimento: e' una correzione.
        Si mirava a ±57 dal centro (mezzaluce 75) e poi si aggiungeva un
        effetto a giro NELLO STESSO VERSO della mira. Misurata la y
@@ -11596,7 +11633,7 @@ function oraPartita(){
      volta che si spostano FARO_SOGLIE o FARO_RAMPA: e' l'unico posto del
      file dove l'ora e' scelta invece che contata. */
   if(!SAVE.moto) return 0.56;
-  const tot=(SAVE.durata||MATCH_SEC);
+  const tot=durataPartita();
   if(!(tot>0)) return 0.35;
   /* IL MENU E' LA SERA PIENA (tema 9). Stava a 0,35 — l'ora del primo
      terzo di partita — e dietro i pannelli restava un prato di
@@ -14562,6 +14599,36 @@ function zonaTiro(x, y, opGoalX){
 }
 
 /* =====================================================================
+   IL PRIMO CORPO NELLA CORSIA DEL TIRO — la stessa domanda che si fara'
+   updateBall fra un fotogramma, posta un fotogramma prima.
+
+   updateBall mura quando un corpo si trova a meno di P_R+B_R-2 dal
+   pallone mentre viaggia sopra le 420 unita'. Qui si chiede la stessa
+   cosa lungo tutta la retta: proiezione sul versore del tiro (quanto
+   avanti sta) e distanza dalla retta (quanto di lato). Chi sta dietro o
+   oltre il piano della porta non conta. Torna la distanza del primo
+   corpo utile, o un numero grande se la corsia e' sgombra.
+   ===================================================================== */
+function corsiaTiro(p, ux, uy){
+  const b=G.ball, gx=p.team===0?FW:0;
+  const sPorta = Math.abs(ux)>0.05 ? (gx-b.x)/ux : 1e9;
+  if(sPorta<=0) return 1e9;
+  const RC=P_R+B_R-2;
+  let primo=1e9;
+  for(let i=0;i<G.players.length;i++){
+    const o=G.players[i];
+    if(o.out>0 || o===p) continue;
+    const dx=o.x-b.x, dy=o.y-b.y;
+    const s=dx*ux+dy*uy;
+    if(s<=0 || s>=sPorta) continue;
+    if(Math.abs(dx*uy-dy*ux)>=RC) continue;
+    if(s<primo) primo=s;
+  }
+  return primo;
+}
+
+
+/* =====================================================================
    LA FINESTRA DI DISTANZA DEL CROSS, tutta dedotta (vedi l'intestazione).
    Nessuno di questi numeri e' scelto: escono da TIRO_ATTR, cioe' dalla
    taglia del campo, e da due soglie che il gioco gia' dichiara.
@@ -14844,7 +14911,20 @@ function aiCarrier(p, opGoalX, D){
        perche' in tre decimi il giocatore si e' mosso e un tiro mirato
        dove si stava e' un tiro storto.
        ============================================================= */
-    if(p.kickCd<=0 && anticipa(p, 'tiro', 0.30+Math.random()*0.16, sparaTiroCpu)){
+    /* LA CARICA CONOSCE LO SPAZIO (26 ago 2026). Il gesto restava lungo
+       0,30-0,46 s anche con un avversario a venticinque unita', e in quei
+       venti-ventotto fotogrammi il marcatore arrivava: misurato su 297
+       tiri, la pressione scendeva da 40 a 26 mentre si caricava, e il 67%
+       dei tiri murati entro 80 unita' aveva la corsia LIBERA oltre 60 nel
+       momento in cui si era deciso di tirare. Non era traffico d'area:
+       era l'attesa. Adesso la preparazione dura quanto il tempo che c'e'
+       — piena da 119 unita' in su, dove la conquista visiva del gesto
+       vale ancora tutta, e ridotta al tocco di prima a contatto, che e'
+       esattamente cio' che si vede fare a un calciatore pressato. Un
+       solo Math.random, come prima: il seme scorre uguale. */
+    const respiro = clamp((press-24)/95, 0, 1);
+    const durCar = 0.08 + respiro*(0.22+Math.random()*0.16);
+    if(p.kickCd<=0 && anticipa(p, 'tiro', durCar, sparaTiroCpu)){
       p.aiShotQ=q;                         // la qualita' si decide adesso, il tiro parte dopo
       p.aiActT=Math.max(p.aiActT, 0.50);   // non decide altro mentre carica
     }
@@ -33523,7 +33603,13 @@ function refreshImpostUI(){
     ' <small>scossa, coriandoli, transizioni</small>';
   $('btnSetDalt').innerHTML='ALTO CONTRASTO: '+(SAVE.dalt?'SÌ':'NO')+
     ' <small>daltonismo: kit ben separati</small>';
-  $('btnSetTempo').innerHTML='DURATA PARTITA: '+SAVE.durata+'″ <small>90, 120 o 180 secondi</small>';
+  /* LA VOCE DICE COSA SI STA SCEGLIENDO DAVVERO. Il numero del menu e' il
+     tempo del 5 contro 5: sul campo a 7 e su quello a 11 il cronometro
+     scala col campo (vedi durataPartita), e una voce che dicesse solo
+     «90 secondi» mentirebbe a chi gioca a undici. I due numeri accanto
+     sono contati, non scritti a mano. */
+  $('btnSetTempo').innerHTML='DURATA PARTITA: '+SAVE.durata+'″ <small>a 7 contro 7 '+
+    Math.round(SAVE.durata*1610/1150)+'″, a 11 contro 11 '+Math.round(SAVE.durata*2300/1150)+'″ — il campo e\' piu\' grande</small>';
   $('btnSetMoviola').innerHTML='MOVIOLA DOPO IL GOL: '+(SAVE.moviola?'SÌ':'NO')+
     ' <small>rivedi la rete al rallentatore</small>';
   /* la manopola smaltata segue lo stato scritto nel testo */
