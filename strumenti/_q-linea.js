@@ -409,9 +409,19 @@ function preparaScena(cfg) {
   const sotto = document.elementFromPoint(grande.x, grande.y);
   if (!sotto || sotto.id !== 'gioco')
     return { errore: 'sul disco (' + grande.x + ',' + grande.y + ') non c\'e\' la tela ma ' + (sotto ? sotto.tagName + '#' + sotto.id : 'niente') };
+  /* IL DISCO DEL CROSS, e da oggi la prova C guarda LUI (26 ago 2026).
+     Fino a ieri il cross col dito viveva sul disco PASSAGGIO, che sopra
+     STICK_SPRINT passava dal ramo comeCross di doFiltrante. Dal 23 agosto
+     L1.6 ha dato al cross un disco suo ('cross'), e dal 26 il disco
+     PASSAGGIO fa una cosa sola: mira e passa rasoterra (L1.4, la palla
+     alta e' stata tolta da li' apposta perche' era un doppione). Un
+     cancello che continuasse a cercare l'arco sul disco sbagliato non
+     misurerebbe il gioco: misurerebbe il proprio ricordo. */
+  const disCross = bt.find(c => c && c.act === 'cross') || null;
   return { pi, FW, FH, GOAL_H: c0.GOAL_H,
            px: players[pi].x, py: players[pi].y,
            grande: { x: grande.x, y: grande.y, r: grande.r, act: grande.act },
+           cross: disCross ? { x: disCross.x, y: disCross.y, r: disCross.r, act: disCross.act } : null,
            piccolo: { x: piccolo.x, y: piccolo.y, r: piccolo.r, act: piccolo.act } };
 }
 
@@ -673,14 +683,27 @@ function lcg(seme) { let s = seme >>> 0; return () => { s = (s * 1664525 + 10139
         /* fino alla maturazione dell'anticipo (PASS_CAR_U = 3 fotogrammi;
            uno in piu' perche' la lettura non consuma piu' il primo) */
         await passo(6);
+        /* IL DITO SI ALZA PRIMA DI CHIEDERE DOV'E' ANDATO IL PALLONE
+           (26 agosto 2026). Fino a ieri il calcio si leggeva col dito
+           ancora GIU', perche' il disco PASSAGGIO calciava alla
+           pressione. Con L1.4 quel verbo si MIRA, quindi parte al
+           rilascio, e chiedere «dove e' andato» prima di lasciare
+           faceva contare 36 scene su 36 come ROTTE — un cancello che
+           non misura niente e lo dichiara, ma che non misura niente.
+           Lo spostamento non altera la misura sul gioco che calcia alla
+           pressione: li' il calcio e' gia' dentro S.calci quando il dito
+           si alza, e la lettura dei pixel della linea resta dov'era,
+           cioe' col dito GIU', che e' l'unico momento in cui la linea
+           esiste. Verificato: il cancello resta verde sul gioco che
+           calcia alla pressione. */
+        await m.suR();
+        await passo(3);
         const calcio = await pag.evaluate(() => {
           const S = window.__sonda, k = window.__piScena;
           const miei = S.calci.filter(c => c.chi === k);
           const b = window.__test.ball;
           return miei.length ? { ang: Math.atan2(miei[0].vy, miei[0].vx), passTo: b.passTo } : null;
         });
-        await m.suR();
-        await passo(3);
         await m.muoviL(CASA_L.x + 8, CASA_L.y);
         await passo(1);
         tot++;
@@ -734,8 +757,9 @@ function lcg(seme) { let s = seme >>> 0; return () => { s = (s * 1664525 + 10139
       const cfg = { x: q.FW - 380 + (rnd() * 80 - 40), y: q.FH - 90 - rnd() * 30 };
       const rip = await pag.evaluate(preparaScena, cfg);
       if (rip.errore) { nulle++; continue; }
-      const P = rip.piccolo;
-      if (P.act !== 'through') { nulle++; continue; }
+      /* il disco del cross, non piu' quello del passaggio */
+      const P = rip.cross || rip.piccolo;
+      if (P.act !== 'cross') { nulle++; continue; }
       /* camera assestata e FOTO DI RIFERIMENTO del riquadro della corda;
          lo sprint si chiede DOPO lo scatto e la pressione arriva subito,
          cosi' fra foto e lettura passa un solo passo di corsa (< 1 px
@@ -780,11 +804,18 @@ function lcg(seme) { let s = seme >>> 0; return () => { s = (s * 1664525 + 10139
                  bordo: (innerWidth - window.__test.view.Ax) / window.__test.view.S2 };
       });
       await passo(5);
+      /* IL DITO SI ALZA PRIMA DI CHIEDERE SE IL PALLONE E' PARTITO, per
+         la stessa ragione della prova B: da L1.4 il disco PASSAGGIO
+         calcia al rilascio, e leggere prima faceva contare tutte e 12 le
+         scene come rotte. Sul gioco che calcia alla pressione il calcio
+         e' gia' in S.calci quando il dito si alza, quindi la misura non
+         cambia — e la lettura dei pixel dell'arco resta col dito GIU'. */
+      await m.suR();
+      await passo(3);
       const parte = await pag.evaluate(() => {
         const S = window.__sonda, k = window.__piScena;
         return S.calci.filter(c => c.chi === k).length > 0;
       });
-      await m.suR();
       const att = parte ? await pag.evaluate(() => window.__atterra()) : null;
       await m.muoviL(CASA_L.x + 8, CASA_L.y);
       await passo(1);

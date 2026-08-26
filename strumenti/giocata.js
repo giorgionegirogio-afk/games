@@ -236,7 +236,19 @@ function guardaPulsanti(a) {
      scritto meglio. */
   const gr = bt.reduce((a, z) => (z.r > a.r ? z : a), bt[0]);
   const pc = bt.filter(z => z !== gr)[0];
-  const ric = quale === 'grande' ? gr : pc;
+  /* SI PUO' CHIEDERE UN DISCO PER ATTO, non solo per taglia (26 ago
+     2026). Fino a ieri i dischi erano due e «grande/piccolo» bastava a
+     nominarli; dal 23 agosto L1.6 ne ha portati quattro, e un verbo puo'
+     essersi spostato di disco — il cross, per esempio, ha il suo. Chi
+     passa un nome che non e' 'grande' ne' 'piccolo' lo cerca per act, e
+     se non c'e' il banco lo DICE invece di premere il disco sbagliato. */
+  let ric;
+  if (quale === 'grande') ric = gr;
+  else if (quale === 'piccolo') ric = pc;
+  else {
+    ric = bt.find(z => z && z.act === quale);
+    if (!ric) return { errore: 'nessun disco offre l\'atto ' + quale + ': ci sono ' + bt.map(z => z.act).join(', ') };
+  }
   /* LA SECONDA SORGENTE */
   if (!Array.isArray(t.comandiTouch))
     return { errore: "__test.comandiTouch non esiste: con una sola sorgente non posso accorgermi di un export che mente sempre allo stesso modo" };
@@ -244,7 +256,17 @@ function guardaPulsanti(a) {
   if (!zone.length)
     return { errore: "il gioco non sta DIPINGENDO nessun pulsante in questo istante (comandiTouch e' vuoto di pulsanti): " +
                      'premerei un comando che non c\'e\' sullo schermo. Scena ' + (t.state || '?') };
-  const dip = zone.find(z => Math.abs(z.r - ric.r) < 0.5) ||
+  /* LE DUE SORGENTI SI APPAIANO PER VERBO, non per raggio (26 ago 2026).
+     L'appaiamento per raggio era univoco finche' i dischi erano due; dal
+     23 agosto L1.6 ne ha portati quattro e due di loro hanno lo STESSO
+     raggio, quindi find() prendeva il primo che capitava e confrontava la
+     posizione di un disco con quella di un altro: 84,59 px di scarto, e
+     il banco si fermava dicendo «una delle due mente» quando a mentire
+     era il suo appaiamento. L'identita' di un disco e' il verbo che
+     offre; il ripiego sul raggio resta per un file che non dichiarasse
+     l'atto. */
+  const dip = zone.find(z => ric.act && z.act === ric.act) ||
+              zone.find(z => Math.abs(z.r - ric.r) < 0.5) ||
               zone.reduce((a, z) => (z.r > a.r ? z : a), zone[0]);
   const dipY = dip.y - (dip.premuto ? AFF : 0);
   const d2 = Math.hypot(dip.x - ric.x, dipY - ric.y);
@@ -293,7 +315,19 @@ async function premiPulsante(cdp, pag, info, quale, tenutaMs, attoAtteso, extra)
     await dita.su(cdp, [{ x: ora.x, y: ora.y, id: extra.id }]);
   } else {
     await dito.giu(cdp, ora.x, ora.y);
-    await attesa(tenutaMs);
+    /* IL DITO PUO' TRASCINARE MENTRE TIENE (26 ago 2026). Serve da L1.4:
+       il disco PASSAGGIO non calcia piu' alla pressione, si MIRA col
+       trascinamento e parte al rilascio. Senza questo, «premi e aspetta»
+       misura l'appoggio sicuro e chiama filtrante un passaggio che
+       filtrante non e'. Chi non passa extra.trascina si comporta come
+       ieri, al bit. */
+    if (extra && extra.trascina) {
+      const T = extra.trascina, n = T.passi || 5;
+      for (let i = 1; i <= n; i++) {
+        await dito.sposta(cdp, ora.x + T.dx * i / n, ora.y + T.dy * i / n);
+        await attesa(Math.max(1, Math.round(tenutaMs / n)));
+      }
+    } else await attesa(tenutaMs);
     await dito.su(cdp);
   }
   return ora;
@@ -418,7 +452,18 @@ const GIOCATE = {
          (nessuna levetta attiva): la quiete ha gia' girato la faccia del
          comandato verso un compagno, perche' la filtrante pretende un
          bersaglio con dot > 0,5. */
-      return premiPulsante(cdp, pag, info, 'piccolo', 80, 'through');
+      /* IL DITO TRASCINA, DAL 26 AGOSTO 2026 (L1.4). Fino a ieri bastava
+         posare il dito 80 ms: doFiltrante partiva alla pressione e la
+         mira veniva dal corpo. Adesso il disco PASSAGGIO si MIRA — sotto
+         R_ARMA (22 px) il rilascio fa l'APPOGGIO SICURO, che non e' una
+         filtrante e non deve contarsi come tale. Quaranta px verso il
+         compagno: sopra la soglia d'armo, sotto la mira piena (52), e
+         ben dentro R_ANNULLA (96). La direzione la da' la quiete, che ha
+         gia' girato il comandato verso un compagno: si trascina lungo la
+         sua faccia. */
+      const f = info.faccia || { x: 1, y: 0 };
+      return premiPulsante(cdp, pag, info, 'piccolo', 120, 'through',
+        { trascina: { dx: f.x * 40, dy: f.y * 40, passi: 5 } });
     },
   },
   cross: {
@@ -447,7 +492,14 @@ const GIOCATE = {
         await dita.sposta(cdp, [{ x: AX, y: AY + Math.round(SPINTA * i / 5), id: 1 }]);
         await attesa(16);
       }
-      const r = await premiPulsante(cdp, pag, info, 'piccolo', 80, 'through',
+      /* IL DISCO E' QUELLO DEL CROSS, dal 26 agosto 2026. Il verbo si e'
+         spostato: fino al 23 agosto il cross col dito era il disco
+         PASSAGGIO premuto con lo scatto tenuto (doFiltrante -> comeCross);
+         L1.6 gli ha dato un disco suo ('cross') e L1.4 ha tolto la palla
+         alta dal disco PASSAGGIO, che adesso mira e passa rasoterra. Un
+         banco che continuasse a premere il disco vecchio misurerebbe il
+         proprio ricordo. Lo scatto tenuto resta: e' la scena del cross. */
+      const r = await premiPulsante(cdp, pag, info, 'cross', 80, 'cross',
         { id: 2, altreDita: [{ x: AX, y: AY + SPINTA, id: 1 }] });
       await dita.su(cdp, []);        // e adesso si alza anche la levetta
       return r;

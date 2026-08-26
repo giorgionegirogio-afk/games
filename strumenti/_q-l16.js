@@ -445,10 +445,20 @@ const n2 = v => (v === null || v === undefined || !isFinite(v)) ? 'n/d' : (Math.
       const d = disco(await dischi(), 'through');
       if (!d) { nulla = true; esiti.push({ id: 'F', nome: 'PASSAGGIO', ok: null }); }
       else {
+        /* IL DITO SI ALZA PRIMA DI CONTARE (26 ago 2026). Questa prova
+           esiste per dire che il verbo di ieri non e' morto nel trasloco
+           dei dischi, e fino a ieri lo diceva cosi': posa il dito,
+           aspetta otto fotogrammi, conta. Bastava perche' il disco
+           PASSAGGIO calciava alla PRESSIONE. Con L1.4 quel verbo si mira
+           e parte al RILASCIO — contare col dito ancora giu' leggeva
+           zero calci e chiamava «regressione» un verbo vivo. Adesso si
+           conta dopo aver lasciato, che e' quando il calcio esiste in
+           tutti e due i contratti: su un gioco che calcia alla pressione
+           il calcio e' gia' dentro __calci quando il dito si alza. */
         await dita.posa(1, d.x, d.y);
         await passo(8);
-        const r = await pag.evaluate(() => ({ calci: window.__calci.length }));
         await dita.alzaTutte(); await passo(6);
+        const r = await pag.evaluate(() => ({ calci: window.__calci.length }));
         const ok = r.calci === 1;
         esiti.push({ id: 'F', nome: 'PASSAGGIO calcia ancora (non regressione)', ok });
         console.log('\nF) NON REGRESSIONE — PASSAGGIO: calci ' + r.calci);

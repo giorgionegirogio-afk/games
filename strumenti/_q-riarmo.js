@@ -59,9 +59,40 @@
          file --gioco, atteso 8/8 (si salta con --senza-l11, e allora
          l'esito D e' NON PROVATO, non verde).
 
+   ATTENZIONE, QUESTO CANCELLO E' RUMOROSO SU A1 E B2 — misurato il 26
+   agosto 2026, ed e' il primo numero da leggere prima di credergli.
+   Tre corse dello STESSO file, senza cambiare un byte fra l'una e
+   l'altra:
+
+     gioco del 26 agosto   A1  VERDE VERDE ROSSO
+                           B2  VERDE ROSSO VERDE
+     gioco del giorno prima A1  VERDE VERDE  —
+                           B2  VERDE ROSSO  —
+
+   Oscillano tutti e due, su tutti e due i file: un rosso di A1 o di B2
+   preso da una corsa sola non accusa nessuno. Sono le due prove che
+   dipendono da un gesto lungo del dito (deriva di 32 px in 0,7 s,
+   trascinamento voluto dopo il ri-armo) con le dita di protocollo, e
+   il tempo di parete fra un touchMove e l'altro non e' fermo. Chi vuole
+   giudicare A1 o B2 faccia TRE corse per file e confronti le maggioranze,
+   oppure ripari prima il banco: fino a quel giorno il cancello vale
+   come pavimento su A2/A3/B1/B3/D e come indicazione sugli altri due.
+
+   E UNA RIPARAZIONE VERA, sempre del 26 agosto: il disco storico si
+   sceglieva per RAGGIO MINIMO, e dal 23 agosto L1.6 ha portato i dischi
+   a quattro — il minimo non e' piu' il disco PASSAGGIO/CAMBIO (r30) ma
+   uno dei nuovi (r26). Le prove A2, B2, A3 e B3 si fermavano da sole
+   dicendo «il disco piccolo offre press»: venti prove nulle su venti.
+   Adesso si sceglie per raggio DICHIARATO (30), col ripiego sul minimo
+   per un file di ieri. Da quella riparazione A2 e' tornato verde sul
+   gioco del giorno prima, e A3/B3 sono passate da NULLE a verdi su
+   quello nuovo: il cancello aveva smesso di misurare senza dirlo.
+
    COME SI LEGGE UN VERDETTO. Effetti della simulazione: p.slide>=0
    (scritto da lanciaScivolata), p.raddoppio>0 (scritto da
-   comandaRaddoppio), p.chiamataT>0, p.chargeKind==='passo', e i calci
+   comandaRaddoppio), p.chiamata>0 (il cronometro di L2.3, che dal 26
+   agosto sostituisce il campo chiamataT mai nato), p.chargeKind==='passo',
+   e i calci
    contati avvolgendo kickBall — l'imbuto unico di tutti i calci, lo
    stesso di _q-l11.js. La validita' di ogni scena e' CHIESTA AL GIOCO
    (l'etichetta del disco e l'atto sotto il dito prima e dopo ogni
@@ -226,7 +257,17 @@ function installaAiuti() {
       }
       const bt = T.pulsanti(0);
       const grande = bt.reduce((a, k) => (k.r || 0) > (a.r || 0) ? k : a, bt[0]);
-      const piccolo = bt.reduce((a, k) => (k.r || 0) < (a.r || 0) ? k : a, bt[0]);
+      /* IL DISCO STORICO SI SCEGLIE PER RAGGIO DICHIARATO, NON PER
+         MINIMO (26 ago 2026, la stessa riparazione gia' fatta in
+         _q-linea.js:407). Dal 23 agosto L1.6 ha portato i dischi a
+         quattro, e il piu' piccolo non e' piu' il disco storico
+         PASSAGGIO/CAMBIO (r30) ma uno dei nuovi (r26): questo banco
+         sceglieva quello e poi si fermava da solo dicendo «il disco
+         piccolo offre press» — venti prove nulle su venti, cioe' un
+         cancello che non misurava niente. Il ripiego sul minimo resta
+         per un file di ieri che non avesse i dischi nuovi. */
+      const piccolo = bt.find(k => (k.r | 0) === 30) ||
+                      bt.reduce((a, k) => (k.r || 0) < (a.r || 0) ? k : a, bt[0]);
       const sotto = document.elementFromPoint(grande.x, grande.y);
       if (!sotto || sotto.id !== 'gioco') return { errore: 'sul disco non c\'e\' la tela ma ' + (sotto ? sotto.tagName + '#' + sotto.id : 'niente') };
       return { pi, grande: { x: grande.x, y: grande.y, act: grande.act },
@@ -259,7 +300,17 @@ function installaAiuti() {
         if (d < 250) { const l = Math.max(1, d); q.x = b.x + (q.x - b.x) / l * 260; q.y = b.y + (q.y - b.y) / l * 260; }
       }
       const bt = T.pulsanti(0);
-      const piccolo = bt.reduce((a, q2) => (q2.r || 0) < (a.r || 0) ? q2 : a, bt[0]);
+      /* IL DISCO STORICO SI SCEGLIE PER RAGGIO DICHIARATO, NON PER
+         MINIMO (26 ago 2026, la stessa riparazione gia' fatta in
+         _q-linea.js:407). Dal 23 agosto L1.6 ha portato i dischi a
+         quattro, e il piu' piccolo non e' piu' il disco storico
+         PASSAGGIO/CAMBIO (r30) ma uno dei nuovi (r26): questo banco
+         sceglieva quello e poi si fermava da solo dicendo «il disco
+         piccolo offre press» — venti prove nulle su venti, cioe' un
+         cancello che non misurava niente. Il ripiego sul minimo resta
+         per un file di ieri che non avesse i dischi nuovi. */
+      const piccolo = bt.find(q2 => (q2.r | 0) === 30) ||
+                      bt.reduce((a, q2) => (q2.r || 0) < (a.r || 0) ? q2 : a, bt[0]);
       const sotto = document.elementFromPoint(piccolo.x, piccolo.y);
       if (!sotto || sotto.id !== 'gioco') return { errore: 'sul disco non c\'e\' la tela ma ' + (sotto ? sotto.tagName + '#' + sotto.id : 'niente') };
       return { pi, k, piccolo: { x: piccolo.x, y: piccolo.y, act: piccolo.act } };
