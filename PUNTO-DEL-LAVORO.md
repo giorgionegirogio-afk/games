@@ -1,17 +1,25 @@
 # Dove siamo, e cosa manca
 
-Aggiornato al 18 agosto 2026. Questo file serve a riprendere senza rileggere
+Aggiornato al **27 agosto 2026**. Questo file serve a riprendere senza rileggere
 niente altro.
 
-**Ramo:** `main`. **Ultimo commit:** `60ef759`. Il lavoro di due giornate intere
-è **non committato**: `CALCETTO-il-gioco.html` più una ventina di strumenti.
-Verificare coi cancelli prima di committare.
+**Ramo:** `main`, tutto committato. **Il gioco adesso:** 1938699 byte, md5
+`6d7fabecdd0cf88295b26e121afbe895`. **Cancelli: 14 su 14 verdi, zero deroghe rimaste** — le due
+note aperte che restavano (`--nota-aperta ofl` e `--nota-aperta nascosto`) sono
+cadute il 26 agosto, il giorno che le loro stesse righe avevano già scritto.
 
-**Il gioco adesso:** 1.681.472 byte, md5 `d9e0f8336742039642fcb8bd18bdaf6f`.
-Tre toppe applicate il 18 agosto, in fila e verificate una per una: l'identità
-delle squadre, l'ombra che porta la posa, l'11 contro 11 che non tirava. Costo
-delle tre insieme, misura appaiata: **fra −0,5% e +0,9%, col segno dichiarato
-non sicuro** — cioè indistinguibile da zero.
+## La giornata del 26-27 agosto, in otto righe
+
+| | cosa | misura |
+|---|---|---|
+| 1 | **L'11 contro 11 non aveva un difetto d'intelligenza: aveva un difetto di OROLOGIO.** Sei cure d'IA bocciate in fila con lo stesso profilo erano l'indizio. Novanta secondi su un campo largo il doppio sono mezza partita | 0-0 dal **50% al 22%** (100 partite); i gol *al minuto* restano identici |
+| 2 | Il **tiro non aspetta più il difensore**: la carica durava 0,30-0,46 s anche a contatto, e il marcatore arrivava durante | precisione VERA 7 → 11%, parate 0,38 → 0,49 |
+| 3 | **Cinque toppe ferme dal 20 agosto** entrano: torneo e stagione a 7 e a 11, la licenza OFL a bordo, il salvataggio che sopravvive, l'audio che tace in tasca, zero nomi di concorrenti | il cancello del meta-gioco: «il chiodo del 5v5 è saltato» |
+| 4 | **Le reti vanno a chi le fa** (erano tutte all'uomo di indice 1) | 20 gol su **4** marcatori invece che su 1 |
+| 5 | **La lavagnetta dice tutto quello che il saldo incassa** (i premi dei trofei si pagavano fuori lista) | partite col conto storto: 4 su 14 → **0** |
+| 6 | **Il passaggio si mira col dito** (L1.4), e la linea di guida lo promette | `_q-linea` 5/5, `_q-l16` 6/6, `giocata` 7/7 |
+| 7 | **L'avvio era già a posto**: lo sforo veniva dal banco rallentato 4× | **1861 ms** sul telefono vero contro un tetto di 2000 |
+| 8 | **Due strumenti ciechi e uno rumoroso** trovati e curati: il contrasto delle divise (dispersione 0,86 su soglia 3,00), quattro banchi che sceglievano il disco per raggio, `_q-riarmo` che oscilla su due prove | tutti verificati ancora verdi sul gioco di ieri |
 
 ---
 
