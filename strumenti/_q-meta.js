@@ -543,6 +543,49 @@ const mediana = a => { const b = a.slice().sort((x, y) => x - y); const n = b.le
     }
     di([5, 7, 11].includes(tagliaTour) && [5, 7, 11].includes(tagliaSea), 'le partite del meta-gioco hanno una taglia legale', tagliaTour + '/' + tagliaSea);
 
+    /* --------------- SEZIONE 2 bis — LE RETI VANNO A CHI LE HA FATTE ------------
+       Il censimento del 20 agosto (§3.5.1 voce 7) aveva trovato che TUTTE
+       le reti della squadra del giocatore finivano sull'uomo di indice 1
+       della rosa salvata, chiunque avesse segnato — e la schermata della
+       rosa e' proprio quella in cui il gioco promette che i suoi undici
+       sono persone diverse. Curato il 26 agosto (strumenti/_t-marcatori.js)
+       leggendo il registro delle reti, che adesso porta anche l'indice del
+       marcatore. Questo controllo esiste perche' il difetto non torni: la
+       regola di casa dice che ogni difetto trovato diventa un controllo.
+       Si gioca CPU contro CPU per avere reti da attribuire, poi si spegne
+       il flag e si chiama a mano faiCrescereRosa — che esce subito se
+       G.cpu[0] e' acceso, ed e' proprio lei la cosa da misurare.
+       Misurato il 26 agosto su 14 partite a semi 20260803..20260816:
+       prima 20 gol su UN giocatore, dopo 20 gol su QUATTRO (11/6/2/1, gli
+       attaccanti davanti ai difensori) e nessuna rete persa per strada. */
+    {
+      const m = await pag.evaluate(async () => {
+        const t = window.__test;
+        t.resetSave(); t.save.tutorialDone = 1;
+        let sulTabellone = 0, senzaIndice = 0;
+        for (let i = 0; i < 12; i++) {
+          window.__caso.semina((20260803 + i) >>> 0);
+          t.startMatch(1, 1);
+          t.setCpuVsCpu(true);
+          let sim = 0;
+          while (t.state !== 'end' && sim < 600) { t.simulate(10); sim += 10; }
+          G.cpu[0] = false;
+          sulTabellone += G.score[0];
+          senzaIndice += (G.golLog || []).filter(g => g.idx === undefined || g.idx === null).length;
+          faiCrescereRosa();
+        }
+        const rosa = (t.save.rosa || []).map(r => r.gol | 0);
+        return { rosa, sulTabellone, senzaIndice, inRosa: rosa.reduce((s, x) => s + x, 0) };
+      });
+      const conGol = m.rosa.filter(g => g > 0).length;
+      di(m.senzaIndice === 0, 'ogni rete del registro sa chi l\'ha segnata', m.senzaIndice + ' senza indice');
+      di(m.inRosa === m.sulTabellone, 'nessuna rete si perde per strada fra tabellone e rosa',
+         m.sulTabellone + ' sul tabellone, ' + m.inRosa + ' in rosa');
+      di(m.rosa.length === 0 || m.sulTabellone === 0 || conGol >= 2,
+         'le reti sono di piu\' di un giocatore (non tutte all\'indice 1)',
+         conGol + ' marcatori su ' + m.rosa.length + ' in rosa: [' + m.rosa.join(', ') + ']');
+    }
+
     /* --------------- SEZIONE 3 — il pavimento 0-0 alle tre taglie --------------- */
     if (treTaglie) {
       console.log('\n  -- le tre taglie: il pavimento sulle partite 0-0 --');

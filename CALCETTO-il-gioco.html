@@ -8353,8 +8353,14 @@ function addGoal(team){
     G.goalIdx  = pl ? G.players.indexOf(pl) : -1;
     const tot = durataPartita();
     G.goalMin = G.golden ? 'SUPPL.' : fmtTime(Math.max(0, tot-G.timeLeft));
+    /* L'INDICE DI CHI HA SEGNATO entra nel registro (26 ago 2026).
+       G.goalIdx e' gia' calcolato tre righe piu' su — G.players.indexOf
+       del giocatore che attribuisciRete ha riconosciuto — e finora
+       moriva col fotogramma successivo. Serve a fine partita, quando la
+       rosa salvata deve sapere a chi accreditare la rete: senza di lui
+       faiCrescereRosa dava tutto all'uomo di indice 1. */
     G.golLog.push({ team, min:G.goalMin, chi:G.goalChi, num:G.goalNum,
-                    auto:G.goalAuto, s0:G.score[0], s1:G.score[1] });
+                    auto:G.goalAuto, idx:G.goalIdx, s0:G.score[0], s1:G.score[1] });
   }
   /* cinematica: slow-motion, il pallone prosegue e gonfia la rete */
   G.goalCine = { side, vx:b?b.vx:0, vy:b?b.vy:0, done:false };
@@ -33326,7 +33332,38 @@ function faiCrescereRosa(){
     const nomeAttr=(ATTRIBUTI.find(a=>a.k===scelto.k)||{}).nome||scelto.k;
     r.ultimaCrescita='+1 '+nomeAttr;
   }
-  if(G.score[0]>0) SAVE.rosa[1].gol=(SAVE.rosa[1].gol|0)+G.score[0];
+  /* =====================================================================
+     LE RETI VANNO A CHI LE HA FATTE (26 ago 2026).
+     Qui c'era: if(G.score[0]>0) SAVE.rosa[1].gol += G.score[0], cioe'
+     tutte le reti della squadra all'uomo di indice 1, chiunque avesse
+     segnato — e la schermata della rosa e' proprio quella in cui il
+     gioco promette che i suoi undici sono persone diverse. Il nome
+     giusto lo si aveva gia': attribuisciRete lo trova a ogni gol
+     risalendo la finestra dei tocchi, e da oggi l'indice viaggia nel
+     registro delle reti. Il legame fra campo e rosa e' diretto (vedi la
+     riga che copia SAVE.rosa[i] dentro il giocatore i), quindi l'indice
+     del modulo e' l'indice della rosa.
+     Non diventano gol di nessuno dei miei: le autoreti (di chiunque) e
+     le reti della squadra avversaria. I tiri della lotteria dal
+     dischetto non passano da addGoal e non entrano nel registro, come
+     nel calcio vero. */
+  let accreditate=0;
+  if(Array.isArray(G.golLog)){
+    for(const g of G.golLog){
+      if(!g || g.team!==0 || g.auto) continue;
+      const pl = (g.idx>=0 && G.players[g.idx]) ? G.players[g.idx] : null;
+      if(!pl || pl.team!==0) continue;
+      const r = SAVE.rosa[pl.idx];
+      if(!r) continue;
+      r.gol=(r.gol|0)+1; accreditate++;
+    }
+  }
+  /* LA GUARDIA: se il tabellone dice che abbiamo segnato e il registro
+     non sa dirci da chi — una rete arrivata per una strada che non passa
+     da addGoal, oggi inesistente — le reti non si perdono. Si contano
+     come si contavano ieri, e questo ramo e' il posto dove si scoprira'
+     che quella strada e' nata. */
+  if(G.score[0]>accreditate) SAVE.rosa[1].gol=(SAVE.rosa[1].gol|0)+(G.score[0]-accreditate);
 }
 
 /* ---------- schermata STAGIONE ---------- */
