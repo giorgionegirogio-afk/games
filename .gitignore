@@ -95,3 +95,10 @@ _forno2/
 _forno3/
 _video/
 _analisi/agente*.md.bak
+
+# materiale di terzi tenuto in locale per il confronto: NON deve entrare nel
+# repository. Il mandato dice "senza copyright", e un APK altrui committato
+# sarebbe esattamente il contrario.
+com_ea_gp_fifamobile*.apk
+*_fifamobile*.apk
+fcm-estratto/
