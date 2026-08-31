@@ -586,6 +586,11 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
 .sfris{font-family:var(--cond);font-weight:700;font-size:17px;color:var(--gesso);white-space:nowrap}
 .sfris i{font-style:normal;color:var(--grigio);margin:0 3px}
 .sfriga .fbtn{padding:5px 10px;font-size:11px;margin:0}
+/* MENTRE LA RETE GIRA SI VEDE: CERCA AVVERSARIO e GUARDA ignoravano il
+   tocco in silenzio finche' il flag occupato di Sfida era alzato. Il
+   bottone occupato adesso e' mezzo spento e non prende il dito; la
+   classe la mette e la toglie Sfida.impegna (31 agosto 2026) */
+.sf-occupato{opacity:.45;pointer-events:none}
 .clariga{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;
   background:var(--ardesia);border:1px solid var(--linea);padding:6px 12px;min-width:0}
 .clariga.io{border-color:var(--gesso);background:#22322b}
@@ -1251,22 +1256,9 @@ body.barra #gearBtn{display:none}
   background:var(--gesso);
 }
 
-/* selettore campo compatto (schermata GIOCA) */
-.field-row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:470px;margin:0 auto}
-.fchip{
-  font-family:var(--cond);font-weight:700;font-size:12.5px;letter-spacing:.07em;text-transform:uppercase;
-  color:var(--grigio);background:transparent;border:1px solid var(--linea);padding:7px 9px;cursor:pointer;
-  display:inline-flex;align-items:center;gap:5px;
-}
-.fchip.sel{background:var(--gesso);border-color:var(--gesso);color:#12210f;font-weight:700}
-/* UNO STATO DISATTIVATO DEVE RESTARE LEGGIBILE. Grigio al 40% su verde
-   molto scuro voleva dire che IL TETTO e IL TORNEO NOTTURNO sparivano su
-   un telefono in esterno. Qui il chip bloccato ha un fondo piu' chiaro del
-   fondo pagina, testo grigio chiaro, e soprattutto il PREZZO addosso:
-   dice cosa costa invece di dire soltanto che non ce l'hai. */
-.fchip.lock{background:rgba(255,255,255,.055);border-color:#2a4d3a;color:#b9c7bd}
-.fchip.lock .pz{font-family:var(--cond);font-weight:700;color:var(--oro);letter-spacing:.04em}
-.fchip.lock svg{opacity:.9}
+/* qui viveva il selettore campo compatto della schermata GIOCA: orfano,
+   perche' l'elemento che lo ospitava non esiste piu' in pagina; il ramo
+   JS che lo generava esce con questa stessa toppa (31 agosto 2026) */
 
 .rosa-intro{color:var(--grigio);font-size:13.5px;max-width:700px;margin:0 auto 8px;line-height:1.5}
 .rosa-intro b{color:var(--gesso)}
@@ -1403,7 +1395,6 @@ body.barra #gearBtn{display:none}
      campo e' la parte che si compra, il piazzale attorno no */
   .fcard canvas{height:86px;object-fit:cover}
   .fbtn{font-size:11.5px;padding:5px 4px}
-  .campi-resta{margin:-8px 0 6px}
   .campi-desc{margin:0 auto 8px}
 }
 /* descrizione del campo in uso: una riga sola, sotto l'intestazione */
@@ -1412,10 +1403,12 @@ body.barra #gearBtn{display:none}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .campi-desc b{font-family:var(--cond);font-weight:700;letter-spacing:.08em;
   text-transform:uppercase;color:var(--gesso)}
-/* quanti campi restano da sbloccare: la pastiglia delle monete da sola non
-   dice a che cosa servano */
-.campi-resta{font-family:var(--cond);font-weight:700;font-size:11px;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--grigio);margin:-10px 0 12px}
+/* la riga onesta del pacchetto: sotto il cartello, dice quanto costano
+   i sette campi INSIEME al negozio — il numero lo scrive buildCampiUI
+   leggendo la costante NEGOZIO, mai a mano (31 agosto 2026) */
+.campi-nego{font-family:var(--cond);font-weight:600;font-size:12.5px;line-height:1.3;
+  color:var(--grigio);max-width:640px;margin:0 auto 10px}
+.campi-nego b{font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gesso)}
 /* colonna: la descrizione si allunga quanto vuole, il bottone resta
    incollato al fondo — cosi' i tre bottoni sono sulla stessa linea */
 .fcard{
@@ -2106,9 +2099,9 @@ input{user-select:text;-webkit-user-select:text}
 }
 #splash.fade{opacity:0;pointer-events:none}
 .spl-kick{font-family:var(--mono);font-size:12px;letter-spacing:.32em;color:var(--grigio);text-transform:uppercase;animation:splUp .7s .1s both}
-.spl-logo{font-family:var(--nero);font-weight:900;font-size:clamp(56px,17vw,150px);line-height:.9;color:var(--gesso);text-shadow:5.6px 2.0px 0 rgba(4,12,8,.62);margin:14px 0 10px}
-.spl-logo b{color:var(--tu);font-weight:900}
-.spl-logo i{font-style:normal;display:inline-block;opacity:0;animation:splChalk .42s both}
+/* il titolo a lettere HTML dello splash non ha piu' markup: il logo e'
+   l'SVG qui sotto, e l'animazione splChalk resta perche' e' lei ad
+   accenderlo (31 agosto 2026) */
 .spl-line{height:6px;width:min(420px,70vw);background:var(--ambra);transform:scaleX(0);transform-origin:left;animation:splLine .55s 1.05s both}
 .spl-sub{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--grigio);margin-top:16px;text-transform:uppercase;animation:splUp .6s 1.5s both}
 @keyframes splChalk{
@@ -2910,7 +2903,7 @@ button:active{transform:scale(.96)}
   <div class="spl-kick">DOPOLAVORO FC PRESENTA</div>
   <svg class="spl-logosvg" viewBox="0 0 634 152" role="img" aria-label="CALCETTO"><use href="#gLogoCal"/></svg>
   <div class="spl-line"></div>
-  <div class="spl-sub">tocca per entrare</div>
+  <div class="spl-sub">tocca per entrare &mdash; o il cancello si apre da solo</div>
 </div>
 
 <!-- ============ TRANSIZIONE ============ -->
@@ -3070,6 +3063,7 @@ button:active{transform:scale(.96)}
       squadra.</b> Questo codice &egrave; l&rsquo;unico modo di portarla altrove: copialo
       e tienilo da parte.
       <input id="sfCodMio" readonly spellcheck="false" aria-label="il tuo codice di trasferimento">
+      <div class="sf-nota hidden" id="sfCodAiuto"></div>
       <div class="sf-nota">Sull&rsquo;altro telefono incolla qui sotto il codice. Da quel momento &egrave; quel telefono a essere questa squadra.</div>
       <input id="sfCodIn" autocomplete="off" spellcheck="false" placeholder="incolla qui il codice" aria-label="codice da usare">
       <button class="fbtn paga" id="btnSfCodUsa">USA IL CODICE</button>
@@ -3303,7 +3297,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
         </div>
       </div>
     </div>
-    <div class="frase stretta">&laquo;La partita di calcetto del dopolavoro, compressa in <b>90 secondi</b>. Chi legge il tempo dell'altro, <b>segna</b>.&raquo;</div>
+    <div class="frase stretta">&laquo;La partita di calcetto del dopolavoro, compressa nei <b>90 secondi</b> della gabbia &mdash; sui campi grandi il cronometro cresce col campo. Chi legge il tempo dell'altro, <b>segna</b>.&raquo;</div>
     <!-- I due modi di giocare e l'uscita stanno nella barra agganciata al
          fondo: INDIETRO tagliato a meta' dal bordo era l'ultima cosa che
          si vedeva di questa schermata. -->
@@ -3359,7 +3353,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
          piega: prima l'unico pulsante che si vedeva era TORNA AL MENU, cioe'
          l'unico che non fa giocare. -->
     <div class="azioni">
-      <button class="btnA" id="btnTourPlay">GIOCA <small id="tourPlaySub"></small></button>
+      <button class="btnA" id="btnTourPlay">GIOCA</button>
       <button class="btnA sec" id="btnBackTorneo">TORNA AL MENU</button>
     </div>
   </div>
@@ -3405,12 +3399,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
          eroi ce li ha gia', e sono otto — le anteprime dei campi, dipinte
          con lo stesso pennello della partita. Un nono oggetto ricco non
          aggiungeva gerarchia, la toglieva. -->
-    <h1 class="sotto-titolo" id="campiNome">CAMPI</h1>
+    <h1 class="sotto-titolo">CAMPI</h1>
     <!-- 'ANCORA 7 DA SBLOCCARE' SE N'E' ANDATA: era una riga di testo che
          contava i lucchetti disegnati due centimetri piu' sotto. Il conto
          lo fanno le schede, che sono la cosa meglio disegnata del prodotto
-         — e quei trenta pixel di altezza servono al cartello. -->
-    <div class="campi-resta hidden" id="campiResta"></div>
+         — e quei trenta pixel di altezza servono al cartello. Il div che
+         la ospitava, rimasto nascosto per sempre, e' uscito insieme allo
+         scrittore JS che continuava a riempirlo (31 agosto 2026). -->
     <!-- IL CARTELLO SCRITTO A MANO — l'oggetto-eroe di questa schermata.
          Il commento qui sopra spiegava perche' il tabellone di compensato
          era stato provato e tolto: occupava 155 px IN PIU', spingendo i
@@ -3428,6 +3423,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
         <div class="cart-desc" id="campiDesc"></div>
       </div>
     </div>
+    <!-- la riga onesta del pacchetto (31 agosto 2026): compare solo se
+         il PACCHETTO CAMPI non e' posseduto e resta qualcosa da
+         sbloccare; il testo lo scrive buildCampiUI -->
+    <div class="campi-nego hidden" id="campiNego"></div>
     <div class="cards" id="fieldCards"></div>
     <div style="height:16px"></div>
     <div class="azioni"><button class="btnA sec" id="btnBackCampi">TORNA ALLO SPOGLIATOIO</button></div>
@@ -3680,13 +3679,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     <div class="lavagna lav-mister">
       <div class="lav-corpo">
         <div class="lav-kick">La lavagna del mister</div>
-        <p><b>5 contro 5 in gabbia</b>, portiere compreso: le sponde tengono il pallone sempre in gioco. In amichevole si sale anche a <b>7 contro 7</b> e <b>11 contro 11</b>, su campi pi&ugrave; grandi. <b>90 secondi</b>; sul pareggio <b>golden goal</b> &mdash; il prossimo gol vince &mdash; e dopo quaranta secondi si decide <b>dal dischetto</b>. Controlli sempre il tuo uomo pi&ugrave; vicino al pallone: anello e freccia lo segnalano, gli altri si muovono da soli.</p>
+        <p><b>5 contro 5 in gabbia</b>, portiere compreso: le sponde tengono il pallone sempre in gioco. Si sale anche a <b>7 contro 7</b> e <b>11 contro 11</b>, su campi pi&ugrave; grandi &mdash; la taglia scelta in GIOCA vale anche per TORNEO e STAGIONE. <b>90 secondi</b> nella gabbia, di pi&ugrave; sui campi grandi; sul pareggio <b>golden goal</b> &mdash; il prossimo gol vince &mdash; e dopo quaranta secondi si decide <b>dal dischetto</b>. Controlli sempre il tuo uomo pi&ugrave; vicino al pallone: anello e freccia lo segnalano, gli altri si muovono da soli.</p>
         <h3>I gesti, alla lavagna</h3>
         <div class="gessi">
           <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path d="M16 40l12 14m0-14L16 54"/><path d="M92 12l12 14m0-14L92 26"/><path class="trat" d="M32 44 Q62 36 88 24"/><path d="M88 24l-9 1m9-1l-4 8"/><circle class="palla" cx="30" cy="46" r="3.6"/></svg>
             <b class="gn">Passaggio</b><span class="gt">pulsante <b>PASSA</b><span class="soloKb"> &middot; <kbd>C</kbd></span> &mdash; palla al pi&ugrave; smarcato, ai piedi</span></div>
           <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path d="M22 26l12 14m0-14L22 40"/><circle class="lieve" cx="28" cy="33" r="12"/><circle class="lieve" cx="28" cy="33" r="18" opacity=".5"/><path d="M46 33 Q72 31 96 30"/><path d="M96 30l-9-4m9 4l-8 5"/><path d="M104 6h11v50h-11"/></svg>
-            <b class="gn">Tiro col timing</b><span class="gt">tieni <b>TIRA</b> e rilascia sull'anello che pulsa<span class="soloKb"> &middot; <kbd>X</kbd></span></span></div>
+            <b class="gn">Tiro col timing</b><span class="gt">tieni <b>TIRA</b> e rilascia sull'anello che pulsa<span class="soloKb"> &middot; <kbd>X</kbd></span> &mdash; oltre 1,25 secondi parte da solo</span></div>
           <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><circle class="avv" cx="84" cy="24" r="8"/><circle class="palla" cx="72" cy="42" r="3.6"/><path d="M18 34l12 14m0-14L18 48"/><path class="lieve" d="M10 46l9 2m-9 4l7 1"/><path d="M34 44 60 43"/><path d="M60 43l-8-4m8 4l-8 4"/></svg>
             <b class="gn">Scivolata</b><span class="gt">trascina <b>CONTRASTA</b> e rilascia, o pulsante <b>SCIVOLATA</b><span class="soloKb"> &middot; <kbd>Z</kbd></span> &mdash; di fronte &egrave; rubata, da dietro &egrave; fallo</span></div>
           <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path d="M52 24l12 14m0-14L52 38"/><path class="lieve" d="M26 24l9 7-9 7m-13-14l9 7-9 7"/><path d="M72 31 102 31"/><path d="M102 31l-9-5m9 5l-9 5"/></svg>
@@ -3711,12 +3710,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
         <h3>Tastiera</h3>
         <p><span class="pill c">P1</span> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> muovi &middot; <kbd>C</kbd> passa &middot; <kbd>X</kbd> tira &middot; <kbd>E</kbd> filtrante &middot; <kbd>Z</kbd> scivola &middot; <kbd>Shift</kbd> scatto &middot; <kbd>Q</kbd> cambia uomo<br>
         <span class="pill r">P2</span> <kbd>&#8593;</kbd><kbd>&#8595;</kbd><kbd>&#8592;</kbd><kbd>&#8594;</kbd> muovi &middot; <kbd>N</kbd> passa &middot; <kbd>M</kbd> tira &middot; <kbd>,</kbd> filtrante &middot; <kbd>B</kbd> scivola &middot; <kbd>Shift destro</kbd> scatto &middot; <kbd>/</kbd> cambia uomo</p>
-        <p>Su telefono trascini per correre (stick virtuale). <b>Stick a sinistra; a destra cinque dischi: TIRA/CONTRASTA, FILTRANTE/CAMBIO, PASSA/PRESSA, CROSS/SCIVOLATA e SCATTO/SCUDO, che si TIENE</b>. Alzare il dito dalla levetta non fa mai partire niente: i gesti si battono coi dischi &mdash; tranne uno: <b>strappare la levetta dall'altra parte, passando dal centro</b>, &egrave; la finta. Girare arcuando da fuori resta una virata normale. In 2 giocatori lo schermo &egrave; diviso a met&agrave;.</p>
+        <p>Su telefono trascini per correre (stick virtuale). <b>Stick a sinistra; a destra cinque dischi: TIRA/CONTRASTA, FILTRANTE/CAMBIO, PASSA/PRESSA, CROSS/SCIVOLATA e SCATTO/SCUDO, che si TIENE</b>. Alzare il dito dalla levetta non fa mai partire niente: i gesti si battono coi dischi &mdash; tranne uno: <b>strappare la levetta dall'altra parte, passando dal centro</b>, &egrave; la finta. Girare arcuando da fuori resta una virata normale. In 2 giocatori lo schermo &egrave; diviso a met&agrave;, e la mentalit&agrave; regolabile &mdash; in GIOCA e dalla pausa &mdash; &egrave; solo quella del giocatore di sinistra.</p>
         <h3>Le regole del campetto</h3>
         <p><b>La squadra pensa.</b> L'ultimo uomo non abbandona mai la sua met&agrave; campo; quando l'azione si ribalta le ali scattano lunghe: &egrave; il contropiede. In vantaggio negli ultimi quindici secondi la CPU porta la palla nell'angolo, come al campetto.</p>
         <p><b>Il portiere &egrave; un giocatore vero.</b> Esce sulla bisettrice, legge il tiro e si tuffa: la parata avviene per contatto. Se lo spiazzi o lo scavalchi, &egrave; gol.</p>
         <p><b>Cartellini.</b> Fallo da dietro o in ritardo = cartellino; al secondo della stessa squadra un uomo esce per 12 secondi. La scivolata &egrave; una decisione, non un riflesso.</p>
-        <p><b>La punizione-duello.</b> Il tiratore <b>trascina il dito sulla porta</b> — il mirino segue il dito — rilascia dove vuole mandarla e ferma la barra di potenza; il portiere ondeggia, accenna finte e sceglie il tuffo di nascosto: chi legge l'altro, vince.</p>
+        <p><b>La punizione-duello.</b> Il tiratore <b>trascina il dito sulla porta</b> — il mirino segue il dito — rilascia dove vuole mandarla e ferma la barra di potenza; il portiere ondeggia, accenna finte e sceglie il tuffo di nascosto: chi legge l'altro, vince. Da tastiera il terzo si sceglie con <kbd>A</kbd>/<kbd>S</kbd>/<kbd>D</kbd> (P1) o con le frecce (P2) — e anche <kbd>W</kbd> e freccia su valgono il centro. Col dito il portiere ha <b>3 secondi</b> per scegliere il lato del tuffo: poi il tuffo parte da solo.</p>
         <p><b>I tuoi cinque uomini.</b> Hanno un nome e quattro attributi che spostano davvero la simulazione; dopo ogni partita uno cresce di un punto. Li trovi in <b>ROSA</b>. Sulle taglie grandi i posti oltre il quinto li coprono i rincalzi di quartiere.</p>
         <p><b>Moviola e pausa.</b> Dopo ogni rete si rivede il gol al rallentatore (si spegne dalle Preferenze). <kbd>ESC</kbd> o il bottone <b>&#10074;&#10074;</b> fermano il gioco davvero.</p>
       </div>
@@ -3779,7 +3778,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
          pixel di comandi in meno, da' una porta piu' alta di un terzo. -->
     <div class="duelfoot">
       <div id="powerWrap" class="hidden"><div id="powerBand"></div><div id="powerCursor"></div></div>
-      <div id="duelMsg"></div>
+      <!-- annunciato DAVVERO: senza aria-live un testo cambiato dentro
+           un nodo gia' presente non viene mai letto dai lettori di
+           schermo (31 agosto 2026) -->
+      <div id="duelMsg" role="status" aria-live="polite"></div>
       <div class="duelhint" id="duelHint"></div>
     </div>
   </div>
@@ -9309,7 +9311,9 @@ const ACH=[
   { id:'punizione',     ico:'ghiaccio',   nome:'FREDDO DAL DISCHETTO',  desc:'Segna una punizione-duello',               premio:40,  liv:'bronzo' },
   { id:'vittorie10',    ico:'grafico',    nome:'VETERANO',              desc:'Vinci 10 partite',                         premio:120, liv:'oro',     obiettivo:10,   conta:s=>s.vittorie },
   { id:'torneo',        ico:'trofeo',     nome:'RE DEL QUARTIERE',      desc:'Vinci un torneo',                          premio:150, liv:'oro',     obiettivo:1,    conta:s=>s.tornei },
-  { id:'ricco',         ico:'monete',     nome:'SALVADANAIO',           desc:'Arriva a 1000 monete',                     premio:100, liv:'oro',     obiettivo:1000, conta:()=>SAVE.coins },
+  /* la barra legge il MASSIMO STORICO (stats.maxCoins), non il saldo:
+     spendere non fa regredire il trofeo (31 agosto 2026) */
+  { id:'ricco',         ico:'monete',     nome:'SALVADANAIO',           desc:'Arriva a 1000 monete',                     premio:100, liv:'oro',     obiettivo:1000, conta:s=>Math.max(SAVE.coins|0, s.maxCoins|0) },
   { id:'collezionista', ico:'mappa',      nome:'GIRAMONDO',             desc:'Sblocca tutti gli 8 campi',                premio:200, liv:'oro',     obiettivo:8,    conta:()=>SAVE.fields.filter(Boolean).length },
   { id:'campione',      ico:'scudetto',   nome:'CAMPIONE DEL QUARTIERE',desc:'Vinci una stagione di campionato',         premio:200, liv:'oro',     obiettivo:1,    conta:s=>s.stagioni },
   /* le descrizioni dicono la CONDIZIONE VERA (31 agosto 2026): i
@@ -9567,14 +9571,17 @@ function defaultSave(){
        questa squadra, e vanno con lei quando qualcuno la attacca: senza,
        la sfida sarebbe «la CPU col tuo nome sopra», e uno lo riconosce in
        tre minuti. Si imparano dalle partite, non da un menu. */
-    rete:{ id:'', segreto:'', coda:[], nome:'', punti:0, posto:0, visto:0, forza:0,
+    rete:{ id:'', segreto:'', coda:[], nome:'', punti:0, posto:0, forza:0,
            indole:{ pressing:50, linea:50, larghezza:50, ritmo:50, rischio:50, durezza:50, n:0 } },
     ach:{},
-    stats:{ partite:0, vittorie:0, golF:0, golS:0, perfetti:0, rubate:0, tornei:0, stagioni:0 },
+    /* maxCoins: il massimo storico delle monete — contabilita' di
+       interfaccia per la barra del SALVADANAIO, che spendendo non deve
+       regredire (31 agosto 2026) */
+    stats:{ partite:0, vittorie:0, golF:0, golS:0, perfetti:0, rubate:0, tornei:0, stagioni:0, maxCoins:0 },
     albo:[],                      // tornei vinti: {data, campo, nome}
     tour:null,                    // torneo in corso (bracket persistito)
     season:null,                  // stagione in corso (calendario e classifica)
-    rosa:null,                    // i tuoi quattro giocatori, con nome e attributi
+    rosa:null,                    // i tuoi cinque giocatori, con nome e attributi
     lastRes:null,                 // ultimo risultato giocato, per la lavagna della home
   };
 }
@@ -9631,7 +9638,10 @@ function loadSave(){
     /* negozio: si rileggono solo le chiavi conosciute */
     if(j.shop&&typeof j.shop==='object') for(const k in s.shop) s.shop[k]=j.shop[k]?1:0;
     if(j.shopA&&typeof j.shopA==='object') for(const k in s.shopA) s.shopA[k]=j.shopA[k]?1:0;
-    if(Array.isArray(j.sponsorNomi)) s.sponsorNomi=j.sponsorNomi.filter(x=>typeof x==='string').map(x=>x.slice(0,14)).slice(0,6);
+    /* quattro cartelloni, non sei: la pagina ha spon0..spon3 e chi
+       scrive taglia gia' a 4 — rileggerne 6 teneva in vita due nomi
+       fantasma che nessuno mostrava (31 agosto 2026) */
+    if(Array.isArray(j.sponsorNomi)) s.sponsorNomi=j.sponsorNomi.filter(x=>typeof x==='string').map(x=>x.slice(0,14)).slice(0,4);
     /* coerenza: il pacchetto campi possiede tutti i campi, le divise oltre
        la prima sono del pacchetto divise */
     if(s.shop.campi||s.shop.completo) for(let i=0;i<FIELDS.length;i++) s.fields[i]=1;
@@ -9661,7 +9671,7 @@ function loadSave(){
       if(typeof r.id==='string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id)) d.id=r.id;
       if(typeof r.segreto==='string' && r.segreto.length<=96 && /^[A-Za-z0-9_-]+$/.test(r.segreto)) d.segreto=r.segreto;
       if(typeof r.nome==='string') d.nome=r.nome.slice(0,18);
-      for(const k of ['punti','posto','visto','forza'])
+      for(const k of ['punti','posto','forza'])
         if(typeof r[k]==='number' && isFinite(r[k])) d[k]=Math.max(0,r[k]|0);
       if(r.indole&&typeof r.indole==='object')
         for(const k in d.indole){
@@ -9683,6 +9693,10 @@ function loadSave(){
     }
     if(j.ach&&typeof j.ach==='object') for(const a of ACH){ if(j.ach[a.id]) s.ach[a.id]=true; }
     if(j.stats&&typeof j.stats==='object') for(const k in s.stats){ if(typeof j.stats[k]==='number'&&isFinite(j.stats[k])) s.stats[k]=Math.max(0,j.stats[k]|0); }
+    /* maxCoins passa dal filtro qui sopra (chiave conosciuta, numero
+       finito, non negativo) e non puo' stare sotto il saldo appena
+       riletto: i salvataggi nati prima partono dal saldo di oggi */
+    if((s.stats.maxCoins|0)<(s.coins|0)) s.stats.maxCoins=s.coins|0;
     if(Array.isArray(j.albo)) s.albo=j.albo.filter(e=>e&&typeof e==='object').slice(0,200);
     if(j.tour&&typeof j.tour==='object'&&Array.isArray(j.tour.teams)&&j.tour.teams.length===8&&Array.isArray(j.tour.rounds)) s.tour=j.tour;
     if(j.season&&typeof j.season==='object'&&Array.isArray(j.season.squadre)&&j.season.squadre.length===8&&Array.isArray(j.season.cal)) s.season=j.season;
@@ -11368,6 +11382,9 @@ function applyMatchRewards(){
 function addCoinsInternal(n, etichetta){
   if(etichetta && (n|0)>0 && Array.isArray(G._brExtra)) G._brExtra.push([etichetta, n|0]);
   SAVE.coins=Math.max(0,(SAVE.coins|0)+(n|0));
+  /* il massimo storico per la barra del SALVADANAIO: contabilita' di
+     interfaccia, non tocca la simulazione (31 agosto 2026) */
+  if(SAVE.coins>(SAVE.stats.maxCoins|0)) SAVE.stats.maxCoins=SAVE.coins;
   if(SAVE.coins>=1000) unlockAch('ricco');
   refreshCoinVals();
 }
@@ -13963,7 +13980,6 @@ function eseguiPassUmano(p){
   if(kickBall(p, dx/l, dy/l, speed, 0)){
     Audio5.kick(0.35);
     b.passTo=G.players.indexOf(best);
-    if(t===0 && !G.cpu[0]) Tut.notify('pass');
   }
 }
 
@@ -14468,10 +14484,6 @@ function eseguiFiltrante(p){
     b.passTo=G.players.indexOf(best);
     G.stats.filtranti[t]=(G.stats.filtranti[t]||0)+1;
     Audio5.kick(0.5);
-    /* il tutorial insegna «passa» e adesso lo si impara da questo
-       pulsante: la filtrante E' un passaggio, e per questa via il suo
-       passo non si e' mai chiuso */
-    if(t===0 && !G.cpu[0]) Tut.notify('pass');
   }
 }
 
@@ -14784,7 +14796,6 @@ function eseguiPassaggioL14(p, tr, bersaglio){
        L2.3), non una soglia scelta */
     if(best.chiamata>0 && !alto) G.stats.filtranti[t]=(G.stats.filtranti[t]||0)+1;
     Audio5.kick(0.35+0.15*fat);
-    if(t===0 && !G.cpu[0]) Tut.notify('pass');
   }
 }
 
@@ -15002,7 +15013,6 @@ function releaseCharge(t, lettura){
       p.chargeClip='tiro';
       if(kickBall(p, mx/l, my/l, Math.max(300,(340+300*clamp(c/SHOT_MAX,0,1))*pw), 0)){
         G.stats.tiri[t]++; G.ball.tiroT=t;
-        if(t===0 && !G.cpu[0]) Tut.notify('shot');
         Audio5.kick(0.4);
       }
       return;
@@ -15221,7 +15231,6 @@ function fireShot(p, nx, ny, q, lob){
     if(q===1){ G.stats.perfetti[t]++; buzz(12); }
     return;
   }
-  if(t===0 && !G.cpu[0]) Tut.notify('shot');
   const goalY=FH/2;
   /* QUI C'ERA LA BUGIA DEL TABELLINO, ed e' quella che ha portato la
      giuria sulla pista sbagliata. Lo specchio si contava cosi':
@@ -15427,7 +15436,6 @@ function fireShotMirato(p, c, finestra, lettura, my){
   }
   if(!kickBall(p, nx, ny, vel, 0)) return;
   G.stats.tiri[t]++;
-  if(t===0 && !G.cpu[0]) Tut.notify('shot');
   if(finestra){
     /* il colpo pieno del tiro perfetto, identico a ieri: e' il gesto
        che il gioco chiede di imparare — se non si sente, non si
@@ -15729,7 +15737,6 @@ function lanciaScivolata(p){
   if(!p.slideMirata && bl>1 && bl<200){ nx=bx/bl; ny=by/bl; }
   p.slideMirata=false;
   p.slide=0; p.slideDX=nx; p.slideDY=ny;
-  if(p.team===0 && !G.cpu[0] && G.ctrl[0]===G.players.indexOf(p)) Tut.notify('slide');
   Audio5.slideS(); Audio5.beep(240);
 }
 
@@ -16180,12 +16187,10 @@ function step(){
      scivolata di chiunque — maturano e partono da soli */
   maturaAnticipi(dt);
 
-  /* tutorial: il primo passo si completa muovendosi davvero */
-  if(Tut.active && Tut.step===0 && !G.cpu[0]){
-    const mv=humanMove(0);
-    if(mv[0]||mv[1]) Tut.notify('move');
-  }
-
+  /* qui un blocco chiamava Tut.notify('move') — e altri sette punti
+     sparsi notify('pass'), notify('shot'), notify('slide'): chiavi di
+     un tutorial che non esiste piu'. I passi vivi sono tieni, mira e
+     raddoppio, e le loro chiavi passano da verboUsato (31 agosto 2026). */
   switchControlled(dt);
 
   /* la squadra pensa prima dei singoli: stato, ruoli, contropiede */
@@ -17233,7 +17238,9 @@ function infliggiCartellino(p){
     const alt=diMovimentoInCampo(p.team)[0];
     G.ctrl[p.team]= alt ? G.players.indexOf(alt) : -1;
   }
-  showBanner('FUORI 12 SECONDI!', '#ff4d4d', 1.8);
+  /* il numero lo dice ESPULSIONE_SEC, non la mano: se la costante
+     cambia, il cartello resta vero (31 agosto 2026) */
+  showBanner('FUORI '+ESPULSIONE_SEC+' SECONDI!', '#ff4d4d', 1.8);
   Audio5.whistle(true);
   buzz([60,40,60]);
 }
@@ -20082,7 +20089,11 @@ const Duel = {
     }else if(s.phase==='wait'){
       ui.duelPhase.textContent='IL PORTIERE SI PREPARA...';
       ui.duelHint.textContent = s.keeperHuman
-        ? (InputPref.touch ? 'PORTIERE: TOCCA IL LATO DEL TUFFO'
+        /* il limite e' vero: stopPower arma cpuT=3.0 per il portiere
+           umano e allo scadere il tuffo parte da solo (casuale). Col
+           dito questo e' l'UNICO momento utile, quindi il cartello dice
+           anche il tempo (31 agosto 2026) */
+        ? (InputPref.touch ? 'PORTIERE: TOCCA IL LATO DEL TUFFO — HAI 3 SECONDI, POI PARTE DA SOLO'
                            : (s.keeper===0?'P1: A / S / D':'P2: ← / ↓ / →'))
         : '';
     }
@@ -20312,10 +20323,10 @@ const Duel = {
       if(s.resultT>0.85 && !s.shown){
         s.shown=true;
         const M={gol:'GOL!', parata:'PARATA!', fuori:'FUORI!'};
+        /* niente colore: #duelMsg e' largo un pixel e ritagliato via
+           dal clip, esiste solo per i lettori di schermo — tingerlo era
+           vestire un invisibile (31 agosto 2026) */
         ui.duelMsg.textContent=M[s.outcome];
-        ui.duelMsg.style.color = s.outcome==='gol'
-          ? TEAMCOL[s.shooter]
-          : (s.outcome==='parata'?'#f2f5ef':'#ffb020');
         if(s.outcome==='gol'){
           Audio5.roar();
           if(shopAttivo('curva')) Audio5.coro();
@@ -37707,12 +37718,12 @@ const ui={
   statBody:$('statBody'),
   powerWrap:$('powerWrap'), powerBand:$('powerBand'), powerCursor:$('powerCursor'),
   duelPhase:$('duelPhase'), duelMsg:$('duelMsg'), duelHint:$('duelHint'),
-  fieldRow:$('fieldRow'), fieldCards:$('fieldCards'),
+  fieldCards:$('fieldCards'),
   kitGrid:$('kitGrid'), teamNameIn:$('teamNameIn'),
   achList:$('achList'), alboList:$('alboList'), statList:$('statList'),
   tourIntro:$('tourIntro'), tourBoard:$('tourBoard'), bracket:$('bracket'),
-  tourStato:$('tourStato'), tourPremio:$('tourPremio'), tourCoppa:$('tourCoppa'),
-  btnTourPlay:$('btnTourPlay'), tourPlaySub:$('tourPlaySub'),
+  tourStato:$('tourStato'), tourPremio:$('tourPremio'),
+  btnTourPlay:$('btnTourPlay'),
   toasts:$('toasts'), tut:$('tut'), tutText:$('tutText'), tutStep:$('tutStep'),
 };
 /* tutte le schermate-overlay (per la navigazione) */
@@ -37838,6 +37849,17 @@ function setPaused(v){
           : 'C passa · X tira · E filtrante (E+Shift cross) · Z scivola · Q cambia · Shift scatto e scudo')
           + '<button class="cmdlink" id="btnPauseComandi" type="button">cambia</button>';
       } }
+    /* il piccolo di RIPRENDI e il title del bottone di pausa dicevano
+       «ESC» anche a chi gioca col dito, dove ESC non esiste: il comando
+       vero su touch e' il tasto Indietro (vedi window.__indietro). Si
+       riscrivono QUI, accanto a pausaCmd, dalla stessa fonte di verita'
+       (InputPref.touch), cosi' i cartelli della pausa non possono
+       divergere (31 agosto 2026) */
+    { const br=document.getElementById('btnResume');
+      const sm=br && br.querySelector('small');
+      if(sm) sm.textContent = InputPref.touch ? 'oppure il tasto Indietro' : 'oppure premi ESC';
+      const pb=document.getElementById('pauseBtn');
+      if(pb) pb.title = InputPref.touch ? 'Pausa (tasto Indietro)' : 'Pausa (ESC)'; }
     Audio5.crowdLevel(0.15);
   }else{
     hide(ui.pausa);
@@ -37978,7 +38000,7 @@ window.__indietro = function(){
 
   /* In partita il tasto apre e chiude la pausa, e basta: una partita non si
      puo' riprendere a meta' come una mano di carte, quindi il tasto Indietro
-     non deve poterla buttare via. Per uscire c'e' ESCI nel pannello di
+     non deve poterla buttare via. Per uscire c'e' ABBANDONA nel pannello di
      pausa, che e' una scelta esplicita. */
   if(inMatch){ setPaused(!G.paused); return true; }
 
@@ -38667,6 +38689,10 @@ function chiudiGiornata(golCasa, golFuori){
       addCoinsInternal(SEA_TITOLO, 'Titolo di campione');
       SAVE.stats.stagioni=(SAVE.stats.stagioni|0)+1;
       SAVE.albo.push({data:dataOggi(), nome:SAVE.teamName+' — CAMPIONE', campo:'STAGIONE'});
+      /* stesso tetto della rilettura (loadSave taglia a 200): troncare
+         solo al load lasciava crescere il salvataggio senza limite
+         (31 agosto 2026) */
+      if(SAVE.albo.length>200) SAVE.albo.length=200;
       unlockAch('campione');
     }else if(mio<=2) addCoinsInternal(SEA_PODIO, 'Podio di campionato');
   }
@@ -38735,6 +38761,9 @@ function tournamentWon(){
     nome:SAVE.teamName,
     campo:FIELDS[clamp(G.fieldIdx|0,0,FIELDS.length-1)].nome,
   });
+  /* stesso tetto della rilettura (200), come per il titolo di stagione
+     (31 agosto 2026) */
+  if(SAVE.albo.length>200) SAVE.albo.length=200;
   SAVE.tour=null;
   persistSave();
 }
@@ -38904,7 +38933,6 @@ function mostraRisultatiGiornata(){
 }
 function buildTorneoUI(){
   const T=SAVE.tour;
-  if(ui.tourCoppa) ui.tourCoppa.dataset.vuota = (T&&T.won)?'0':'1';
   /* il pulsante GIOCA vive nella barra agganciata al fondo: si accende solo
      quando c'e' un tabellone in corso */
   ui.btnTourPlay.classList.toggle('hidden', !T);
@@ -38983,7 +39011,9 @@ function buildBracket(T){
      fuori dal flusso, e la sua altezza non spinge piu' in basso il verdetto.
      E' vuota (cromo) finche' il torneo non e' vinto, d'ottone quando lo e' —
      cosi' dice anche a che punto sei, non solo che esiste un premio. */
-  if(ui.tourCoppa) ui.tourCoppa.dataset.vuota = T.won?'0':'1';
+  /* qui, e in testa a buildTorneoUI, una guardia scriveva dataset.vuota
+     su un gancio verso l'elemento #tourCoppa, mai esistito in pagina:
+     scrittura mai avvenuta. Tolti gancio e guardie (31 agosto 2026). */
   montaCoppe();
   /* la lavagna si ricuoce se il tabellone ha cambiato altezza (es. da
      intro a tabellone pieno): montaTela controlla la misura da solo */
@@ -39009,23 +39039,13 @@ function buildCampoLinea(){
   if(b) b.textContent=FIELDS[clamp(SAVE.fieldSel|0,0,FIELDS.length-1)].nome;
   montaEroi();
 }
+/* IL RAMO DELLE PASTIGLIE E' USCITO (31 agosto 2026): l'elemento
+   #fieldRow non esiste in pagina, quindi la guardia `if(!ui.fieldRow)
+   return` usciva sempre e le pastiglie non nascevano mai. Resta il
+   nome, che sei punti di chiamata conoscono: oggi la funzione monta la
+   riga del campo e basta. */
 function buildFieldRow(){
   buildCampoLinea();
-  if(!ui.fieldRow) return;
-  ui.fieldRow.innerHTML='';
-  FIELDS.forEach((f,i)=>{
-    const b=document.createElement('button');
-    b.className='fchip'+(SAVE.fieldSel===i?' sel':'')+(SAVE.fields[i]?'':' lock');
-    b.innerHTML = SAVE.fields[i] ? esc(f.nome)
-      : icoSVG('lucchetto',12)+esc(f.nome)+' <span class="pz">'+f.prezzo+'</span>';
-    b.addEventListener('click', ()=>{
-      Audio5.unlock();
-      if(!SAVE.fields[i]){ Audio5.beep(240); goScreen(ui.campi); buildCampiUI(); return; }
-      Audio5.beep(520);
-      setField(i);
-    });
-    ui.fieldRow.appendChild(b);
-  });
 }
 function setField(i){
   if(!SAVE.fields[i]) return;
@@ -39049,9 +39069,6 @@ function buyField(i){
 function buildCampiUI(){
   ui.fieldCards.innerHTML='';
   {
-    const resta=FIELDS.reduce((n,f,i)=> n + (SAVE.fields[i]?0:1), 0);
-    const el=document.getElementById('campiResta');
-    if(el) el.textContent = resta ? ('ancora '+resta+' da sbloccare') : 'li hai sbloccati tutti';
     /* la descrizione del campo IN USO, una riga sola: dentro la scheda, in
        quattro colonne, si troncava a meta' frase e faceva sembrare rotta
        la scheda */
@@ -39060,6 +39077,20 @@ function buildCampiUI(){
     if(nm) nm.textContent=f.nome;
     const de=document.getElementById('campiDesc');
     if(de) de.textContent=f.desc;
+    /* la riga onesta del pacchetto: se il PACCHETTO CAMPI non e'
+       posseduto e c'e' ancora qualcosa da sbloccare, si dice QUI che al
+       negozio i sette campi si sbloccano insieme, e a quanto — N letto
+       dalla costante NEGOZIO, mai scritto a mano (31 agosto 2026) */
+    const ng=document.getElementById('campiNego');
+    if(ng){
+      const pk=NEGOZIO.find(o=>o.id==='campi');
+      /* il conto e' SUO, non preso in prestito: la variabile resta
+         del vecchio contatore invisibile e' stata rimossa dai ganci
+         morti, e il fumo l'ha detto subito (ReferenceError, 31 ago) */
+      const mostra=!!pk && !shopHa('campi') && SAVE.fields.some(v=>!v);
+      ng.classList.toggle('hidden', !mostra);
+      if(mostra) ng.innerHTML='Al negozio il <b>PACCHETTO CAMPI</b> sblocca i sette campi tutti insieme: <b>'+(pk.monete|0)+' monete</b>';
+    }
     montaEroi();
   }
   FIELDS.forEach((f,i)=>{
@@ -39079,7 +39110,10 @@ function buildCampiUI(){
     /* il prezzo si scrive UNA volta sola, sul pulsante: 'SBLOCCA A 150'
        piu' un pulsante disabilitato con scritto '150' era la stessa
        informazione data due volte nella stessa scheda */
-    const b=document.createElement('button'); b.className='fbtn';
+    /* IN USO e' una targa, non un comando: da button era inerte ma
+       focusabile (31 agosto 2026). Stessa classe, stesso vestito:
+       dentro #campi .fbtn e' flex per tutti gli elementi. */
+    const b=document.createElement(sb&&SAVE.fieldSel===i ? 'span' : 'button'); b.className='fbtn';
     if(sb){
       if(SAVE.fieldSel===i){ b.classList.add('inuse'); b.textContent='IN USO'; }
       else{
@@ -39131,6 +39165,10 @@ function buildNegozioUI(){
   wrap.innerHTML='';
   const pezzi=NEGOZIO.filter(o=>o.id!=='completo');
   const tuttiIPezzi=pezzi.every(o=>shopHa(o.id));
+  /* comprati i quattro pezzi separati, la carta COMPLETO si mostrava
+     posseduta ma il salvataggio diceva 0: lo stato mostrato e lo stato
+     salvato adesso coincidono (31 agosto 2026) */
+  if(tuttiIPezzi && !SAVE.shop.completo){ SAVE.shop.completo=1; persistSave(); }
   NEGOZIO.forEach(o=>{
     const ha = o.id==='completo' ? (!!SAVE.shop.completo || tuttiIPezzi) : shopHa(o.id);
     const card=document.createElement('div');
@@ -39161,7 +39199,11 @@ function buildNegozioUI(){
           riga.appendChild(bs);
         }
       }else{
-        const b=document.createElement('button');
+        /* targa, non comando: da button era inerte ma focusabile, e la
+           tastiera ci inciampava a vuoto (31 agosto 2026). Stessa
+           classe, stesso vestito: dentro #negozio .fbtn e' flex per
+           tutti gli elementi, cambia solo il tag. */
+        const b=document.createElement('span');
         b.className='fbtn use'; b.textContent='SBLOCCATO — PER SEMPRE';
         riga.appendChild(b);
       }
@@ -39331,14 +39373,19 @@ function buildStatsUI(){
       tile((dr>0?'+':'')+dr,'Differenza reti', dr>0?'fluo':(dr<0?'rosa':''))+
       tile(s.perfetti|0,'Tiri perfetti','','bersaglio')+
       tile(s.rubate|0,'Rubate pulite','','fulmine')+
-      tile(SAVE.coins|0,'Monete','','monete');
+      /* in mezzo ai cumulativi era l'unico numero che poteva calare:
+         l'etichetta adesso dice che e' un saldo (31 agosto 2026) */
+      tile(SAVE.coins|0,'Monete in tasca','','monete');
   }
   const tb=$('statTrofei');
   if(tb){
     const n=Object.keys(SAVE.ach).length, tot=ACH.length;
     tb.innerHTML='<div class="tl"><span>Trofei sbloccati</span><b>'+n+' / '+tot+'</b></div>'+
       '<div class="tb"><i style="width:'+Math.round(n/tot*100)+'%"></i></div>'+
-      '<div class="tl" style="margin:6px 0 0"><span>Tornei vinti</span><b>'+(s.tornei|0)+'</b></div>';
+      '<div class="tl" style="margin:6px 0 0"><span>Tornei vinti</span><b>'+(s.tornei|0)+'</b></div>'+
+      /* le stagioni vinte esistevano nel salvataggio (stats.stagioni)
+         ma nessuna schermata le mostrava (31 agosto 2026) */
+      '<div class="tl" style="margin:6px 0 0"><span>Stagioni vinte</span><b>'+(s.stagioni|0)+'</b></div>';
   }
 }
 
@@ -39825,6 +39872,17 @@ const Sfida = {
   /* un tocco alla volta: due CERCA AVVERSARIO in fila prenderebbero due
      impegni dal server e il primo dei due morirebbe senza partita */
   occupato: false,
+  /* IL FLAG SI DEVE VEDERE (31 agosto 2026): mentre la rete girava,
+     CERCA AVVERSARIO e GUARDA ignoravano il tocco senza dare un segno.
+     Chi alza o abbassa il flag passa di qui: i bottoni si vestono e si
+     svestono di .sf-occupato, mezzo spenti finche' il giro non finisce. */
+  impegna(v){
+    this.occupato = !!v;
+    const c = $('btnSfidaCerca');
+    if(c) c.classList.toggle('sf-occupato', this.occupato);
+    const l = $('sfLista');
+    if(l) l.querySelectorAll('[data-guarda]').forEach(b => b.classList.toggle('sf-occupato', this.occupato));
+  },
   sfide: [],
   /* quelle aperte in questa sessione. Il server segna «vista» quando il
      difensore chiede il replay, ma il pallino si deve spegnere SUBITO
@@ -39855,10 +39913,10 @@ const Sfida = {
      in un colpo d'occhio che cos'e' questa modalita' e perche' oggi non
      puo' usarla, e poi tornare a giocare. */
   perche(errore){
-    if(errore === 'spenta')  return 'La sfida e\' spenta in questa copia del gioco: manca l\'indirizzo del server.';
+    if(errore === 'spenta')  return 'La sfida è spenta in questa copia del gioco: manca l\'indirizzo del server.';
     if(errore === 'lenta')   return 'Il server non ha risposto in otto secondi. Riprova quando hai campo: il gioco intanto non cambia di una virgola.';
     if(errore === 'assente') return 'Serve la rete: qui si gioca contro le squadre di altre persone. Senza, tutto il resto del gioco funziona come sempre.';
-    if(errore === 'bandito') return 'Questa squadra non e\' piu\' ammessa in classifica.';
+    if(errore === 'bandito') return 'Questa squadra non è più ammessa in classifica.';
     if(errore === 'troppe')  return 'Troppe richieste di fila: aspetta un minuto.';
     if(errore === 'rosa-corta') return 'Serve una rosa di almeno quattro uomini per pubblicare la squadra.';
     return 'Il server ha detto di no (' + String(errore || 'ignoto') + ').';
@@ -39867,10 +39925,10 @@ const Sfida = {
   /* ------------------------------------------------------ aggiornare */
   async aggiorna(){
     if(this.occupato) return;
-    this.occupato = true;
+    this.impegna(true);
     try{
       if(!Rete.base){ this.stato(this.perche('spenta'), true); return; }
-      this.stato('Sto guardando se c\'e\' campo...');
+      this.stato('Sto guardando se c\'è campo...');
       const e = await Rete.entra();
       if(!e.ok){ this.stato(this.perche(e.errore), true); this.dipingi(); return; }
       /* la vetrina: il server deve sapere com'e' la squadra OGGI, se no
@@ -39890,12 +39948,12 @@ const Sfida = {
         const mia = c.righe.filter(r => r && r.sono_io)[0];
         if(mia){ Rete.mem().posto = mia.posto|0; Rete.mem().punti = mia.punti|0; persistSave(); }
       }
-      this.stato('Attacca la squadra di un\'altra persona: non deve essere online, non deve nemmeno aver aperto il gioco oggi.');
+      this.stato('Attacca la squadra di un’altra persona: non deve essere online, non deve nemmeno aver aperto il gioco oggi.');
       this.dipingi();
     }catch(err){
       this.stato('Qualcosa non ha funzionato. Il gioco resta quello di prima.', true);
     }finally{
-      this.occupato = false;
+      this.impegna(false);
     }
   },
 
@@ -39911,12 +39969,12 @@ const Sfida = {
       const coda = m.coda.length;
       c.innerHTML = 'CERCA AVVERSARIO <small>' +
         (coda ? esc(coda + (coda===1 ? ' partita ancora da consegnare' : ' partite ancora da consegnare'))
-              : 'una partita sola, col seme che da\' il server') + '</small>';
+              : 'una partita sola, col seme che dà il server') + '</small>';
     }
     const box = $('sfLista');
     if(!box) return;
     if(!this.sfide.length){
-      box.innerHTML = '<div class="sf-vuota">Nessuno ti ha ancora attaccato. Quando succedera\' lo troverai qui, con la partita da rivedere.</div>';
+      box.innerHTML = '<div class="sf-vuota">Nessuno ti ha ancora attaccato. Quando succederà lo troverai qui, con la partita da rivedere.</div>';
       return;
     }
     let h = '';
@@ -39942,6 +40000,8 @@ const Sfida = {
     }
     box.innerHTML = h;
     box.querySelectorAll('[data-guarda]').forEach(b => {
+      /* ridipinta mentre la rete gira: i bottoni nascono gia' vestiti */
+      if(this.occupato) b.classList.add('sf-occupato');
       b.addEventListener('click', () => { Audio5.unlock(); Audio5.beep(520); this.guarda(b.dataset.guarda|0); });
     });
   },
@@ -39950,7 +40010,7 @@ const Sfida = {
   async cerca(){
     if(this.occupato) return;
     if(!Rete.base){ this.stato(this.perche('spenta'), true); return; }
-    this.occupato = true;
+    this.impegna(true);
     this.stato('Sto cercando una squadra della tua forza...');
     let r = null;
     /* =====================================================================
@@ -39968,7 +40028,7 @@ const Sfida = {
     try{ const p = await Rete.pubblica(); if(p.ok) this.pubblicata = true; }catch(e){}
     try{ r = await Rete.avversario(SAVE.taglia || 5); }
     catch(e){ r = { ok:false, errore:'assente' }; }
-    this.occupato = false;
+    this.impegna(false);
     if(!r || !r.ok){ this.stato(this.perche(r && r.errore), true); return; }
     this.gioca(r);
   },
@@ -40035,12 +40095,12 @@ const Sfida = {
   async guarda(id){
     if(this.occupato) return;
     if(!Rete.base){ this.stato(this.perche('spenta'), true); return; }
-    this.occupato = true;
+    this.impegna(true);
     this.stato('Sto prendendo la partita...');
     let r = null;
     try{ r = await Rete.replay(id|0); }
     catch(e){ r = { ok:false, errore:'assente' }; }
-    this.occupato = false;
+    this.impegna(false);
     if(!r || !r.ok || !r.sfida){ this.stato(this.perche(r && r.errore), true); return; }
     const s = r.sfida;
     const q = Array.isArray(r.squadre) ? r.squadre : [];
@@ -40058,7 +40118,7 @@ const Sfida = {
        ===================================================================== */
     if(!att || !Array.isArray(att.rosa) || att.rosa.length < 4){
       this.vistoQui[id|0] = 1;
-      this.stato('Questa partita non si puo\' piu\' rivedere: il server non ha la rosa di chi ti ha attaccato.', true);
+      this.stato('Questa partita non si può più rivedere: il server non ha la rosa di chi ti ha attaccato.', true);
       this.dipingi();
       return;
     }
@@ -40075,7 +40135,7 @@ const Sfida = {
     }
     if(righe < 0){
       Reg.spegni();
-      this.stato('Il nastro di questa partita non si riesce ad aprire: e\' di una forma che questo gioco non sa leggere.', true);
+      this.stato('Il nastro di questa partita non si riesce ad aprire: è di una forma che questo gioco non sa leggere.', true);
       return;
     }
     /* =====================================================================
@@ -40101,9 +40161,9 @@ const Sfida = {
     if(incompleto){
       Reg.spegni();
       this.vistoQui[id|0] = 1;
-      this.stato('Questa partita e\' passata da un calcio piazzato, e i comandi del duello dal ' +
+      this.stato('Questa partita è passata da un calcio piazzato, e i comandi del duello dal ' +
                  'dischetto il registro non li annota ancora: rivederla darebbe una partita diversa ' +
-                 'da quella che hai subito, quindi non te la faccio vedere. Il risultato e\' quello qui sotto.', true);
+                 'da quella che hai subito, quindi non te la faccio vedere. Il risultato è quello qui sotto.', true);
       this.dipingi();
       return;
     }
@@ -40174,7 +40234,7 @@ const Sfida = {
       return;
     }
     if(!c.righe.length){
-      box.innerHTML = '<div class="sf-vuota">La classifica e\' ancora vuota. Gioca la prima sfida e ci sei.</div>';
+      box.innerHTML = '<div class="sf-vuota">La classifica è ancora vuota. Gioca la prima sfida e ci sei.</div>';
       return;
     }
     let h = '';
@@ -40193,7 +40253,15 @@ const Sfida = {
   apriCodice(){
     const c = Rete.codiceTrasferimento();
     const e = $('sfCodMio');
-    if(e) e.value = c || 'Ancora nessuna identita\': apri la sfida una volta con la rete accesa.';
+    /* il campo readonly contiene IL CODICE o niente: l'aiuto ci stava
+       DENTRO travestito da codice, e chi provava a copiarlo si portava
+       via una frase (31 agosto 2026). Adesso sta nel piccolo sotto. */
+    if(e) e.value = c || '';
+    const n = $('sfCodAiuto');
+    if(n){
+      n.textContent = c ? '' : 'Ancora nessuna identità: apri la sfida una volta con la rete accesa.';
+      n.classList.toggle('hidden', !!c);
+    }
     const i = $('sfCodIn'); if(i) i.value = '';
     show($('sfidaCodice'));
   },
@@ -40203,7 +40271,7 @@ const Sfida = {
     if(Rete.accettaTrasferimento(i.value)){
       this.pubblicata = false; this.sfide = []; this.vistoQui = {};
       hide($('sfidaCodice'));
-      toast('scopa','SQUADRA RIPRESA','Adesso questo telefono e\' quella squadra.');
+      toast('scopa','SQUADRA RIPRESA','Adesso questo telefono è quella squadra.');
       this.dipingi(); this.aggiorna();
     }else{
       toast('fischietto','CODICE SBAGLIATO','Ricontrolla: si copia per intero, punti compresi.');
@@ -40274,9 +40342,9 @@ function chiudiSfida(){
       toast('fischietto','NON ERA QUESTA LA PARTITA',
             'Rigiocata finisce ' + ga + '-' + gd + ', ma quella vera era ' + S.atteso[0] + '-' + S.atteso[1] + '.');
       try{
-        Sfida.stato('Il replay non ha ricostruito la partita: e\' finito ' + ga + '-' + gd +
+        Sfida.stato('Il replay non ha ricostruito la partita: è finito ' + ga + '-' + gd +
                     ' e quella vera era ' + S.atteso[0] + '-' + S.atteso[1] + '. La squadra di chi ti ha ' +
-                    'attaccato e\' cambiata da allora, e il server ne tiene una copia sola, quella di oggi.', true);
+                    'attaccato è cambiata da allora, e il server ne tiene una copia sola, quella di oggi.', true);
       }catch(e){}
     }
     return;
@@ -40345,8 +40413,8 @@ function fermaReplayAlDischetto(){
   goScreen($('sfida'));
   setScene('menu');
   try{ Audio5.crowdLevel(0); }catch(e){}
-  Sfida.stato('Questa partita si e\' fermata su un calcio piazzato: il registro non annota ancora ' +
-              'i comandi del duello dal dischetto, e da li\' in poi non si puo\' rivedere. ' +
+  Sfida.stato('Questa partita si è fermata su un calcio piazzato: il registro non annota ancora ' +
+              'i comandi del duello dal dischetto, e da lì in poi non si può rivedere. ' +
               'Il risultato resta quello scritto qui sotto.', true);
 }
 
@@ -40367,7 +40435,7 @@ function abbandonaSfida(){
   G.diff = clamp(SAVE.diff|0, 0, 2);
   try{ refreshDiffRows(); }catch(e){}
   if(S.nomePrima !== undefined){ G.teamName = S.nomePrima; try{ applyKit(); refreshTeamRGB(); }catch(e){} }
-  if(!S.replay) toast('fischietto','SFIDA ABBANDONATA','Non e\' stata mandata: non conta ne\' in bene ne\' in male.');
+  if(!S.replay) toast('fischietto','SFIDA ABBANDONATA','Non è stata mandata: non conta né in bene né in male.');
 }
 
 /* ------------------------------------------------------- i comandi */
@@ -40376,6 +40444,9 @@ $('btnSfidaCerca').addEventListener('click', ()=>{ Audio5.unlock(); Audio5.beep(
 $('btnSfidaClassifica').addEventListener('click', ()=>{ Audio5.unlock(); Sfida.apriClassifica(); });
 $('btnSfidaCodice').addEventListener('click', ()=>{ Audio5.unlock(); Sfida.apriCodice(); });
 $('btnSfCodUsa').addEventListener('click', ()=>{ Audio5.unlock(); Sfida.usaCodice(); });
+/* Invio nel campo del codice vale USA IL CODICE: chi incolla e preme
+   Invio non deve andare a cercare il bottone (31 agosto 2026) */
+$('sfCodIn').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); Audio5.unlock(); Sfida.usaCodice(); } });
 $('btnSfCodChiudi').addEventListener('click', ()=>{ Audio5.unlock(); hide($('sfidaCodice')); });
 $('btnBackSfida').addEventListener('click', ()=>{ hide($('sfidaCodice')); goScreen(ui.menu); });
 $('btnBackClassifica').addEventListener('click', ()=>{ goScreen($('sfida')); });
@@ -40488,7 +40559,7 @@ const Rete = {
 
   /* -------------------------------------------------------- l'identita' */
   mem(){
-    if(!SAVE.rete) SAVE.rete = { id:'', segreto:'', coda:[], nome:'', punti:0, posto:0, visto:0 };
+    if(!SAVE.rete) SAVE.rete = { id:'', segreto:'', coda:[], nome:'', punti:0, posto:0 };
     if(!Array.isArray(SAVE.rete.coda)) SAVE.rete.coda = [];
     return SAVE.rete;
   },
@@ -40545,7 +40616,10 @@ const Rete = {
     if(this.haIdentita){
       const r = await this.chiama('/api/entra', 'POST', { id:m.id });
       if(r.ok){
-        m.visto = Date.now();
+        /* qui si scriveva m.visto = Date.now(): nessuno lo rileggeva
+           mai — l'ultimo accesso lo tiene il server per conto proprio.
+           Campo tolto anche dal saldo di partenza e dalla rilettura
+           (31 agosto 2026). */
         if(r.punti){ m.punti = r.punti.punti|0; }
         persistSave();
       }
@@ -40554,7 +40628,6 @@ const Rete = {
     const r = await this.chiama('/api/entra', 'POST', {});
     if(r.ok && r.id && r.segreto){
       m.id = r.id; m.segreto = r.segreto;
-      m.visto = Date.now();
       persistSave();
     }
     return r;
@@ -40725,7 +40798,17 @@ const Rete = {
       const definitivo = ['nessun-impegno','seme-non-tuo','impegno-scaduto','gia-inviata',
                           'gol','replay-mancante','replay-forma','replay-vuoto','replay-grosso',
                           'bandito','ignoto'].includes(r.errore);
-      if(definitivo){ m.coda.shift(); persistSave(); continue; }
+      if(definitivo){
+        m.coda.shift(); persistSave();
+        /* LA PARTITA SI BUTTA QUI, e chi l'ha giocata deve saperlo:
+           prima spariva dalla coda in silenzio (31 agosto 2026) */
+        try{
+          toast('fischietto','PARTITA NON CONSEGNATA',
+                'Il ' + (riga.gol_a|0) + '-' + (riga.gol_d|0) + ' non sarà mai consegnato: il server ' +
+                'l\'ha rifiutato per sempre (' + String(r.errore||'ignoto') + '). Le altre in coda vanno avanti.');
+        }catch(e){}
+        continue;
+      }
       break;
     }
     return { ok:mandate>0 || !m.coda.length, mandate, coda:m.coda.length, ultima };
@@ -40768,6 +40851,10 @@ const Rete = {
     if((s % 46656).toString(36).toUpperCase().padStart(3,'0') !== p[2].toUpperCase()) return false;
     const m = this.mem();
     m.id = p[0]; m.segreto = p[1]; m.coda = [];
+    /* i numeri del VECCHIO proprietario non seguono la squadra: punti,
+       posto e forza li ridara' il server alla prossima apertura, e fino
+       ad allora la tessera dice «—», non i suoi (31 agosto 2026) */
+    m.punti = 0; m.posto = 0; m.forza = 0;
     persistSave();
     return true;
   },

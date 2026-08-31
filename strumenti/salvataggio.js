@@ -153,7 +153,12 @@ function perditeMigrazione(s, v) {
   uguale('nome squadra', s.teamName, v.teamName);
   uguale('campi sbloccati', s.fields, v.fields);
   uguale('campo scelto', s.fieldSel, v.fieldSel);
-  uguale('statistiche', s.stats, v.stats);
+  /* le statistiche si confrontano CHIAVE PER CHIAVE del vecchio: la
+     legge di questi due controlli e' «non si perde niente», e una
+     migrazione che AGGIUNGE un campo (maxCoins, 31 agosto 2026 —
+     nasce dal saldo riletto, mai sotto) non perde nulla.
+     L'uguaglianza stretta chiamava perdita un guadagno. */
+  for (const k in v.stats) uguale('statistiche.' + k, s.stats && s.stats[k], v.stats[k]);
   uguale('albo', s.albo, v.albo);
   uguale('trofei', s.ach, v.ach);
   uguale('negozio', s.shop, v.shop);

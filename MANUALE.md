@@ -389,80 +389,72 @@ Qui il registro completo, a edizioni.
     ereditava la pulsazione del menu — e il cancello dei comandi del dito
     che sbagliava 2-3 volte su 10.)*
 
-## A registro — gravi o medie, da progettare prima di toccare
+## Curate la sera stessa (seconda passata: 83 ancoraggi in quattro toppe, più tre cure di simulazione)
 
-- **Il pareggio promesso e irraggiungibile**: la stagione dichiara
-  «PAREGGIO +15» e la classifica ha la colonna N, ma ogni partita pari va a
-  golden goal e rigori: il giocatore non può pareggiare MAI. Decidere: in
-  stagione il pareggio deve esistere (niente golden), o la promessa va
-  tolta. Tocca il gioco, non i testi.
-- **La contabilità del duello**: i tiri dal dischetto contano nei «Tiri» ma
-  mai in «Nello specchio» (la precisione ne esce diluita), e le parate del
-  duello non esistono per il tabellino né per la crescita del portiere.
-- **Il marcatore della punizione può non essere chi ha tirato** (il gol va
-  all'ultimo toccatore prima del fallo).
-- **MORTE IMPROVVISA** si sblocca anche vincendo ai rigori (il gioco stesso
-  distingue golden e rigori); **FREDDO DAL DISCHETTO** anche col rigore
-  della serie (è pensato per la punizione-duello).
-- **I replay delle sfide possono sbloccare trofei di metà partita**
-  (primo gol, tripletta…): sospetto letto dal codice, da riprodurre.
-- **Il trasferimento di squadra** porta identità e punti ma non rosa e nome,
-  e la tessera mostra i numeri del vecchio proprietario finché la rete non
-  risponde; il campo «vero/finto» dell'avversario di rete non è mai letto
-  (contro l'avversario di allenamento si dice comunque «SFIDA»).
-- **MOVIMENTO: COMPLETO** viene riportato a RIDOTTO a ogni avvio se il
-  sistema chiede riduzione del movimento, in silenzio: serve un avviso o un
-  terzo stato «rispetta il sistema».
-- **ESC/Indietro e i bottoni a schermo divergono** sulle schermate a due
-  livelli (ESC salta sempre al menu): decidere una regola sola.
-- **Il tutorial non è rigiocabile** se non azzerando tutto.
+12. **Il pareggio esiste**: in campionato lo 0-0 al 90″ chiude la
+    giornata — PAREGGIO, +15, la X in classifica. Golden e rigori
+    restano ad amichevole, torneo e sfida; il cancello del meta-gioco
+    ora misura entrambe le leggi.
+13. **I trofei si vincono, non si guardano**: riprodotto che il replay
+    di una sfida sbloccava PRIMO GOL e pagava monete; cinque guardie.
+    E MORTE IMPROVVISA esige il golden vero, FREDDO la punizione vera.
+14. **Il dischetto entra in contabilità**: il gol del duello è nello
+    specchio, la parata è del portiere (tabellino e crescita), e il
+    marcatore a referto è il rigorista della targa.
+15. **COME SI GIOCA completato**: il tiro che parte da solo a 1,25 s,
+    W/↑ per il centro nel duello, i 3 secondi del portiere col dito,
+    la taglia che vale anche per torneo e stagione, la mentalità del
+    solo giocatore di sinistra in 2P. Lo splash dice il vero, RIPRENDI
+    e il title della pausa parlano la lingua dell'input, la citazione
+    di GIOCA non promette più 90 secondi ai campi grandi.
+16. **Ganci morti estirpati** (31 ancoraggi): fieldRow, tourCoppa,
+    campiResta, campiNome, tourPlaySub, le otto Tut.notify morte, il
+    CSS orfano dello splash, SAVE.rete.visto (cinque scritture, una
+    scovata dal controllo stesso), i 6 sponsor che erano 4, i commenti
+    bugiardi, il «12» del banner composto dalla costante.
+17. **La SFIDA onesta fino all'ultimo accento** (30 ancoraggi): tutti
+    gli apostrofi-accento del dominio curati; duelMsg con aria-live
+    (annunciato davvero); Invio conferma il codice; i bottoni si
+    spengono visivamente mentre la rete gira; le partite scartate
+    dalla coda hanno un toast col motivo; il trasferimento azzera i
+    numeri del vecchio proprietario; l'aiuto esce dal campo readonly.
+18. **Negozio e bacheca**: il COMPLETO comprato a pezzi si salva
+    davvero; la schermata CAMPI dice quanto costa il pacchetto (letto
+    dalla costante); SALVADANAIO conta il massimo storico; l'albo si
+    tronca anche in scrittura; «Stagioni vinte» esiste; i cartellini
+    di stato non rubano più il fuoco; «Monete in tasca» dichiara ciò
+    che è.
+
+## A registro — ciò che resta, e in che stato
+
+- **Il palleggio avversario mangia la scivolata trascinata** (#82) —
+  **PROGETTATA**: `_analisi/PROGETTO-ISTERESI-DISCO.md`, con la sonda
+  nuova `_p-sfarfallio.js` che ha misurato la causa (6 ri-armi in 6
+  secondi per la sola soglia dei 36,4 senza che il pallone cambi lato).
+  La cura scelta: il ri-armo scatta solo se il pallone CAMBIA SQUADRA.
+- **Il gioco aereo della macchina** (#72) — **PROGETTATA** e con la
+  diagnosi rettificata: la causa prima a 7/11 non è la finestra del
+  cross ma `attaccaArea` spenta da taglia 7 (nessuno entra mai in
+  area); cura a tre stadi in `_analisi/PROGETTO-GIOCO-AEREO.md`.
+- **La prima onda di contenuti** — **PROGETTATA**:
+  `_analisi/PROGETTO-ONDA-CONTENUTI-1.md` — DIVISIONI DEL QUARTIERE
+  (scala persistente a nove gradini), ABBANDONO con conseguenza in
+  torneo e stagione, RECORD e seconda mensola (da 15 a 24 trofei).
+  ~10 giornate, ordine 2→1→3; ASSALTO rimandato a onda 2 con ragioni.
+- **Il 2 giocatori paga monete senza guardia** (#83, scoperta del
+  progettista): due pollici che si accordano incassano all'infinito —
+  da decidere con la taratura dei premi delle divisioni.
+- **MOVIMENTO: COMPLETO** viene riportato a RIDOTTO in silenzio a ogni
+  avvio se il sistema chiede riduzione: serve un avviso o un terzo
+  stato «rispetta il sistema».
+- **ESC/Indietro e i bottoni a schermo** divergono sulle schermate a
+  due livelli (ESC salta sempre al menu): serve una regola sola,
+  decisa e dichiarata.
+- **Il tutorial non è rigiocabile** se non azzerando tutto: manca una
+  voce «rivedi il tutorial».
+- **Il trasferimento di squadra** porta identità e punti ma non rosa e
+  nome (la tessera ora almeno non mente più); e il campo «vero/finto»
+  dell'avversario di rete non è ancora letto (contro l'avversario di
+  allenamento si dice comunque «SFIDA»).
 - **Il tetto dei rigori** (9 tiri a testa) a parità perfetta premia la
-  squadra di casa, senza dichiararlo.
-- **Portiere umano al duello col dito**: il limite dei 3 secondi non è
-  scritto da nessuna parte.
-- **In 2 giocatori** il secondo umano non può cambiare la propria mentalità
-  e nessun testo lo dice.
-- **Il palleggio avversario mangia la scivolata trascinata** *(trovato la
-  sera stessa, con una sonda dedicata)*: mentre il portatore palleggia
-  verso di te, il possesso «sfarfalla» a ogni tocco e il disco CONTRASTA
-  si ri-arma cambiando faccia — il trascinamento perde l'origine e il
-  rilascio non produce la scivolata (~1 volta su 5 nella scena tipica).
-  Serve un'isteresi sull'atto mentre il dito tiene: a registro, perché
-  tocca la semantica dell'input e chiede il giro completo dei cancelli
-  dei verbi.
-
-## A registro — minori
-
-Testi e residui: lo splash dice «tocca per entrare» ma entra da solo dopo
-2,6 s · «oppure premi ESC» e «Pausa (ESC)» compaiono anche su telefono ·
-la citazione di GIOCA promette «90 secondi» senza dire che 7 e 11 allungano ·
-COME SI GIOCA dice «in amichevole si sale a 7 e 11» ma vale anche per
-torneo e stagione · due schermate si chiamano entrambe IMPOSTAZIONI e il
-bottone che le separa si chiama PREFERENZE · «BACHECA» e «la bacheca del
-campetto» sono due luoghi diversi · il banner «FUORI 12 SECONDI!» ha il 12
-scritto a mano accanto alla costante · «VINCE CPU (CPU)» e «VINCE X (CPU)»
-dopo una stagione · il minuto della lavagnetta finale è sempre «90» anche
-ai supplementari · «RIGORI  X - Y» ha una doppia spaziatura · W/↑ tirano al
-centro ma i testi dicono solo A/S/D · i messaggi JS della SFIDA usano
-l'apostrofo al posto degli accenti · l'aiuto del duello e della pausa
-tastiera omettono la mappa del P2 · il piccolo del disco grande «mente» da
-terra (dichiarato nel codice) · lo SHOT_HARDCAP (il tiro che parte da solo a
-1,25 s) non è documentato in nessun aiuto.
-
-Codice morto e ganci: `fieldRow` e `tourCoppa` sono riferimenti a elementi
-inesistenti (guardie li rendono innocui) · `campiResta` è scritto ma
-invisibile per sempre · `campiNome` è un id mai letto · `tourPlaySub` è il
-gemello senza crash del difetto della stagione · `SAVE.rete.visto` si
-scrive e non si legge mai · `SAVE.rete.nome` è predisposto e mai scritto ·
-`Tut.notify` riceve chiavi di un tutorial che non esiste più · CSS morto
-dello splash (`.spl-logo`) e del vecchio selettore campi (`.fchip`) ·
-`#duelMsg` è «per i lettori di schermo» ma senza `aria-live` non viene
-annunciato · la carta COMPLETO comprando i 4 pezzi si mostra posseduta ma
-`shop.completo` resta 0 · l'albo si tronca a 200 voci solo alla rilettura ·
-la barra del SALVADANAIO regredisce spendendo · «SBLOCCATO — PER SEMPRE» e
-«IN USO» sono bottoni inerti ma focusabili · i 7 campi singoli costano
-15.350 contro le 1.330 del pacchetto e nessuno lo segnala · CERCA/GUARDA
-ignorano il tocco in silenzio mentre la rete gira · Invio non conferma il
-codice di trasferimento · le partite scartate dalla coda di rete non
-avvisano · la finestra del passo alto usa la stessa soglia dello scatto
-(66 px) senza dichiararlo.
+  squadra di casa senza dichiararlo.
