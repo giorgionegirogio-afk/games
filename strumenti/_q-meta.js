@@ -40,8 +40,10 @@
        stagione, monete e statistiche devono uscire dal localStorage
        identiche al bit;
      · il pareggio: misurato (giornata 10) che lo 0-0 al 90' NON chiude
-       la partita — si va a golden — quindi in stagione la X del
-       giocatore non esiste e il golden gol entra nel risultato
+       la partita — si va a golden. RETTIFICA (31 agosto 2026, #79): in
+       CAMPIONATO non e' piu' cosi' — lo 0-0 chiude la giornata e la X
+       entra in classifica (giornata 10 lo misura); il golden resta la
+       legge di amichevole e torneo, e il torneo perso lo misura
        registrato. Non e' un difetto che questo cancello giudica: e' un
        fatto che dichiara, perche' nessun documento lo diceva.
 
@@ -180,12 +182,16 @@ function installaAiuti() {
       if (t.state !== 'end') return { err: 'la partita non si chiude: scena ' + t.state };
       return { score: [t.score[0], t.score[1]], perfetti: t.stats.perfetti[0] | 0, rubate: t.stats.rubate[0] | 0 };
     },
-    /* la via del pareggio: nessuna rete forzata, cronometro quasi a zero,
+    /* la via del GOLDEN: nessuna rete forzata, cronometro quasi a zero,
        e si guarda cosa fa il gioco sullo 0-0 al 90'. Se si alza il flag
-       del golden la partita si decide li' con una rete forzata
+       del golden la partita si decide li' con una rete forzata di `chi`
        (il tiro dei rigori vuole il dito umano e questo banco non ce
-       l'ha: fermarsi al golden e' il modo di misurare senza inventare) */
-    pareggio() {
+       l'ha: fermarsi al golden e' il modo di misurare senza inventare).
+       RETTIFICA (31 agosto 2026, #79): la STAGIONE non passa piu' di
+       qui — in campionato lo 0-0 chiude la giornata, e lo misura
+       pareggioCampionato() qui sotto. Questa via resta la misura della
+       legge del golden dove il golden vige: amichevole e TORNEO. */
+    pareggio(chi) {
       /* PRIMA dentro il gioco vivo, POI il cronometro: dare setTimeLeft
          durante il primo calcio d'inizio (quello con la presentazione dei
          capitani) non regge — misurato: la partita e' durata i 90 secondi
@@ -207,10 +213,28 @@ function installaAiuti() {
         if (t.G.golden) { visto = true; break; }
       }
       if (!visto) return { err: 'niente golden sullo 0-0: scena ' + t.state + ' punteggio ' + t.score[0] + '-' + t.score[1] };
-      if (!t.forceGoal(0)) return { err: 'forceGoal rifiutato nel golden' };
+      if (!t.forceGoal(chi || 0)) return { err: 'forceGoal rifiutato nel golden' };
       s = 0; while (t.state !== 'end' && s < 200) { t.simulate(5); s += 5; }
       if (t.state !== 'end') return { err: 'il golden gol non chiude la partita' };
       return { vistoGolden: true, score: [t.score[0], t.score[1]], perfetti: t.stats.perfetti[0] | 0, rubate: t.stats.rubate[0] | 0 };
+    },
+    /* LA LEGGE NUOVA DEL CAMPIONATO (31 agosto 2026, #79): lo 0-0 al
+       90' CHIUDE la giornata — niente golden, niente rigori, la X entra
+       in classifica. Questa via misura che il flag NON si alzi e che la
+       partita finisca com'e': se il golden scattasse, e' proprio il
+       rosso che serve. */
+    pareggioCampionato() {
+      this.fino(['play'], 120);
+      if (t.state !== 'play') return { err: 'non si entra nel gioco vivo: scena ' + t.state };
+      if (t.score[0] + t.score[1] > 0) return { err: 'il campo non e\' vergine: ' + t.score[0] + '-' + t.score[1] };
+      t.setTimeLeft(0.05);
+      let s = 0;
+      while (t.state !== 'end' && s < 6000) {
+        t.simulate(0.05); s++;
+        if (t.G.golden) return { err: 'il golden e\' scattato in campionato: la legge del pareggio non vige' };
+      }
+      if (t.state !== 'end') return { err: 'lo 0-0 al 90\' non chiude la giornata: scena ' + t.state };
+      return { pareggioChiuso: true, score: [t.score[0], t.score[1]], perfetti: t.stats.perfetti[0] | 0, rubate: t.stats.rubate[0] | 0 };
     },
   };
   return 'ok';
@@ -408,9 +432,13 @@ const mediana = a => { const b = a.slice().sort((x, y) => x - y); const n = b.le
     const preE = await pag.evaluate(leggiStato);
     const oiE = (() => { const m = preE.tour.rounds[0].find(m => m.a === 0 || m.b === 0); return m.a === 0 ? m.b : m.a; })();
     await pag.evaluate(() => { window.__test.startTourMatch(); });
-    const fineE = await pag.evaluate(() => window.__qm.forza(0, 1));
+    /* la sconfitta arriva DAL GOLDEN (31 agosto 2026): cosi' questo giro
+       misura anche che nel torneo la legge del golden vige ancora, ora
+       che in campionato non vige piu' (#79) */
+    const fineE = await pag.evaluate(() => window.__qm.pareggio(1));
     if (fineE.err) esplodi('torneo perso: ' + fineE.err);
-    di(fineE.score[0] < fineE.score[1], 'la sconfitta forzata e\' una sconfitta', fineE.score.join('-'));
+    di(fineE.vistoGolden === true, 'nel torneo lo 0-0 al 90\' va ancora al GOLDEN (misurato)');
+    di(fineE.score[0] < fineE.score[1], 'la sconfitta al golden e\' una sconfitta', fineE.score.join('-'));
     const postE = await pag.evaluate(leggiStato);
     di(postE.tour && postE.tour.out === true, 'perso il quarto: il torneo e\' fuori (out)');
     di(postE.tour && postE.tour.rounds[0].every(m => m.w === m.a || m.w === m.b), 'il resto del tabellone si risolve da solo');
@@ -464,7 +492,7 @@ const mediana = a => { const b = a.slice().sort((x, y) => x - y); const n = b.le
       const forza = pre.season.squadre[m.a === 0 ? m.b : m.a].forza;
       const diffAttesa = forza >= 8 ? 2 : (forza >= 5 ? 1 : 0);
       const fine = g === 9
-        ? await pag.evaluate(() => window.__qm.pareggio())
+        ? await pag.evaluate(() => window.__qm.pareggioCampionato())
         : await pag.evaluate(() => window.__qm.forza(2, 0));
       if (fine.err) esplodi('giornata ' + (g + 1) + ': ' + fine.err);
       const post = await pag.evaluate(leggiStato);
@@ -481,8 +509,10 @@ const mediana = a => { const b = a.slice().sort((x, y) => x - y); const n = b.le
         (uguale ? '' : ' — LA CLASSIFICA NON TORNA') +
         (via.diff === diffAttesa ? '' : ' — diff ' + via.diff + ' attesa ' + diffAttesa));
       if (g === 9) {
-        di(fine.vistoGolden === true, 'lo 0-0 al 90\' non chiude la partita: si va al GOLDEN (misurato)');
-        di(fine.score[0] !== fine.score[1] && registrata, 'in stagione la X del giocatore non esiste: il golden entra nel risultato registrato', fine.score.join('-'));
+        /* la legge nuova (#79, 31 agosto 2026): in campionato si pareggia */
+        di(fine.pareggioChiuso === true && fine.score[0] === fine.score[1],
+          'lo 0-0 al 90\' in campionato CHIUDE la giornata: niente golden (misurato)', fine.score.join('-'));
+        di(registrata, 'la X del giocatore esiste ed entra in classifica come pareggio', fine.score.join('-'));
       }
       const achNuovi = post.ach.filter(a => !pre.ach.includes(a));
       if (g === 0) moneteG0 = { delta: post.coins - pre.coins, attese: monete(fine, true, C.SEA_WIN, achNuovi), achNuovi };

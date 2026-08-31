@@ -10854,8 +10854,11 @@ function addGoal(team){
      anche il fotogramma che tutti guardano: la fascia nera con SALTA in
      mezzo alla festa del gol e' la cosa che non deve esserci. */
   if(typeof Tut!=='undefined' && Tut.active) Tut.finish(true);
-  /* trofei del giocatore (solo se la squadra 0 e' umana) */
-  if(team===0 && !G.cpu[0]){
+  /* trofei del giocatore (solo se la squadra 0 e' umana, e NON in
+     rilettura: nel replay di una sfida G.cpu[0] e' false ma a giocare
+     e' il nastro — riprodotto il 31 agosto: guardare sbloccava e
+     pagava. Guardare una partita non e' giocarla.) */
+  if(team===0 && !G.cpu[0] && Reg.modo!==2){
     unlockAch('primo_gol');
     if(G.score[0]>=3) unlockAch('tripletta');
   }
@@ -11324,7 +11327,10 @@ function applyMatchRewards(){
   addCoinsInternal(gain);
   /* trofei */
   if(won){
-    if(G.golden) unlockAch('golden');
+    /* al GOLDEN si vince solo col golden gol: G.golden resta alzato
+       anche quando dopo 40 secondi si passa ai rigori, e il trofeo
+       scattava pure li' (31 agosto 2026) */
+    if(G.golden && !G.rigori) unlockAch('golden');
     if(G.score[1]===0) unlockAch('cleansheet');
     if(CS.vittorie>=10) unlockAch('vittorie10');
   }
@@ -15232,7 +15238,7 @@ function fireShot(p, nx, ny, q, lob){
   if(q===1){
     /* perfetto: teso e angolato verso il palo lontano */
     G.stats.perfetti[t]++;
-    if(t===0 && !G.cpu[0] && G.stats.perfetti[0]>=5) unlockAch('perfetti5');
+    if(t===0 && !G.cpu[0] && Reg.modo!==2 && G.stats.perfetti[0]>=5) unlockAch('perfetti5');
     /* LA MIRA SCEGLIE LA CORSIA (26 ago 2026). L'incrocio si prendeva
        sempre opposto alla propria posizione — il palo lontano, che e' la
        regola giusta CONTRO IL PORTIERE. Ma prima del portiere ci sono
@@ -15428,7 +15434,7 @@ function fireShotMirato(p, c, finestra, lettura, my){
        impara. Cambia solo il verso del giro: segue la mira invece
        dell'incrocio automatico, e a mira zero il giro e' zero. */
     G.stats.perfetti[t]++;
-    if(t===0 && !G.cpu[0] && G.stats.perfetti[0]>=5) unlockAch('perfetti5');
+    if(t===0 && !G.cpu[0] && Reg.modo!==2 && G.stats.perfetti[0]>=5) unlockAch('perfetti5');
     const fCur=(f!==null)?f:(p.y<goalY?1:-1);
     G.ball.curve=fCur*150*pow;
     G.ball.perfectT=0.6;
@@ -16120,7 +16126,14 @@ function step(){
     G.timeLeft-=dt;
     if(G.timeLeft<=0){
       G.timeLeft=0;
-      if(G.score[0]===G.score[1]){
+      /* IN CAMPIONATO IL PARI E' UN PAREGGIO (31 agosto 2026, #79).
+         L'intro prometteva «PAREGGIO +15» e la classifica ha la colonna
+         N, ma il golden scattava SEMPRE e il giocatore non poteva
+         pareggiare mai: titolo, premio e punto erano codice nato morto.
+         Il golden resta l'identita' dell'amichevole, del torneo (serve
+         un vincitore) e della sfida in rete (flusso registrato): solo
+         la giornata di campionato finisce come finisce il calcio. */
+      if(G.score[0]===G.score[1] && G.matchCtx!=='season'){
         G.golden=true; G.goldenT=0;
         showBanner('GOLDEN GOAL','#ffb020',2.2);
         Audio5.whistle(false); Audio5.swell();
@@ -17274,7 +17287,7 @@ function checkSlideContact(p){
         b.owner=G.players.indexOf(p); b.passTo=-1;
         G.stats.rubate[p.team]++;
         /* trofeo: 10 rubate pulite totali (carriera + partita in corso) */
-        if(p.team===0 && !G.cpu[0] && SAVE.stats.rubate+G.stats.rubate[0]>=10) unlockAch('rubate10');
+        if(p.team===0 && !G.cpu[0] && Reg.modo!==2 && SAVE.stats.rubate+G.stats.rubate[0]>=10) unlockAch('rubate10');
         G.freeze=0.11;                       // hit-stop scivolata perfetta
         /* la rubata pulita e' l'unico contrasto che si vince: la scossa va
            nel verso in cui si e' entrati, e il manto salta */
@@ -20015,6 +20028,7 @@ const Duel = {
        gira in freekick), vt avanza in update e anima il solo disegno */
     this.vt=0;
     this.aimU=0; this.aimV=0.50; this.dito=-1; this.mira=false; this.mirato=false;
+    this.contato=false;   /* i conti dell'esito si fanno UNA volta (#80) */
     /* UI */
     ui.duelMsg.textContent='';
     hide(ui.powerWrap);
@@ -20305,12 +20319,27 @@ const Duel = {
         if(s.outcome==='gol'){
           Audio5.roar();
           if(shopAttivo('curva')) Audio5.coro();
-          if(s.shooter===0 && s.shooterHuman && !G.cpu[0]) unlockAch('punizione');
+          /* solo la PUNIZIONE-duello: il rigore della serie il gioco
+             stesso lo titola RIGORE, e un trofeo che promette una cosa
+             e ne accetta un'altra e' una bugia (31 agosto 2026). E non
+             nel replay, per la stessa legge dei cinque qui sopra. */
+          if(s.shooter===0 && s.shooterHuman && !G.cpu[0] && !G.rigori && Reg.modo!==2) unlockAch('punizione');
         }else Audio5.clack(true);
       }
       if(s.resultT>2.0){
         s.shown=false;
         hide(ui.duel);
+        /* IL DISCHETTO ENTRA IN CONTABILITA' (31 agosto 2026, #80).
+           stopPower conta gia' il tiro; qui si conta il resto: un gol
+           e' nello specchio per definizione, una parata anche — e la
+           parata e' del portiere, per il tabellino e per la sua
+           crescita. Solo il «fuori» resta fuori dallo specchio. Il
+           chiavistello evita ogni doppio conto. */
+        if(!s.contato){
+          s.contato=true;
+          if(s.outcome!=='fuori') G.stats.inPorta[s.shooter]=(G.stats.inPorta[s.shooter]||0)+1;
+          if(s.outcome==='parata') G.stats.parate[s.keeper]++;
+        }
         /* se siamo ai rigori l'esito non riapre il gioco: aggiorna la serie */
         if(G.rigori){
           s.phase='off';
@@ -20324,6 +20353,11 @@ const Duel = {
           b.y = FH/2 + (s.zone-1)*(GOAL_H/2-24);
           b.vx = s.shooter===0 ? 520 : -520;
           b.vy = 0; b.z=0; b.vz=0;
+          /* CHI TIRA, SEGNA (31 agosto 2026, #80): addGoal accredita
+             l'ultimo toccatore, che qui era chi aveva SUBITO il fallo.
+             Il rigorista lo dice duelloUomini() — la stessa verita'
+             della targa TIRA in scena — e il suo tocco si segna qui. */
+          { const u=duelloUomini(); if(u && u.tir) segnaTocco(G.players.indexOf(u.tir)); }
           addGoal(s.shooter);
         }else{
           /* il gioco riprende: possesso al portiere che ha difeso */
