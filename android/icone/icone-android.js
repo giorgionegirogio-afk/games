@@ -134,7 +134,10 @@ function conZona(fn, zoom) {
 }
 
 const lavori = [];
-for (const px of [48, 72, 96, 144, 192]) {
+/* 512: non e' una densita' Android, e' l'icona che Google Play chiede
+   nella scheda dello store (512x512, PNG, niente trasparenza ai bordi
+   perche' il margine e' 0). Stessa mano deterministica delle altre. */
+for (const px of [48, 72, 96, 144, 192, 512]) {
   lavori.push(['icona-calcetto-' + px + '.png', px, calcetto(0)]);
   lavori.push(['icona-circolo-' + px + '.png', px, circolo(0)]);
 }

@@ -170,7 +170,18 @@ const P_DATI = forse('const INS_LAT_MIN', ';', ) + '\n'
              + forse('let _insSonda', ';\n');
 const P_COST = pezzo('const STICK_DEAD=', '\n', 'STICK_DEAD/STICK_FULL');
 const P_MOVE = pezzo('function humanMove(t){', '\n}\n', 'humanMove');
-const P_SPR1 = pezzo('const STICK_SPRINT =', '\n', 'STICK_SPRINT');
+/* STICK_SPRINT E' OPZIONALE DAL 29 AGOSTO 2026, e la ragione va scritta:
+   la toppa _t-scatto-scudo.js toglie quella costante dal gioco perche' lo
+   scatto non nasce piu' dalla lunghezza della levetta ma dalla TENUTA di
+   un disco. Una costante che non decide piu' niente e' una costante morta
+   e non si spedisce; ma questo banco la estraeva con «pezzo», che e'
+   un'estrazione OBBLIGATORIA, e sul gioco curato moriva prima di
+   misurare — accusando il gioco di un guasto che era suo. Con «forse» il
+   banco misura tutti e due i giochi: se la costante c'e' la porta dentro
+   (e sul gioco vecchio non cambia un byte), se non c'e' non la cerca. Il
+   valore restituito diventa null, cosi' chi lo legge distingue «non
+   c'e'» da «vale zero». */
+const P_SPR1 = forse('const STICK_SPRINT =', '\n');
 const P_SPR2 = pezzo('function humanSprint(t){', '\n}\n', 'humanSprint');
 const P_TOUCH = (() => {
   const i = SRC.indexOf('const Touch5 = {');
@@ -230,7 +241,8 @@ function ambiente(vista) {
        chiamante, e va misurata sul chiamante. */
     const __rel = Touch5.release.bind(Touch5);
     Touch5.release = function(t,s){ amb.rilasci++; return __rel(t,s); };
-    return { Touch5, humanMove, humanSprint, touchBtnLayout, STICK_DEAD, STICK_FULL, STICK_SPRINT };
+    return { Touch5, humanMove, humanSprint, touchBtnLayout, STICK_DEAD, STICK_FULL,
+             STICK_SPRINT: (typeof STICK_SPRINT!=='undefined' ? STICK_SPRINT : null) };
   `;
   /* cio' che l'ambiente qui sopra gia' fornisce non va estratto dal
      gioco: sono i finti che rendono misurabile l'ingresso da solo */

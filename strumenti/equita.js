@@ -124,7 +124,47 @@ async function giocaLato(browser, porta, nome, conf, partite, semeBase) {
 
   /* la configurazione del lato: un frammento JS libero, eseguito una
      volta, dopo il caricamento e prima di ogni partita */
-  if (conf) await pag.evaluate(fr => { (0, eval)(fr); }, conf);
+  let effetto = null;
+  if (conf) {
+    /* =====================================================================
+       IL LATO B HA CAMBIATO QUALCOSA? (27 agosto 2026)
+
+       Un cancello che passa perche' non ha misurato niente e' peggio di
+       nessun cancello, e qui il modo di non misurare niente e' banale: se
+       --conf-b non produce effetto — il nome di un metodo cambiato, un
+       oggetto che non esiste piu', un errore ingoiato da eval — allora A e
+       B sono lo stesso gioco, la differenza esce 0,000 e il cancello dice
+       verde su una promessa che nessuno ha verificato.
+
+       E' esattamente il caso in cui ci si trova oggi: il negozio e'
+       davvero solo estetico, quindi le coppie escono identiche 10 su 10 —
+       il risultato giusto e il risultato del cancello cieco sono lo
+       stesso numero. L'unico modo di distinguerli e' guardare se lo stato
+       si e' mosso PRIMA di giocare.
+
+       L'impronta e' il salvataggio piu' il negozio: e' cio' che qualunque
+       configurazione sensata deve toccare per avere un effetto in campo.
+       ===================================================================== */
+    const impronta = () => pag.evaluate(() => {
+      const t = window.__test;
+      let s = '';
+      try { s += JSON.stringify(t.save); } catch (e) { s += 'save?'; }
+      try { if (t.negozio) s += JSON.stringify(t.negozio()); } catch (e) { s += 'neg?'; }
+      try { if (t.fields) s += JSON.stringify(t.fields); } catch (e) { s += 'fld?'; }
+      return s;
+    });
+    const prima = await impronta();
+    await pag.evaluate(fr => { (0, eval)(fr); }, conf);
+    const dopo = await impronta();
+    /* si contano i CARATTERI DIVERSI, non la differenza di lunghezza:
+       sbloccare tutto il negozio porta una fila di 0 a diventare una fila
+       di 1, e la lunghezza non si muove di un byte. Una misura che
+       guardasse solo la lunghezza direbbe «quasi niente» proprio nel caso
+       che deve riconoscere. */
+    let diversi = 0;
+    for (let i = 0; i < Math.max(prima.length, dopo.length); i++) if (prima[i] !== dopo[i]) diversi++;
+    effetto = { mosso: prima !== dopo, byte: diversi };
+  }
 
   const risultati = [];
   const inizio = Date.now();
@@ -147,7 +187,7 @@ async function giocaLato(browser, porta, nome, conf, partite, semeBase) {
   const ms = Date.now() - inizio;
 
   await ctx.close();
-  return { nome, risultati, ms, errori };
+  return { nome, risultati, ms, errori, effetto };
 }
 
 (async () => {
@@ -200,6 +240,20 @@ async function giocaLato(browser, porta, nome, conf, partite, semeBase) {
       identiche < partite ? 'il gioco attinge a un caso non governato dal seme: la misura non e\' riproducibile' : '');
   } else {
     console.log(`  --    coppie identiche A/B: ${identiche}/${partite} (con conf-b possono differire)`);
+    /* --- 3b. IL LATO B HA DAVVERO CAMBIATO QUALCOSA?
+       Senza questo controllo il cancello passerebbe verde anche se
+       --conf-b non facesse niente — un nome di metodo cambiato, un
+       oggetto sparito, un errore ingoiato da eval. Il risultato giusto
+       («comprare non sposta il gioco», differenza 0,000) e il risultato
+       del cancello cieco («non ho misurato niente», differenza 0,000)
+       sono lo stesso numero, e solo questa riga li distingue. --- */
+    verifica(B.effetto && B.effetto.mosso,
+      'il lato B ha davvero cambiato lo stato del gioco' +
+        (B.effetto && B.effetto.mosso ? ` (${B.effetto.byte} byte di scarto nell'impronta)` : ''),
+      (B.effetto && !B.effetto.mosso)
+        ? 'il frammento --conf-b non ha mosso ne\' il salvataggio ne\' il negozio ne\' i campi: ' +
+          'questo confronto NON prova niente. Controlla che i nomi che usa esistano ancora.'
+        : '');
   }
 
   /* --- 4. IL CANCELLO: la configurazione B non deve spostare il risultato --- */

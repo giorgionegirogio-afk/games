@@ -10,39 +10,63 @@ progetto: la fonte di ogni numero e' il comando che l'ha prodotto.
 1. COSA CONTIENE IL GIOCO (CALCETTO-il-gioco.html, md5 30279089de83249e44e66d2247294f5f)
 -----------------------------------------------------------------------
 
-MATERIALE DI TERZI — due soli componenti, entrambi caratteri tipografici:
+MATERIALE DI TERZI — tre soli componenti, tutti caratteri tipografici,
+due famiglie, la stessa licenza:
 
   a) Archivo Black Regular, versione 1.006
      Copyright 2017 The Archivo Black Project Authors
      (https://github.com/Omnibus-Type/ArchivoBlack)
      Licenza: SIL Open Font License 1.1, SENZA Reserved Font Name.
-     Incorporato come woff2 in base64 (14.332 byte binari), sottoinsieme
-     di 161 glifi il cui intervallo di copertura coincide con il
-     sottoinsieme "latin-ext" distribuito da Google Fonts.
+     Incorporato come woff2 in base64 (18.604 byte binari), sottoinsieme
+     "latin" distribuito da Google Fonts: 231 glifi, 220 caratteri
+     mappati.
      Verifica: tabella `name` letta voce per voce con fontTools 4.63.0 —
      nameID 0 (copyright) e nameID 14 (URL della licenza,
      http://scripts.sil.org/OFL) presenti; nameID 13 (testo della
      licenza) ASSENTE nel binario. Percio' il testo viaggia QUI e nella
      schermata CREDITI del gioco (toppa strumenti/_t-crediti.js).
 
-  b) Barlow Condensed Bold, versione 1.408
+  b) Barlow Condensed Regular, versione 1.408
      Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)
      Licenza: SIL Open Font License 1.1, SENZA Reserved Font Name.
-     Incorporato come woff2 in base64 (7.636 byte binari), sottoinsieme
-     di 140 glifi il cui intervallo di copertura coincide con il
-     sottoinsieme "vietnamese" distribuito da Google Fonts.
+     Incorporato come woff2 in base64 (21.164 byte binari), sottoinsieme
+     "latin": 272 glifi, 227 caratteri mappati.
      Stessa verifica, stesso esito: nameID 13 assente dal binario.
 
-  AVVERTENZA MISURATA, non un'opinione: nessuno dei due sottoinsiemi
-  contiene le lettere A-Z, a-z, le cifre 0-9 o le vocali accentate
-  italiane (misurato dalla tabella cmap: Archivo copre U+0100-017F e
-  spiccioli, Barlow copre l'intervallo vietnamita U+1EA0-1EF9 piu'
-  combinanti). Quindi OGGI nessun carattere del testo del gioco esce da
-  questi font: tutto il testo visibile viene dai caratteri di sistema
-  del dispositivo. Gli obblighi OFL restano (si distribuisce comunque il
-  Font Software), ma i due font sono, di fatto, peso morto: la decisione
-  se sostituirli coi sottoinsiemi "latin" veri o rimuoverli spetta al
-  committente (vedi il referto della revisione diritti del 20/8/2026).
+  c) Barlow Condensed Bold, versione 1.408
+     Stesso copyright e stessa licenza della b).
+     Incorporato come woff2 in base64 (22.444 byte binari), sottoinsieme
+     "latin": 272 glifi, 227 caratteri mappati.
+     E' entrato il 28 agosto 2026: prima il grassetto lo INVENTAVA il
+     browser ingrassando i contorni del tondo, e su un carattere
+     condensato quella finta chiude le aste.
+
+  -------------------------------------------------------------------
+  LA SOSTITUZIONE DEL 28 AGOSTO 2026, e perche' e' stata fatta.
+
+  Fino a quel giorno qui c'era un'avvertenza che diceva, misurandolo:
+  nessuno dei due sottoinsiemi conteneva le lettere A-Z, a-z, le cifre
+  o le vocali accentate italiane. Erano "latin-ext" e "vietnamese",
+  cioe' le CODE di due famiglie senza il loro corpo. Ventidue kB di
+  base64 che non avevano mai scritto una lettera: TUTTO il testo del
+  gioco usciva dai caratteri di sistema del dispositivo.
+
+  L'avvertenza era esatta e lasciava la scelta al committente. La scelta
+  e' stata fatta il 28 agosto: sostituire coi sottoinsiemi "latin" veri.
+  Stesse due famiglie, stessa licenza, stesso copyright — cambia solo
+  QUALI GLIFI ci sono dentro, piu' il taglio grassetto vero.
+
+  MISURATO DOPO, con fontTools sulla tabella cmap:
+    Archivo Black 400      26/26 lettere maiuscole, 12/12 accentate
+    Barlow Condensed 400   26/26, 12/12
+    Barlow Condensed 700   26/26, 12/12
+  e a schermo (strumenti/_q-carattere.js, 8 controlli su 8): la parola
+  «CALCETTO» a 100px misurava 520,36 unita' — cioe' ESATTAMENTE quanto
+  in serif, la firma del ripiego — e adesso misura 594,9 in Archivo
+  Black e 339,3 in Barlow Condensed.
+
+  COSTO: 62.212 byte di woff2 contro 21.968, cioe' circa 53 kB in piu'
+  nel file HTML. Sull'APK, compresso, molto meno.
 
 TUTTO IL RESTO E' FATTO IN CASA — verificato cosi':
   - Immagini: le uniche `data:image` sono 2 SVG scritti a mano nel

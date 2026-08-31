@@ -1,0 +1,13 @@
+{
+  "name": "calcetto-rete",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Il server di CALCETTO: cinque funzioni davanti a Postgres. Zero dipendenze.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "prova": "node prove/tutte.js && node prove/economia.js",
+    "prova-server": "node prove/tutte.js",
+    "prova-economia": "node prove/economia.js"
+  }
+}

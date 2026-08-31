@@ -61,8 +61,20 @@ def main():
     lav = os.path.join(os.path.dirname(fuori), '_lavoro_apk')
     shutil.rmtree(lav, ignore_errors=True); os.makedirs(lav)
 
+    # 28 ago 2026: il manifest di android/costruisci.py ha imparato a
+    # portare versionCode e versionName (il codice sono i minuti passati
+    # dal 2024, vedi il cappello di quel file), e questo file si era
+    # fermato a prima — la .format() moriva con KeyError: 'codice'.
+    # Qui il codice e' 1 DI PROPOSITO: questo APK e' di prova, e con il
+    # codice piu' basso possibile l'APK vero del repo si reinstalla
+    # sempre sopra senza disinstallare niente. Un APK di prova non deve
+    # poter restare sul telefono per sbaglio. Se sul telefono c'e' gia'
+    # un codice piu' alto, Android rifiuta il declassamento: si passa
+    # APK_CODICE=<piu del suo> per una prova, e si sa di doverlo
+    # disinstallare dopo.
+    campi = dict(APP, codice=int(os.environ.get('APK_CODICE', '1')), nome='prova-toppa')
     with open(os.path.join(lav, 'AndroidManifest.xml'), 'w', encoding='utf-8') as f:
-        f.write(manifest_testo().format(**APP))
+        f.write(manifest_testo().format(**campi))
 
     res = os.path.join(lav, 'res')
     for d, px in [('mdpi', 48), ('hdpi', 72), ('xhdpi', 96), ('xxhdpi', 144), ('xxxhdpi', 192)]:

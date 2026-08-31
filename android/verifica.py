@@ -139,8 +139,53 @@ for nome, html, pkg in APP:
         # niente rete: nessun src/href remoto, nessuna chiamata in uscita
         remoti = re.findall(r'(?:src|href)\s*=\s*["\']https?://[^"\']+', testo)
         dice(not remoti, 'nessuna risorsa remota  %s' % (remoti[:2] or ''))
-        chiamate = re.findall(r'\b(?:fetch|XMLHttpRequest|WebSocket|EventSource)\s*\(', testo)
-        dice(not chiamate, 'nessuna chiamata di rete  %s' % (chiamate[:3] or ''))
+        # =============================================================
+        # LA RETE: NON «ZERO CHIAMATE», MA «UNA SOLA PORTA E NESSUNA
+        # ALL'AVVIO» (rettifica del 29 agosto 2026).
+        #
+        # Qui c'era  dice(not chiamate, 'nessuna chiamata di rete').
+        # Era giusta finche' il gioco era offline puro. Poi e' entrata la
+        # modalita' SFIDA — il multigiocatore asincrono — che usa fetch, e
+        # da quel giorno questo cancello e' ROSSO IN PERMANENZA. Un
+        # cancello sempre rosso e' peggio di nessun cancello: dopo due
+        # giorni nessuno lo guarda piu', e quando diventera' rosso per una
+        # ragione vera non se ne accorgera' nessuno.
+        #
+        # La regola che vale oggi e' piu' stretta, non piu' larga, e dice
+        # tre cose che si possono misurare guardando il testo:
+        #   1. si esce da UNA porta sola, e la porta e' dichiarata in un
+        #      posto solo (Rete.base). Un secondo indirizzo va discusso,
+        #      non aggiunto.
+        #   2. nessuna chiamata parte da sola: fetch vive dentro
+        #      Rete.chiama, che si raggiunge soltanto da una voce di menu.
+        #   3. XMLHttpRequest, WebSocket ed EventSource restano a ZERO —
+        #      sono i canali che nessuna funzione di questo gioco ha
+        #      ragione di aprire, e un giorno che comparissero vorrebbe
+        #      dire che e' entrato qualcosa che non abbiamo scritto noi.
+        vecchi = re.findall(r'\b(?:XMLHttpRequest|WebSocket|EventSource)\s*\(', testo)
+        dice(not vecchi, 'nessun canale di rete oltre a fetch  %s' % (vecchi[:3] or ''))
+        fetch = re.findall(r'\bfetch\s*\(', testo)
+        dice(len(fetch) <= 1,
+             'fetch sta in un posto solo (%d), non sparso per il gioco' % len(fetch))
+        # l'URL INTERO, non il solo host: la lista bianca distingue
+        # github.com/jpt/barlow (una licenza) da github.com/chiunque
+        porte = sorted(set(re.findall(r"""https?://[^\s"'<>()\\]+""", testo)))
+        fuori = [p for p in porte if not (
+            p.startswith('http://www.w3.org')          # il vocabolario SVG
+            or p.startswith('https://openfontlicense') # le licenze dei caratteri
+            or p.startswith('http://scripts.sil.org')
+            # i tre repository dei caratteri: non sono porte, sono la riga
+            # «dove vive questo font» che l'OFL obbliga a portarsi dietro
+            # dentro il file. Sono elencati a mano di proposito: il giorno
+            # che entra un quarto carattere questo cancello esce ROSSO, e
+            # chi lo ha messo dovra' dire di chi e' e con che licenza —
+            # che e' precisamente il controllo che vogliamo, visto che il
+            # gioco deve restare libero da diritti altrui.
+            or p.startswith('https://github.com/Omnibus-Type')   # Archivo
+            or p.startswith('https://github.com/jpt')            # Barlow
+            or p.startswith('https://github.com/solmatas')       # Bitter
+            or p.startswith('https://calcetto-rete.vercel.app'))]   # il nostro server
+        dice(not fuori, 'si esce da una porta sola, e e" la nostra  %s' % (fuori[:2] or ''))
         dice('window.__indietro' in testo, "il gioco sa gestire il tasto Indietro")
 
     f = subprocess.run([BT + '/apksigner.bat', 'verify', '--verbose', percorso],

@@ -94,7 +94,13 @@
    per tap, flick e carica e' il rilascio — e' il dito che tiene aperta
    la carica, misurare dall'appoggio boccerebbe per costruzione anche
    una carica perfetta — mentre per il trascinamento e per i pulsanti
-   contestuali (l'azione parte al touchstart) e' l'appoggio del dito.
+   contestuali che agiscono al touchstart (cambio, cross) e' l'appoggio
+   del dito. PASSAGGIO e FILTRANTE comandano dal RILASCIO, dal 26
+   agosto (L1.4): il disco piccolo col possesso si MIRA trascinando ed
+   esegue quando il dito si alza (CALCETTO-il-gioco.html:13061, :14244).
+   Misurato il 31 agosto: contarle dall'appoggio addebitava al gioco la
+   durata del trascinamento del banco — 572 ms e 35 fotogrammi di
+   latenza, di cui la risposta vera era l'ultima trentina di ms.
    Si stampano entrambe le distanze.
 
    La risposta non basta: dev'essere l'azione GIUSTA, e lo dice lo STATO
@@ -109,6 +115,41 @@
    premerebbe RIPRENDI e la prova non proverebbe niente). Se anche una
    sola giocata dice OK in pausa, lo strumento sta attestando: va
    riparato, non consegnato.
+
+   ======= LE ATTESE SI CONTANO IN FOTOGRAMMI (31 agosto 2026) =========
+   Misurato su questa base: 2-3 corse su 10 uscivano ROSSE in entrambe le
+   versioni del gioco, cioe' il rosso non distingueva niente. La causa
+   non era una giocata: erano LE ATTESE IN MILLISECONDI su un banco in
+   tempo reale. Il gioco risponde solo a un confine di fotogramma, e la
+   sonda campiona una volta per fotogramma: su una macchina carica i
+   fotogrammi si allargano (125 ms l'uno a 8 fps), una risposta vera al
+   primo fotogramma utile veniva CAMPIONATA oltre i 500 ms, e il cancello
+   accusava il gioco del carico della macchina.
+
+   La legge dei due orologi, e non si mescola:
+   · i TEMPI DEL GESTO (tenute, passi del trascinamento) restano in
+     millisecondi, IDENTICI a ieri. Non e' una rinuncia, e' una misura:
+     i tocchi sono gestiti a EVENTI dal gioco (i gestori scattano
+     all'arrivo, non al fotogramma), quindi il gesto si registra anche
+     sub-frame; e la prima stesura di questa cura, che contava in
+     fotogrammi anche i passi, faceva DUE giri di protocollo per passo
+     e allungava il gesto stesso — misurato: la filtrante passava da
+     ~200 a 921 ms, e siccome la sua latenza si conta dall'appoggio,
+     era la cura ad accusare il gioco. Tre rossi su sette, tutti miei;
+   · la BASE DI QUIETE e la FINESTRA DI RISPOSTA tengono i millisecondi
+     di ieri come minimo E garantiscono un numero minimo di fotogrammi
+     DISEGNATI: sono le fasi in cui si CAMPIONA, e i campioni sono
+     fotogrammi — 1300 ms a 8 fps sono 10 campioni, non 78;
+   · il CANCELLO passa: risposta entro 500 ms OPPURE entro 30 fotogrammi
+     (che a 60 fps SONO 500 ms: sulla macchina sana le due condizioni
+     coincidono per costruzione e il cancello e' identico a ieri).
+     Quando passano i fotogrammi ma non i millisecondi, il banco lo
+     DICE: e' il carico della macchina, non il gioco — e la riga stampa
+     il passo mediano dei fotogrammi perche' chi legge veda quanto.
+   Limite dichiarato: sotto carico pesante una regressione che fosse di
+   TEMPO interno del gioco (non di fotogrammi) puo' passare — su banco
+   carico non e' distinguibile dal carico stesso. Fa fede il protocollo
+   di casa: dieci corse per lato su macchina quieta.
 
    uso:
      node strumenti/giocata.js --giocata tiro
@@ -165,6 +206,30 @@ function arg(n, d) {
 }
 const attesa = ms => new Promise(r => setTimeout(r, ms));
 const dentro = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+/* L'ATTESA CHE CONTA I FOTOGRAMMI (31 agosto 2026, vedi il cappello).
+   Aspetta ENTRAMBE le cose: almeno ms di orologio vero E almeno fot
+   fotogrammi disegnati dalla pagina (contatore window.__fot, un rAF
+   installato da installaSonda). Si usa SOLO per le fasi che campionano
+   (base di quiete, finestra di risposta), mai dentro un gesto: e' UN
+   solo giro di protocollo che si risolve al confine di fotogramma —
+   la prima stesura (evaluate + waitForFunction, due giri per chiamata,
+   una chiamata per passo di trascinamento) allungava i gesti e li
+   faceva bocciare: vedi il cappello. Il guardiano da 30 s evita che un
+   rAF fermo (pagina nascosta) lasci il banco appeso per sempre. */
+async function attesaFotogrammi(pag, fot, msMinimo) {
+  await pag.evaluate(a => new Promise(fine => {
+    const da = window.__fot | 0, t0 = performance.now();
+    const guardiano = setInterval(() => {
+      if (performance.now() - t0 > 30000) { clearInterval(guardiano); fine('guardiano'); }
+    }, 500);
+    const giro = () => {
+      if ((window.__fot | 0) - da >= a.fot && performance.now() - t0 >= a.ms) { clearInterval(guardiano); fine(0); }
+      else requestAnimationFrame(giro);
+    };
+    giro();
+  }), { fot, ms: msMinimo || 0 });
+}
 
 const esiti = [];
 /* LE NOTE STANNO SOTTO LA GIOCATA CHE LE HA PRODOTTE, e non sotto quella
@@ -379,7 +444,10 @@ const GIOCATE = {
      ancora, sul pulsante piccolo, e adesso si misura li'. */
   passaggio: {
     titolo: "pulsante piccolo col pallone e NESSUN compagno nel cono di mira (PASSAGGIO) -> palla giocata al piu' smarcato",
-    possesso: true, bersaglio: 'palla', comando: 'inizio', miraVuota: true, richiedePassaggio: true,
+    /* comando 'fine', non 'inizio' (31 agosto 2026): con L1.4 il disco
+       esegue al RILASCIO — dall'appoggio si misurerebbe la tenuta del
+       banco, non il gioco. Vedi il cappello. */
+    possesso: true, bersaglio: 'palla', comando: 'fine', miraVuota: true, richiedePassaggio: true,
     async gesto(cdp, pag, info) {
       /* stesso pulsante della filtrante, stessa risoluzione al
          touchstart: cambia il CAMPO, non il dito. Senza nessun compagno
@@ -444,11 +512,15 @@ const GIOCATE = {
        (touchBtnLayout, CALCETTO-il-gioco.html:8803): la filtrante e' la
        sua forma MIRATA, non un secondo pulsante. */
     titolo: "pulsante piccolo col pallone e un compagno nel cono di mira -> filtrante tesa e rasoterra",
-    possesso: true, bersaglio: 'palla', comando: 'inizio', mira: true, richiedeFiltrante: true,
+    /* comando 'fine', non 'inizio' (31 agosto 2026): con L1.4 il disco
+       si mira trascinando ed esegue al RILASCIO (:13061). Dall'appoggio
+       la latenza inglobava il trascinamento del banco: 572 ms e 35
+       fotogrammi su gioco sano, rosso su ENTRAMBI gli orologi — non era
+       rumore, era il banco che cronometrava se' stesso. */
+    possesso: true, bersaglio: 'palla', comando: 'fine', mira: true, richiedeFiltrante: true,
     async gesto(cdp, pag, info) {
       /* il pulsante PICCOLO: il centro lo dice il gioco (info.piccolo).
-         L'azione parte al TOCCO, non al rilascio: comanda l'appoggio,
-         con i 50 ms dell'anticipo umano davanti. La mira viene dal corpo
+         La mira viene dal corpo
          (nessuna levetta attiva): la quiete ha gia' girato la faccia del
          comandato verso un compagno, perche' la filtrante pretende un
          bersaglio con dot > 0,5. */
@@ -532,12 +604,50 @@ const GIOCATE = {
          trascina verso il pallone, si rilascia. Questo gesto misura quel
          percorso di dito; il contrasto in piedi e il contenimento hanno
          il loro cancello dedicato (_q-l12.js, prove A/A2/B/C/E). */
+      /* IL PORTATORE SI RIPUNTA UN ISTANTE PRIMA DEL GESTO (31 agosto
+         2026). Fra la quiete e il rilascio passano 350-500 ms di partita
+         VIVA: il portatore dribbla, e da 84 unita' arrivava sul filo del
+         raggio onesto della scivolata (140) — la giocata era una moneta,
+         verde o rossa a seconda del carico. Non e' una mano nuova: e' la
+         stessa mano della quiete, avvicinata al gesto. Se nel frattempo
+         il pallone e' passato ad altri, si rimette in scena il piu'
+         vicino: cio' che si misura resta il NOSTRO dito e la risposta
+         del gioco, non la pazienza dell'avversario. */
+      const scena = await pag.evaluate(() => {
+        const t = window.__test, G = t.G, v = t.view;
+        const pi = G.ctrl[0];
+        if (pi < 0) return { errore: 'nessun giocatore comandato (G.ctrl[0] = -1)' };
+        const p = G.players[pi];
+        let q = (G.ball.owner >= 0 && G.players[G.ball.owner]
+                 && G.players[G.ball.owner].team === 1
+                 && G.players[G.ball.owner].role !== 'gk') ? G.players[G.ball.owner] : null;
+        if (!q) {
+          let dm = 1e9;
+          for (const z of G.players) {
+            if (z.team !== 1 || z.out > 0 || z.role === 'gk') continue;
+            const d = Math.hypot(z.x - p.x, z.y - p.y);
+            if (d < dm) { dm = d; q = z; }
+          }
+        }
+        if (!q) return { errore: 'nessun avversario di movimento a cui ridare il pallone' };
+        const dx = q.x - p.x, dy = q.y - p.y, l = Math.max(1, Math.hypot(dx, dy));
+        const ux = dx / l, uy = dy / l;
+        q.x = p.x + ux * 84; q.y = p.y + uy * 84; q.vx = 0; q.vy = 0;
+        const b = G.ball;
+        b.owner = G.players.indexOf(q);
+        b.x = q.x + ux * 8; b.y = q.y + uy * 8;
+        b.vx = 0; b.vy = 0; b.vz = 0; b.z = 0;
+        const sx = w => w * v.S2 + v.Ax, sy = w => w * v.S2 + v.Ay;
+        return { palla: { x: sx(b.x), y: sy(b.y) }, comandato: { x: sx(p.x), y: sy(p.y) } };
+      });
+      if (scena.errore) throw Object.assign(new Error(scena.errore), { banco: true });
       const ora = await pag.evaluate(guardaPulsanti,
         { quale: 'grande', atto: 'slide', toll: TOLL_INCROCIO, aff: AFFONDAMENTO });
       if (ora.errore) throw Object.assign(new Error(ora.errore), { banco: true });
       ora.note = [];
-      /* verso il pallone, in coordinate di schermo: la mira e' del dito */
-      let vx = info.palla.x - info.comandato.x, vy = info.palla.y - info.comandato.y;
+      /* verso il pallone, in coordinate di schermo APPENA ripuntate:
+         la mira e' del dito */
+      let vx = scena.palla.x - scena.comandato.x, vy = scena.palla.y - scena.comandato.y;
       const vl = Math.max(1, Math.hypot(vx, vy)); vx /= vl; vy /= vl;
       await dito.giu(cdp, ora.x, ora.y);
       for (let i = 1; i <= 5; i++)
@@ -557,11 +667,18 @@ const GIOCATE = {
    spediti). */
 function installaSonda() {
   window.__sonda = { campioni: [], eventi: [], via: false };
+  /* IL CONTAFOTOGRAMMI: un rAF sempre acceso, indipendente dalla sonda.
+     E' l'orologio in fotogrammi di attesaFotogrammi e della latenza in
+     fotogrammi: ogni evento touch e ogni campione portano il suo valore,
+     cosi' "quanti fotogrammi fra il comando e la risposta" e' una
+     sottrazione, non una stima. */
+  window.__fot = 0;
+  (function tic() { window.__fot++; requestAnimationFrame(tic); })();
   for (const tipo of ['touchstart', 'touchmove', 'touchend']) {
     addEventListener(tipo, e => {
       if (!window.__sonda.via) return;
       const c = e.changedTouches && e.changedTouches[0];
-      window.__sonda.eventi.push({ tipo, t: performance.now(), x: c ? c.clientX : null, y: c ? c.clientY : null });
+      window.__sonda.eventi.push({ tipo, t: performance.now(), fot: window.__fot, x: c ? c.clientX : null, y: c ? c.clientY : null });
     }, { capture: true, passive: true });
   }
   window.__sondaVia = () => {
@@ -580,7 +697,7 @@ function installaSonda() {
       }
       const b = G.ball;
       S.campioni.push({
-        t: performance.now(),
+        t: performance.now(), fot: window.__fot,
         /* z e passTo sono le firme delle azioni nuove: il cross esiste
            solo se la palla prende quota, la filtrante solo se resta a
            terra e con un destinatario assegnato */
@@ -827,8 +944,18 @@ function analizza(dati, comando, bersaglio) {
   const daChi = comando === 'inizio' ? inizio : comando === 'ultimoInizio' ? ultimoInizio : fine;
   const comandoT = daChi ? daChi.t : null;
   if (comandoT == null) return { errore: 'gesto incompleto: alla pagina manca il touch' + (comando === 'fine' ? 'end' : 'start') + ' che comanda' };
+  /* il fotogramma in cui il gesto comanda: la latenza in fotogrammi e'
+     una sottrazione fra contatori, non una stima sui millisecondi */
+  const comandoFot = daChi.fot != null ? daChi.fot : null;
   const C = dati.campioni || [];
   if (!C.length) return { errore: 'nessun campione: la sonda non ha girato' };
+  /* il passo mediano fra i campioni: 16-17 ms su banco sano; e' il
+     numero che dice QUANTO il banco era carico quando i millisecondi e
+     i fotogrammi non raccontano la stessa storia */
+  const passi = [];
+  for (let i = 1; i < C.length; i++) passi.push(C[i].t - C[i - 1].t);
+  passi.sort((x, y) => x - y);
+  const passoMedianoMs = passi.length ? passi[Math.floor(passi.length / 2)] : null;
   let base = null;
   for (const c of C) { if (c.t <= comandoT) base = c; else break; }
   if (!base) base = C[0];
@@ -858,7 +985,7 @@ function analizza(dati, comando, bersaglio) {
      ha ricevuto puo' calciare a sua volta e mettere una z che non e'
      del nostro gesto. */
   let zVoloMax = 0, inVolo = false, voloFinito = false, toccoNostro = null;
-  let scivolataMs = null, cambioMs = null, nuovoIndice = null, passToVisto = null;
+  let scivolataMs = null, scivolataFot = null, cambioMs = null, cambioFot = null, nuovoIndice = null, passToVisto = null;
   const baseIdx = base.comandato ? base.comandato.i : null;
   for (const c of C) {
     if (c.t <= comandoT) continue;
@@ -878,8 +1005,14 @@ function analizza(dati, comando, bersaglio) {
       else if (c.palla.owner >= 0 || c.ultimoTocco !== toccoNostro) voloFinito = true;
       if (inVolo && !voloFinito && c.palla.z != null) zVoloMax = Math.max(zVoloMax, c.palla.z);
     }
-    if (scivolataMs == null && c.comandato && c.comandato.slide != null && c.comandato.slide >= 0) scivolataMs = c.t - comandoT;
-    if (cambioMs == null && baseIdx != null && c.comandato && c.comandato.i !== baseIdx) { cambioMs = c.t - comandoT; nuovoIndice = c.comandato.i; }
+    if (scivolataMs == null && c.comandato && c.comandato.slide != null && c.comandato.slide >= 0) {
+      scivolataMs = c.t - comandoT;
+      scivolataFot = (comandoFot != null && c.fot != null) ? c.fot - comandoFot : null;
+    }
+    if (cambioMs == null && baseIdx != null && c.comandato && c.comandato.i !== baseIdx) {
+      cambioMs = c.t - comandoT; nuovoIndice = c.comandato.i;
+      cambioFot = (comandoFot != null && c.fot != null) ? c.fot - comandoFot : null;
+    }
     if (passToVisto == null && c.palla && c.palla.passTo != null && c.palla.passTo >= 0) passToVisto = c.palla.passTo;
   }
   /* TOLTA la velocita' del flick. BANCO ONESTO: nessun ripiego muto.
@@ -894,10 +1027,13 @@ function analizza(dati, comando, bersaglio) {
     /* per il bersaglio 'ctrl' la risposta non e' una velocita': e' il
        cambio dell'indice del comandato, e la latenza si conta da li' */
     latenzaMs: bersaglio === 'ctrl' ? cambioMs : (risp ? risp.t - comandoT : null),
+    latenzaFot: bersaglio === 'ctrl' ? cambioFot
+      : (risp && risp.fot != null && comandoFot != null ? risp.fot - comandoFot : null),
     dallInizioMs: risp && inizio ? risp.t - inizio.t : null,
     rispostaMax: vmax,
     caricaMax,
-    zVoloMax, scivolataMs, cambioMs, nuovoIndice, passToVisto,
+    zVoloMax, scivolataMs, scivolataFot, cambioMs, cambioFot, nuovoIndice, passToVisto,
+    passoMedianoMs,
   };
 }
 
@@ -995,7 +1131,10 @@ function analizza(dati, comando, bersaglio) {
     });
     const prima = await contatori();
     await pag.evaluate(() => window.__sondaVia());
-    await attesa(150);                       // base di quiete prima del gesto
+    /* base di quiete prima del gesto: 150 ms come ieri, e ALMENO 5
+       campioni della sonda — sotto carico 150 ms possono contenere 2
+       fotogrammi soli, e una base di 2 campioni non e' una base */
+    await attesaFotogrammi(pag, 5, 150);
     let noteGesto = [];
     try {
       const esitoGesto = await g.gesto(cdp, pag, info);
@@ -1010,7 +1149,11 @@ function analizza(dati, comando, bersaglio) {
       raccolta.push({ nome, esito: 'NON MISURATA', banco: true, errore: e.message });
       continue;
     }
-    await attesa(1300);                      // finestra di risposta
+    /* finestra di risposta: 1300 ms come ieri E almeno 78 fotogrammi
+       (che a 60 fps sono la stessa cosa): la firma dell'azione — quota,
+       scivolata, cambio — si legge dai campioni, e i campioni sono
+       fotogrammi */
+    await attesaFotogrammi(pag, 78, 1300);
     const dati = await pag.evaluate(() => window.__sondaAlt());
     const dopo = await contatori();
     const tiriFatti = dopo.tiri - prima.tiri, perfettiFatti = dopo.perfetti - prima.perfetti;
@@ -1022,7 +1165,21 @@ function analizza(dati, comando, bersaglio) {
       raccolta.push({ nome, esito: 'NO', errore: a.errore, note: noteGesto, campioni: dati.campioni, eventi: dati.eventi });
       continue;
     }
-    const rispondeInTempo = a.latenzaMs != null && a.latenzaMs <= 500;
+    /* IL CANCELLO HA DUE OROLOGI (31 agosto 2026, vedi il cappello):
+       500 ms OPPURE 30 fotogrammi. A 60 fps sono la stessa cosa, quindi
+       su banco sano niente cambia; divergono solo sotto carico, dove i
+       millisecondi accusavano il gioco del carico della macchina (2-3
+       rossi su 10 in ENTRAMBE le versioni del gioco: un rosso che non
+       distingue niente). Quando passa solo l'orologio dei fotogrammi,
+       la nota lo dice col passo mediano misurato. */
+    const FOT_CANCELLO = 30;
+    const inTempoMs = a.latenzaMs != null && a.latenzaMs <= 500;
+    const inTempoFot = a.latenzaFot != null && a.latenzaFot <= FOT_CANCELLO;
+    const rispondeInTempo = inTempoMs || inTempoFot;
+    if (!inTempoMs && inTempoFot) noteGesto.push(
+      'risposta in ' + a.latenzaFot + ' fotogrammi ma ' + a.latenzaMs.toFixed(0) +
+      ' ms: il banco girava a ' + (a.passoMedianoMs != null ? a.passoMedianoMs.toFixed(0) : '?') +
+      " ms a fotogramma — e' il carico della macchina, non il gioco");
     /* oltre alla risposta in tempo, l'azione dev'essere quella GIUSTA:
        lo dicono i contatori del gioco e lo stato campionato, non la
        nostra impressione sul movimento della palla */
@@ -1057,10 +1214,17 @@ function analizza(dati, comando, bersaglio) {
       if (crossFatti < 1) azioneNo = "il contatore dei cross non sale: il pulsante piccolo con lo scatto tenuto e' stato letto come altro";
       else if (!(a.zVoloMax > 10)) azioneNo = `cross a tabellino ma la palla non prende quota (z max ${a.zVoloMax.toFixed(1)}: sopra le teste serve 26)`;
     }
-    if (!azioneNo && g.richiedeScivolata && (a.scivolataMs == null || a.scivolataMs > 500))
-      azioneNo = a.scivolataMs == null
-        ? 'il comandato non entra mai in scivolata (p.slide resta spento)'
-        : `la scivolata parte solo dopo ${a.scivolataMs.toFixed(0)} ms`;
+    if (!azioneNo && g.richiedeScivolata) {
+      const scOkMs = a.scivolataMs != null && a.scivolataMs <= 500;
+      const scOkFot = a.scivolataFot != null && a.scivolataFot <= FOT_CANCELLO;
+      if (a.scivolataMs == null)
+        azioneNo = 'il comandato non entra mai in scivolata (p.slide resta spento)';
+      else if (!scOkMs && !scOkFot)
+        azioneNo = `la scivolata parte solo dopo ${a.scivolataMs.toFixed(0)} ms (${a.scivolataFot != null ? a.scivolataFot : '?'} fotogrammi)`;
+      else if (!scOkMs && scOkFot) noteGesto.push(
+        'scivolata in ' + a.scivolataFot + ' fotogrammi ma ' + a.scivolataMs.toFixed(0) +
+        " ms: carico della macchina, non il gioco");
+    }
     const passa = rispondeInTempo && !azioneNo;
     const chi = g.bersaglio === 'palla' ? 'la palla' : g.bersaglio === 'ctrl' ? "l'indice del comandato" : 'il giocatore comandato';
     const daQuando = g.comando === 'inizio' ? "dall'appoggio del dito"
@@ -1072,10 +1236,10 @@ function analizza(dati, comando, bersaglio) {
             ? `${chi} non cambia mai dopo il gesto: nessuna risposta`
             : `${chi} non cambia mai velocita' dopo il gesto: nessuna risposta`)
         : !rispondeInTempo
-          ? `risposta a ${a.latenzaMs.toFixed(0)} ms: oltre il cancello dei 500`
+          ? `risposta a ${a.latenzaMs.toFixed(0)} ms e ${a.latenzaFot != null ? a.latenzaFot : '?'} fotogrammi: oltre il cancello (500 ms / ${FOT_CANCELLO} fotogrammi)`
           : azioneNo
             ? azioneNo + ` (latenza ${a.latenzaMs.toFixed(0)} ms)`
-            : `latenza ${a.latenzaMs.toFixed(0)} ms ${daQuando}` +
+            : `latenza ${a.latenzaMs.toFixed(0)} ms (${a.latenzaFot != null ? a.latenzaFot + ' fotogrammi' : 'fotogrammi ignoti'}) ${daQuando}` +
               (a.dallInizioMs != null && g.comando === 'fine' ? ` (${a.dallInizioMs.toFixed(0)} ms dall'inizio del gesto)` : '') +
               (g.bersaglio === 'ctrl' ? '' : ` — risposta: palla fino a ${a.rispostaMax.toFixed(0)} unita'/s`) +
               (g.richiedeTiro ? ` — tiri a tabellino +${tiriFatti}, perfetti +${perfettiFatti}` : '') +
@@ -1089,7 +1253,8 @@ function analizza(dati, comando, bersaglio) {
               (g.richiedeScivolata ? ` — p.slide acceso ${a.scivolataMs.toFixed(0)} ms dopo il tocco` : ''), noteGesto);
     raccolta.push({
       nome, esito: passa ? 'OK' : 'NO',
-      latenzaMs: a.latenzaMs, dallInizioMs: a.dallInizioMs,
+      latenzaMs: a.latenzaMs, latenzaFotogrammi: a.latenzaFot,
+      passoMedianoMs: a.passoMedianoMs, dallInizioMs: a.dallInizioMs,
       rispostaMaxUnitaAlSecondo: a.rispostaMax, caricaMaturataSec: a.caricaMax,
       note: noteGesto, tiriATabellino: tiriFatti, tiriPerfetti: perfettiFatti,
       filtrantiATabellino: filtrantiFatte, crossATabellino: crossFatti,

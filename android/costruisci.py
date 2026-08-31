@@ -133,7 +133,13 @@ def versione():
     return codice, nome
 
 
-CODICE, NOME = versione()
+# NB: la chiamata a versione() sta in fondo, dentro il cancello __main__, e
+# NON qui. Il motivo e' che versione() SCRIVE versione.json, e verifica.py
+# confronta quel file con il codice trovato dentro gli APK: se bastasse
+# importare questo modulo per far avanzare il contatore, il primo «import
+# costruisci» farebbe uscire rosso verifica.py sugli APK gia' sul disco,
+# accusandoli di un difetto che non hanno. Avanza il contatore chi
+# costruisce davvero, e nessun altro.
 
 MANIFEST = u'''<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -141,7 +147,17 @@ MANIFEST = u'''<?xml version="1.0" encoding="utf-8"?>
     android:versionCode="{codice}"
     android:versionName="{nome}">
 
-  <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34" />
+  <!-- targetSdk 36, dal 31 agosto 2026: da quel giorno Google Play
+       rifiuta le app nuove sotto Android 16 (API 36) — verificato sulla
+       pagina ufficiale il giorno stesso. Si dichiara 36 e si continua a
+       compilare contro android-34: Gioco.java non usa nessuna API nuova,
+       e la piattaforma sul disco resta l'unica. Il guscio e' gia' pronto
+       al bordo-a-bordo imposto da 35+: tema Fullscreen, immersivo in
+       schermoIntero(), disegno sotto la tacca, e il gioco usa
+       env(safe-area-inset-*) nel CSS. NON PROVATO su un telefono
+       Android 15/16 (qui c'e' solo Android 11, dove 36 non cambia
+       niente): lo dira' la prova chiusa. -->
+  <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="36" />
 
   <!-- Nessun permesso. Il gioco non usa la rete, non legge contatti,
        non accede a file, non manda niente da nessuna parte. -->
@@ -211,7 +227,7 @@ def costruisci(app):
     base = os.path.join(lav, 'base.apk')
     esegui([BT + '/aapt2.exe', 'link', '-o', base, '-I', ANDROID_JAR,
             '--manifest', os.path.join(lav, 'AndroidManifest.xml'),
-            '--min-sdk-version', '24', '--target-sdk-version', '34',
+            '--min-sdk-version', '24', '--target-sdk-version', '36',
             '--no-version-vectors', compilate])
 
     # ---- si aggiungono dex e asset ----
@@ -242,9 +258,29 @@ def costruisci(app):
     return kb, ver.stdout.strip().splitlines()[:2]
 
 
-os.makedirs(USCITA, exist_ok=True)
-print('versione:  codice %d   nome "%s"' % (CODICE, NOME))
-for app in APP:
-    kb, certi = costruisci(app)
-    print('%-10s %7.0f kB   %s' % (app['nome'] + '.apk', kb, certi[0] if certi else ''))
-print('\nAPK in:', USCITA)
+# IL CANCELLO __main__ — perche' c'e'.
+#
+# Da qui in giu' si COSTRUISCE. Sopra si dichiara soltanto: dove sta l'SDK,
+# com'e' fatto il manifest, come si calcola il numero di versione. Senza
+# questo cancello le due cose erano la stessa cosa, e chiunque scrivesse
+# «import costruisci» per leggere il manifest si ritrovava due APK
+# ricostruiti sotto il naso.
+#
+# Serve a bundle.py, che deve produrre un .aab descritto dallo STESSO
+# manifest e numerato dallo STESSO contatore: se copiasse il manifest, i
+# due file divergerebbero al primo ritocco e il bundle caricato sullo
+# store descriverebbe un'app diversa da quella provata sul telefono.
+#
+# Lanciato come sempre (`python costruisci.py`) il comportamento non
+# cambia di una virgola: __name__ vale '__main__' e si esegue tutto.
+if __name__ == '__main__':
+    # qui, e solo qui, il contatore avanza: costruisci(app) legge questi due
+    # come globali, e li trova perche' un'assegnazione a livello di modulo
+    # resta globale anche dentro un if.
+    CODICE, NOME = versione()
+    os.makedirs(USCITA, exist_ok=True)
+    print('versione:  codice %d   nome "%s"' % (CODICE, NOME))
+    for app in APP:
+        kb, certi = costruisci(app)
+        print('%-10s %7.0f kB   %s' % (app['nome'] + '.apk', kb, certi[0] if certi else ''))
+    print('\nAPK in:', USCITA)

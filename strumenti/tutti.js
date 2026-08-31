@@ -194,7 +194,29 @@ const CANCELLI = [
   { nome: 'collaudo',    cmd: ['strumenti/collaudo.js'],                                conta: true,  lento: false },
   { nome: 'misura',      cmd: ['strumenti/misura.js'],                                  conta: true,  lento: false },
   { nome: 'senza-rete',  cmd: ['strumenti/senza-rete.js'],                              conta: true,  lento: false },
-  { nome: 'equita',      cmd: ['strumenti/equita.js', '--partite', '10'],               conta: true,  lento: false },
+  /* =====================================================================
+     DUE VOCI PER EQUITA', e la seconda mancava (27 agosto 2026).
+
+     In batteria c'era una riga sola:  equita.js --partite 10 . Senza
+     --conf-b pero' equita.js NON misura l'equita': il lato B e' identico
+     ad A, e quel che si controlla e' che le coppie a semi appaiati
+     escano identiche — cioe' l'AUTODIAGNOSI dello strumento, la sua
+     prova-che-sa-fallire. Utilissima, ma e' un'altra domanda.
+
+     Cosi' il cancello che porta il nome «equita» sorvegliava il
+     determinismo, e la promessa scritta in testa a equita.js — «nessun
+     oggetto comprato da' vantaggio in campo» — non era sorvegliata da
+     nessuno. Finche' il gioco non incassava era un difetto di nome; dal
+     giorno in cui incassa, quella promessa sta accanto a un prezzo.
+
+     Adesso sono due voci con due nomi veri. La seconda passa il lato B
+     per --conf-b: attivaOggetti('tutti') sblocca E attiva tutto il
+     negozio, che e' esattamente il percorso previsto (vedi il commento
+     di sbloccaOggetto nel gioco: «zero suoni, zero caso»).
+     ===================================================================== */
+  { nome: 'equita-sonda', cmd: ['strumenti/equita.js', '--partite', '10'],              conta: true,  lento: false },
+  { nome: 'equita',       cmd: ['strumenti/equita.js', '--partite', '10',
+                                '--conf-b', "window.__test.attivaOggetti('tutti')"],    conta: true,  lento: false },
   { nome: 'silhouette',  cmd: ['strumenti/silhouette.js'],                              conta: true,  lento: false },
   { nome: 'folla',       cmd: ['strumenti/folla.js'],                                   conta: true,  lento: false },
   { nome: 'seme',        cmd: ['strumenti/seme.js'],                                    conta: true,  lento: false },
@@ -218,6 +240,81 @@ const CANCELLI = [
      togliesse quella schermata trova il rosso, che e' esattamente cio'
      che la deroga prometteva. */
   { nome: 'diritti',     cmd: ['strumenti/diritti.js'],                                  conta: true,  lento: false },
+  /* testo-fuori: il buco che il 28 agosto 2026 ha lasciato passare il
+     NOME DEL GIOCO scritto male. Sul telefono vero la home diceva
+     «CALCETT», e la didascalia del compensato perdeva fino a 34 px di
+     lettere su quattro formati — con venti cancelli verdi, perche'
+     nessuno di loro guardava il TESTO. Questo legge il DOM di ogni
+     schermata a sette formati (telefono orizzontale e verticale, piu'
+     desktop) e confronta scrollWidth con clientWidth, distinguendo tre
+     cose: le lettere perdute IN SILENZIO (rosso, e la soglia e' zero),
+     i troncamenti dichiarati coi puntini e chi sporge senza essere
+     ritagliato (questi due a riferimento datato, rossi solo se
+     peggiorano).
+     conta:TRUE, e puo' contare per le due ragioni di casa: sa dire «non
+     ho misurato» (3 se il gioco indicato non esiste, 2 se Chromium non
+     parte) e non ha nulla di casuale — nessuna partita, nessun
+     sorteggio, nessun cronometro: due corse danno lo stesso referto.
+     E' ROSSO SUL GIOCO SPEDITO finche' non entra _t-titolo.js, ed e'
+     giusto cosi': il difetto c'e'. */
+  { nome: 'testo-fuori', cmd: ['strumenti/testo-fuori.js'],                              conta: true,  lento: false },
+  /* =====================================================================
+     carattere: IL CANCELLO CHE ESISTEVA E NON ERA IN BATTERIA — messo in
+     lista il 28 agosto 2026 a sera, e vale la pena scrivere perche'.
+
+     _q-carattere.js e' nato stamattina per il difetto piu' caro
+     dell'anno: per un MESE i due woff2 incorporati non hanno contenuto
+     una sola lettera A-Z e il gioco ha scritto tutto in ripiego di
+     sistema, con venti cancelli verdi. La cura e' arrivata, il cancello
+     che la sorveglia e' stato scritto — e poi e' rimasto fuori da
+     questa lista. Un cancello che non e' in batteria non e' un
+     cancello: e' un comando che qualcuno si deve ricordare. Se domani
+     un sottoinsieme sbagliato tornasse dentro i woff2, la batteria
+     uscirebbe verde esattamente come per tutto il mese scorso.
+
+     conta:TRUE, e puo' contare per le due ragioni di casa. SA DIRE «NON
+     HO MISURATO»: esce 2 se il browser non parte o se la pagina lancia
+     eccezioni, e in quel caso qui si legge BANCO e non rosso.
+     SA FALLIRE, e il guasto e' un file: `node strumenti/_t-guasto-car.js
+     --out fuori/car-rotto.html` scrive una copia in cui il marchio ha il
+     condensato al posto di Archivo Black; su quella copia il cancello e'
+     rosso (stiramento 1,611 contro la banda 0,88..1,14, misurato il 28
+     agosto 2026). Lo stesso guasto ha mostrato che la prova del VUOTO,
+     da sola, restava verde: era una prova che non poteva cadere, perche'
+     textLength stende i glifi e le fa dire sempre 515. Adesso sono due,
+     e il guasto ne accende una.
+     Deterministico, nessuna partita, nessun sorteggio, nessun
+     cronometro: corre in compagnia e costa pochi secondi. */
+  { nome: 'carattere',   cmd: ['strumenti/_q-carattere.js'],                              conta: true,  lento: false },
+  /* =====================================================================
+     disposizione: il buco gemello di testo-fuori, trovato il 28 agosto
+     2026. Sul telefono lo SPOGLIATOIO aveva CAMPI da solo a sinistra con
+     mezza riga di niente accanto e un buco di 82 px prima di TORNA AL
+     MENU — e SEDICI cancelli erano verdi, perche' nessuno di loro guarda
+     la GEOMETRIA. collaudo conta i nodi, testo-fuori confronta
+     scrollWidth con clientWidth (e dichiara di non vedere ne' i vuoti ne'
+     gli a capo), tocco chiede dove finiscono i bersagli — e CAMPI orfano
+     si tocca benissimo — istantanea giudica la luce. Una schermata poteva
+     essere verde su tutti e sedici e restare messa male.
+     Alla prima corsa ha trovato lo stesso difetto in CINQUE schermate
+     (SPOGLIATOIO, IMPOSTAZIONI, TORNEO, STAGIONE, PREFERENZE), non in
+     quella segnalata soltanto.
+     conta:TRUE, e puo' contare per le due ragioni di casa.
+     SA DIRE «NON HO MISURATO»: 3 se il gioco indicato non esiste o se
+     nessuna schermata si apre, 2 se Chromium non parte o non c'e' nessuna
+     .ov; e le schermate che SCORRONO le salta dichiarandolo, perche' li'
+     il vuoto in fondo e' la lista che continua, non un buco.
+     SA FALLIRE: `--guasto` ferisce una schermata SANA (BACHECA) in quattro
+     modi, uno per ogni regola — cella stretta, voce inchiodata a una
+     colonna, buco di 110 px — e il 28 agosto 2026 le ha viste rosse tutte
+     e quattro (1 SCARTO, 1 ORFANO, 1 VUOTO, 1 BUCHI, uscita 1).
+     NON ACCUSA A OCCHI CHIUSI: ogni buco candidato viene guardato in
+     fotografia e assolto se dentro c'e' qualcosa (la HOME ha 122 px di
+     «vuoto» che sono il campetto coi giocatori). Le assoluzioni si
+     stampano sempre, anche in verde.
+     Deterministico, niente partite, niente sorteggi, niente cronometro:
+     corre in compagnia e costa una ventina di secondi. */
+  { nome: 'disposizione', cmd: ['strumenti/disposizione.js'],                             conta: true,  lento: false },
   /* eventi: l'unico cancello che misura il GIOCO invece dell'immagine
      (censimento §3.8.7). Deterministico a seme fisso e senza disegno:
      puo' correre in compagnia. Le soglie sono un pavimento largo,
@@ -259,6 +356,58 @@ const CANCELLI = [
      `node strumenti/_q-meta.js --tre-taglie` e da verde si mette in
      batteria. */
   { nome: 'meta',        cmd: ['strumenti/_q-meta.js'],                                  conta: true,  lento: false },
+  /* nomi: il punto cieco che il 28 agosto 2026 e' costato una bocciatura.
+     Il gioco aveva gia' trovato e riparato «due uomini con lo stesso
+     cognome nella stessa squadra» — l'elenco dei cognomi fu portato da
+     quindici a trenta — ma la riparazione era affidata a un COMMENTO. La
+     panchina di _t-condizione.js ha riaperto la ferita (28 uomini con 26
+     cognomi a 11 contro 11, Rocco e Vito Piedebuono nella stessa squadra)
+     e la batteria e' rimasta verde 15 su 15, perche' _identita.js — che
+     si citava a garanzia — misura maglie e numeri, dei nomi non sa
+     niente.
+     conta:TRUE, e puo' contare per le due ragioni di casa: sa dire «non
+     ho misurato» (3 se il gioco indicato non esiste o nessuna taglia
+     parte, 2 se il browser non si apre) e SA FALLIRE — `--guasto` copia
+     un cognome da un compagno e l'ha visto rosso a tutte e tre le taglie
+     il 28 agosto 2026, e sul file rotto (fuori/cond-rotto.html) nomina
+     le due coppie una per una.
+     Deterministico, tre partite aperte e nemmeno giocate, nessun
+     cronometro: corre in compagnia e costa una decina di secondi. */
+  { nome: 'nomi',        cmd: ['strumenti/_p-nomi.js'],                                  conta: true,  lento: false },
+  /* =====================================================================
+     tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
+     2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
+     cancelli in lista ne ha visto uno.
+
+       · in PAUSA la quarta voce faceva finire ABBANDONA col centro a
+         y=433 su uno schermo alto 412: dalla partita non si usciva piu';
+       · in AMICHEVOLE la riga CAMPO stava sotto la barra dei bottoni —
+         centro a y=341 su 412, cioe' SULLO SCHERMO, ma il colpo lo
+         prendeva la fascia adesiva. Sul telefono si leggeva «CA...».
+
+     collaudo.js apre le schermate e conta i nodi, istantanea.js le
+     fotografa e giudica la luce: nessuno dei due CHIEDE AL DOM dove
+     finiscono i bersagli. Una schermata puo' essere verde 36 su 36, bella
+     in fotografia, e non lasciarsi usare.
+     Alla sua prima corsa questo cancello ha trovato, da solo, un terzo
+     difetto che nessuno cercava: sotto i 640 px di larghezza in
+     orizzontale la voce NEGOZIO della home usciva dallo schermo su una
+     pagina che non scorre — irraggiungibile, non «da scorrere».
+
+     conta:TRUE, e puo' contare per le due ragioni di casa.
+     SA DIRE «NON HO MISURATO»: esce 3 se il gioco indicato non esiste o
+     se una schermata non si apre, 2 se playwright manca o il browser non
+     parte; e le due scene di partita in verticale le dichiara NON
+     PERTINENTI invece di bocciarle (li' il gioco chiede di ruotare
+     apposta, ed e' una decisione sua, non un difetto).
+     SA FALLIRE: `--guasto` incolla una lastra trasparente sopra le tre
+     voci dello SPOGLIATOIO — una schermata verde su tutte le taglie, non
+     quella malata, se no il controllo negativo non dimostrerebbe niente
+     — e il 28 agosto 2026 l'ha vista rossa con 9 guai.
+     Deterministico, niente cronometro, niente sorteggi: corre in
+     compagnia. Costa un paio di minuti sulle sette taglie della corsa
+     breve; le tre dei tablet stanno dietro --tutte. */
+  { nome: 'tocco',       cmd: ['strumenti/tocco.js'],                                    conta: true,  lento: false },
   /* audio: il punto cieco piu' grosso del censimento del 20 agosto
      (§3.8.1: «se ogni calcio diventasse muto, la batteria uscirebbe
      verde 13 su 13»). CONTA, e conta subito, perche' 25 dei suoi 28

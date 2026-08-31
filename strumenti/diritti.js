@@ -112,9 +112,34 @@ const TERMINI_OVUNQUE = [
   { n: 'Bayern',         re: /\b(Bayern|BAYERN)\b/g },
   { n: 'Real Madrid',    re: /\bReal\s+Madrid\b/gi },
   { n: 'PSG',            re: /\bPSG\b/g },
-  /* giocatori: «messi» minuscolo e' il participio di mettere («mal
-     messi», riga 17941 del gioco): la maiuscola e' l'unico discrimine */
-  { n: 'Messi',          re: /\b(Messi|MESSI)\b/g },
+  /* =====================================================================
+     «MESSI» — il caso in cui l'italiano e un cognome si scrivono uguale.
+
+     La prima stesura diceva: «"messi" minuscolo e' il participio di
+     mettere, la maiuscola e' l'unico discrimine», e cercava sia `Messi`
+     sia `MESSI`. Non basta, e il 28 agosto 2026 il cancello e' diventato
+     rosso su questo commento del gioco:
+
+         …I, ED E' UNA MISURA CHE LI HA MESSI COSI'. La prima stesura…
+
+     In questo progetto i commenti usano il MAIUSCOLO per enfasi, e in una
+     frase enfatica il participio di «mettere» si scrive MESSI come tutto
+     il resto. Il discrimine non e' la maiuscola: e' se la parola sta in
+     una frase tutta maiuscola.
+
+     LA REGOLA DI ADESSO, e resta severa dove serve:
+       · `Messi` con la sola iniziale maiuscola  ->  ROSSO sempre. E' la
+         forma in cui un nome proprio entrerebbe in un contenuto — un
+         nome di giocatore, un testo di interfaccia — che e' l'unico posto
+         dove il cancello deve mordere.
+       · `MESSI` tutto maiuscolo  ->  rosso SOLO se accanto c'e' un nome
+         di battesimo (LIONEL, LEO). Altrimenti e' italiano, e si conta
+         come nota.
+     Cosi' un nome protetto in un contenuto resta impossibile, e una
+     frase italiana in maiuscolo non manda piu' nessuno a cercare un
+     difetto che non c'e'. */
+  { n: 'Messi',          re: /\bMessi\b/g },
+  { n: 'Messi (nome intero)', re: /\b(LIONEL|LEO)\s+MESSI\b/g },
   { n: 'Ronaldo',        re: /\b(Ronaldo|RONALDO)\b/g },
   { n: 'Maradona',       re: /\b(Maradona|MARADONA)\b/g },
   { n: 'Neymar',         re: /\b(Neymar|NEYMAR)\b/g },
@@ -148,6 +173,23 @@ const URL_AMMESSI = [
   'http://scripts.sil.org/OFL',
   'https://github.com/Omnibus-Type/ArchivoBlack',
   'https://github.com/jpt/barlow',
+  /* =====================================================================
+     IL NOSTRO SERVER (28 agosto 2026), e vale la pena scrivere perche' un
+     indirizzo di rete e' ammesso in un gioco che si vanta di funzionare
+     offline.
+
+     E' la radice della sfida asincrona (strumenti/_t-rete.js). Il gioco
+     la usa SOLO quando qualcuno apre la modalita' in rete: non c'e' una
+     chiamata all'avvio, non c'e' una chiamata durante una partita, e con
+     la radice vuota il gioco si comporta esattamente come si comportava
+     prima che quella toppa esistesse (misurato: _q-rete.js, prova 8).
+
+     E' l'unico indirizzo del gioco che punta a una macchina nostra.
+     Quando il cancello ne trovera' un secondo, quel secondo va discusso
+     prima di essere iscritto qui: la lista bianca non e' un posto dove
+     si mettono le cose per farle passare, e' l'elenco di cio' che
+     qualcuno ha deciso di lasciar uscire dal telefono. */
+  'https://calcetto-rete.vercel.app',
 ];
 /* R6: le tre stringhe che provano che copyright e licenza viaggiano col
    gioco. Sono ESATTAMENTE i nameID 0 dei due woff2 (letti con fontTools
@@ -353,8 +395,21 @@ function controlla(src, opz) {
   note.push('menzioni di concorrenti nei commenti: ' + commConc +
     (commConc ? '  (censite; toppa _t-menzioni.js scritta, applicarla le porta a 0)' : ''));
   /* R3 — censimento base64 */
-  if (b64.length !== 2 || b64.some(m => m !== 'font/woff2'))
-    rossi.push('R3 base64: attesi ESATTAMENTE 2 font/woff2, trovati [' + b64.join(', ') + ']. Un asset incorporato nuovo va iscritto nel NOTICE e qui.');
+  /* =====================================================================
+     TRE, dal 28 agosto 2026, e il numero e' scritto a mano apposta.
+
+     Erano due, ed erano i sottoinsiemi sbagliati: latin-ext e vietnamita,
+     senza una sola lettera A-Z. Sono stati sostituiti coi sottoinsiemi
+     "latin" veri (stesse famiglie, stessa OFL) e si e' aggiunto il
+     grassetto disegnato di Barlow, che prima il browser inventava.
+
+     Il numero resta INCHIODATO invece di essere «quanti ne trovi»: un
+     asset incorporato e' materiale di terzi, e ogni volta che ne entra
+     uno qualcuno deve andare a iscriverlo nel NOTICE. Un cancello che
+     contasse da solo lascerebbe passare in silenzio il quarto — che
+     magari non ha nemmeno una licenza compatibile. */
+  if (b64.length !== 3 || b64.some(m => m !== 'font/woff2'))
+    rossi.push('R3 base64: attesi ESATTAMENTE 3 font/woff2, trovati [' + b64.join(', ') + ']. Un asset incorporato nuovo va iscritto nel NOTICE e qui.');
   /* R4 — censimento URL */
   const urlRe = /https?:\/\/[^\s"'<>()\\]+/g; let m2;
   while ((m2 = urlRe.exec(mascherato))) {

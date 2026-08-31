@@ -278,32 +278,73 @@ const MIN_CRESCITA   = 8;     // % di sagoma in piu' con lo scoppio del gol
             e questa viene DOPO, perche' forceGoal cambia scena e da li'
             in poi nessuna misura sui pixel vale piu' niente.
        --------------------------------------------------------------- */
-    const A0 = await pixel(RS);
-    await pag.evaluate(() => {
-      /* 0,25 s dopo il gol: dentro lo scoppio, quando la tribuna e' su */
-      window.__test.G.crowdHype = 2.35;
-      window.__test.disegna();
-    });
-    const A1 = await pixel(RS);
-
-    let px0 = 0, px1 = 0;
-    for (let i = 0; i < A0.length; i += 4) {
-      /* SOGLIA ALTA, non media: sotto i 380 di somma RGB ci sono anche il
-         fondale, la recinzione e le case, che non c'entrano niente e
+    /* =================================================================
+       IL FONDO SI MEDIA SULLE FASI (31 agosto 2026) — terzo difetto di
+       questo banco, stessa famiglia dei primi due: misurava una cosa
+       vera dividendola per una sbagliata.
+       Da oggi startMatch azzera G.pulse (cura dei cinque cronometri,
+       voce #65), quindi il pulse a questo punto del banco e' sempre lo
+       stesso — e la misura a ISTANTE UNICO e' una moneta caduta male
+       per sempre: il fondo con hype=0 (l'ola lenta a t*1,6 piu' gli
+       scatenati, TUTTI funzioni di G.pulse) capitava su una fase ricca
+       di braccia, e la crescita usciva 4,8% con uno scoppio IDENTICO —
+       in drawCrowd, nello scoppio, w non legge t: le braccia sono su
+       per tutti a qualunque fase. Provato con la toppa invertita:
+       pre-cura 3/3 verdi, con-cura 3/3 rossi, sempre gli stessi numeri.
+       Il gioco festeggiava uguale; il banco divideva per un fondo a
+       fase fissa.
+       Adesso fondo e scoppio si misurano su OTTO fasi sparse su ~11 s
+       di orologio della folla (l'ola lenta fa un giro in 3,9 s, gli
+       scatenati in ~9) e si confrontano le SOMME. Che lo scoppio non
+       cambi con la fase e' la controprova gratuita: se un giorno
+       cambiasse, la media lo assorbe e la misura resta giusta.
+       Gioco in pausa e camera inchiodata per tutta la serie, come gia'
+       fa la misura del respiro qui sopra. */
+    const mis = await pag.evaluate(rs => {
+      const t = window.__test, G = t.G, c = t.cam;
+      const eraPausa = !!G.paused, eraHype = G.crowdHype, eraPulse = G.pulse;
+      t.setPaused(true);
+      const s = { x: c.x, y: c.y, z: c.z };
+      const ctx = document.getElementById('gioco').getContext('2d');
+      /* SOGLIA ALTA, non media: sotto i 380 di somma RGB ci sono anche
+         il fondale, la recinzione e le case, che non c'entrano niente e
          diluirebbero il segnale. Sopra restano teste e MANI — e le mani,
          quando le braccia salgono, sono pixel chiari che prima non
          c'erano da nessuna parte.
          DA 430 A 380, e il numero non e' di gusto. 430 era la soglia del
          16 agosto; da onda 5 la gradinata sta in ombra e la mano, larga
-         quattro pixel dopo la riduzione dell'atlante, cade fra 300 e 430:
-         a 430 restavano fuori proprio i pixel che il gol aggiunge. A 380
-         il termine di sola traslazione si annulla e resta la forma. */
-      if (A0[i] + A0[i + 1] + A0[i + 2] > 380) px0++;
-      if (A1[i] + A1[i + 1] + A1[i + 2] > 380) px1++;
-    }
-    const cresc = px0 ? 100 * (px1 / px0 - 1) : 0;
+         quattro pixel dopo la riduzione dell'atlante, cade fra 300 e
+         430: a 430 restavano fuori proprio i pixel che il gol aggiunge.
+         A 380 il termine di sola traslazione si annulla e resta la
+         forma. */
+      const conta = () => {
+        const d = ctx.getImageData(rs.x * 2, rs.y * 2, rs.w * 2, rs.h * 2).data;
+        let n = 0;
+        for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 380) n++;
+        return n;
+      };
+      const fasi = [0, 1.53, 3.06, 4.59, 6.12, 7.65, 9.18, 10.71];
+      let sum0 = 0, sum1 = 0;
+      for (const df of fasi) {
+        G.crowdHype = 0; G.pulse = 1000 + df;
+        c.x = s.x; c.y = s.y; c.z = s.z; t.disegna();
+        c.x = s.x; c.y = s.y; c.z = s.z;
+        sum0 += conta();
+        /* 0,25 s dopo il gol: dentro lo scoppio, quando la tribuna e' su */
+        G.crowdHype = 2.35; G.pulse = 1000 + df;
+        c.x = s.x; c.y = s.y; c.z = s.z; t.disegna();
+        c.x = s.x; c.y = s.y; c.z = s.z;
+        sum1 += conta();
+      }
+      G.crowdHype = eraHype; G.pulse = eraPulse;
+      c.x = s.x; c.y = s.y; c.z = s.z;
+      if (!eraPausa) t.setPaused(false);
+      t.disegna();
+      return { sum0, sum1 };
+    }, RS);
+    const cresc = mis.sum0 ? 100 * (mis.sum1 / mis.sum0 - 1) : 0;
     dice(cresc >= MIN_CRESCITA,
-      `la sagoma della folla cresce con lo scoppio del gol (braccia su): ${cresc.toFixed(1)}% (minimo ${MIN_CRESCITA}%)`);
+      `la sagoma della folla cresce con lo scoppio del gol (braccia su): ${cresc.toFixed(1)}% su 8 fasi (minimo ${MIN_CRESCITA}%)`);
 
     /* LA MISURA VALEVA? Il cartello si spegne prima; se durante le due
        misure sui pixel il gioco ne ha riacceso uno, i due numeri qui

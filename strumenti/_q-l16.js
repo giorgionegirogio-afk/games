@@ -282,6 +282,26 @@ const n2 = v => (v === null || v === undefined || !isFinite(v)) ? 'n/d' : (Math.
     const attiA = btA.map(b => b.act).join(',');
     const attiD = btD.map(b => b.act).join(',');
     const attesiA = 'shot,through,pass,cross', attesiD = 'slide,swap,press,tackle';
+    /* =====================================================================
+       I QUATTRO DI L1.6 SONO I PRIMI QUATTRO, NON GLI UNICI (29 ago 2026).
+
+       Fino a oggi questa riga chiedeva «esattamente quattro dischi», e il
+       29 agosto la toppa _t-scatto-scudo.js ne ha aggiunto un quinto
+       (SCATTO/SCUDO, un modificatore tenuto): il cancello diventava rosso
+       su una geometria sana, cioe' accusava il gioco di un guasto che era
+       suo.
+       Non si e' allentato niente di cio' che questo cancello sorveglia. I
+       QUATTRO di L1.6 devono ancora essere quei quattro, con quegli atti,
+       IN QUELL'ORDINE e nelle prime quattro posizioni — che e' il
+       contratto su cui il ri-armo rilegge il disco per indice. Le prese
+       disgiunte e gli inserti si controllavano gia' su TUTTI i dischi
+       dichiarati (i due cicli qui sopra), quindi il quinto ci passa
+       dentro insieme agli altri e un disco nuovo messo male resta rosso.
+       Quello che cade e' solo il conto: da «quattro» a «almeno quattro,
+       e i primi quattro sono questi».
+       ===================================================================== */
+    const primiA = btA.slice(0, 4).map(b => b.act).join(',');
+    const primiD = btD.slice(0, 4).map(b => b.act).join(',');
     let coppieOk = true, coppiaRotta = '';
     for (const bt of [btA, btD]) {
       for (let i = 0; i < bt.length; i++) for (let j = i + 1; j < bt.length; j++) {
@@ -297,15 +317,16 @@ const n2 = v => (v === null || v === undefined || !isFinite(v)) ? 'n/d' : (Math.
     const vecchiOk = btA.length >= 2 && btD.length >= 2 &&
       btA[0].act === 'shot' && btA[0].r === 40 && btA[1].act === 'through' && btA[1].r === 30 &&
       btD[0].act === 'slide' && btD[0].r === 40 && btD[1].act === 'swap' && btD[1].r === 30;
-    const okA = btA.length === 4 && btD.length === 4 && attiA === attesiA && attiD === attesiD &&
+    const okA = btA.length >= 4 && btD.length === btA.length &&
+                primiA === attesiA && primiD === attesiD &&
                 coppieOk && insertiOk && vecchiOk;
-    esiti.push({ id: 'A', nome: 'quattro dischi, atti giusti nei due contesti, prese disgiunte, dentro gli inserti, i due vecchi intoccati', ok: okA });
+    esiti.push({ id: 'A', nome: 'i quattro di L1.6 nei primi quattro posti, atti giusti nei due contesti, prese disgiunte (tutti i dischi), dentro gli inserti, i due vecchi intoccati', ok: okA });
     console.log('A) GEOMETRIA — attacco [' + attiA + '] difesa [' + attiD + ']');
-    console.log('   dischi: ' + btA.length + ' e ' + btD.length + ' (attesi 4 e 4)  ·  prese disgiunte: ' + (coppieOk ? 'si\'' : 'NO — ' + coppiaRotta) +
+    console.log('   dischi: ' + btA.length + ' e ' + btD.length + ' (almeno 4, e i primi quattro sono quelli di L1.6)  ·  prese disgiunte: ' + (coppieOk ? 'si\'' : 'NO — ' + coppiaRotta) +
                 '  ·  inserti: ' + (insertiOk ? 'si\'' : 'NO — ' + insertoRotto) + '  ·  dischi 0/1 come ieri: ' + (vecchiOk ? 'si\'' : 'NO'));
-    console.log('   atteso: 4+4, [' + attesiA + '] e [' + attesiD + ']  ->  ' + (okA ? 'VERDE' : 'ROSSO'));
+    console.log('   atteso nei primi quattro: [' + attesiA + '] e [' + attesiD + ']  ->  ' + (okA ? 'VERDE' : 'ROSSO'));
 
-    if (btA.length !== 4) {
+    if (btA.length < 4) {
       /* senza i dischi nuovi le prove B-E non hanno niente da premere:
          si dichiara e si chiude, il rosso di A basta */
       console.log('\n   (B-E saltate: senza quattro dischi non c\'e\' niente da premere)');

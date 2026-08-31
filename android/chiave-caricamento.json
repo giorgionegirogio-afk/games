@@ -1,0 +1,9 @@
+{
+ "a_cosa_serve": "firmare i .aab caricati su Google Play",
+ "impronta_sha256": "63c36db94549413d46e24ec1de1c21574690a242bac9fd38b12e57b6aa3fa204",
+ "scade": "Mon Aug 21 11:16:03 CEST 2056",
+ "alias": "caricamento",
+ "dove": "C:/Users/Utenteee/.chiavi-dopolavoro/caricamento.jks",
+ "generata": "2026-08-29",
+ "nota": "qui c'e' solo l'impronta, che e' pubblica. La chiave sta fuori dal repository. Se sparisce, bundle.py si ferma invece di generarne una nuova in silenzio."
+}

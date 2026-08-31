@@ -1,12 +1,25 @@
 # Dove siamo, e cosa manca
 
-Aggiornato al **27 agosto 2026**. Questo file serve a riprendere senza rileggere
-niente altro.
+Aggiornato al **31 agosto 2026** — il giorno della pubblicazione. Questo file
+serve a riprendere senza rileggere niente altro.
 
-**Ramo:** `main`, tutto committato. **Il gioco adesso:** 1938699 byte, md5
-`6d7fabecdd0cf88295b26e121afbe895`. **Cancelli: 14 su 14 verdi, zero deroghe rimaste** — le due
-note aperte che restavano (`--nota-aperta ofl` e `--nota-aperta nascosto`) sono
-cadute il 26 agosto, il giorno che le loro stesse righe avevano già scritto.
+**Ramo:** `main`. **Il gioco adesso:** ~2,36 MB, `targetSdk` **36** (da oggi
+Play rifiuta le app nuove sotto Android 16 — verificato e schivato il giorno
+stesso). **Cancelli:** batteria verde, `verifica.py` 48/48.
+
+## La giornata del 29-31 agosto, in breve
+
+| | cosa |
+|---|---|
+| 1 | **Il MANUALE** (`MANUALE.md`): 269 voci censite dal codice da undici lettori, con appendice di **98 incoerenze** — 10 curate lo stesso giorno |
+| 2 | **La STAGIONE moriva alla seconda apertura** (TypeError) e per quel crash RISULTATI DELL'ULTIMA GIORNATA non era mai esistito: curata |
+| 3 | **Il duello dal dischetto era un fermo-immagine** (0 campioni su 2408 cambiati in 700 ms): ora ha un orologio di solo disegno (22/2408) |
+| 4 | **Sette «TORNA AL MENU» bugiardi**, «quattro dischi» che erano cinque, «Z contrasta» che era la scivolata, trofei e podio disonesti nei testi: parole vere |
+| 5 | **I cinque cronometri** che sopravvivevano a `startMatch` (voce #65): azzerati, distribuzioni identiche al byte su 100+100 partite |
+| 6 | **`giocata.js`** sbagliava 2-3 volte su 10 in entrambe le versioni: tre difetti del banco curati (due orologi, comando dal rilascio, portatore ripuntato) — 70/70 su dieci corse, e in pausa fallisce ancora come deve |
+| 7 | **`folla.js`** divideva per un fondo a fase fissa: mediato su 8 fasi, 9,6% identico su entrambe le versioni |
+| 8 | **Pacchetto Play**: `SCHEDA-STORE.md` coi testi pronti, privacy in `rete/public/privacy.html` (da deployare), icona 512, fotografie in `fuori/store/`, `PUBBLICARE.md` coi passi del giorno |
+| 9 | Le lezioni di metodo sono in memoria persistente (`concludere-solo-da-misure`): oggi hanno pagato quattro volte, due contro di me |
 
 ## La giornata del 26-27 agosto, in otto righe
 

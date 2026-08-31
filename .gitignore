@@ -81,6 +81,9 @@ _bisez/
 _provino/
 fuori/_video-tempi-grezzi.json
 strumenti/_z-dati/
+# il candidato della toppa SFIDA (_t-sfida-ui.js non ha --dentro: produce
+# solo copie di prova; lanciato senza --out la lascia accanto al gioco)
+*.sfidaui.html
 
 # le cartelle di lavoro degli specialisti: rapporti gia' riassunti in
 # _analisi/, e pesano piu' del gioco intero
@@ -102,3 +105,12 @@ _analisi/agente*.md.bak
 com_ea_gp_fifamobile*.apk
 *_fifamobile*.apk
 fcm-estratto/
+
+# bundletool: 31 MB di strumento di Google, si riscarica da
+# https://github.com/google/bundletool/releases (Apache 2.0). Un binario
+# in un repository di sorgenti e un peso che nessuno rilegge mai.
+android/strumenti/bundletool.jar
+
+# la cache di Python: bundle.py fa "import costruisci", e da quel momento
+# android/__pycache__ esiste. Sono file rigenerati a ogni avvio.
+__pycache__/

@@ -280,9 +280,39 @@ async function calcetto(browser, srv) {
         if (!isFinite(p.x) || !isFinite(p.y)) sani = false;
         if (p.x < -60 || p.x > c.FW + 60 || p.y < -60 || p.y > c.FH + 60) dentro = false;
       }
+      /* =====================================================================
+         IL PALLONE DENTRO IL CAMPO — MA NON NELLA SCENA DEL GOL.
+         (ventottesimo strumento cieco, 28 agosto 2026)
+
+         Qui c'era:  pallaOk = b.x >= 0 && b.x <= c.FW && ...
+         cioe' «il pallone sta fra le due linee di fondo», chiesto
+         qualunque cosa stia succedendo. Ma dopo venti secondi di
+         simulazione la scena puo' essere `goal`, e nella scena del gol il
+         pallone E' DENTRO LA RETE: oltre la linea di GOAL_D unita', che
+         e' esattamente dove deve stare. Il cancello leggeva quel pallone
+         e diceva «qualcuno e' uscito dal mondo».
+
+         Come si e' visto: applicando due cure alla simulazione, ognuna
+         delle quali passava il collaudo DA SOLA. Insieme facevano
+         qualche gol in piu', la finestra dei venti secondi cadeva piu'
+         spesso sulla scena del gol, e il cancello diventava rosso — su
+         un gioco in cui `dentro` e `sani` erano entrambi veri. Il
+         verbale del rosso lo diceva gia': {"dentro":true,"sani":true,
+         "pallaOk":false}. Nessuno era uscito dal mondo: era entrato in
+         porta.
+
+         E DEVE ANCORA SAPER FALLIRE. La banda non diventa infinita: nella
+         scena del gol il pallone puo' stare fino a GOAL_D piu' un raggio
+         oltre la linea, e non un'unita' di piu'. Un pallone a x = 5000
+         resta un NO in tutte le scene.
+         ===================================================================== */
       const b = t.ball;
-      const pallaOk = b && b.x >= 0 && b.x <= c.FW && b.y >= 0 && b.y <= c.FH;
-      esiti.push({ tg, att: ATT[tg], c, dentro, sani, pallaOk, scena: t.state });
+      const inRete = (t.state === 'goal');
+      const OLTRE = 34 + 12;          /* GOAL_D piu' il raggio del pallone */
+      const x0 = inRete ? -OLTRE : 0, x1 = inRete ? c.FW + OLTRE : c.FW;
+      const pallaOk = b && b.x >= x0 && b.x <= x1 && b.y >= 0 && b.y <= c.FH;
+      esiti.push({ tg, att: ATT[tg], c, dentro, sani, pallaOk, scena: t.state,
+                   palla: { x: Math.round(b.x), y: Math.round(b.y), banda: [x0, Math.round(x1)] } });
     }
     t.startMatch(1, 1); t.setCpuVsCpu(true);
     return { esiti, dopo: t.campo };
@@ -300,7 +330,7 @@ async function calcetto(browser, srv) {
       JSON.stringify(c));
     verifica(e.sani && e.dentro && e.pallaOk,
       `taglia ${e.tg}: la partita gira e nessuno esce dal mondo (scena ${e.scena})`,
-      JSON.stringify({ dentro: e.dentro, sani: e.sani, pallaOk: e.pallaOk }));
+      JSON.stringify({ dentro: e.dentro, sani: e.sani, pallaOk: e.pallaOk, palla: e.palla }));
   }
   verifica(taglie.dopo.taglia === 5 && taglie.dopo.FW === 1150,
     'startMatch(1,1) riapre la taglia base, 5 contro 5 sul campo di sempre', JSON.stringify(taglie.dopo));
