@@ -368,3 +368,82 @@ su cio' che un dito nuovo otterrebbe, ed e' gia' cosi' oggi).
 - **R7 — Il banco bersaglio non e' ripetibile** (rAF vero: 10/20 → 11/20 in
   due corse identiche). Il 19/20 va letto come «peggiore di tre corse», e
   un 18 isolato va rifatto prima di dichiarare rosso il progetto.
+
+---
+
+## 8. IL VERBALE DELL'APPLICAZIONE — 1 settembre 2026
+
+La toppa e' DENTRO: `strumenti/_t-isteresi-disco.js`, 5 ancoraggi, applicata
+al file di casa (2.366.861 → 2.369.910 byte). Il meccanismo e' il §3 parola
+per parola, con una sola aggiunta prudenziale: `squadraDelPallone` guarda
+`if(!b) return -1` prima di leggere il pallone.
+
+### 8.1 Le misure, e la rilettura onesta della soglia §6.1
+
+`_p-contrasto20`, cinque corse: 19, 17, 18, 16, 20. La soglia «19/20 sulla
+peggiore di tre» NON e' soddisfatta alla lettera — ed era MAL POSTA:
+presumeva che ogni fallito fosse la malattia. La sonda, estesa con la
+colonna del LATO (squadraDelPallone + lastTouch al rilascio), classifica
+OGNI fallito delle corse contate: **zero falliti per sfarfallio senza
+cambio di lato** (la malattia: prima erano 9 su 20); i residui sono TUTTI
+cambi di lato veri a meta' gesto — il contrasto in piedi della pressione
+che VINCE il pallone (lato 0, tocco di un nostro uomo), o la contesa vera
+(due cambi di lato in un gesto). Non sono fallimenti del verbo: sono il
+ri-armo sacrosanto che fa il suo mestiere su una palla che ha davvero
+cambiato padrone.
+
+`_p-sfarfallio` dopo la toppa: **gli stessi 6 cambi di faccia, agli stessi
+fotogrammi** del prima — l'etichetta dipinta non e' stata toccata (§3.4).
+
+### 8.2 I cancelli
+
+| banco | esito |
+|---|---|
+| `giocata --tutte` | **20 corse su 20 senza rossi** (era ~1 rosso su 5) |
+| `giocata --tutte --pausa` | esce 1 come deve (7/7 non rispondono) |
+| `_q-l12` | 9/9 — prova B compresa: il rischio R1 non s'e' avverato |
+| `_q-l16` | 6/6 |
+| `_q-precedenza` | 9/9 |
+| `_q-riarmo` | **7/7 per tre corse consecutive** |
+| `_q-determinismo` | VERDE |
+| `_c3-sorteggi` | VERDE (conto dei dado() invariato) |
+| `_crit3-mira` | dump dei duelli a seme fisso PRIMA/DOPO **identici al bit** (tot 1893/1750/1637/1076..., sequenze uguali) |
+| `_crit4-sorteggi` | UGUALE su tutte le righe, anche a pollice 150sx |
+| `_crit10-sorteggi` | VERDE: sei partite identiche sui due file |
+
+### 8.3 I banchi accusavano l'innocente: sei riparazioni, tutte a verbale
+
+Il grosso della giornata di verifica e' stato IL BANCO, non il gioco — e
+cinque delle sei rotture PREESISTEVANO alla toppa (provato rigirando i
+banchi sul file di prima):
+
+1. `giocata.js` accreditava la scivolata all'uomo comandato DOPO un cambio
+   automatico, non a chi aveva ricevuto il comando (spia doSlide +
+   scivolaChi; famiglia del 29º cieco).
+2. `_q-precedenza` moriva su TUTTE e nove le prove per un commento di ieri
+   («STICK_DEAD (12)») letto come chiamata: il taglio «;\n» della via delle
+   costanti correva dentro humanMove. Cura: si chiude a fine riga.
+3. `_q-precedenza`: mancava il finto di `Reg` (oraGioco lo legge dal
+   lavoro sul replay). Cura: stub dichiarato.
+4. `_q-riarmo` campionava a blocchi di 3 fotogrammi: una scivolata
+   trascinata VERSO il pallone vince il contatto nello stesso fotogramma
+   e il banco la dichiarava mai nata. Cura: passo 1 + la transizione
+   slide -1→0 letta dalla spia dei verbi.
+5. `_q-riarmo`, scena del raddoppio: nessun garante nel cono della
+   direzione trascinata (uomoVersoDirezione sceglie NEL cono; la scena
+   svuotava il campo). Cura: garante a 180 unita' nella direzione.
+6. `_q-riarmo`: rilascio nel fotogramma orfano del palleggio
+   (b.owner==-1 il 56,7% del tempo) → comandaRaddoppio rifiuta per la sua
+   prima guardia. Cura: perno del portatore all'istante del rilascio.
+   (L'oscillazione «su due prove» era gia' a verbale il 27 agosto: oggi ha
+   tre nomi e tre cure.)
+
+### 8.4 Conferma dalla miniera
+
+Lo scavo dei comandi del concorrente (MINIERA-FCM.md §4) conferma la
+strada B per architettura: il loro strato touch vive di giudizi discreti
+di possesso (PossessionChangeEvaluation, startNewPossessionTransition),
+non di frontiere geometriche per fotogramma — e il loro ri-armo e' cosi'
+invadente che la palestra ha un comando per spegnerlo
+(lxDisableTouchControllerReset). La porta sul cambio di lato e' la
+versione a costo zero dello stesso giudizio. VOCE CHIUSA.

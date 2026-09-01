@@ -348,6 +348,57 @@ function installaAiuti() {
       S.calci = []; S.tot = 0;
       return { k };
     },
+    /* IL GARANTE DEL RADDOPPIO (1 settembre 2026). comandaRaddoppio
+       sceglie l'uomo NEL CONO della direzione trascinata
+       (uomoVersoDirezione): in una scena che spinge tutti a 260 unita'
+       dal pallone, con le posizioni alla deriva fra una prova e l'altra,
+       certe direzioni restano senza nessuno nel cono e il banco
+       accusava il gioco di un no che era della scena (misurato con la
+       spia dei verbi: «raddoppio accesi 0» su direzioni diverse a ogni
+       corsa). Qui si posa UN compagno di movimento a 180 unita' nella
+       direzione che il dito trascinera': la prova torna a misurare il
+       verbo, non la geografia della deriva. */
+    garanteRaddoppio(rad) {
+      const pi = G.ctrl[0]; if (pi < 0) return { errore: 'nessun comandato' };
+      const p = G.players[pi], c = T.campo;
+      let k = -1, dm = 1e9;
+      for (let i = 0; i < G.players.length; i++) {
+        const q = G.players[i];
+        if (q.team !== 0 || i === pi || q.out > 0 || q.role === 'gk') continue;
+        const d = Math.hypot(q.x - p.x, q.y - p.y);
+        if (d < dm) { dm = d; k = i; }
+      }
+      if (k < 0) return { errore: 'nessun compagno di movimento' };
+      const q = G.players[k];
+      q.x = Math.max(30, Math.min(c.FW - 30, p.x + Math.cos(rad) * 180));
+      q.y = Math.max(30, Math.min(c.FH - 30, p.y + Math.sin(rad) * 180));
+      q.vx = 0; q.vy = 0;
+      return { k };
+    },
+    /* IL PERNO DEL PORTATORE (1 settembre 2026). comandaRaddoppio esige
+       un portatore all'istante della chiamata (la sua prima guardia:
+       b.owner>=0 e avversario), ma durante un palleggio b.owner
+       sfarfalla a -1 (misurato in _p-sfarfallio.js: 56,7% dei
+       fotogrammi): un rilascio caduto in un fotogramma orfano riceveva
+       un no ONESTO del gioco che il banco leggeva come rosso del
+       ri-armo. Qui, se la palla e' orfana, la si rimette al piede
+       dell'avversario piu' vicino un istante prima del rilascio: la
+       prova torna a misurare il ri-armo, non la fase del palleggio. */
+    tienilo() {
+      const b = G.ball;
+      if (b.owner >= 0) return { owner: b.owner };
+      let k = -1, dm = 1e9;
+      for (let i = 0; i < G.players.length; i++) {
+        const o = G.players[i];
+        if (o.team !== 1 || o.out > 0 || o.role === 'gk') continue;
+        const d = Math.hypot(o.x - b.x, o.y - b.y);
+        if (d < dm) { dm = d; k = i; }
+      }
+      if (k < 0) return { errore: 'nessun avversario' };
+      b.owner = k; b.x = G.players[k].x + 8; b.y = G.players[k].y;
+      b.vx = 0; b.vy = 0; b.vz = 0; b.z = 0;
+      return { owner: k };
+    },
     /* la palla arriva al piede del comandato (il contesto diventa NOSTRO) */
     dai() {
       const pi = G.ctrl[0], p = G.players[pi], b = G.ball;
@@ -418,6 +469,30 @@ const n2 = v => (v === null || v === undefined || !isFinite(v)) ? 'n/d' : (Math.
     if (aiuti !== 'ok' && aiuti !== 'gia') { console.error('FALLITO: ' + aiuti); process.exit(2); }
     const cdp = await ctx.newCDPSession(pag);
     const passo = n => pag.evaluate(k => window.__banco.passo(k), n);
+    /* LA SPIA DEI VERBI (1 settembre 2026, diagnosi del 7-su-8 stabile):
+       avvolge i tre consumatori per nome globale e trascrive; sul rosso
+       la riga della direzione dice DA CHI e' morto il gesto. Non tocca
+       il gioco: delega e trascrive. */
+    await pag.evaluate(() => {
+      window.__spia82 = [];
+      const vs = window.doSlide;
+      if (typeof vs === 'function') window.doSlide = function (t, fase) {
+        window.__spia82.push({ q: 'doSlide ' + fase }); return vs.apply(this, arguments);
+      };
+      const vl = window.lanciaScivolata;
+      if (typeof vl === 'function') window.lanciaScivolata = function (p) {
+        const e = { q: 'lancio', rec: p ? +(+p.recover).toFixed(3) : null, slidePrima: p ? p.slide : null };
+        const r = vl.apply(this, arguments); e.slideDopo = p ? p.slide : null;
+        window.__spia82.push(e); return r;
+      };
+      const vr = window.comandaRaddoppio;
+      if (typeof vr === 'function') window.comandaRaddoppio = function (t) {
+        const r = vr.apply(this, arguments);
+        const T = window.__test, G = T && T.G; let n = 0;
+        if (G) for (const q of G.players) if (q.team === 0 && q.raddoppio > 0) n++;
+        window.__spia82.push({ q: 'raddoppio', accesi: n }); return r;
+      };
+    });
     return { pag, cdp, passo };
   }
 
@@ -457,9 +532,15 @@ const n2 = v => (v === null || v === undefined || !isFinite(v)) ? 'n/d' : (Math.
      e due le parti. Si campiona ogni 3 fotogrammi per 24 e si tiene il
      massimo; i calci sono comunque cumulativi nella sonda. */
   async function effettiDopo(pag, passo) {
+    /* A PASSO UNO, NON A BLOCCHI DI TRE (1 settembre 2026). Misurato con
+       la spia dei verbi: al trascinamento verso il pallone la scivolata
+       parte (lancio: slide -1->0, recover 0) e VINCE il pallone al primo
+       contatto — vita piu' corta del blocco di 3 fotogrammi, e il banco
+       la dichiarava mai nata. Il campione va preso ogni fotogramma:
+       stessi 24 fotogrammi di finestra, nessun blocco cieco. */
     const dopo = { sciv: 0, radd: 0, chiam: 0, posePasso: 0, calci0: 0 };
-    for (let k = 0; k < 8; k++) {
-      await passo(3);
+    for (let k = 0; k < 24; k++) {
+      await passo(1);
       const s = await pag.evaluate(() => window.__qr.stato());
       for (const c of ['sciv', 'radd', 'chiam', 'posePasso', 'calci0']) dopo[c] = Math.max(dopo[c], s[c]);
     }
@@ -499,10 +580,21 @@ const n2 = v => (v === null || v === undefined || !isFinite(v)) ? 'n/d' : (Math.
     if (aRil !== 'slide') { await dito.suSicuro(cdp); return { nulla: 'il contesto non ha retto fino al rilascio: atto ' + aRil }; }
     const prima = await pag.evaluate(() => window.__qr.stato());
     if (prima.sciv > 0) { await dito.suSicuro(cdp); return { nulla: 'scivolata gia\' accesa prima del rilascio' }; }
+    await pag.evaluate(() => { if (window.__spia82) window.__spia82.length = 0; });
     await dito.su(cdp);
     const dopo = await effettiDopo(pag, passo);
     await dito.suSicuro(cdp);
-    return { armata: dopo.sciv > 0 ? 1 : 0, lett: let1 };
+    const spia = await pag.evaluate(() => (window.__spia82 || []).splice(0));
+    /* L'EFFETTO SI LEGGE ANCHE DALLA TRANSIZIONE (1 settembre 2026):
+       una scivolata trascinata VERSO il pallone puo' vincere il
+       contatto nello stesso fotogramma in cui nasce — slide -1 -> 0 e
+       di nuovo -1 prima di qualunque campione fra i passi. La spia
+       trascrive la transizione dallo stato del gioco (p.slide prima e
+       dopo lanciaScivolata): se il lancio ha acceso la scivolata, il
+       verbo e' uscito — che e' esattamente cio' che questa prova
+       misura. Il campione classico resta per le scivolate lunghe. */
+    const lanciata = spia.some(s => s.q === 'lancio' && s.slidePrima < 0 && s.slideDopo >= 0);
+    return { armata: (dopo.sciv > 0 || lanciata) ? 1 : 0, lett: let1, spia };
   }
 
   /* ------------------------------------------------------------------
@@ -538,6 +630,13 @@ const n2 = v => (v === null || v === undefined || !isFinite(v)) ? 'n/d' : (Math.
       if (a2 !== 'swap') { await dito.suSicuro(cdp); return { nulla: 'dopo il furto il dito tiene ' + a2 }; }
     }
     await passo(2);   /* fermi dopo l'ultimo ri-armo, come sopra */
+    /* solo per il raddoppio: il garante nel cono della direzione (il
+       verbale sta su garanteRaddoppio). La deriva nei ~10 fotogrammi del
+       trascinamento e' trascurabile: il garante parte fermo. */
+    if (attoFinale === 'swap') {
+      const w = await pag.evaluate(r => window.__qr.garanteRaddoppio(r), dir);
+      if (w.errore) { await dito.suSicuro(cdp); return { nulla: w.errore }; }
+    }
     if (fase === 'correzione') await correzione(cdp, passo, P, dx, dy);
     else await trascinaDa(cdp, passo, P.x, P.y, dx, dy);
     const let1 = await pag.evaluate(() => window.__qr.lettura());
@@ -546,12 +645,20 @@ const n2 = v => (v === null || v === undefined || !isFinite(v)) ? 'n/d' : (Math.
     await pag.evaluate(() => window.__qr.azzeraSonda());
     const prima = await pag.evaluate(() => window.__qr.stato());
     if (attoFinale === 'swap' && prima.radd > 0) { await dito.suSicuro(cdp); return { nulla: 'raddoppio gia\' acceso prima del rilascio' }; }
+    /* il perno del portatore, solo per il raddoppio (verbale su tienilo) */
+    if (attoFinale === 'swap') await pag.evaluate(() => window.__qr.tienilo());
+    await pag.evaluate(() => { if (window.__spia82) window.__spia82.length = 0; });
     await dito.su(cdp);
     const dopo = await effettiDopo(pag, passo);
     await dito.suSicuro(cdp);
-    if (attoFinale === 'swap') return { armata: dopo.radd > 0 ? 1 : 0, lett: let1 };
+    const spia = await pag.evaluate(() => (window.__spia82 || []).splice(0));
+    /* come per la scivolata: fa fede anche il conteggio degli accesi
+       preso DENTRO la chiamata (raddoppio gia' assegnato), oltre al
+       campione fra i passi */
+    const raddoppiato = spia.some(s => s.q === 'raddoppio' && s.accesi > 0);
+    if (attoFinale === 'swap') return { armata: (dopo.radd > 0 || raddoppiato) ? 1 : 0, lett: let1, spia };
     return { armata: (dopo.calci0 > 0 || dopo.posePasso > 0 || dopo.chiam > 0) ? 1 : 0,
-             dett: dopo, lett: let1 };
+             dett: dopo, lett: let1, spia };
   }
 
   /* B3 — il passaggio NORMALE, senza nessun ri-armo: pressione su
@@ -617,6 +724,14 @@ const n2 = v => (v === null || v === undefined || !isFinite(v)) ? 'n/d' : (Math.
     stampa('    atteso: 0 scivolate  ->  ' + (okA ? 'VERDE' : 'ROSSO'));
     stampa('B1) TRASCINAMENTO VOLUTO di 60 px dopo il ri-armo — la scivolata deve uscire');
     stampa('    scivolate: ' + rB.armate + ' su ' + rB.valide + ' (' + rB.nulle + ' nulle)  ·  atteso: tutte  ->  ' + (okB ? 'VERDE' : 'ROSSO'));
+    /* sul rosso il no ha un nome per direzione (1 settembre 2026): senza
+       questa riga il 7-su-8 non diceva QUALE direzione muore ne' come */
+    if (!okB) for (let i = 0; i < b1.length; i++) {
+      const e = b1[i], g = Math.round(DIR8[i] * 180 / Math.PI);
+      stampa('      dir ' + g + '°: ' + (e.nulla ? 'NULLA — ' + e.nulla
+        : (e.armata ? 'scivola' : 'NIENTE') + '  ·  spostamento letto ' + (e.lett ? n2(e.lett.l) : '?') + ' px, R_ARMA ' + (e.lett ? n2(e.lett.rArma) : '?')
+        + (e.spia && e.spia.length ? '  ·  spia: ' + e.spia.map(s => s.q + (s.rec != null ? ' rec ' + s.rec : '') + (s.slidePrima != null ? ' slide ' + s.slidePrima + '->' + s.slideDopo : '') + (s.accesi != null ? ' accesi ' + s.accesi : '')).join(' | ') : '  ·  spia: MUTA')));
+    }
     stampa('PREZZO (stampato, non giudicato): trascinamento voluto di 33 px, ~0,3 s dopo il ri-armo');
     stampa('    scivolate: ' + rP.armate + ' su ' + rP.valide + '  ·  R_ARMA al rilascio ' + n2(rP.rArmaMin) + '..' + n2(rP.rArmaMax) + ' px');
     stampa('');
@@ -643,6 +758,13 @@ const n2 = v => (v === null || v === undefined || !isFinite(v)) ? 'n/d' : (Math.
     stampa('    atteso: 0 raddoppi  ->  ' + (okA ? 'VERDE' : 'ROSSO'));
     stampa('B2) TRASCINAMENTO VOLUTO di 60 px dopo il ri-armo — il raddoppio deve uscire');
     stampa('    raddoppi: ' + rB.armate + ' su ' + rB.valide + ' (' + rB.nulle + ' nulle)  ·  atteso: tutti  ->  ' + (okB ? 'VERDE' : 'ROSSO'));
+    /* come per B1: sul rosso, il no per direzione */
+    if (!okB) for (let i = 0; i < b2.length; i++) {
+      const e = b2[i], g = Math.round(DIR8[i] * 180 / Math.PI);
+      stampa('      dir ' + g + '°: ' + (e.nulla ? 'NULLA — ' + e.nulla
+        : (e.armata ? 'raddoppia' : 'NIENTE') + '  ·  spostamento letto ' + (e.lett ? n2(e.lett.l) : '?') + ' px, R_ARMA ' + (e.lett ? n2(e.lett.rArma) : '?')
+        + (e.spia && e.spia.length ? '  ·  spia: ' + e.spia.map(s => s.q + (s.rec != null ? ' rec ' + s.rec : '') + (s.slidePrima != null ? ' slide ' + s.slidePrima + '->' + s.slideDopo : '') + (s.accesi != null ? ' accesi ' + s.accesi : '')).join(' | ') : '  ·  spia: MUTA')));
+    }
     stampa('');
   }
 

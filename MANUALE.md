@@ -428,10 +428,15 @@ Qui il registro completo, a edizioni.
 ## A registro — ciò che resta, e in che stato
 
 - **Il palleggio avversario mangia la scivolata trascinata** (#82) —
-  **PROGETTATA**: `_analisi/PROGETTO-ISTERESI-DISCO.md`, con la sonda
-  nuova `_p-sfarfallio.js` che ha misurato la causa (6 ri-armi in 6
-  secondi per la sola soglia dei 36,4 senza che il pallone cambi lato).
-  La cura scelta: il ri-armo scatta solo se il pallone CAMBIA SQUADRA.
+  **CURATA il 1 settembre 2026** (`strumenti/_t-isteresi-disco.js`, 5
+  ancoraggi): il ri-armo scatta solo se il pallone CAMBIA LATO
+  (`squadraDelPallone`: il padrone se c'è, altrimenti la squadra
+  dell'ultimo tocco). Misure: sonda dei 20 contrasti da 11/20 a ~18/20
+  con **zero falliti per sfarfallio** (i residui sono furti veri a metà
+  gesto); `giocata` 20/20; `_q-riarmo` 7/7 per tre corse; tracce dei
+  duelli a seme fisso identiche al bit prima/dopo. Il verbale intero:
+  `_analisi/PROGETTO-ISTERESI-DISCO.md` §8, comprese le sei riparazioni
+  ai banchi che accusavano l'innocente.
 - **Il gioco aereo della macchina** (#72) — **PROGETTATA** e con la
   diagnosi rettificata: la causa prima a 7/11 non è la finestra del
   cross ma `attaccaArea` spenta da taglia 7 (nessuno entra mai in

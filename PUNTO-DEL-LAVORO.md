@@ -1,7 +1,27 @@
 # Dove siamo, e cosa manca
 
-Aggiornato al **31 agosto 2026** — il giorno della pubblicazione. Questo file
-serve a riprendere senza rileggere niente altro.
+Aggiornato al **1 settembre 2026**. Questo file serve a riprendere senza
+rileggere niente altro.
+
+## La giornata del 1 settembre, in breve
+
+| | cosa |
+|---|---|
+| 1 | **LA MINIERA** (`_analisi/MINIERA-FCM.md`): su mandato del committente («non reinventare la ruota»), sei minatori hanno estratto le soluzioni del concorrente come fatti liberi — divisioni, formato ASSALTO, ritmo del ritorno, comandi, gioco aereo, schermi — con righe di prova e gradi. **Il percorso scende da ~26-27 a ~19-20 giornate.** Quattro rettifiche già scritte nella mappa delle differenze |
+| 2 | **#82 CURATA e verificata**: la porta del ri-armo sul cambio di lato (`_t-isteresi-disco.js`). Sonda 11/20 → ~18/20 con zero falliti per sfarfallio; `giocata` 20/20; `_q-riarmo` 7/7 ×3; duelli a seme fisso identici al bit prima/dopo. Verbale: `PROGETTO-ISTERESI-DISCO.md` §8 |
+| 3 | **Sei banchi accusavano l'innocente**, cinque per rotture PREESISTENTI: giocata (scivolata accreditata all'uomo sbagliato dopo l'autoswitch), precedenza (taglio delle costanti + finto di Reg), riarmo (campionatore a blocchi, garante del raddoppio, perno del portatore). Tutti riparati con verbale |
+| 4 | **#72 pronta a partire**: `_t-aereo.js` scritto e provato a vuoto (8 ancoraggi, stadi A+B); fotografia PRIMA presa (`fuori/aereo-prima-*.json`, cross 0,3/0,0/0,0) |
+| 5 | La direttiva del committente è in memoria permanente (`minare-il-paragone`): prima di progettare, scavare il pacchetto di paragone |
+
+## Il prossimo passo, in ordine
+
+1. `node strumenti/_t-aereo.js --dentro` e la batteria §5 del progetto aereo
+   (stadio C resta dietro il cancello della sonda).
+2. Onda 1 asciugata dalla miniera: divisioni a 3 fasce × 3 con premi a
+   formula e pavimento di fascia (MINIERA §1), poi record/abbandono.
+3. Taccuino del campetto (~2,5 g, dopo il contenuto 3) e ASSALTO (~6 g, onda 2).
+4. Play Console: bloccata alla creazione dell'account (2FA + 25 € +
+   identità sono solo del committente); AAB 1402079 pronto.
 
 **Ramo:** `main`. **Il gioco adesso:** ~2,36 MB, `targetSdk` **36** (da oggi
 Play rifiuta le app nuove sotto Android 16 — verificato e schivato il giorno

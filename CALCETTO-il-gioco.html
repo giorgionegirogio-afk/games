@@ -13409,6 +13409,10 @@ const Touch5 = {
        verbo, che e' appena nato. */
     this.atti[id]={ t:t, carica:(act==='shot' ? ctrlPlayer(t) : null),
                     slot:slot, act:act,
+                    /* il lato del pallone alla nascita dell'atto: e' il
+                       testimone che la porta del ri-armo confronta (vedi
+                       IL PASSO DELLA SIMULAZIONE, voce #82) */
+                    sq:squadraDelPallone(),
                     posaX:x, posaY:y, x:x, y:y, tenuta:0, posato:0, morto:false,
                     anello:[{x:x,y:y,q:this.tempo}] };
   },
@@ -13488,11 +13492,18 @@ const Touch5 = {
      succedere, perche' quando l'atto smette di esistere la risposta
      cambia da sola.
 
-     E si spegne anche quando il DISCO cambia verbo sotto il dito: il
-     ri-armo di L1.1 riscrive a.act, quindi avvicinandosi al pallone —
-     dove il disco offre TIRA — il contenimento finisce. E' la distanza
-     a cui si contiene, non un difetto: da li' in dentro il verbo e' un
-     altro.
+     E si spegne anche quando il DISCO cambia verbo sotto il dito E il
+     pallone ha cambiato lato: dal 1 settembre 2026 (voce #82) il
+     ri-armo di L1.1 riscrive a.act solo a quelle DUE condizioni (la
+     porta in IL PASSO DELLA SIMULAZIONE). La vecchia frase
+     «avvicinandosi al pallone — dove il disco offre TIRA — il
+     contenimento finisce: e' la distanza a cui si contiene» NON E' PIU'
+     VERA contro un portatore avversario che palleggia: finche' il lato
+     non cambia, il contenimento TIENE anche sotto la frontiera del
+     tiro. Finisce come prima quando il pallone cambia lato (furto
+     compiuto, in una direzione o nell'altra) o quando il dito si alza.
+     Il codice qui sotto non e' cambiato: legge a.act, che e'
+     esattamente cio' che l'isteresi stabilizza.
      ===================================================================== */
   contiene(t){
     for(const id in this.atti){
@@ -13584,15 +13595,24 @@ const Touch5 = {
      non puo' produrre un contrasto. Quello che si guadagna e' che il dito
      gia' giu' TIENE il verbo nuovo, e da li' in poi tutto funziona.
 
-     COS'E' UN «CAMBIO DI CONTESTO», qui: che il disco sotto il dito
-     offra un verbo diverso da quello che l'atto teneva. Non c'e' una
-     seconda definizione di contesto scritta da nessuna parte — si chiede
-     a touchBtnLayout, che e' la stessa funzione che decide le etichette e
-     che risolve il tocco. Il giorno in cui il contesto diventera' tre
-     (IO / NOI / LORO) e si stabilizzera' (b.passTo dentro possessoTeam,
-     piu' l'isteresi), questo ri-armo seguira' senza che qui cambi una
-     riga: e' un vantaggio dell'aver legato il ri-armo al VERBO OFFERTO
-     invece che a una copia locale del possesso.
+     COS'E' UN «CAMBIO DI CONTESTO», qui — DUE condizioni, non una
+     (1 settembre 2026, voce #82): che il disco sotto il dito offra un
+     verbo diverso da quello che l'atto teneva, E che il pallone abbia
+     cambiato LATO da quando l'atto e' nato (squadraDelPallone: il
+     padrone se c'e', altrimenti la squadra dell'ultimo tocco). La prima
+     si chiede a touchBtnLayout, che e' la stessa funzione che decide le
+     etichette e che risolve il tocco; la seconda e' l'isteresi che il
+     capoverso scritto qui prometteva («piu' l'isteresi, questo ri-armo
+     seguira'»): adempiuta. Il perche' sta nella misura del 31 agosto
+     (strumenti/_p-sfarfallio.js): durante un contrasto vero il pallone
+     conteso attraversa la frontiera KICK_R*1,4 avanti e indietro — 6
+     cambi di faccia in 6 s, puntate da 8, 14 e 57 fotogrammi — e ogni
+     attraversamento azzerava il punto di posa mangiandosi il
+     trascinamento della scivolata (11 gesti su 20 a buon fine,
+     strumenti/_p-contrasto20.js). In TUTTI i sei cambi misurati la
+     squadra dell'ultimo tocco non era mai cambiata; nel furto vero
+     cambia sempre. Il discrimine e' esatto, senza raggi ne' cronometri
+     da tarare.
 
      COSTO. Il ciclo gira solo se c'e' almeno un dito su un disco: a mani
      libere non esegue niente. Con un dito giu' sono due oggetti allocati
@@ -13706,19 +13726,34 @@ const Touch5 = {
       if(!bt){ delete this.atti[id]; continue; }
       const d=touchBtnLayout(a.t)[a.slot];
       if(d && d.act!==a.act){
-        if(a.carica) this.chiudiCarica(a.carica);
-        /* L1.4 — il verbo nuovo non eredita la posa del passaggio, come
-           non eredita la carica del tiro: si chiude senza calciare. */
-        if(a.passa){ this.chiudiPassaL14(a.passa); a.passa=null; }
-        a.act=d.act; bt.act=d.act;
-        /* il verbo nuovo non ha eseguito niente, quindi non tiene aperta
-           nessuna carica: da qui in poi questo dito non ha piu' titolo a
-           chiudere o a far partire il tiro di nessuno */
-        a.carica=null;
-        a.posaX=a.x; a.posaY=a.y;
-        a.anello=[{x:a.x,y:a.y,q:this.tempo}];
-        a.tenuta=0; a.morto=false;
-        continue;
+        /* LA PORTA DEL RI-ARMO (1 settembre 2026, voce #82). Il verbo
+           offerto e' cambiato, ma il ri-armo scatta solo se il pallone
+           ha DAVVERO cambiato lato da quando l'atto e' nato: nei sei
+           cambi di faccia misurati durante un palleggio conteso
+           (strumenti/_p-sfarfallio.js) il lato non cambia MAI, nel
+           furto vero cambia SEMPRE — non esiste furto senza contatto
+           (segnaTocco). Un ri-armo soppresso non puo' produrre azioni
+           illegali: ogni rilascio ri-verifica le proprie guardie. */
+        const sq=squadraDelPallone();
+        if(sq!==a.sq){
+          if(a.carica) this.chiudiCarica(a.carica);
+          /* L1.4 — il verbo nuovo non eredita la posa del passaggio, come
+             non eredita la carica del tiro: si chiude senza calciare. */
+          if(a.passa){ this.chiudiPassaL14(a.passa); a.passa=null; }
+          a.act=d.act; bt.act=d.act;
+          /* il verbo nuovo non ha eseguito niente, quindi non tiene aperta
+             nessuna carica: da qui in poi questo dito non ha piu' titolo a
+             chiudere o a far partire il tiro di nessuno */
+          a.carica=null;
+          a.posaX=a.x; a.posaY=a.y;
+          a.anello=[{x:a.x,y:a.y,q:this.tempo}];
+          a.tenuta=0; a.morto=false;
+          a.sq=sq;
+          continue;
+        }
+        /* stesso lato: e' lo sfarfallio del palleggio sulla frontiera
+           KICK_R*1,4. L'atto TIENE — verbo, posa, anello, tenuta — e i
+           cronometri del pollice avanzano qui sotto. */
       }
       /* il tempo del pollice avanza SEMPRE, anche su un atto morto: il
          dito e' fisicamente giu' e continua a rotolare. Quello del verbo
@@ -13780,6 +13815,22 @@ function ctrlPlayer(t){
    _t-oracolo.js la legge come riga di controllo. */
 function possessoTeam(t){
   return G.ball && G.ball.owner>=0 && G.players[G.ball.owner] && G.players[G.ball.owner].team===t;
+}
+/* LA SQUADRA A CUI IL PALLONE APPARTIENE, ai fini del ri-armo del
+   motore d'ingresso (1 settembre 2026, voce #82): il padrone se c'e',
+   altrimenti la squadra dell'ultimo tocco (b.lastTouch, il registro che
+   segnaTocco scrive a OGNI contatto: calci, furti, tocchi sporchi,
+   raccolte, blocchi col corpo, strappi, mani del portiere, rinvii,
+   calcio d'inizio). Un palleggio, una respinta, un tocco sporco non
+   cambiano lato; un furto si' — sempre, perche' non esiste furto senza
+   contatto. STESSO STATUTO DELLE QUATTRO CAPACITA' QUI SOTTO: non
+   scrive un bit, non chiama mai dado() ne' Math.random. */
+function squadraDelPallone(){
+  const b=G.ball;
+  if(!b) return -1;
+  if(b.owner>=0 && G.players[b.owner]) return G.players[b.owner].team;
+  if(b.lastTouch>=0 && G.players[b.lastTouch]) return G.players[b.lastTouch].team;
+  return -1;
 }
 /* =====================================================================
    LE QUATTRO CAPACITA' — «se premo adesso, cosa succede».

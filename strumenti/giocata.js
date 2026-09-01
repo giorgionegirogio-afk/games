@@ -709,6 +709,14 @@ function installaSonda() {
            chiudere la finestra del volo — vedi analizza(). */
         ultimoTocco: (G.touches && G.touches.length) ? G.touches[G.touches.length - 1].t : null,
         comandato: p ? { i: pi, x: p.x, y: p.y, vx: p.vx, vy: p.vy, carica: p.charge !== undefined ? p.charge : null, slide: p.slide !== undefined ? p.slide : null } : null,
+        /* CHI della squadra 0 sta scivolando, comandato o no (1 settembre
+           2026, voce #82): se il comando passa a un altro uomo fra il
+           rilascio e il fuoco dell'anticipo (60 ms), la scivolata parte
+           sull'uomo VECCHIO e il campo qui sopra guarda il NUOVO — il
+           banco accuserebbe l'innocente. Si registra il primo uomo di
+           movimento in scivolata, e analizza() accredita il gesto
+           all'uomo che era comandato al momento del comando. */
+        scivolaChi: (() => { for (let i = 0; i < G.players.length; i++) { const q = G.players[i]; if (q && q.team === 0 && q.slide != null && q.slide >= 0) return i; } return -1; })(),
         vicino: vic ? { i: vi, x: vic.x, y: vic.y, vx: vic.vx, vy: vic.vy } : null,
         scena: G.scene, pausa: !!G.paused,
       });
@@ -1005,7 +1013,11 @@ function analizza(dati, comando, bersaglio) {
       else if (c.palla.owner >= 0 || c.ultimoTocco !== toccoNostro) voloFinito = true;
       if (inVolo && !voloFinito && c.palla.z != null) zVoloMax = Math.max(zVoloMax, c.palla.z);
     }
-    if (scivolataMs == null && c.comandato && c.comandato.slide != null && c.comandato.slide >= 0) {
+    if (scivolataMs == null && ((c.comandato && c.comandato.slide != null && c.comandato.slide >= 0)
+        /* voce #82: la scivolata si accredita all'uomo comandato AL
+           MOMENTO del comando (baseIdx), anche se nel frattempo il
+           cursore e' passato altrove: e' lui che il dito ha comandato */
+        || (c.scivolaChi != null && baseIdx != null && c.scivolaChi === baseIdx))) {
       scivolataMs = c.t - comandoT;
       scivolataFot = (comandoFot != null && c.fot != null) ? c.fot - comandoFot : null;
     }
@@ -1080,6 +1092,46 @@ function analizza(dati, comando, bersaglio) {
   await pag.waitForFunction('window.__test !== undefined', null, { timeout: 20000 });
   await pag.waitForTimeout(500);
   await pag.evaluate(installaSonda);
+  /* LA SPIA DI doSlide (1 settembre 2026, voce #82): quando il rosso dice
+     «p.slide resta spento» questa lista dice DA CHI e' morto il gesto —
+     doSlide mai chiamato (l'atto e' morto prima del rilascio), oppure
+     chiamato e rifiutato dentro startSlide (recover, kickCd, carica in
+     volo). Si avvolge DOPO il load: il binding globale della funzione e'
+     riassegnabile, e ogni chiamante passa dal nome. Non tocca il gioco:
+     delega e trascrive. */
+  await pag.evaluate(() => {
+    window.__spiaSlide = [];
+    const vero = window.doSlide;
+    if (typeof vero === 'function') window.doSlide = function (t, fase, tr) {
+      const T = window.__test, G = T && T.G;
+      const pi = G && G.ctrl ? G.ctrl[t] : -1, q = pi >= 0 ? G.players[pi] : null;
+      const e = { fase: fase, chi: pi, armato: tr ? !!tr.armato : null,
+        recover: q ? +(+q.recover).toFixed(3) : null,
+        kickCd: q ? +(+q.kickCd).toFixed(3) : null,
+        slidePrima: q ? q.slide : null };
+      const r = vero.apply(this, arguments);
+      e.slideDopo = q ? q.slide : null;
+      window.__spiaSlide.push(e);
+      return r;
+    };
+    /* la scivolata nasce 60 ms DOPO, quando l'anticipo fuoca
+       lanciaScivolata — e il rifiuto la' dentro (slide>=0 o recover>0)
+       e' muto. startSlide passa il richiamo per NOME globale, quindi
+       l'avvolgimento arriva anche dentro l'anticipo. */
+    const fuoco = window.lanciaScivolata;
+    if (typeof fuoco === 'function') window.lanciaScivolata = function (q) {
+      const T = window.__test, G = T && T.G;
+      window.__spiaSlide.push({ fase: 'lancio', armato: null,
+        chi: G && q ? G.players.indexOf(q) : null,
+        recover: q ? +(+q.recover).toFixed(3) : null,
+        kickCd: q ? +(+q.kickCd).toFixed(3) : null,
+        slidePrima: q ? q.slide : null, contrasto: q ? q.contrasto : null });
+      const r = fuoco.apply(this, arguments);
+      const u = window.__spiaSlide[window.__spiaSlide.length - 1];
+      u.slideDopo = q ? q.slide : null;
+      return r;
+    };
+  });
   await pag.evaluate(() => {
     const t = window.__test;
     t.dismissSplash && t.dismissSplash();
@@ -1224,6 +1276,17 @@ function analizza(dati, comando, bersaglio) {
       else if (!scOkMs && scOkFot) noteGesto.push(
         'scivolata in ' + a.scivolataFot + ' fotogrammi ma ' + a.scivolataMs.toFixed(0) +
         " ms: carico della macchina, non il gioco");
+      /* la spia (voce #82): sul rosso si allega il verbale di doSlide,
+         cosi' il no ha un nome senza dover rifare la corsa. doSlide e'
+         chiamato solo dal disco difensivo: la coda e' di questo gesto. */
+      if (azioneNo) {
+        const spy = await pag.evaluate(() => (window.__spiaSlide || []).slice(-6));
+        azioneNo += '  [spia doSlide: ' + (spy.length ? spy.map(s =>
+          s.fase + ' (uomo ' + s.chi + ')' + (s.armato == null ? '' : (s.armato ? ' armato' : ' NON armato')) +
+          ' rec ' + s.recover + ' cd ' + s.kickCd + ' slide ' + s.slidePrima + '->' + s.slideDopo).join(' | ')
+          : 'MAI chiamato') +
+          (a.cambioMs != null ? ' — comando passato all\'uomo ' + a.nuovoIndice + ' a +' + a.cambioMs.toFixed(0) + ' ms' : '') + ']';
+      }
     }
     const passa = rispondeInTempo && !azioneNo;
     const chi = g.bersaglio === 'palla' ? 'la palla' : g.bersaglio === 'ctrl' ? "l'indice del comandato" : 'il giocatore comandato';

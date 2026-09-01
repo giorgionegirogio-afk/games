@@ -112,7 +112,17 @@ function dipendenze(codice, gia, profondita) {
     if (i < 0) {
       for (const par of ['let ' + n + ' ', 'let ' + n + '=', 'const ' + n + ' ', 'const ' + n + '=']) {
         const k = SRC.indexOf('\n' + par);
-        if (k >= 0 && SRC.indexOf('\n' + par, k + 1) < 0) { apre = par; chiude = ';\n'; i = k; break; }
+        /* LA VIA DELLE COSTANTI CHIUDE A FINE RIGA, NON AL «;\n»
+           (1 settembre 2026). Il guasto, misurato: un commento del gioco
+           dice «fra SOGLIA_LEVETTA (6) e STICK_DEAD (12)», la rete a
+           nomi lo legge come chiamata e viene qui; la riga vera e'
+           «const STICK_DEAD=12, STICK_FULL=46;   // dead-zone...» — il
+           «;» NON e' seguito da a-capo, quindi il taglio «;\n» correva
+           dentro humanMove e il banco moriva con «Unexpected token ')'»
+           su tutte e nove le prove, accusando il gioco di un guasto
+           suo (la stessa classe del 29 agosto). Una dichiarazione di
+           dato di primo livello sta su una riga: si prende la riga. */
+        if (k >= 0 && SRC.indexOf('\n' + par, k + 1) < 0) { apre = par; chiude = '\n'; i = k; break; }
       }
     }
     if (i < 0) continue;                       // ne' funzione ne' dato di primo livello
@@ -234,6 +244,10 @@ function ambiente(vista) {
     const releaseCharge=t=>amb.atti.push('tiro'+t);
     const ctrlPlayer=t=>null;
     const chiudiAnticipo=p=>{};
+    /* il registro delle sfide, finto (1 settembre 2026): Touch5 chiama
+       oraGioco(), che fuori dal replay (modo!==2) usa performance.now().
+       Qui il replay non esiste: modo 0, e tOra non si legge mai. */
+    const Reg={modo:0, tOra:0};
   `;
   const post = `
     /* si conta OGNI chiamata a release, anche se oggi e' inerte: la

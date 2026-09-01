@@ -128,6 +128,12 @@ const attesa = ms => new Promise(r => setTimeout(r, ms));
         distPortatore: +d.toFixed(1),
         owner: G.ball.owner,
         ownerTeam: G.ball.owner >= 0 && G.players[G.ball.owner] ? G.players[G.ball.owner].team : -1,
+        /* il LATO del pallone al rilascio (1 settembre 2026, voce #82):
+           se un NIENTE ha lato 0, il ri-armo era il furto sacrosanto —
+           la palla e' passata dalla nostra parte a meta' gesto; se ha
+           lato 1, la malattia dello sfarfallio e' ancora viva */
+        lato: (typeof squadraDelPallone === 'function') ? squadraDelPallone() : null,
+        lastTouch: G.ball.lastTouch,
         ctrl: G.ctrl[0],
       };
     }, [info.pi, info.portatore]);
@@ -139,6 +145,7 @@ const attesa = ms => new Promise(r => setTimeout(r, ms));
       dettaglio: r.chiamate.map(c => c.fase).join(','),
       distPortatore: r.distPortatore, ctrlCambiato: r.ctrl !== info.pi,
       owner: r.owner, nostra: r.owner >= 0 ? (r.ownerTeam === 0) : null,
+      lato: r.lato, lastTouch: r.lastTouch,
       recover: r.recover, kickCd: r.kickCd });
   }
 
@@ -150,6 +157,7 @@ const attesa = ms => new Promise(r => setTimeout(r, ms));
       '  [' + e.dettaglio + ']' +
       '  dist ' + e.distPortatore + '  ctrlCambiato ' + e.ctrlCambiato +
       '  palla: ' + (e.owner < 0 ? 'libera' : (e.nostra ? 'NOSTRA' : 'loro')) +
+      '  lato ' + e.lato + ' (tocco ' + e.lastTouch + ')' +
       '  recover ' + e.recover + '  kickCd ' + e.kickCd);
   }
   console.log('\n' + ok + ' scivolate su ' + esiti.filter(e => !e.errore).length + ' gesti misurati');

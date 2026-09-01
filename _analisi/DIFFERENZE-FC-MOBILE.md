@@ -54,9 +54,9 @@ senza licenze): no-per-scelta 494 · si 417 · con-lavoro 319 · gia-fatto 107 �
 
 **Partita a sole occasioni da gol (VS Attack)**  ·  meglio: FC Mobile  ·  dal-pacchetto  ·  fattibile: si
 
-- FC Mobile: esiste ed e' un pilastro: il motore ha gli identificativi dei traguardi di VS Attack a scaglioni (1, 3, 10, 20, 50, 100, 250 partite) e un azzeramento di modalita' dedicato
+- FC Mobile: esiste ed e' un pilastro: il motore ha gli identificativi dei traguardi di VS Attack a scaglioni (1, 2, 3, 10, 20, 50, 100, 200, 250 partite — rettifica del 1 settembre 2026: la stesura precedente ne elencava 7, lo scavo della miniera ha trovato anche il 2 e il 200) e un azzeramento di modalita' dedicato
 - CALCETTO: non esiste: si gioca sempre la partita intera, difesa compresa
-- prova: `motore-tutte.txt:40530 s2vsattack1LogoId, :22769 s2vsattack3LogoId, :16121 s2vsattack10LogoId, :29372 s2vsattack20LogoId, :11572 s2vsattack50LogoId, :9366 s2vsattack100LogoId, :13873 s2vsattack250LogoId, :22717 attackModeReset. Le 10-15 occasioni classificate Basic/Good/Great sono da-fonte-web`
+- prova: `motore-tutte.txt:40530 s2vsattack1LogoId, :47200 s2vsattack2LogoId, :22769 s2vsattack3LogoId, :16121 s2vsattack10LogoId, :29372 s2vsattack20LogoId, :11572 s2vsattack50LogoId, :9366 s2vsattack100LogoId, :64906 s2vsattack200LogoId, :13873 s2vsattack250LogoId, :22717 attackModeReset. Le 10-15 occasioni classificate Basic/Good/Great sono da-fonte-web. Il progetto d'adozione sta in MINIERA-FCM.md §2`
 
 **Partita in tempo reale contro un altro essere umano a distanza**  ·  meglio: FC Mobile  ·  dal-pacchetto  ·  fattibile: no-per-scelta
 
@@ -308,9 +308,9 @@ senza licenze): no-per-scelta 494 · si 417 · con-lavoro 319 · gia-fatto 107 �
 
 **Che cosa succede sul pareggio a fine tempo**  ·  meglio: FC Mobile  ·  dal-pacchetto  ·  fattibile: con-lavoro
 
-- FC Mobile: supplementari veri come tempo di gioco aggiuntivo, con la variante che li lega ai rigori: ExtraTimeWithPenalties, ExtraTimeOnly, l'interruttore extraTimeEnabled, i due orologi CT_GameTime_ExtraTimeHalfTime e CT_GameTime_ExtraTimeFullTime, e la serie dal dischetto come sequenza propria. La stringa GoldenGoal nel motore non c'e'
+- FC Mobile: supplementari veri come tempo di gioco aggiuntivo, con la variante che li lega ai rigori: ExtraTimeWithPenalties, ExtraTimeOnly, l'interruttore extraTimeEnabled, i due orologi CT_GameTime_ExtraTimeHalfTime e CT_GameTime_ExtraTimeFullTime, e la serie dal dischetto come sequenza propria. RETTIFICA (1 settembre 2026): «la stringa GoldenGoal nel motore non c'e'» valeva solo per la grafia attaccata — l'enum degli spareggi del modello di partita elenca SILVER_GOAL, GOLDEN_GOAL, PENALTIES e NO_OVERTIME: il golden come formato di spareggio esiste anche da lui
 - CALCETTO: golden goal automatico, morte improvvisa di 40 secondi, e poi si va comunque ai rigori: nessun supplementare vero. Fuse qui due righe della prima stesura, 'Parita' a fine tempo' e 'Tempi supplementari veri', che raccontavano lo stesso fatto da due lati
-- prova: `fcm-estratto/motore-tutte.txt:42645 ExtraTimeWithPenalties, :62633 ExtraTimeOnly, :51529 extraTimeEnabled, :68657 e :70779 CT_GameTime_ExtraTime*, :35358 NISPenaltyShootout; grep GoldenGoal = 0 / CALCETTO-il-gioco.html:12305-12315`
+- prova: `fcm-estratto/motore-tutte.txt:42645 ExtraTimeWithPenalties, :62633 ExtraTimeOnly, :51529 extraTimeEnabled, :68657 e :70779 CT_GameTime_ExtraTime*, :35358 NISPenaltyShootout; grep GoldenGoal (attaccato) = 0, ma :112017-112021 SILVER_GOAL/GOLDEN_GOAL/PENALTIES/NO_OVERTIME nell'enum OvertimeFormat / CALCETTO-il-gioco.html:12305-12315`
 
 **Modalita' a durata brevissima**  ·  meglio: FC Mobile  ·  da-fonte-web  ·  fattibile: si
 
@@ -2394,11 +2394,11 @@ senza licenze): no-per-scelta 494 · si 417 · con-lavoro 319 · gia-fatto 107 �
 - CALCETTO: Nessuna penalita' legata all'orientamento del corpo al momento del tiro
 - prova: `Nota di taratura FC Mobile 26; nessun simbolo isolato nel motore estratto`
 
-**Duello aereo**  ·  meglio: FC Mobile  ·  dedotto  ·  fattibile: con-lavoro
+**Duello aereo**  ·  meglio: FC Mobile  ·  dal-pacchetto  ·  fattibile: con-lavoro
 
-- FC Mobile: Duello aereo contendibile fra due giocatori
+- FC Mobile: Duello aereo contendibile fra due giocatori: la battaglia per il pallone alto e' uno stato modellato, con spallate fisiche, punteggio di salto e due classi di urgenza d'approccio
 - CALCETTO: Non esiste come duello: chi arriva prima nella finestra di quota prende il pallone, punto
-- prova: `Ragionamento, non prova: nel motore estratto non ho isolato un simbolo di duello aereo, e sul telefono la partita vera era col lucchetto. La riga resta perche' il lato CALCETTO e' letto nel codice, ma il lato FC e' un'attesa`
+- prova: `PROMOSSA da dedotto a dal-pacchetto il 1 settembre 2026 (scavo della miniera): motore-tutte.txt:10531 mIsInBattleForAirBall, :12855 isBattleForAirBall, :47105 JostleDisplacement, :43812 JumpingScore, :21588 air_ball_low_urgency, :23918 air_ball_high_urgency, :52718 mIdealApproachFacingAngle.mAir. Adattamento possibile in piccolo (senza attributi ne' sorteggi) in MINIERA-FCM.md §5; il lato CALCETTO resta letto nel codice (updateBall, primo corpo a portata)`
 
 **Rovesciata**  ·  meglio: FC Mobile  ·  dal-pacchetto  ·  fattibile: si
 
@@ -8724,11 +8724,11 @@ senza licenze): no-per-scelta 494 · si 417 · con-lavoro 319 · gia-fatto 107 �
 - CALCETTO: 0 divisioni
 - prova: `motore-tutte.txt: 11 righe con 'Division', DIVISION_MANAGER_LEADERBOARD_ENABLED 1`
 
-**Missioni giornaliere**  ·  meglio: FC Mobile  ·  osservato  ·  fattibile: no-per-scelta
+**Missioni giornaliere**  ·  meglio: FC Mobile  ·  osservato  ·  fattibile: con-lavoro
 
 - FC Mobile: MISSIONI e' una delle cinque voci in fondo al menu principale, e le missioni si azzerano su un orologio
 - CALCETTO: 0: nessun premio giornaliero, nessuna missione, nessuna ragione per tornare a un'ora precisa
-- prova: `_analisi/FCMOBILE-OSSERVATO.md par. 3: MISSIONI contata sulla schermata / l'ora esatta dell'azzeramento resta di fonte web`
+- prova: `_analisi/FCMOBILE-OSSERVATO.md par. 3: MISSIONI contata sulla schermata / l'ora esatta dell'azzeramento resta di fonte web. RETTIFICA della marca (1 settembre 2026, su mandato del committente del 31 agosto): da no-per-scelta a con-lavoro — il progetto d'adozione senza scadenze, senza serie di giorni e senza perdita (il TACCUINO DEL CAMPETTO) sta in MINIERA-FCM.md §3; quando entrera', le voci-merito «niente calendario» di questa mappa vanno riscritte come «giornaliero senza scadenza ne' perdita»`
 
 **Contenuti a tempo**  ·  meglio: FC Mobile  ·  da-fonte-web  ·  fattibile: no-per-scelta
 

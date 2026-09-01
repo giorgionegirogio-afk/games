@@ -1,34 +1,43 @@
 /* =====================================================================
-   _t-aereo.js — IL COLPO DI TESTA: il pallone alto smette di passare e
-   basta (voce 7 del censimento, 23 agosto 2026).
+   _t-aereo.js — IL GIOCO AEREO DELLA MACCHINA, stadi A e B
+   (1 settembre 2026, voce di lavoro #72; progetto in
+   _analisi/PROGETTO-GIOCO-AEREO.md, misure del 31 agosto).
 
-   IL FATTO, dal censimento e dal cancello: sopra Z_SOPRA_TESTA = 26 il
-   solo codice che tocca il pallone sono le sponde e i pali — «zero
-   occorrenze di colpo di testa in tutto il file», per costruzione. Ed
-   e' appena diventato un difetto VERO: la CPU crossa davvero (onda dei
-   cross), il dito crossa con destinatario (L1.6), e quei palloni alti
-   nessuno li puo' giocare prima che cadano.
+   LA DIAGNOSI RETTIFICATA (sonda alle porte, §1.4 del progetto): a 7 e
+   a 11 la finestra di distanza non viene MAI interrogata — su 3.483
+   fotogrammi esaminati non c'e' UN compagno dentro l'area al tempo di
+   volo. Il collo e' l'OCCUPAZIONE DELL'AREA (89-100% delle bocciature),
+   e attaccaArea e' spenta da taglia 7 per una bocciatura che colpiva
+   l'elezione del piu' avanzato. Il collasso della finestra (dal 22% del
+   campo a 5 al 5% a 11, per due costanti assolute contro un attrito che
+   scala) e' vero e si cura insieme.
 
-   LA CURA, quattro mosse e nessun sorteggio:
-     1. Z_TESTA_MAX = 46: fin dove arriva la testa di un corpo IN PIEDI.
-        Sta sotto il tetto del cancello (Q_TETTO 50) e sotto l'apice dei
-        palloni dichiarati irraggiungibili (87): il banco C resta pulito.
-     2. IL CONTATTO, in updateBall a pallone libero: primo corpo di
-        movimento in piedi (non steso, non in rialzata, non in
-        rovesciata, non espulso, non freddo di kickCd) col pallone nella
-        finestra [26, 46] e a portata di corpo (P_R+B_R+3). DETERMINISTA:
-        niente Math.random — i banchi a seme fisso non si sfasano.
-     3. IL VERBO: in zona di tiro e' l'INCORNATA verso lo specchio
-        (conta come tiro, arriva con la legge dei tiri); fuori zona e'
-        la SPIZZATA in avanti, via dalla propria porta, che prosegue il
-        volo basso e giocabile.
-     4. LA SCIVOLATA IMPARA LA QUOTA: la spazzata su palla libera
-        chiedeva solo la distanza in pianta — uno steso a terra spazzava
-        un pallone che gli volava sopra la testa. Il cancello (banchi B
-        e D) pretende zero: adesso la quota si chiede.
+   LA CURA, confermata dalla miniera (MINIERA-FCM.md §5: la corsa in area
+   del concorrente e' un INCARICO designato separato dal rifinitore; il
+   cross corto e' un TIPO a volo basso, non un errore):
+   - STADIO A: il taglio in area a 7/11 lo fa la SOLA PUNTA — l'uomo gia'
+     davanti, che non fa manovra per definizione.
+   - STADIO B: il volo si calcola PER BERSAGLIO (crossVolo, lo stesso
+     clamp di doCross all'inverso, 3 giri fissi); il pavimento della
+     finestra diventa GOAL_H (un cross sotto la luce della porta e' un
+     appoggio) e il dMin artificiale muore; i cancelli del portiere e
+     del varco ricevono il T vero.
+   - STADIO C (dMax in scala col campo) NON e' qui: si apre solo se il
+     banco, dopo A+B, nomina dMax come porta che boccia a 11.
 
-   Cancello: strumenti/_q-aereo.js (gia' scritto, coi suoi controlli
-   negativi; sul gioco di oggi A e D sono impossibili per costruzione).
+   LEGGE DEI SORTEGGI (§4 del progetto, dichiarato): nessuna funzione
+   toccata pesca sorteggi, ma l'ESITO cambia — quando la punta taglia,
+   aiDecide salta lo smarcamento col suo rnd(-30,30); quando un cross
+   parte dove prima non partiva, i dadi del tiro/passaggio a valle non
+   si consumano. Le partite a seme fisso DIVERGONO per progetto: i
+   confronti appaiati al bit attraverso questa toppa non valgono, si
+   confronta a distribuzioni (_eventi --contro).
+
+   ACCETTAZIONE (§5): _q-cross.js IDENTICO (doCross non si tocca);
+   _g-aereo.js verso 2-6 cross/partita alle tre taglie; _q-aereo verde;
+   _q-cross2 non peggiora raccolti/partiti; _eventi --contro nelle
+   forbici (tiri ±2, gol ±0,4, 0-0 letto nel verso); equita' ripassa;
+   seme/determinismo verdi; prestazione --contro HEAD.
 
    uso:  node strumenti/_t-aereo.js --out fuori/aereo.html
          node strumenti/_t-aereo.js --dentro
@@ -42,152 +51,247 @@ const arg = (n, d) => {
   return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : d;
 };
 const haFlag = n => process.argv.indexOf('--' + n) > 0;
+const inFile = path.resolve(RADICE, arg('in', 'CALCETTO-il-gioco.html'));
+const outFile = haFlag('dentro') ? inFile : path.resolve(RADICE, arg('out', 'fuori/aereo.html'));
 
 const ANCORE = [
 
-/* 1 — la quota della testa */
+/* 1 — STADIO A: la guardia della punta, e la lapide si rettifica */
 {
-  nome: '1/4 Z_TESTA_MAX: fin dove arriva un corpo in piedi',
-  cerca: "const Z_SOPRA_PORTIERE = 34;       // oltre questa quota il portiere non ci arriva: e' il pallonetto",
-  metti: "const Z_SOPRA_PORTIERE = 34;       // oltre questa quota il portiere non ci arriva: e' il pallonetto\n" +
-         "const Z_TESTA_MAX = 46;            // fin qui un corpo IN PIEDI gioca il pallone di testa (voce 7)",
+  nome: '1/8 attaccaArea: il taglio lo fa la punta (stadio A)',
+  cerca:
+`     Percio' la corsa in area vive dove il gioco non ha gia' un uomo
+     davanti, e in nessun altro posto. Il cross a 7 e a 11 resta una cosa
+     NON FATTA, ed e' scritto cosi' nel rapporto invece di essere spedito
+     con un numero che dice il contrario di quello che promette.
+     ===================================================================== */
+  if(TAGLIA>=7) return false;`,
+  metti:
+`     Percio' la corsa in area vive dove il gioco non ha gia' un uomo
+     davanti, e in nessun altro posto. Il cross a 7 e a 11 resta una cosa
+     NON FATTA, ed e' scritto cosi' nel rapporto invece di essere spedito
+     con un numero che dice il contrario di quello che promette.
+
+     RETTIFICA (1 settembre 2026, voce #72): la bocciatura misurata qui
+     sopra colpiva l'ELEZIONE DEL PIU' AVANZATO, che rubava il rifinitore
+     alla manovra — quei numeri restano veri per quella versione. La
+     sonda alle porte del 31 agosto (PROGETTO-GIOCO-AEREO §1.4) ha dato
+     il collo un nome: a 7 e a 11 non c'e' MAI un compagno in area al
+     tempo di volo (0 su 3.483 fotogrammi esaminati). Da oggi il taglio
+     lo fa la SOLA PUNTA — l'uomo che il gioco tiene gia' davanti
+     (stazione PUNTA_X, «NON RIENTRA»), che non fa manovra per
+     definizione e il cui prezzo sul punteggio del passaggio e' gia'
+     pagato (sopra 0,74 non la sceglie comunque). Non e' un secondo uomo
+     fisso davanti: e' quello che c'era, che adesso entra. A 5 la punta
+     non esiste e la guardia non morde: le stesse righe di oggi, al bit.
+     ===================================================================== */
+  if(TAGLIA>=7 && ruoloDi(p)!=='punta') return false;`,
 },
 
-/* 2 — il verbo, definito accanto al pallone */
+/* 2 — STADIO B: la finestra perde il pavimento artificiale, nasce crossVolo */
 {
-  nome: '2/4 colpoDiTesta: incornata in zona, spizzata fuori',
-  cerca: `/* ---------- pallone ---------- */
-function updateBall(dt){`,
-  metti: `/* =====================================================================
-   IL COLPO DI TESTA (voce 7). Nessun sorteggio: chi c'e' c'e', e il
-   verbo lo decide la zona — e' la stessa domanda del tiro (zonaTiro),
-   quindi non possono divergere. L'incornata CONTA nel tabellino dei
-   tiri e porta l'etichetta del tiro in volo (b.tiroT): il portiere la
-   para come ogni tiro. La spizzata prosegue il volo in avanti, bassa e
-   giocabile, via dalla propria porta.
+  nome: '2/8 crossFinestra senza dMin + crossVolo',
+  cerca:
+`/* =====================================================================
+   LA FINESTRA DI DISTANZA DEL CROSS, tutta dedotta (vedi l'intestazione).
+   Nessuno di questi numeri e' scelto: escono da TIRO_ATTR, cioe' dalla
+   taglia del campo, e da due soglie che il gioco gia' dichiara.
    ===================================================================== */
-function colpoDiTesta(q, qi, b){
-  const t=q.team, gx=t===0?FW:0;
-  const inZona=zonaTiro(q.x, q.y, gx);
-  let nx, ny, v;
-  if(inZona){
-    const gy=FH/2 + (q.y<FH/2?1:-1)*(GOAL_H/2-30);
-    const dx=gx-q.x, dy=gy-q.y, l=Math.max(1,len(dx,dy));
-    nx=dx/l; ny=dy/l;
-    v=Math.min(TIRO_TETTO*0.8, Math.max(330, 240 + TIRO_ATTR*l));
-    G.stats.tiri[t]++;
-  }else{
-    const dx=gx-q.x, dy=(FH/2-q.y)*0.4, l=Math.max(1,len(dx,dy));
-    nx=dx/l; ny=dy/l;
-    v=Math.max(300, len(b.vx,b.vy)*0.8);
-  }
-  b.owner=-1; b.passTo=-1; b.crossTo=-1; b.curve=0; b.perfectT=0; b.saveRolled=false;
-  b.vx=nx*v; b.vy=ny*v;
-  b.vz=40;                               // riparte basso ma vivo
-  b.tiroT = inZona ? t : -1;
-  segnaTocco(qi);
-  q.kickCd=0.5; q.kickT=0.2; q.kickB=0.24;
-  q.fx=nx; q.fy=ny;
-  Audio5.kick(0.5);
-}
+const CROSS_ZONA  = 0.48;    // il portatore: dentro l'ultimo 48% del campo
+const CROSS_TVOLO = 0.75;    // il volo, sempre il piu' lungo che doCross sappia
+const CROSS_RACC  = 420;     // sopra questa velocita' d'arrivo nessuno la ferma
+function crossFinestra(){
+  const K = Math.max(0.001, TIRO_ATTR);
+  const e = Math.exp(-CROSS_TVOLO*K);
+  const c = (1-e)/(CROSS_TVOLO*K);          // strada vera / distanza mirata
+  return { K, c, dMin: 430*CROSS_TVOLO*c, dMax: CROSS_RACC*(1-e)/(K*e) };
+}`,
+  metti:
+`/* =====================================================================
+   LA FINESTRA DI DISTANZA DEL CROSS, tutta dedotta (vedi l'intestazione).
+   Nessuno di questi numeri e' scelto: escono da TIRO_ATTR, cioe' dalla
+   taglia del campo, e da due soglie che il gioco gia' dichiara.
 
-/* ---------- pallone ---------- */
-function updateBall(dt){`,
+   RISCRITTA il 1 settembre 2026 (voce #72): il pavimento dMin era un
+   ARTEFATTO dell'assunzione «il volo, sempre il piu' lungo» — esisteva
+   solo per garantire T=0,75, e sui campi grandi chiudeva la finestra
+   col dMax fino al 5% del campo a 11 (PROGETTO-GIOCO-AEREO §1.3).
+   Sotto quel pavimento doCross vola benissimo, a T piu' corto: adesso
+   il volo si calcola PER BERSAGLIO (crossVolo, qui sotto) e il
+   pavimento vero e' GOAL_H in crossBersaglio — un cross piu' corto
+   della luce della porta e' un appoggio, e l'appoggio esiste gia'.
+   Resta il dMax, che vive nel regime T=0,75 dove questa formula e'
+   esatta.
+   ===================================================================== */
+const CROSS_ZONA  = 0.48;    // il portatore: dentro l'ultimo 48% del campo
+const CROSS_TVOLO = 0.75;    // il TETTO del volo; il volo vero, per bersaglio, lo da' crossVolo
+const CROSS_RACC  = 420;     // sopra questa velocita' d'arrivo nessuno la ferma
+function crossFinestra(){
+  const K = Math.max(0.001, TIRO_ATTR);
+  const e = Math.exp(-CROSS_TVOLO*K);
+  const c = (1-e)/(CROSS_TVOLO*K);          // strada vera / distanza mirata
+  return { K, c, dMax: CROSS_RACC*(1-e)/(K*e) };
+}
+/* IL VOLO SU MISURA: il volo di un cross che deve ATTERRARE a distanza
+   d — lo stesso conto di doCross, all'inverso, con LO STESSO clamp.
+   Tre giri fissi bastano: c varia al massimo del 4,23% su tutta la
+   corsa di T (misurato il 31 agosto sulle costanti del file: 4,23% a
+   taglia 5, 3,13% a 7, 2,24% a 11). Proprieta' da banco: per ogni d
+   sopra il vecchio dMin converge al primo giro a T=0,75 e dA=d/c —
+   identico al conto di prima, al bit. Nessun sorteggio, nessuna
+   scrittura. */
+function crossVolo(d){
+  const K = Math.max(0.001, TIRO_ATTR);
+  let T = L14_T1, dA = d;
+  for(let i=0;i<3;i++){
+    const c = (1-Math.exp(-K*T))/(K*T);
+    dA = d/c;
+    T = clamp(dA/430, L14_T0, L14_T1);
+  }
+  return { T, dA, arrivo: (dA/T)*Math.exp(-K*T) };
+}`,
 },
 
-/* 3 — il contatto, nel volo libero */
+/* 3 — il portiere riceve il T vero: firma */
 {
-  nome: '3/4 updateBall: il pallone alto trova una testa',
-  cerca: `  /* effetto a giro del tiro perfetto */
-  if(b.perfectT>0){`,
-  metti: `  /* IL PALLONE ALTO TROVA UNA TESTA (voce 7): finestra [26, 46],
-     portata del corpo, primo che c'e'. Gli stesi, i freddi e i portieri
-     no — il portiere ha gia' il suo mestiere sotto quota 34
-     (tentaPresa), e dargli anche la testa farebbe due mestieri in un
-     fotogramma. Nessun sorteggio: il banco a seme fisso non si sfasa. */
-  if(b.owner<0 && b.z>Z_SOPRA_TESTA && b.z<=Z_TESTA_MAX){
-    for(let qi=0;qi<G.players.length;qi++){
-      const q=G.players[qi];
-      if(q.out>0 || q.slide>=0 || q.recover>0 || q.rove>=0 || q.role==='gk') continue;
-      if(q.kickCd>0) continue;
-      /* CHI E' CHIAMATO SUL CROSS ALLUNGA IL COLLO: la portata del
-         destinatario e' un passo (34), quella di chiunque altro e' il
-         corpo (24). E' l'attacco al pallone, non una calamita: vale
-         solo dentro la finestra di quota, e solo per l'uomo scritto
-         sul pallone. */
-      const portata = (b.crossTo===qi) ? 34 : (P_R+B_R+3);
-      if(len(q.x-b.x,q.y-b.y)>portata) continue;
-      colpoDiTesta(q, qi, b);
-      break;
+  nome: '3/8 crossPortiereCopre: quarto argomento T',
+  cerca:
+`function crossPortiereCopre(team, lx, ly){`,
+  metti:
+`function crossPortiereCopre(team, lx, ly, T){
+  T=T||CROSS_TVOLO;`,
+},
+
+/* 4 — il portiere riceve il T vero: la corsa */
+{
+  nome: '4/8 crossPortiereCopre: la corsa su T',
+  cerca:
+`  /* dove sara' fra CROSS_TVOLO: verso la sua meta, al suo passo */
+  let px=tx-gk.x, py=ty-gk.y;
+  const pl=len(px,py), corsa=GK_SPEED*CROSS_TVOLO;`,
+  metti:
+`  /* dove sara' fra T — il volo vero di QUESTO cross (voce #72): verso
+     la sua meta, al suo passo. Su un cross corto il portiere ha meno
+     tempo, e il cancello lo dice. */
+  let px=tx-gk.x, py=ty-gk.y;
+  const pl=len(px,py), corsa=GK_SPEED*T;`,
+},
+
+/* 5 — il varco riceve il T vero */
+{
+  nome: '5/8 crossVarcoLibero: quinto argomento T',
+  cerca:
+`function crossVarcoLibero(p, nx, ny, dA){
+  const K=Math.max(0.001, TIRO_ATTR);
+  const t0=(CROSS_TVOLO-Math.sqrt(Math.max(0,CROSS_TVOLO*CROSS_TVOLO-4*Z_SOPRA_TESTA/280)))/2;
+  const varco=(dA/CROSS_TVOLO)*(1-Math.exp(-K*t0))/K;`,
+  metti:
+`function crossVarcoLibero(p, nx, ny, dA, T){
+  /* voce #72: il tratto basso dipende dal volo VERO. Su un cross corto
+     il pallone sale prima (vz=280*T con lo stesso conto di doCross),
+     quindi il varco richiesto e' piu' corto: il cancello resta fedele
+     alla fisica che protegge. */
+  T=T||CROSS_TVOLO;
+  const K=Math.max(0.001, TIRO_ATTR);
+  const t0=(T-Math.sqrt(Math.max(0,T*T-4*Z_SOPRA_TESTA/280)))/2;
+  const varco=(dA/T)*(1-Math.exp(-K*t0))/K;`,
+},
+
+/* 6 — il destinatario: pavimento GOAL_H, volo per candidato, T ai cancelli */
+{
+  nome: '6/8 crossBersaglio a volo variabile (stadio B)',
+  cerca:
+`   Fra quelli che tengono vince il piu' vicino alla porta.
+   ===================================================================== */
+function crossBersaglio(p, opGoalX){
+  const t=p.team;
+  const F=crossFinestra();
+  let scelto=null, meglio=1e9;
+  for(const q of G.players){
+    if(q.team!==t || q===p || q.out>0 || q.role==='gk') continue;
+    const qx=q.x+q.vx*CROSS_TVOLO, qy=q.y+q.vy*CROSS_TVOLO;
+    if(!dentroArea(t, qx, qy)) continue;
+    const d=len(qx-p.x, qy-p.y);
+    if(d<F.dMin || d>F.dMax) continue;
+    if(crossPortiereCopre(t, qx, qy)) continue;
+    const nx=(qx-p.x)/d, ny=(qy-p.y)/d;
+    const dA=d/F.c;                       // si mira a d/c perche' cada a d
+    if(!crossVarcoLibero(p, nx, ny, dA)) continue;
+    const dg=Math.abs(opGoalX-qx);
+    if(dg<meglio){ meglio=dg; scelto={ q, nx, ny, mira:[p.x+nx*dA, p.y+ny*dA] }; }
+  }
+  return scelto;
+}`,
+  metti:
+`   Fra quelli che tengono vince il piu' vicino alla porta.
+
+   RETTIFICA (1 settembre 2026, voce #72): i numeri qui sopra (124
+   partiti, 97 in area, 74 raccolti, 69 conclusi, 22 in rete) sono
+   della versione col pavimento dMin e restano veri per lei. Da oggi il
+   pavimento e' GOAL_H — la stessa soglia di fascia di crossCPU, che
+   scala gia' col campo — e il volo si calcola PER CANDIDATO con
+   crossVolo: il cross corto e' un volo piu' basso da calcolare, non un
+   errore da bocciare. Sui bersagli che passavano gia', la mira e'
+   identica al bit (crossVolo converge a T=0,75); cambiano i bersagli
+   NUOVI sotto il vecchio pavimento, e la SCELTA quando uno di loro e'
+   piu' vicino alla porta: e' la cura, non un effetto collaterale. La
+   riproiezione del compagno al T corto puo' spostarlo di ~20 unita'
+   contro una portata di raccolta di 34: dichiarato, e _q-cross2 lo
+   sorveglia (raccolti/partiti non deve scendere).
+   ===================================================================== */
+function crossBersaglio(p, opGoalX){
+  const t=p.team;
+  const F=crossFinestra();
+  let scelto=null, meglio=1e9;
+  for(const q of G.players){
+    if(q.team!==t || q===p || q.out>0 || q.role==='gk') continue;
+    let T=CROSS_TVOLO;
+    let qx=q.x+q.vx*T, qy=q.y+q.vy*T;
+    let d=len(qx-p.x, qy-p.y);
+    if(d<GOAL_H || d>F.dMax) continue;
+    const volo=crossVolo(d);              // il T vero di QUESTO cross
+    if(volo.T<CROSS_TVOLO){
+      /* cross corto: il compagno si riproietta col T vero, e il
+         candidato si rigiudica sul quadro vero */
+      T=volo.T;
+      qx=q.x+q.vx*T; qy=q.y+q.vy*T;
+      d=len(qx-p.x, qy-p.y);
+      if(d<GOAL_H) continue;
     }
+    if(!dentroArea(t, qx, qy)) continue;
+    if(crossPortiereCopre(t, qx, qy, T)) continue;
+    const nx=(qx-p.x)/d, ny=(qy-p.y)/d;
+    if(!crossVarcoLibero(p, nx, ny, volo.dA, T)) continue;
+    const dg=Math.abs(opGoalX-qx);
+    if(dg<meglio){ meglio=dg; scelto={ q, nx, ny, mira:[p.x+nx*volo.dA, p.y+ny*volo.dA] }; }
   }
-  /* effetto a giro del tiro perfetto */
-  if(b.perfectT>0){`,
+  return scelto;
+}`,
 },
 
-/* 5 — dove il pallone scende a quota di testa */
+/* 7 — il commento di L14_T1 smette di promettere un T unico */
 {
-  nome: '5/6 puntoTesta: il punto d\'incontro a quota 34',
-  cerca: `function doCross(p,nx,ny,mira,dest){`,
-  metti: `/* DOVE IL PALLONE SCENDE A QUOTA DI TESTA (34): e' il punto in cui un
-   corpo fermo lo INCONTRA con la fronte invece di aspettarlo coi piedi.
-   La strada in volo e' v*t senza attrito (L2.2a: l'attrito e' dell'erba,
-   non dell'aria). Se il pallone e' gia' sotto quota e scende, il punto
-   e' qui e ora. Torna [x, y, t]. */
-function puntoTesta(b){
-  const H=34;
-  if(b.z<=H && b.vz<=0) return [b.x, b.y, 0];
-  const disc=b.vz*b.vz+1120*Math.max(0,b.z-H);
-  const t=Math.max(0,(b.vz+Math.sqrt(Math.max(0,disc)))/560);
-  return [ clamp(b.x+b.vx*t, 8, FW-8), clamp(b.y+b.vy*t, 8, FH-8), t ];
-}
-function doCross(p,nx,ny,mira,dest){`,
+  nome: '7/8 la rettifica nel commento di L14_T1',
+  cerca:
+`const L14_T1 = 0.75;     // s di volo a quota piena   -> quota VERA 37,6. NON SI ALZA: CROSS_TVOLO (:18930) vale 0,75 e su di lei poggiano la finestra del cross CPU, il conto sul portiere e la posizione del compagno all'atterraggio`,
+  metti:
+`const L14_T1 = 0.75;     // s di volo a quota piena   -> quota VERA 37,6. NON SI ALZA: CROSS_TVOLO vale 0,75 ed e' il TETTO del volo del cross CPU; dal 1 settembre 2026 (voce #72) il volo vero per bersaglio lo calcola crossVolo con QUESTO stesso clamp, e portiere e compagno usano quel T`,
 },
 
-/* 6 — il chiamato del cross attacca il pallone, non l'erba */
+/* 8 — il verbale dell'appoggio: i suoi numeri portano la data */
 {
-  nome: '6/6 aiDecide: chi aspetta il cross va all\'incontro di testa',
-  cerca: `  if(b.owner<0 && b.z>0 && b.crossTo===G.players.indexOf(p)){
-    const c=puntoCaduta(b);`,
-  metti: `  if(b.owner<0 && b.z>0 && b.crossTo===G.players.indexOf(p)){
-    /* VOCE 7 (23 ago 2026): il punto giusto non e' dove il pallone
-       TOCCA TERRA — e' dove SCENDE A QUOTA DI TESTA. Aspettando la
-       caduta, il pallone attraversava la finestra della testa a
-       cinquanta unita' dal ricevente e nessun cross si giocava per
-       aria (6,3% al banco A contro il 30% chiesto). */
-    const c=puntoTesta(b);`,
-},
-
-/* 4 — la scivolata impara la quota */
-{
-  nome: '4/4 checkSlideContact: la spazzata chiede anche la quota',
-  cerca: `  /* palla libera: la scivolata la spazza */
-  if(!carrier && d<KICK_R && p.kickCd<=0){`,
-  metti: `  /* palla libera: la scivolata la spazza — SE E' A TERRA (voce 7).
-     Prima chiedeva solo la distanza in pianta, e uno steso spazzava un
-     pallone che gli volava sopra la testa: il cancello aereo (banchi B
-     e D) pretende zero, ed e' la fisica a pretenderlo prima di lui. */
-  if(!carrier && d<KICK_R && p.kickCd<=0 && b.z<=Z_SOPRA_TESTA){`,
+  nome: '8/8 la data sui numeri del cambio-idea',
+  cerca:
+`     piu' di un secondo ad arrivare in area. Quando arriva, l'appoggio e'
+     gia' partito come pensiero.`,
+  metti:
+`     piu' di un secondo ad arrivare in area. Quando arriva, l'appoggio e'
+     gia' partito come pensiero. (Numeri della versione col pavimento
+     dMin, 31 agosto; dal 1 settembre — voce #72 — la finestra e' piu'
+     larga e le frequenze vanno rimisurate: la ragione della riga resta.)`,
 },
 
 ];
-
-/* -------------------------------------------------------------------- */
-if (haFlag('elenco')) {
-  console.log('_t-aereo.js — ' + ANCORE.length + ' ancoraggi:');
-  for (const a of ANCORE) console.log('  · ' + a.nome);
-  process.exit(0);
-}
-
-const dentro = haFlag('dentro');
-const inFile = path.resolve(arg('in', path.join(RADICE, 'CALCETTO-il-gioco.html')));
-if (!fs.existsSync(inFile)) { console.error('FALLITO: non esiste ' + inFile); process.exit(1); }
-
-let outFile = arg('out', '');
-if (dentro) outFile = inFile;
-else if (!outFile) outFile = inFile.replace(/\.html$/i, '') + '.aereo.html';
-outFile = path.resolve(outFile);
-if (!dentro && outFile === inFile) { console.error('FALLITO: --out coincide con --in.'); process.exit(2); }
 
 const src = fs.readFileSync(inFile, 'utf8');
 let out = src;
@@ -203,12 +307,22 @@ if (mancanti.length) {
   process.exit(1);
 }
 const attesi = [
-  ['function colpoDiTesta(', 1],
-  ['function puntoTesta(', 1],
-  ['puntoTesta(b)', 2],                 // definizione e la chiamata del chiamato
-  ['colpoDiTesta(q, qi, b)', 2],        // definizione piu' la chiamata
-  ['Z_TESTA_MAX', 2],                   // la costante e la guardia del contatto
-  ['b.z<=Z_SOPRA_TESTA)', 2],           // una c'era gia' nel gioco, l'altra e' la guardia della spazzata
+  ["if(TAGLIA>=7 && ruoloDi(p)!=='punta') return false;", 1],
+  ['if(TAGLIA>=7) return false;', 0],
+  ['function crossVolo(d){', 1],
+  ['crossVolo(', 2],                                  // la definizione e la chiamata
+  ['function crossPortiereCopre(team, lx, ly, T){', 1],
+  ['function crossVarcoLibero(p, nx, ny, dA, T){', 1],
+  ['T=T||CROSS_TVOLO;', 2],                           // portiere e varco
+  ['GK_SPEED*T', 1],
+  ['crossPortiereCopre(t, qx, qy, T)', 1],
+  ['crossVarcoLibero(p, nx, ny, volo.dA, T)', 1],
+  ['d<GOAL_H || d>F.dMax', 1],
+  ['dMin: 430*CROSS_TVOLO*c', 0],                     // il codice del pavimento e' morto
+  ['F.dMin', 0],
+  ['voce #72', 7],
+  // doCross e la guida del dito non si toccano
+  ['const T=clamp(dist/430, L14_T0, L14_T1);', 2],
 ];
 const rotti = attesi.filter(([s, n]) => (out.split(s).length - 1) !== n)
   .map(([s, n]) => s + ' atteso ' + n + ', trovato ' + (out.split(s).length - 1));
