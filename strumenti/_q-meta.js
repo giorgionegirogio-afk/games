@@ -277,7 +277,21 @@ function leggiStato() {
     tour: t.save.tour,
     season: t.save.season,
     teamName: t.save.teamName,
+    /* la scala del quartiere (Contenuto 1, 1 settembre 2026): serve al
+       modello delle monete, perche' una promozione paga con etichetta
+       dentro la lavagnetta e il conto «al centesimo» la deve conoscere */
+    div: t.save.div,
   }));
+}
+/* il premio di scala fra due letture: si paga SOLO alla promozione con
+   bandiera nuova — e' la stessa regola del gioco, riscritta qui perche'
+   il banco non si fidi della lavagnetta che sta giudicando */
+function premioScala(C, pre, post) {
+  if (!pre.div || !post.div) return 0;
+  let s = 0;
+  for (let g = 1; g <= 8; g++)
+    if (post.div.premi[g] && !(pre.div.premi[g])) s += C.DIV_PREMIO[g] | 0;
+  return s;
 }
 
 /* la classifica attesa, RICALCOLATA QUI dai risultati registrati: 3 punti
@@ -346,6 +360,7 @@ const mediana = a => { const b = a.slice().sort((x, y) => x - y); const n = b.le
       SEA_WIN, SEA_DRAW, SEA_TITOLO, SEA_PODIO,
       TOUR_PRIZE: TOUR_PRIZE.slice(), TOUR_DIFF: TOUR_DIFF.slice(),
       ACH_PREMI: Object.fromEntries(ACH.map(a => [a.id, a.premio | 0])),
+      DIV_PREMIO: DIV_PREMIO.slice(),
     }));
     /* il delta di monete atteso per una partita, dalla tariffa del gioco */
     const monete = (fine, vinta, extra, achNuovi) =>
@@ -399,7 +414,7 @@ const mediana = a => { const b = a.slice().sort((x, y) => x - y); const n = b.le
       di(fine.score[0] > fine.score[1], 'turno ' + r + ': vinto come forzato', fine.score.join('-'));
       const post = await pag.evaluate(leggiStato);
       const achNuovi = post.ach.filter(a => !pre.ach.includes(a));
-      const attese = monete(fine, true, C.TOUR_PRIZE[r], achNuovi);
+      const attese = monete(fine, true, C.TOUR_PRIZE[r], achNuovi) + premioScala(C, pre, post);
       di(post.coins - pre.coins === attese, 'turno ' + r + ': le monete tornano al centesimo',
         'delta ' + (post.coins - pre.coins) + ' contro attese ' + attese + (achNuovi.length ? ' (trofei: ' + achNuovi.join(',') + ')' : ''));
       if (r < 2) {
@@ -515,8 +530,8 @@ const mediana = a => { const b = a.slice().sort((x, y) => x - y); const n = b.le
         di(registrata, 'la X del giocatore esiste ed entra in classifica come pareggio', fine.score.join('-'));
       }
       const achNuovi = post.ach.filter(a => !pre.ach.includes(a));
-      if (g === 0) moneteG0 = { delta: post.coins - pre.coins, attese: monete(fine, true, C.SEA_WIN, achNuovi), achNuovi };
-      if (g === 13) moneteG13 = { delta: post.coins - pre.coins, attese: monete(fine, true, C.SEA_WIN + C.SEA_TITOLO, achNuovi), achNuovi };
+      if (g === 0) moneteG0 = { delta: post.coins - pre.coins, attese: monete(fine, true, C.SEA_WIN, achNuovi) + premioScala(C, pre, post), achNuovi };
+      if (g === 13) moneteG13 = { delta: post.coins - pre.coins, attese: monete(fine, true, C.SEA_WIN + C.SEA_TITOLO, achNuovi) + premioScala(C, pre, post), achNuovi };
 
       /* -------- il salvataggio fra le partite: la ricarica a meta' --------
          Non un mock: la pagina si ricarica DAVVERO e lo stato deve uscire

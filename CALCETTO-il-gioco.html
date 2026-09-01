@@ -3012,6 +3012,7 @@ button:active{transform:scale(.96)}
     <h1 class="sotto-titolo">BACHECA</h1>
     <div class="menu-voci">
       <button class="voce" id="btnTrofei">TROFEI <small>obiettivi e albo d'oro</small></button>
+      <button class="voce" id="btnDivisioni">DIVISIONI <small>la scala del quartiere</small></button>
       <button class="voce" id="btnStatsScr">STATISTICHE <small>la tua carriera</small></button>
     </div>
     <div style="height:14px"></div>
@@ -3548,6 +3549,23 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   </div>
 </div>
 
+<!-- ============ DIVISIONI (la scala del quartiere) ============
+     Gemella di TROFEI nelle classi e nel passo: i nove gradini in
+     colonna dall'alto, l'attuale evidenziato, le stelle come pallini,
+     la regola della fascia scritta in chiaro accanto al suo nome, il
+     premio della prossima promozione col glifo moneta. Nessun orologio,
+     nessuna scadenza: la scala non si azzera mai. -->
+<div id="divisioni" class="ov hidden">
+  <div class="box">
+    <h1 class="sotto-titolo">DIVISIONI</h1>
+    <div class="eti" style="margin:0 0 4px">La scala del quartiere</div>
+    <div class="achlist" id="divList"></div>
+    <div class="eti" style="margin-top:14px;opacity:.8"><small>La fascia conquistata &egrave; per sempre: non si retrocede mai sotto il suo primo gradino. La scala non scade e non si azzera.</small></div>
+    <div style="height:14px"></div>
+    <div class="azioni"><button class="btnA sec" id="btnBackDiv">TORNA ALLA BACHECA</button></div>
+  </div>
+</div>
+
 <!-- ============ STATISTICHE ============ -->
 <!-- I NUMERI DELLA CARRIERA STANNO SU UNA LAVAGNA, scritti col gessetto:
      stessa ardesia e stesso legno del tabellone del torneo e della
@@ -3746,6 +3764,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       <div id="coinBreak"></div>
       <div class="ctot"><span>MONETE GUADAGNATE</span><span>+<span id="coinGain">0</span> <i class="coin"></i></span></div>
       <div class="csaldo">SALDO: <b id="coinSaldo">0</b> <i class="coin"></i></div>
+      <div id="endScala" class="hidden" style="margin-top:6px;text-align:center;font-size:13px;letter-spacing:.4px"></div>
     </div>
     <div class="azioni">
       <button class="btnA" id="btnRivincita">RIVINCITA</button>
@@ -9294,6 +9313,27 @@ const TOUR_PRIZE=[40,80,250];
 const TOUR_ROUNDS=['QUARTI DI FINALE','SEMIFINALE','FINALE'];
 /* difficolta' CPU crescente: quarti facile, semifinale normale, finale dura */
 const TOUR_DIFF=[0,1,2];
+/* =====================================================================
+   LE DIVISIONI DEL QUARTIERE (Contenuto 1, 1 settembre 2026).
+   Nove gradini in TRE FASCE da tre, sul modello a due livelli del
+   concorrente (MINIERA-FCM.md §1: gruppi + mini-divisioni; nove e non
+   ventisette perche' il nostro spazio avversario sono tre gradi di CPU,
+   non una popolazione). Il gradino dice contro chi vale la pena vincere
+   (stellaValida); il premio e' GENERATO da tre manopole, non scritto a
+   mano — base 12, passo 1,25 a gradino, salto 1,4 a fascia:
+   12, 15, 26, 33, 41, 72, 90, 112 = 401 monete una tantum, da rivedere
+   DOPO la misura del tasso monete/partita (progetto §6.8). Il pavimento
+   e' di FASCIA: sotto il primo gradino della fascia raggiunta non si
+   retrocede mai — la fascia conquistata e' per sempre, il gradino si
+   difende. Nessun orologio, nessun azzeramento: la scala non scade.
+   Zero dado(): aritmetica pura sugli esiti.
+   ===================================================================== */
+const DIV_NOMI=['CORTILE','VICOLO','VIA','PIAZZA','RIONE','BORGO','QUARTIERE','CITTÀ','LEGGENDA DEL CAMPETTO'];
+const DIV_SOGLIA=[3,3,3,3,3,4,4,4,5];
+const DIV_PREMIO=[0].concat([1,2,3,4,5,6,7,8].map(g=>Math.round(12*Math.pow(1.25,g-1)*Math.pow(1.4,Math.floor(g/3)))));
+/* la stella vale se l'avversario e' all'altezza del gradino: fascia
+   bassa sempre, fascia di mezzo da NORMALE in su, fascia alta solo DURO */
+function stellaValida(diff, g){ return g<3 || (g<6 ? diff>=1 : diff===2); }
 
 /* trofei / obiettivi (ico = nome dell'icona SVG in ICONS) */
 /* Ogni riga porta: un'icona SUA (due trofei con lo stesso glifo erano due
@@ -9578,6 +9618,10 @@ function defaultSave(){
        interfaccia per la barra del SALVADANAIO, che spendendo non deve
        regredire (31 agosto 2026) */
     stats:{ partite:0, vittorie:0, golF:0, golS:0, perfetti:0, rubate:0, tornei:0, stagioni:0, maxCoins:0 },
+    /* la scala del quartiere: gradino, stelle nel gradino, e i premi di
+       promozione gia' pagati (bandiere 0/1 per gradino: il saliscendi
+       non e' una zecca) — Contenuto 1, 1 settembre 2026 */
+    div:{ g:0, stelle:0, premi:[] },
     albo:[],                      // tornei vinti: {data, campo, nome}
     tour:null,                    // torneo in corso (bracket persistito)
     season:null,                  // stagione in corso (calendario e classifica)
@@ -9693,6 +9737,15 @@ function loadSave(){
     }
     if(j.ach&&typeof j.ach==='object') for(const a of ACH){ if(j.ach[a.id]) s.ach[a.id]=true; }
     if(j.stats&&typeof j.stats==='object') for(const k in s.stats){ if(typeof j.stats[k]==='number'&&isFinite(j.stats[k])) s.stats[k]=Math.max(0,j.stats[k]|0); }
+    /* LA SCALA (Contenuto 1): chiavi note, tetti duri, premi come
+       bandiere 0/1 — un salvataggio manomesso (div.g=99) non diventa
+       un fuori-scala ne' una zecca. I salvataggi nati prima prendono
+       il default: chiave additiva, versione ferma a v4. */
+    if(j.div&&typeof j.div==='object'){
+      s.div.g = clamp(j.div.g|0, 0, 8);
+      s.div.stelle = clamp(j.div.stelle|0, 0, Math.max(0, DIV_SOGLIA[s.div.g]-1));
+      if(Array.isArray(j.div.premi)) for(let i=0;i<=8;i++) s.div.premi[i] = j.div.premi[i] ? 1 : 0;
+    }
     /* maxCoins passa dal filtro qui sopra (chiave conosciuta, numero
        finito, non negativo) e non puo' stare sotto il saldo appena
        riletto: i salvataggi nati prima partono dal saldo di oggi */
@@ -10622,6 +10675,9 @@ function startMatch(mode, diff, opts){
      diritto a uno stato pulito anche acceso lontano da qui. Azzerare
      non consuma sorteggi: i banchi a seme fisso non si sfasano. */
   G.possOwner=-1; G.possT=0; G.pulse=0; G.crowdSndT=0;
+  /* e con loro l'esito della scala (Contenuto 1, rischio 6 del
+     progetto): stato di fine partita, mai letto dalla simulazione */
+  G._divEsito=null;
   G.netBulge[0]={t:9,y:FH/2,mag:0}; G.netBulge[1]={t:9,y:FH/2,mag:0};
   /* si parte gia' alla distanza giusta: 39 px di giocatore, non un campo
      visto dal satellite che poi scende */
@@ -11337,6 +11393,34 @@ function applyMatchRewards(){
       advanceTournament(false);
     }
   }
+  /* LE DIVISIONI DEL QUARTIERE (Contenuto 1, 1 settembre 2026): il
+     verbale intero sta sulle costanti DIV_*. Qui il blocco eredita
+     GRATIS le guardie di questa funzione (G.cpu[0] esce in testa, i
+     replay non arrivano per G.matchRewarded) e aggiunge le sue: il 2
+     giocatori non e' un avversario che misura, la sfida ha la sua
+     classifica. Il premio passa da addCoinsInternal CON etichetta:
+     entra in G._brExtra e la lavagnetta torna al bit. */
+  if(G.mode===1 && !G.sfida){
+    const gPrima=SAVE.div.g;
+    let dStella=0;
+    if(won && stellaValida(G.diff, SAVE.div.g)) dStella=+1;
+    else if(!won && !pari) dStella=-1;
+    if(dStella!==0){
+      SAVE.div.stelle += dStella;
+      if(SAVE.div.stelle >= DIV_SOGLIA[SAVE.div.g] && SAVE.div.g < 8){
+        SAVE.div.g++; SAVE.div.stelle=0;
+        if(!SAVE.div.premi[SAVE.div.g]){
+          SAVE.div.premi[SAVE.div.g]=1;
+          addCoinsInternal(DIV_PREMIO[SAVE.div.g], 'Promozione: '+DIV_NOMI[SAVE.div.g]);
+        }
+      } else if(SAVE.div.stelle < 0){
+        /* il pavimento di FASCIA: si scende solo dentro la fascia */
+        if(SAVE.div.g>2 && SAVE.div.g%3!==0){ SAVE.div.g--; SAVE.div.stelle=DIV_SOGLIA[SAVE.div.g]-1; }
+        else SAVE.div.stelle=0;
+      }
+    }
+    G._divEsito = { d:dStella, g:SAVE.div.g, stelle:SAVE.div.stelle, prima:gPrima };
+  }
   let gain=0; for(const b of br) gain+=b[1];
   addCoinsInternal(gain);
   /* trofei */
@@ -11396,6 +11480,22 @@ function showEndCoins(rew){
   show(ui.endCoins);
   ui.coinBreak.innerHTML = rew.br.map(b=>
     '<div class="crow"><span>'+b[0]+'</span><b>+'+b[1]+'</b></div>').join('');
+  /* LA SCALA NON E' MAI MUTA QUANDO SI MUOVE (Contenuto 1): una riga
+     sotto il saldo — stella, promozione o retrocessione — e il cambio
+     di FASCIA (gradini 3, 6) e la vetta fanno la festa grande col
+     cartello, in riuso da showBanner. */
+  { const es=document.getElementById('endScala'), e=G._divEsito;
+    if(es){
+      if(e && (e.d!==0 || e.g!==e.prima)){
+        const su=e.g>e.prima, giu=e.g<e.prima;
+        es.classList.remove('hidden');
+        es.innerHTML = su ? 'PROMOSSO: <b>'+DIV_NOMI[e.g]+'</b>'
+          : giu ? 'RETROCESSO: <b>'+DIV_NOMI[e.g]+'</b>'
+          : (e.d>0 ? 'STELLA GUADAGNATA' : 'STELLA PERSA')
+            +' &middot; '+DIV_NOMI[e.g]+' '+e.stelle+'/'+DIV_SOGLIA[e.g];
+        if(su) showBanner(DIV_NOMI[e.g], TEAMCOL[0], (e.g%3===0||e.g===8)?2.2:1.3);
+      } else { es.classList.add('hidden'); es.innerHTML=''; }
+    } }
   /* count-up del totale e del saldo */
   const el=ui.coinGain, sal=ui.coinSaldo, id=++coinAnim;
   const tot=el.closest ? el.closest('.ctot') : null;
@@ -37891,6 +37991,7 @@ const ui={
   pausa:$('pausa'), pauseBtn:$('pauseBtn'),
   gioca:$('gioca'), torneo:$('torneo'), campi:$('campi'), squadra:$('squadra'),
   trofei:$('trofei'), statistiche:$('statistiche'), impostazioni:$('impostazioni'),
+  divisioni:$('divisioni'),
   endTitolo:$('endTitolo'), endVinc:$('endVinc'),
   endTh0:$('endTh0'), endTh1:$('endTh1'), endTrofeo:$('endTrofeo'),
   endCoins:$('endCoins'), coinBreak:$('coinBreak'), coinGain:$('coinGain'), coinSaldo:$('coinSaldo'),
@@ -37913,7 +38014,7 @@ const SCREENS=[ui.menu,ui.howto,ui.end,ui.gioca,ui.torneo,ui.campi,ui.squadra,ui
                   gratis tutto quello che le altre hanno gia': il tasto
                   Indietro di Android, l'Escape, la sfumatura di fondo
                   pagina e il fatto che aprirne una chiuda le altre. */
-               $('sfida'),$('classifica')].filter(Boolean);
+               $('sfida'),$('classifica'),$('divisioni')].filter(Boolean);
 function hideAllScreens(){ for(const s of SCREENS) hide(s); }
 /* navigazione fluida: schermata singola attiva */
 function goScreen(el){
@@ -39566,6 +39667,37 @@ function buildTrofeiUI(){
   if(me){ me.querySelectorAll('canvas.eroecv').forEach(x=>x.dataset.ok=''); montaTela(me, disegnaMensola); }
 }
 
+/* la scala del quartiere: nove gradini dall'alto, tre fasce con la
+   regola scritta accanto, l'attuale acceso e gli altri in penombra
+   (riuso delle classi dei trofei: achrow/lock/apremio/afatto). Il
+   premio col glifo moneta sta sui gradini non ancora pagati: quello
+   della prossima promozione si legge senza cercarlo. */
+function buildDivisioniUI(){
+  const g=SAVE.div.g, st=SAVE.div.stelle;
+  const FASCE=['LA STRADA','IL CUORE DEL QUARTIERE','LA CITTÀ ALTA'];
+  const REGOLE=['ogni vittoria contro la CPU vale una stella',
+                'le stelle si vincono solo contro NORMALE e DURO',
+                'le stelle si vincono solo contro il DURO'];
+  let h='';
+  for(let i=8;i>=0;i--){
+    if(i===8||i===5||i===2){
+      const f=Math.floor(i/3);
+      h+='<div class="eti" style="margin:10px 0 4px">'+FASCE[f]
+        +' <small style="opacity:.75">&middot; '+REGOLE[f]+'</small></div>';
+    }
+    const qui=(i===g);
+    const pieni = qui ? st : (i<g ? DIV_SOGLIA[i] : 0);
+    let stelle=''; for(let k=0;k<DIV_SOGLIA[i];k++) stelle += (k<pieni?'&#9679;':'&#9675;');
+    const premio = i===0 ? ''
+      : (SAVE.div.premi[i] ? '<span class="afatto">FATTO</span>'
+                           : '<span class="apremio">+'+DIV_PREMIO[i]+' <i class="coin"></i></span>');
+    h+='<div class="achrow'+(qui?'':' lock')+'">'
+      +'<div class="atxt"><b>'+(i+1)+'. '+DIV_NOMI[i]+(qui?' &mdash; SEI QUI':'')+'</b>'
+      +'<small>'+stelle+'</small></div>'+premio+'</div>';
+  }
+  const el=document.getElementById('divList'); if(el) el.innerHTML=h;
+}
+
 /* statistiche carriera: due tessere grandi, l'arco delle vittorie, poi le
    piccole. Con tutti zeri deve comunque sembrare un cruscotto, non un vuoto. */
 function buildStatsUI(){
@@ -39842,6 +39974,7 @@ $('btnSquadra').addEventListener('click', ()=>{
   buildKitGrid();
 });
 $('btnTrofei').addEventListener('click', ()=>{ Audio5.unlock(); goScreen(ui.trofei); buildTrofeiUI(); });
+$('btnDivisioni').addEventListener('click', ()=>{ Audio5.unlock(); goScreen(ui.divisioni); buildDivisioniUI(); });
 $('btnStatsScr').addEventListener('click', ()=>{ Audio5.unlock(); goScreen(ui.statistiche); buildStatsUI(); });
 $('btnImpost').addEventListener('click', ()=>{ Audio5.unlock(); goScreen(ui.impostazioni); refreshImpostUI(); });
 $('btnBackGioca').addEventListener('click', ()=>{ goScreen(ui.menu); });
