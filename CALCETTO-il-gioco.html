@@ -3580,6 +3580,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
         <div class="statlist" id="statList"></div>
         <div class="statmini" id="statMini"></div>
         <div class="trofbar" id="statTrofei"></div>
+        <div class="eti" style="margin:10px 0 2px">Record personali</div>
+        <div class="statmini" id="statRecord"></div>
       </div>
     </div>
     <div class="azioni"><button class="btnA sec" id="btnBackStats">TORNA ALLA BACHECA</button></div>
@@ -9363,6 +9365,21 @@ const ACH=[
   { id:'pallonetto',    ico:'sombrero',   nome:'SOMBRERO',              desc:'Tenta un pallonetto e segna nella stessa partita', premio:50,  liv:'argento' },
   { id:'volee',         ico:'volo',       nome:'AL VOLO',               desc:'Tenta un tiro al volo e segna nella stessa partita', premio:70,  liv:'oro' },
   { id:'disciplina',    ico:'fischietto', nome:'MAI UN FALLO',          desc:'Vinci una partita senza commettere falli', premio:60,  liv:'argento' },
+  /* LA SECONDA MENSOLA (Contenuto 3, 1 settembre 2026): da 15 a 24,
+     tutte su contatori veri o sulla scala — la barra di avanzamento le
+     serve da sola. Ogni glifo e' SUO (verbale dei glifi): cilindro,
+     stadio, tamburo, bacheca, guanto, cartellone, laurea, sfida,
+     maglia — tutti gia' in casa, nessuna coppia. Premi modesti (360 in
+     tutto, media 40): la festa e' il toast, non la zecca. */
+  { id:'vecchiaguardia',ico:'cilindro',   nome:'VECCHIA GUARDIA',       desc:'Gioca 50 partite',                         premio:30,  liv:'bronzo',  obiettivo:50,   conta:s=>s.partite },
+  { id:'centoreti',     ico:'stadio',     nome:'CENTO RETI',            desc:'Segna 100 gol in carriera',                premio:50,  liv:'argento', obiettivo:100,  conta:s=>s.golF },
+  { id:'cinquedifila',  ico:'tamburo',    nome:'CINQUE DI FILA',        desc:'Vinci 5 partite di fila',                  premio:40,  liv:'argento', obiettivo:5,    conta:s=>s.serieVMax },
+  { id:'muraglia',      ico:'bacheca',    nome:'MURAGLIA',              desc:'10 vittorie senza subire gol',             premio:40,  liv:'argento', obiettivo:10,   conta:s=>s.cleanSheets },
+  { id:'goleada',       ico:'cartellone', nome:'GOLEADA',               desc:'Segna 5 gol in una sola partita',          premio:30,  liv:'bronzo' },
+  { id:'guantone',      ico:'guanto',     nome:'GUANTONE',              desc:'50 parate dei tuoi portieri',              premio:30,  liv:'bronzo',  obiettivo:50,   conta:s=>s.parate },
+  { id:'scalatore',     ico:'laurea',     nome:'SCALATORE',             desc:'Prima promozione nelle divisioni',         premio:20,  liv:'bronzo',  obiettivo:1,    conta:()=>SAVE.div.g },
+  { id:'recitta',       ico:'sfida',      nome:'RE DELLA CITTÀ',   desc:'Raggiungi la divisione CITTÀ',        premio:50,  liv:'oro',     obiettivo:7,    conta:()=>SAVE.div.g },
+  { id:'leggenda',      ico:'maglia',     nome:'LEGGENDA DEL CAMPETTO', desc:'La vetta della scala. L&rsquo;ultimo trofeo del gioco', premio:70, liv:'oro', obiettivo:8, conta:()=>SAVE.div.g },
 ];
 
 /* =====================================================================
@@ -9617,7 +9634,16 @@ function defaultSave(){
     /* maxCoins: il massimo storico delle monete — contabilita' di
        interfaccia per la barra del SALVADANAIO, che spendendo non deve
        regredire (31 agosto 2026) */
-    stats:{ partite:0, vittorie:0, golF:0, golS:0, perfetti:0, rubate:0, tornei:0, stagioni:0, maxCoins:0 },
+    stats:{ partite:0, vittorie:0, golF:0, golS:0, perfetti:0, rubate:0, tornei:0, stagioni:0, maxCoins:0,
+            /* la carriera profonda (Contenuto 3, 1 settembre 2026):
+               numeri che la partita gia' misurava e morivano al fischio.
+               serieV e' la serie CORRENTE di vittorie, serieVMax la
+               migliore di sempre. */
+            pareggi:0, cleanSheets:0, parate:0, falli:0, serieV:0, serieVMax:0 },
+    /* i record personali: il migliore di sempre, con la data. Quattro
+       voci fisse; si scrivono solo quando il numero e' migliore
+       (aggiornaRecord), mai d'ufficio. */
+    record:{ golPartita:{v:0,data:''}, scartoMax:{v:0,data:''}, perfettiPartita:{v:0,data:''}, serieV:{v:0,data:''} },
     /* la scala del quartiere: gradino, stelle nel gradino, e i premi di
        promozione gia' pagati (bandiere 0/1 per gradino: il saliscendi
        non e' una zecca) — Contenuto 1, 1 settembre 2026 */
@@ -9745,6 +9771,14 @@ function loadSave(){
       s.div.g = clamp(j.div.g|0, 0, 8);
       s.div.stelle = clamp(j.div.stelle|0, 0, Math.max(0, DIV_SOGLIA[s.div.g]-1));
       if(Array.isArray(j.div.premi)) for(let i=0;i<=8;i++) s.div.premi[i] = j.div.premi[i] ? 1 : 0;
+    }
+    /* I RECORD (Contenuto 3): chiavi fisse, numeri finiti non negativi,
+       data come stringa corta — un migliore-di-sempre manomesso non
+       supera la rilettura */
+    if(j.record&&typeof j.record==='object') for(const k in s.record){
+      const r=j.record[k];
+      if(r&&typeof r==='object'&&typeof r.v==='number'&&isFinite(r.v)&&r.v>0)
+        s.record[k]={ v:Math.max(0,r.v|0), data:String(r.data||'').slice(0,20) };
     }
     /* maxCoins passa dal filtro qui sopra (chiave conosciuta, numero
        finito, non negativo) e non puo' stare sotto il saldo appena
@@ -11354,6 +11388,14 @@ function rigaMomento(){
          '<span class="ml">'+eti+'</span><span class="mv">'+val+'</span></div></td></tr>';
 }
 
+/* il migliore di sempre, con la data: si scrive SOLO se v e' migliore
+   (Contenuto 3, 1 settembre 2026). Nessun sorteggio e nessuna festa
+   qui: la festa e' dei trofei, che leggono i contatori. */
+function aggiornaRecord(k, v){
+  const r = SAVE.record && SAVE.record[k];
+  if(!r) return;
+  if((v|0) > (r.v|0)){ r.v = v|0; r.data = dataOggi(); }
+}
 /* ---------- ricompense di fine partita ---------- */
 function applyMatchRewards(){
   if(G.cpu[0]) return null;              // QA cpu-vs-cpu: niente ricompense
@@ -11367,6 +11409,18 @@ function applyMatchRewards(){
   CS.partite++; if(won) CS.vittorie++;
   CS.golF+=G.score[0]; CS.golS+=G.score[1];
   CS.perfetti+=S.perfetti[0]; CS.rubate+=S.rubate[0];
+  /* la carriera profonda e i record (Contenuto 3): il verbale sta su
+     aggiornaRecord e sulle chiavi del salvataggio */
+  if(G.score[0]===G.score[1]) CS.pareggi++;
+  if(won && G.score[1]===0) CS.cleanSheets++;
+  CS.parate += (S.parate&&S.parate[0])|0;
+  CS.falli  += (S.falli&&S.falli[0])|0;
+  CS.serieV = won ? (CS.serieV|0)+1 : 0;
+  if(CS.serieV > (CS.serieVMax|0)) CS.serieVMax = CS.serieV;
+  aggiornaRecord('golPartita', G.score[0]);
+  aggiornaRecord('scartoMax',  G.score[0]-G.score[1]);
+  aggiornaRecord('perfettiPartita', (S.perfetti&&S.perfetti[0])|0);
+  aggiornaRecord('serieV', CS.serieV);
   /* monete: base + risultato + gol + porta imbattuta + perfetti + rubate */
   const pari = G.score[0]===G.score[1];
   const br=[['Partita giocata',COIN_BASE]];
@@ -11435,6 +11489,18 @@ function applyMatchRewards(){
   if(S.perfetti[0]>=5) unlockAch('perfetti5');
   faiCrescereRosa();
   if(won && S.falli[0]===0) unlockAch('disciplina');
+  /* la seconda mensola (Contenuto 3): GOLEADA e' della partita, il
+     resto e' carriera e scala. unlockAch paga con etichetta dentro la
+     raccolta: la lavagnetta resta contabile. */
+  if(CS.partite>=50)     unlockAch('vecchiaguardia');
+  if(CS.golF>=100)       unlockAch('centoreti');
+  if(CS.serieVMax>=5)    unlockAch('cinquedifila');
+  if(CS.cleanSheets>=10) unlockAch('muraglia');
+  if(G.score[0]>=5)      unlockAch('goleada');
+  if(CS.parate>=50)      unlockAch('guantone');
+  if(SAVE.div.g>=1)      unlockAch('scalatore');
+  if(SAVE.div.g>=7)      unlockAch('recitta');
+  if(SAVE.div.g>=8)      unlockAch('leggenda');
   if((S.pallonetti&&S.pallonetti[0]>0) && G.score[0]>0) unlockAch('pallonetto');
   if((S.volee&&S.volee[0]>0) && G.score[0]>0) unlockAch('volee');
   if(tourWonNow){
@@ -39743,6 +39809,21 @@ function buildStatsUI(){
       /* le stagioni vinte esistevano nel salvataggio (stats.stagioni)
          ma nessuna schermata le mostrava (31 agosto 2026) */
       '<div class="tl" style="margin:6px 0 0"><span>Stagioni vinte</span><b>'+(s.stagioni|0)+'</b></div>';
+  }
+  /* I RECORD PERSONALI (Contenuto 3): quattro tessere col migliore di
+     sempre e la data piccola sotto; a zero, il trattino — un cruscotto,
+     non un vuoto, come le tessere qui sopra. */
+  const rc=$('statRecord');
+  if(rc){
+    const R=SAVE.record||{};
+    const tR=(k,lab)=>{ const r=R[k]||{v:0,data:''};
+      return '<div class="stile"><div class="sv">'+(r.v>0?r.v:'&mdash;')+'</div>'+
+        '<div class="sl">'+lab+(r.v>0&&r.data?'<br><span style="opacity:.7;font-size:10px">'+r.data+'</span>':'')+'</div></div>'; };
+    rc.innerHTML=
+      tR('golPartita','Gol in una partita')+
+      tR('scartoMax','Scarto massimo')+
+      tR('perfettiPartita','Tiri perfetti in gara')+
+      tR('serieV','Vittorie di fila');
   }
 }
 

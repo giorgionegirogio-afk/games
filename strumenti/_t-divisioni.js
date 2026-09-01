@@ -72,9 +72,16 @@ function verifica(ok, nome, det) {
     const t = window.__test;
     t.startMatch(mode, diff, { size: 5 });
     for (let i = 0; i < 240 && G.scene !== 'play'; i++) t.simulate(1 / 60);
-    for (let k = 0; k < golA; k++) t.forceGoal(0);
-    for (let k = 0; k < golB; k++) t.forceGoal(1);
-    for (let i = 0; i < 240 && G.scene !== 'play'; i++) t.simulate(1 / 60);
+    /* un gol alla volta, tornando in gioco fra l'uno e l'altro (la
+       lezione del banco dei record: i forceGoal a raffica ne atterrano
+       uno). Qui gli esiti erano comunque giusti — contava solo il
+       segno — ma il punteggio dichiarato deve essere quello vero. */
+    const forza = team => {
+      t.forceGoal(team);
+      for (let i = 0; i < 900 && G.scene !== 'play'; i++) t.simulate(1 / 60);
+    };
+    for (let k = 0; k < golA; k++) forza(0);
+    for (let k = 0; k < golB; k++) forza(1);
     t.setTimeLeft(0.2);
     for (let i = 0; i < 1200 && G.scene !== 'end'; i++) t.simulate(1 / 60);
     const es = document.getElementById('endScala');
