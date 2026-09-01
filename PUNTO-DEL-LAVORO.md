@@ -15,8 +15,9 @@ rileggere niente altro.
 
 ## Il prossimo passo, in ordine
 
-1. `node strumenti/_t-aereo.js --dentro` e la batteria §5 del progetto aereo
-   (stadio C resta dietro il cancello della sonda).
+1. ~~La #72~~ FATTA in sei stadi (1 settembre, sera): cross 0,3/0,0/0,0 →
+   1,0/1,0/0,2, batteria verde; il residuo (bersaglio [2,6], «con uomo» 0)
+   è la voce #84 — l'appuntamento del cross, progetto a parte.
 2. Onda 1 asciugata dalla miniera: divisioni a 3 fasce × 3 con premi a
    formula e pavimento di fascia (MINIERA §1), poi record/abbandono.
 3. Taccuino del campetto (~2,5 g, dopo il contenuto 3) e ASSALTO (~6 g, onda 2).

@@ -556,3 +556,65 @@ tre regole pagate dai banchi cross:
 Se questa sonda serve anche DOPO la cura (e serve: è l'uscita dei rischi 1 e
 6), va promossa a `strumenti/_sonda-cross-porte.js` con questo stesso
 cappello e la data.
+
+---
+
+## 8. IL VERBALE DELL'APPLICAZIONE — 1 settembre 2026
+
+Sei toppe, ognuna misurata prima della successiva, ognuna col suo attrezzo
+ancorato (`_t-aereo.js` … `_t-aereo6.js`). Il filo: ogni stadio ha aperto
+una porta e la sonda ha nominato la successiva — SEI porte, non le due del
+progetto.
+
+| stadio | attrezzo | cosa | cross (5/7/11) dopo |
+|---|---|---|---|
+| A + B | `_t-aereo` (8 àncore) | punta in area a 7/11; volo per bersaglio, pavimento GOAL_H, T ai cancelli | 0,3 / 0,0 / 0,0 |
+| A2 | `_t-aereo2` | la partenza anticipata della punta (cancello 0,58→0,75) | 0,3 / 0,2 / 0,0 |
+| B2 | `_t-aereo3` | il cross sull'inserimento (CROSS_GRAZIA 0,40 sul candidato in corsa) | invariato |
+| C | `_t-aereo4` | dMax in scala col campo (479/592/772) | 0,3 / 1,0 / 0,0 |
+| C2 | `_t-aereo5` | in fascia la carica di tiro si abbandona per il cross con bersaglio | 0,3 / 1,2 / 0,0 |
+| C3 | `_t-aereo6` | la STRISCIA CONTESA si guarda a ogni fotogramma | **1,0 / 1,0 / 0,2** |
+
+Le misure che hanno guidato (tutte del 1 settembre, semi dichiarati):
+
+- Dopo A+B la sonda alle porte diceva: a 7 CON BERSAGLIO 0→44 ma cross 0;
+  a 11 occupazione ancora zero. La sonda della punta (nuova,
+  `_sonda-punta.js` nello scratchpad) ha trovato il perché: la punta
+  ARRIVA (distanza minima dal secondo palo 2-17 unità, 1.179 proiezioni
+  in area) ma sta a **424-1007 unità dal crossatore contro un dMax di
+  386** — la porta che lo stadio C esigeva per nome. (La previsione della
+  miniera — «C improbabile» — è smentita qui dalla misura: il rimedio del
+  concorrente ai cross corti non c'entra col nostro tetto lungo, che è un
+  difetto di scala tutto nostro, gemello del tappo a 500.)
+- Dopo C, a 11: CON BERSAGLIO 0→14, portiere 0, varco 0 — e cross 0.
+  L'imbuto contato dai CONSUMATORI (crossBersaglio/crossCPU/doCross
+  avvolti): a 5, trova 8 · apre 1 · fuoca 1 — e gli «11 rifiuti per
+  carica» erano in gran parte le ri-consultazioni durante la pendenza
+  dell'anticipo (clip 'cross'), un artefatto del contatore che va
+  dichiarato; il rifiuto VERO era la carica di tiro in fascia (7v7:
+  trova 1, apre 0). Da lì C2.
+- Dopo C2, i 14 fotogrammi buoni a 11 restavano nella STRISCIA CONTESA
+  (in fascia ma dentro zonaTiro), dove il ramo per-fotogramma non entrava
+  e il ritmo delle decisioni non coincideva mai: crossBersaglio consultata
+  ZERO volte a segno nel gioco vivo. Da lì C3, che ha acceso tutte e tre
+  le taglie.
+
+### 8.1 Il residuo, dichiarato
+
+Il bersaglio della voce — **[2, 6] cross a partita** — NON è raggiunto:
+siamo a 1,0 / 1,0 / 0,2. E «con uomo» (entrate in fascia di testa con un
+uomo a portata) resta **0,0**: il pallone cade dove l'uomo non è ancora.
+Le porte residue hanno il nome: (1) la FREQUENZA delle finestre —
+l'appuntamento fra portatore crossabile e uomo qualificato è raro perché
+anti-correlato (quando l'ala è pronta la punta non è arrivata; quando
+arriva, l'ala ha già scaricato); (2) l'ARRIVO nel tempo della testa. Sono
+ritmo tattico (tenuta del portatore, più corse, tempi dell'inserimento),
+non cancelli: è un'altra cura, da progettare a parte — coi semi della
+miniera già raccolti (il bersaglio-posizione di SearchPosition, il duello
+aereo a punteggio). La voce di registro nuova è #84.
+
+### 8.2 Nastri e versione
+
+Vale il §4: le partite a seme fisso divergono per progetto, i replay
+registrati prima non si rigiocano uguali, il bump di versione va nel
+verbale di pubblicazione insieme a quello della #82.

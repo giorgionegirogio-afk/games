@@ -437,10 +437,17 @@ Qui il registro completo, a edizioni.
   duelli a seme fisso identiche al bit prima/dopo. Il verbale intero:
   `_analisi/PROGETTO-ISTERESI-DISCO.md` §8, comprese le sei riparazioni
   ai banchi che accusavano l'innocente.
-- **Il gioco aereo della macchina** (#72) — **PROGETTATA** e con la
-  diagnosi rettificata: la causa prima a 7/11 non è la finestra del
-  cross ma `attaccaArea` spenta da taglia 7 (nessuno entra mai in
-  area); cura a tre stadi in `_analisi/PROGETTO-GIOCO-AEREO.md`.
+- **Il gioco aereo della macchina** (#72) — **SEI STADI APPLICATI il
+  1 settembre 2026** (`_t-aereo.js`…`_t-aereo6.js`): la punta taglia in
+  area e parte prima, il volo si calcola per bersaglio, il tetto di
+  raccolta scala col campo, in fascia il cross con bersaglio vero batte
+  la carica di tiro e si guarda a ogni fotogramma anche nella striscia
+  contesa. Cross per partita: da 0,3/0,0/0,0 a **1,0/1,0/0,2** (primo
+  cross a 11 della storia del gioco); regressioni tutte nelle forbici
+  (batteria §5, otto banchi verdi + prestazione 3/3). RESIDUO dichiarato
+  a registro come **#84**: bersaglio [2,6] non raggiunto e «con uomo» a
+  0 — l'appuntamento fra crossatore e corridore è ritmo tattico, altra
+  cura. Verbale: `_analisi/PROGETTO-GIOCO-AEREO.md` §8.
 - **La prima onda di contenuti** — **PROGETTATA**:
   `_analisi/PROGETTO-ONDA-CONTENUTI-1.md` — DIVISIONI DEL QUARTIERE
   (scala persistente a nove gradini), ABBANDONO con conseguenza in

@@ -14625,7 +14625,7 @@ const L14_PIENO   = 88;  // px CSS: qui la quota del passaggio e' piena
    i quattro che sbagliavano erano proprio i traversoni corti — le
    distanze del cross vero. */
 const L14_T0 = 0.66;     // s di volo a quota minima  -> quota VERA 29,0 (tre unita' sopra i corpi)
-const L14_T1 = 0.75;     // s di volo a quota piena   -> quota VERA 37,6. NON SI ALZA: CROSS_TVOLO (:18930) vale 0,75 e su di lei poggiano la finestra del cross CPU, il conto sul portiere e la posizione del compagno all'atterraggio
+const L14_T1 = 0.75;     // s di volo a quota piena   -> quota VERA 37,6. NON SI ALZA: CROSS_TVOLO vale 0,75 ed e' il TETTO del volo del cross CPU; dal 1 settembre 2026 (voce #72) il volo vero per bersaglio lo calcola crossVolo con QUESTO stesso clamp, e portiere e compagno usano quel T
 function verboTrascinato(act, tr){
   if(!tr) return null;
   if(!tr.armato) return { act:(act==='shot' ? 'tiro' : 'passo'), su:0 };
@@ -18931,10 +18931,31 @@ function attaccaArea(p, carrier){
      davanti, e in nessun altro posto. Il cross a 7 e a 11 resta una cosa
      NON FATTA, ed e' scritto cosi' nel rapporto invece di essere spedito
      con un numero che dice il contrario di quello che promette.
+
+     RETTIFICA (1 settembre 2026, voce #72): la bocciatura misurata qui
+     sopra colpiva l'ELEZIONE DEL PIU' AVANZATO, che rubava il rifinitore
+     alla manovra — quei numeri restano veri per quella versione. La
+     sonda alle porte del 31 agosto (PROGETTO-GIOCO-AEREO §1.4) ha dato
+     il collo un nome: a 7 e a 11 non c'e' MAI un compagno in area al
+     tempo di volo (0 su 3.483 fotogrammi esaminati). Da oggi il taglio
+     lo fa la SOLA PUNTA — l'uomo che il gioco tiene gia' davanti
+     (stazione PUNTA_X, «NON RIENTRA»), che non fa manovra per
+     definizione e il cui prezzo sul punteggio del passaggio e' gia'
+     pagato (sopra 0,74 non la sceglie comunque). Non e' un secondo uomo
+     fisso davanti: e' quello che c'era, che adesso entra. A 5 la punta
+     non esiste e la guardia non morde: le stesse righe di oggi, al bit.
      ===================================================================== */
-  if(TAGLIA>=7) return false;
+  if(TAGLIA>=7 && ruoloDi(p)!=='punta') return false;
   const t=p.team, gx=t===0?FW:0;
-  if(Math.abs(gx-carrier.x) > FW*CROSS_CORSA) return false;
+  /* A2 (1 settembre 2026, voce #72): ai campi grandi la punta parte
+     PRIMA. Dalla stazione al secondo palo corrono ~500 unita' (~3,5 s),
+     piu' del possesso medio d'ala: col cancello a 0,58 la corsa partiva
+     in rifinitura e a 11 non arrivava MAI (sonda alle porte: 0
+     proiezioni in area su 4 partite, anche con A+B dentro). Per lei il
+     cancello si apre al 75% del campo; per tutti gli altri, e a 5,
+     restano le stesse righe al bit. */
+  const sogliaCorsa = (TAGLIA>=7 && ruoloDi(p)==='punta') ? 0.75 : CROSS_CORSA;
+  if(Math.abs(gx-carrier.x) > FW*sogliaCorsa) return false;
   if(ruoloDi(p)==='ultimo') return false;
   /* CHI CI VA NON CAMBIA VENTI VOLTE AL SECONDO.
      "Il piu' avanzato" cambia titolare di continuo, perche' due uomini
@@ -19540,15 +19561,56 @@ function corsiaTiro(p, ux, uy){
    LA FINESTRA DI DISTANZA DEL CROSS, tutta dedotta (vedi l'intestazione).
    Nessuno di questi numeri e' scelto: escono da TIRO_ATTR, cioe' dalla
    taglia del campo, e da due soglie che il gioco gia' dichiara.
+
+   RISCRITTA il 1 settembre 2026 (voce #72): il pavimento dMin era un
+   ARTEFATTO dell'assunzione «il volo, sempre il piu' lungo» — esisteva
+   solo per garantire T=0,75, e sui campi grandi chiudeva la finestra
+   col dMax fino al 5% del campo a 11 (PROGETTO-GIOCO-AEREO §1.3).
+   Sotto quel pavimento doCross vola benissimo, a T piu' corto: adesso
+   il volo si calcola PER BERSAGLIO (crossVolo, qui sotto) e il
+   pavimento vero e' GOAL_H in crossBersaglio — un cross piu' corto
+   della luce della porta e' un appoggio, e l'appoggio esiste gia'.
+   Resta il dMax, che vive nel regime T=0,75 dove questa formula e'
+   esatta.
    ===================================================================== */
 const CROSS_ZONA  = 0.48;    // il portatore: dentro l'ultimo 48% del campo
-const CROSS_TVOLO = 0.75;    // il volo, sempre il piu' lungo che doCross sappia
+const CROSS_TVOLO = 0.75;    // il TETTO del volo; il volo vero, per bersaglio, lo da' crossVolo
 const CROSS_RACC  = 420;     // sopra questa velocita' d'arrivo nessuno la ferma
+const CROSS_GRAZIA = 0.40;   // il respiro concesso all'inserimento: vedi crossBersaglio (B2)
 function crossFinestra(){
   const K = Math.max(0.001, TIRO_ATTR);
   const e = Math.exp(-CROSS_TVOLO*K);
   const c = (1-e)/(CROSS_TVOLO*K);          // strada vera / distanza mirata
-  return { K, c, dMin: 430*CROSS_TVOLO*c, dMax: CROSS_RACC*(1-e)/(K*e) };
+  /* STADIO C (1 settembre 2026, voce #72): il tetto di raccolta scala
+     col campo, come l'attrito da cui e' dedotto — CROSS_RACC/ATTR_K.
+     La porta che l'ha aperto ha il nome che il progetto esigeva:
+     misurato con A+B dentro, a 11 la punta ARRIVA in area ma sta a
+     424-1007 unita' dal crossatore contro un dMax di 386 (dalla riga
+     laterale al bordo dell'area corrono gia' 409 unita'). E' lo stesso
+     errore del «tappo a 500 che non sapeva quant'e' grande il campo».
+     dMax: 479/592/772 alle tre taglie; a taglia 5 ATTR_K=1 e il conto
+     e' identico al bit. Il lancio al tetto arriva a 1.032/1.245 u/s:
+     dichiarato nel progetto (§6.6), sorvegliato da _eventi --contro e
+     dall'occhio; il tappo a 860 resta pronto se l'occhio boccia. */
+  return { K, c, dMax: (CROSS_RACC/ATTR_K)*(1-e)/(K*e) };
+}
+/* IL VOLO SU MISURA: il volo di un cross che deve ATTERRARE a distanza
+   d — lo stesso conto di doCross, all'inverso, con LO STESSO clamp.
+   Tre giri fissi bastano: c varia al massimo del 4,23% su tutta la
+   corsa di T (misurato il 31 agosto sulle costanti del file: 4,23% a
+   taglia 5, 3,13% a 7, 2,24% a 11). Proprieta' da banco: per ogni d
+   sopra il vecchio dMin converge al primo giro a T=0,75 e dA=d/c —
+   identico al conto di prima, al bit. Nessun sorteggio, nessuna
+   scrittura. */
+function crossVolo(d){
+  const K = Math.max(0.001, TIRO_ATTR);
+  let T = L14_T1, dA = d;
+  for(let i=0;i<3;i++){
+    const c = (1-Math.exp(-K*T))/(K*T);
+    dA = d/c;
+    T = clamp(dA/430, L14_T0, L14_T1);
+  }
+  return { T, dA, arrivo: (dA/T)*Math.exp(-K*T) };
 }
 
 /* =====================================================================
@@ -19566,7 +19628,8 @@ function crossFinestra(){
    GK_AREA_X*0,62), passo al massimo GK_SPEED — e poi si confronta
    l'ellisse vera, con l'orientamento che ha in piedi (lungo x).
    ===================================================================== */
-function crossPortiereCopre(team, lx, ly){
+function crossPortiereCopre(team, lx, ly, T){
+  T=T||CROSS_TVOLO;
   const gk = portiereDi(1-team);
   if(!gk || gk.out>0) return false;
   const goalX = team===0?FW:0;
@@ -19574,9 +19637,11 @@ function crossPortiereCopre(team, lx, ly){
   const usc=clamp(dl*0.10, 16, GK_AREA_X*0.62);
   const tx=goalX+dx/dl*usc;
   const ty=clamp(FH/2+dy*0.55, GY0+6, GY1-6);
-  /* dove sara' fra CROSS_TVOLO: verso la sua meta, al suo passo */
+  /* dove sara' fra T — il volo vero di QUESTO cross (voce #72): verso
+     la sua meta, al suo passo. Su un cross corto il portiere ha meno
+     tempo, e il cancello lo dice. */
   let px=tx-gk.x, py=ty-gk.y;
-  const pl=len(px,py), corsa=GK_SPEED*CROSS_TVOLO;
+  const pl=len(px,py), corsa=GK_SPEED*T;
   let fx=tx, fy=ty;
   if(pl>corsa){ fx=gk.x+px/pl*corsa; fy=gk.y+py/pl*corsa; }
   /* l'ellisse di tentaPresa, col corpo in piedi orientato lungo x */
@@ -19593,10 +19658,15 @@ function crossPortiereCopre(team, lx, ly){
    fisica richieda. Anche questa e' una funzione con un nome perche' si
    possa contare da fuori quante volte boccia.
    ===================================================================== */
-function crossVarcoLibero(p, nx, ny, dA){
+function crossVarcoLibero(p, nx, ny, dA, T){
+  /* voce #72: il tratto basso dipende dal volo VERO. Su un cross corto
+     il pallone sale prima (vz=280*T con lo stesso conto di doCross),
+     quindi il varco richiesto e' piu' corto: il cancello resta fedele
+     alla fisica che protegge. */
+  T=T||CROSS_TVOLO;
   const K=Math.max(0.001, TIRO_ATTR);
-  const t0=(CROSS_TVOLO-Math.sqrt(Math.max(0,CROSS_TVOLO*CROSS_TVOLO-4*Z_SOPRA_TESTA/280)))/2;
-  const varco=(dA/CROSS_TVOLO)*(1-Math.exp(-K*t0))/K;
+  const t0=(T-Math.sqrt(Math.max(0,T*T-4*Z_SOPRA_TESTA/280)))/2;
+  const varco=(dA/T)*(1-Math.exp(-K*t0))/K;
   for(const o of G.players){
     if(o.team===p.team || o.out>0) continue;
     const ox=o.x-p.x, oy=o.y-p.y;
@@ -19630,6 +19700,20 @@ function crossVarcoLibero(p, nx, ny, dA){
    perche' e' il momento in cui il pallone e lui devono trovarsi nello
    stesso posto.
    Fra quelli che tengono vince il piu' vicino alla porta.
+
+   RETTIFICA (1 settembre 2026, voce #72): i numeri qui sopra (124
+   partiti, 97 in area, 74 raccolti, 69 conclusi, 22 in rete) sono
+   della versione col pavimento dMin e restano veri per lei. Da oggi il
+   pavimento e' GOAL_H — la stessa soglia di fascia di crossCPU, che
+   scala gia' col campo — e il volo si calcola PER CANDIDATO con
+   crossVolo: il cross corto e' un volo piu' basso da calcolare, non un
+   errore da bocciare. Sui bersagli che passavano gia', la mira e'
+   identica al bit (crossVolo converge a T=0,75); cambiano i bersagli
+   NUOVI sotto il vecchio pavimento, e la SCELTA quando uno di loro e'
+   piu' vicino alla porta: e' la cura, non un effetto collaterale. La
+   riproiezione del compagno al T corto puo' spostarlo di ~20 unita'
+   contro una portata di raccolta di 34: dichiarato, e _q-cross2 lo
+   sorveglia (raccolti/partiti non deve scendere).
    ===================================================================== */
 function crossBersaglio(p, opGoalX){
   const t=p.team;
@@ -19637,16 +19721,37 @@ function crossBersaglio(p, opGoalX){
   let scelto=null, meglio=1e9;
   for(const q of G.players){
     if(q.team!==t || q===p || q.out>0 || q.role==='gk') continue;
-    const qx=q.x+q.vx*CROSS_TVOLO, qy=q.y+q.vy*CROSS_TVOLO;
-    if(!dentroArea(t, qx, qy)) continue;
-    const d=len(qx-p.x, qy-p.y);
-    if(d<F.dMin || d>F.dMax) continue;
-    if(crossPortiereCopre(t, qx, qy)) continue;
+    let T=CROSS_TVOLO;
+    let qx=q.x+q.vx*T, qy=q.y+q.vy*T;
+    let d=len(qx-p.x, qy-p.y);
+    if(d<GOAL_H || d>F.dMax) continue;
+    const volo=crossVolo(d);              // il T vero di QUESTO cross
+    if(volo.T<CROSS_TVOLO){
+      /* cross corto: il compagno si riproietta col T vero, e il
+         candidato si rigiudica sul quadro vero */
+      T=volo.T;
+      qx=q.x+q.vx*T; qy=q.y+q.vy*T;
+      d=len(qx-p.x, qy-p.y);
+      if(d<GOAL_H) continue;
+    }
+    if(!dentroArea(t, qx, qy)){
+      /* B2 — IL CROSS SULL'INSERIMENTO (1 settembre 2026): il candidato
+         IN CORSA D'AREA vale anche se al tempo di volo e' appena fuori,
+         purche' la corsa lo porti dentro entro CROSS_GRAZIA. La mira
+         resta la sua proiezione al tempo di volo: il pallone cade sul
+         suo binario un soffio prima di lui. Misurato prima della cura:
+         a 11 la punta arrivava (min 2-17 unita' dal secondo palo) ma
+         MAI nei fotogrammi del portatore pronto — l'appuntamento
+         mancava, non la corsa. E' il cross anticipato del calcio vero,
+         e il concorrente lo tiene come TIPO dedicato. */
+      if(!(q.corsaArea>0
+           && dentroArea(t, q.x+q.vx*(T+CROSS_GRAZIA), q.y+q.vy*(T+CROSS_GRAZIA)))) continue;
+    }
+    if(crossPortiereCopre(t, qx, qy, T)) continue;
     const nx=(qx-p.x)/d, ny=(qy-p.y)/d;
-    const dA=d/F.c;                       // si mira a d/c perche' cada a d
-    if(!crossVarcoLibero(p, nx, ny, dA)) continue;
+    if(!crossVarcoLibero(p, nx, ny, volo.dA, T)) continue;
     const dg=Math.abs(opGoalX-qx);
-    if(dg<meglio){ meglio=dg; scelto={ q, nx, ny, mira:[p.x+nx*dA, p.y+ny*dA] }; }
+    if(dg<meglio){ meglio=dg; scelto={ q, nx, ny, mira:[p.x+nx*volo.dA, p.y+ny*volo.dA] }; }
   }
   return scelto;
 }
@@ -19684,16 +19789,32 @@ function crossCPU(p, opGoalX){
      quelle 81. Non e' un caso: un portatore pressato sulla fascia decide
      di scaricare a ogni tempo di reazione, mentre il compagno impiega
      piu' di un secondo ad arrivare in area. Quando arriva, l'appoggio e'
-     gia' partito come pensiero.
+     gia' partito come pensiero. (Numeri della versione col pavimento
+     dMin, 31 agosto; dal 1 settembre — voce #72 — la finestra e' piu'
+     larga e le frequenze vanno rimisurate: la ragione della riga resta.)
      Il gioco questa mossa la fa gia': doFiltrante chiude la carica aperta
      quando il dito chiede un'altra cosa (dentro doFiltrante, la riga
-     "stava caricando il tiro: cambia idea"). Qui vale la stessa regola con un limite in piu': si
-     cambia idea solo su un APPOGGIO, mai su un tiro — il tiro ha la
-     precedenza, e questa e' la terza riga che glielo garantisce.
-     La clip 'cross' distingue la carica del cross da quella
-     dell'appoggio, cosi' il cross non annulla se stesso. */
+     "stava caricando il tiro: cambia idea"). La prima stesura aggiungeva
+     un limite: «si cambia idea solo su un APPOGGIO, mai su un tiro — il
+     tiro ha la precedenza, e questa e' la terza riga che glielo
+     garantisce».
+
+     RETTIFICA (1 settembre 2026, voce #72, stadio C2). Misurato coi
+     consumatori avvolti, a seme fisso: a 5 contro 5 crossBersaglio
+     trovava un bersaglio VERO 8 volte e questa guardia apriva UN solo
+     anticipo — 11 rifiuti per carica non-appoggio; a 7 e a 11 il cross
+     della macchina non esisteva. Ma DENTRO questa funzione il portatore
+     e' per costruzione in fascia, fuori dallo specchio (la guardia
+     |p.y-FH/2|>=GOAL_H, due righe sopra): il tiro che si stava
+     caricando li' e' una preghiera d'angolo, e un cross con un uomo
+     vero in area lo batte per mestiere. La precedenza del tiro resta
+     dove il tiro e' vero — nello specchio il ramo per-fotogramma non
+     entra (negazione esatta di zonaTiro), e al ritmo delle decisioni il
+     dado del tiro parla PRIMA che il cross venga consultato. Qui ogni
+     carica si abbandona; la clip 'cross' continua a distinguere il
+     cross, che non annulla se stesso. */
   if(p.charge>=0){
-    if(p.chargeKind!=='passo' || p.chargeClip==='cross') return false;
+    if(p.chargeClip==='cross') return false;
     chiudiAnticipo(p);
   }
   if(!anticipa(p, 'passo', PASS_CAR, q=>{
@@ -19747,7 +19868,15 @@ function aiCarrier(p, opGoalX, D){
      compagno IN AREA, il portiere non ci arriva e il varco e' libero;
      quando torna vero il pallone parte e il possesso finisce.
      ===================================================================== */
-  if(p.kickCd<=0 && !zonaTiro(p.x, p.y, opGoalX, p.team) && crossCPU(p, opGoalX)){
+  /* C3 (1 settembre 2026, voce #72): il ramo si apre anche alla
+     STRISCIA CONTESA — in fascia ma dentro zonaTiro — dove stavano
+     TUTTI i fotogrammi con bersaglio misurati a 11 (14 su 4 partite) e
+     dove il ritmo delle decisioni non arrivava mai in tempo. In fascia
+     il cross con un uomo vero in area batte il tiro d'angolo per
+     mestiere (la rettifica C2 dentro crossCPU); nello specchio vero
+     niente cambia: crossCPU rifiuta per costruzione sotto GOAL_H. */
+  if(p.kickCd<=0 && (!zonaTiro(p.x, p.y, opGoalX, p.team) || Math.abs(p.y-FH/2)>=GOAL_H)
+     && crossCPU(p, opGoalX)){
     p.aiActT=Math.max(p.aiActT||0, 0.30);   // non decide altro mentre il piede va
     return;
   }
