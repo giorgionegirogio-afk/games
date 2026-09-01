@@ -356,6 +356,15 @@ const CANCELLI = [
      `node strumenti/_q-meta.js --tre-taglie` e da verde si mette in
      batteria. */
   { nome: 'meta',        cmd: ['strumenti/_q-meta.js'],                                  conta: true,  lento: false },
+  /* l'onda dei contenuti (1 settembre 2026): tre cancelli nuovi, uno
+     per contenuto. divisioni e record girano a passo simulato e corrono
+     in compagnia; abbandono preme bottoni veri con attese vere (wipe,
+     tocchi CDP) e corre DA SOLO come i cronometrici — un banco a dita
+     vere su banco occupato accusa l'innocente (lezione del trentesimo
+     cieco). */
+  { nome: 'divisioni',   cmd: ['strumenti/_t-divisioni.js'],                             conta: true,  lento: false },
+  { nome: 'record',      cmd: ['strumenti/_t-record-conta.js'],                          conta: true,  lento: false },
+  { nome: 'abbandono',   cmd: ['strumenti/_t-abbandono-conta.js'],                       conta: true,  lento: true  },
   /* nomi: il punto cieco che il 28 agosto 2026 e' costato una bocciatura.
      Il gioco aveva gia' trovato e riparato «due uomini con lo stesso
      cognome nella stessa squadra» — l'elenco dei cognomi fu portato da
@@ -436,6 +445,14 @@ const CANCELLI = [
   { nome: 'volti',       cmd: ['strumenti/volti.js'],                                   conta: true,  lento: true },
   /* da qui in giu': cronometrici, girano da soli */
   { nome: 'giocata',     cmd: ['strumenti/giocata.js', '--tutte'],                      conta: true,  lento: false, solo: true },
+  /* CONTROESEMPIO MISURATO ALLA ROBUSTEZZA DELL'APPAIAMENTO (1 settembre
+     2026): in batteria, subito dopo giocata, prestazione ha dichiarato
+     +26,9% e +26,3% confrontando due file BYTE-IDENTICI (worktree==HEAD,
+     git diff vuoto) — contro una risoluzione dichiarata del 9,1%
+     (--prova-uguale, stesso minuto). Da sola, un minuto dopo: 3/3. La
+     coda dei Chromium appena chiusi piega un lato dell'appaiamento piu'
+     dell'altro. Un suo rosso in batteria si RIMISURA da solo prima di
+     crederci; su file identici e' falso per costruzione. */
   { nome: 'prestazione', cmd: ['strumenti/prestazione.js', '--contro', 'HEAD'],         conta: true,  lento: false, solo: true },
   { nome: 'avvio',       cmd: ['strumenti/avvio.js'],                                   conta: false, lento: true,  solo: true },
   /* il cancello vero dell'avvio: sta ULTIMO perche' vuole il telefono tutto

@@ -448,11 +448,16 @@ Qui il registro completo, a edizioni.
   a registro come **#84**: bersaglio [2,6] non raggiunto e «con uomo» a
   0 — l'appuntamento fra crossatore e corridore è ritmo tattico, altra
   cura. Verbale: `_analisi/PROGETTO-GIOCO-AEREO.md` §8.
-- **La prima onda di contenuti** — **PROGETTATA**:
-  `_analisi/PROGETTO-ONDA-CONTENUTI-1.md` — DIVISIONI DEL QUARTIERE
-  (scala persistente a nove gradini), ABBANDONO con conseguenza in
-  torneo e stagione, RECORD e seconda mensola (da 15 a 24 trofei).
-  ~10 giornate, ordine 2→1→3; ASSALTO rimandato a onda 2 con ragioni.
+- **La prima onda di contenuti** — **I TRE CONTENUTI SONO IN CAMPO**
+  (1 settembre 2026, ordine 2→1→3): ABBANDONO = sconfitta a tavolino
+  0-3 in torneo e stagione col doppio tocco (banco 14/14); DIVISIONI
+  DEL QUARTIERE a nove gradini in tre fasce, premi a formula (401 una
+  tantum), pavimento di fascia, schermata in bacheca e riga di fine
+  partita (banco 18/18); RECORD personali con la data e seconda mensola
+  da 15 a 24 trofei (banco 12/12). Restano dell'onda: la misura del
+  tasso monete/partita (§6.8, prerequisito della taratura fine), la
+  giuria dei dieci minuti, il collaudo a mano su telefono. ASSALTO a
+  onda 2 col formato già risolto dalla miniera (MINIERA-FCM.md §2).
 - **Il 2 giocatori paga monete senza guardia** (#83, scoperta del
   progettista): due pollici che si accordano incassano all'infinito —
   da decidere con la taratura dei premi delle divisioni.

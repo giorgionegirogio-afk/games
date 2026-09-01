@@ -18,9 +18,18 @@ rileggere niente altro.
 1. ~~La #72~~ FATTA in sei stadi (1 settembre, sera): cross 0,3/0,0/0,0 →
    1,0/1,0/0,2, batteria verde; il residuo (bersaglio [2,6], «con uomo» 0)
    è la voce #84 — l'appuntamento del cross, progetto a parte.
-2. Onda 1 asciugata dalla miniera: divisioni a 3 fasce × 3 con premi a
-   formula e pavimento di fascia (MINIERA §1), poi record/abbandono.
-3. Taccuino del campetto (~2,5 g, dopo il contenuto 3) e ASSALTO (~6 g, onda 2).
+2. ~~Onda 1~~ I TRE CONTENUTI SONO DENTRO (1 settembre, notte), in
+   ordine 2→1→3 come da progetto: l'ABBANDONO vale 0-3 a tavolino in
+   torneo e stagione (banco 14/14); le DIVISIONI a 3 fasce × 3 con premi
+   a formula, pavimento di fascia e schermata in bacheca (banco 18/18,
+   _q-meta col modello aggiornato 80/80); RECORD con la data + la
+   seconda mensola da 15 a 24 trofei (banco 12/12). I tre banchi sono in
+   batteria (tutti.js). RESTA dell'onda: la misura del tasso
+   monete/partita (§6.8 — prerequisito della taratura FINE dei premi),
+   la giuria dei dieci minuti sul rischio-frustrazione, e il collaudo a
+   mano su telefono.
+3. Taccuino del campetto (~2,5 g, ora che il contenuto 3 c'è) e ASSALTO
+   (~6 g, onda 2 — la scala ha un posto dove versare).
 4. Play Console: bloccata alla creazione dell'account (2FA + 25 € +
    identità sono solo del committente); AAB 1402079 pronto.
 
