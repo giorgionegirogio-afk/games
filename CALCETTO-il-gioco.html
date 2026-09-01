@@ -2893,7 +2893,7 @@ button:active{transform:scale(.96)}
            minimappa e i dieci corpi in campo si spostano tutti insieme,
            che e' il modo in cui lo si vede anche allo stadio. -->
       <button class="voce sw" id="btnPauseMent">MENTALIT&Agrave;: EQUILIBRIO</button>
-      <button class="voce" id="btnQuit">ABBANDONA <small>torna al menu</small></button>
+      <button class="voce" id="btnQuit">ABBANDONA <small id="quitSub">torna al menu</small></button>
     </div>
   </div>
 </div>
@@ -3320,7 +3320,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   <div class="box">
     <h1 class="sotto-titolo">TORNEO</h1>
     <div id="tourIntro">
-      <div class="frase">Otto squadre di quartiere, <b>eliminazione diretta</b>. Quarti facili, finale durissima. Chi alza il trofeo entra nell'<b>albo d'oro</b>.</div>
+      <div class="frase">Otto squadre di quartiere, <b>eliminazione diretta</b>. Quarti facili, finale durissima. Chi alza il trofeo entra nell'<b>albo d'oro</b>. Abbandonare a met&agrave; vale <b>sconfitta a tavolino</b>.</div>
       <div class="tourinfo">MONTEPREMI &middot; QUARTI <b>+40</b> &middot; SEMIFINALE <b>+80</b> &middot; FINALE <b>+250</b> <i class="coin"></i></div>
       <div class="menu-voci">
         <button class="voce" id="btnNuovoTorneo">NUOVO TORNEO <small>sorteggio del tabellone</small></button>
@@ -3364,7 +3364,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   <div class="box">
     <h1 class="sotto-titolo">STAGIONE</h1>
     <div id="seaIntro">
-      <div class="frase">Otto squadre di quartiere, <b>andata e ritorno</b>: 14 giornate, tre punti a vittoria. Le altre partite si giocano davvero, simulate con la forza delle squadre. Chi chiude primo alza la <b>coppa del quartiere</b>.</div>
+      <div class="frase">Otto squadre di quartiere, <b>andata e ritorno</b>: 14 giornate, tre punti a vittoria. Le altre partite si giocano davvero, simulate con la forza delle squadre. Chi chiude primo alza la <b>coppa del quartiere</b>. Abbandonare una giornata vale <b>0-3 a tavolino</b>.</div>
       <div class="tourinfo">PREMI &middot; VITTORIA <b>+35</b> &middot; PAREGGIO <b>+15</b> &middot; PODIO <b>+200</b> &middot; TITOLO <b>+600</b> <i class="coin"></i></div>
       <div class="menu-voci">
         <button class="voce" id="btnNuovaStagione">NUOVA STAGIONE <small>sorteggio del calendario</small></button>
@@ -37998,6 +37998,12 @@ function refreshPauseStats(){
   el.innerHTML=h;
   el.classList.toggle('hidden', !h);
 }
+/* IL DOPPIO TOCCO DELL'ABBANDONO (Contenuto 2, 1 settembre 2026): la
+   prima pressione arma, la seconda esegue — il gesto di AZZERA DATI.
+   Si disarma a ogni apertura della pausa: un'armatura non sopravvive
+   mai a una ripresa di gioco. Stato di interfaccia, mai letto dalla
+   simulazione. */
+let quitArmato=false;
 function setPaused(v){
   v=!!v;
   if(v===G.paused) return;
@@ -38013,6 +38019,15 @@ function setPaused(v){
   { const tb=document.getElementById('tut'); if(tb) tb.classList.toggle('pausahide', v); }
   if(v){
     show(ui.pausa); refreshPauseAudio(); refreshPauseMent(); refreshPauseStats();
+    /* ABBANDONA dice il prezzo del contesto (Contenuto 2): in torneo e
+       stagione la rinuncia vale tavolino, e il bottone lo dichiara
+       PRIMA del tocco, non dopo. Il doppio tocco si disarma qui. */
+    quitArmato=false;
+    { const qs=document.getElementById('quitSub');
+      if(qs){
+        const serio=(G.matchCtx==='tour'||G.matchCtx==='season') && !G.matchRewarded;
+        qs.textContent = serio ? 'vale sconfitta a tavolino 0-3' : 'torna al menu';
+      } }
     /* la riga-manifesto dei comandi, secondo l'input davvero in uso */
     /* LA RIGA DICE LA VERITA' SUL LATO. Diceva «Stick a sinistra» anche
        a mancino acceso, cioe' avrebbe mentito il giorno stesso in cui il
@@ -38113,13 +38128,43 @@ $('btnPauseMent').addEventListener('click', ()=>{
   showBanner(mentDi(0).n, TEAMCOL[0], 1.3);
 });
 $('btnQuit').addEventListener('click', ()=>{
+  /* L'ABBANDONO HA UNA CONSEGUENZA (Contenuto 2, 1 settembre 2026).
+     La schermata del torneo promette «eliminazione diretta» dal primo
+     giorno, e questo gestore non la manteneva: nessun ramo di contesto,
+     si rigiocava il turno all'infinito. Adesso in torneo e stagione la
+     rinuncia vale SCONFITTA A TAVOLINO 0-3 — o il punteggio corrente se
+     gia' peggiore: il tavolino non e' mai un condono. Niente monete,
+     niente crescita, stats.partite ferma: la partita non e' stata
+     giocata, e' stata lasciata. L'amichevole resta libera. */
+  const serio = (G.matchCtx==='tour' || G.matchCtx==='season') && !G.matchRewarded;
+  if(serio && !quitArmato){
+    quitArmato=true;
+    const qs=document.getElementById('quitSub');
+    if(qs) qs.textContent='SICURO? tocca di nuovo: vale 0-3';
+    return;
+  }
   G.paused=false; hide(ui.pausa);
   /* USCIRE DA UNA SFIDA NON E' GRATIS PER IL GIOCO, ed e' qui che si
      paga: senza questa riga il seme resterebbe acceso e tutte le
      amichevoli successive sarebbero la stessa identica partita, e il
      cronometro resterebbe su quello di rete. Il difetto non si vede
-     finche' non si gioca due volte di fila. */
+     finche' non si gioca due volte di fila.
+     E L'ORDINE E' LEGGE: abbandonaSfida() spegne il seme PRIMA del ramo
+     serio, cosi' i dadi di chiudiGiornata/advanceTournament girano a
+     seme spento e SEME.n non si muove (la legge dei sorteggi del
+     dopo-partita, verbale dentro advanceTournament). */
   abbandonaSfida();
+  if(serio){
+    /* il tavolino: 0-3, salvo un campo gia' peggiore. chiudiGiornata
+       riceve il punteggio dal punto di vista del giocatore, come lo
+       passa applyMatchRewards. */
+    let ga = G.score[0], gb = G.score[1];
+    if(gb - ga < 3){ ga = 0; gb = 3; }
+    if(G.matchCtx==='season') chiudiGiornata(ga, gb);
+    else advanceTournament(false);
+    G.matchRewarded = true;      // cintura: nessun premio puo' piu' scattare
+    persistSave();
+  }
   Tut.stop();
   playWipe();
   hideAllScreens(); hide(ui.duel); show(ui.menu);
