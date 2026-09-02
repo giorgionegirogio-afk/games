@@ -1,6 +1,6 @@
 /* =====================================================================
    _q-volo.js — LA PULSANTIERA DICE LA VERITA'? (voce #88)
-   Cinque prove a passo 1/60, semi dichiarati, tutte sul comportamento:
+   Prove a passo 1/60, semi dichiarati, tutte sul comportamento:
      A  durante il volo di un NOSTRO cross il disco grande offre TIRA
         in almeno il 90% dei fotogrammi (misurato prima della cura: 9%)
      B  inseguendo un portatore avversario la faccia del disco grande
@@ -9,6 +9,13 @@
      D  tenendo TIRA durante il volo esce una volee' (G.stats.volee sale)
      E  nessuna cella ACCESA rifiuta l'atto (PRESSA offerto senza
         portatore avversario e' un verbo morto sotto il dito)
+     F  la rovesciata mantiene la precedenza sul tiro
+     G  nessuna cella SPENTA nasconde un atto possibile — la direzione
+        OPPOSTA di E (rilievo 2 della revisione del compito 4, 2
+        settembre 2026): grandeSpento usava puoContrastare, piu' severa
+        dell'azione vera doSlide(t,'premi'), e durante l'anticipo di una
+        scivolata trascinata il disco si spegneva su un contrasto in
+        piedi ancora lecito.
    uso: node strumenti/_q-volo.js [--gioco file.html]
    ===================================================================== */
 const http = require('http');
@@ -200,6 +207,97 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
   di(dif.bugie === 0, 'B la faccia non cambia SENZA che cambi il possesso (6 s)',
     dif.bugie + ' bugie su ' + dif.cambi + ' cambi totali (gli altri seguono un cambio di possesso vero)');
   di(dif.morte === 0, 'E nessuna cella accesa rifiuta l\'atto', dif.morte + ' fotogrammi con PRESSA morto');
+
+  /* ---- G: nessuna cella SPENTA nasconde un atto possibile ----
+     NASCE DAL RILIEVO 2 della revisione del compito 4 (2 settembre
+     2026). E controlla una direzione sola — una cella ACCESA che
+     rifiuta l'atto. Mancava la direzione opposta: una cella SPENTA che
+     nasconde un atto che il gioco eseguirebbe comunque. Era proprio
+     l'asimmetria che aveva lasciato passare il rilievo: grandeSpento
+     usava puoContrastare(ctrlPlayer(t)), che chiude ANCHE su una carica
+     aperta (p.charge>=0 && p.chargeGo), mentre l'azione vera premendo
+     il disco grande — doSlide(t,'premi') — non guarda la carica affatto
+     (e' dichiarato dal suo stesso commento: «le stesse condizioni che
+     puoContrastare chiede alla scivolata, MENO LA CARICA»). Durante
+     l'anticipo di una scivolata trascinata (startSlide -> anticipa,
+     chargeGo=lanciaScivolata, 60-100 ms) il disco si spegneva su un
+     contrasto in piedi ancora lecito.
+     L'ORACOLO NON RICHIAMA LE FUNZIONI SOTTO ESAME (ne' puoContrastare
+     ne' l'eventuale puoContrastoPremuto della cura): duplica sul
+     GIOCATORE le condizioni vere e proprie dei due atti, le stesse che
+     B ed E gia' duplicano per PRESSA. Se richiamasse la funzione che
+     produce grandeSpento la prova sarebbe circolare — verde anche sul
+     file rotto, perche' misurerebbe la bugia con lo stesso righello che
+     l'ha scritta:
+       grande: l'atto (un contrasto in piedi, doSlide(t,'premi')) e'
+               impossibile SOLO SE p.out>0||p.slide>=0||p.recover>0||
+               p.rove>=0 — le quattro condizioni vere, lette dal corpo;
+       PRESSA: l'atto (il raddoppio) e' impossibile SOLO SE non esiste
+               un portatore avversario in piedi (car&&car.team!==t&&
+               car.out<=0) — la stessa guardia vera che B/E duplicano.
+     DUE SCENE. La prima ARMA DI PROPOSITO la finestra che il rilievo 2
+     ha misurato (startSlide con mirata=true, come farebbe un
+     trascinamento sul disco), perche' l'inseguimento normale della
+     scena B/E non apre mai una carica sul giocatore comandato e non
+     la eserciterebbe. La seconda ripete l'inseguimento di B/E,
+     fotogramma per fotogramma, per non dipendere da una sola scena
+     costruita a mano. */
+  const spec = await pag.evaluate((seme) => {
+    const t = window.__test;
+    t.semina(seme);
+    t.startMatch(1, 1, { size: 7 });
+    for (let i = 0; i < 600 && G.scene !== 'play'; i++) t.simulate(1 / 60);
+    if (G.scene !== 'play') return { errore: 'mai in play' };
+    t.setTimeLeft(600);
+    const pi = G.ctrl[0]; if (pi < 0) return { errore: 'nessun comandato' };
+    const p = G.players[pi];
+    let bugieGrande = 0, bugiePressa = 0, campioni = 0;
+    const primeBugie = [];
+    const campiona = (dove) => {
+      const bt = t.pulsanti(0);
+      const grande = bt.reduce((a, z) => (z.r > a.r ? z : a), bt[0]);
+      const pressa = bt.find(z => z.act === 'press');
+      campioni++;
+      if (grande.off) {
+        const attoPossibile = !(p.out > 0 || p.slide >= 0 || p.recover > 0 || p.rove >= 0);
+        if (attoPossibile) { bugieGrande++; if (primeBugie.length < 4) primeBugie.push(dove + ':grande'); }
+      }
+      if (pressa && pressa.off) {
+        const car = G.ball.owner >= 0 ? G.players[G.ball.owner] : null;
+        const attoPossibile = !!(car && car.team !== 0 && car.out <= 0);
+        if (attoPossibile) { bugiePressa++; if (primeBugie.length < 4) primeBugie.push(dove + ':pressa'); }
+      }
+    };
+    /* scena 1 — si arma di proposito la finestra del rilievo 2 */
+    p.x = FW * 0.5; p.y = FH * 0.5; p.vx = 0; p.vy = 0;
+    p.out = 0; p.slide = -1; p.recover = 0; p.rove = -1; p.charge = -1; p.chargeGo = null;
+    G.ball.owner = -1; G.ball.x = 10; G.ball.y = 10; G.ball.vx = 0; G.ball.vy = 0; G.ball.vz = 0; G.ball.z = 0;
+    startSlide(p, 1, 0, true);
+    campiona('armata');
+    p.charge = -1; p.chargeGo = null; p.slide = -1;      // si scarica, non serve oltre
+    /* scena 2 — l'inseguimento vero, come B/E, un fotogramma alla volta */
+    let k = -1, dm = 1e9;
+    for (let i = 0; i < G.players.length; i++) {
+      const q = G.players[i];
+      if (q.team !== 1 || q.role === 'gk' || q.out > 0) continue;
+      const d = Math.hypot(q.x - p.x, q.y - p.y);
+      if (d < dm) { dm = d; k = i; }
+    }
+    if (k >= 0) {
+      const o = G.players[k];
+      o.x = p.x + 84; o.y = p.y; o.vx = 0; o.vy = 0;
+      G.ball.owner = k; G.ball.x = o.x + 8; G.ball.y = o.y; G.ball.vx = 0; G.ball.vy = 0; G.ball.vz = 0; G.ball.z = 0;
+      segnaTocco(k);
+      for (let i = 0; i < 360; i++) { campiona('inseg' + i); t.simulate(1 / 60); }
+    }
+    return { bugieGrande, bugiePressa, campioni, primeBugie };
+  }, SEME_INSEGUE + 1);
+  if (spec.errore) { console.log('BANCO: ' + spec.errore); process.exit(2); }
+  if (!spec.campioni) { console.log('BANCO: G non ha campionato un solo fotogramma'); process.exit(2); }
+  di(spec.bugieGrande === 0 && spec.bugiePressa === 0,
+    'G nessuna cella spenta nasconde un atto possibile',
+    spec.bugieGrande + ' bugie sul grande, ' + spec.bugiePressa + ' su PRESSA, su ' + spec.campioni + ' fotogrammi'
+    + (spec.primeBugie.length ? '  es. ' + spec.primeBugie.join(' · ') : ''));
 
   /* ---- F: la rovesciata mantiene la precedenza ----
      NASCE DA UN RILIEVO DELLA REVISIONE (2 settembre 2026). Il compito 3

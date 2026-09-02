@@ -12431,8 +12431,18 @@ function touchBtnLayout(t){
      non c'e' nessun portatore avversario da raddoppiare — la stessa
      guardia che comandaPressa applica al momento del rifiuto, portata
      dove il dito la puo' VEDERE invece di scoprirla premendo.
-     Nessun nome nuovo entra qui: puoContrastare e ctrlPlayer sono gia'
-     in casa e gia' estratte da _q-precedenza.
+     PUOCONTRASTOPREMUTO E' NOME NUOVO (correzione del 2 settembre
+     2026): grandeSpento usava puoContrastare, che e' PIU' SEVERA
+     dell'azione vera premuta sul disco grande (doSlide(t,'premi') non
+     controlla la carica). La revisione ha misurato la divergenza:
+     nella finestra di anticipo di una scivolata trascinata
+     puoContrastare torna falso mentre un contrasto in piedi resta
+     lecito, e il disco si spegneva su un atto possibile. Ora
+     grandeSpento specchia la guardia VERA, estratta in
+     puoContrastoPremuto (sopra doSlide) e usata da tutte e due le
+     parti. E' un nome nuovo ma di primo livello e sotto i 2.000
+     caratteri: _q-precedenza lo tira dentro da sola, nessuna modifica
+     al banco.
      G.BALL PUO' ESSERE NULL, E NON E' UN CASO DI LABORATORIO (misurato
      il 2 settembre 2026 con Playwright sul file curato: la pagina non
      arrivava mai a definire __test). G.ball nasce null (vedi l'oggetto
@@ -12443,7 +12453,7 @@ function touchBtnLayout(t){
      riga da sola bastava a impedire il caricamento del gioco. */
   const carrOra = (G.ball && G.ball.owner>=0) ? G.players[G.ball.owner] : null;
   const pressaViva = !!(carrOra && carrOra.team!==t && carrOra.out<=0);
-  const grandeSpento = !tira && !puoContrastare(ctrlPlayer(t));
+  const grandeSpento = !tira && !puoContrastoPremuto(ctrlPlayer(t));
   /* dentroGliInserti sta QUI, sull'unica sorgente della geometria dei
      comandi: da questa funzione scendono il tocco (Touch5.start :8894),
      la riadozione (Touch5.move :9047), il disco armato che si rilegge per
@@ -15958,16 +15968,32 @@ function contrastoPasso(p){
      'premi'         il dito si posa sul disco: CONTRASTO IN PIEDI
      'scivola'       il dito si alza DOPO aver trascinato: scivolata
                      mirata, con la direzione del trascinamento */
+/* LA GUARDIA VERA DELL'AZIONE CHE PARTE PREMENDO CONTRASTA (voce #88,
+   correzione del compito 4, 2 settembre 2026 - la revisione ha trovato
+   che grandeSpento era piu' severo dell'azione vera). Le stesse
+   quattro condizioni di puoContrastare, MENO la carica: una carica di
+   tiro aperta non impedisce di stendere il piede, e non c'e' niente da
+   chiudere perche' qui non si prepara nessun gesto. Estratta perche'
+   grandeSpento (touchBtnLayout) deve essere lo SPECCHIO ESATTO di
+   QUESTA guardia, non di puoContrastare che e' piu' severa: durante la
+   finestra di anticipo di una scivolata trascinata (startSlide ->
+   anticipa, chargeGo=lanciaScivolata, 60-100 ms) puoContrastare
+   tornava falso e il disco si spegneva, ma un contrasto in piedi
+   restava lecito — una cella spenta che nasconde un atto possibile, il
+   difetto stesso che questa voce cura, girato dall'altra parte. Nome
+   nuovo, ma di primo livello e sotto i 2.000 caratteri: _q-precedenza
+   lo estrae da sola, nessuna modifica al banco. */
+function puoContrastoPremuto(p){
+  return !!(p && !(p.out>0 || p.slide>=0 || p.recover>0 || p.rove>=0));
+}
 function doSlide(t, fase, L){
   const p=ctrlPlayer(t);
   if(!p) return;
   if(fase==='premi'){
-    /* un corpo a terra, espulso o gia' impegnato non contrasta: sono le
-       stesse condizioni che puoContrastare chiede alla scivolata, meno
-       la carica — una carica di tiro aperta non impedisce di stendere il
-       piede, e non c'e' niente da chiudere perche' qui non si prepara
-       nessun gesto. */
-    if(p.out>0 || p.slide>=0 || p.recover>0 || p.rove>=0){
+    /* la guardia vive in puoContrastoPremuto, qui sopra: una sola copia,
+       letta anche da touchBtnLayout per calcolare grandeSpento, cosi'
+       la verita' non puo' piu' divergere fra le due. */
+    if(!puoContrastoPremuto(p)){
       /* L3.1 — il rifiuto VISIBILE: il corpo non e' in condizione e il
          no si deve vedere, se no il dito ha premuto a vuoto senza
          saperlo. */
@@ -35454,7 +35480,16 @@ function drawTouchButtons(){
          produrre niente si dipinge attenuato, cosi' il dito sa PRIMA di
          premere invece di scoprirlo dopo. Non si sposta, non cambia
          nome, non cambia posto: cambia solo quanto e' acceso. */
-      const aPas=(pressed?1:velaPastiglia(bx0,by0,bt.r)) * (bt.off?0.42:1);
+      /* L'INTERO COMANDO SI ATTENUA, NON SOLO LA PASTIGLIA (voce #88,
+         correzione del compito 4, minore 2 della revisione, 2 settembre
+         2026). Il brief chiedeva di attenuare il comando intero
+         (ctx.globalAlpha *= 0.45); la prima stesura toccava solo aPas,
+         lasciando ghiera ed etichetta a piena opacita' su una cella che
+         dichiara di essere spenta. aOff e' la SOLA fonte del fattore, e
+         si applica qui alla pastiglia e piu' sotto alla ghiera e
+         all'etichetta, cosi' il disco spento si vede spento ovunque. */
+      const aOff=bt.off?0.42:1;
+      const aPas=(pressed?1:velaPastiglia(bx0,by0,bt.r)) * aOff;
       /* IL BUCO SI DICHIARA, come tutto il resto dell'interfaccia:
            dentro  l'alfa della pastiglia (sotto 0,15 i pixel dentro la
                    ghiera sono tornati prato)
@@ -35500,7 +35535,7 @@ function drawTouchButtons(){
          che puo' essersi svuotata; ghiera, fili, arco di carica ed
          etichetta no: sono LORO il comando, e un comando non si spegne
          perche' un terzino gli passa dietro. */
-      ctx.globalAlpha=aBt;
+      ctx.globalAlpha=aBt*aOff;
       /* la ghiera: ambra a riposo, gesso da premuta. Anche lei tre stop —
          il metallo prende il sole da ovest come tutto il resto */
       {

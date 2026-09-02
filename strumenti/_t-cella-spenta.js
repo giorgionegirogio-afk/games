@@ -43,7 +43,7 @@ const ANCORE = [
 
 /* 1 — le due condizioni, accanto alle capacita' gia' calcolate */
 {
-  nome: '1/4 le due condizioni di cella spenta',
+  nome: '1/5 le due condizioni di cella spenta',
   cerca:
 `  const tira = puoTirare(t), passa = puoPassare(t), scudo = puoScudo(t);`,
   metti:
@@ -73,7 +73,7 @@ const ANCORE = [
 
 /* 2 — il disco grande porta il campo */
 {
-  nome: '2/4 il disco grande si spegne',
+  nome: '2/5 il disco grande si spegne',
   cerca:
 `    tira  ? { act:'shot',    label:'TIRA',      x:bx+s*64,  y:VH-60,  r:40 }
           : { act:'slide',   label:'CONTRASTA', x:bx+s*64,  y:VH-60,  r:40 },`,
@@ -84,7 +84,7 @@ const ANCORE = [
 
 /* 3 — PRESSA si spegne senza nessuno da raddoppiare */
 {
-  nome: '3/4 PRESSA si spegne',
+  nome: '3/5 PRESSA si spegne',
   cerca:
 `    passa ? { act:'pass',    label:'PASSA',     x:bx+s*52,  y:VH-148, r:26 }
           : { act:'press',   label:'PRESSA',    x:bx+s*52,  y:VH-148, r:26 },`,
