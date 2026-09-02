@@ -187,6 +187,57 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
   di(dif.cambi === 0, 'B la faccia non cambia inseguendo un avversario (6 s)', dif.cambi + ' cambi');
   di(dif.morte === 0, 'E nessuna cella accesa rifiuta l\'atto', dif.morte + ' fotogrammi con PRESSA morto');
 
+  /* ---- F: la rovesciata mantiene la precedenza ----
+     NASCE DA UN RILIEVO DELLA REVISIONE (2 settembre 2026). Il compito 3
+     aveva citato _q-l12 e _q-precedenza come prova che la rovesciata non
+     era morta: nessuno dei due esercita quel codice — il primo e' il
+     cancello del disco difensivo, il secondo SOSTITUISCE startCharge con
+     un finto e non chiama mai la funzione vera. Due verdi che non
+     provavano niente. Qui la proprieta' si misura davvero: si costruisce
+     la scena della rovesciata (pallone che scende nella finestra, sotto
+     la verticale, dentro l'area, uomo girato alla porta), si preme TIRA,
+     e si guarda quale carica si e' aperta. */
+  const rov = await pag.evaluate(() => {
+    const t = window.__test;
+    t.startMatch(1, 1, { size: 7 });
+    for (let i = 0; i < 600 && G.scene !== 'play'; i++) t.simulate(1 / 60);
+    if (G.scene !== 'play') return { errore: 'mai in play' };
+    t.setTimeLeft(600);
+    const pi = G.ctrl[0]; if (pi < 0) return { errore: 'nessun comandato' };
+    const p = G.players[pi];
+    /* dentro l'area avversaria, girato alla porta */
+    p.x = FW - 100; p.y = FH / 2; p.vx = 0; p.vy = 0; p.fx = 1; p.fy = 0;
+    p.charge = -1; p.chargeKind = null; p.chargeGo = null; p.rove = -1;
+    /* LA SCENA SI COSTRUISCE ALL'INDIETRO DALLE FORMULE DEL GIOCO, non a
+       occhio: la prima stesura metteva il pallone a sei unita' dall'uomo
+       e il ramo in prova non si attivava nemmeno (serve una distanza
+       oltre KICK_R*1,4), cosi' la prova era rossa anche sul codice
+       giusto — cioe' non discriminava. Qui si sceglie il tempo di
+       caduta tc, si ricava la quota dalla stessa formula di
+       finestraRovesciata (z = ROVE_ZC + ((560*tc - vz)^2 - vz^2)/1120),
+       e si mette il pallone LONTANO ma con la velocita' che lo fa
+       atterrare addosso all'uomo. */
+    const b = G.ball;
+    const tc = 0.2, vz = -20;
+    const dist = 60;                       // oltre KICK_R*1,4 = 36,4
+    b.owner = -1; b.y = p.y; b.vy = 0;
+    b.vz = vz;
+    b.z = ROVE_ZC + (Math.pow(560 * tc - vz, 2) - vz * vz) / 1120;
+    b.vx = dist / tc;                      // arriva su di lui in tc secondi
+    b.x = p.x - dist;
+    const aperta = finestraRovesciata(p);
+    startCharge(0);
+    const esito = { aperta, kind: p.chargeKind || null, rove: p.rove };
+    /* si lascia la scena pulita per non sporcare il resto */
+    p.charge = -1; p.chargeKind = null; p.chargeGo = null; p.rove = -1;
+    return esito;
+  });
+  if (rov.errore) { console.log('BANCO: ' + rov.errore); process.exit(2); }
+  if (!rov.aperta) { console.log('BANCO: la scena della rovesciata non si e\' montata (finestra chiusa)'); process.exit(2); }
+  di(rov.kind === 'rovesciata' || rov.rove >= 0,
+    'F la rovesciata mantiene la precedenza sul tiro',
+    'carica aperta: ' + (rov.kind || 'nessuna') + ', rove ' + rov.rove);
+
   if (ecc.length) di(false, 'nessuna eccezione di pagina', ecc[0]);
   const rossi = esiti.filter(v => !v).length;
   console.log('\n' + (esiti.length - rossi) + ' prove su ' + esiti.length + ' — ' + (rossi ? 'CANCELLO ROSSO' : 'CANCELLO VERDE'));
