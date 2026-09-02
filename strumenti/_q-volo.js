@@ -40,7 +40,20 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
    B fra 2 e 6 cambi, sullo STESSO file, in tre lanci di fila). Un banco
    che non ripete non fa da giudice a chi viene dopo: due seguono qui,
    uno per prova, cosi' il prima e il dopo si confrontano sullo stesso
-   caso e non sul rumore. */
+   caso e non sul rumore.
+
+   DUE TECNICHE DI SEMINA CONVIVONO IN strumenti/, e va detto perche'
+   (2 settembre 2026). Gli altri banchi della casa sostituiscono
+   Math.random sulla pagina con un generatore proprio (vedi
+   _p-sfarfallio.js, addInitScript con xorshift): li' il seme del gioco
+   resta spento e il caso passa tutto dal rimpiazzo. Qui invece si
+   ACCENDE il generatore interno del gioco con t.semina(), che e' la
+   stessa porta che usano le sfide. Le due tecniche sono equivalenti in
+   questa prova — SEME.on e' letto solo dentro dado(), e gli unici
+   Math.random rimasti nel file sono il ripiego di dado() stesso e un
+   generatore del pennello che non tocca nulla di cio' che si misura —
+   e questa e' piu' corta di una riga di preambolo. Chi arriva dopo
+   sappia che sono due, e non una svista. */
 const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
 
 (async () => {
@@ -79,6 +92,13 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
     const mi = G.players.indexOf(mate);
     const dx = mate.x - p.x, dy = mate.y - p.y, l = Math.max(1, Math.hypot(dx, dy));
     doCross(p, dx / l, dy / l, [mate.x, mate.y], mi);
+    /* LO STIMOLO SI VERIFICA PARTITO PRIMA DI MISURARNE L'EFFETTO
+       (rilievo della revisione, 2 settembre 2026). doCross ha guardie
+       sue e kickBall puo' rifiutare: se il cross non parte, il ciclo
+       qui sotto non gira, tot resta 0 e il banco stamperebbe «0%
+       (0/0)» — un rosso per la ragione sbagliata, mentre il contratto
+       vuole «non ho misurato» (uscita 2). */
+    if (G.ball.owner >= 0) return { errore: 'il cross non e\' partito: il pallone ha ancora un padrone' };
     const voleePrima = (G.stats.volee[0] | 0);
     /* si tiene premuto TIRA per tutto il volo, come farebbe il pollice */
     let tira = 0, tot = 0, ctrlAlDest = -1;
@@ -97,6 +117,9 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
              volee: (G.stats.volee[0] | 0) - voleePrima };
   }, SEME_VOLO);
   if (volo.errore) { console.log('BANCO: ' + volo.errore); process.exit(2); }
+  /* zero fotogrammi campionati non e' «zero per cento»: e' «non ho
+     misurato», e si esce con 2 (rilievo della revisione) */
+  if (!volo.tot) { console.log('BANCO: il volo non ha campionato un solo fotogramma'); process.exit(2); }
   const quota = volo.tot ? volo.tira / volo.tot : 0;
   di(quota >= 0.90, 'A il disco grande offre TIRA durante il volo del nostro cross',
     Math.round(quota * 100) + '% (' + volo.tira + '/' + volo.tot + '), soglia 90%');
@@ -133,17 +156,24 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
       const faccia = grande.act + (grande.off ? '-off' : '');
       if (prec !== null && faccia !== prec) cambi++;
       prec = faccia;
-      /* E: una cella ACCESA che rifiuta l'atto e' un verbo morto */
+      /* E: una cella ACCESA che rifiuta l'atto e' un verbo morto. Il
+         criterio e' la guardia VERA di comandaPressa, che rifiuta anche
+         sull'avversario a terra (o.out>0): senza quel pezzo il conteggio
+         sotto-stima (rilievo della revisione, 2 settembre 2026). */
       const pressa = bt.find(z => z.act === 'press');
       if (pressa && !pressa.off) {
         const car = G.ball.owner >= 0 ? G.players[G.ball.owner] : null;
-        if (!car || car.team === 0) morte++;
+        if (!car || car.team === 0 || car.out > 0) morte++;
       }
       t.simulate(1 / 60);
     }
-    return { cambi, morte };
+    return { cambi, morte, campioni: 360 };
   }, SEME_INSEGUE);
   if (dif.errore) { console.log('BANCO: ' + dif.errore); process.exit(2); }
+  /* come per il volo: nessun campione non e' «zero cambi», e' «non ho
+     misurato» — se no B passerebbe con un verde falso (rilievo della
+     revisione) */
+  if (!dif.campioni) { console.log('BANCO: l\'inseguimento non ha campionato un solo fotogramma'); process.exit(2); }
   di(dif.cambi === 0, 'B la faccia non cambia inseguendo un avversario (6 s)', dif.cambi + ' cambi');
   di(dif.morte === 0, 'E nessuna cella accesa rifiuta l\'atto', dif.morte + ' fotogrammi con PRESSA morto');
 
