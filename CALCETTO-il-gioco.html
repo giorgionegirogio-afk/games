@@ -12423,6 +12423,27 @@ function touchBtnLayout(t){
      cioe' interfaccia nuova. Sta scritto qui perche' chi legge sappia
      che quel caso e' noto e misurato, non dimenticato. */
   const tira = puoTirare(t), passa = puoPassare(t), scudo = puoScudo(t);
+  /* LA CELLA SPENTA (voce #88, 2 settembre 2026). Il verbale qui sopra
+     dichiarava il caso e la sua cura: «ripararlo vuol dire un disco
+     SPENTO, cioe' interfaccia nuova». Due condizioni, non una di piu':
+     il disco grande quando NESSUN verbo e' possibile (ne' tiro ne'
+     contrasto: uomo a terra, in rialzo, in rovesciata), e PRESSA quando
+     non c'e' nessun portatore avversario da raddoppiare — la stessa
+     guardia che comandaPressa applica al momento del rifiuto, portata
+     dove il dito la puo' VEDERE invece di scoprirla premendo.
+     Nessun nome nuovo entra qui: puoContrastare e ctrlPlayer sono gia'
+     in casa e gia' estratte da _q-precedenza.
+     G.BALL PUO' ESSERE NULL, E NON E' UN CASO DI LABORATORIO (misurato
+     il 2 settembre 2026 con Playwright sul file curato: la pagina non
+     arrivava mai a definire __test). G.ball nasce null (vedi l'oggetto
+     G) e resta tale finche' non parte la prima partita; ma
+     touchBtnLayout gira anche prima, dal refreshImpostUI() lanciato ad
+     ogni avvio per scrivere i tre numeri misurati della pagina comandi
+     (misurePollice). Senza la guardia «G.ball &&» qui sotto, quella
+     riga da sola bastava a impedire il caricamento del gioco. */
+  const carrOra = (G.ball && G.ball.owner>=0) ? G.players[G.ball.owner] : null;
+  const pressaViva = !!(carrOra && carrOra.team!==t && carrOra.out<=0);
+  const grandeSpento = !tira && !puoContrastare(ctrlPlayer(t));
   /* dentroGliInserti sta QUI, sull'unica sorgente della geometria dei
      comandi: da questa funzione scendono il tocco (Touch5.start :8894),
      la riadozione (Touch5.move :9047), il disco armato che si rilegge per
@@ -12446,7 +12467,7 @@ function touchBtnLayout(t){
      funzione e ogni nome nuovo l'ha gia' uccisa due volte. */
   return dentroGliInserti(pollicePosa([
     tira  ? { act:'shot',    label:'TIRA',      x:bx+s*64,  y:VH-60,  r:40 }
-          : { act:'slide',   label:'CONTRASTA', x:bx+s*64,  y:VH-60,  r:40 },
+          : { act:'slide',   label:'CONTRASTA', x:bx+s*64,  y:VH-60,  r:40, off:grandeSpento },
     /* PASSA E PASSAGGIO NON POSSONO STARE NELLA STESSA SCHERMATA, e per
        due ragioni indipendenti. La prima e' che il primo nome e' il
        PREFISSO del secondo: a otto centimetri di distanza, su un
@@ -12467,7 +12488,7 @@ function touchBtnLayout(t){
     passa ? { act:'through', label:'FILTRANTE', x:bx+s*158, y:VH-72,  r:30 }
           : { act:'swap',    label:'CAMBIO',    x:bx+s*158, y:VH-72,  r:30 },
     passa ? { act:'pass',    label:'PASSA',     x:bx+s*52,  y:VH-148, r:26 }
-          : { act:'press',   label:'PRESSA',    x:bx+s*52,  y:VH-148, r:26 },
+          : { act:'press',   label:'PRESSA',    x:bx+s*52,  y:VH-148, r:26, off:!pressaViva },
     passa ? { act:'cross',   label:'CROSS',     x:bx+s*136, y:VH-158, r:26 }
           : { act:'tackle',  label:'SCIVOLATA', x:bx+s*136, y:VH-158, r:26 },
     /* L3 — IL QUINTO DISCO, E PERCHE' LA SUA FACCIA NON LA DECIDE IL
@@ -12866,6 +12887,16 @@ const Touch5 = {
         const up=d/(bt.r+10); if(up<uPresa){ uPresa=up; preso=bt; slot=k; }
         const ue=d/(bt.r+18); if(ue<uEscl){ uEscl=ue; }
       }
+      /* LA CELLA SPENTA NON RISPONDE (voce #88, 2 settembre 2026): il
+         dito si posa e non succede niente — nessun atto nasce, nessuna
+         carica si apre, e il disco non viene nemmeno registrato come
+         premuto. Non e' un rifiuto VISIBILE come quello di L3.1: quello
+         resta, e serve al caso opposto — cella ACCESA e corpo che non
+         ce la fa (a terra, in rialzo), dove il dito ha chiesto una cosa
+         lecita e merita di sapere che il corpo ha detto no. Qui invece
+         il disco dichiarava gia' di essere spento: chi lo preme ha gia'
+         avuto la sua risposta guardandolo. */
+      if(uPresa<=1 && preso && preso.off) return;
       if(uPresa<=1){
         const bt=preso;
         this.btnTouch[id]={t,act:bt.act};
@@ -35419,7 +35450,11 @@ function drawTouchButtons(){
          della pressione, dura il tempo di un dito, ed e' l'unico
          momento in cui chi guarda sta guardando il pollice e non il
          campo. */
-      const aPas=pressed?1:velaPastiglia(bx0,by0,bt.r);
+      /* LA CELLA SPENTA SI VEDE (voce #88): un disco che non puo'
+         produrre niente si dipinge attenuato, cosi' il dito sa PRIMA di
+         premere invece di scoprirlo dopo. Non si sposta, non cambia
+         nome, non cambia posto: cambia solo quanto e' acceso. */
+      const aPas=(pressed?1:velaPastiglia(bx0,by0,bt.r)) * (bt.off?0.42:1);
       /* IL BUCO SI DICHIARA, come tutto il resto dell'interfaccia:
            dentro  l'alfa della pastiglia (sotto 0,15 i pixel dentro la
                    ghiera sono tornati prato)
