@@ -100,20 +100,29 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
        vuole «non ho misurato» (uscita 2). */
     if (G.ball.owner >= 0) return { errore: 'il cross non e\' partito: il pallone ha ancora un padrone' };
     const voleePrima = (G.stats.volee[0] | 0);
-    /* si tiene premuto TIRA per tutto il volo, come farebbe il pollice */
-    let tira = 0, tot = 0, ctrlAlDest = -1;
+    /* si tiene premuto TIRA per tutto il volo, come farebbe il pollice.
+       SI CONTANO SOLO I FOTOGRAMMI IN CUI LA PALLA E' NOSTRA (correzione
+       del 2 settembre 2026, dopo il compito 2). La prima stesura contava
+       l'intero ciclo: ma in questa scena il portiere avversario esce e
+       tocca il pallone al fotogramma 57 su 237, e da li' in poi la palla
+       e' LORO — chiedere che il disco dica ancora TIRA sarebbe chiedere
+       al gioco di mentire, cioe' l'opposto di questa voce. Il
+       denominatore giusto e' il volo NOSTRO; i fotogrammi dopo il
+       cambio di lato si contano a parte e si stampano, perche' un
+       banco che scarta in silenzio e' un banco che nasconde. */
+    let tira = 0, tot = 0, ctrlAlDest = -1, dopoIlCambio = 0;
     for (let i = 0; i < 240 && G.ball.owner < 0; i++) {
+      const nostra = squadraDelPallone() === 0;
       const bt = t.pulsanti(0);
       const grande = bt.reduce((a, z) => (z.r > a.r ? z : a), bt[0]);
       const acceso = grande.act === 'shot' && !grande.off;
-      if (acceso) tira++;
-      tot++;
+      if (nostra) { if (acceso) tira++; tot++; } else dopoIlCambio++;
       startCharge(0);                       // il dito tiene TIRA
       if (ctrlAlDest < 0 && G.ctrl[0] === mi) ctrlAlDest = i;
       t.simulate(1 / 60);
     }
     for (let i = 0; i < 60; i++) t.simulate(1 / 60);
-    return { tira, tot, ctrlAlDest, mi,
+    return { tira, tot, ctrlAlDest, mi, dopoIlCambio,
              volee: (G.stats.volee[0] | 0) - voleePrima };
   }, SEME_VOLO);
   if (volo.errore) { console.log('BANCO: ' + volo.errore); process.exit(2); }
@@ -122,7 +131,8 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
   if (!volo.tot) { console.log('BANCO: il volo non ha campionato un solo fotogramma'); process.exit(2); }
   const quota = volo.tot ? volo.tira / volo.tot : 0;
   di(quota >= 0.90, 'A il disco grande offre TIRA durante il volo del nostro cross',
-    Math.round(quota * 100) + '% (' + volo.tira + '/' + volo.tot + '), soglia 90%');
+    Math.round(quota * 100) + '% (' + volo.tira + '/' + volo.tot + '), soglia 90%'
+    + ' + ' + volo.dopoIlCambio + ' fotogrammi dopo il cambio di lato, non contati');
   di(volo.ctrlAlDest >= 0 && volo.ctrlAlDest <= 30,
     'C il comando passa al destinatario entro mezzo secondo',
     volo.ctrlAlDest < 0 ? 'mai' : volo.ctrlAlDest + ' fotogrammi');

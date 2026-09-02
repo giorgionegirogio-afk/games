@@ -14063,9 +14063,21 @@ function puoTirare(t){
        pallone si spazza, non si tira: il titolo del compito lo dice
        gia' — «la palla NOSTRA IN VOLO». */
     if(finestraRovesciata(p)) return true;
+    /* «IN VOLO» E' IL PASSAGGIO IN CORSO, NON LA QUOTA (2 settembre
+       2026, correzione del coordinatore). La guardia sulla sola altezza
+       curava la prova F ma tagliava fuori i passaggi RASOTERRA nostri —
+       e quelli sono meta' della lagnanza: misurato il 1 settembre, in un
+       solo passaggio a terra la faccia del disco cambiava fino a quattro
+       volte. Il discrimine vero e' che il pallone stia andando a
+       QUALCUNO: b.passTo/b.crossTo dicono il destinatario e si azzerano
+       gia' su muro, tocco sporco, controllo e uscite (non restano
+       rancidi). Il pallone fermo a terra della prova F non ha
+       destinatario e non prende quota: resta fuori da entrambe le vie,
+       e la spazzata torna a essere una spazzata. */
+    const inCorsa = (G.ball.passTo>=0 || G.ball.crossTo>=0 || G.ball.z>0 || G.ball.vz>0);
     return squadraDelPallone()===t &&
            len(G.ball.x-p.x,G.ball.y-p.y) <= P_SPEED*TIRO_PORTATA &&
-           (G.ball.z>0 || G.ball.vz>0);
+           inCorsa;
   }
   return true;
 }
