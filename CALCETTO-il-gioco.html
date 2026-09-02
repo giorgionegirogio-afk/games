@@ -16607,6 +16607,41 @@ function switchControlled(dt){
     if(G.ctrl[t]<0) continue;              // CPU
     if(G.swLock[t]>0 && G.players[G.ctrl[t]].out<=0) continue;
     let best=-1,bd=1e9;
+    /* IL COMANDO SEGUE IL DESTINATARIO (voce #88, 2 settembre 2026).
+       Misurato da _q-volo.js, prova C: mentre il cross volava verso il
+       compagno che lo aspettava, il comando restava al piu' vicino al
+       pallone — cioe' a un altro uomo — con 38 fotogrammi di ritardo
+       sul bersaglio di 30 (mezzo secondo). Qui si sceglieva solo la
+       distanza dal pallone, e la distanza non sa chi ricevera' davvero.
+       Se un passaggio o un cross ha un destinatario DICHIARATO dal
+       motore (b.crossTo per i palloni alti, altrimenti b.passTo), il
+       controllo va subito a lui: e' l'uomo su cui il dito sta gia'
+       armando il tiro di prima, non un estraneo che gli e' solo piu'
+       vicino in quell'istante.
+
+       IL CAMBIO MANUALE VINCE SEMPRE, E QUESTA RIGA NON PUO' RUBARGLIELO:
+       quando il dito preme CAMBIO senza palla, cambiaGiocatore(t) scrive
+       G.ctrl[t] di persona (non passa da qui) e pianta subito
+       G.swLock[t]=0.75, la guardia in cima a questa stessa funzione. Per
+       0.75 s questo intero blocco — vecchio piu'-vicino e nuovo
+       destinatario compresi — non gira per quella squadra: il dito
+       vince nella sua finestra come vinceva prima di questa cura,
+       perche' la cura vive dopo la guardia e non la tocca. Solo a
+       finestra scaduta il destinatario dichiarato torna a contare, se
+       il pallone e' ancora per aria: fra un atto esplicito del dito e
+       un suggerimento del motore vince l'atto. Misurato: la giocata
+       'cambio' di giocata.js, che campiona proprio il cambio
+       dell'indice comandato, resta verde dopo questa cura.
+
+       b.passTo e b.crossTo non restano rancidi: si azzerano gia' in
+       updateBall su muro, tocco sporco e ogni presa di controllo, e
+       ancora su testa alta, parata, palo e pallone sopra la traversa —
+       verificato con grep, non solo letto sul piano. */
+    const dest = (G.ball.crossTo>=0 ? G.ball.crossTo : (G.ball.passTo>=0 ? G.ball.passTo : -1));
+    const qd = dest>=0 ? G.players[dest] : null;
+    if(qd && qd.team===t && qd.out<=0 && qd.role!=='gk'){
+      best=dest; bd=0;
+    } else
     for(let i=0;i<G.players.length;i++){
       const p=G.players[i];
       if(p.team!==t || p.out>0 || p.role==='gk') continue;
