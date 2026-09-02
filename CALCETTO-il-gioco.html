@@ -14079,6 +14079,19 @@ function puoTirare(t){
            len(G.ball.x-p.x,G.ball.y-p.y) <= P_SPEED*TIRO_PORTATA &&
            inCorsa;
   }
+  /* IN DIFESA LA FACCIA NON MENTE (voce #88): entro il raggio di calcio,
+     se il pallone e' degli AVVERSARI il verbo e' il contrasto, non il
+     tiro. Misurato il 1 settembre 2026: inseguendo un portatore la
+     faccia cambiava piu' volte in sei secondi, tutte fra 33,4 e 36,9
+     unita' (la frontiera di KICK_R*1,4), mentre la squadra dell'ultimo
+     tocco non cambiava MAI. Qui, e non prima dell'if-oltre-il-raggio,
+     perche' quel ramo porta la rovesciata: una guardia messa prima
+     blocca anche il caso normale — pallone toccato per ultimo dagli
+     avversari, in volo verso di noi — e la prova F si spegne.
+     IL PREZZO, dichiarato: si perde la punta-rubata — premere TIRA su
+     un pallone avversario vicino e strapparlo via. Misurato con
+     _p-contrasto20 prima e dopo: se i furti calano, la cura si aggiusta. */
+  if(G.ball.owner!==pi && squadraDelPallone()===(1-t)) return false;
   return true;
 }
 /* la guardia di doFiltrante (pallone suo o entro il raggio di calcio)
