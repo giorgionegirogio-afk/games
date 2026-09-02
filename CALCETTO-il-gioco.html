@@ -14030,12 +14030,43 @@ function squadraDelPallone(){
    della rovesciata e' aperta. NON comprende la guardia di idempotenza
    (p.charge<0): quella non dice che il tiro e' impossibile, dice che lo
    stai gia' caricando, e in quell'istante il disco E' il tiro. */
+/* LA PORTATA DEL TIRO (voce #88, 1 settembre 2026): oltre il raggio di
+   calcio il tiro resta offerto se il pallone e' NOSTRO, IN VOLO, e il
+   comandato puo' raggiungerlo — un uomo copre P_SPEED*1,2 unita' in
+   poco piu' di un secondo. Un numero solo, dichiarato: se il banco
+   mostrasse che spegne troppo, sale a 1,5 e si rimisura. Nessuna
+   previsione del punto di caduta: sarebbe un secondo modello della
+   fisica dentro un predicato che deve restare puro. */
+const TIRO_PORTATA = 1.2;
 function puoTirare(t){
   const p=ctrlPlayer(t);
   if(!p || p.slide>=0 || p.recover>0 || p.rove>=0) return false;
   const pi=G.players.indexOf(p);
-  if(G.ball.owner!==pi && len(G.ball.x-p.x,G.ball.y-p.y)>KICK_R*1.4)
-    return finestraRovesciata(p);
+  if(G.ball.owner!==pi && len(G.ball.x-p.x,G.ball.y-p.y)>KICK_R*1.4){
+    /* LA FACCIA SEGUE IL POSSESSO, NON LA GEOMETRIA (voce #88). Fino a
+       oggi qui si rispondeva con la sola finestra della rovesciata, e
+       il disco grande diventava CONTRASTA per il 91-97% del volo di un
+       nostro cross (misurato il 1 settembre 2026, sonda a 1/60): il
+       verbale delle capacita' lo prevedeva — «"nostra" e' una domanda
+       che durante il volo di un passaggio non ha risposta» — e la
+       risposta adesso c'e', ed e' squadraDelPallone: il padrone se c'e',
+       altrimenti la squadra dell'ultimo tocco. La rovesciata mantiene la
+       precedenza: si prova per prima.
+       IN VOLO NON E' UN DETTAGLIO (rilievo della revisione, 2 settembre
+       2026): senza questa terza guardia (b.z>0 o b.vz>0, lo stesso
+       idioma della riga 17704 e della finestra della rovesciata) la via
+       si apre anche a un pallone FERMO A TERRA — la spazzata difensiva
+       di _q-l12 prova F ne era la prova: comandato nel proprio terzo,
+       pallone libero e gia' nostro per l'ultimo tocco, a 45 unita' (oltre
+       KICK_R*1,4 ma dentro P_SPEED*1,2), offriva TIRA al posto di
+       CONTRASTA e le 30 scene diventavano tutte nulle. A terra il
+       pallone si spazza, non si tira: il titolo del compito lo dice
+       gia' — «la palla NOSTRA IN VOLO». */
+    if(finestraRovesciata(p)) return true;
+    return squadraDelPallone()===t &&
+           len(G.ball.x-p.x,G.ball.y-p.y) <= P_SPEED*TIRO_PORTATA &&
+           (G.ball.z>0 || G.ball.vz>0);
+  }
   return true;
 }
 /* la guardia di doFiltrante (pallone suo o entro il raggio di calcio)
