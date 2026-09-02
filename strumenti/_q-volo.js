@@ -16,6 +16,13 @@
         dell'azione vera doSlide(t,'premi'), e durante l'anticipo di una
         scivolata trascinata il disco si spegneva su un contrasto in
         piedi ancora lecito.
+     H  il rilascio a vuoto (compito 9, 2 settembre 2026): si preme TIRA
+        una volta sola sul destinatario di un nostro cross quando il
+        pallone e' ancora lontano (oltre la vecchia soglia
+        P_SPEED*TIRO_PORTATA — la cura di questo compito e' l'unico modo
+        in cui la carica si apre li'), e si rilascia due fotogrammi dopo,
+        pallone ancora fuori portata: nessun tiro fantasma, nessun cambio
+        di possesso, nessuna carica che resta appesa.
    uso: node strumenti/_q-volo.js [--gioco file.html]
    ===================================================================== */
 const http = require('http');
@@ -349,6 +356,74 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
   di(rov.kind === 'rovesciata' || rov.rove >= 0,
     'F la rovesciata mantiene la precedenza sul tiro',
     'carica aperta: ' + (rov.kind || 'nessuna') + ', rove ' + rov.rove);
+
+  /* ---- H: il rilascio a vuoto non produce un tiro fantasma ----
+     NASCE DAL COMPITO 9 (2 settembre 2026, voce #88): la cura allarga
+     puoTirare — il destinatario dichiarato di un nostro cross puo' aprire
+     la carica del tiro anche lontano dal pallone, cosa che fino a ieri
+     era negata dalla sola soglia geometrica P_SPEED*TIRO_PORTATA
+     (201,6). LA DOMANDA CHE LA CURA NON PUO' ARCHIVIARE CON UN
+     RAGIONAMENTO: se il dito preme TIRA quando il pallone e' ancora a
+     ~290 unita' e lo RILASCIA prima che arrivi, che cosa succede?
+     Si preme UNA VOLTA SOLA (non si tiene, a differenza di D) nella
+     stessa finestra misurata da fuori/_p-a10.js — dist ben sopra 201,6,
+     cosi' la carica si apre SOLO grazie al ramo nuovo di puoTirare: su
+     un puoTirare non curato la premessa (vuoto.aperta) sarebbe falsa e
+     il banco uscirebbe con 2 ("non ho misurato"), non con un verde
+     immeritato. Poi si rilascia due fotogrammi dopo, pallone ancora
+     fuori portata, e si guarda se e' nato un tiro fantasma. */
+  const vuoto = await pag.evaluate((seme) => {
+    const t = window.__test;
+    t.semina(seme);
+    t.startMatch(1, 1, { size: 7 });
+    for (let i = 0; i < 600 && G.scene !== 'play'; i++) t.simulate(1 / 60);
+    if (G.scene !== 'play') return { errore: 'mai in play' };
+    t.setTimeLeft(600);
+    const pi = G.ctrl[0]; if (pi < 0) return { errore: 'nessun comandato' };
+    const p = G.players[pi];
+    p.x = FW * 0.72; p.y = FH * 0.16; p.vx = 0; p.vy = 0;
+    const mate = G.players.find(q => q.team === 0 && q !== p && q.role !== 'gk');
+    if (!mate) return { errore: 'nessun compagno' };
+    mate.x = FW - 90; mate.y = FH / 2; mate.vx = 0; mate.vy = 0;
+    const b = G.ball;
+    b.owner = pi; b.x = p.x + 8; b.y = p.y; b.vx = 0; b.vy = 0; b.vz = 0; b.z = 0;
+    segnaTocco(pi);
+    const mi = G.players.indexOf(mate);
+    const dx = mate.x - p.x, dy = mate.y - p.y, l = Math.max(1, Math.hypot(dx, dy));
+    doCross(p, dx / l, dy / l, [mate.x, mate.y], mi);
+    if (G.ball.owner >= 0) return { errore: 'il cross non e\' partito' };
+    for (let i = 0; i < 18; i++) t.simulate(1 / 60);   // stessa finestra di _p-a10.js
+    const cp = ctrlPlayer(0);
+    if (!cp || G.players.indexOf(cp) !== mi) return { errore: 'il comando non e\' del destinatario' };
+    const distApertura = Math.hypot(G.ball.x - cp.x, G.ball.y - cp.y);
+    if (distApertura <= P_SPEED * TIRO_PORTATA) return { errore: 'distanza troppo corta, la scena non discrimina' };
+    startCharge(0);                          // UNA pressione, non tenuta
+    const aperta = cp.charge >= 0 && cp.chargeKind === 'tiro';
+    const prima = { vx: G.ball.vx, vy: G.ball.vy, owner: G.ball.owner,
+      squadra: squadraDelPallone(), tiri0: (G.stats.tiri[0] | 0), volee0: (G.stats.volee[0] | 0) };
+    /* dieci fotogrammi di tenuta (0,167 s), sopra TAP_T = 0,15: e' un
+       rilascio TENUTO, non un tap — il percorso che il brief descrive
+       ("preme... rilascia a meta'") e quello che fireShotMirato guarda
+       con la sua guardia di distanza, non il tap corto di kickBall */
+    for (let i = 0; i < 10; i++) t.simulate(1 / 60);
+    const distRilascio = Math.hypot(G.ball.x - cp.x, G.ball.y - cp.y);
+    releaseCharge(0);                        // ...e si solleva, palla ancora lontana
+    const dopo = { vx: G.ball.vx, vy: G.ball.vy, owner: G.ball.owner,
+      squadra: squadraDelPallone(), tiri0: (G.stats.tiri[0] | 0), volee0: (G.stats.volee[0] | 0),
+      charge: cp.charge, chargeGo: cp.chargeGo };
+    return { distApertura, distRilascio, aperta, prima, dopo };
+  }, SEME_VOLO);
+  if (vuoto.errore) { console.log('BANCO: ' + vuoto.errore); process.exit(2); }
+  if (!vuoto.aperta) { console.log('BANCO: la carica non si e\' aperta sul destinatario lontano (dist ' + Math.round(vuoto.distApertura) + ') — puoTirare non e\' curato, o la scena e\' cambiata'); process.exit(2); }
+  const velocitaFerma = vuoto.prima.vx === vuoto.dopo.vx && vuoto.prima.vy === vuoto.dopo.vy;
+  const possessoFermo = vuoto.prima.owner === vuoto.dopo.owner && vuoto.prima.squadra === vuoto.dopo.squadra;
+  const nessunTiroFantasma = vuoto.prima.tiri0 === vuoto.dopo.tiri0 && vuoto.prima.volee0 === vuoto.dopo.volee0;
+  const caricaChiusa = vuoto.dopo.charge < 0 && !vuoto.dopo.chargeGo;
+  di(velocitaFerma && possessoFermo && nessunTiroFantasma && caricaChiusa,
+    'H il rilascio a vuoto non produce ne\' tiro fantasma ne\' cambio di possesso ne\' carica appesa',
+    'apertura ' + Math.round(vuoto.distApertura) + 'u, rilascio ' + Math.round(vuoto.distRilascio) + 'u — '
+    + 'velocita ferma:' + velocitaFerma + ' possesso fermo:' + possessoFermo
+    + ' niente tiro:' + nessunTiroFantasma + ' carica chiusa:' + caricaChiusa);
 
   if (ecc.length) di(false, 'nessuna eccezione di pagina', ecc[0]);
   const rossi = esiti.filter(v => !v).length;

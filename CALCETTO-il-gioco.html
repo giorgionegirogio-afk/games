@@ -14116,9 +14116,25 @@ function puoTirare(t){
        destinatario e non prende quota: resta fuori da entrambe le vie,
        e la spazzata torna a essere una spazzata. */
     const inCorsa = (G.ball.passTo>=0 || G.ball.crossTo>=0 || G.ball.z>0 || G.ball.vz>0);
-    return squadraDelPallone()===t &&
-           len(G.ball.x-p.x,G.ball.y-p.y) <= P_SPEED*TIRO_PORTATA &&
-           inCorsa;
+    /* L'APPUNTAMENTO DEL TIRO AL VOLO (voce #88, compito 9, 2 settembre
+       2026). Fino a oggi qui contava SOLO la distanza: P_SPEED*TIRO_PORTATA
+       (201,6) bastava per un terzo uomo qualunque, ma negava il tiro al
+       destinatario dichiarato del cross appena il pallone superava quella
+       soglia. Misurato sulla stessa scena del cross a 7 contro 7 (seme
+       88001, fuori/_p-a10.js): nei fotogrammi 17-26 il comando era GIA'
+       del destinatario (ctrl===dest, la cura del compito 6 funziona), la
+       palla era nostra e in volo verso di lui, e la distanza scendeva da
+       304,7 a 205,7 — sempre sopra 201,6, per un soffio alla fine. Dieci
+       fotogrammi su 56 (82%), sempre la stessa causa: il gioco guardava
+       DOVE STA LA PALLA ADESSO invece di A CHI E' DESTINATA.
+       Chi e' il destinatario dichiarato sta gia' andando all'appuntamento:
+       la soglia di distanza, che resta per chiunque altro (un terzo uomo
+       che non aspetta quel pallone), non deve chiedergli di aspettare che
+       il pallone sia a due passi per potersi preparare al volo. */
+    const dest = G.ball.crossTo>=0 ? G.ball.crossTo : G.ball.passTo;
+    const atteso = dest>=0 && G.players[dest]===p;
+    return squadraDelPallone()===t && inCorsa &&
+           (atteso || len(G.ball.x-p.x,G.ball.y-p.y) <= P_SPEED*TIRO_PORTATA);
   }
   /* IN DIFESA LA FACCIA NON MENTE (voce #88): entro il raggio di calcio,
      se il pallone e' degli AVVERSARI il verbo e' il contrasto, non il
