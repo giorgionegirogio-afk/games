@@ -23,6 +23,18 @@
         in cui la carica si apre li'), e si rilascia due fotogrammi dopo,
         pallone ancora fuori portata: nessun tiro fantasma, nessun cambio
         di possesso, nessuna carica che resta appesa.
+     I  il palo non lascia crossTo rancido (rilievo CRITICO della
+        revisione del compito 9, 2 settembre 2026): dopo un cross deviato
+        da un palo, il disco grande non deve offrire TIRA a un uomo
+        lontano dal pallone rimbalzato — hitPosts deve azzerare
+        b.crossTo come gia' azzera b.passTo.
+     J  la fascia morta del volo, 26-29,9 unita' (rilievo ALTO della
+        revisione del compito 9, 2 settembre 2026): un pallone che passa
+        a fianco di un giocatore con la carica del tiro gia' armata, mai
+        piu' vicino di KICK_R (26) ne' mai fuori da KICK_R*1,15 (29,9),
+        non deve ne' contare un tiro ne' cambiare la velocita' del
+        pallone — kickBall rifiuta il calcio in quella fascia, e il
+        ramo TIRO AL VOLO di updateBall deve ascoltarlo.
    uso: node strumenti/_q-volo.js [--gioco file.html]
    ===================================================================== */
 const http = require('http');
@@ -400,7 +412,8 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
     startCharge(0);                          // UNA pressione, non tenuta
     const aperta = cp.charge >= 0 && cp.chargeKind === 'tiro';
     const prima = { vx: G.ball.vx, vy: G.ball.vy, owner: G.ball.owner,
-      squadra: squadraDelPallone(), tiri0: (G.stats.tiri[0] | 0), volee0: (G.stats.volee[0] | 0) };
+      squadra: squadraDelPallone(), tiri0: (G.stats.tiri[0] | 0), volee0: (G.stats.volee[0] | 0),
+      tiroT: G.ball.tiroT };
     /* dieci fotogrammi di tenuta (0,167 s), sopra TAP_T = 0,15: e' un
        rilascio TENUTO, non un tap — il percorso che il brief descrive
        ("preme... rilascia a meta'") e quello che fireShotMirato guarda
@@ -410,20 +423,183 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
     releaseCharge(0);                        // ...e si solleva, palla ancora lontana
     const dopo = { vx: G.ball.vx, vy: G.ball.vy, owner: G.ball.owner,
       squadra: squadraDelPallone(), tiri0: (G.stats.tiri[0] | 0), volee0: (G.stats.volee[0] | 0),
-      charge: cp.charge, chargeGo: cp.chargeGo };
+      charge: cp.charge, chargeGo: cp.chargeGo, tiroT: G.ball.tiroT };
     return { distApertura, distRilascio, aperta, prima, dopo };
   }, SEME_VOLO);
   if (vuoto.errore) { console.log('BANCO: ' + vuoto.errore); process.exit(2); }
   if (!vuoto.aperta) { console.log('BANCO: la carica non si e\' aperta sul destinatario lontano (dist ' + Math.round(vuoto.distApertura) + ') — puoTirare non e\' curato, o la scena e\' cambiata'); process.exit(2); }
   const velocitaFerma = vuoto.prima.vx === vuoto.dopo.vx && vuoto.prima.vy === vuoto.dopo.vy;
   const possessoFermo = vuoto.prima.owner === vuoto.dopo.owner && vuoto.prima.squadra === vuoto.dopo.squadra;
-  const nessunTiroFantasma = vuoto.prima.tiri0 === vuoto.dopo.tiri0 && vuoto.prima.volee0 === vuoto.dopo.volee0;
+  /* RILIEVO BASSO della revisione del compito 9 (2 settembre 2026):
+     l'oracolo controllava solo G.stats.tiri[0]/volee[0], ma un b.tiroT
+     scritto senza cambio di statistiche sarebbe sfuggito — e' esattamente
+     la forma dei due tiri fantasma curati altrove in questa stessa
+     correzione (il volo e fireShot potevano scrivere b.tiroT anche
+     quando le statistiche restavano ferme). Adesso si guarda anche lui. */
+  const nessunTiroFantasma = vuoto.prima.tiri0 === vuoto.dopo.tiri0 && vuoto.prima.volee0 === vuoto.dopo.volee0
+    && vuoto.prima.tiroT === vuoto.dopo.tiroT;
   const caricaChiusa = vuoto.dopo.charge < 0 && !vuoto.dopo.chargeGo;
   di(velocitaFerma && possessoFermo && nessunTiroFantasma && caricaChiusa,
     'H il rilascio a vuoto non produce ne\' tiro fantasma ne\' cambio di possesso ne\' carica appesa',
     'apertura ' + Math.round(vuoto.distApertura) + 'u, rilascio ' + Math.round(vuoto.distRilascio) + 'u — '
     + 'velocita ferma:' + velocitaFerma + ' possesso fermo:' + possessoFermo
     + ' niente tiro:' + nessunTiroFantasma + ' carica chiusa:' + caricaChiusa);
+
+  /* ---- I: il palo non lascia crossTo rancido ----
+     RILIEVO CRITICO della revisione del compito 9 (2 settembre 2026,
+     voce #88). hitPosts azzerava b.passTo al rimbalzo (riga ~18620) ma
+     MAI b.crossTo: hitPosts non chiama segnaTocco ne' tocca b.owner,
+     quindi dopo un cross deviato da un palo squadraDelPallone() restava
+     la squadra che aveva crossato, e la preferenza di controllo in
+     switchControlled continuava a comandare il destinatario dichiarato —
+     lo stesso campo rancido che puoTirare consulta nel ramo "atteso". Il
+     ramo si apriva SENZA guardare la distanza: TIRA restava acceso su un
+     pallone rimbalzato altrove, verso un uomo che non lo aspettava piu'.
+     LA SCENA (identica a fuori/_p-palo-crossto.js, la sonda che ha
+     riprodotto il difetto a runtime prima della cura): un cross a 380 u/s
+     (sopra 320, il ramo "PALO!" del rimbalzo pieno) dritto su un palo,
+     col destinatario dichiarato parcheggiato lontano dalla porta — cosi'
+     che DOPO il rimbalzo la sola via che potrebbe accendere TIRA sia
+     l'"atteso" rancido, non la soglia geometrica (che a centinaia di
+     unita' di distanza sarebbe comunque chiusa). */
+  const palo = await pag.evaluate(() => {
+    const t = window.__test;
+    t.startMatch(1, 1, { size: 7 });
+    for (let i = 0; i < 600 && G.scene !== 'play'; i++) t.simulate(1 / 60);
+    if (G.scene !== 'play') return { errore: 'mai in play' };
+    t.setTimeLeft(600);
+    const pi = G.ctrl[0]; if (pi < 0) return { errore: 'nessun comandato' };
+    const kicker = G.players[pi];
+    const mate = G.players.find(q => q.team === 0 && q !== kicker && q.role !== 'gk');
+    if (!mate) return { errore: 'nessun compagno' };
+    const mi = G.players.indexOf(mate);
+    /* il palo lontano della porta avversaria (team 0 attacca verso FW) */
+    const post = POSTI.find(([gx, gy]) => gx === FW && gy === GY1) || POSTI[POSTI.length - 1];
+    const [gx, gy] = post;
+    /* parcheggia tutti gli altri lontano, per non interferire (raccolta,
+       tentaPresa, testa) sulla scena sintetica */
+    for (const q of G.players) { if (q === kicker || q === mate) continue; q.x = FW * 0.5; q.y = 20; q.vx = 0; q.vy = 0; }
+    /* il destinatario dichiarato resta LONTANO dal palo: e' la misura del
+       difetto — dopo il rimbalzo la palla puo' andare ovunque */
+    mate.x = FW * 0.5; mate.y = FH * 0.85; mate.vx = 0; mate.vy = 0;
+    kicker.x = gx - 120; kicker.y = gy - 60; kicker.vx = 0; kicker.vy = 0;
+    const b = G.ball;
+    const startX = gx - 55, startY = gy - 35;
+    const ddx = gx - startX, ddy = gy - startY, ll = Math.max(1, Math.hypot(ddx, ddy));
+    const V = 380;                        // sopra 320: il ramo "PALO!" pieno
+    b.owner = -1; b.x = startX; b.y = startY;
+    b.vx = ddx / ll * V; b.vy = ddy / ll * V; b.z = 25; b.vz = 10;
+    b.crossTo = mi; b.passTo = -1; b.lastTouch = pi;
+    let urtato = false, crossToRancido = 0, tiraSuLontano = 0, campioni = 0;
+    for (let i = 0; i < 40 && b.owner < 0; i++) {
+      const dot0 = b.vx * ddx + b.vy * ddy;
+      t.simulate(1 / 60);
+      const dot1 = b.vx * ddx + b.vy * ddy;
+      if (!urtato && dot1 < 0 && dot0 >= 0) urtato = true;   // il rimbalzo: la palla torna indietro
+      if (!urtato) continue;                                 // si conta solo DOPO l'urto
+      campioni++;
+      const cp = ctrlPlayer(0);
+      if (!cp) continue;
+      const dist = Math.hypot(b.x - cp.x, b.y - cp.y);
+      const bt = t.pulsanti(0);
+      const gr = bt.reduce((a, z) => (z.r > a.r ? z : a), bt[0]);
+      const acceso = gr.act === 'shot' && !gr.off;
+      if (b.crossTo >= 0) crossToRancido++;
+      if (acceso && dist > P_SPEED * TIRO_PORTATA) tiraSuLontano++;
+    }
+    return { urtato, crossToRancido, tiraSuLontano, campioni };
+  });
+  if (palo.errore) { console.log('BANCO: ' + palo.errore); process.exit(2); }
+  if (!palo.urtato) { console.log('BANCO: il cross non ha mai urtato il palo — la scena non si e\' montata'); process.exit(2); }
+  if (!palo.campioni) { console.log('BANCO: I non ha campionato un solo fotogramma dopo l\'urto'); process.exit(2); }
+  di(palo.crossToRancido === 0 && palo.tiraSuLontano === 0,
+    'I dopo un palo il disco grande non offre TIRA a un uomo lontano',
+    palo.crossToRancido + ' fotogrammi con crossTo rancido, ' + palo.tiraSuLontano
+    + ' con TIRA offerto oltre la soglia, su ' + palo.campioni + ' dopo l\'urto');
+
+  /* ---- J: la fascia morta del volo non conta un tiro fantasma ----
+     RILIEVO ALTO della revisione del compito 9 (2 settembre 2026). Il
+     ramo "TIRO AL VOLO" di updateBall ammette fino a KICK_R*1,15 (29,9)
+     come guardia d'ingresso, ma kickBall rifiuta sopra KICK_R (26): nella
+     fascia 26-29,9 il tabellino segnava un tiro che il pallone non aveva
+     mai sentito. LA SCENA misura la fascia morta DIRETTAMENTE, senza
+     affidarsi al caso: il comandato ha la carica del tiro gia' armata
+     (chargeKind='tiro', charge oltre TAP_T) e sta fermo, e un pallone
+     veloce (350 u/s, IN VOLO — b.z=24, sotto Z_SOPRA_TESTA cosi' non lo
+     si gioca di testa, e senza attrito a terra che confonderebbe la
+     misura di velocita') gli passa davanti a distanza minima 28 unita' —
+     dentro la fascia morta (26 < 28 < 29,9) nel punto di massimo
+     avvicinamento, mai piu' vicino. Se il tabellino sale o la velocita'
+     del pallone cambia, e' il fantasma; se nessuno dei due si muove, il
+     tentativo e' stato correttamente rifiutato. */
+  const morto = await pag.evaluate((seme) => {
+    const t = window.__test;
+    t.semina(seme);
+    t.startMatch(1, 1, { size: 7 });
+    for (let i = 0; i < 600 && G.scene !== 'play'; i++) t.simulate(1 / 60);
+    if (G.scene !== 'play') return { errore: 'mai in play' };
+    t.setTimeLeft(600);
+    /* IL SOGGETTO E' IL COMANDATO (G.ctrl[0]): senza input sullo stick
+       resta dove lo si mette, come nelle prove A/D/H. */
+    const pi = G.ctrl[0]; if (pi < 0) return { errore: 'nessun comandato' };
+    const p = G.players[pi];
+    p.x = FW * 0.5; p.y = FH * 0.5; p.vx = 0; p.vy = 0;
+    p.out = 0; p.slide = -1; p.recover = 0; p.rove = -1; p.kickCd = 0;
+    p.charge = TAP_T + 0.02; p.chargeKind = 'tiro'; p.chargeGo = null;
+    /* parcheggia tutti gli altri lontano dal corridoio del pallone: senza
+       questo un compagno o un avversario piazzato li' dal calcio d'inizio
+       (non seminato prima d'ora: misurato un tiro VERO, non fantasma, su
+       una corsa senza semina) puo' toccare la palla per un'altra via
+       (raccolta, muro) e confondere la misura */
+    for (const q of G.players) { if (q === p) continue; q.x = FW * 0.1; q.y = 20; q.vx = 0; q.vy = 0; }
+    const OFFSET = 28;                     // dentro 26 (KICK_R) - 29,9 (KICK_R*1,15)
+    const DX0 = 60, VX = 350;
+    /* IL TRAGUARDO GEOMETRICO (dx=0, distanza minima 28) cade a
+       DX0/VX = 0,171 s = fotogramma ~10,3: il primo tentativo usava 10
+       fotogrammi in tutto e si fermava PRIMA di arrivarci (distanza
+       minima misurata: 31, non 28) — non era l'IA a spostare il
+       giocatore, era il campione troppo corto. z0=24 (sotto
+       Z_SOPRA_TESTA=26, cosi' non si gioca di testa) tiene il pallone in
+       aria abbastanza a lungo (atterra verso il fotogramma ~17,6) da
+       attraversare tutta la fascia morta (fotogrammi ~8,5-12,1) prima di
+       toccare terra. */
+    const b = G.ball;
+    b.owner = -1; b.lastTouch = -1;
+    b.x = p.x - DX0; b.y = p.y - OFFSET; b.z = 24; b.vz = 0;
+    b.vx = VX; b.vy = 0; b.crossTo = -1; b.passTo = -1;
+    const tiriPrima = (G.stats.tiri[0] | 0), voleePrima = (G.stats.volee[0] | 0);
+    const vxPrima = b.vx, vyPrima = b.vy;
+    let distMin = 1e9, campioni = 0;
+    for (let i = 0; i < 16; i++) {
+      t.simulate(1 / 60);
+      campioni++;
+      const d = Math.hypot(b.x - p.x, b.y - p.y);
+      if (d < distMin) distMin = d;
+    }
+    return { tiriPrima, voleePrima, vxPrima, vyPrima, distMin, campioni,
+      tiriDopo: (G.stats.tiri[0] | 0), voleeDopo: (G.stats.volee[0] | 0),
+      vxDopo: b.vx, vyDopo: b.vy };
+  }, SEME_INSEGUE + 2);
+  if (morto.errore) { console.log('BANCO: ' + morto.errore); process.exit(2); }
+  /* la premessa: la scena deve davvero restare nella fascia morta (26 =
+     KICK_R, 29,9 = KICK_R*1,15 — le stesse costanti del gioco, qui fuori
+     dalla pagina e percio' scritte a mano: se il gioco le cambiasse, la
+     costruzione della scena andrebbe rifatta) e MAI entrare nella vera
+     portata di calcio, altrimenti la prova misurerebbe un altro caso e un
+     verde non varrebbe niente (regola della casa: "non ho misurato" e'
+     un'uscita, non un rosso ne' un verde) */
+  if (!(morto.distMin > 26 && morto.distMin <= 29.9)) {
+    console.log('BANCO: la scena non e\' rimasta nella fascia morta (distanza minima ' + morto.distMin.toFixed(1) + ')');
+    process.exit(2);
+  }
+  const nessunTiroContato = morto.tiriPrima === morto.tiriDopo && morto.voleePrima === morto.voleeDopo;
+  const velocitaInvariata = morto.vxPrima === morto.vxDopo && morto.vyPrima === morto.vyDopo;
+  di(nessunTiroContato && velocitaInvariata,
+    'J la fascia morta del volo (26-29,9) non conta un tiro fantasma',
+    'distanza minima ' + morto.distMin.toFixed(1) + ' su ' + morto.campioni + ' fotogrammi — '
+    + 'tiri ' + morto.tiriPrima + '->' + morto.tiriDopo + ', volee ' + morto.voleePrima + '->' + morto.voleeDopo
+    + ', velocita (' + morto.vxPrima.toFixed(1) + ',' + morto.vyPrima.toFixed(1) + ')->('
+    + morto.vxDopo.toFixed(1) + ',' + morto.vyDopo.toFixed(1) + ')');
 
   if (ecc.length) di(false, 'nessuna eccezione di pagina', ecc[0]);
   const rossi = esiti.filter(v => !v).length;

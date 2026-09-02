@@ -14081,7 +14081,11 @@ function squadraDelPallone(){
 const TIRO_PORTATA = 1.2;
 function puoTirare(t){
   const p=ctrlPlayer(t);
-  if(!p || p.slide>=0 || p.recover>0 || p.rove>=0) return false;
+  /* MANCAVA p.out>0 (rilievo MEDIO della revisione del compito 9, 2
+     settembre 2026): presente in puoPassare, puoContrastare e anticipa,
+     assente qui. Preesistente al compito 9, ma il brief chiedeva di
+     verificarlo esplicitamente. */
+  if(!p || p.out>0 || p.slide>=0 || p.recover>0 || p.rove>=0) return false;
   const pi=G.players.indexOf(p);
   if(G.ball.owner!==pi && len(G.ball.x-p.x,G.ball.y-p.y)>KICK_R*1.4){
     /* LA FACCIA SEGUE IL POSSESSO, NON LA GEOMETRIA (voce #88). Fino a
@@ -15548,7 +15552,15 @@ function fireShot(p, nx, ny, q, lob){
   p.chargeClip='tiro';                    // la clip del gesto per kickBall
   /* la CPU tira meno forte alle difficolta' basse; e chi ha piu' tiro tira di piu' */
   const pow = (G.cpu[t] ? DIFF[G.diff].shotPow : 1) * fatt(p.tiro,0.10);
-  G.stats.tiri[t]++;
+  /* IL TIRO FANTASMA (rilievo ALTO/2 della revisione del compito 9, 2
+     settembre 2026). Il tabellino saliva QUI, prima di sapere se un
+     qualunque kickBall dei quattro rami sotto sarebbe riuscito. La
+     guardia d'ingresso ammette fino a KICK_R*1,4 (36,4) quando il
+     pallone non e' nostro, ma kickBall rifiuta sopra KICK_R (26): nella
+     fascia 26-36,4 il tiro veniva contato e il pallone non si muoveva.
+     Da qui in poi G.stats.tiri[t]++ si scrive UNA VOLTA PER RAMO, subito
+     dopo il kickBall di quel ramo, solo se e' riuscito — stesso schema
+     di fireShotMirato. */
   if(lob){
     /* pallonetto: la quota e' l'arma, la potenza il prezzo.
        I NUMERI STANNO IN lobBalistica, non qui: adesso li legge anche
@@ -15557,7 +15569,8 @@ function fireShot(p, nx, ny, q, lob){
     const b=G.ball;
     const bl=lobBalistica(q,pow);
     const potenza = bl.potenza;
-    kickBall(p, nx, ny, potenza, 0);
+    if(!kickBall(p, nx, ny, potenza, 0)) return;
+    G.stats.tiri[t]++;
     b.vz = bl.vz;
     b.curve=0; b.perfectT=0;
     G.stats.pallonetti[t]=(G.stats.pallonetti[t]||0)+1;
@@ -15615,7 +15628,8 @@ function fireShot(p, nx, ny, q, lob){
        quello per cui esiste: battere il portiere, non la porta. */
     const gy=goalY + corner*(GOAL_H/2-24);
     const dx=gx-p.x, dy=gy-p.y, l=Math.max(1,len(dx,dy));
-    kickBall(p, dx/l, dy/l, tiroVelocita(1, 640*pow, l), 0);
+    if(!kickBall(p, dx/l, dy/l, tiroVelocita(1, 640*pow, l), 0)) return;
+    G.stats.tiri[t]++;
     /* effetto a giro leggero verso l'incrocio + scia colorata */
     G.ball.curve = corner*150*pow;
     G.ball.perfectT = 0.6;
@@ -15640,7 +15654,8 @@ function fireShot(p, nx, ny, q, lob){
        spegneva a centrocampo: ZERO su 27 raggiungevano la porta. */
     const gx=t===0?FW:0;
     const dx=gx-p.x, dy=goalY-p.y, l=Math.max(1,len(dx,dy));
-    kickBall(p, dx/l, dy/l, tiroVelocita(0, 340*pow, l), 0);
+    if(!kickBall(p, dx/l, dy/l, tiroVelocita(0, 340*pow, l), 0)) return;
+    G.stats.tiri[t]++;
     Audio5.kick(0.45);
   }else{
     /* troppo tardi: strozzato, spesso fuori misura */
@@ -15655,7 +15670,8 @@ function fireShot(p, nx, ny, q, lob){
     const err=rnd(-1,1)*0.30 + (dado()<0.5?-0.16:0.16);
     const a=Math.atan2(ny,nx)+err;
     const dOb=Math.max(1,len((t===0?FW:0)-p.x, goalY-p.y));
-    kickBall(p, Math.cos(a), Math.sin(a), tiroVelocita(2, 400*pow, dOb), 0);
+    if(!kickBall(p, Math.cos(a), Math.sin(a), tiroVelocita(2, 400*pow, dOb), 0)) return;
+    G.stats.tiri[t]++;
     Audio5.kick(0.6);
   }
   /* IL PALLONE SA DI CHI E' IL TIRO CHE STA VOLANDO. Lo legge chi puo'
@@ -18006,14 +18022,42 @@ function updateBall(dt){
       const q = (p.charge>=SHOT_MIN && p.charge<=SHOT_MAX) ? 1 : (p.charge<SHOT_MIN?0:2);
       const dx=goalX-p.x, dy=(FH/2)-p.y, l=Math.max(1,len(dx,dy));
       const bonus = clamp(sp*0.35, 0, 220);
-      chiudiAnticipo(p);
-      G.stats.volee[t]=(G.stats.volee[t]||0)+1;
-      G.stats.tiri[t]++;
       /* il volo aveva lo stesso difetto del tiro fermo: la potenza non
          sapeva la distanza. Qui il pavimento e' lo stesso, e il bonus
          della palla in arrivo resta tutto. */
       const vel=Math.max((q===1?620:q===0?380:430)+bonus, tiroVelocita(q, 0, l));
-      kickBall(p, dx/l, dy/l, vel, 0);
+      /* IL TIRO FANTASMA (rilievo ALTO della revisione del compito 9, 2
+         settembre 2026). Questa guardia d'ingresso ammette fino a
+         KICK_R*1,15 (29,9 unita', qualche riga sopra), ma kickBall
+         rifiuta sopra KICK_R (26): nella fascia 26-29,9 il tabellino
+         segnava un tiro che il pallone non aveva mai sentito, perche'
+         l'esito di kickBall non veniva mai letto. La cura del compito 9
+         rende questa fascia PIU' probabile (il destinatario arma la
+         carica da oltre 300 unita' invece che da 201,6, e la tiene
+         aperta piu' a lungo), quindi e' un rilievo di questo compito.
+         Stesso schema di fireShotMirato (~15773): si legge l'esito
+         PRIMA di scrivere qualunque statistica. Misurato con la scena
+         della prova D di _q-volo.js sul file non curato (seme 88001):
+         il tentativo cadeva proprio nella fascia morta (33,9 unita' un
+         fotogramma prima, dentro 26-29,9 al momento del controllo),
+         G.stats.volee saliva, e b.vx/b.vy restavano bit-per-bit identici
+         — un fantasma vero, non un caso di laboratorio. */
+      if(!kickBall(p, dx/l, dy/l, vel, 0)) continue;
+      /* chiudiAnticipo si sposta QUI, dopo il calcio riuscito — non piu'
+         incondizionato prima del tentativo. Due ragioni, non una sola:
+         (1) se il pallone e' ancora nella fascia morta, la carica RESTA
+         aperta e il giocatore ritenta al fotogramma successivo invece di
+         perdere il gesto su un tentativo che kickBall ha rifiutato — e
+         un fotogramma dopo, nella stessa scena misurata sopra, il
+         pallone e' gia' a 19,9 unita', dentro KICK_R per davvero: la
+         prova D adesso esce con una volee' VERA, non con un contatore
+         alzato a vuoto; (2) e' anche l'ordine giusto per il disegno:
+         kickBall legge p.chargeClip per scegliere la clip del calcio
+         ('tiro'), e chiudiAnticipo lo azzera — chiamarlo prima privava
+         il calcio riuscito della sua clip. */
+      chiudiAnticipo(p);
+      G.stats.volee[t]=(G.stats.volee[t]||0)+1;
+      G.stats.tiri[t]++;
       b.tiroT=t;
       if(q===1){
         G.stats.perfetti[t]++;
@@ -18401,7 +18445,12 @@ function tentaPresa(p,b,disteso){
   const sp=len(b.vx,b.vy);
   const ki=G.players.indexOf(p);
   G.stats.parate[p.team]++;
-  segnaTocco(ki); b.passTo=-1; b.curve=0; b.perfectT=0; b.saveRolled=true;
+  /* coerenza con hitPosts (rilievo CRITICO, revisione compito 9): il
+     pallone fra le mani o respinto dal portiere non e' destinato a
+     nessuno. Oggi il caso e' gia' mascherato dal segnaTocco qui sotto
+     (cambia subito squadraDelPallone()), ma un difetto mascherato torna
+     appena la maschera cade. */
+  segnaTocco(ki); b.passTo=-1; b.crossTo=-1; b.curve=0; b.perfectT=0; b.saveRolled=true;
   /* LO SPECCHIO SI CONTA QUI, e non dove si sperava. Se il pallone che
      il portiere tocca porta l'etichetta di un tiro avversario, quel tiro
      era nello specchio: e' la definizione, non una stima. */
@@ -18617,6 +18666,19 @@ function hitPosts(b){
     const dot=b.vx*nx+b.vy*ny;
     if(dot<0){ b.vx-=1.78*dot*nx; b.vy-=1.78*dot*ny; }
     b.vx*=0.78; b.vy*=0.78;
+    /* CROSSTO RANCIDO DOPO UN PALO (rilievo CRITICO della revisione del
+       compito 9, 2 settembre 2026). Qui sotto si azzerava gia' b.passTo,
+       ma non b.crossTo: hitPosts non chiama segnaTocco ne' tocca
+       b.owner, quindi dopo il rimbalzo squadraDelPallone() restava la
+       squadra che aveva crossato, e la preferenza di controllo
+       continuava a comandare il destinatario dichiarato. puoTirare legge
+       lo stesso campo nel ramo "atteso": TIRA restava acceso su un
+       pallone rimbalzato altrove, senza guardare la distanza — misurato
+       con fuori/_p-palo-crossto.js sul file non curato: crossTo rancido
+       in 32/32 fotogrammi dopo l'urto, TIRA offerto a distanza superiore
+       a P_SPEED*TIRO_PORTATA in 24/32. Dopo un palo il pallone non e'
+       piu' destinato a nessuno, come dopo un muro o un tocco sporco. */
+    b.crossTo=-1;
     b.curve=0; b.perfectT=0; b.passTo=-1; b.saveRolled=false;
     tagliaScia();
     /* IL PALO E' UN EVENTO, NON UNO STATO — ed e' un difetto PREESISTENTE.
@@ -18678,7 +18740,12 @@ function ballOverBar(b, portaLato){
   const difende = portaLato;                      // 0 = porta sinistra (difende team 0)
   showBanner('ALTA!','#96ab9e',0.9);
   Audio5.whistle(false);
-  b.z=0; b.vz=0; b.curve=0; b.perfectT=0; b.passTo=-1; b.saveRolled=false;
+  /* coerenza con hitPosts (rilievo CRITICO, revisione compito 9): senza
+     questa riga, se "deep" qui sotto risultasse null (nessun difensore
+     disponibile) ne' b.owner ne' lastTouch cambierebbero, e
+     squadraDelPallone() resterebbe la squadra che ha crossato — lo
+     stesso buco che hitPosts aveva sempre, non solo per coerenza. */
+  b.z=0; b.vz=0; b.curve=0; b.perfectT=0; b.passTo=-1; b.crossTo=-1; b.saveRolled=false;
   b.vx=0; b.vy=0;
   /* rinvio dal fondo: la palla riparte dai piedi del piu' arretrato che difende */
   let deep=portiereDi(difende), dd=1e9;
