@@ -159,13 +159,26 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
     o.x = p.x + 84; o.y = p.y; o.vx = 0; o.vy = 0;
     const b = G.ball; b.owner = k; b.x = o.x + 8; b.y = o.y; b.vx = 0; b.vy = 0; b.vz = 0; b.z = 0;
     segnaTocco(k);
-    let cambi = 0, prec = null, morte = 0;
+    /* SI CONTANO LE BUGIE, NON I CAMBI (correzione del 2 settembre 2026,
+       dopo il compito 5). La prima stesura chiedeva ZERO cambi di faccia
+       in sei secondi: ma se il possesso cambia DAVVERO — e in questa
+       scena l'intelligenza lo fa quattro volte, agli stessi fotogrammi
+       anche sul gioco intonso — allora la faccia DEVE cambiare, ed e' il
+       comportamento giusto. Chiedere zero sarebbe chiedere al disco di
+       mentire, cioe' l'opposto di questa voce. Il difetto vero e' il
+       cambio di faccia che NON segue un cambio di possesso: quello e'
+       la bugia, e di quelle se ne contavano tre su quattro. */
+    let cambi = 0, bugie = 0, prec = null, precLato = null, morte = 0;
     for (let i = 0; i < 360; i++) {
+      const lato = squadraDelPallone();
       const bt = t.pulsanti(0);
       const grande = bt.reduce((a, z) => (z.r > a.r ? z : a), bt[0]);
       const faccia = grande.act + (grande.off ? '-off' : '');
-      if (prec !== null && faccia !== prec) cambi++;
-      prec = faccia;
+      if (prec !== null && faccia !== prec) {
+        cambi++;
+        if (lato === precLato) bugie++;   // faccia cambiata a possesso fermo
+      }
+      prec = faccia; precLato = lato;
       /* E: una cella ACCESA che rifiuta l'atto e' un verbo morto. Il
          criterio e' la guardia VERA di comandaPressa, che rifiuta anche
          sull'avversario a terra (o.out>0): senza quel pezzo il conteggio
@@ -177,14 +190,15 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
       }
       t.simulate(1 / 60);
     }
-    return { cambi, morte, campioni: 360 };
+    return { cambi, bugie, morte, campioni: 360 };
   }, SEME_INSEGUE);
   if (dif.errore) { console.log('BANCO: ' + dif.errore); process.exit(2); }
   /* come per il volo: nessun campione non e' «zero cambi», e' «non ho
      misurato» — se no B passerebbe con un verde falso (rilievo della
      revisione) */
   if (!dif.campioni) { console.log('BANCO: l\'inseguimento non ha campionato un solo fotogramma'); process.exit(2); }
-  di(dif.cambi === 0, 'B la faccia non cambia inseguendo un avversario (6 s)', dif.cambi + ' cambi');
+  di(dif.bugie === 0, 'B la faccia non cambia SENZA che cambi il possesso (6 s)',
+    dif.bugie + ' bugie su ' + dif.cambi + ' cambi totali (gli altri seguono un cambio di possesso vero)');
   di(dif.morte === 0, 'E nessuna cella accesa rifiuta l\'atto', dif.morte + ' fotogrammi con PRESSA morto');
 
   /* ---- F: la rovesciata mantiene la precedenza ----
