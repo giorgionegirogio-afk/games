@@ -15201,10 +15201,16 @@ function startCharge(t){
   if(G.ball.owner!==pi && len(G.ball.x-p.x,G.ball.y-p.y)>KICK_R*1.4){
     /* TIRA con la palla ALTA che scende nella finestra: e' la rovesciata
        (decisione 1 di AZIONI.md — stesso tasto, contesto diverso).
-       La finestra non si richiede qui: puoTirare l'ha gia' chiesta, ed
-       e' l'unico modo di arrivare a questo ramo. */
-    tentaRovesciata(p);
-    return;
+       LA ROVESCIATA HA LA PRECEDENZA e si prova per prima: e' il verbo
+       spettacolare del gioco e non deve perderla (voce #88). */
+    if(finestraRovesciata(p)){ tentaRovesciata(p); return; }
+    /* PALLA NOSTRA IN VOLO: si apre la carica del TIRO, e sara' il
+       CONTATTO a decidere che gesto esce — tiro fermo se la palla e' a
+       terra, volee' se arriva alta e veloce (updateBall lo sa gia' fare:
+       cerca «TIRO AL VOLO»). E' il modello del paragone: il tiro di
+       prima non e' un pulsante, e' un tipo di contatto. Se la palla non
+       e' nostra o e' fuori portata, puoTirare ha gia' detto no e qui non
+       si arriva. */
   }
   /* la carica del tiro e' l'unico anticipo che NON matura da solo: la
      tiene aperta il dito, e chiude releaseCharge. Percio' chargeGo resta
