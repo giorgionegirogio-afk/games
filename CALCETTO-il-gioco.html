@@ -16633,11 +16633,24 @@ function switchControlled(dt){
        'cambio' di giocata.js, che campiona proprio il cambio
        dell'indice comandato, resta verde dopo questa cura.
 
-       b.passTo e b.crossTo non restano rancidi: si azzerano gia' in
-       updateBall su muro, tocco sporco e ogni presa di controllo, e
-       ancora su testa alta, parata, palo e pallone sopra la traversa —
-       verificato con grep, non solo letto sul piano. */
-    const dest = (G.ball.crossTo>=0 ? G.ball.crossTo : (G.ball.passTo>=0 ? G.ball.passTo : -1));
+       RETTIFICA (2 settembre 2026, rilievo della revisione). La prima
+       stesura di questo verbale diceva che b.passTo e b.crossTo non
+       restano mai rancidi. E' vero per passTo, FALSO per crossTo: il
+       grep di controllo lo ha trovato azzerato in tre soli posti
+       (kickBall, colpoDiTesta, provaStrappo) e NON su muro, tocco
+       sporco, raccolta, parata del portiere, palo, traversa, fallo,
+       contrasto vinto e rinvio. Senza la guardia qui sotto, dopo una
+       parata su cross il comando sarebbe rimasto incollato al
+       destinatario per sempre — il pallone in mano al portiere
+       avversario e il dito sull'uomo sbagliato.
+       LA GUARDIA E' IL CONCETTO DI QUESTA VOCE: il destinatario conta
+       solo finche' il pallone e' ancora per aria (nessun padrone) E il
+       lato e' ancora il nostro (squadraDelPallone). Al primo tocco
+       avversario il lato cambia e la preferenza cade da sola, senza
+       inseguire nove punti di azzeramento sparsi nel motore. */
+    const inVolo = G.ball.owner<0 && squadraDelPallone()===t;
+    const dest = !inVolo ? -1
+               : (G.ball.crossTo>=0 ? G.ball.crossTo : (G.ball.passTo>=0 ? G.ball.passTo : -1));
     const qd = dest>=0 ? G.players[dest] : null;
     if(qd && qd.team===t && qd.out<=0 && qd.role!=='gk'){
       best=dest; bd=0;
