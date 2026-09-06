@@ -3854,6 +3854,21 @@ const TAGLIE={
         {fx:0.27,fy:-0.36,lato:-1}, {fx:0.27,fy:-0.12,lato:0}, {fx:0.27,fy:0.12,lato:0}, {fx:0.27,fy:0.36,lato:1},
         {fx:0.13,fy:-0.34,lato:-1}, {fx:0.13,fy:-0.115,lato:0}, {fx:0.13,fy:0.115,lato:0}, {fx:0.13,fy:0.34,lato:1} ] },
 };
+/* LA TAVOLA DELLE VERNICI (voce #86, compito 1). Ogni riga di gesso e ogni
+   scatola della regola prende il numero DA QUI, per taglia: il pennello e
+   dentroArea non possono piu' divergere perche' leggono lo stesso posto.
+   OGGI la tavola replica i valori storici al bit (62/14/66, 118/230/112):
+   i compiti 4 e 5 la porteranno alle misure vere. areaSemi=0 significa
+   "usa GOAL_H*0.77 come sempre" finche' il compito 5 non decide. */
+const VERNICI={
+  5:{ cerchio:62, angolo:14, dArco:66, dischetto:112, dischetto2:0,
+      areaProf:118, areaSemi:0, portaProf:0, portaLargh:0 },
+  7:{ cerchio:62, angolo:14, dArco:66, dischetto:129, dischetto2:0,
+      areaProf:136, areaSemi:0, portaProf:0, portaLargh:0 },
+  11:{ cerchio:62, angolo:14, dArco:66, dischetto:146, dischetto2:0,
+      areaProf:153, areaSemi:0, portaProf:0, portaLargh:0 },
+};
+let VERNICE=VERNICI[5];
 /* =====================================================================
    LE TRE MENTALITA' — il modulo che si allunga o si accorcia.
 
@@ -27548,7 +27563,7 @@ function paintField(c, TH, pX, pY, q, vivo){
   const LA=TH.lineA||1;
   /* area e dischetto: l'area segue kPasso (uscita del portiere) e la sua
      ALTEZZA la luce della porta — sul campo base i numeri restano 118/230/112 */
-  const AREA_W=Math.round(118*KPASSO), AREA_H=Math.round(230*GOAL_H/150), DISCH=Math.round(112*KPASSO);
+  const AREA_W=VERNICE.areaProf, AREA_H=(VERNICE.areaSemi||Math.round(230*GOAL_H/150)/2)*2, DISCH=VERNICE.dischetto;
   /* LINEE DI GESSO PIENE. Il METRO chiede "linee bianche piene" e le
      nostre erano al 50%: su un verde saturo un gesso a meta' forza legge
      grigio, e il gesso e' l'unica cosa del manto che ha diritto di essere
@@ -27667,17 +27682,17 @@ function paintField(c, TH, pX, pY, q, vivo){
   /* linea mediana: tratto PIENO come tutto il resto del gesso. Era
      l'unica linea tratteggiata del campo e sembrava un errore di disegno. */
   gLinea(FW/2,0, FW/2,FH, 0.92, 7);
-  gArco(FW/2,FH/2,62, 0,6.2832, 0.92, 9);
+  gArco(FW/2,FH/2,VERNICE.cerchio, 0,6.2832, 0.92, 9);
   for(const side of [0,1]) gRett(side?FW-AREA_W:0, FH/2-AREA_H/2, AREA_W, AREA_H, 0.92, 5);
   /* ARCHI D'ANGOLO: quattro quarti di cerchio da 14 sulle bandierine */
   for(const [ax,ay,a0] of [[0,0,0],[FW,0,Math.PI/2],[FW,FH,Math.PI],[0,FH,Math.PI*1.5]]){
-    gArco(ax,ay,14, a0,a0+Math.PI/2, 0.92, 2);
+    gArco(ax,ay,VERNICE.angolo, a0,a0+Math.PI/2, 0.92, 2);
   }
   /* ARCO dell'area, la mezzaluna fuori dai 16 metri */
   for(const side of [0,1]){
     const dx0=side?FW-DISCH:DISCH;
-    if(side) gArco(dx0,FH/2,66, Math.PI*0.62, Math.PI*1.38, 0.92, 5);
-    else     gArco(dx0,FH/2,66, -Math.PI*0.38, Math.PI*0.38, 0.92, 5);
+    if(side) gArco(dx0,FH/2,VERNICE.dArco, Math.PI*0.62, Math.PI*1.38, 0.92, 5);
+    else     gArco(dx0,FH/2,VERNICE.dArco, -Math.PI*0.38, Math.PI*0.38, 0.92, 5);
   }
   /* la SECONDA MANO, sfalsata di un'unita' e mezza: e' il gesso passato
      due volte, una a inizio stagione e una a meta'. Si spezza anche lei,
@@ -27686,7 +27701,7 @@ function paintField(c, TH, pX, pY, q, vivo){
   c.lineWidth=1.2;
   gRett(2.6,2.6,FW-5.2,FH-5.2, 0.15, 9);
   gLinea(FW/2+1.6,0, FW/2-1.6,FH, 0.15, 8);
-  gArco(FW/2,FH/2,63.8, 0,6.2832, 0.15, 9);
+  gArco(FW/2,FH/2,VERNICE.cerchio+1.8, 0,6.2832, 0.15, 9);
   c.fillStyle='rgba('+TH.gesso+',.78)';
   c.beginPath(); c.arc(FW/2,FH/2,3,0,6.2832); c.fill();
   /* DISCHETTI DEL RIGORE: in un gioco che manda ai rigori devono esserci */
@@ -28413,7 +28428,7 @@ function setTaglia(n){
   n = (n===7||n===11) ? n : 5;
   if(n===TAGLIA) return TAGLIA;
   const T=TAGLIE[n];
-  TAGLIA=n; KPASSO=T.kPasso;
+  TAGLIA=n; KPASSO=T.kPasso; VERNICE=VERNICI[n];
   FW=T.FW; FH=T.FH; GOAL_H=T.GOAL_H;
   /* l'attrito e' un derivato del campo come GY0 e POSTI: si ricuoce qui,
      nell'unica porta che cambia campo logico, e da nessun'altra parte */
@@ -41796,6 +41811,11 @@ window.__test = {
              texOK: !!fieldTex && fieldTex.width>2,
              giocatori:G.players.length };
   },
+  /* LA TAVOLA DELLE VERNICI, per il banco (voce #86, compito 1). Una
+     funzione e non un valore congelato: letta DOPO startMatch/setTaglia,
+     riflette sempre la taglia in cui la partita e' davvero entrata. */
+  proporzioni(){ return {TAGLIA,FW,FH,GOAL_H,GK_AREA_X,P_R,B_R,KICK_R,POST_R,SEP_R,P_SPEED,
+                          VERNICE: Object.assign({},VERNICE)}; },
   get score(){ return G.score; },
   get timeLeft(){ return G.timeLeft; },
   setTimeLeft(sec){ G.timeLeft=Math.max(0,+sec||0); },
