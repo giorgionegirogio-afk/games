@@ -3834,8 +3834,16 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
    e camera (kTetto in updateCamera) leggono FW/FH a ogni fotogramma:
    restano vere SENZA UN SOLO RITOCCO anche sull'11 — verificato e
    misurato in questo compito, non solo promesso (vedi i commenti
-   accanto a k0 e a kTetto). La porta cresce MENO del campo
-   (x1.15 / x1.3): se crescesse con lui il portiere sparirebbe.
+   accanto a k0 e a kTetto). RETTIFICA (voce #86, compito 5, 6 settembre
+   2026): "la porta cresce MENO del campo (x1.15/x1.3)" descriveva un
+   fattore di scala fisso — vero nel 2026 di allora, non piu' oggi: da
+   questo compito 103/172/192 non sono 150/172/196 scalati, sono il
+   tetto +-20% sulla luce ufficiale di ciascuna taglia deciso dal
+   committente il 6 settembre 2026 (FIFA Futsal 3 m, UISP 5,5 m, IFAB
+   7,32 m -> +19,4%/+16,6%/+19,8%, misura e fonte in
+   strumenti/_t-porta-area.js). La RAGIONE non e' cambiata: oltre quel
+   tetto il portiere sparirebbe dentro una porta troppo grande per il
+   suo corpo.
    GOAL_D, POST_R, P_R, B_R, KICK_R, P_SPEED non scalano: corpi e piedi
    sono gli stessi, cambia il mondo. E la gabbia resta: le sponde sono il
    clamp su FW/FH — nessuna rimessa, a nessuna taglia.
@@ -3847,7 +3855,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
    sinistra (batte il calcio d'inizio), idx 2 la destra: convenzioni di
    resetKickoff, da non toccare. lato = -1/0/+1 per i tagli in attacco. */
 const TAGLIE={
-  5:{ FW:1150, FH:560,  GOAL_H:150, kPasso:1,    nome:'5 CONTRO 5',
+  5:{ FW:1150, FH:560,  GOAL_H:103, kPasso:1,    nome:'5 CONTRO 5',
       modulo:[ {gk:1},
         {fx:0.375,fy:-0.24,lato:-1}, {fx:0.375,fy:0.24,lato:1},
         {fx:0.185,fy:-0.16,lato:-1}, {fx:0.185,fy:0.16,lato:1} ] },
@@ -3855,7 +3863,7 @@ const TAGLIE={
       modulo:[ {gk:1},
         {fx:0.375,fy:-0.28,lato:-1}, {fx:0.375,fy:0.28,lato:1}, {fx:0.43,fy:0,lato:0},
         {fx:0.185,fy:-0.26,lato:-1}, {fx:0.185,fy:0,lato:0}, {fx:0.185,fy:0.26,lato:1} ] },
-  11:{ FW:2300, FH:1490, GOAL_H:196, kPasso:1.3,  nome:'11 CONTRO 11',
+  11:{ FW:2300, FH:1490, GOAL_H:192, kPasso:1.3,  nome:'11 CONTRO 11',
       modulo:[ {gk:1},
         {fx:0.40,fy:-0.10,lato:-1}, {fx:0.40,fy:0.10,lato:1},
         {fx:0.27,fy:-0.36,lato:-1}, {fx:0.27,fy:-0.12,lato:0}, {fx:0.27,fy:0.12,lato:0}, {fx:0.27,fy:0.36,lato:1},
@@ -3871,16 +3879,21 @@ const TAGLIE={
    ce l'ha: guardia nel pennello). dischetto2 e' il secondo dischetto del
    futsal (10 m, oggi 0 alle altre taglie = non disegnato). portaProf/
    portaLargh sono l'area di porta, accesa solo a 11 (IFAB): 0 altrove
-   vuol dire "non disegnata". areaProf/areaSemi restano i valori storici
-   (118/136/153, areaSemi=0) finche' il compito 5 non li porta alle
-   misure vere. */
+   vuol dire "non disegnata". DAL COMPITO 5 (misura e fonte in
+   strumenti/_t-porta-area.js) anche areaProf/areaSemi sono le misure
+   vere: profondita' e semilarghezza dell'area di rigore, non piu' i
+   valori storici 118/136/153 con areaSemi sempre a 0. Con areaSemi>0 a
+   ogni taglia i ripieghi GOAL_H*0.77 (dentroArea) e
+   Math.round(230*GOAL_H/150)/2 (il pennello) sono rami morti
+   DOCUMENTATI, non rimossi: restano il ripiego dichiarato dal progetto
+   per un giorno che non arrivera' piu' su queste tre taglie. */
 const VERNICI={
   5:{ cerchio:86, angolo:7, dArco:0, dischetto:173, dischetto2:288,
-      areaProf:118, areaSemi:0, portaProf:0, portaLargh:0 },
+      areaProf:173, areaSemi:216, portaProf:0, portaLargh:0 },
   7:{ cerchio:106, angolo:27, dArco:106, dischetto:215, dischetto2:0,
-      areaProf:136, areaSemi:0, portaProf:0, portaLargh:0 },
+      areaProf:268, areaSemi:288, portaProf:0, portaLargh:0 },
   11:{ cerchio:200, angolo:22, dArco:200, dischetto:241, dischetto2:0,
-      areaProf:153, areaSemi:0, portaProf:120, portaLargh:401 },
+      areaProf:361, areaSemi:441, portaProf:120, portaLargh:401 },
 };
 let VERNICE=VERNICI[5];
 /* =====================================================================
@@ -3948,7 +3961,22 @@ function pernoModulo(T){
 }
 let TAGLIA = 5, KPASSO = 1;
 let FW = 1150, FH = 560;           // campo logico (riassegnati da setTaglia)
-let GOAL_H = 150;                  // luce della porta (riassegnata da setTaglia)
+/* RILIEVO CRITICO (voce #86, compito 5): questo letterale doveva GIA'
+   restare sincrono con TAGLIE[5].GOAL_H a mano (era 150 come TAGLIE[5]
+   di ieri), ma setTaglia(n) ha una guardia if(n===TAGLIA) return; che
+   NON riassegna GOAL_H quando la taglia richiesta e' GIA' quella
+   corrente — cioe' MAI, per chi entra in una partita a 5 senza prima
+   essere passato da un'altra taglia (il caso comune: TAGLIA parte a 5).
+   Finche' i due numeri coincidevano per costruzione (compiti 1-4, mai
+   toccato GOAL_H a 5) la staleness era invisibile. Da questo compito
+   TAGLIE[5].GOAL_H cambia (103, non piu' 150): senza questa riga letta
+   dalla tavola, la partita a 5 vera avrebbe tenuto la porta vecchia per
+   sempre, e la riparazione sarebbe stata un numero scritto ma mai
+   eseguito. Misurato: confronto due-versioni a 5 restava 0/20 partite
+   diverse finche' questa riga leggeva il letterale 150 invece della
+   tavola. Stessa cura di VERNICE=VERNICI[5] qui sopra: leggere la
+   tavola invece di un secondo numero scritto a mano. */
+let GOAL_H = TAGLIE[5].GOAL_H;     // luce della porta (riassegnata da setTaglia)
 const GOAL_D = 34;                 // profondità porta
 const GOAL_Z = 52;                 // ALTEZZA della porta: sopra questa quota la palla e' alta
 const POST_R = 5.5;                // i pali hanno un corpo vero, non sono un effetto sonoro
@@ -18233,7 +18261,14 @@ function updateBall(dt){
    legato alla difficolta' e si tuffa. La parata avviene per CONTATTO
    geometrico con il corpo disteso: se lo scavalchi o lo spiazzi, e' gol.
    Cosi' tirare bene e posizionarsi bene contano davvero. */
-let GK_AREA_X = 118;                       // quanto lontano dalla linea puo' uscire (scala con kPasso)
+/* STESSO RILIEVO CRITICO di GOAL_H qui sopra (voce #86, compito 5):
+   118 era il duplicato a mano di VERNICI[5].areaProf, e setTaglia(5) non
+   lo riassegna quando la taglia e' gia' 5. Da questo compito
+   VERNICI[5].areaProf vale 173: senza questa riga, la partita a 5 vera
+   avrebbe tenuto GK_AREA_X=118 (l'area vecchia) mentre il gesso disegnava
+   gia' l'area nuova — "area disegnata = area applicata" sarebbe rotto
+   proprio nella taglia che il banco doveva proteggere. */
+let GK_AREA_X = VERNICE.areaProf;          // quanto lontano dalla linea puo' uscire (scala con kPasso)
 const GK_SPEED = 150, GK_DIVE_SPEED = 430; // passo normale e slancio del tuffo
 const GK_REACH = 26;                       // semiasse del corpo disteso nel tuffo
 /* LA RACCOLTA PRIMA DEL TUFFO — sette centesimi, e si paga e si riscuote.

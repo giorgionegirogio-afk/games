@@ -157,6 +157,24 @@ const GOAL_FONTE = {
   11: 'IFAB Regola 1/A1: porta 7,32x2,44 m',
 };
 
+/* AREA DI RIGORE — SEMILARGHEZZA (voce #86, compito 5, tolleranza ±10%
+   come il resto della vernice). VERNICE.areaSemi e' il MEZZO della
+   larghezza totale della scatola (dentroArea confronta |y-FH/2| <=
+   areaSemi): il bersaglio ufficiale e' meta' di (luce della porta + due
+   volte la profondita' dell'area), stessa fonte gia' in GOAL_UFF e in
+   VERNICE_UFF (campo 'areaProf') per 5 e 11. A 7 l'UISP non fissa una
+   larghezza d'area (_analisi/MISURE-UFFICIALI.md, A3: "non trovato"):
+   il piano (tavola dei bersagli, brief compito 5) sceglie la distanza
+   del dischetto (8 m, UISP/A3) al posto della profondita' (10 m) come
+   estensione laterale — scelta dichiarata del committente, non una
+   misura indipendente: segnata "convenzione" nel nome della prova, come
+   le tre convenzioni del 7 qui sopra. */
+const AREA_SEMI_UFF = {
+  5: (3.00 + 2 * 6.00) / 2,     // FIFA Futsal Laws/A2: porta 3 m + 2x6 m area -> 7,50 m
+  7: (5.50 + 2 * 8.00) / 2,     // UISP/A3: porta 5,5 m + 2x8 m (convenzione: dischetto, non profondita') -> 10,75 m
+  11: (7.32 + 2 * 16.50) / 2,   // IFAB Regola 1/A1: porta 7,32 m + 2x16,5 m area -> 20,16 m
+};
+
 /* FH A 11 COME LARGHEZZA REALE DEL CAMPO (tolleranza ±15%, solo a 11:
    a 5 e 7 il piano dichiara FH "invariato", nessun bersaglio) */
 const FH11_UFF = 68.0;   // IFAB Regola 1/A1: campo standard 105x68 m
@@ -223,6 +241,18 @@ const pct = x => (x * 100).toFixed(1) + '%';
     const sc = scarto(p.GOAL_H, rapp, uff);
     di(Math.abs(sc) <= TOLL_GOAL, 'porta, luce (GOAL_H) a ' + taglia + '  (fonte: ' + GOAL_FONTE[taglia] + ')',
       p.GOAL_H + 'u / ' + rapp + 'u/m = ' + (p.GOAL_H / rapp).toFixed(2) + 'm contro ' + uff.toFixed(2) + 'm ufficiali, scarto ' + pct(sc) + ' (tetto ±20%)');
+  }
+
+  /* ---- l'area di rigore, SEMILARGHEZZA (voce #86, compito 5), tolleranza
+     ±10% come il resto della vernice — vedi AREA_SEMI_UFF in testa al file ---- */
+  for (const taglia of [5, 7, 11]) {
+    const p = prop[taglia], rapp = RAPPORTO[taglia];
+    const uff = AREA_SEMI_UFF[taglia];
+    const v = p.VERNICE.areaSemi;
+    const sc = scarto(v, rapp, uff);
+    const conv = taglia === 7 ? '  (convenzione: dischetto 8 m al posto della profondita\', A3 "non trovato")' : '';
+    di(Math.abs(sc) <= TOLL_VERNICE, 'area di rigore (semilarghezza) a ' + taglia + conv,
+      v + 'u / ' + rapp + 'u/m = ' + (v / rapp).toFixed(2) + 'm contro ' + uff.toFixed(2) + 'm ufficiali, scarto ' + pct(sc) + ' (tetto ±10%)');
   }
 
   /* ---- le tre convenzioni del 7: uguaglianza, non scarto ---- */
