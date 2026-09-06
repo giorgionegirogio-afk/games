@@ -1,7 +1,14 @@
 # Dove siamo, e cosa manca
 
-Aggiornato al **1 settembre 2026**. Questo file serve a riprendere senza
+Aggiornato al **6 settembre 2026**. Questo file serve a riprendere senza
 rileggere niente altro.
+
+## La giornata del 6 settembre, in breve
+
+| | cosa |
+|---|---|
+| 1 | **#88 LA PULSANTIERA: CANTIERE CHIUSO.** Dieci compiti, un solo commit ciascuno: la faccia dei dischi dipende dal possesso (`squadraDelPallone()`) invece che da una soglia geometrica, le celle si spengono invece di travestirsi da un altro verbo, il comando segue il destinatario dichiarato del passaggio, il raddoppio è una tenuta. Le sei soglie del progetto approvato tutte VERDI su `strumenti/_q-volo.js` (11/11): TIRA nel volo del cross 9%→100%, faccia bugiarda in 6 s d'inseguimento 3→0, comando al destinatario 38→17 fotogrammi (0,63 s→0,28 s), volée 0→1, celle accese che rifiutano l'atto 147→0 (e la direzione opposta, prova G, 0/361), furti a dita vere invariati (19/20 e 17/20 prima, 17/20 e 17/20 dopo). Batteria intera verde (24 cancelli che contano), sorteggi identici al bit: `_q-determinismo` 10/10, `_c3-sorteggi` 0 partite divergenti su 60, `_crit10-sorteggi` verde. Verbale completo in `MANUALE.md` § A registro, voce #88 |
+| 2 | **Restano quattro cantieri della stessa decomposizione** (decisa dal committente il 1° settembre, `docs/superpowers/specs/2026-09-01-pulsantiera-contesto-design.md` §7), nessuno ancora iniziato: **vernice del campo** in scala ufficiale (#86), **residuo della moviola** — i cronometri dei gesti non interpolati (#85), **rimesse laterali e calci d'angolo** (#87), **meccaniche dei verbi** — filtrante, cross e rovesciata rifatti sul modello del paragone (#89) |
 
 ## La giornata del 1 settembre, in breve
 

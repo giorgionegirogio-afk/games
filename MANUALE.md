@@ -427,6 +427,53 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **La pulsantiera che mentiva sul possesso** (#88) — **CURATA il 6
+  settembre 2026** (dieci compiti, attrezzi ad ancore in
+  `strumenti/_t-*.js`: `_t-ricevente`, `_t-cella-spenta`,
+  `_t-cella-spenta-alfa`, `_t-contrasto-specchio`, `_t-difesa-ferma`,
+  `_t-raddoppio-tenuta`, `_t-crossto-palo` fra gli altri): la faccia dei
+  dischi smette di dipendere da una soglia geometrica sul pallone e
+  dipende dal possesso (`squadraDelPallone()`, già in casa dalla voce
+  #82); le celle si spengono invece di travestirsi da un altro verbo; il
+  comando segue il destinatario dichiarato del passaggio; il raddoppio
+  diventa una tenuta invece di un impulso. Le sei soglie decise **prima**
+  dell'esecuzione (progetto approvato,
+  `docs/superpowers/specs/2026-09-01-pulsantiera-contesto-design.md` §5),
+  tutte VERDI oggi su `strumenti/_q-volo.js` (11 prove su 11):
+  1. TIRA premibile durante il volo di un nostro cross: **9% → 100%**
+     (soglia dello spec; oggi 232/232 fotogrammi, prova A — il campione
+     si allarga da 56 a 232 dopo la correzione del palo del compito 9,
+     che rende legittimi 184 fotogrammi prima esclusi come «dopo il
+     cambio di lato»);
+  2. Cambi di faccia bugiardi in 6 s di inseguimento senza cambio di
+     possesso: **3 → 0** su 4 cambi totali (i cambi che restano seguono
+     un vero cambio di possesso, e la prova B li lascia passare apposta);
+  3. Comando al destinatario del passaggio: **38 → 17 fotogrammi**
+     (0,63 s → 0,28 s, soglia 0,5 s, prova C);
+  4. Volée eseguibili tenendo TIRA durante il volo: **0 → 1** (prova D);
+  5. Celle accese che rifiutano l'atto: **147 → 0 fotogrammi** (prova E);
+     direzione opposta, prova nuova G — celle spente che nascondono un
+     atto possibile: **0 su 361 fotogrammi** (rossa a 1/361 sulla guardia
+     rotta, verificato apposta con un file guasto per costruzione);
+  6. Furti riusciti (il prezzo dichiarato prima di scrivere il codice):
+     **non calano** — scivolate riuscite a dita vere, due misure prima e
+     due dopo la cura di §4.3: 19/20 e 17/20 prima, 17/20 e 17/20 dopo.
+
+  Fuori dalle sei soglie ma nello stesso lavoro: il raddoppio non scade
+  più da solo sotto il dito — durante 5 s di tenuta continua il
+  cronometro del compagno non scende sotto **2,78 s** e si azzera da sé
+  al rilascio (prova K). Sorteggi identici al bit su tutta la
+  lavorazione: `_q-determinismo` 10/10; `_c3-sorteggi` 0 partite
+  divergenti su 60 (542275 = 542275 chiamate a `dado()`);
+  `_crit10-sorteggi` verde (sei partite identiche sui due file, conto
+  statico di `dado()` invariato 89→89). Minori a registro per la
+  revisione finale: (1) `swLock` a 0,75 s può superare il volo di un
+  cross e vanificare la volée appena sbloccata; (2) durante la tenuta del
+  raddoppio il bersaglio si rideriva ogni 0,2 s dalla direzione corrente,
+  quindi a metà presa l'uomo chiamato può cambiare; (3) il numero della
+  prova A col seme scelto (5%) cade fuori dal ballo senza seme (8-22% su
+  più semi). Verbale del progetto:
+  `docs/superpowers/specs/2026-09-01-pulsantiera-contesto-design.md`.
 - **Il palleggio avversario mangia la scivolata trascinata** (#82) —
   **CURATA il 1 settembre 2026** (`strumenti/_t-isteresi-disco.js`, 5
   ancoraggi): il ri-armo scatta solo se il pallone CAMBIA LATO

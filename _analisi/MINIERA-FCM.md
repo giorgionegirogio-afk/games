@@ -109,13 +109,22 @@ spedita oggi ESATTAMENTE come da progetto, senza tarature aggiunte. Il loro
 ri-armo e' cosi' invadente che la palestra ha un comando per spegnerlo
 (lxDisableTouchControllerReset :19482).
 
-Adozioni piccole a valle: (a) l'autoswitch segue il ricevente designato
-(b.passTo, alla USER_ASSIGNMENT_REQUEST_PASSRECEIVER :61724) — 3-4 righe in
-switchControlled; (b) registro tipizzato dell'ultimo cambio manuale/auto
-(alla lxDidManualSwitchOccur :28392) — 2 righe. Per il futuro: coni di
-ricerca per verbo e punteggio a due pesi (TAP_TO_PASS/GESTURE_SEARCH_ANGLE_*
-:8188..., FORWARD_WEIGHT/DIST_WEIGHT :37150/:50564); doppio tocco solo
-bufferizzato a fotogrammi (InputBufferDoubleTapHold :59502).
+Adozioni piccole a valle, **FATTE il 6 settembre 2026** (voce #88, dieci
+compiti, batteria e sorteggi verdi): (a) l'autoswitch segue il ricevente
+designato (b.passTo/b.crossTo, alla USER_ASSIGNMENT_REQUEST_PASSRECEIVER
+:61724) — sei righe in switchControlled; misurato, comando al destinatario
+da 38 a 17 fotogrammi (0,63 s -> 0,28 s, soglia 0,5 s). (b) Il registro del
+cambio non e' un campo tipizzato nuovo (come proposto qui, sul modello di
+lxDidManualSwitchOccur :28392): l'esecutore ha trovato che il timer gia' in
+casa `G.swLock[t]` fa lo stesso lavoro da guardia di precedenza — il cambio
+manuale vince sempre nella sua finestra di 0,75 s, e solo a finestra
+scaduta l'autoswitch al destinatario torna a contare (commento "IL CAMBIO
+MANUALE VINCE SEMPRE" dentro switchControlled). Scelta piu' onesta della
+proposta: niente stato duplicato da tenere sincronizzato con quello che
+gia' esisteva. Per il futuro: coni di ricerca per verbo e punteggio a due
+pesi (TAP_TO_PASS/GESTURE_SEARCH_ANGLE_* :8188..., FORWARD_WEIGHT/DIST_WEIGHT
+:37150/:50564); doppio tocco solo bufferizzato a fotogrammi
+(InputBufferDoubleTapHold :59502).
 
 Taglio: 1,5-2 giornate (il banco comparativo A/B non serve piu'; la
 «stabilizzazione del contesto» promessa dal verbale non e' piu' un lavoro).
