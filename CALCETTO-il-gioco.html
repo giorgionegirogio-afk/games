@@ -19956,16 +19956,21 @@ function aiDecide(p, b, carrier, weHaveBall, myGoalX, opGoalX, isCpuTeam, D){
 
    E' la stessa che finestraRovesciata usava scritta a mano, ed e' la
    stessa che il disegno del campo usa per la riga bianca (AREA_Wu =
-   Math.round(118*KPASSO): cercalo per nome, non per numero di riga — i
-   numeri di riga di questo file invecchiano in un giorno).
-   Scriverla una volta sola non e' pulizia: e' il modo di garantire che
-   "il cross cade in area" e "la rovesciata si puo' aprire" parlino dello
-   stesso rettangolo. Se un giorno uno dei due si muove, si muovono tutti
-   e due.
+   VERNICE.areaProf: cercalo per nome, non per numero di riga — i numeri
+   di riga di questo file invecchiano in un giorno).
+   FINO AL COMPITO 1 la profondita' (GK_AREA_X) e la vernice (AREA_W,
+   AREA_Wu) erano la STESSA formula scritta due volte a mano (118*kPasso
+   in ciascuna): coincidevano per caso, non per costruzione. DAL COMPITO
+   2 (voce #86) GK_AREA_X si ricuoce leggendo VERNICE.areaProf in
+   setTaglia, e la semilarghezza qui sotto legge VERNICE.areaSemi (col
+   ripiego GOAL_H*0.77 finche' la tavola non decide un valore vero): non
+   e' piu' un patto fra formule che oggi coincidono per caso, e' la
+   stessa variabile letta due volte. Se un giorno uno dei due si muove,
+   si muovono tutti e due perche' non possono fare altrimenti.
    ===================================================================== */
 function dentroArea(team, x, y){
   const gx = team===0?FW:0;
-  return Math.abs(x-gx) <= GK_AREA_X && Math.abs(y-FH/2) <= GOAL_H*0.77;
+  return Math.abs(x-gx) <= GK_AREA_X && Math.abs(y-FH/2) <= (VERNICE.areaSemi || GOAL_H*0.77);
 }
 
 /* =====================================================================
@@ -28439,7 +28444,7 @@ function setTaglia(n){
   ATTR_K=1150/FW; TIRO_ATTR=1.0498*ATTR_K;
   GY0=FH/2-GOAL_H/2; GY1=FH/2+GOAL_H/2;
   POSTI=[[0,GY0],[0,GY1],[FW,GY0],[FW,GY1]];
-  GK_AREA_X=Math.round(118*KPASSO);
+  GK_AREA_X=VERNICE.areaProf;
   RESIZE_FORZA=true; resize();          // SCALE/OX/OY/PADX/PADY + fieldTex/vignette
   rebuildCrowd();
   G.menuBall.x=FW*0.32; G.menuBall.y=FH*0.35;
