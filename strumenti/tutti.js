@@ -387,8 +387,8 @@ const CANCELLI = [
      domani qualcuno tocca puoTirare, puoContrastoPremuto o
      touchBtnLayout senza saperlo, questo e' l'unico posto dove il
      silenzio si rompe.
-     Deterministico a semi dichiarati (88001, 88002), passo 1/60, nessun
-     cronometro: corre in compagnia. */
+     Deterministico a semi dichiarati (88001, 88002, 88003), passo 1/60,
+     nessun cronometro: corre in compagnia. */
   { nome: 'volo',        cmd: ['strumenti/_q-volo.js'],                                  conta: true,  lento: false },
   /* nomi: il punto cieco che il 28 agosto 2026 e' costato una bocciatura.
      Il gioco aveva gia' trovato e riparato «due uomini con lo stesso
