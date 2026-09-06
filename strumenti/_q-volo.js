@@ -35,6 +35,18 @@
         non deve ne' contare un tiro ne' cambiare la velocita' del
         pallone — kickBall rifiuta il calcio in quella fascia, e il
         ramo TIRO AL VOLO di updateBall deve ascoltarlo.
+     K  il raddoppio diventa una tenuta (compito 7, voce #88): prima
+        della cura comandaPressa scriveva UNA volta sola p.raddoppio =
+        RADDOPPIO_T (3 s) sul compagno chiamato, e il cronometro scadeva
+        da solo dentro aiMove ANCHE col dito ancora giu' sul disco
+        PRESSA — un ordine che doveva durare quanto il dito lo tiene ne
+        durava invece tre secondi fissi. Si arma un atto 'press' vero
+        (Touch5.start sul disco PRESSA: e' Touch5.passo che va misurato,
+        non una scorciatoia sopra comandaPressa) e lo si TIENE 5 s col
+        portatore avversario fermo in piedi: il massimo raddoppio fra i
+        compagni non deve mai toccare zero. Poi il dito si alza
+        (Touch5.end): il cronometro deve finire da se' entro RADDOPPIO_T
+        piu' margine — nessun ordine immortale.
    uso: node strumenti/_q-volo.js [--gioco file.html]
    ===================================================================== */
 const http = require('http');
@@ -80,7 +92,7 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
    generatore del pennello che non tocca nulla di cio' che si misura —
    e questa e' piu' corta di una riga di preambolo. Chi arriva dopo
    sappia che sono due, e non una svista. */
-const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
+const SEME_VOLO = 88001, SEME_INSEGUE = 88002, SEME_TENUTA = 88003;
 
 (async () => {
   const prova = arg('gioco', '');
@@ -600,6 +612,121 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002;
     + 'tiri ' + morto.tiriPrima + '->' + morto.tiriDopo + ', volee ' + morto.voleePrima + '->' + morto.voleeDopo
     + ', velocita (' + morto.vxPrima.toFixed(1) + ',' + morto.vyPrima.toFixed(1) + ')->('
     + morto.vxDopo.toFixed(1) + ',' + morto.vyDopo.toFixed(1) + ')');
+
+  /* ---- K: il raddoppio diventa una tenuta (compito 7, voce #88) ----
+     PRIMA DELLA CURA comandaPressa scriveva UNA volta sola p.raddoppio =
+     RADDOPPIO_T (3 s) sul compagno chiamato, e il cronometro scendeva da
+     solo dentro aiMove ANCHE col dito ancora giu' sul disco PRESSA: un
+     ordine che doveva durare quanto il dito lo tiene, ne durava invece
+     tre secondi fissi. LA CURA sta dentro Touch5.passo: finche' l'atto
+     'press' e' vivo e la cella e' accesa, ogni 0,2 s (RINNOVO_PRESSA_T)
+     si richiama comandaPressa, e il cronometro torna a scadere da capo.
+
+     DUE LATI, UN SOLO VERDETTO. La scena arma un atto 'press' VERO
+     (Touch5.start sul disco PRESSA — non una scorciatoia sopra
+     comandaPressa: e' Touch5.passo, il ciclo degli atti, che va
+     misurato) e lo TIENE per 5 s di simulazione: il massimo raddoppio
+     fra i compagni non deve mai toccare zero. Poi il dito si alza
+     (Touch5.end): il cronometro deve finire da se' entro RADDOPPIO_T
+     piu' margine — nessun ordine immortale.
+
+     IL POSSESSO AVVERSARIO E' TENUTO FERMO A OGNI SINGOLO FOTOGRAMMA, non
+     solo all'apertura della scena come in B/E: senza questo l'AI del
+     compagno chiamato correrebbe DAVVERO a pressare il portatore (e' il
+     comportamento vero, letto sopra aiMove, riga 19731) e prima o poi lo
+     raggiungerebbe, rubandogli il pallone — la cella si spegnerebbe a
+     meta' tenuta e il rinnovo tacerebbe per progetto: corretto, ma
+     misurerebbe la scena e non la cura. Si ripristinano owner e
+     posizione del portatore (piu' kickCd/aiActT alti, la stessa tecnica
+     di scenaDifesa in _q-l16.js, allungata a 5 s) e si parcheggiano
+     TUTTI gli altri in un angolo, a ogni fotogramma: il campo del
+     raddoppio non dipende dalla posizione di nessuno, solo dal
+     possesso, quindi il parcheggio non tocca cio' che si misura. */
+  const tenuta = await pag.evaluate((seme) => {
+    const t = window.__test;
+    t.semina(seme);
+    t.startMatch(1, 1, { size: 7 });
+    for (let i = 0; i < 600 && G.scene !== 'play'; i++) t.simulate(1 / 60);
+    if (G.scene !== 'play') return { errore: 'mai in play' };
+    t.setTimeLeft(600);
+    const pi = G.ctrl[0]; if (pi < 0) return { errore: 'nessun comandato' };
+    const p = G.players[pi];
+    let oi = -1;
+    for (let i = 0; i < G.players.length; i++) {
+      const q = G.players[i];
+      if (q.team === 0 || q.role === 'gk') continue;
+      oi = i; break;
+    }
+    if (oi < 0) return { errore: 'nessun avversario di movimento' };
+    const o = G.players[oi];
+    const OX = FW * 0.5, OY = FH * 0.5;
+    const b = G.ball;
+    /* il fermo-scena: portatore, pallone e ogni altro giocatore tornano
+       al loro posto PRIMA di ogni t.simulate */
+    const fissa = () => {
+      p.x = OX - 60; p.y = OY; p.vx = 0; p.vy = 0; p.fx = 1; p.fy = 0;
+      o.x = OX; o.y = OY; o.vx = 0; o.vy = 0; o.out = 0;
+      o.slide = -1; o.recover = 0; o.rove = -1; o.kickCd = 5; o.aiActT = 5;
+      b.owner = oi; b.x = OX + 8; b.y = OY; b.vx = 0; b.vy = 0; b.vz = 0; b.z = 0;
+      for (let i = 0; i < G.players.length; i++) {
+        const q = G.players[i];
+        if (q === p || q === o) continue;
+        q.x = 15 + (i % 5) * 10; q.y = 15 + Math.floor(i / 5) * 10; q.vx = 0; q.vy = 0;
+      }
+    };
+    fissa();
+    segnaTocco(oi);
+    const bt0 = t.pulsanti(0);
+    const pressa0 = bt0.find(z => z.act === 'press');
+    if (!pressa0) return { errore: 'il disco PRESSA non e\' offerto' };
+    if (pressa0.off) return { errore: 'PRESSA e\' spento: la scena non si e\' montata' };
+    const massimoRaddoppio = () => {
+      let m = 0;
+      for (const q of G.players) { if (q.team === 0 && q !== p) m = Math.max(m, q.raddoppio || 0); }
+      return m;
+    };
+    const ID = 9001;
+    Touch5.start(ID, pressa0.x, pressa0.y);           // un atto vero, un dito vero
+    /* LO STIMOLO SI VERIFICA PARTITO PRIMA DI MISURARNE L'EFFETTO (regola
+       di casa): comandaPressa scatta gia' dentro Touch5.start, alla
+       pressione — se qui non ha ordinato niente la scena non discrimina,
+       e si esce con l'errore invece di un rosso per la ragione sbagliata */
+    const primoMassimo = massimoRaddoppio();
+    if (primoMassimo <= 0) return { errore: 'la prima pressione non ha ordinato il raddoppio a nessuno' };
+    const TENUTA_FRAMES = 300;                        // 5 s tenuti
+    let minDurante = Infinity, offDurante = 0;
+    for (let i = 0; i < TENUTA_FRAMES; i++) {
+      fissa();
+      t.simulate(1 / 60);
+      const btI = t.pulsanti(0);
+      const pI = btI.find(z => z.act === 'press');
+      if (!pI || pI.off) offDurante++;
+      const m = massimoRaddoppio();
+      if (m < minDurante) minDurante = m;
+    }
+    Touch5.end(ID);                                   // il dito si alza
+    const RILASCIO_FRAMES = Math.ceil((RADDOPPIO_T + 0.3) * 60);
+    let scesoAZero = massimoRaddoppio() <= 0, frameZero = scesoAZero ? 0 : -1;
+    for (let i = 0; i < RILASCIO_FRAMES && !scesoAZero; i++) {
+      fissa();
+      t.simulate(1 / 60);
+      if (massimoRaddoppio() <= 0) { scesoAZero = true; frameZero = i + 1; }
+    }
+    return { primoMassimo, minDurante, offDurante, campioniTenuta: TENUTA_FRAMES,
+             scesoAZero, frameZero, rilascioFrames: RILASCIO_FRAMES, RADDOPPIO_T };
+  }, SEME_TENUTA);
+  if (tenuta.errore) { console.log('BANCO: ' + tenuta.errore); process.exit(2); }
+  if (!tenuta.campioniTenuta) { console.log('BANCO: K non ha campionato un solo fotogramma'); process.exit(2); }
+  /* PRESSA spento durante la tenuta e' la scena che scivola, non un
+     verdetto: si esce con 2, come da regola di casa (rilievo del brief) */
+  if (tenuta.offDurante > 0) {
+    console.log('BANCO: PRESSA si e\' spento ' + tenuta.offDurante + ' volte durante la tenuta: la scena non ha retto il possesso avversario');
+    process.exit(2);
+  }
+  di(tenuta.minDurante > 0 && tenuta.scesoAZero,
+    'K il raddoppio tiene finche\' il dito preme PRESSA, e muore da solo al rilascio',
+    'tenuta: minimo ' + tenuta.minDurante.toFixed(2) + 's su ' + tenuta.campioniTenuta + ' fotogrammi (RADDOPPIO_T=' + tenuta.RADDOPPIO_T + 's)'
+    + '  ·  rilascio: ' + (tenuta.scesoAZero ? 'zero in ' + tenuta.frameZero + '/' + tenuta.rilascioFrames + ' fotogrammi' : 'MAI sceso a zero entro ' + tenuta.rilascioFrames + ' fotogrammi'));
 
   if (ecc.length) di(false, 'nessuna eccezione di pagina', ecc[0]);
   const rossi = esiti.filter(v => !v).length;

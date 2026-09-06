@@ -13968,6 +13968,44 @@ const Touch5 = {
          entrambi col suo continue: un sessantesimo, ininfluente.) */
       a.posato+=dt;
       if(!a.morto) a.tenuta+=dt;
+      /* =================================================================
+         L1.5 — IL RADDOPPIO DIVENTA UNA TENUTA (compito 7, voce #88).
+
+         Fino a ieri comandaPressa scriveva UNA volta sola p.raddoppio =
+         RADDOPPIO_T (RUOLO_MIN*2 = 3 s), e da li' il cronometro scendeva
+         da solo dentro aiMove — anche col dito ancora giu' sul disco.
+         Il compagno chiamato smetteva di pressare dopo 3 s SEMPRE, anche
+         se il pollice non aveva mai lasciato PRESSA: un ordine che
+         doveva durare quanto il dito lo tiene durava invece un tempo
+         fisso, e basta.
+
+         LA CURA STA QUI, non dentro comandaPressa: e' il posto dove i
+         cronometri del pollice avanzano gia' (a.posato, a.tenuta, due
+         righe sopra), col dt fisso della simulazione (Legge 1) e solo
+         quando l'atto e' vivo. Finche' il dito tiene un atto 'press'
+         vivo, ogni RINNOVO_PRESSA_T di tenuta si richiama comandaPressa:
+         RADDOPPIO_T torna a scadere da capo, e siccome 0,2 s e' un
+         quindicesimo di RADDOPPIO_T il cronometro del compagno non
+         arriva mai a zero mentre il dito preme.
+
+         A RITMO RIDOTTO, non a ogni fotogramma: comandaPressa richiama
+         uomoVersoDirezione, che scandisce la rosa in cerca del compagno
+         piu' vicino alla direzione — farlo a 60 Hz costerebbe sessanta
+         volte il prezzo per lo stesso identico risultato (l'uomo
+         chiamato resta lo stesso finche' la direzione non cambia).
+
+         LA CELLA SPENTA NON RINNOVA NIENTE: d e' la stessa lettura,
+         fresca a questo fotogramma, che la porta del ri-armo qui sopra
+         gia' usa per decidere se il verbo e' cambiato — non una seconda
+         chiamata a touchBtnLayout. Se il portatore avversario e' uscito
+         (d.off, la stessa guardia che pressaViva applica), il rinnovo
+         tace: e' la stessa regola della cella spenta che non risponde
+         nemmeno alla prima pressione (Touch5.start), applicata qui al
+         rinnovo invece che al tocco. */
+      if(!a.morto && a.act==='press' && d && !d.off){
+        a.rinnovoT=(a.rinnovoT||0)+dt;
+        if(a.rinnovoT>=RINNOVO_PRESSA_T){ a.rinnovoT=0; comandaPressa(a.t); }
+      }
     }
   }
 };
@@ -19253,6 +19291,7 @@ function puntoRaddoppio(carrier, myGoalX){
   return [clamp(carrier.x+vx/vl*so, P_R, FW-P_R), clamp(carrier.y+vy/vl*so, P_R, FH-P_R)];
 }
 const RADDOPPIO_T = RUOLO_MIN*2;
+const RINNOVO_PRESSA_T = 0.2;      // s di tenuta fra due rinnovi del cronometro (L1.5, compito 7)
 
 /* =====================================================================
    L'ATTACCO DELL'AREA — l'uomo che si stacca e va a farsi trovare.
@@ -32915,7 +32954,15 @@ function drawSegniTerra(lista){
       if(!isCtrl) anelloPortatoreTratto(p);
       ctx.restore();
     }
-    if(isCtrl) anelloComandato(p);
+    if(isCtrl){
+      anelloComandato(p);
+      /* IL SEGNO DEL CONTENIMENTO (compito 7, voce #88): la stessa
+         domanda che L1.2 gia' fa dentro aiMove per rallentare il passo
+         (Touch5.contiene, atti vivi, non una bandiera) diventa anche un
+         segno che l'occhio vede, cosi' chi difende sa che il gesto e'
+         attivo invece di indovinarlo dal solo rallentamento. */
+      if(Touch5.contiene(p.team)) anelloContenimento(p);
+    }
   }
   if(buco) ctx.restore();
 }
@@ -32997,6 +33044,36 @@ function anelloComandato(p){
   ctx.closePath();
   ctx.strokeStyle='rgba(0,0,0,.46)'; ctx.lineWidth=2.8; ctx.lineJoin='round'; ctx.stroke();
   ctx.fillStyle='rgba(255,176,32,.95)'; ctx.fill();
+  ctx.restore();
+}
+
+/* IL SEGNO DEL CONTENIMENTO (compito 7, voce #88). Il rallentamento del
+   contenimento (L1.2, dentro aiMove) e' un effetto sul CORPO — si sente
+   nel passo, non si vede sul vetro — e chi difende non ha modo di
+   sapere se il dito e' ancora registrato sopra il disco o se un ri-armo
+   silenzioso l'ha gia' spento. Qui il gesto diventa un segno: due archi
+   ciano ai piedi dell'uomo, DENTRO l'anello ambra del comandato
+   (anelloComandato, appena sopra) — mai sopra, perche' l'ambra e' gia'
+   presa dal controllo e un cerchio pieno concentrico leggerebbe come un
+   doppio bordo sullo stesso paio di scarpe. La domanda che li accende
+   e' la stessa di L1.2, Touch5.contiene: nessuno stato nuovo da
+   accendere e da spegnere, quindi nessun modo di lasciare un segno
+   acceso quando il gesto e' gia' finito. Il respiro (SAVE.moto) e' lo
+   stesso di anelloComandato: fermo a meta' via a movimento ridotto.
+   BUDGET: estremo laterale (2,5+15,5+2)x1,18 = 23,6 < 30, il raggio da
+   cui collaudo.js campiona l'erba. */
+function anelloContenimento(p){
+  ctx.save();
+  ctx.translate(p.x,p.y); ctx.scale(P_DIS,P_DIS); ctx.translate(-p.x,-p.y);
+  const pl = SAVE.moto ? 0.5+0.5*Math.sin(G.pulse*3.4) : 0.5;
+  const arx=14.6+0.9*pl, ary=6.4+0.39*pl;
+  const cx=p.x+2.5, cy=p.y+6.6;
+  for(const [a0,a1] of [[0.06*Math.PI,0.44*Math.PI],[1.06*Math.PI,1.44*Math.PI]]){
+    ctx.strokeStyle='rgba(0,0,0,.42)'; ctx.lineWidth=4.0;
+    ctx.beginPath(); ctx.ellipse(cx,cy,arx,ary,0,a0,a1); ctx.stroke();
+    ctx.strokeStyle='rgba(57,211,230,.88)'; ctx.lineWidth=2.2;
+    ctx.beginPath(); ctx.ellipse(cx,cy,arx,ary,0,a0,a1); ctx.stroke();
+  }
   ctx.restore();
 }
 
