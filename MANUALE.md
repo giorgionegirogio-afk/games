@@ -428,7 +428,7 @@ Qui il registro completo, a edizioni.
 ## A registro — ciò che resta, e in che stato
 
 - **La pulsantiera che mentiva sul possesso** (#88) — **CURATA il 6
-  settembre 2026** (dieci compiti, attrezzi ad ancore in
+  settembre 2026** (nove compiti, attrezzi ad ancore in
   `strumenti/_t-*.js`: `_t-ricevente`, `_t-cella-spenta`,
   `_t-cella-spenta-alfa`, `_t-contrasto-specchio`, `_t-difesa-ferma`,
   `_t-raddoppio-tenuta`, `_t-crossto-palo` fra gli altri): la faccia dei
@@ -447,7 +447,10 @@ Qui il registro completo, a edizioni.
      cambio di lato»);
   2. Cambi di faccia bugiardi in 6 s di inseguimento senza cambio di
      possesso: **3 → 0** su 4 cambi totali (i cambi che restano seguono
-     un vero cambio di possesso, e la prova B li lascia passare apposta);
+     un vero cambio di possesso, e la prova B li lascia passare apposta —
+     i due numeri vengono da strumenti diversi, entrambi veri: 6 cambi
+     osservati da `_p-sfarfallio` (commit abe425d) di cui 4 bugiardi
+     spariti; il banco B conta le bugie, non i cambi: 3 → 0);
   3. Comando al destinatario del passaggio: **38 → 17 fotogrammi**
      (0,63 s → 0,28 s, soglia 0,5 s, prova C);
   4. Volée eseguibili tenendo TIRA durante il volo: **0 → 1** (prova D);
