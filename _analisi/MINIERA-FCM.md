@@ -109,7 +109,7 @@ spedita oggi ESATTAMENTE come da progetto, senza tarature aggiunte. Il loro
 ri-armo e' cosi' invadente che la palestra ha un comando per spegnerlo
 (lxDisableTouchControllerReset :19482).
 
-Adozioni piccole a valle, **FATTE il 6 settembre 2026** (voce #88, dieci
+Adozioni piccole a valle, **FATTE il 6 settembre 2026** (voce #88, nove
 compiti, batteria e sorteggi verdi): (a) l'autoswitch segue il ricevente
 designato (b.passTo/b.crossTo, alla USER_ASSIGNMENT_REQUEST_PASSRECEIVER
 :61724) — sei righe in switchControlled; misurato, comando al destinatario

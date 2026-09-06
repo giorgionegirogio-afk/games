@@ -366,18 +366,25 @@ const CANCELLI = [
   { nome: 'record',      cmd: ['strumenti/_t-record-conta.js'],                          conta: true,  lento: false },
   { nome: 'abbandono',   cmd: ['strumenti/_t-abbandono-conta.js'],                       conta: true,  lento: true  },
   /* volo: la pulsantiera dice la verita'? (voce #88, 2 settembre 2026).
-     Otto prove sul COMPORTAMENTO dei dischi, non sul loro disegno: che
-     TIRA resti offerto mentre una palla NOSTRA vola, che la faccia non
-     cambi senza che cambi il possesso, che il comando passi al
-     destinatario, che la volee' esca davvero, che nessuna cella accesa
-     rifiuti l'atto e — la direzione opposta, che era il buco della prima
-     stesura — che nessuna cella SPENTA nasconda un atto possibile.
+     Undici prove (A-K) sul COMPORTAMENTO dei dischi, non sul loro
+     disegno: che TIRA resti offerto mentre una palla NOSTRA vola, che
+     la faccia non cambi senza che cambi il possesso, che il comando
+     passi al destinatario, che la volee' esca davvero, che nessuna
+     cella accesa rifiuti l'atto e — la direzione opposta, che era il
+     buco della prima stesura — che nessuna cella SPENTA nasconda un
+     atto possibile; piu' tardi si sono aggiunte il palo che non deve
+     lasciare un destinatario rancido, la fascia morta del volo che non
+     deve mentire al tabellino, e il raddoppio che deve tenere quanto il
+     dito lo tiene.
 
      PERCHE' STA IN BATTERIA E NON FRA I CANCELLI A MANO: e' il solo
      banco della casa che misura la coerenza fra cio' che un disco
-     DICHIARA e cio' che il gioco poi CONCEDE. Sei delle otto prove sono
-     nate rosse su difetti veri e sono diventate verdi con una cura
-     misurata; se domani qualcuno tocca puoTirare, puoContrastoPremuto o
+     DICHIARA e cio' che il gioco poi CONCEDE. Nove delle undici prove
+     sono nate rosse su difetti veri e sono diventate verdi con una cura
+     misurata; le altre due (la rovesciata e il rilascio a vuoto) sono
+     nate come controlli che discriminano — verdi sul gioco vero, rosse
+     solo su una copia rotta apposta, mai su un difetto dal vivo. Se
+     domani qualcuno tocca puoTirare, puoContrastoPremuto o
      touchBtnLayout senza saperlo, questo e' l'unico posto dove il
      silenzio si rompe.
      Deterministico a semi dichiarati (88001, 88002), passo 1/60, nessun
