@@ -228,7 +228,7 @@ const pct = x => (x * 100).toFixed(1) + '%';
   /* ---- le tre convenzioni del 7: uguaglianza, non scarto ---- */
   for (const c of CONVENZIONI_7) {
     const v = prop[7].VERNICE[c.campo];
-    di(v === c.atteso, 'convenzione — ' + c.nome + ' a 7 (valore convenuto ' + c.atteso + ', nessuna fonte non lo misura)',
+    di(v === c.atteso, 'convenzione — ' + c.nome + ' a 7 (valore convenuto ' + c.atteso + ', nessuna fonte lo misura)',
       'oggi VERNICE.' + c.campo + '=' + v + (v === c.atteso ? '' : ', atteso ' + c.atteso));
   }
 

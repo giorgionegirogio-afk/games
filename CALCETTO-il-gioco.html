@@ -26479,7 +26479,11 @@ function paintField(c, TH, pX, pY, q, vivo){
     /* il seme e' il tipo di campo: stessa usura a ogni cottura */
     const RU=semeRnd(usuraSeme(TH));
     const U=USURA[TH.tipo]||USURA.oratorio;
-    const AREA_Wu=Math.round(118*KPASSO), DISCHu=Math.round(112*KPASSO);
+    /* LE CHIAZZE D'USURA SEGUONO LA TAVOLA DELLE VERNICI, come il gesso
+       poco sopra (voce #86, correzione revisione compito 1): cosi'
+       quando l'area si muove (compiti 4/5) si muovono anche loro, invece
+       di restare ferme sui vecchi letterali. */
+    const AREA_Wu=VERNICE.areaProf, DISCHu=VERNICE.dischetto;
     c.save();
     c.beginPath(); c.rect(0,0,FW,FH); c.clip();
     /* chiazza a raggio rumoroso: n gobbe grosse, m gobbe fini, ruotata.
