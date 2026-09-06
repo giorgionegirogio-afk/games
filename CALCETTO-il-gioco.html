@@ -3826,8 +3826,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
    crescono il MONDO, non le figure — lo zoom e' in pixel per unita'
    (vedi S2_*), quindi i corpi restano grossi uguali sullo schermo e un
    campo piu' grande significa solo piu' campo fuori quadro.
-   Rapporto d'aspetto 2.05 INVARIATO su tutte: minimappa e taratura
-   camera restano vere senza ritocchi. La porta cresce MENO del campo
+   RETTIFICA (voce #86, compito 3, 6 settembre 2026): "INVARIATO su
+   tutte" era vero fino a qui. Restano 2,05 le taglie 5 e 7; l'11 passa
+   da FH:1120 a FH:1490 per prendere i 68 m veri del campo IFAB
+   (105x68 m), e il suo rapporto scende a 1,5436 (2300/1490) contro il
+   vero 1,5441 (105/68): scarto -0,03%. Minimappa (k0 in drawMinimappa)
+   e camera (kTetto in updateCamera) leggono FW/FH a ogni fotogramma:
+   restano vere SENZA UN SOLO RITOCCO anche sull'11 — verificato e
+   misurato in questo compito, non solo promesso (vedi i commenti
+   accanto a k0 e a kTetto). La porta cresce MENO del campo
    (x1.15 / x1.3): se crescesse con lui il portiere sparirebbe.
    GOAL_D, POST_R, P_R, B_R, KICK_R, P_SPEED non scalano: corpi e piedi
    sono gli stessi, cambia il mondo. E la gabbia resta: le sponde sono il
@@ -3848,7 +3855,7 @@ const TAGLIE={
       modulo:[ {gk:1},
         {fx:0.375,fy:-0.28,lato:-1}, {fx:0.375,fy:0.28,lato:1}, {fx:0.43,fy:0,lato:0},
         {fx:0.185,fy:-0.26,lato:-1}, {fx:0.185,fy:0,lato:0}, {fx:0.185,fy:0.26,lato:1} ] },
-  11:{ FW:2300, FH:1120, GOAL_H:196, kPasso:1.3,  nome:'11 CONTRO 11',
+  11:{ FW:2300, FH:1490, GOAL_H:196, kPasso:1.3,  nome:'11 CONTRO 11',
       modulo:[ {gk:1},
         {fx:0.40,fy:-0.10,lato:-1}, {fx:0.40,fy:0.10,lato:1},
         {fx:0.27,fy:-0.36,lato:-1}, {fx:0.27,fy:-0.12,lato:0}, {fx:0.27,fy:0.12,lato:0}, {fx:0.27,fy:0.36,lato:1},
@@ -34337,9 +34344,20 @@ function drawMinimappa(){
   const vy0=Math.max(0,(PA_Y0-Ay)/S2), vy1=Math.min(FH,(PA_Y1-Ay)/S2);
   const quota=Math.max(0,(vx1-vx0))*Math.max(0,(vy1-vy0))/(FW*FH);
   if(quota>=0.92) return;
-  /* sull'11 contro 11 si vede ~1/4 di campo: la bussola c'e' sempre (la
-     quota 0,92 non scatta mai) ed e' l'unico orientamento, quindi il
-     fattore grande vale anche sotto i 700px */
+  /* RETTIFICA (voce #86, compito 3, 6 settembre 2026): "~1/4 di campo"
+     non era una misura, era una stima a occhio — e sbagliava per
+     eccesso gia' PRIMA di questo compito. Misurato dal vivo con
+     Playwright (fuori/_misura-minimappa-11.js), formula del brief
+     (VW/S2)/FW x (VH/S2)/FH allo zoom di riposo (S2_BASE_DEV, lo
+     stesso zRiposo che updateCamera calcola per il menu), su telefono
+     915x412: PRIMA di questo compito (FH 1120) l'11 mostrava il 9,4%
+     del campo (~1/11); DOPO (FH 1490, i 68 m IFAB) ne mostra il 7,0%
+     (~1/14) — ANCORA MENO, perche' il campo e' piu' alto e lo schermo
+     non e' cambiato. La bussola resta quindi necessaria almeno quanto
+     prima: la quota 0,92 non scatta mai e l'unico orientamento resta
+     questo, quindi il fattore grande vale anche sotto i 700px. Il
+     fattore k0=1,35 non si tocca qui: nessuna misura dice che non
+     basta piu'. */
   const k0 = (Math.min(VW,VH)>=700 || TAGLIA===11) ? 1.35 : 1;
   /* IN BASSO AL CENTRO, come i radar dei riferimenti (quarto appello).
      Nell'angolo destro l'aggancio sopra la fascia delle insegne spingeva
