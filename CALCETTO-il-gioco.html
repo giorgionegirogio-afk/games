@@ -10798,6 +10798,39 @@ function startMatch(mode, diff, opts){
      diritto a uno stato pulito anche acceso lontano da qui. Azzerare
      non consuma sorteggi: i banchi a seme fisso non si sfasano. */
   G.possOwner=-1; G.possT=0; G.pulse=0; G.crowdSndT=0;
+  /* =====================================================================
+     IL TOCCO NON SOPRAVVIVE PIU' ALLA PARTITA (voce #85, compito 2 —
+     estende ai voce #68 la stessa famiglia dei cronometri fratelli qui
+     sopra). Touch5 vive fuori da G e da SAVE: la toppa del 31 agosto
+     non lo copriva, e la prova E di strumenti/_q-replay.js lo aveva
+     scoperto dichiarando "prova nulla" invece di un rosso (voce #68,
+     28 agosto 2026).
+
+     BISEZIONE MISURATA (strumenti/_diag-replay.js e sonde gemelle in
+     fuori/, oggi): la levetta lasciata ATTIVA a fine partita cambia
+     davvero la partita dopo (diverge al campione 6); un verbo a tenuta
+     (scatto, contenimento) lasciato premuto senza rilascio lascia
+     atti{}/btnTouch{} orfani che restano accesi per tutta la partita
+     dopo (diverge al campione 7). stick[].ox/oy da solo con
+     active=false e un candidato orfano in pend{} sono risultati
+     innocui nel percorso normale (start() crea sempre un'origine
+     fresca; pend non e' letto da nessuna decisione di gioco) — azzerati
+     comunque qui, a costo zero, per la stessa prudenza della riga
+     sopra.
+
+     NON E' Touch5.azzera(): quella funzione e' per pausa/ripresa e
+     tiene apposta l'origine della levetta per la riadozione del
+     pollice che torna. Qui la partita e' NUOVA, non ripresa: lo stato
+     residuo si azzera per intero, origine compresa. setPaused chiama
+     Touch5.azzera() per conto suo e non passa da startMatch, quindi
+     questa toppa non tocca il caso "pausa col dito giu', poi ripresa"
+     (verificato con sonda dedicata). */
+  for(const s of Touch5.stick){
+    s.active=false; s.id=-1; s.ox=0; s.oy=0; s.dx=0; s.dy=0;
+    s.hist=[]; s.riadotta=null;
+  }
+  Touch5.pend={}; Touch5.btnTouch={};
+  if(Touch5.atti) Touch5.atti={};
   /* e con loro l'esito della scala (Contenuto 1, rischio 6 del
      progetto): stato di fine partita, mai letto dalla simulazione */
   G._divEsito=null;
