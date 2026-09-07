@@ -390,6 +390,24 @@ const CANCELLI = [
      Deterministico a semi dichiarati (88001, 88002, 88003), passo 1/60,
      nessun cronometro: corre in compagnia. */
   { nome: 'volo',        cmd: ['strumenti/_q-volo.js'],                                  conta: true,  lento: false },
+  /* proporzioni: il campo e' nella scala dei campi veri? (voce #86, 6
+     settembre 2026). Misura le costanti del campo LETTE DAL GIOCO VIVO
+     dopo setTaglia() (cerchio, angolo, dArco, dischetto, area, porta e a
+     11 i corpi P_R/B_R) contro le misure ufficiali con fonte primaria di
+     _analisi/MISURE-UFFICIALI.md, con lo stesso metodo del committente:
+     rapporto unita'/metro dalla lunghezza del campo, poi lo scarto di
+     ogni elemento da quel rapporto.
+
+     PERCHE' STA IN BATTERIA: e' l'unico posto che si accorge se qualcuno
+     tocca TAGLIE/VERNICI/CORPI senza saperlo — un letterale rimesso a
+     mano in un pennello, un dischetto ricopiato invece che letto dalla
+     tavola, un raggio dimenticato fuori da setTaglia. Nato ROSSO 4/24 sul
+     gioco del 6 settembre (cerchio 11 -69,1%, area 11 -57,7%, area di
+     porta assente, porta 5 +73,9%, corpi +189,6%/+232,1%), arrivato a
+     27/27 coi compiti 1-6 della voce #86 (tavola VERNICI, costante unica
+     disegnata=applicata, forma dell'11, porta e area vere, corpi a 11).
+     Deterministico, nessun cronometro: corre in compagnia. */
+  { nome: 'proporzioni', cmd: ['strumenti/_q-proporzioni.js'],                            conta: true,  lento: false },
   /* nomi: il punto cieco che il 28 agosto 2026 e' costato una bocciatura.
      Il gioco aveva gia' trovato e riparato «due uomini con lo stesso
      cognome nella stessa squadra» — l'elenco dei cognomi fu portato da

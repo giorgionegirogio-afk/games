@@ -1,6 +1,13 @@
 # MISURE UFFICIALI — la base di misura per la voce #86
 
-Aggiornato al 2 settembre 2026.
+Aggiornato al 2 settembre 2026. **Nota sulle edizioni**: la voce #86 (6-7
+settembre 2026) ha portato il gioco alle misure di PARTE A in sette
+compiti; PARTE B e PARTE C restano quello che erano — la fotografia del
+gioco PRIMA della cura, con la sua data — e ogni tabella che quella cura
+ha superato porta ora, subito sotto, una nota «EDIZIONE 7 settembre
+2026» coi valori nuovi e lo scarto residuo dalla stessa fonte di PARTE
+A. La storia non si cancella: si rettifica in chiaro, accanto al numero
+vecchio.
 
 Il committente scrive: «le proporzioni tra giocatori, campo da calcio, linee
 del campo di gioco e dimensioni porte non sono corrette, ci sono le
@@ -173,6 +180,19 @@ Il campo è disegnato in orizzontale (FW = lunghezza, FH = larghezza reale del
 terreno) — il nome delle variabili nel codice usa "W"/"H" per lo schermo, non
 per lunghezza/larghezza calcistiche.
 
+> **EDIZIONE 7 settembre 2026 (voce #86, compiti 3 e 5).** FW e kPasso
+> restano quelli di questa tabella a ogni taglia; FH e GOAL_H cambiano:
+>
+> | taglia | FW | FH | GOAL_H | scarto GOAL_H dalla fonte (tetto ±20%) |
+> |---|---|---|---|---|
+> | 5 | 1150 (inv.) | 560 (inv.) | **103** (era 150) | +19,4% (FIFA Futsal 3 m) |
+> | 7 | 1610 (inv.) | 784 (inv.) | **172** (invariata) | +16,6% (UISP 5,5 m) |
+> | 11 | 2300 (inv.) | **1490** (era 1120) | **192** (era 196) | +19,8% (IFAB 7,32 m) |
+>
+> FH a 11 sale a 1490 per prendere i 68 m veri del campo IFAB (105×68 m):
+> il rapporto FW:FH passa da 2,05 a 1,5436, contro il vero 105/68 = 1,5441
+> (scarto −0,03%) — vedi la rettifica C4 sotto.
+
 `FW`/`FH`/`GOAL_H` sono riassegnate da `setTaglia()` a `:28269` (`FW=T.FW;
 FH=T.FH; GOAL_H=T.GOAL_H;`), che ricuoce anche `GY0/GY1` (`:28273`, i bordi
 verticali della porta) e `GK_AREA_X` (`:28275`, quanto può uscire il
@@ -236,6 +256,31 @@ in tutto il file — nessun riscontro. Il disegno del campo (`:27523`,
 contro 11 reale ha due rettangoli annidati (l'area di rigore da 16,5 m e
 l'area di porta da 5,5 m); il gioco ne disegna uno solo a ogni taglia.
 
+> **EDIZIONE 7 settembre 2026 (voce #86, compiti 1, 4, 5, 6).** I
+> letterali di questa sezione non esistono più come tali: sono entrati
+> nella tavola `VERNICI` per taglia (compito 1), coi valori portati alle
+> misure vere (compiti 4-5); `P_R`/`B_R` restano invarianti a 5 e 7, ma a
+> 11 diventano per-taglia (compito 6). L'area di porta (5,5 m IFAB) ora
+> esiste, solo a 11.
+>
+> | elemento | 5 | 7 | 11 | fonte |
+> |---|---|---|---|---|
+> | cerchio (raggio) | 62 → **86** | 62 → **106** (convenzione) | 62 → **200** | FIFA Futsal 3 m / — / IFAB 9,15 m |
+> | arco d'angolo (raggio) | 14 → **7** | 14 → **27** (convenzione) | 14 → **22** | FIFA Futsal 0,25 m / — / IFAB 1 m |
+> | arco della "D" (raggio) | 66 → **0** (niente D nel futsal) | 66 → **106** (convenzione) | 66 → **200** | — / — / IFAB 9,15 m |
+> | dischetto (distanza) | 112 → **173** (+ 2° dischetto 288) | 129 → **215** | 146 → **241** | FIFA Futsal 6/10 m / UISP 8 m / IFAB 11 m |
+> | area di rigore (profondità) | 118 → **173** | 136 → **268** | 153 → **361** | FIFA Futsal / UISP / IFAB |
+> | area di rigore (semilarghezza) | assente → **216** | assente → **288** | assente → **441** | derivata dalla profondità/porta |
+> | area di porta (prof./largh.) | — | — | assente → **120/401** | IFAB 5,5×5,5 m |
+> | `P_R` (raggio giocatore) | 13 (inv.) | 13 (inv.) | 13 → **5** (diametro +11,3% vs 0,41 m) | A4, proxy spalle |
+> | `B_R` (raggio pallone) | 8 (inv.) | 8 (inv.) | 8 → **2,5** (diametro +3,8% vs 0,22 m) | A2 |
+>
+> Le tre convenzioni a 7 (cerchio, angolo, D) restano senza fonte
+> primaria (A3 «non trovato»): il piano le fissa alla stessa frazione di
+> larghezza del campo dell'11 (cerchio e D) e al valore famiglia-11
+> (angolo), verificate per uguaglianza e non contate nello scarto ±10%.
+> Misura e verdetto pieno (27/27): `strumenti/_q-proporzioni.js`.
+
 ---
 
 ## PARTE C — la tabella del divario
@@ -265,6 +310,16 @@ rispetto al campo, positivo che è troppo GRANDE.
 | Giocatore (diametro corpo, proxy spalle) | 0,41 | 26 | 63,41 | **+120,6%** |
 | Pallone (diametro, fisica) | 0,22 | 16 | 72,73 | **+153,0%** |
 
+> **EDIZIONE 7 settembre 2026.** A 5 il campo e i corpi non scalano
+> (dichiarazione del piano); vernice e porta sì: porta 150→**103**
+> (scarto **+19,4%**, dentro il tetto ±20% invece di +73,9%); cerchio
+> 62→**86** (**−0,3%**, invece di −28,1%); dischetto 112→**173**
+> (**+0,3%**, invece di −35,1%); area (profondità) 118→**173**
+> (**+0,3%**, invece di −31,6%); arco d'angolo 14→**7** (**−2,6%**,
+> invece di +94,8%). Giocatore e pallone restano gli stessi numeri (26 e
+> 16 unità): a 5 non erano nel piano, e lo scarto resta quello di sopra.
+> Misura: `strumenti/_q-proporzioni.js`, prove "a 5".
+
 ### C2. Taglia 7 — ancora primaria: campo FIGC-SGS 50 × 30 m, rapporto di riferimento 1610/50 = **32,20 u/m**
 (se si usa l'ancora UISP 44-65 m, il rapporto di riferimento cade fra 36,6 e 24,8 u/m: la tabella sotto si sposterebbe di conseguenza — è la ragione per cui il calcio a 7 resta il caso più incerto dei tre, vedi A3)
 
@@ -282,6 +337,19 @@ rispetto al campo, positivo che è troppo GRANDE.
 | Giocatore (diametro corpo) | 0,41 | 26 | 63,41 | **+96,9%** |
 | Pallone (diametro, fisica) | 0,22 | 16 | 72,73 | **+125,9%** |
 
+> **EDIZIONE 7 settembre 2026.** Il piano ha scelto l'ancora UISP (60 m
+> di lunghezza, dentro il 44-65 UISP) invece della FIGC-SGS di questa
+> tabella — dichiarato in `strumenti/_q-proporzioni.js` come scelta del
+> committente, non ridedotto — quindi il rapporto di riferimento
+> dell'edizione è 1610/60 = **26,83 u/m**, non 32,20. Su quella base:
+> porta 172 resta **invariata** (era già nel tetto ±20%, +16,6% sui 5,5 m
+> UISP); area (profondità, UISP 10 m) 136→**268** (**−0,1%**, invece di
+> −57,8%); dischetto (UISP 8 m) 129→**215** (**+0,2%**, invece di
+> −49,9%); cerchio e arco d'angolo diventano **convenzioni dichiarate**
+> (106 e 27, verificate per uguaglianza, non per scarto — nessuna fonte
+> le misura, vedi A3). Giocatore e pallone: il piano non tocca i corpi a
+> 7, scarto invariato. Misura: `strumenti/_q-proporzioni.js`, prove "a 7".
+
 ### C3. Taglia 11 (calcio a 11) — ancora: campo 105 × 68 m, rapporto di riferimento 2300/105 = **21,90 u/m**
 
 | grandezza | ufficiale (m) | nel gioco (unità) | rapporto implicito (u/m) | scarto |
@@ -297,6 +365,23 @@ rispetto al campo, positivo che è troppo GRANDE.
 | Giocatore (diametro corpo) | 0,41 | 26 | 63,41 | **+189,5%** |
 | Pallone (diametro, fisica) | 0,22 | 16 | 72,73 | **+232,1%** |
 
+> **EDIZIONE 7 settembre 2026.** Ogni riga di questa tabella è cambiata.
+> Porta 196→**192** (**+19,8%**, dentro il tetto ±20%, invece di
+> +22,2%); cerchio 62→**200** (**−0,2%**, invece di −69,1%); arco
+> d'angolo 14→**22** (**+0,5%**, invece di −36,1%); area di rigore
+> (profondità) 153→**361** (**−0,1%**, invece di −57,7%); area di porta,
+> prima assente, ora **disegnata** (120×401, geometria verificata senza
+> incrocio con l'area di rigore); dischetto 146→**241** (**0,0%**,
+> invece di −39,4%); giocatore (diametro) 26→**10** (**+11,4%**, tetto
+> ±15%, invece di +189,5%); pallone (diametro) 16→**5** (**+3,8%**, tetto
+> ±15%, invece di +232,1%). Conseguenza collaterale misurata (non uno
+> scarto dalla misura ufficiale, ma un effetto sul gioco): i contatti
+> fisici puri a 11 calano del −70% perché la soglia di collisione
+> corpo-palla (`P_R+B_R`) scende da 21 a 7,5 unità — i momenti da porta
+> al minuto restano vivi (5,0→7,5) e lo 0-0 resta 0% prima e dopo. Il
+> rapporto FW:FH è trattato a parte, vedi C4. Misura:
+> `strumenti/_q-proporzioni.js`, prove "a 11".
+
 ### C4. Extra: la forma stessa del campo (lunghezza:larghezza), sulle tre taglie
 
 Il gioco tiene fisso 2,05:1 (`:3819-3822`) a ogni taglia; il rapporto reale
@@ -308,6 +393,13 @@ manto ma il manto stesso:
 | 5 | 40:20 = 2,00 | 2,05 | +2,7% |
 | 7 | 50:30 = 1,67 | 2,05 | **+23,2%** |
 | 11 | 105:68 = 1,54 | 2,05 | **+33,0%** |
+
+> **EDIZIONE 7 settembre 2026 (voce #86, compito 3).** Il piano ha
+> deciso di correggere la forma **solo a 11** (FH 1120→1490): a 11 il
+> rapporto FW:FH scende da 2,05 a **1,5436**, contro il vero 105:68 =
+> **1,5441** — scarto **−0,03%**, invece di +33,0%. A 5 e 7 il rapporto
+> resta 2,05 (scarti +2,7% e +23,2% invariati): la voce #86 non li
+> tocca, e il gioco continua a dichiararlo in commento (vedi B1).
 
 ---
 
@@ -352,3 +444,19 @@ fonte secondaria, pentagame.it, dà 7 m per i Pulcini, non verificata sul PDF
 originale); la larghezza delle spalle specifica di un calciatore
 professionista (uso il dato di popolazione generale CDC come proxy
 dichiarato).
+
+> **EDIZIONE 7 settembre 2026 — i tre scarti sopra, dopo la voce #86.**
+> Tutti e tre curati, con misura di verifica in `strumenti/_q-proporzioni.js`
+> (27/27, nato 4/24 il 6 settembre): (1) il cerchio a 11 passa da −69,1% a
+> **−0,2%** (62→200 unità); (2) giocatore e pallone a 11 passano da
+> +189,5%/+232,1% a **+11,4%/+3,8%** (dentro il tetto ±15% deciso dal
+> committente, non a zero: i corpi restano leggermente più grandi del
+> vero, per costruzione — la camera compensa restando più stretta,
+> misurato 1,35-5,69% di campo inquadrato); (3) l'area di rigore a 11
+> passa da −57,7% a **−0,1%** (153→361) e la seconda area (5,5 m) **non è
+> più assente**: disegnata (120×401), verificata senza incrocio con
+> l'area di rigore. Restano i «non trovato» di sopra: nessuna fonte
+> nuova è emersa per il cerchio/arco del 7 (il piano li fissa come
+> convenzioni dichiarate, non come misure — vedi la nota di edizione a
+> B2) o per il dischetto del 7 secondo un documento FIGC primario (il
+> piano usa l'ancora UISP, 8 m, vedi la nota di edizione a C2).

@@ -427,6 +427,92 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Le proporzioni ufficiali del campo** (#86) — **CURATA il 7 settembre
+  2026** (sette compiti, commit `55bbc4e..eeb081b`, un attrezzo ad ancore
+  per compito in `strumenti/_t-*.js`: `_t-tavola-vernice`,
+  `_t-costante-area`, `_t-forma-11`, `_t-vernice-vera`, `_t-porta-area`,
+  `_t-leva-corpi`): il campo, il gesso, la porta e — a 11 — i corpi
+  entrano nella scala dei campi veri, misurati da un banco
+  (`strumenti/_q-proporzioni.js`, ora in batteria) che confronta le
+  costanti LETTE DAL GIOCO VIVO dopo `setTaglia()` con le misure
+  ufficiali con fonte primaria di `_analisi/MISURE-UFFICIALI.md`. Le
+  quattro decisioni del committente (6 settembre 2026,
+  `docs/superpowers/plans/2026-09-06-proporzioni-ufficiali.md`): vernice
+  ufficiale entro **±10%**; area disegnata e applicata dalla stessa
+  costante (zero formule duplicate); forma a 11 e corpi a 11 entro
+  **±15%**; porta entro **±20%** su tutte e tre le taglie con
+  `GK_AREA_X` ricalibrata sulla stessa costante dell'area.
+
+  Tavola prima/dopo, con lo scarto residuo dalla misura ufficiale:
+  | grandezza | 5 | 7 | 11 | fonte |
+  |---|---|---|---|---|
+  | forma del campo (FH) | 560 (inv.) | 784 (inv.) | **1120 → 1490** (68,0 m; aspetto 1,5436 vs 1,5441 IFAB, −0,03%) | IFAB Regola 1 |
+  | porta (GOAL_H, tetto ±20%) | 150 → **103** (+19,4%) | 172 → **172** (+16,6%, già nel tetto) | 196 → **192** (+19,8%) | FIFA Futsal/UISP/IFAB |
+  | area di rigore (profondità) | 118 → **173** | 136 → **268** | 153 → **361** | FIFA Futsal/UISP/IFAB |
+  | area di rigore (semilarghezza) | assente → **216** | assente → **288** | assente → **441** | derivata dalla profondità/porta |
+  | cerchio di centrocampo (raggio) | 62 → **86** | 62 → **106** (convenzione) | 62 → **200** | FIFA Futsal/convenzione/IFAB |
+  | corpi a 11 (P_R / B_R) | 13/8 (inv.) | 13/8 (inv.) | **13→5 / 8→2,5** (diametro +11,3%/+3,8%) | A4 (proxy spalle) / A2 |
+
+  **Le tre CONVENZIONI del 7** (cerchio 106, angolo 27, arco della "D"
+  106): nessuna fonte dà un numero per queste tre voci a 7
+  (`_analisi/MISURE-UFFICIALI.md` A3 "non trovato"). Scelta dichiarata,
+  non misura: cerchio e "D" alla stessa frazione di larghezza del campo
+  dell'11 (9,15/68 → 106), angolo al valore famiglia-11 (1 m → 27). Il
+  banco le verifica per **uguaglianza** al valore convenuto, non per
+  scarto percentuale, e non le conta nel verdetto ±10%.
+
+  Il banco `_q-proporzioni` nasce **ROSSO 4/24** sul gioco del 6
+  settembre 2026 (cerchio a 11 −69,1%, area a 11 −57,7%, area di porta
+  assente, porta a 5 +73,9%, corpi +189,6%/+232,1%) e arriva a **27/27**
+  coi sei compiti.
+
+  **Conseguenza misurata a 11 contro 11** (l'unico posto dove questo
+  numero è a registro): i contatti fisici puri calano del **−70%**, per
+  costruzione — la soglia di collisione corpo-palla (`P_R+B_R`) scende
+  da 21 a 7,5 unità, quindi corpo e palla si sfiorano per caso molto
+  meno spesso. La partita a 11 **non ne risente**: i momenti da porta al
+  minuto salgono da **5,0 a 7,5**, e lo 0-0 nei 90 secondi simulati resta
+  **0%** prima e dopo (`strumenti/_eventi.js --taglia 11`).
+
+  **Copertura onesta**: i cancelli di batteria (`giocata`, `eventi`,
+  `istantanea`, `folla`) girano a taglia 5 di default e non esercitano
+  l'11; la garanzia sull'11 viene dai lanci `--taglia 11` fatti a mano in
+  ogni compito e dagli screenshot ispezionati (`fuori/vernice-11.png`,
+  `fuori/porta-area-11.png`, `fuori/corpi-11.png`).
+
+  **Bug latente trovato e curato al compito 5**: `GOAL_H` e
+  `GK_AREA_X` nascevano come letterali di modulo, e il `setTaglia(5)`
+  d'avvio usciva subito per la guardia `n===TAGLIA` — la partita a 5 di
+  default non avrebbe mai visto i valori nuovi. Curato con due ancore
+  sui letterali iniziali.
+
+  **Scoperta fuori perimetro, voce #98**: `_q-determinismo --taglia 7`
+  dà partite divergenti già al primo campione fra due corse sulla stessa
+  pagina — PRE-esistente su `HEAD` prima di questo ramo (il banco di
+  batteria gira solo a taglia 5 e non l'aveva mai visto).
+
+  **Sorteggi**: `_q-determinismo` **10/10**. Il confronto due-versioni
+  COMPLESSIVO del ramo (base `791877e`, prima del piano, contro
+  `CALCETTO-il-gioco.html` di oggi, `_c3-sorteggi.js --taglie 5,7,11`)
+  **DIVERGE per costruzione**: 58 partite su 60 con un conto di sorteggi
+  diverso, 542.275 → 601.224 chiamate a `dado()` totali. Non è un rosso
+  da nascondere: è la conseguenza dichiarata del piano — porta e area
+  cambiano a tutte le taglie dal compito 5, forma e corpi a 11 dai
+  compiti 3 e 6. Le divergenze dichiarate per compito, verificate al bit
+  nel loro compito: 1 (tavola+banco) identico a 5/7/11; 2 (costante
+  unica) identico a 5/7/11; 3 (forma dell'11) identico a 5/7, DIVERGE a
+  11 (20/20); 4 (vernice) identico a 5/7/11; 5 (porta+area) DIVERGE a
+  5/7/11 (20/20, 20/20, 19/20); 6 (corpi a 11) identico a 5/7, DIVERGE a
+  11 (20/20). Ogni "identico" del piano è stato provato al bit nel suo
+  compito, non solo promesso.
+
+  **CONSEGUENZA**: i nastri delle sfide registrati col motore precedente
+  non si riproducono più (stessa conseguenza già a registro per la voce
+  #88); la voce **#96** (cancello di pubblicazione) copre anche questo
+  ramo. Verbale completo:
+  `docs/superpowers/plans/2026-09-06-proporzioni-ufficiali.md`, rapporti
+  `.git/sdd/brief/86-compito-*-report.md`, misure con fonte in
+  `_analisi/MISURE-UFFICIALI.md`.
 - **La pulsantiera che mentiva sul possesso** (#88) — **CURATA il 6
   settembre 2026** (nove compiti, attrezzi ad ancore in
   `strumenti/_t-*.js`: `_t-ricevente`, `_t-cella-spenta`,

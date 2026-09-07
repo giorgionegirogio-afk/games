@@ -269,7 +269,10 @@ async function calcetto(browser, srv) {
      ===================================================================== */
   const taglie = await pag.evaluate(async () => {
     const t = window.__test;
-    const ATT = { 5:{FW:1150,FH:560,n:10}, 7:{FW:1610,FH:784,n:14}, 11:{FW:2300,FH:1120,n:22} };
+    /* FH a 11: 1120 fino al 6 settembre 2026, 1490 da quel giorno (voce
+       #86 compito 3, forma vera 105x68 IFAB, aspetto 1,5436 vs 1,5441
+       reale) — rettifica ad edizione, non un secondo valore accettato. */
+    const ATT = { 5:{FW:1150,FH:560,n:10}, 7:{FW:1610,FH:784,n:14}, 11:{FW:2300,FH:1490,n:22} };
     const esiti = [];
     for (const tg of [5, 7, 11]) {
       t.startMatch(1, 1, { size: tg }); t.setCpuVsCpu(true);

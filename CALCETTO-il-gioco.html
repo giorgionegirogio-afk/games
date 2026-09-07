@@ -3839,7 +3839,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
    fattore di scala fisso — vero nel 2026 di allora, non piu' oggi: da
    questo compito 103/172/192 non sono 150/172/196 scalati, sono il
    tetto +-20% sulla luce ufficiale di ciascuna taglia deciso dal
-   committente il 6 settembre 2026 (FIFA Futsal 3 m, UISP 5,5 m, IFAB
+   committente il 6 settembre 2026 (regolamento futsal 3 m, UISP 5,5 m, IFAB
    7,32 m -> +19,4%/+16,6%/+19,8%, misura e fonte in
    strumenti/_t-porta-area.js). La RAGIONE non e' cambiata: oltre quel
    tetto il portiere sparirebbe dentro una porta troppo grande per il
@@ -3884,7 +3884,7 @@ const TAGLIE={
    dentroArea non possono piu' divergere perche' leggono lo stesso posto.
    DAL COMPITO 4 (misura e fonte di ogni numero in
    strumenti/_t-vernice-vera.js) cerchio, angolo, dischetto e dArco sono
-   le misure vere di FIFA Futsal/UISP/IFAB, non piu' i valori storici
+   le misure vere di regolamento futsal/UISP/IFAB, non piu' i valori storici
    62/14/66/112-129-146. dArco:0 a 5 vuol dire "niente D" (il futsal non
    ce l'ha: guardia nel pennello). dischetto2 e' il secondo dischetto del
    futsal (10 m, oggi 0 alle altre taglie = non disegnato). portaProf/
@@ -27818,7 +27818,7 @@ function paintField(c, TH, pX, pY, q, vivo){
   for(const side of [0,1]){
     c.beginPath(); c.arc(side?FW-DISCH:DISCH, FH/2, 3.4, 0, 6.2832); c.fill();
   }
-  /* SECONDO DISCHETTO (SOLO 5, FIFA Futsal Laws/A2: 10 m): un punto
+  /* SECONDO DISCHETTO (SOLO 5, regolamento futsal/A2: 10 m): un punto
      come il primo, stessa taglia. Guardia su dischetto2: a 7/11 vale 0
      e non si disegna. */
   if(VERNICE.dischetto2) for(const side of [0,1]){
