@@ -34367,7 +34367,22 @@ function registraFotogramma(dt){
                           /* la ROVESCIATA e la clip del calcio si registrano
                              con tutto il resto: la ripresa in camera bassa
                              rilegge questi campi per rifare il gesto */
-                          rv:q.rove, rT:q.roveT1, kc:q.kickClip})),
+                          rv:q.rove, rT:q.roveT1, kc:q.kickClip,
+                          /* IL CONTRASTO E LA PARATA NEL CAMPIONE (voce #85,
+                             compito 3): questi cinque campi esistono sul
+                             giocatore vivo da sempre ma non entravano nel
+                             nastro -- un gol nato da un contrasto vinto o
+                             da una respinta col pugno del portiere rivedeva
+                             nel replay lo stato ATTUALE del campo, non
+                             quello REGISTRATO al momento del gesto: il
+                             nastro non sapeva nulla del contrasto ne' delle
+                             mani del portiere. Nomi per esteso (non
+                             abbreviati come i campi qui sopra) perche'
+                             sono gli stessi che la prova CAMPI di
+                             _q-replay.js legge dal campione crudo. */
+                          contrasto:q.contrasto, presaT:q.presaT,
+                          gkManiT:q.gkManiT, rinvT:q.rinvT,
+                          recover:q.recover})),
   };
   G.rec.push(f);
   if(G.rec.length > REC_MAX) G.rec.shift();
@@ -34529,6 +34544,18 @@ function disegnaMoviola(){
     /* la rovesciata e la clip del calcio come tutto il resto */
     if(f.rv!==undefined){ q.rove=f.rv; if(f.rT) q.roveT1=f.rT; }
     if(f.kc!==undefined) q.kickClip=f.kc;
+    /* IL CONTRASTO E LA PARATA SI COPIANO DI PESO, NON SI INTERPOLANO
+       (voce #85, compito 3): sono stato discreto come slide/dive/charge/
+       rove qui sopra, non un cronometro continuo -- mescolare un
+       contrasto a meta' con uno finito inventerebbe una posa mai vista.
+       Qui si rilegge quello che il compito 3 ha registrato;
+       l'interpolazione dei cronometri di gesto (kickT/kickB/charge/
+       roveT1) resta il compito 4, non questi cinque campi. */
+    if(f.contrasto!==undefined) q.contrasto=f.contrasto;
+    if(f.presaT!==undefined) q.presaT=f.presaT;
+    if(f.gkManiT!==undefined) q.gkManiT=f.gkManiT;
+    if(f.rinvT!==undefined) q.rinvT=f.rinvT;
+    if(f.recover!==undefined) q.recover=f.recover;
     /* il nastro viene da PRIMA della rete: la festa e la delusione, che
        vivono nel presente, sul replay sarebbero un anacronismo — il
        marcatore che esulta mentre sta ancora tirando */
