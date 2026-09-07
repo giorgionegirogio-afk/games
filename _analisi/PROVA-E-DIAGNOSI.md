@@ -1,5 +1,19 @@
 # Perché la prova E si dichiara nulla (voce #68)
 
+> **EDIZIONE del 7 settembre 2026, sera (dopo il compito 2 del ramo
+> voce-85-moviola).** La bisezione ha SMENTITO l'anello che questa diagnosi
+> lasciava aperto: `stick[0].ox/oy` da soli sono INERTI (Touch5.start crea
+> sempre un'origine fresca); le cause vere della divergenza same-page sono
+> `stick.active/id/dx/dy/hist` (diverge al campione 6) e gli atti a tenuta
+> orfani `atti`/`btnTouch` (campione 7). La cura vive in `startMatch` via
+> `Touch5.azzera()` (commit `8a207e1` + `d48058c`), la voce #68 è CHIUSA.
+> RESTA APERTO, come voce #98: una componente NON-Touch5 — il seme
+> 20260803 diverge perfino fra due pagine FRESCHE in CPU-contro-CPU a
+> taglia 7/11 (8/10 identico prima e dopo la cura). Il riproduttore più
+> pulito per chi riaprirà la #98 è quel seme a pagine fresche. Dettagli:
+> `MANUALE.md` §A registro voce #85 e `.git/sdd/brief/85-compito-2-report.md`.
+> Il testo sotto resta com'era: è la diagnosi PRE-bisezione, storia inclusa.
+
 Diagnosi in sola lettura, 7 settembre 2026. Nessun file di gioco o di banco
 è stato modificato; le sonde usa-e-getta vivono in `fuori/` e ci restano.
 Verificato per nome/funzione contro il main pulito attuale (dopo la fusione
