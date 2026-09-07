@@ -457,7 +457,7 @@ async function apri(browser, porta) {
     const soloGioca = f => !!f.mv && f.mv.fase === 'gioca';
     const n = scatto.post.length;
     const correnti = new Array(scatto.playersN).fill(0);
-    let max = 0, maxIdx = -1, transizioniUtili = 0;
+    let max = 0, maxIdx = -1, transizioniAttive = 0, transizioniCongelate = 0;
     for (let i = 1; i < n; i++) {
       const fa = scatto.post[i - 1], fb = scatto.post[i];
       if (!(soloGioca(fa) && soloGioca(fb))) { correnti.fill(0); continue; }
@@ -475,20 +475,35 @@ async function apri(browser, porta) {
         const attivoOra = b.kickT > 0 || b.kickB > 0 ||
           (b.charge != null && b.charge >= 0) || (b.slide != null && b.slide >= 0) ||
           (b.dive != null && b.dive > 0) || (b.rove != null && b.rove >= 0);
-        if (tuttiFermi && attivoOra && posAvanza) {
-          transizioniUtili++;
-          correnti[k]++;
-          if (correnti[k] > max) { max = correnti[k]; maxIdx = k; }
+        /* SI CONTA OGNI TRANSIZIONE ATTIVA, non solo quelle congelate (voce
+           #85, compito 4, correzione del banco): con la copia di peso ogni
+           transizione attiva era anche congelata per costruzione, e i due
+           conteggi coincidevano per caso — "non ho misurato" dipendeva da
+           quante restavano ferme invece che da quante c'erano. Dopo
+           l'interpolazione un gesto attivo si sposta ad ogni fotogramma:
+           ZERO congelamenti e' l'esito ATTESO della cura, non l'assenza
+           di scena. Se il denominatore restasse "solo le congelate", una
+           cura perfetta (zero congelamenti) azzererebbe anche il
+           denominatore e la prova si dichiarerebbe nulla proprio quando
+           avrebbe il verdetto piu' bello da dare. */
+        if (attivoOra && posAvanza) {
+          transizioniAttive++;
+          if (tuttiFermi) {
+            transizioniCongelate++;
+            correnti[k]++;
+            if (correnti[k] > max) { max = correnti[k]; maxIdx = k; }
+          } else correnti[k] = 0;
         } else correnti[k] = 0;
       }
     }
-    if (transizioniUtili === 0) {
+    if (transizioniAttive === 0) {
       console.log('  --   PROVA NULLA: nessun gesto attivo nella fase \'gioca\' del replay a questo seme (non ho misurato).');
       nonMisurato = true;
     } else {
       di(max < 3, 'SCATTO) i cronometri del gesto avanzano col corpo invece di restare congelati',
          'max ' + max + ' fotogrammi consecutivi congelati (giocatore ' + maxIdx + '), su ' +
-         transizioniUtili + ' transizioni con un gesto attivo, seme ' + SEME_MOVIOLA);
+         transizioniAttive + ' transizioni con un gesto attivo (' + transizioniCongelate +
+         ' congelate), seme ' + SEME_MOVIOLA);
     }
   }
 
