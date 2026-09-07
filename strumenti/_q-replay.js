@@ -15,7 +15,7 @@
    puo' VERIFICARE rigiocandolo, che e' l'anti-imbroglio piu' economico
    che esista.
 
-   CINQUE PROVE:
+   SETTE PROVE:
      A  il nastro si scrive e si rilegge senza perdere un comando
      B  la partita rigiocata e' identica campione per campione
      C  con un seme diverso NON e' identica (se lo fosse, vorrebbe dire
@@ -24,14 +24,25 @@
      D  quanto pesa il nastro, in byte veri, prima e dopo il deflate
      E  in registrazione il gioco NON cambia: la stessa partita giocata
         col registro acceso e col registro spento e' la stessa partita
+     SCATTO  durante il replay di un gol, i cronometri del gesto
+        (kickT/kickB/charge/chargeT/slide/dive/rove/roveT1) avanzano col
+        corpo invece di restare congelati sul campione (voce #85)
+     CAMPI   il campione della moviola porta i cinque campi di posa
+        (contrasto, presaT, gkManiT, rinvT, recover) e almeno uno varia
+        durante una scena che li esercita (voce #85)
 
    La E e' quella che protegge chi gioca offline: se registrare cambiasse
    il gioco, avremmo comprato il multigiocatore col prezzo di un gioco
-   diverso, e nessuno se ne accorgerebbe.
+   diverso, e nessuno se ne accorgerebbe. SCATTO e CAMPI sono il giudice
+   del reclamo "il replay va a scatti": rosso oggi per costruzione,
+   verdi solo dopo le cure di interpolazione e registrazione (voce #85,
+   compiti successivi).
 
    uso:  node strumenti/_q-replay.js --gioco fuori/reg.html
          node strumenti/_q-replay.js --gioco fuori/reg.html --taglia 11
-   esce 0 se passa tutto, 1 se una prova fallisce, 2 se il banco esplode.
+   esce 0 se passa tutto, 1 se una prova fallisce, 2 se il banco esplode
+   O se SCATTO/CAMPI non sono riusciti a costruire la loro scena (la
+   disciplina "non ho misurato": una prova nulla non e' un rosso).
    ===================================================================== */
 const fs = require('fs');
 const path = require('path');
@@ -49,6 +60,16 @@ const TAGLIA = [5, 7, 11].includes(+arg('taglia', 5)) ? +arg('taglia', 5) : 5;
 const SEME = parseInt(arg('seme', '20260803'), 10) >>> 0;
 const PASSI = parseInt(arg('passi', '2400'), 10);   /* 40 secondi di gioco a 60 Hz */
 const provaRel = arg('gioco', process.env.GIOCO_PROVA || '');
+
+/* SEME DICHIARATO PER SCATTO E CAMPI (voce #85, compito 1): lo stesso di
+   fuori/_sonda-moviola-scatti.js e di _analisi/MOVIOLA-OGGI.md, non quello
+   generico del banco (--seme sopra), cosi' il numero nel rapporto e quello
+   nell'analisi sono la stessa cosa. */
+const SEME_MOVIOLA = 20260907;
+const MOV_WARMUP_TICKS = 570;   // 9,5 s a 60 Hz: riempie l'anello REC_SEC=9 di azione vera prima del gol
+const MOV_POST_MAX = 1000;      // tetto di sicurezza dopo il gol forzato (16,6 s)
+const MOV_GESTI = ['kickT', 'kickB', 'charge', 'chargeT', 'slide', 'dive', 'rove', 'roveT1'];
+const MOV_CAMPI = ['contrasto', 'presaT', 'gkManiT', 'rinvT', 'recover'];
 
 function servi(prova) {
   return new Promise(ok => {
@@ -148,6 +169,10 @@ async function apri(browser, porta) {
   const browser = await chromium.launch();
   const esiti = [];
   const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' : 'NO  ') + nome + (det ? '  [' + det + ']' : '')); };
+  /* una prova che non riesce a costruire la sua scena non e' un rosso: e'
+     una prova nulla, come gia' la E fa per il suo controllo del controllo.
+     Alla fine, se e' successo, il banco esce con 2 invece di 0/1. */
+  let nonMisurato = false;
 
   console.log('=== LA PARTITA RIGIOCATA E\' LA STESSA? — ' + TAGLIA + ' contro ' + TAGLIA +
               ', seme ' + SEME + ', ' + PASSI + ' passi' + (provaRel ? ', gioco ' + provaRel : '') + ' ===\n');
@@ -361,12 +386,187 @@ async function apri(browser, porta) {
     di(true, 'E) due giri spenti a cavallo di uno acceso sono uguali — la prova qui sopra tiene');
   }
 
+  /* =====================================================================
+     SCATTO: I CRONOMETRI DEL GESTO RESTANO CONGELATI MENTRE IL CORPO
+     SCORRE? (voce #85, compito 1)
+
+     La logica e' quella di fuori/_sonda-moviola-scatti.js (analisi del 7
+     settembre 2026, _analisi/MOVIOLA-OGGI.md), promossa da misura a prova
+     di banco: si gioca CPU contro CPU per riempire l'anello G.rec di
+     azione vera, si forza un gol a seme dichiarato, e si cattura OGNI
+     fotogramma di schermo (passo fisso 1/60, la cadenza vera di
+     ridisegno) durante il replay. Per ogni giocatore in quadro si cerca
+     la sequenza piu' lunga di fotogrammi consecutivi in cui TUTTI e otto
+     i cronometri del gesto restano bit-identici MENTRE il corpo si sposta
+     di piu' di 0,2 unita' — la firma di un valore congelato sul campione
+     registrato mentre l'interpolazione fa scorrere la posizione. Solo la
+     fase 'gioca' conta: 'entra'/'rete'/'uscita' sono fermi-immagine
+     dichiarati, e confonderli col congelamento vero renderebbe la misura
+     illeggibile (la stessa scelta della sonda). Pagina propria (M1), non
+     riusata: nessun tocco sintetico qui dentro, quindi nessun residuo di
+     Touch5 da azzerare fra i giri.
+     ===================================================================== */
+  console.log('');
+  console.log('SCATTO — i cronometri del gesto avanzano col corpo, o restano congelati? (voce #85)');
+  const M1 = await apri(browser, srv.porta);
+  const scatto = await M1.pag.evaluate(([seme, warm, postMax]) => {
+    const t = window.__test;
+    const r4 = x => Math.round((+x || 0) * 10000) / 10000;
+    function fotogramma() {
+      const mv = t.moviola;
+      return {
+        mv: mv ? { fase: mv.fase } : null,
+        p: t.players.map(p => ({
+          x: r4(p.x), y: r4(p.y),
+          kickT: r4(p.kickT), kickB: r4(p.kickB),
+          charge: p.charge === undefined ? null : r4(p.charge), chargeT: r4(p.chargeT),
+          slide: p.slide === undefined ? null : r4(p.slide),
+          dive: p.dive === undefined ? null : r4(p.dive),
+          rove: p.rove === undefined ? null : r4(p.rove), roveT1: r4(p.roveT1),
+        })),
+      };
+    }
+    t.semina(seme);
+    t.startMatch(1, 1);
+    t.setCpuVsCpu(true);
+    for (let i = 0; i < warm; i++) t.simulate(1 / 60);
+    const ballOwner = t.ball.owner;
+    const team = (ballOwner >= 0 && t.players[ballOwner]) ? t.players[ballOwner].team : 0;
+    const forceGoalOk = t.forceGoal(team);
+    const post = [];
+    let vistaMoviola = false, moviolaFinita = false;
+    for (let i = 0; i < postMax; i++) {
+      t.simulate(1 / 60);
+      const f = fotogramma();
+      post.push(f);
+      if (f.mv) vistaMoviola = true;
+      if (vistaMoviola && !f.mv) { moviolaFinita = true; break; }
+      if (t.state === 'menu' || t.state === 'end') break;
+    }
+    return { forceGoalOk, vistaMoviola, moviolaFinita, playersN: t.players.length, post };
+  }, [SEME_MOVIOLA, MOV_WARMUP_TICKS, MOV_POST_MAX]);
+  await M1.ctx.close();
+
+  if (!scatto.forceGoalOk) {
+    console.log('  --   PROVA NULLA: forceGoal non ha funzionato, nessuna moviola da misurare (non ho misurato).');
+    nonMisurato = true;
+  } else if (!scatto.vistaMoviola) {
+    console.log('  --   PROVA NULLA: la moviola non si e\' mai accesa (SAVE.moviola=0?) (non ho misurato).');
+    nonMisurato = true;
+  } else {
+    const soloGioca = f => !!f.mv && f.mv.fase === 'gioca';
+    const n = scatto.post.length;
+    const correnti = new Array(scatto.playersN).fill(0);
+    let max = 0, maxIdx = -1, transizioniUtili = 0;
+    for (let i = 1; i < n; i++) {
+      const fa = scatto.post[i - 1], fb = scatto.post[i];
+      if (!(soloGioca(fa) && soloGioca(fb))) { correnti.fill(0); continue; }
+      const np = Math.min(fa.p.length, fb.p.length);
+      for (let k = 0; k < np; k++) {
+        const a = fa.p[k], b = fb.p[k];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const posAvanza = Math.sqrt(dx * dx + dy * dy) > 0.2;
+        let tuttiFermi = true;
+        for (const c of MOV_GESTI) {
+          const va = a[c], vb = b[c];
+          if (va == null && vb == null) continue;
+          if (va == null || vb == null || Math.abs(vb - va) > 1e-9) { tuttiFermi = false; break; }
+        }
+        const attivoOra = b.kickT > 0 || b.kickB > 0 ||
+          (b.charge != null && b.charge >= 0) || (b.slide != null && b.slide >= 0) ||
+          (b.dive != null && b.dive > 0) || (b.rove != null && b.rove >= 0);
+        if (tuttiFermi && attivoOra && posAvanza) {
+          transizioniUtili++;
+          correnti[k]++;
+          if (correnti[k] > max) { max = correnti[k]; maxIdx = k; }
+        } else correnti[k] = 0;
+      }
+    }
+    if (transizioniUtili === 0) {
+      console.log('  --   PROVA NULLA: nessun gesto attivo nella fase \'gioca\' del replay a questo seme (non ho misurato).');
+      nonMisurato = true;
+    } else {
+      di(max < 3, 'SCATTO) i cronometri del gesto avanzano col corpo invece di restare congelati',
+         'max ' + max + ' fotogrammi consecutivi congelati (giocatore ' + maxIdx + '), su ' +
+         transizioniUtili + ' transizioni con un gesto attivo, seme ' + SEME_MOVIOLA);
+    }
+  }
+
+  /* =====================================================================
+     CAMPI: IL CAMPIONE DELLA MOVIOLA PORTA I CINQUE CAMPI DI POSA?
+     (voce #85, compito 1)
+
+     _analisi/MOVIOLA-OGGI.md 2.1: contrasto, presaT, gkManiT, rinvT,
+     recover esistono come campi veri del giocatore ma non sono fra quelli
+     scritti in registraFotogramma. La scena: doSlide(0,'premi') e' lo
+     stesso verbo che esegue un dito vero sulla pressione del disco del
+     contrasto (righe 13012-13017 del gioco) — nessun sorteggio in mezzo,
+     perche' il contrasto accende SEMPRE p.contrasto=CONTRASTO_FIN, non e'
+     un tiro con esito sorteggiato — quindi e' deterministico a un seme
+     dichiarato senza bisogno di cercare un episodio fortunato in CPU
+     contro CPU. G.rec si legge DIRETTAMENTE (e' un const di primo livello
+     nello stesso script del gioco, come Reg e Touch5 che questo stesso
+     banco gia' chiama senza passare da __test): si controlla se una
+     qualunque delle cinque chiavi compare nelle righe registrate durante
+     e dopo il contrasto, e se il suo valore VARIA. Pagina propria (M2):
+     doSlide bypassa Touch5, quindi non c'e' stato del tocco da azzerare.
+     ===================================================================== */
+  console.log('');
+  console.log('CAMPI — il campione della moviola porta contrasto/presaT/gkManiT/rinvT/recover? (voce #85)');
+  const M2 = await apri(browser, srv.porta);
+  const campi = await M2.pag.evaluate(([seme, nomi]) => {
+    const t = window.__test;
+    t.semina(seme);
+    t.startMatch(1, 1);
+    let ticksToPlay = 0;
+    while (t.state !== 'play' && ticksToPlay < 300) { t.simulate(1 / 60); ticksToPlay++; }
+    const ctrlIdx = G.ctrl[0];
+    const guardiaOk = ctrlIdx >= 0 && typeof puoContrastoPremuto === 'function' && puoContrastoPremuto(G.players[ctrlIdx]);
+    let contrastoOk = false;
+    if (guardiaOk) {
+      doSlide(0, 'premi');
+      contrastoOk = G.players[ctrlIdx].contrasto > 0;
+      for (let i = 0; i < 40; i++) t.simulate(1 / 60);   // ~0,67 s: CONTRASTO_FIN=0,18 s decade dentro
+    }
+    const rec = (ctrlIdx >= 0) ? G.rec.map(f => {
+      const q = f.p[ctrlIdx], o = {};
+      for (const nn of nomi) o[nn] = Object.prototype.hasOwnProperty.call(q, nn) ? q[nn] : undefined;
+      return o;
+    }) : [];
+    return { ctrlIdx, ticksToPlay, guardiaOk, contrastoOk, rec, registrati: G.rec.length };
+  }, [SEME_MOVIOLA, MOV_CAMPI]);
+  await M2.ctx.close();
+
+  if (campi.ctrlIdx < 0 || !campi.guardiaOk || !campi.contrastoOk) {
+    console.log('  --   PROVA NULLA: la scena del contrasto non si e\' costruita (ctrlIdx=' + campi.ctrlIdx +
+                ', guardia=' + campi.guardiaOk + ', contrasto=' + campi.contrastoOk + ') (non ho misurato).');
+    nonMisurato = true;
+  } else if (campi.rec.length === 0) {
+    console.log('  --   PROVA NULLA: nessun fotogramma registrato nella finestra del contrasto (non ho misurato).');
+    nonMisurato = true;
+  } else {
+    const presenti = MOV_CAMPI.filter(nn => campi.rec.some(r => r[nn] !== undefined));
+    const varia = presenti.filter(nn => new Set(campi.rec.map(r => r[nn]).filter(v => v !== undefined)).size > 1);
+    if (presenti.length === 0) {
+      di(false, 'CAMPI) il campione della moviola porta i cinque campi di posa',
+         'nessuno dei cinque presente nelle ' + campi.rec.length + ' righe registrate durante il contrasto (seme ' +
+         SEME_MOVIOLA + '): contrasto/presaT/gkManiT/rinvT/recover assenti da registraFotogramma');
+    } else {
+      di(varia.length > 0, 'CAMPI) il campione della moviola porta i cinque campi di posa',
+         presenti.join(',') + ' presenti; ' + (varia.length ? varia.join(',') + ' variano' : 'nessuno varia'));
+    }
+  }
+
   await browser.close(); srv.chiudi();
-  if (A.errori.length || B.errori.length) {
-    console.error('\nECCEZIONI DI PAGINA: ' + [...A.errori, ...B.errori].slice(0, 3).join(' | '));
+  if (A.errori.length || B.errori.length || M1.errori.length || M2.errori.length) {
+    console.error('\nECCEZIONI DI PAGINA: ' + [...A.errori, ...B.errori, ...M1.errori, ...M2.errori].slice(0, 3).join(' | '));
     process.exit(2);
   }
   const rossi = esiti.filter(x => !x).length;
   console.log('\n' + esiti.length + ' controlli, ' + (esiti.length - rossi) + ' passati, ' + rossi + ' falliti');
+  if (nonMisurato) {
+    console.log('ATTENZIONE: una o piu\' prove nuove non hanno potuto costruire la loro scena (uscita 2, non ho misurato).');
+    process.exit(2);
+  }
   process.exit(rossi ? 1 : 0);
 })().catch(e => { console.error('FALLITO (banco): ' + e.message); process.exit(2); });
