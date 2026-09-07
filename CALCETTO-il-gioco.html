@@ -3845,8 +3845,18 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
    tetto il portiere sparirebbe dentro una porta troppo grande per il
    suo corpo.
    GOAL_D, POST_R, P_R, B_R, KICK_R, P_SPEED non scalano: corpi e piedi
-   sono gli stessi, cambia il mondo. E la gabbia resta: le sponde sono il
-   clamp su FW/FH — nessuna rimessa, a nessuna taglia.
+   sono gli stessi, cambia il mondo. RETTIFICA (voce #86, compito 6, 7
+   settembre 2026): "P_R, B_R ... non scalano" era vero fino a qui.
+   Restano 13/8 sulle taglie 5 e 7 (nessuna divergenza li', il menu vive
+   sulla 5); l'11 passa a 5/2,5 — diametro giocatore 0,456 m contro
+   0,41 m atteso (+11,3%), pallone 0,228 m contro 0,22 m IFAB (+3,8%),
+   entrambi dentro il tetto +-15% (misura e fonte in
+   strumenti/_t-leva-corpi.js). GOAL_D, POST_R, KICK_R, P_SPEED restano
+   invariati su tutte e tre le taglie: la camera compensa il corpo piu'
+   piccolo restando ai soliti 40/34/31 px (Z_FIG40/Z_BORDO/Z_MURO,
+   ricotti in setTaglia con la stessa formula di sempre). E la gabbia
+   resta: le sponde sono il clamp su FW/FH — nessuna rimessa, a nessuna
+   taglia.
    kPasso allunga le POCHE distanze assolute dell'IA (slancio, appoggio,
    standoff, uscita del portiere); tutte le soglie in frazioni di FW/FH
    scalano da sole.
@@ -4028,8 +4038,21 @@ const Z_SOPRA_TESTA = 26;          // oltre questa quota la palla passa sopra i 
 const Z_SOPRA_PORTIERE = 34;       // oltre questa quota il portiere non ci arriva: e' il pallonetto
 const Z_TESTA_MAX = 46;            // fin qui un corpo IN PIEDI gioca il pallone di testa (voce 7)
 
+/* =====================================================================
+   CORPI — LA LEVA DEI CORPI (voce #86, compito 6, 7 settembre 2026).
+   A 5 e a 7 P_R/B_R restano 13/8 come sempre (il menu e le miniature
+   vivono sulla taglia 5: nessuna divergenza li'). A 11 il corpo cresce
+   in unita' di mondo perche' il campo IFAB e' piu' grande: diametro
+   giocatore 0,456 m contro 0,41 m atteso (+11,3%), diametro pallone
+   0,228 m contro 0,22 m IFAB Regola 2 (+3,8%). Entrambi dentro il tetto
+   +-15% deciso dal committente il 6 settembre 2026 (misura e fonte
+   complete in strumenti/_t-leva-corpi.js). P_R/B_R sono ricotti in
+   setTaglia (unica porta); i letterali qui sotto restano 13/8 perche'
+   COINCIDONO con CORPI[5] per costruzione — il boot a 5 e' gia' coerente
+   senza bisogno di leggere la tavola. */
+const CORPI={5:{P_R:13,B_R:8},7:{P_R:13,B_R:8},11:{P_R:5,B_R:2.5}};
 /* giocatori / pallone */
-const P_R = 13;                    // raggio giocatore
+let P_R = 13;                      // raggio giocatore (ricotto in setTaglia, tavola CORPI)
 /* =====================================================================
    P_DIS — DI QUANTO LA FIGURA SI DISEGNA PIU' GRANDE DEL SUO CORPO.
 
@@ -4061,7 +4084,7 @@ const P_R = 13;                    // raggio giocatore
        macchia era gia' piu' larga della figura.
    ===================================================================== */
 const P_DIS = 1.18;
-const B_R = 8;                     // raggio pallone (URTI: non si tocca)
+let B_R = 8;                       // raggio pallone (URTI: non si tocca; ricotto in setTaglia, tavola CORPI)
 /* =====================================================================
    B_DIS — DI QUANTO IL PALLONE SI DISEGNA PIU' GRANDE DEL SUO CORPO.
 
@@ -4328,7 +4351,12 @@ const SCUDO_FIATO = 20;            // fiato al secondo speso a reggere un uomo
    secondo. Quanto lontano lo decide la corsa che avevi, perche' un
    pallone spinto di lato da fermo non e' una finta, e' un appoggio.
    Non scala con la taglia del campo (niente KPASSO): qui si salta un
-   CORPO, e P_R e P_SPEED sono gli stessi su tutti e tre i campi.
+   CORPO, e P_SPEED e' lo stesso su tutti e tre i campi. RETTIFICA (voce
+   #86, compito 6, 7 settembre 2026): "P_R... sono gli stessi su tutti e
+   tre i campi" non vale piu' per l'11 (P_R 13 -> 5, vedi CORPI). Il
+   comportamento qui non cambia comunque: SCARTO_V0/SCARTO_VK sono
+   velocita' assolute e non leggono P_R — solo la premessa a parole
+   andava aggiornata, non la formula.
 
    IL TOCCO. STRAPPO_TOCCO e' il tempo in cui il piede sta fermo e il
    pallone non e' di nessuno. E' il rischio, cioe' la finta.
@@ -4382,7 +4410,11 @@ const SLIDE_T = 0.20, SLIDE_CLEAN = 0.10, SLIDE_REC = 0.45;
 /* la spinta della scivolata si distende in tre fotogrammi partendo dal 30%
    della velocita' di punta: vedi il ramo della scivolata in updatePlayerFisica */
 const SLIDE_LANCIO = 0.055, SLIDE_LAN0 = 0.30;
-const SLIDE_BALL_R = P_R + B_R + 7;   // quanto vicino al pallone conta come "presa pulita"
+/* CENSITA DAL COMPITO 6 (voce #86): nasce da P_R+B_R, che da questo
+   compito cambiano a 11 — senza ricottura sarebbe rimasta la fotografia
+   del boot (28) invece di seguire il corpo vero (14,5 a 11). Ricotta in
+   setTaglia insieme a P_R/B_R, stessa formula di sempre. */
+let SLIDE_BALL_R = P_R + B_R + 7;   // quanto vicino al pallone conta come "presa pulita"
 const DIETRO_DOT = 0.52;              // allineamento oltre il quale l'entrata e' da dietro
 /* disciplina in stile futsal: due gialli di squadra = un uomo fuori per 12 secondi */
 const CARTELLINI_PER_ESPULSIONE = 2, ESPULSIONE_SEC = 12;
@@ -24714,8 +24746,16 @@ const S2_MIN=1.00, S2_BASE=1.25, S2_MAX=1.53, S2_GOL=1.77;
    leggibilita' tattica (palla + 3 uomini vicini + la porta d'attacco in
    zona) o per portare in quadro il bordo di scenografia. Z_FIG40 e' il
    pixel sotto cui la concessione al bordo non puo' spingere: 40 px di
-   corpo, cioe' 40 / (2·P_R·P_DIS) px per unita', uguale su ogni formato. */
-const Z_FIG40 = 40/(2*P_R*P_DIS);
+   corpo, cioe' 40 / (2·P_R·P_DIS) px per unita'. RETTIFICA (voce #86,
+   compito 6, 7 settembre 2026): "uguale su ogni formato" era vero
+   finche' P_R era 13 dappertutto. Da questo compito P_R cambia a 11
+   (13 -> 5, vedi CORPI), quindi Z_FIG40 cresce con lui: la FORMULA resta
+   la stessa su ogni formato (40 px di corpo per costruzione), il suo
+   VALORE in px/unita' no — passa da 1,304 (5 e 7, invariato) a 3,39
+   sull'11, perche' li' lo stesso corpo occupa meno unita' di mondo e
+   serve piu' zoom per tenerlo a 40 px. Ricotta in setTaglia insieme a
+   P_R, stessa formula di oggi. */
+let Z_FIG40 = 40/(2*P_R*P_DIS);
 /* IL PAVIMENTO DELLA SOLA CONCESSIONE AL BORDO — 37 px di corpo invece di
    40. La misura del freeze-frame test dice due cose insieme e vanno lette
    una accanto all'altra: (a) la figura attiva sta oggi fra il 13,3% e il
@@ -24736,7 +24776,7 @@ const Z_FIG40 = 40/(2*P_R*P_DIS);
    muro vale piu' del doppio. Sotto i 34 px non si scende: il «mare
    d'erba con le formiche» e' il difetto da cui veniamo, e la forbice
    scende qui SOLO quando in cambio arriva una fascia intera. */
-const Z_BORDO = 34/(2*P_R*P_DIS);
+let Z_BORDO = 34/(2*P_R*P_DIS);      // ricotto in setTaglia insieme a P_R (voce #86, compito 6)
 /* =====================================================================
    Z_MURO — IL PAVIMENTO DEL MONDO IN QUADRO, 27 px di corpo.
 
@@ -24776,7 +24816,7 @@ const Z_BORDO = 34/(2*P_R*P_DIS);
    fondo). Un muro solo si compra gia' a Z_BORDO; scendere sotto per un
    muro solo vuol dire pagare presenza e portare a casa erba, ed e' il
    caso peggiore che questa passata e' venuta a chiudere. */
-const Z_MURO = 31/(2*P_R*P_DIS);
+let Z_MURO = 31/(2*P_R*P_DIS);      // ricotto in setTaglia insieme a P_R (voce #86, compito 6)
 /* Si era provato a legare la forbice all'altezza dell'area di gioco per
    riempire i viewport 4:3, e il fondo era finito a 0,90: sul telefono in
    orizzontale il giocatore aveva perso il 31% lineare e l'inquadratura
@@ -28511,6 +28551,15 @@ function setTaglia(n){
   GY0=FH/2-GOAL_H/2; GY1=FH/2+GOAL_H/2;
   POSTI=[[0,GY0],[0,GY1],[FW,GY0],[FW,GY1]];
   GK_AREA_X=VERNICE.areaProf;
+  /* LA LEVA DEI CORPI (voce #86, compito 6): P_R/B_R vengono dalla
+     tavola CORPI, e i tre pavimenti di zoom si ricuociono con la STESSA
+     formula di sempre — e' quella formula, non un numero nuovo, a tenere
+     i corpi a 40/34/31 px sullo schermo a ogni taglia. SLIDE_BALL_R e'
+     derivato da P_R+B_R e va ricotto con loro, o resterebbe la
+     fotografia del boot (censimento del Passo 1). */
+  P_R=CORPI[n].P_R; B_R=CORPI[n].B_R;
+  SLIDE_BALL_R=P_R+B_R+7;
+  Z_FIG40=40/(2*P_R*P_DIS); Z_BORDO=34/(2*P_R*P_DIS); Z_MURO=31/(2*P_R*P_DIS);
   RESIZE_FORZA=true; resize();          // SCALE/OX/OY/PADX/PADY + fieldTex/vignette
   rebuildCrowd();
   G.menuBall.x=FW*0.32; G.menuBall.y=FH*0.35;
@@ -29606,9 +29655,15 @@ function updateCamera(rdt){
      LA FUNZIONE, e sono i numeri delle tre taglie:
          5 :  campo 1150x560   area   644.000  ->  radice 1,000
          7 :  campo 1610x784   area 1.262.240  ->  radice 0,714
-        11 :  campo 2300x1120  area 2.576.000  ->  radice 0,500
+        11 :  campo 2300x1490  area 3.427.000  ->  radice 0,4335
+     RETTIFICA (voce #86, compito 6, 7 settembre 2026): questa riga
+     diceva "campo 2300x1120 area 2.576.000 -> radice 0,500", l'FH di
+     PRIMA del compito 3 (che l'ha portato a 1490 per i 68 m veri IFAB,
+     6 settembre 2026). Il commento era rimasto indietro, il codice no:
+     kTetto, poche righe sotto, legge FW*FH a ogni fotogramma e calcolava
+     gia' la radice vera da allora.
      Il tetto proporzionale sarebbe S2_MAX per quella radice: 1,53 sul 5,
-     1,09 sul 7, 0,765 sull'11.
+     1,09 sul 7, 0,663 sull'11 (non piu' 0,765).
 
      E QUI IL PAVIMENTO DICE DI NO, e va detto invece di sfondarlo.
      Z_BORDO = 34 px di corpo (1,108 px per unita') e Z_MURO = 31 px
