@@ -433,8 +433,13 @@ Qui il registro completo, a edizioni.
   chiude solo il compito 6, escludendo il verbale stesso — un attrezzo
   ad ancore
   per compito in `strumenti/_t-*.js`: `_t-tavola-vernice`,
-  `_t-costante-area`, `_t-forma-11`, `_t-vernice-vera`, `_t-porta-area`,
-  `_t-leva-corpi`): il campo, il gesso, la porta e — a 11 — i corpi
+  `_t-area-unica`, `_t-forma-undici`, `_t-vernice-vera`, `_t-porta-area`,
+  `_t-leva-corpi` — più due dalla revisione: `_t-usura-vernice` (le
+  chiazze d'usura ai dischetti e alle mezzelune seguono la stessa tavola
+  del gesso, non più i vecchi letterali) e `_t-diritti-fifa` (tre
+  commenti dei compiti 4/5 smettono di citare il marchio nella fonte
+  della misura, IFAB e UISP restano)): il campo, il gesso, la porta e —
+  a 11 — i corpi
   entrano nella scala dei campi veri, misurati da un banco
   (`strumenti/_q-proporzioni.js`, ora in batteria) che confronta le
   costanti LETTE DAL GIOCO VIVO dopo `setTaglia()` con le misure
@@ -488,6 +493,11 @@ Qui il registro completo, a edizioni.
   d'avvio usciva subito per la guardia `n===TAGLIA` — la partita a 5 di
   default non avrebbe mai visto i valori nuovi. Curato con due ancore
   sui letterali iniziali.
+
+  **Conseguenza dichiarata della revisione finale**: con l'area vera, il
+  rinvio a pugno del portiere può cadere dentro l'area a 7 e a 11 (prima
+  cadeva sempre fuori): comportamento da valutare, a registro come
+  seguito.
 
   **Scoperta fuori perimetro, voce #98**: `_q-determinismo --taglia 7`
   dà partite divergenti già al primo campione fra due corse sulla stessa

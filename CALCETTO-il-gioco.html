@@ -18300,7 +18300,7 @@ function updateBall(dt){
    avrebbe tenuto GK_AREA_X=118 (l'area vecchia) mentre il gesso disegnava
    gia' l'area nuova — "area disegnata = area applicata" sarebbe rotto
    proprio nella taglia che il banco doveva proteggere. */
-let GK_AREA_X = VERNICE.areaProf;          // quanto lontano dalla linea puo' uscire (scala con kPasso)
+let GK_AREA_X = VERNICE.areaProf;          // quanto lontano dalla linea puo' uscire (scala con la tavola VERNICE.areaProf, dal compito 5)
 const GK_SPEED = 150, GK_DIVE_SPEED = 430; // passo normale e slancio del tuffo
 const GK_REACH = 26;                       // semiasse del corpo disteso nel tuffo
 /* LA RACCOLTA PRIMA DEL TUFFO — sette centesimi, e si paga e si riscuote.
@@ -18632,8 +18632,14 @@ function tentaPresa(p,b,disteso){
        pallaPresa lo disegna mentre ci scende dentro. Su un pugno il
        pallone se ne va.
        Con vz fra 150 e 240 e gravita' 560 il volo dura da 0,54 a 0,86 s
-       e il pallone tocca terra fra 242 e 590 unita' dal portiere: fuori
-       dall'area su tutte e tre le taglie (GK_AREA_X vale 118, 136, 153). */
+       e il pallone tocca terra fra 242 e 590 unita' dal portiere.
+       RETTIFICATO (voce #86, ritocchi della revisione finale, 7
+       settembre 2026): con l'area vera GK_AREA_X vale 173, 268, 361 a
+       5/7/11 — a 5 l'atterraggio resta sempre fuori dall'area
+       (242>173), ma a 7 e a 11 PUO' cadere dentro (242-268 a 7,
+       242-361 a 11). La proprieta' storica "sempre fuori dall'area" non
+       vale piu' a 7/11: decisione rimandata alla voce a registro
+       (MANUALE.md, voce #86). */
     manoPortiere(p,'pugni');
     showBanner('PUGNI!','#39d3e6',0.85);
   }else if(Math.abs(largo)<zonaMani && sp<sogliaPresa*bandaSfugge){
@@ -19246,7 +19252,13 @@ function aiMove(p,dt){
    ===================================================================== */
 /* raggio entro cui due compagni si respingono a vicenda: quattro volte
    il corpo, cioe' la distanza sotto la quale due omini a schermo si
-   leggono come una macchia sola */
+   leggono come una macchia sola.
+   RETTIFICATO (voce #86, ritocchi della revisione finale, 7 settembre
+   2026): vero a 5/7 (54 = 4x13,5, con P_R=13), ma a 11 P_R vale 5 e 54
+   e' 5,4 diametri (2*P_R=10), non quattro corpi. SEP_R resta di
+   proposito un letterale indipendente dalla taglia (gia' dichiarato
+   innocuo dal compito 6, _t-leva-corpi.js): qui si rettifica solo la
+   prosa, non il numero. */
 const SEP_R = 54;
 const RUOLO_MIN = 1.5;          // quanto dura un'assegnazione, in secondi
 /* DOVE STAZIONA LA PUNTA, in frazione di campo dalla propria porta.
@@ -27659,8 +27671,11 @@ function paintField(c, TH, pX, pY, q, vivo){
   /* linee di gesso, leggermente consumate: doppio passaggio sfalsato
      (lineA >1 sui temi scuri: righe piu' decise per la leggibilita') */
   const LA=TH.lineA||1;
-  /* area e dischetto: l'area segue kPasso (uscita del portiere) e la sua
-     ALTEZZA la luce della porta — sul campo base i numeri restano 118/230/112 */
+  /* RETTIFICATO (voce #86, ritocchi della revisione finale, 7 settembre
+     2026): l'area NON segue piu' kPasso — dal compito 2 viene dalla
+     tavola VERNICE (VERNICE.areaProf), e dal compito 5 quella tavola
+     porta le misure vere: 173/268/361 a 5/7/11, non piu' i vecchi
+     118/230/112 del campo base. ALTEZZA resta la luce della porta. */
   const AREA_W=VERNICE.areaProf, AREA_H=(VERNICE.areaSemi||Math.round(230*GOAL_H/150)/2)*2, DISCH=VERNICE.dischetto;
   /* AREA DI PORTA (voce #86, compito 4): rettangolo interno, oggi acceso
      solo a 11 (VERNICE.portaProf/portaLargh diversi da 0 solo li'). */
