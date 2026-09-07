@@ -87,7 +87,8 @@ const attesi = [
 const rotti = attesi.filter(([s, n]) => (conta(out, s) - conta(src, s)) !== n)
   .map(([s, n]) => s + ' atteso +' + n + ', trovato +' + (conta(out, s) - conta(src, s)));
 if (rotti.length) { console.error('FALLITO dopo la sostituzione:\n  ' + rotti.join('\n  ')); process.exit(1); }
-if (conta(out, 'FIFA') !== 0) { console.error('FALLITO: "FIFA" sopravvive nel file (' + conta(out, 'FIFA') + ' volte).'); process.exit(1); }
+const residuoFifa = out.match(/\bfifa\b/gi) || []; // stessa regola R1 di strumenti/diritti.js: parola intera, senza distinguere maiuscole/minuscole
+if (residuoFifa.length !== 0) { console.error('FALLITO: "FIFA" (regola R1, case-insensitive) sopravvive nel file (' + residuoFifa.length + ' volte).'); process.exit(1); }
 
 fs.mkdirSync(path.dirname(outFile), { recursive: true });
 fs.writeFileSync(outFile, out);

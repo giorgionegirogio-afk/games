@@ -428,7 +428,10 @@ Qui il registro completo, a edizioni.
 ## A registro — ciò che resta, e in che stato
 
 - **Le proporzioni ufficiali del campo** (#86) — **CURATA il 7 settembre
-  2026** (sette compiti, commit `55bbc4e..eeb081b`, un attrezzo ad ancore
+  2026** (sette compiti, commit `544e617..6528cf8` — dal compito 1 al
+  verbale del compito 7; `55bbc4e` è il commit del progetto e `eeb081b`
+  chiude solo il compito 6, escludendo il verbale stesso — un attrezzo
+  ad ancore
   per compito in `strumenti/_t-*.js`: `_t-tavola-vernice`,
   `_t-costante-area`, `_t-forma-11`, `_t-vernice-vera`, `_t-porta-area`,
   `_t-leva-corpi`): il campo, il gesso, la porta e — a 11 — i corpi
@@ -495,8 +498,12 @@ Qui il registro completo, a edizioni.
   COMPLESSIVO del ramo (base `791877e`, prima del piano, contro
   `CALCETTO-il-gioco.html` di oggi, `_c3-sorteggi.js --taglie 5,7,11`)
   **DIVERGE per costruzione**: 58 partite su 60 con un conto di sorteggi
-  diverso, 542.275 → 601.224 chiamate a `dado()` totali. Non è un rosso
-  da nascondere: è la conseguenza dichiarata del piano — porta e area
+  diverso, 542.275 → 601.224 chiamate a `dado()` totali. Le tre corse
+  SEPARATE per taglia danno **60/60**: lo scarto della corsa combinata
+  (58/60) è il non-determinismo PRE-esistente a taglia 7 e 11, già a
+  registro alla voce #98 (sopra) e fuori dal perimetro di questo ramo —
+  non una cura parziale. Non è un rosso da nascondere: è la conseguenza
+  dichiarata del piano — porta e area
   cambiano a tutte le taglie dal compito 5, forma e corpi a 11 dai
   compiti 3 e 6. Le divergenze dichiarate per compito, verificate al bit
   nel loro compito: 1 (tavola+banco) identico a 5/7/11; 2 (costante
