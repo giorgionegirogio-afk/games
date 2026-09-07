@@ -42,7 +42,7 @@
    gkManiT/rinvT, :33588-33590 contrasto, :33542-33543/:17245-17246
    recover) -- tutti pilotano st.u o uno squash in modo CONTINUO
    (st.u=0,32+0,43*(1-p.presaT/0,8), sq=1+0,14*clamp(p.recover/0.30,0,1)),
-   mai un semplice sì/no. Si interpolano tutti con la stessa guardia
+   mai un semplice si'/no. Si interpolano tutti con la stessa guardia
    "decresce" di kickT/kickB/dive.
 
    chargeT E roveT1 (compito 4, punto 3): sono bersagli/durate costanti
