@@ -429,8 +429,12 @@ Qui il registro completo, a edizioni.
 
 - **La moviola fluida** (#85, con le voci #68 e #98 a bordo) — **CURATA il
   7 settembre 2026** (diagnosi `15410bf`, piano `90fe5b9`, cinque compiti
-  in commit `3c560d6..6beea19`, attrezzi ad ancore in `strumenti/_t-*.js`
-  per ogni compito): il replay dei gol smette di tenere congelati i
+  in commit `3c560d6..3372268` — dal banco che nasce rosso al verbale, con
+  le due code di revisione dei compiti 2 e 4 (`d48058c`, `6beea19`);
+  attrezzi ad ancore per i tre compiti che toccano il gioco — 2:
+  `_t-touch5-azzera`+`_t-touch5-riadotta`, 3: `_t-campione-pose`, 4:
+  `_t-moviola-blend` — mentre i compiti 1 e 5 toccano solo banco e
+  documenti): il replay dei gol smette di tenere congelati i
   cronometri dei gesti mentre il corpo scorre liscio, il campione della
   moviola porta anche le pose di contrasto e di parata, e la prova E del
   banco del replay (`strumenti/_q-replay.js`, ora anche in batteria) torna
