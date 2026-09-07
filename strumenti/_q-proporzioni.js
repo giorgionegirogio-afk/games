@@ -75,6 +75,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
+const { semeFisso } = require('./_posa.js');
 const RADICE = path.resolve(__dirname, '..');
 const arg = (n, d) => {
   const i = process.argv.indexOf('--' + n);
@@ -298,6 +299,103 @@ const pct = x => (x * 100).toFixed(1) + '%';
     di(Math.abs(scB) <= TOLL_CORPO, 'corpo del pallone (diametro) a 11  (fonte: A2, pallone 0,22 m)',
       (2 * p.B_R) + 'u / ' + rapp + 'u/m = ' + (2 * p.B_R / rapp).toFixed(2) + 'm contro ' + B_R_DIAM_UFF.toFixed(2) + 'm ufficiali, scarto ' + pct(scB) + ' (tetto ±15%)');
   }
+
+  /* =====================================================================
+     IL RINVIO A PUGNO ATTERRA SEMPRE FUORI DALL'AREA (voce #100).
+
+     Il committente (7 settembre 2026, testuale): «Allungare il rinvio in
+     proporzione cosi' da renderlo piu' realistico al calcio vero». Con
+     l'area vera (voce #86) il pugno del portiere - che storicamente
+     atterrava fra 242 e 590 unita' dal portiere, sempre fuori area su
+     tutte e tre le taglie - poteva cadere DENTRO l'area a 7 e a 11
+     (242<268, 242<361: rettificato nel commento accanto al ramo PUGNI di
+     tentaPresa, CALCETTO-il-gioco.html riga ~18635). La cura (voce #100,
+     strumenti/_t-rinvio-scala.js) scala le due componenti ORIZZONTALI del
+     pugno (vx avanti, vy laterale) per GK_PUGNO_SCALA =
+     VERNICE.areaProf/VERNICI[5].areaProf, lasciando vz (e quindi il tempo
+     di volo) invariato: e' lo stesso gesto delle mani a ogni taglia,
+     cambia solo quanto lontano arriva.
+
+     PERCHE' QUESTO BANCO NON FA VOLARE IL PALLONE FOTOGRAMMA PER
+     FOTOGRAMMA (misurato PRIMA di scrivere il resto della prova): in CPU
+     contro CPU un pugno lanciato in mezzo al campo viene spesso
+     intercettato da un altro giocatore o esce dai limiti prima di
+     toccare terra — su 300 rinvii forzati per taglia, da 67 a 199 non
+     atterravano entro 200 fotogrammi (3,3 s reali). E' la stessa
+     non-ripetibilita' dei banchi a tocchi reali gia' nota: un banco che
+     misurasse cosi' sarebbe intermittente per un motivo estraneo alla
+     fisica del rinvio, non per un suo difetto.
+
+     LA PROVA CHIAMA COMUNQUE LA FUNZIONE VERA (tentaPresa), non ricopia
+     le soglie: costruisce la situazione PUGNI (pallone fermo davanti al
+     portiere, alto e forte — la stessa di strumenti/_q-mani.js), lascia
+     che sia il gioco a scegliere il ramo, e legge i vx/vy/vz REALI che
+     assegna — non una dichiarazione, il meccanismo vero. Da questi calcola
+     dove atterrerebbe in campo libero con la STESSA formula del commento
+     rettificato: tempo di volo t=2*vz/560 (560 = gravita' del pallone
+     libero, CALCETTO-il-gioco.html:18032), distanza = t*hypot(vx,vy) —
+     non solo vx, anche la componente laterale conta.
+
+     Colpire il minimo VERO (i tre sorteggi tutti al loro estremo insieme,
+     nella STESSA prova) e' raro: su un campione la distanza CONGIUNTA piu'
+     bassa osservata resta qualche unita' sopra il minimo teorico. Il
+     banco quindi RICOSTRUISCE il caso peggiore dai tre MINIMI MARGINALI
+     osservati su tutte le prove (min di vx, min di vy, min di vz, non
+     serve che coincidano nella stessa prova: ciascun minimo marginale di
+     una banda uniforme converge al suo vero estremo molto piu' in fretta
+     del minimo congiunto) — verificato a mano che con N=3000 il
+     ricostruito torna 242,2-242,4 contro il 242,2 del calcolo teorico
+     (0,5357*hypot(430,140)), prima di fissare N=4000 qui sotto.
+
+     SEME dichiarato: 20260907 (la data della decisione), per rendere il
+     campione ripetibile — vedi semeFisso in strumenti/_posa.js. */
+  await pag.evaluate(semeFisso, 20260907);
+  const GRAV_PUGNO = 560;   // CALCETTO-il-gioco.html:18032, gravita' del volo libero del pallone
+  const TRIALS_PUGNO = 4000;
+  for (const taglia of [5, 7, 11]) {
+    const r = await pag.evaluate(([n, trials]) => {
+      const t = window.__test;
+      t.startMatch(1, 1, { size: n });
+      const gk = () => G.players.find(pl => pl.team === 0 && pl.role === 'gk' && pl.out <= 0);
+      const campioni = [];
+      for (let k = 0; k < trials; k++) {
+        const p = gk();
+        if (!p) return { errore: 'portiere non trovato a taglia ' + n };
+        p.dive = 0; p.recover = 0; if ('gkManiT' in p) { p.gkManiT = 0; p.gkMani = ''; }
+        const b = G.ball;
+        b.owner = -1; b.passTo = -1; b.crossTo = -1; b.tiroT = -1; b.saveRolled = false;
+        const dir = p.team === 0 ? 1 : -1;
+        /* la stessa situazione PUGNI di strumenti/_q-mani.js: pallone
+           fermo davanti al portiere (dy=0), alto (z=20>GK_PUGNO_Z=16) e
+           forte (sp=500>sogliaPresa=330) — tentaPresa sceglie il ramo,
+           non lo si impone */
+        b.x = p.x; b.y = p.y; b.z = 20; b.vx = -dir * 500; b.vy = 0; b.vz = 0;
+        let banner = '';
+        const sb0 = window.showBanner;
+        window.showBanner = function (tt) { banner = tt; return sb0.apply(this, arguments); };
+        tentaPresa(p, b);
+        window.showBanner = sb0;
+        if (banner !== 'PUGNI!') { campioni.push({ scartato: true, ramo: banner }); continue; }
+        campioni.push({ vx: Math.abs(b.vx), vy: Math.abs(b.vy), vz: b.vz });
+      }
+      return { campioni };
+    }, [taglia, TRIALS_PUGNO]);
+    if (r.errore) { console.log('BANCO: ' + r.errore); await browser.close(); srv.chiudi(); process.exit(2); }
+    const validi = r.campioni.filter(c => !c.scartato);
+    if (validi.length < TRIALS_PUGNO * 0.5) {
+      console.log('BANCO: solo ' + validi.length + '/' + TRIALS_PUGNO + ' rinvii hanno preso il ramo PUGNI a taglia ' + taglia);
+      await browser.close(); srv.chiudi(); process.exit(2);
+    }
+    const vxMin = Math.min(...validi.map(c => c.vx)), vxMax = Math.max(...validi.map(c => c.vx));
+    const vyMin = Math.min(...validi.map(c => c.vy)), vyMax = Math.max(...validi.map(c => c.vy));
+    const vzMin = Math.min(...validi.map(c => c.vz)), vzMax = Math.max(...validi.map(c => c.vz));
+    const distMin = (2 * vzMin / GRAV_PUGNO) * Math.hypot(vxMin, vyMin);
+    const distMax = (2 * vzMax / GRAV_PUGNO) * Math.hypot(vxMax, vyMax);
+    const areaProf = prop[taglia].GK_AREA_X;
+    di(distMin > areaProf, 'il rinvio a pugno atterra fuori dall\'area a ' + taglia + '  (decisione del committente, 7 settembre 2026)',
+      'atterraggio ricostruito ' + distMin.toFixed(1) + '-' + distMax.toFixed(1) + 'u su ' + validi.length + '/' + TRIALS_PUGNO + ' rinvii PUGNI validi, area profonda ' + areaProf + 'u');
+  }
+  if (ecc.length) { console.log('BANCO: eccezione di pagina — ' + ecc[0]); await browser.close(); srv.chiudi(); process.exit(2); }
 
   await ctx.close(); await browser.close(); srv.chiudi();
   const rossi = esiti.filter(v => !v).length;

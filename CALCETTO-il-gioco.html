@@ -18332,6 +18332,16 @@ const GK_DIVE_T = 0.58;
    ===================================================================== */
 const GK_PUGNO_Z = 16;       // sopra questa quota la palla forte si smanaccia
 const GK_SFUGGE  = 1.60;     // fin dove ci prova con le mani, in multipli della soglia
+/* IL RINVIO A PUGNO SI ALLUNGA IN PROPORZIONE ALL'AREA (voce #100,
+   decisione del committente del 7 settembre 2026: "allungare il rinvio
+   in proporzione cosi' da renderlo piu' realistico al calcio vero").
+   E' un `let` come GK_AREA_X qui sopra e per la STESSA ragione
+   (rilievo critico voce #86 compito 5): il letterale di boot vale SOLO
+   perche' a taglia 5 VERNICE e' gia' VERNICI[5], quindi il fattore nasce
+   1 per costruzione, non per un numero scelto a mano. Si ricuoce in
+   setTaglia insieme a GK_AREA_X, dalla stessa tavola VERNICI. Il conto e
+   la misura per intero stanno in strumenti/_t-rinvio-scala.js. */
+let GK_PUGNO_SCALA = VERNICE.areaProf / VERNICI[5].areaProf;   // 1 a 5, ~1,549 a 7, ~2,087 a 11
 /* QUANTO DURA IL GESTO DELLE MANI, ed e' un latch di solo disegno.
    0,34 s: la finestra piu' lunga che il portiere in piedi passa senza
    rimettersi a camminare — GK_SPEED e' 150 unita' al secondo, quindi in
@@ -18622,8 +18632,8 @@ function tentaPresa(p,b,disteso){
     const fuori = (b.y>FH/2?1:-1);
     const dir = p.team===0?1:-1;
     b.x = p.x + dir*(P_R+B_R+3);
-    b.vx = dir*rnd(430,620);
-    b.vy = fuori*rnd(140,300);
+    b.vx = dir*rnd(430,620)*GK_PUGNO_SCALA;
+    b.vy = fuori*rnd(140,300)*GK_PUGNO_SCALA;
     b.vz = rnd(150,240);
     /* LA CLIP ADESSO C'E', ed e' fatta e non riciclata: 'pugni', i due
        pugni che partono insieme avanti e in alto col bacino sulle punte.
@@ -18631,15 +18641,28 @@ function tentaPresa(p,b,disteso){
        guantoni sopra la testa CON il pallone fermo nelle mani, e
        pallaPresa lo disegna mentre ci scende dentro. Su un pugno il
        pallone se ne va.
-       Con vz fra 150 e 240 e gravita' 560 il volo dura da 0,54 a 0,86 s
-       e il pallone tocca terra fra 242 e 590 unita' dal portiere.
+       Con vz fra 150 e 240 e gravita' 560 il volo dura da 0,54 a 0,86 s,
+       INVARIATO dalla scala: e' lo stesso gesto delle mani a ogni
+       taglia, cambia solo quanto lontano il pugno ARRIVA (vx, vy), non
+       quanto sale (vz).
        RETTIFICATO (voce #86, ritocchi della revisione finale, 7
-       settembre 2026): con l'area vera GK_AREA_X vale 173, 268, 361 a
-       5/7/11 — a 5 l'atterraggio resta sempre fuori dall'area
-       (242>173), ma a 7 e a 11 PUO' cadere dentro (242-268 a 7,
-       242-361 a 11). La proprieta' storica "sempre fuori dall'area" non
-       vale piu' a 7/11: decisione rimandata alla voce a registro
-       (MANUALE.md, voce #86). */
+       settembre 2026): con l'area vera GK_AREA_X a 173/268/361 (5/7/11),
+       il vecchio atterraggio fra 242 e 590 unita' restava sempre fuori
+       area a 5 (242>173) ma POTEVA cadere dentro a 7 e a 11 (242-268 a
+       7, 242-361 a 11): la proprieta' storica "sempre fuori dall'area"
+       si rompeva proprio dove l'area era diventata vera.
+       RETTIFICATO DI NUOVO (voce #100, 7 settembre 2026). Il committente
+       decide: «allungare il rinvio in proporzione cosi' da renderlo piu'
+       realistico al calcio vero». vx e vy scalano per GK_PUGNO_SCALA =
+       VERNICE.areaProf/VERNICI[5].areaProf; vz resta com'era, perche' e'
+       il gesto delle mani a non cambiare, non la distanza che il pugno
+       copre. A 5 il fattore e' 1 (taglia IDENTICA al bit): l'atterraggio
+       resta 242-590. A 7 (fattore 1,549) diventa 375-914; a 11 (fattore
+       2,087) diventa 505-1231 unita' (23-56 m a 21,90 unita'/metro,
+       rapporto della voce #86) — un rinvio a pugno realistico. La
+       proprieta' storica "sempre fuori dall'area" torna vera a ogni
+       taglia: misurato in strumenti/_q-proporzioni.js, prova "il rinvio
+       a pugno atterra fuori dall'area". */
     manoPortiere(p,'pugni');
     showBanner('PUGNI!','#39d3e6',0.85);
   }else if(Math.abs(largo)<zonaMani && sp<sogliaPresa*bandaSfugge){
@@ -28566,6 +28589,7 @@ function setTaglia(n){
   GY0=FH/2-GOAL_H/2; GY1=FH/2+GOAL_H/2;
   POSTI=[[0,GY0],[0,GY1],[FW,GY0],[FW,GY1]];
   GK_AREA_X=VERNICE.areaProf;
+  GK_PUGNO_SCALA=VERNICE.areaProf/VERNICI[5].areaProf;   // voce #100: il rinvio a pugno scala con l'area, ricotto qui come GK_AREA_X
   /* LA LEVA DEI CORPI (voce #86, compito 6): P_R/B_R vengono dalla
      tavola CORPI, e i tre pavimenti di zoom si ricuociono con la STESSA
      formula di sempre — e' quella formula, non un numero nuovo, a tenere
@@ -41970,7 +41994,7 @@ window.__test = {
   /* LA TAVOLA DELLE VERNICI, per il banco (voce #86, compito 1). Una
      funzione e non un valore congelato: letta DOPO startMatch/setTaglia,
      riflette sempre la taglia in cui la partita e' davvero entrata. */
-  proporzioni(){ return {TAGLIA,FW,FH,GOAL_H,GK_AREA_X,P_R,B_R,KICK_R,POST_R,SEP_R,P_SPEED,
+  proporzioni(){ return {TAGLIA,FW,FH,GOAL_H,GK_AREA_X,GK_PUGNO_SCALA,P_R,B_R,KICK_R,POST_R,SEP_R,P_SPEED,
                           VERNICE: Object.assign({},VERNICE)}; },
   get score(){ return G.score; },
   get timeLeft(){ return G.timeLeft; },

@@ -494,10 +494,22 @@ Qui il registro completo, a edizioni.
   default non avrebbe mai visto i valori nuovi. Curato con due ancore
   sui letterali iniziali.
 
-  **Conseguenza dichiarata della revisione finale**: con l'area vera, il
-  rinvio a pugno del portiere può cadere dentro l'area a 7 e a 11 (prima
-  cadeva sempre fuori): comportamento da valutare, a registro come
-  seguito.
+  **Conseguenza dichiarata della revisione finale, CURATA alla voce
+  #100** (7 settembre 2026): con l'area vera, il rinvio a pugno del
+  portiere poteva cadere dentro l'area a 7 e a 11 (242 contro 268 e 361:
+  prima cadeva sempre fuori, 242-590 su tutte e tre le taglie). Il
+  committente decide: «allungare il rinvio in proporzione così da
+  renderlo più realistico al calcio vero» — non un effetto da subire, una
+  scelta posseduta. Le due componenti orizzontali del pugno (avanti e
+  laterale) scalano per `GK_PUGNO_SCALA = VERNICE.areaProf /
+  VERNICI[5].areaProf` (`strumenti/_t-rinvio-scala.js`); il tempo di volo
+  (vz) resta invariato, è lo stesso gesto delle mani a ogni taglia. A 5 il
+  fattore è 1, taglia **identica al bit**: atterraggio 242-590 unità
+  invariato. A 7 (fattore 1,549) diventa **375-914**; a 11 (fattore
+  2,087) diventa **505-1231** unità — 23-56 m a 21,90 unità/metro, un
+  rinvio a pugno realistico. La proprietà storica «sempre fuori
+  dall'area» torna vera a ogni taglia, misurata in
+  `strumenti/_q-proporzioni.js` (tre prove nuove, una per taglia: 27→30).
 
   **Scoperta fuori perimetro, voce #98**: `_q-determinismo --taglia 7`
   dà partite divergenti già al primo campione fra due corse sulla stessa
