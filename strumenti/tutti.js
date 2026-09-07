@@ -408,6 +408,33 @@ const CANCELLI = [
      disegnata=applicata, forma dell'11, porta e area vere, corpi a 11).
      Deterministico, nessun cronometro: corre in compagnia. */
   { nome: 'proporzioni', cmd: ['strumenti/_q-proporzioni.js'],                            conta: true,  lento: false },
+  /* replay: la moviola dice il vero, e registrare non cambia il gioco?
+     (voce #85, 7 settembre 2026). Rigioca un nastro registrato con le
+     dita e misura tre cose che un replay bit-a-bit da solo non protegge:
+     SCATTO (il cronometro del gesto avanza insieme al corpo o resta
+     congelato mentre la posizione si muove — seme 20260907), CAMPI (il
+     campione della moviola porta anche i cinque campi di posa
+     contrasto/presaT/gkManiT/rinvT/recover, non solo gli otto storici) e
+     la prova E — "registrare non cambia il gioco": la stessa partita a
+     registro acceso e a registro spento, sulla stessa pagina (righe
+     287-362 del banco, la diagnosi della voce #68).
+
+     PERCHE' STA IN BATTERIA: e' il solo posto che si accorge se un
+     futuro tocco al replay, alla moviola o a Touch5 torna a congelare i
+     cronometri del gesto, a dimenticare un campo di posa, o a far
+     tornare la prova E a PROVA NULLA. Nato ROSSO su due fronti coi
+     compiti 1-3 della voce #85: SCATTO a 5 fotogrammi consecutivi
+     congelati, CAMPI assente da tutte e 10 le righe del campione durante
+     un contrasto vero; curati col compito 4 (SCATTO 5->0 su 16
+     transizioni attive) e col compito 3 (CAMPI presente e variabile). La
+     prova E, prima della cura di Touch5 in startMatch del compito 2
+     (l'azzeramento che orfanava il dito vivo attraverso una rivincita
+     rapida), poteva dichiararsi PROVA NULLA (diagnosi in
+     _analisi/PROVA-E-DIAGNOSI.md, voce #68); dopo la cura e' verde e non
+     e' piu' tornata NULLA.
+     Deterministico ai semi dichiarati (20260803 per il nastro, 20260907
+     per SCATTO/CAMPI): corre in compagnia. */
+  { nome: 'replay',      cmd: ['strumenti/_q-replay.js'],                                conta: true,  lento: false },
   /* nomi: il punto cieco che il 28 agosto 2026 e' costato una bocciatura.
      Il gioco aveva gia' trovato e riparato «due uomini con lo stesso
      cognome nella stessa squadra» — l'elenco dei cognomi fu portato da

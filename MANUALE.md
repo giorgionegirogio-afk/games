@@ -427,6 +427,123 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **La moviola fluida** (#85, con le voci #68 e #98 a bordo) — **CURATA il
+  7 settembre 2026** (diagnosi `15410bf`, piano `90fe5b9`, cinque compiti
+  in commit `3c560d6..6beea19`, attrezzi ad ancore in `strumenti/_t-*.js`
+  per ogni compito): il replay dei gol smette di tenere congelati i
+  cronometri dei gesti mentre il corpo scorre liscio, il campione della
+  moviola porta anche le pose di contrasto e di parata, e la prova E del
+  banco del replay (`strumenti/_q-replay.js`, ora anche in batteria) torna
+  a dare un verdetto vero invece di dichiararsi nulla.
+
+  **Il reclamo del committente (testuale, dal mandato originario)**: «il
+  replay dei goal va a scatti» e «nel replay si vede tutta l'azione fino
+  al goal di rovesciata, quindi anche il dribbling le finte e le azioni
+  con tante catene di possesso palla e dribbling».
+
+  **Metà del reclamo era già risolta dal 1° settembre 2026** (commit
+  `21ff404`): la finestra del replay risale all'ultimo cambio di possesso,
+  tetto 9 s, `REC_HZ` 20 — un fatto già in produzione da una settimana,
+  non un lavoro di questo ramo. La metà rimasta aperta («va a scatti») era
+  vera solo per i cronometri dei gesti, ed è quella misurata e curata qui.
+
+  **Le tre decisioni del committente (7 settembre 2026,**
+  **`docs/superpowers/specs/2026-09-07-moviola-fluida-design.md`)**: (1)
+  lo scatto si cura con ENTRAMBE le cure — interpolare i cronometri dei
+  gesti E registrare i cinque campi di posa mancanti; (2) la finestra
+  resta 9 s / `REC_HZ` 20, invariata (si riapre solo con una misura
+  futura, non con un'impressione); (3) la cura profonda di `Touch5` entra
+  in questo ramo, per chiudere la voce #68 e misurare la voce #98.
+
+  1. **Scatto — i cronometri dei gesti bloccati**
+     (`kickT/kickB/charge/chargeT/slide/dive/rove/roveT1`): venivano
+     copiati di peso dal campione della moviola, restando bit-identici
+     fino a **5 fotogrammi di schermo consecutivi** mentre il corpo del
+     giocatore avanzava (seme dichiarato 20260907, prova SCATTO). Curato
+     interpolando anche questi otto campi (`mixSu`), con la guardia sui
+     riavvii — `(v<u) || ((u===-1)!==(v===-1))` — perché un cronometro
+     che RIPARTE fra due campioni (valore nuovo minore del precedente, o
+     un passaggio da/verso la sentinella -1 che segna "gesto assente")
+     non va spalmato: scatta al nuovo invece di mescolarsi col vecchio.
+     Dopo la cura: **0 fotogrammi congelati su 16 transizioni con un
+     gesto attivo** (prima: 5 su 16, di cui 13 congelate).
+  2. **Campi — le pose di contrasto e parata assenti dal campione**:
+     `contrasto, presaT, gkManiT, rinvT, recover` non venivano registrati:
+     un gol nato da un contrasto vinto o da una respinta del portiere
+     mostrava nel replay lo stato ATTUALE di quei campi, non quello
+     davvero registrato al momento del gesto. Ora i cinque campi sono
+     scritti a ogni campione e ripristinati nel disegno. Prova CAMPI: da
+     assenti a presenti e variabili. Peso dichiarato: **19.800 numeri in
+     più a taglia 11** (5 campi × 22 giocatori × 180 campioni),
+     **~396 kB di sola RAM per eccesso** (stima arrotondata per eccesso),
+     mai serializzati — `G.rec` è un buffer locale di solo disegno,
+     azzerato a ogni fine replay, indipendente dal nastro delle sfide che
+     il server ri-simula.
+  3. **Prova E — «registrare non cambia il gioco» — e la voce #68
+     CHIUSA**: il banco poteva dichiararsi **PROVA NULLA** perché due
+     partite identiche sulla stessa pagina (registro spento/acceso/
+     spento) divergevano a causa di uno stato di `Touch5` che sopravviveva
+     a `startMatch()`. La bisezione **ha smentito la diagnosi iniziale**:
+     `stick.ox/oy` — l'origine del joystick sintetico, il sospetto di
+     partenza — è di per sé INERTE; le cause vere sono `stick.active/id/
+     dx/dy/hist` (la divergenza compare al campione 6) e il verbo a
+     tenuta orfano `atti`/`btnTouch` (compare al campione 7). Curato in
+     `startMatch()` chiamando `Touch5.azzera()` — la stessa funzione che
+     pausa/ripresa già usa — che chiude quei campi SENZA azzerare
+     `stick.ox/oy` (sempre sovrascritto prima del riuso, per non perdere
+     il gesto di chi torna col pollice ancora premuto): una riadozione
+     morbida, non un azzeramento a martello. Misurato: prima della cura
+     una rivincita ravvicinata lasciava un **dito fantasma**
+     (riagganciato=false, `vx=0` per 30 fotogrammi dopo il calcio
+     d'inizio); dopo, il dito vivo si riaggancia con la sua velocità vera
+     (`vx` 0 → 82,63 dopo 30 fotogrammi di tocco), senza orfanare la
+     rivincita. Prova E: da **PROVA NULLA** a **verde**, mai più tornata
+     nulla nei compiti successivi. **Voce #68 CHIUSA** — con la nota
+     onesta che la stabilità osservata viene anche da una toppa di banco
+     preesistente (`Reg.azzeraComandi` in partenza), non dalla sola cura:
+     se la prova E tornasse nulla in futuro, sospettare prima quella
+     componente.
+  4. **Determinismo, e la voce #98 RIDIMENSIONATA (non chiusa qui)**: a
+     taglia 5 resta **10/10** a ogni compito. Misurato dopo la cura
+     Touch5 anche a **7 e 11**, come deciso: resta **8/10, IDENTICO prima
+     e dopo la cura** — il seme 20260803 diverge già fra **due pagine
+     FRESCHE** in CPU-contro-CPU (zero `Touch5`, zero dita) al primo
+     campione. La causa non è il tocco: è un difetto vero del motore,
+     indipendente da questo ramo e dalla sua cura. La voce #98 non si
+     chiude: si **ridimensiona**, con il dossier aggiornato nella voce
+     stessa (il perimetro Touch5 è escluso per misura diretta, non per
+     congettura).
+
+  **La nota onesta sull'occhio** (soglia 6 dello spec): la cura arriva
+  fino al rig — la catena `kickB → posa` è stata verificata nel sorgente
+  (gradi veri di gamba, nessuna quantizzazione a valle, LOD escluso) — ma
+  nell'episodio campionato (seme 20260907, il "seguito della gamba" dopo
+  un tocco leggero, non un calcio pieno) **la differenza a occhio è
+  impercettibile**: un confronto pixel-per-pixel fra due fotogrammi con
+  lo stesso spostamento in schermo dà **145.007/608.400 pixel diversi
+  (23,8%)** prima della cura e **144.603/608.400 (23,77%)** dopo, con la
+  stessa `mediaDelta` (16,385 in entrambi i casi) — praticamente lo
+  stesso conteggio. Detto con questa franchezza: **la verifica percettiva
+  su un gesto ampio (scivolata, tuffo, rovesciata) o in gioco vero resta
+  aperta**, prima di dichiarare il reclamo «va a scatti» percettivamente
+  chiuso e non solo numericamente chiuso. La prova numerica (SCATTO)
+  resta comunque l'unica che conta per il cancello, ed è inequivocabile.
+
+  **Sorteggi**: `_q-determinismo` a taglia 5 **10/10** a ogni compito. Il
+  confronto due-versioni COMPLESSIVO del ramo (base `3bced51`, prima
+  della diagnosi, contro `CALCETTO-il-gioco.html` di oggi,
+  `_c3-sorteggi.js --taglie 5,7,11`): **0 partite divergenti su 60**
+  (601.370 = 601.370 chiamate a `dado()`) — il **primo ramo di questa
+  voce che chiude senza dichiarare una sola divergenza**: registrazione e
+  disegno sono osservazione pura, e la cura di Touch5 non tocca i
+  percorsi CPU-contro-CPU.
+
+  **Batteria**: intera verde in quattro spezzoni (26 cancelli che
+  contano, incluso `replay` — nuovo in batteria da oggi, con le prove
+  SCATTO/CAMPI/E di questa voce dentro). Verbale completo:
+  `docs/superpowers/specs/2026-09-07-moviola-fluida-design.md`,
+  `_analisi/MOVIOLA-OGGI.md`, `_analisi/PROVA-E-DIAGNOSI.md`, rapporti
+  `.git/sdd/brief/85-compito-*-report.md`.
 - **Le proporzioni ufficiali del campo** (#86) — **CURATA il 7 settembre
   2026** (sette compiti, commit `544e617..6528cf8` — dal compito 1 al
   verbale del compito 7; `55bbc4e` è il commit del progetto e `eeb081b`
