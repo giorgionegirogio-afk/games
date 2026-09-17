@@ -335,12 +335,27 @@ const ASPETTA_BATTUTA = `
     }
 
     /* ===================================================================
-       PROVA 6 — ANTI-STALLO. Riparte dalla stessa scena della prova 2:
-       se la battuta non si vede mai (oggi), non c'e' nessun anti-stallo
-       da misurare — la prova e' rossa per la stessa ragione della 2, non
-       per un difetto suo. Se un giorno la battuta comparira', il
-       verdetto vero e' "si scioglie da sola, palla viva" entro 5 s in
-       piu' dopo averla vista. */
+       PROVA 6 — ANTI-STALLO (voce #87, correzione revisione compito 2).
+       La stesura precedente pretendeva t.battuta===null esattamente al
+       PRIMO fotogramma con t.state!=='battuta' — un'assunzione PIU'
+       FORTE dello spec, che misurava "si risolve all'uscita di scena",
+       non "il fermo e' breve e la palla non resta mai bloccata". Con
+       quella misura sbagliata l'implementazione aveva convenienza a
+       tenere l'intera finestra dentro la scena 'battuta' (fermo + hold
+       insieme, fino a 3,8 s) pur di far coincidere i due eventi sullo
+       stesso fotogramma: il difetto che la revisione ha condannato.
+
+       Questa versione misura le DUE promesse vere dello spec, dalla
+       PRIMA comparsa della battuta di rimessa (t.battuta non-null, tipo
+       'rimessa' — la stessa attesa della prova 2, ASPETTA_BATTUTA):
+         (a) FERMO BREVE — entro 1,2 s di simulazione t.state==='play'
+             (soglia di spec: rimessa ~0,8 s; 1,2 s da' margine di
+             misura senza coprire il difetto condannato, che era 3,8 s
+             e quindi restrebbe rossissimo anche con questo margine);
+         (b) SCIOGLIMENTO — entro 5 s totali t.battuta===null E palla
+             viva (b.owner>=0 oppure la sua velocita' supera 50).
+       Le due soglie si misurano nello stesso giro di simulazione,
+       accumulando il tempo trascorso dalla comparsa della battuta. */
     {
       const setup = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
@@ -353,29 +368,34 @@ const ASPETTA_BATTUTA = `
       if (setup.errore) { di(false, '6. ANTI-STALLO', 'BANCO: scena non costruita — ' + setup.errore); }
       else {
         const rBattuta = await pag.evaluate(ASPETTA_BATTUTA);
-        if (!rBattuta.vista) {
-          di(false, '6. ANTI-STALLO — la battuta deve sciogliersi da sola, palla viva',
-            'la scena battuta non si e\' mai vista in 2 s: non c\'e\' nessun fermo da cui uscire, quindi nessun anti-stallo da misurare oggi');
+        if (!rBattuta.vista || !rBattuta.battuta || rBattuta.battuta.tipo !== 'rimessa') {
+          di(false, '6. ANTI-STALLO — fermo breve (<=1,2s) e scioglimento (<=5s), palla viva',
+            'la battuta di rimessa non e\' mai comparsa in 2 s: nessun fermo da cui misurare fermo breve o scioglimento');
         } else {
           const rDopo = await pag.evaluate(`
             (function(){
               const t = window.__test;
-              const n = 300; // 5 s
+              const n = 300; // 5 s dalla prima comparsa della battuta di rimessa
+              let fermoT = null;
               for(let i=0;i<n;i++){
                 t.simulate(1/60);
-                if(t.state!=='battuta'){
+                const tempo = (i+1)/60;
+                if(fermoT===null && t.state==='play') fermoT = tempo;
+                if(t.battuta===null){
                   const b = t.ball;
                   const viva = (b.owner>=0) || Math.hypot(b.vx,b.vy) > 50;
-                  return { sciolta:true, fotogramma:i, battuta:t.battuta, viva };
+                  return { fermoT, sciolta:true, tempoScioglimento:tempo, viva };
                 }
               }
-              return { sciolta:false, fotogramma:n, battuta:t.battuta };
+              return { fermoT, sciolta:false, tempoScioglimento:null, viva:null };
             })()
           `);
-          const ok = rDopo.sciolta && rDopo.battuta === null && rDopo.viva === true;
-          di(ok, '6. ANTI-STALLO — la battuta deve sciogliersi da sola, palla viva',
-            rDopo.sciolta ? ('scena lasciata al fotogramma ' + rDopo.fotogramma + ', battuta=' + JSON.stringify(rDopo.battuta) + ', palla viva=' + rDopo.viva)
-                          : ('la scena battuta e\' rimasta ferma per 5 s in piu\', mai sciolta'));
+          const fermoOk = rDopo.fermoT !== null && rDopo.fermoT <= 1.2;
+          const sciogliOk = rDopo.sciolta && rDopo.tempoScioglimento <= 5 && rDopo.viva === true;
+          const ok = fermoOk && sciogliOk;
+          di(ok, '6. ANTI-STALLO — fermo breve (<=1,2s) e scioglimento (<=5s), palla viva',
+            '(a) FERMO BREVE: state=play a ' + (rDopo.fermoT === null ? 'MAI' : rDopo.fermoT.toFixed(3) + 's') + ' (soglia 1,2s)   ' +
+            '(b) SCIOGLIMENTO: ' + (rDopo.sciolta ? ('battuta=null a ' + rDopo.tempoScioglimento.toFixed(3) + 's, palla viva=' + rDopo.viva) : 'MAI sciolta in 5s') + ' (soglia 5s)');
         }
       }
     }
