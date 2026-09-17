@@ -10480,7 +10480,7 @@ function makePlayer(team, idx, x, y, role){
        gkClip ricorda se il tuffo in corso era 'tuffo' o 'parata' per
        chiudere la rialzata sulla stessa clip. --- */
     chargeClip:null, kickClip:null, gkClip:'',
-    frenaT:0, frenaAcc:0, fintaT:0, fintaCd:0, mesto:0, presaT:0, rinvT:0,
+    frenaT:0, frenaAcc:0, fintaT:0, fintaCd:0, mesto:0, presaT:0, rinvT:0, rimT:0,
     /* gkMani/gkManiT: quale dei tre esiti senza presa ha appena fatto
        il portiere IN PIEDI, e per quanto ancora si vede. Sono latch di
        solo disegno come presaT: la fisica non li legge mai. */
@@ -10733,7 +10733,7 @@ function resetKickoff(){
     if(p.out>0){ p.x=p.team===0?FW*0.22:FW*0.78; p.y=-P_R*2.4; }
     p.aiT=dado()*0.2; p.aiTX=p.x; p.aiTY=p.y;
     p.kickT=0; p.celeb=0;
-    p.mesto=0; p.frenaT=0; p.fintaT=0; p.presaT=0; p.rinvT=0;   // i latch del rig
+    p.mesto=0; p.frenaT=0; p.fintaT=0; p.presaT=0; p.rinvT=0; p.rimT=0;   // i latch del rig
     p.gkMani=''; p.gkManiT=0;                    // e le tre mani del portiere
     p.strappoCd=0;                       // e l'attesa fra due finte comandate
     p.corsaArea=0;                                              // e la corsa in area
@@ -14466,8 +14466,16 @@ function kickBall(p, nx, ny, speed, spinY){
   if(G.ball.owner!==G.players.indexOf(p) && d>KICK_R) return false;
   /* LA BATTUTA SI CHIUDE QUI (voce #87, compito 2): kickBall e' l'unico
      imbuto di tutti i calci del gioco (umano, CPU, auto-battuta) - se il
-     battitore in attesa e' proprio p, la battuta pendente e' consumata. */
-  if(G.battuta && G.players[G.battuta.battitore]===p) G.battuta=null;
+     battitore in attesa e' proprio p, la battuta pendente e' consumata.
+     LA CLIP SI ARMA PRIMA DI DIMENTICARE (correzione di revisione
+     compito 3): se la battuta che si chiude era una rimessa, p.rimT
+     parte da RIMESSA_CLIP_T - un cronometro di solo disegno che da qui
+     in poi pilota rigStato, sul modello di rinvT. Deve leggere
+     G.battuta.tipo PRIMA della riga sotto, che lo cancella. */
+  if(G.battuta && G.players[G.battuta.battitore]===p){
+    if(G.battuta.tipo==='rimessa') p.rimT=RIMESSA_CLIP_T;
+    G.battuta=null;
+  }
   b.owner=-1; segnaTocco(G.players.indexOf(p));
   b.vx=nx*speed; b.vy=ny*speed+spinY;
   b.curve=0; b.perfectT=0; b.saveRolled=false;
@@ -14608,10 +14616,13 @@ function doPassaggio(t){
   if(!puoPassare(t)) return;
   const p=ctrlPlayer(t);
   if(p.charge>=0 && !p.chargeGo) chiudiAnticipo(p);   // stava caricando il tiro: cambia idea
-  /* IN BATTUTA IL PASSAGGIO E' UNA RIMESSA (voce #87, compito 3):
-     stesso anticipo, stesso lancio - solo la clip cambia, per dire al
-     pollice che quello che sta per partire e' il verbo di casa. */
-  if(anticipa(p, 'passo', PASS_CAR_U, eseguiPassUmano)) p.chargeClip=inBattuta(p)?'rimessa':'passaggio';
+  /* LA VIA chargeClip PER LA RIMESSA E' SUPERATA (voce #87, correzione
+     di revisione compito 3): la carica umana dura 0-3 fotogrammi
+     (PASS_CAR_U) - troppo poco perche' la clip si veda. La clip vive
+     ora su p.rimT, armato da kickBall quando il calcio parte davvero
+     (vedi li'): qui resta solo il passaggio semplice, senza deviazioni
+     per la battuta. */
+  if(anticipa(p, 'passo', PASS_CAR_U, eseguiPassUmano)) p.chargeClip='passaggio';
 }
 /* il CROSS col tasto suo. Da ogni meta' campo: dalla propria e' il
    lancio lungo, stesso gesto e stessa palla alta — un disco che dicesse
@@ -14633,9 +14644,10 @@ function doCrossUmano(t){
       if(d<bd){ bd=d; dest=i; }
     }
     doCross(q, 0, 0, null, dest);
-  /* IN BATTUTA IL CROSS E' UNA RIMESSA (voce #87, compito 3): stesso
-     meccanismo, la clip dice al pollice che e' il verbo di casa. */
-  })) p.chargeClip=inBattuta(p)?'rimessa':'cross';
+  /* LA VIA chargeClip PER LA RIMESSA E' SUPERATA (voce #87, correzione
+     di revisione compito 3): vedi il commento gemello in doPassaggio -
+     la clip vive ora su p.rimT, armato da kickBall. */
+  })) p.chargeClip='cross';
 }
 /* PRESSA: il raddoppio di L1.5, senza il trascinamento — la direzione
    la da' il portatore stesso. Con il pallone di nessuno TACE, per la
@@ -17250,6 +17262,11 @@ function aggiornaPosa(p, dt){
   if(p.mesto>0) p.mesto-=dt;
   if(p.presaT>0) p.presaT-=dt;
   if(p.rinvT>0) p.rinvT-=dt;
+  /* la clip della rimessa (voce #87, correzione di revisione compito 3):
+     stesso trattamento di rinvT, un giocatore di movimento qualunque puo'
+     portarla, quindi il decremento vive nel passo COMUNE (questa
+     funzione gira per ogni giocatore, non solo per il portiere). */
+  if(p.rimT>0) p.rimT-=dt;
   if(p.gkManiT>0) p.gkManiT-=dt;
 
   /* MOVIMENTO RIDOTTO: la fase si congela, la deformazione sparisce, il
@@ -18999,6 +19016,15 @@ const BATTUTA_T = { rimessa:0.8, rinvio:0.8 };   // il binario rapido del parago
 const BATTUTA_HOLD = 3.0;    // anti-stallo: entro questo tempo la battuta parte da sola
 const BATTUTA_CPU = 0.5;     // la CPU batte quando restano questi secondi di hold
 const BATTUTA_RAGGIO = 60;   // gli avversari vengono spinti fuori da questo raggio
+/* LA CLIP DELLA RIMESSA VIAGGIA SU UN CRONOMETRO SUO (voce #87,
+   correzione di revisione compito 3): non piu' chargeClip (cieco in
+   partita vera - la carica umana dura 0-3 fotogrammi e la CPU non
+   carica affatto), ma p.rimT, sul modello di rinvT/rinvioPortiere
+   (:18967 e il ramo gemello in rigStato). kickBall lo arma quando il
+   battitore di una rimessa calcia davvero; da li' la clip gioca per
+   intero, u=0->1, sui secondi dichiarati qui - non piu' schiacciata
+   prima del calcio. */
+const RIMESSA_CLIP_T = 0.55;
 
 /* la durata del fermo a scena 'battuta'. rimessa e rinvio: sempre 0,8 s
    (BATTUTA_T). L'angolo (compito 4) allunga il fermo sulle taglie grandi
@@ -19055,7 +19081,7 @@ function posaBattuta(){
   /* gli stessi latch che il fischio azzera in resetKickoff (voce #87,
      precedente dichiarato): il battitore non eredita una scivolata o un
      anticipo aperto da prima del fermo. */
-  bt.slide=-1; bt.recover=0; chiudiAnticipo(bt); bt.rove=-1; bt.kickT=0; bt.kickB=0;
+  bt.slide=-1; bt.recover=0; chiudiAnticipo(bt); bt.rove=-1; bt.kickT=0; bt.kickB=0; bt.rimT=0;
   for(const q of G.players){
     if(q.team===team) continue;
     const dx=q.x-bt.x, dy=q.y-bt.y, d=Math.max(1,len(dx,dy));
@@ -33852,6 +33878,15 @@ function rigStato(p){
   /* ---- scivolata: discesa su slide, rialzata su recover ---- */
   if(p.slide>=0){ st.clip='scivolata'; st.u=0.08+0.62*clamp(p.slide/SLIDE_T,0,1); return st; }
   if(p.recover>0){ st.clip='scivolata'; st.u=0.70+0.25*clamp(1-p.recover/SLIDE_REC,0,1); return st; }
+  /* ---- LA RIMESSA (voce #87, correzione di revisione compito 3): sta
+     QUI, PRIMA del calcio generico, e non e' un caso. kickBall arma
+     p.rimT E p.kickT/p.kickB nello STESSO istante (lo stesso calcio):
+     senza questa precedenza il ramo del calcio generico qui sotto
+     vincerebbe sempre, e la clip 'rimessa' non si vedrebbe mai - il
+     difetto esatto che questa correzione ripara. u cresce da 0 (calcio
+     appena partito) a 1 (cronometro esaurito), lo stesso verso di
+     rinvT qui sopra. ---- */
+  if(p.rimT>0){ st.clip='rimessa'; st.u=1-(p.rimT/RIMESSA_CLIP_T); return st; }
   /* ---- il calcio: frustata+seguito sul cronometro gia' del gioco ---- */
   if(p.kickT>0 || p.kickB>0){
     const c = p.kickClip||'passaggio', t1 = RIG_CALCI[c]||0.31;
@@ -34666,6 +34701,15 @@ function registraFotogramma(dt){
                              _q-replay.js legge dal campione crudo. */
                           contrasto:q.contrasto, presaT:q.presaT,
                           gkManiT:q.gkManiT, rinvT:q.rinvT,
+                          /* rimT ENTRA NEL CAMPIONE (voce #87, correzione
+                             di revisione compito 3): stesso trattamento
+                             dei cinque campi qui sopra (voce #85, compito
+                             3) - un cronometro di solo disegno che
+                             decresce a zero e pilota st.u/st.clip in modo
+                             continuo. Senza, un replay che rivede una
+                             rimessa perderebbe la clip nuova e mostrerebbe
+                             il corpo fermo o il calcio generico. */
+                          rimT:q.rimT,
                           recover:q.recover})),
   };
   G.rec.push(f);
@@ -34889,6 +34933,10 @@ function disegnaMoviola(){
     if(f.presaT!==undefined) q.presaT=mixGiu(f.presaT,(g.presaT!==undefined?g.presaT:f.presaT));
     if(f.gkManiT!==undefined) q.gkManiT=mixGiu(f.gkManiT,(g.gkManiT!==undefined?g.gkManiT:f.gkManiT));
     if(f.rinvT!==undefined) q.rinvT=mixGiu(f.rinvT,(g.rinvT!==undefined?g.rinvT:f.rinvT));
+    /* rimT segue lo stesso trattamento di rinvT (voce #87, correzione di
+       revisione compito 3): decresce a zero, si interpola con mixGiu, la
+       stessa guardia sul riavvio (saltaGiu: non risale mai da solo). */
+    if(f.rimT!==undefined) q.rimT=mixGiu(f.rimT,(g.rimT!==undefined?g.rimT:f.rimT));
     if(f.recover!==undefined) q.recover=mixGiu(f.recover,(g.recover!==undefined?g.recover:f.recover));
     /* il nastro viene da PRIMA della rete: la festa e la delusione, che
        vivono nel presente, sul replay sarebbero un anacronismo — il

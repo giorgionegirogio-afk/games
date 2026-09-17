@@ -89,8 +89,27 @@
         scioglimento (o al tetto di 5s), nessun avversario deve mai
         scendere sotto 40 unita' di distanza dal battitore (la guardia
         in aiDecide, voce #87 compito 3).
-   Il file adesso e' a nove prove; l'exit code 3 resta non usato da
-   nessuna delle nove.
+   Il file era a nove prove; l'exit code 3 resta non usato da nessuna.
+
+   RETTIFICA (17 settembre 2026, sera — correzione di revisione compito
+   3, decisione del committente sul rilievo "imposto dal piano"). La via
+   chargeClip per la clip di rimessa (prove 8/9 qui sopra non la
+   toccavano) si e' rivelata cieca in partita vera: la carica umana dura
+   0-3 fotogrammi e la battuta CPU (eseguiAiPass -> kickBall diretto) non
+   passa affatto dalla carica — la clip non arrivava mai a schermo per
+   davvero. La cura (strumenti/_t-rimessa-clip.js) sposta la clip su un
+   cronometro di solo disegno, p.rimT, armato da kickBall quando il
+   battitore consuma una rimessa, sul modello di rinvT/rinvioPortiere.
+   QUESTO FILE GUADAGNA LA DECIMA PROVA, la condanna dedicata:
+    10. CLIP-RIMESSA — CPU contro CPU, campo vero, rimessa alla fascia
+        nord (stessa geometria della prova 2/9): dal fotogramma in cui
+        G.battuta si azzera (la battuta e' consumata, il calcio e'
+        partito), il battitore deve mostrare la clip 'rimessa' per
+        almeno 6 fotogrammi consecutivi, letta via __test.poseInCampo()
+        (idx+team del battitore, catturati mentre la battuta e' ancora
+        pendente, sono la chiave stabile: il campo esiste gia' e basta,
+        nessuna estensione dell'hook).
+   Il file e' adesso a dieci prove; l'exit code 3 resta non usato.
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -602,6 +621,82 @@ const ASPETTA_BATTUTA = `
           di(ok, '9. RISPETTO — nessun avversario punta entro 40 unita\' dal battitore per tutta la finestra',
             'bersaglio (aiTX/aiTY) piu\' vicino osservato: ' + (r.minTarget === Infinity ? 'nessun fotogramma misurato' : r.minTarget.toFixed(1) + ' unita\' (giocatore ' + r.chi + ') al fotogramma ' + r.frameMin) +
             '  (finestra ' + (r.risolta ? ('sciolta al fotogramma ' + r.fineFotogramma) : ('MAI sciolta in ' + n + ' fotogrammi')) + ')');
+        }
+      }
+    }
+
+    /* ===================================================================
+       PROVA 10 — CLIP-RIMESSA (rettifica del 17 settembre, correzione di
+       revisione compito 3). CPU contro CPU, campo vero, rimessa alla
+       fascia nord (stessa geometria delle prove 2/9). La condanna: dal
+       fotogramma in cui G.battuta si azzera (la battuta e' consumata,
+       kickBall ha fatto partire il pallone) il battitore deve mostrare
+       la clip 'rimessa' per almeno 6 fotogrammi CONSECUTIVI.
+
+       L'IDENTITA' DEL BATTITORE si cattura mentre t.battuta e' ancora
+       pendente (t.players[t.battuta.battitore].idx/.team): dopo che la
+       battuta si scioglie t.battuta e' null e l'indice del battitore
+       si perde da li', ma idx+team restano un giocatore stabile per
+       tutta la partita e sono la chiave con cui si cerca la sua riga
+       dentro __test.poseInCampo().
+
+       LA LETTURA E' t.disegna()+t.poseInCampo(), non t.players[i].
+       poseClip direttamente: poseInCampo() e' l'hook dichiarato dal
+       brief, ed espone gia' idx/team/clip — verificato leggendone la
+       definizione (CALCETTO-il-gioco.html, vicino a 42866): basta cosi',
+       nessuna estensione. t.simulate() fa avanzare la fisica ma NON
+       ridisegna (il suo stesso commento lo dice): senza t.disegna() ad
+       ogni fotogramma, poseClip resterebbe quello dell'ultimo rendering
+       vero e la misura leggerebbe uno stato vecchio — lo stesso pattern
+       gia' in uso in strumenti/seme.js (t.simulate(...); t.disegna();
+       prima di leggere t.poseInCampo()). */
+    {
+      const setup = await pag.evaluate(({ seme, taglia }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.save.sponde = 'campo';
+        t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
+        return SCENA_FASCIA(0);
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+      if (setup.errore) { di(false, '10. CLIP-RIMESSA', 'BANCO: scena non costruita — ' + setup.errore); }
+      else {
+        const rBattuta = await pag.evaluate(ASPETTA_BATTUTA);
+        if (!rBattuta.vista || !rBattuta.battuta) {
+          di(false, '10. CLIP-RIMESSA — 6 fotogrammi consecutivi di clip \'rimessa\' dal calcio',
+            'la battuta di rimessa non e\' mai comparsa in 2s: nessuna finestra da misurare');
+        } else {
+          const ident = await pag.evaluate(() => {
+            const t = window.__test;
+            const bp = t.battuta ? t.players[t.battuta.battitore] : null;
+            return bp ? { idx: bp.idx, team: bp.team } : null;
+          });
+          if (!ident) {
+            di(false, '10. CLIP-RIMESSA — 6 fotogrammi consecutivi di clip \'rimessa\' dal calcio',
+              'BANCO: il battitore e\' gia\' sparito prima di poterne leggere idx/team');
+          } else {
+            const r = await pag.evaluate(({ idx, team }) => {
+              const t = window.__test;
+              const n = 300; // 5s, lo stesso tetto di ANTI-STALLO/RISPETTO
+              let fClear = -1;
+              const trace = [];
+              for (let f = 0; f < n; f++) {
+                t.simulate(1 / 60);
+                t.disegna();
+                if (fClear < 0 && t.battuta === null) fClear = f;
+                if (fClear >= 0) {
+                  const pose = t.poseInCampo().find(p => p.idx === idx && p.team === team);
+                  trace.push(pose ? pose.clip : null);
+                  if (trace.length >= 6) break;
+                }
+              }
+              return { fClear, trace };
+            }, ident);
+            const ok = r.fClear >= 0 && r.trace.length === 6 && r.trace.every(c => c === 'rimessa');
+            di(ok, '10. CLIP-RIMESSA — 6 fotogrammi consecutivi di clip \'rimessa\' dal calcio',
+              r.fClear < 0 ? ('G.battuta non si e\' mai azzerato in ' + 300 + ' fotogrammi (5s)')
+                : ('battuta azzerata al fotogramma ' + r.fClear + ', clip nei 6 fotogrammi seguenti: [' + r.trace.join(', ') + ']'));
+          }
         }
       }
     }
