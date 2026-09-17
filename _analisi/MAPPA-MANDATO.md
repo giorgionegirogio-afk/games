@@ -782,3 +782,17 @@ come corpo in campo, cerimoniale pre-partita, VAR scenografico; il fuorigioco
 2. Il MIND v1 va anticipato sopra le regole a leva corta, o l'onda A resta
    prima?
 3. Il live 1v1 e i due-tempi restano fuori finché A-D non sono incassate?
+
+---
+
+## Le decisioni del committente (17 settembre, notte)
+
+1. Programma **APPROVATO** nell'ordine A → B → C → D, col cantiere #87
+   chiuso per primo.
+2. Il **live 1v1 entra in programma** come **onda E**, in coda alla D:
+   progetto d'architettura dedicato (lockstep prima; il server autoritativo
+   solo se la misura dice che il lockstep non basta), da aprire col suo
+   censimento e il suo spec come ogni cantiere.
+3. Restano fuori salvo mandato futuro: due tempi + sostituzioni vere,
+   infortuni completi, arbitro come corpo in campo, fuorigioco, i18n
+   completa.
