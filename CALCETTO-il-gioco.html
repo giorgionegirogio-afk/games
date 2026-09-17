@@ -10672,6 +10672,12 @@ function setupPlayers(){
 
 /* riposiziona tutti per il calcio d'inizio */
 function resetKickoff(){
+  /* IL FISCHIO DEL GOL UCCIDE UNA BATTUTA PENDENTE (voce #87, compito 2):
+     resetKickoff riparte sempre da zero dopo un gol o un fermo pieno, e
+     una battuta in sospeso (rimessa oggi, angolo/rinvio nei prossimi
+     compiti) non avrebbe piu' senso su un campo appena rimesso in
+     formazione. */
+  G.battuta=null;
   if(G.ball) G.ball.tiroT=-1;             // nessun tiro sopravvive al fischio
   for(const p of G.players){
     const f = formation(p.team)[p.idx];
@@ -11063,7 +11069,7 @@ function setScene(s){
       if(s!=='freekick' && !G.paused) tb.classList.remove('pausahide');
     }
   }
-  const inMatch = s==='play'||s==='kickoff'||s==='golden'||s==='goal'||s==='freekick';
+  const inMatch = s==='play'||s==='kickoff'||s==='battuta'||s==='golden'||s==='goal'||s==='freekick';
   /* niente schermo che si spegne in mezzo a una partita da 90 secondi */
   try{ if(window.tieniAccesoLoSchermo) window.tieniAccesoLoSchermo(inMatch); }catch(e){}
   /* Pausa e audio sono comandi DI PARTITA. Nel duello dal dischetto e nella
@@ -14409,6 +14415,10 @@ function kickBall(p, nx, ny, speed, spinY){
   const b=G.ball;
   const d=len(b.x-p.x, b.y-p.y);
   if(G.ball.owner!==G.players.indexOf(p) && d>KICK_R) return false;
+  /* LA BATTUTA SI CHIUDE QUI (voce #87, compito 2): kickBall e' l'unico
+     imbuto di tutti i calci del gioco (umano, CPU, auto-battuta) - se il
+     battitore in attesa e' proprio p, la battuta pendente e' consumata. */
+  if(G.battuta && G.players[G.battuta.battitore]===p) G.battuta=null;
   b.owner=-1; segnaTocco(G.players.indexOf(p));
   b.vx=nx*speed; b.vy=ny*speed+spinY;
   b.curve=0; b.perfectT=0; b.saveRolled=false;
@@ -16589,6 +16599,33 @@ function step(){
        le due squadre: il cronometro della partita non e' ancora partito
        e l'equita' non se ne accorge. Sul 5 resta tutto com'era. */
     if(G.sceneT>=(TAGLIA>5?1.5:1.0)){ setScene('play'); }
+    return;
+  }
+  if(G.scene==='battuta'){
+    /* IL FERMO DELLA BATTUTA (voce #87, compito 2), gemello del kickoff
+       qui sopra: il ciclo esce subito, fisica e IA del resto del campo
+       sospese. Il fermo dura ALMENO duraBattuta() (0,8 s per rimessa e
+       rinvio; l'angolo del compito 4 legge la taglia); scaduto quel
+       minimo parte l'anti-stallo, che forza la battuta entro
+       BATTUTA_HOLD secondi dall'apertura del fermo - la CPU (e, in
+       questo compito, anche l'umano: i verbi di battuta arrivano al
+       compito 3) battono con la stessa auto-battuta. Zero dado() nuovo
+       qui: eseguiAiPass ne usa uno suo, lo stesso percorso della CPU
+       normale (manopoleDi, la sorgente per squadra che l'IA usa gia'
+       accanto ad aiPass). kickBall stacca G.battuta al primo tocco
+       vero, da qualunque via arrivi - ed e' per questo che si puo'
+       tornare a 'play' subito dopo averlo chiamato, nello stesso
+       fotogramma: se ha funzionato, G.battuta e' gia' null. */
+    const scaduto = G.sceneT>=duraBattuta();
+    if(scaduto && G.battuta){
+      G.battuta.hold-=dt;
+      const bp=G.players[G.battuta.battitore];
+      const cpu=G.cpu[G.battuta.team];
+      if(bp && ((cpu && G.battuta.hold<=BATTUTA_HOLD-BATTUTA_CPU) || G.battuta.hold<=0)){
+        eseguiAiPass(bp, manopoleDi(G.battuta.team));
+      }
+    }
+    if(scaduto && !G.battuta) setScene('play');
     return;
   }
   if(G.scene==='goal'){
@@ -18842,6 +18879,97 @@ function rinvioPortiere(p){
 function tryKeeperSave(b){ /* sostituita dal portiere vero (updateKeeper) */ }
 
 /* sponde + porte: la gabbia rimanda tutto tranne la luce delle porte */
+/* =====================================================================
+   LA BATTUTA (voce #87, compito 2) - quando il campo e' vero (G.campoVero)
+   la palla che esce dalla sponda lunga non rimbalza piu': si ferma un
+   istante (scena 'battuta', gemella del kickoff) e la riprende chi ha
+   diritto alla rimessa. Angolo e rinvio dal fondo restano ai compiti 3
+   e 4: oggi ballWalls() non tocca ancora il ramo del fondo fuori dalla
+   luce, e posaBattuta() sa piazzare solo il tipo 'rimessa'.
+
+   G.battuta = {tipo, team, battitore, x, y, hold} oppure null.
+     tipo       'rimessa' oggi; 'angolo'/'rinvio' nei prossimi compiti.
+     team       la squadra che ha diritto alla battuta.
+     battitore  indice in G.players di chi tocchera' per primo.
+     x,y        il punto di battuta.
+     hold       secondi residui, scaduto il minimo del fermo, prima che
+                l'auto-battuta scatti da sola (l'anti-stallo dentro il
+                ramo 'battuta' del ciclo principale, qui sotto).
+
+   PERIMETRO DICHIARATO: il battitore umano non ha ancora i verbi di
+   battuta (arrivano al compito 3, pulsantiera dedicata): l'anti-stallo
+   lo fa battere con la stessa auto-battuta della CPU a fine hold. E'
+   uno stadio del cantiere, non una svista - la palla non resta mai
+   bloccata, solo l'agenzia del dito arriva dopo. */
+const BATTUTA_T = { rimessa:0.8, rinvio:0.8 };   // il binario rapido del paragone
+const BATTUTA_HOLD = 3.0;    // anti-stallo: entro questo tempo la battuta parte da sola
+const BATTUTA_CPU = 0.5;     // la CPU batte quando restano questi secondi di hold
+const BATTUTA_RAGGIO = 60;   // gli avversari vengono spinti fuori da questo raggio
+
+/* la durata del fermo a scena 'battuta'. rimessa e rinvio: sempre 0,8 s
+   (BATTUTA_T). L'angolo (compito 4) allunga il fermo sulle taglie grandi
+   come il kickoff: la funzione nasce completa anche se oggi la chiama
+   solo il ramo rimessa. */
+function duraBattuta(){
+  const st=G.battuta;
+  if(!st) return 0;
+  if(st.tipo==='angolo') return TAGLIA>5?1.5:1.2;
+  return BATTUTA_T[st.tipo] || 0.8;
+}
+
+/* la palla esce dal campo vero: pulisce il pallone (lo stesso blocco di
+   pulizia di ballOverBar, poco sotto), apre G.battuta, piazza chi batte
+   (posaBattuta) e ferma il gioco un istante. */
+function pallaFuori(tipo, team, x, y){
+  const b=G.ball;
+  b.z=0; b.vz=0; b.curve=0; b.perfectT=0; b.passTo=-1; b.crossTo=-1; b.saveRolled=false;
+  b.vx=0; b.vy=0;
+  G.battuta = { tipo, team, battitore:-1, x, y, hold:BATTUTA_HOLD };
+  posaBattuta();
+  showBanner(tipo.toUpperCase(), TEAMCOL[team], 0.9);
+  Audio5.whistle(false);
+  setScene('battuta');
+}
+
+/* piazza il battitore e la palla sul punto di uscita. Per ora solo il
+   tipo 'rimessa' (angolo e rinvio arrivano ai compiti 3 e 4): il
+   battitore e' il compagno di movimento (mai il portiere, mai chi e'
+   fuori per un'espulsione) piu' vicino al punto; gli avversari entro
+   BATTUTA_RAGGIO vengono spinti fuori radialmente, senza pressare chi
+   batte durante la finestra. */
+function posaBattuta(){
+  const st=G.battuta;
+  if(!st || st.tipo!=='rimessa') return;
+  const team=st.team;
+  let bt=null, bd=1e9;
+  for(const q of G.players){
+    if(q.team!==team || q.out>0 || q.role==='gk') continue;
+    const d=len(q.x-st.x, q.y-st.y);
+    if(d<bd){ bd=d; bt=q; }
+  }
+  if(!bt) return;
+  const bi=G.players.indexOf(bt);
+  st.battitore=bi;
+  bt.x = clamp(st.x, B_R+P_R, FW-(B_R+P_R));
+  bt.y = clamp(st.y, B_R+P_R, FH-(B_R+P_R));
+  bt.vx=0; bt.vy=0;
+  const dir = team===0?1:-1;
+  bt.fx=dir; bt.fy=0;
+  const b=G.ball;
+  b.owner=bi; b.x=bt.x+dir*CARRY_DIST; b.y=bt.y;
+  segnaTocco(bi);
+  /* gli stessi latch che il fischio azzera in resetKickoff (voce #87,
+     precedente dichiarato): il battitore non eredita una scivolata o un
+     anticipo aperto da prima del fermo. */
+  bt.slide=-1; bt.recover=0; chiudiAnticipo(bt); bt.rove=-1; bt.kickT=0; bt.kickB=0;
+  for(const q of G.players){
+    if(q.team===team) continue;
+    const dx=q.x-bt.x, dy=q.y-bt.y, d=Math.max(1,len(dx,dy));
+    if(d<BATTUTA_RAGGIO){ q.x=bt.x+dx/d*BATTUTA_RAGGIO; q.y=bt.y+dy/d*BATTUTA_RAGGIO; }
+  }
+  if(!G.cpu[team]) G.ctrl[team]=bi;
+}
+
 function ballWalls(b){
   const sp=len(b.vx,b.vy);
   const inMouth = b.y>GY0+B_R && b.y<GY1-B_R;
@@ -18891,8 +19019,32 @@ function ballWalls(b){
     }
   }
   /* sponde lunghe */
-  if(b.y<B_R){ b.y=B_R; b.vy=Math.abs(b.vy)*0.82; hitWall(sp,false,0,1); }
-  if(b.y>FH-B_R){ b.y=FH-B_R; b.vy=-Math.abs(b.vy)*0.82; hitWall(sp,false,0,-1); }
+  /* LE SPONDE LUNGHE (voce #87, compito 2): a campo vero la fascia non
+     rimbalza piu', la palla si ferma e la riprende la squadra opposta
+     all'ultimo tocco (rimessa). In GABBIA il ramo sotto resta identico
+     al bit: zero dado() nuovi, il due-versioni a 5/7-gabbia non vede
+     differenza. */
+  if(b.y<B_R){
+    if(G.campoVero){
+      /* REGOLA FISSA, non dado(): se squadraDelPallone() non sa dire chi
+         ha toccato per ultimo (chi<0, mai vero dopo il calcio d'inizio,
+         che gia' semina un tocco in resetKickoff) la rimessa va alla
+         squadra 0. Un pareggio di casi si scioglie con un letterale
+         dichiarato, non con un sorteggio (legge dei sorteggi, voce #87). */
+      const chi=squadraDelPallone();
+      pallaFuori('rimessa', chi>=0?1-chi:0, b.x, 0);
+      return;
+    }
+    b.y=B_R; b.vy=Math.abs(b.vy)*0.82; hitWall(sp,false,0,1);
+  }
+  if(b.y>FH-B_R){
+    if(G.campoVero){
+      const chi=squadraDelPallone();
+      pallaFuori('rimessa', chi>=0?1-chi:0, b.x, FH);
+      return;
+    }
+    b.y=FH-B_R; b.vy=-Math.abs(b.vy)*0.82; hitWall(sp,false,0,-1);
+  }
 }
 
 /* ---------- pali con corpo vero ----------
@@ -30195,7 +30347,7 @@ function updateCamera(rdt){
      secondo ma la targa dei capitani sta in campo per CAP_DUR (1,7 s),
      e lo scatto del banco cade a 1,2 s — quando la scena e' gia' 'play'.
      Il patto vale quindi finche' la targa e' in scena. */
-  const cerimonia = (G.scene==='kickoff' || G.capT>0);
+  const cerimonia = (G.scene==='kickoff' || G.scene==='battuta' || G.capT>0);
   if(cerimonia){ tx=b.x; ty=b.y; }
   /* LO STACCO DEL CALCIO D'INIZIO SENZA PANORAMICA (voce «regia»): sul
      5 — e sulle taglie grandi a movimento ridotto — il quadro del
@@ -30211,7 +30363,7 @@ function updateCamera(rdt){
      disegni consecutivi danno gli stessi bit. Le garanzie dei punti 5 e
      6 qui sotto non servono a questo quadro: la camera E' sul pallone,
      che quindi non puo' essere tagliato dai bordi. */
-  if(G.scene==='kickoff'){ G.cam.x=tx; G.cam.y=ty; G.cam.z=tz; return; }
+  if(G.scene==='kickoff' || G.scene==='battuta'){ G.cam.x=tx; G.cam.y=ty; G.cam.z=tz; return; }
   /* 3. zona morta — piu' stretta in verticale (28 -> 16 px). La zona morta
      e' nata per non far ballare il quadro dietro ogni tocco, e in
      orizzontale serve ancora; in verticale pero' e' diventata un ritardo
@@ -38969,7 +39121,13 @@ let quitArmato=false;
 function setPaused(v){
   v=!!v;
   if(v===G.paused) return;
-  const inMatch = G.scene==='play'||G.scene==='kickoff'||G.scene==='golden'||
+  /* BATTUTA E' UN FERMO DI PARTITA COME KICKOFF (voce #87, compito 2):
+     senza questa voce in piu' la pausa si sarebbe rifiutata in silenzio
+     durante il fermo della rimessa. Le sorelle di questa stessa lista
+     (__indietro, checkOrientation, forceWinMatch) non sono toccate:
+     nessun cancello di questo compito le esercita - osservazione per un
+     giro di pulizia dedicato, non un obbligo qui. */
+  const inMatch = G.scene==='play'||G.scene==='kickoff'||G.scene==='battuta'||G.scene==='golden'||
                   G.scene==='goal'||G.scene==='freekick';
   if(v && !inMatch) return;
   G.paused=v;
