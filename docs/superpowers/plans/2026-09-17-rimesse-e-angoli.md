@@ -87,6 +87,18 @@
 
 ### Compito 3: La battuta è del pollice — i verbi, TIRA spento, la clip
 
+> **Rettifica del 17 settembre, sera (decisione del committente su rilievo
+> «imposto dal piano» della revisione):** la via `chargeClip` prescritta qui
+> sotto per la clip si è rivelata cieca in partita vera — la carica umana
+> dura 3 fotogrammi e la battuta CPU (`eseguiAiPass` → `kickBall`) non passa
+> affatto dalla carica, quindi la posa non arrivava mai. La clip viaggia
+> invece su un **cronometro di solo disegno `p.rimT`** impostato nell'imbuto
+> di `kickBall` quando batte il battitore di una rimessa, sul modello di casa
+> `rinvT`/`rinvioPortiere`; i ganci `chargeClip='rimessa'` si rimuovono. Il
+> campo `rimT` entra anche nel campione della moviola accanto a `rinvT`
+> (promessa della voce #85: pose vere anche nel replay). Le righe originali
+> qui sotto restano come storia del primo tentativo.
+
 **File:**
 - Creare: `strumenti/_t-battuta-verbi.js`
 - Modificare (via attrezzo): `CALCETTO-il-gioco.html` — una funzione nuova `inBattuta(p)` accanto a `puoContrastoPremuto` (:16208), `touchBtnLayout` (cella `shot` :12631), `startCharge` (guardia + rifiuto visibile), `doPassaggio` (:14519) e `doCrossUmano` (:14531) (la clip), le pose (una coppia nuova `poseRimessa`/`pallaRimessa` accanto a `poseRinvio` :5982-6026), la tavola delle clip (:6736), la scelta bersaglio del pressing avversario (guardia di rispetto).
