@@ -516,7 +516,7 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
 .voce.primaria small{color:rgba(6,45,16,.72)}
 .voce.primaria:hover{color:#12210f;background:linear-gradient(180deg,#ffd77f,#f5a410)}
 .diff-row{display:flex;gap:8px;justify-content:center;margin:4px auto 2px;max-width:440px;width:100%}
-.diff,.tbtn,.taglia,.ment{
+.diff,.tbtn,.taglia,.ment,.sponde{
   flex:1;font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--grigio);background:transparent;border:1px solid var(--linea);padding:8px 4px;cursor:pointer;
 }
@@ -529,6 +529,14 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
    non compete col bottone che manda avanti. */
 .diff.sel,.tbtn.sel,.taglia.sel{color:#12210f;background:var(--gesso);border-color:var(--gesso);font-weight:700}
 .taglia.sel small{opacity:.9}
+/* LE SPONDE: gabbia o campo vero, stessa pastiglia delle taglie e delle
+   mentalita' (voce #87, compito 1) — una scelta fra due, ricordata nel
+   salvataggio. A 11 la riga si blocca su CAMPO VERO: .disabilitata spegne
+   solo il dito, il gesso pieno di .sel resta a dire cosa e' scelto. */
+.sponde small{display:block;font-weight:400;font-size:10px;letter-spacing:.14em;opacity:.75;margin-top:2px}
+.sponde.sel{color:#12210f;background:var(--gesso);border-color:var(--gesso);font-weight:700}
+.sponde.sel small{opacity:.9}
+.sponde.disabilitata{opacity:.55;pointer-events:none}
 /* le tre mentalita' portano la stessa pastiglia delle tre taglie: sono
    la stessa specie di scelta (una fra tre, ricordata nel salvataggio) e
    due vestiti diversi per la stessa specie sono un'invenzione gratuita */
@@ -3278,6 +3286,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
           <button class="taglia sel" data-t="5">5 contro 5 <small>la gabbia</small></button>
           <button class="taglia" data-t="7">7 contro 7 <small>il campetto</small></button>
           <button class="taglia" data-t="11">11 contro 11 <small>il campo grande</small></button>
+        </div>
+        <!-- LE SPONDE. Gabbia (di sempre) o campo vero (rimesse, angoli,
+             rinvii); a 11 il campo vero e' obbligatorio e la riga si
+             blocca (voce #87, compito 1). -->
+        <div class="eti">Sponde</div>
+        <div class="diff-row" id="spondeRow">
+          <button class="sponde sel" data-s="gabbia">LA GABBIA <small>si gioca di sponda</small></button>
+          <button class="sponde" data-s="campo">IL CAMPO VERO <small>rimesse, angoli e rinvii</small></button>
         </div>
         <!-- LA MENTALITA'. Sta QUI, sotto la rosa, perche' e' la stessa
              specie di scelta: una fra tre, che vale per tutti i modi di
@@ -9656,6 +9672,11 @@ function defaultSave(){
     v:4, mute:false, vib:true, diff:1, touch:0,
     moto:1, dalt:0, durata:90,     // accessibilita': effetti, contrasto divise, durata
     taglia:5,                      // taglia di rosa dell'amichevole: 5, 7 o 11
+    /* SPONDE: gabbia (il gioco di oggi, ogni sponda rimbalza) o campo
+       vero (rimesse laterali, angoli, rinvii dal fondo). Default gabbia:
+       campo additivo, chi gioca oggi non vede cambiare nulla (voce #87,
+       compito 1). */
+    sponde:'gabbia',
     /* 1 = EQUILIBRIO. Il valore di serie e' la voce neutra, e la voce
        neutra e' il gioco di prima al bit: chi installa oggi non trova
        una partita diversa da quella di ieri per una scelta che non ha
@@ -9777,6 +9798,7 @@ function loadSave(){
     if([5,7,11].indexOf(j.taglia)>=0) s.taglia=j.taglia;
     if(j.mentalita===0||j.mentalita===1||j.mentalita===2) s.mentalita=j.mentalita;
     if(j.moviola===0||j.moviola===1) s.moviola=j.moviola;
+    if(j.sponde==='campo'||j.sponde==='gabbia') s.sponde=j.sponde;
     /* IL POLLICE, riletto con la disciplina del resto del blocco: solo le
        tre chiavi conosciute, solo numeri finiti, dentro l'intervallo che
        la pagina COMANDI offre. Un salvataggio manomesso non puo' chiedere
@@ -10704,6 +10726,13 @@ function startMatch(mode, diff, opts){
      apre quindi il 5v5 di sempre: collaudo, prestazione e scatta
      continuano a misurare lo stesso campo al bit. */
   setTaglia(opts.size || SAVE.taglia || 5);
+  /* LA FOTOGRAFIA DI SPONDE, a taglia ormai nota (voce #87, compito 1).
+     A 11 il campo vero e' sempre acceso, qualunque cosa dica SAVE.sponde
+     (la riga di GIOCA lo blocca gia' a schermo, questa e' la seconda
+     guardia lato motore, quella che non si aggira toccando il
+     salvataggio a mano). Letta una volta sola, mai da SAVE a partita in
+     corso: vive su G come G.mode/G.diff, per tutta la partita. */
+  G.campoVero = (TAGLIA===11) || SAVE.sponde==='campo';
   G.mode = mode===2?2:1;
   if(diff!==undefined) G.diff = clamp(diff|0,0,2);
   G.cpu=[false, G.mode===2?false:true];
@@ -39211,12 +39240,34 @@ refreshDiffRows();
 /* taglia di rosa: 5 base, 7 e 11 in amichevole; persiste nel salvataggio */
 function refreshTaglieRow(){
   document.querySelectorAll('.taglia').forEach(b=>b.classList.toggle('sel', +b.dataset.t===(SAVE.taglia||5)));
+  refreshSpondeRow();
 }
 document.querySelectorAll('.taglia').forEach(b=>{
   b.addEventListener('click', ()=>{
     Audio5.unlock(); Audio5.beep(500);
     SAVE.taglia=+b.dataset.t;
     refreshTaglieRow();
+    persistSave();
+  });
+});
+/* sponde: gabbia o campo vero. A 11 la scelta e' bloccata su CAMPO VERO
+   (classe disabilitata): il refresh della riga taglie la richiama sempre
+   (vedi sopra), cosi' cambiare taglia aggiorna anche il blocco (voce
+   #87, compito 1). */
+function refreshSpondeRow(){
+  const bloccata=(SAVE.taglia||5)===11;
+  document.querySelectorAll('.sponde').forEach(b=>{
+    const attuale=bloccata?'campo':(SAVE.sponde||'gabbia');
+    b.classList.toggle('sel', b.dataset.s===attuale);
+    b.classList.toggle('disabilitata', bloccata);
+  });
+}
+document.querySelectorAll('.sponde').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    if((SAVE.taglia||5)===11) return;
+    Audio5.unlock(); Audio5.beep(500);
+    SAVE.sponde=b.dataset.s;
+    refreshSpondeRow();
     persistSave();
   });
 });
@@ -42136,6 +42187,13 @@ window.__test = {
      riflette sempre la taglia in cui la partita e' davvero entrata. */
   proporzioni(){ return {TAGLIA,FW,FH,GOAL_H,GK_AREA_X,GK_PUGNO_SCALA,P_R,B_R,KICK_R,POST_R,SEP_R,P_SPEED,
                           VERNICE: Object.assign({},VERNICE)}; },
+  /* L'INTERRUTTORE DELLE SPONDE, per il banco (voce #87, compito 1).
+     campoVero fotografa cio' che startMatch ha deciso: mai ricalcolato,
+     mai riletto da SAVE a partita in corso. battuta e' un oggetto
+     nuovo (Object.assign) a ogni lettura, cosi' il banco non puo'
+     mutare lo stato vero tenendo un riferimento vivo. */
+  get campoVero(){ return !!G.campoVero; },
+  get battuta(){ return G.battuta ? Object.assign({},G.battuta) : null; },
   get score(){ return G.score; },
   get timeLeft(){ return G.timeLeft; },
   setTimeLeft(sec){ G.timeLeft=Math.max(0,+sec||0); },
