@@ -7,6 +7,9 @@ reinventare la ruota». I fascicoli grezzi con TUTTE le righe di prova stanno
 negli esiti degli scavi (questa e' la sintesi operativa; ogni fatto citato
 qui porta la riga della miniera o la fonte).
 
+*(Edizione del 17 settembre 2026: si aggiunge lo scavo 7 — rimesse, angoli
+e rinvii — all'apertura del cantiere #87. Gli scavi sono sette.)*
+
 LA LINEA LEGALE, ribadita: idee, meccaniche, strutture, numeri di taratura
 e flussi NON sono coperti da diritto d'autore; l'espressione si' (testi alla
 lettera, nomi, marchi, grafica, audio). Qui si adotta il COME FUNZIONA,
@@ -170,6 +173,63 @@ GIA' conforme (TUT_APERTURE=3 = il loro AUTO_POPUP_TIMES): zero lavoro.
 
 Taglio: −0,25 sulla schermata GIOCA (via la riga di fondale col gradino),
 ~1 giornata di scope futuro chiusa in anticipo; +0,75 per le tre adozioni.
+
+## 7. RIMESSE, ANGOLI E RINVII (scavo 7, 17 settembre — per il cantiere #87)
+
+Come lo fa lui, cinque fatti portanti (5 minatori + 5 verificatori a
+ri-grep, 64 fatti; qui i portanti):
+
+1. **Ogni ripresa e' un piazzato della stessa famiglia.** Chiavi
+   `setpiece_cornerkick` (:22142, :46531), una classe di controllo per tipo
+   (`GoalKickTaker::SetplayControl` :8320, `CornerKickTaker::SetplayControl`
+   :43887, `ThrowinPlayer::SetplayControl` :43893), battitore assegnato
+   all'utente con lo stesso verbale del rigore
+   (`USER_ASSIGNMENT_REQUEST_THROWINPLAYER` :52773, `_CORNERKICKTAKER`
+   :39489, `_GOALKICKTAKER` :41734), battitore d'angolo designato PER LATO
+   nel modello di squadra (`leftCornerKickTakerId` :16096).
+2. **La rimessa ha due velocita'.** Binario normale (`ThrowInCommand`
+   :39329) e binario RAPIDO (`QuickThrowInRequest` :39331,
+   `QuickThrowInCommand` :39492, `PreQuickThrowIn::AssignmentPtr` :57300,
+   `USER_ASSIGNMENT_REQUEST_QUICKTHROWINPLAYER` :70372); anche il rapido ha
+   la posa di preparazione (`Quick_Throw_In_Stand_Lift_Ball_Up` :23937) —
+   mai istantaneo, sempre un fermo percepibile. La punizione ha lo stesso
+   doppio binario (`QuickFreeKickTaker::SetplayControl` :21749); il rinvio
+   dal fondo NO (nessun `QuickGoalKick*`: filone vuoto dichiarato).
+3. **Ogni ripresa ha la sua regia e la sua attesa.** Camera per tipo
+   (`SetPieceCamera - Throw In` :64313, `- Corner Kick` :68355, `- Goal
+   Kick` :70766, `ThrowInCamera` :30943, `Presentation::CornerKickCameraEvent`
+   :24924), stati di attesa (`ActNodeThrowInIdle` :57110,
+   `AiPlayerPlaceThrowinIdle` :34961, `ThrowInIdleHint` :61727), e il motore
+   separa la VALUTAZIONE dell'uscita dalla RICHIESTA della ripresa
+   (`Gameplay::BallOutOfPitch` :73504, `ThrowInEvaluation` :73502,
+   `GoalKickEvaluation` :42636).
+4. **L'IA conosce la fase.** Ripresa classificata offensiva/difensiva
+   (`THROWIN_OFFENSIVE` :16985, `GOALKICK_ATTACKING` :8303,
+   `GOALKICK_DEFENDING` :43883; l'angolo per LATO: `CORNER_LEFT` :32465,
+   enum `_RestartType` :112023-112026), la CPU valuta esplicitamente
+   (`CPU AI/Evaluate Throwin %d` :52777, `AICornerKick` :23847,
+   `AIThrowin`/`AIGoalKick` :28266-28267, `AiPlayerThrowIn` :8312), lo
+   schieramento puo' cambiare a palla fuori (`Gameplay::OutOfPlayLineupChange`
+   :79863), e sul corner disperato il portiere sale
+   (`Gameplay::KeeperUpForCorner` :31456; tratto `PUSHES_UP_FOR_CORNERS`
+   :44029, dedotto: riga isolata).
+5. **La rimessa e' un TIPO DI PASSAGGIO col suo calcolo**
+   (`PassThrowIn::PassSubSystem` :37151, `PassThrowInLong` :34962,
+   `ThrowInLob` :8244), e il tipo di tocco che manda fuori distingue fascia
+   da fondo (`GROUND_FOR_GOALKICK` :30544, enum del tipo-tocco). Avviso
+   metodologico: i `trigger_*` (THROW_IN :22663, GOALKICK :33604,
+   TIME_WASTING_CORNER :11491) sono eventi di TELECRONACA, non comandi; e i
+   cluster di taratura `*BallOut*` (MinBallOutSpeed e famiglia) sono fisica
+   del primo controllo, non palla-fuori.
+
+Cosa ne discende per le tre domande del censimento
+(`_analisi/RIMESSE-E-ANGOLI.md`): (1) da lui la battuta non e' mai
+puramente automatica — battitore assegnato e controllo per tipo — ma il
+binario rapido esiste apposta per non spezzare il ritmo; (2) la pausa c'e'
+sempre, corta nel rapido, con regia dedicata; (3) l'IA distingue la fase e
+si riposiziona. Le ADOZIONI si decidono nello spec del cantiere #87, non
+qui. Vuoto dichiarato: nessuna frase leggibile di tutorial nel binario (i
+testi vivono nelle risorse di localizzazione, fuori dall'estratto).
 
 ---
 

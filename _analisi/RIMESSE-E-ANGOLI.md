@@ -594,3 +594,27 @@ ferma da cui misurare "prima e dopo".
 *Documento di censimento. Non modifica `CALCETTO-il-gioco.html` né alcuno
 strumento in `strumenti/`. Nessuna decisione presa: le tre domande restano
 aperte per il committente.*
+
+---
+
+## Edizione del 17 settembre 2026 (apertura del cantiere)
+
+**1. Il paragone è stato scavato**: `MINIERA-FCM.md` scavo 7 (5 minatori +
+5 verificatori a ri-grep, 64 fatti con riga di prova). In breve, per le tre
+domande qui sopra: da lui **la battuta non è mai puramente automatica**
+(battitore assegnato all'utente per OGNI tipo di ripresa, una classe di
+controllo per tipo), ma la rimessa ha un **binario rapido** dedicato a non
+spezzare il ritmo; la **pausa c'è sempre** (camera dedicata per tipo, stati
+di attesa, posa di preparazione anche nel rapido); l'**IA conosce la fase**
+(riprese classificate offensiva/difensiva, valutazione esplicita della CPU,
+portiere che sale sul corner disperato).
+
+**2. Le righe del gioco citate sopra sono slittate** (il censimento è
+precedente ai rami #86/#85; verificato sull'HEAD `b5656b4` del 17
+settembre): `resetKickoff` 10563→10652, `setScene` 10869→11021,
+`segnaTocco` 10920→11072, `squadraDelPallone` 14025→14225,
+`rinvioPortiere` 18465→18782, `ballWalls` 18499→18816 (il ramo `else`
+fuori dalla luce: 18853-18863; le sponde lunghe: 18865-18866),
+`ballOverBar` 18634→18965, `hitWall` 18692→19027, `startFreeKick`
+20885→21232. La STRUTTURA descritta è invariata (ricontrollata riga per
+riga su `ballWalls`).
