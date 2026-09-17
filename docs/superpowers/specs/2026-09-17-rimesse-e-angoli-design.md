@@ -75,13 +75,17 @@ disperato). Righe di prova in `MINIERA-FCM.md` §7.
 
 ### C. Il fermo e la battuta
 
-- **Scena nuova, una sola**: `'ripresa'` (nono valore dell'enumerazione,
-  :8326), con `G.ripresa = {tipo:'rimessa'|'angolo'|'rinvio', team,
-  battitore, x, y}`. Il ciclo principale esce subito come per `kickoff`
-  (:16555): fisica, IA e input sospesi. Durate: rimessa e rinvio
-  **~0,8 s** (il binario rapido del paragone), angolo **1,2 s a 5 /
-  1,5 s a 7 e 11** (allineato ai tempi di kickoff, :1,0/1,5).
-- **`posaRipresa(tipo)`**: gemello parametrizzato di `resetKickoff`
+- **Scena nuova, una sola**: `'battuta'` (nono valore dell'enumerazione,
+  :8326), con `G.battuta = {tipo:'rimessa'|'angolo'|'rinvio', team,
+  battitore, x, y}`. *(Rettifica del 17 settembre, sera: il primo nome
+  scelto era `ripresa`, ma `G.ripresa` e `__test.ripresa` ESISTONO GIÀ —
+  sono la ripresa dedicata del gol a camera bassa, :16627-16635 e
+  :42715. Scena, struttura e banco si chiamano quindi `battuta`.)* Il
+  ciclo principale esce subito come per `kickoff` (:16555): fisica, IA
+  e input sospesi. Durate: rimessa e rinvio **~0,8 s** (il binario
+  rapido del paragone), angolo **1,2 s a 5 / 1,5 s a 7 e 11**
+  (allineato ai tempi di kickoff, :1,0/1,5).
+- **`posaBattuta(tipo)`**: gemello parametrizzato di `resetKickoff`
   (:10652), la strada già indicata dalla MINIERA §2 per l'ASSALTO.
   Rimessa: il battitore (compagno più vicino al punto d'uscita) si
   piazza sul punto, gli altri restano dove sono. Angolo: battitore
@@ -118,11 +122,11 @@ registro come seguito, fuori da questo cantiere.
 
 ### E. Le prove e i cancelli
 
-- **`strumenti/_q-riprese.js` NATO ROSSO** sul gioco di oggi, poi verde
+- **`strumenti/_q-battute.js` NATO ROSSO** sul gioco di oggi, poi verde
   sul curato. Prove minime: (1) campo vero, palla oltre la fascia →
-  scena `ripresa` tipo rimessa entro 2 s, squadra giusta (opposta
+  scena `battuta` tipo rimessa entro 2 s, squadra giusta (opposta
   all'ultimo tocco); (2) fondo + ultimo tocco della difesa → angolo, +
-  ultimo tocco dell'attacco → rinvio; (3) GABBIA → nessuna ripresa e
+  ultimo tocco dell'attacco → rinvio; (3) GABBIA → nessuna battuta e
   rimbalzo **identico al bit** al gioco di oggi; (4) anti-stallo: la
   battuta parte da sé entro la finestra; (5) TIRA spento sul battitore
   (pattern della prova G di #88); (6) `_q-determinismo` 10/10 anche a
@@ -132,7 +136,7 @@ registro come seguito, fuori da questo cantiere.
   costruzione — dichiarato nel verbale, precedente del ramo #86.
 - **I banchi a rischio già censiti** (censimento §8): le sei copie
   stantie del collaudo con la voce #66 (`_p/_q/_t-p/_tb/_z/_x-collaudo`)
-  — da verificare se la scena `ripresa` li accende (il pallone resta
+  — da verificare se la scena `battuta` li accende (il pallone resta
   dentro `[0,FW]`, ma va misurato, non dedotto); i banchi-camera che
   enumerano le scene (`_z-verbo.js` e gemelli); i banchi d'avvio che
   aspettano `play|kickoff` (non toccati: la prima scena resta kickoff).
@@ -140,7 +144,7 @@ registro come seguito, fuori da questo cantiere.
   interruzioni non devono ammazzare i gol al minuto (banda dichiarata
   nel piano); `giocata`, `precedenza`, `replay`, `proporzioni` restano
   verdi; screenshot di rimessa e angolo ispezionati a occhio.
-- **Batteria**: `_q-riprese` entra in `tutti.js` a fine cantiere, come
+- **Batteria**: `_q-battute` entra in `tutti.js` a fine cantiere, come
   `replay` e `proporzioni` prima di lui.
 
 ### F. Fuori perimetro, e i seguiti
@@ -174,7 +178,7 @@ si rigiocano identici; la voce #96 lo copre già, nessun obbligo nuovo.
 
 Bozza (il piano la possiede e può ritagliarla): 1) banco nato rosso +
 interruttore SPONDE (UI, SAVE, `G.campoVero`); 2) `pallaFuori` + scena
-`ripresa` + rimessa completa (fermo, battuta coi verbi, clip, anti-stallo);
+`battuta` + rimessa completa (fermo, battuta coi verbi, clip, anti-stallo);
 3) angolo (posa d'area, camera, cross, TIRA spento); 4) rinvio dal fondo
 (mani al portiere, flusso esistente); 5) banchi a rischio + giocabilità +
 batteria + verbale nei tre documenti.
