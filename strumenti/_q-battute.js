@@ -45,12 +45,19 @@
         'shot' non porta nemmeno la chiave off (CALCETTO-il-gioco.html,
         vicino a riga 12631) — rossa per costruzione.
 
-   IL SEME: 20260917, il seme dichiarato del cantiere (voce #87). Fissato
-   sia sul generatore di pagina (semeFisso, per qualunque Math.random()
-   cosmetico letto all'avvio) sia sul generatore interno del gioco
-   (__test.semina, quello che governa dado() quando SEME.on e' acceso —
-   sono DUE generatori indipendenti, vedi dado() in CALCETTO-il-gioco.html:
+   IL SEME: 20260917, il seme dichiarato del cantiere (voce #87), default
+   del flag --seme (cambiabile da riga di comando). Fissato sia sul
+   generatore di pagina (semeFisso, per qualunque Math.random() cosmetico
+   letto all'avvio) sia sul generatore interno del gioco (__test.semina,
+   quello che governa dado() quando SEME.on e' acceso — sono DUE
+   generatori indipendenti, vedi dado() in CALCETTO-il-gioco.html:
    "if(!SEME.on) return Math.random()").
+
+   LA TAGLIA: 5 di default (flag --taglia), instradata in ogni
+   startMatch(1,1,{size:...}) delle scene. Il sotto-caso a 11 della prova
+   INTERRUTTORE resta un letterale esplicito: quella prova verifica
+   proprio l'obbligo a campo vero quando la taglia e' 11, non deve
+   seguire il flag.
 
    ZERO dado() NUOVI in questo file: le scene si costruiscono scrivendo
    direttamente lo stato del pallone (owner/x/y/z/vx/vy/vz) e chiamando
@@ -60,6 +67,7 @@
 
    uso:  node strumenti/_q-battute.js
          node strumenti/_q-battute.js --gioco fuori/calcetto-base-7ed570a.html
+         node strumenti/_q-battute.js --taglia 7 --seme 123
    esce 0 se tutte le prove sono verdi, 1 se almeno una e' rossa,
    2 se il banco stesso e' esploso (pagina, hook mancante, eccezione),
    3 riservato a "prova nulla" sul modello di _q-replay.js/_q-l16.js —
@@ -78,7 +86,9 @@ const arg = (n, d) => {
   return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : d;
 };
 
-const SEME_CANTIERE = 20260917;   // il seme dichiarato della voce #87
+const SEME_CANTIERE = 20260917;   // il seme dichiarato della voce #87, default del flag --seme
+const TAGLIA_BANCO = +arg('taglia', 5);   // taglia delle scene (INTERRUTTORE resta a 5/11 espliciti)
+const SEME = +arg('seme', SEME_CANTIERE);
 
 function servi(prova) {
   return new Promise(ok => {
@@ -173,7 +183,7 @@ const ASPETTA_BATTUTA = `
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 915, height: 412 }, isMobile: true, hasTouch: true, locale: 'it-IT' });
   const pag = await ctx.newPage();
-  await pag.addInitScript(semeFisso, SEME_CANTIERE);
+  await pag.addInitScript(semeFisso, SEME);
   const ecc = []; pag.on('pageerror', e => ecc.push(e.message));
   console.log('\n=== LE BATTUTE HANNO UN GIUDICE CHE LE ASPETTA ===  ' + (provaAbs || 'CALCETTO-il-gioco.html (repo)'));
 
@@ -198,21 +208,21 @@ const ASPETTA_BATTUTA = `
        per costruzione, com'e' giusto (l'ordine dichiarato dal piano:
        prima l'attrezzo, poi la condanna che conta e' 2,3,4,6,7). */
     {
-      const r = await pag.evaluate((seme) => {
+      const r = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
-        t.save.sponde = 'campo'; t.startMatch(1, 1, { size: 5 });
+        t.save.sponde = 'campo'; t.startMatch(1, 1, { size: taglia });
         const campoA5 = t.campoVero;
-        t.save.sponde = 'gabbia'; t.startMatch(1, 1, { size: 5 });
+        t.save.sponde = 'gabbia'; t.startMatch(1, 1, { size: taglia });
         const gabbiaA5 = t.campoVero;
         t.save.sponde = 'gabbia'; t.startMatch(1, 1, { size: 11 });
         const gabbiaA11 = t.campoVero;
         return { campoA5, gabbiaA5, gabbiaA11 };
-      }, SEME_CANTIERE);
+      }, { seme: SEME, taglia: TAGLIA_BANCO });
       const ok = r.campoA5 === true && r.gabbiaA5 === false && r.gabbiaA11 === true;
       di(ok, '1. INTERRUTTORE — G.campoVero fotografa SAVE.sponde, e a 11 e\' sempre vero',
-        'sponde=campo,taglia=5 -> campoVero=' + r.campoA5 + ' (atteso true)   ' +
-        'sponde=gabbia,taglia=5 -> campoVero=' + r.gabbiaA5 + ' (atteso false)   ' +
+        'sponde=campo,taglia=' + TAGLIA_BANCO + ' -> campoVero=' + r.campoA5 + ' (atteso true)   ' +
+        'sponde=gabbia,taglia=' + TAGLIA_BANCO + ' -> campoVero=' + r.gabbiaA5 + ' (atteso false)   ' +
         'sponde=gabbia,taglia=11 -> campoVero=' + r.gabbiaA11 + ' (atteso true)');
     }
 
@@ -221,14 +231,14 @@ const ASPETTA_BATTUTA = `
        fascia nord con ultimo tocco della squadra 0: attesa scena
        'battuta', tipo 'rimessa', squadra 1 (l'opposta). */
     {
-      const setup = await pag.evaluate((seme) => {
+      const setup = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
         t.save.sponde = 'campo';
         t.setCpuVsCpu(true);
-        t.startMatch(1, 1, { size: 5 });
+        t.startMatch(1, 1, { size: taglia });
         return SCENA_FASCIA(0);
-      }, SEME_CANTIERE).catch(e => ({ errore: e.message }));
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (setup.errore) { di(false, '2. RIMESSA', 'BANCO: scena non costruita — ' + setup.errore); }
       else {
         const r = await pag.evaluate(ASPETTA_BATTUTA);
@@ -244,14 +254,14 @@ const ASPETTA_BATTUTA = `
        fondo sinistro, ultimo tocco della difesa (team 0): attesa
        tipo 'angolo', squadra 1. */
     {
-      const setup = await pag.evaluate((seme) => {
+      const setup = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
         t.save.sponde = 'campo';
         t.setCpuVsCpu(true);
-        t.startMatch(1, 1, { size: 5 });
+        t.startMatch(1, 1, { size: taglia });
         return SCENA_FONDO(0);
-      }, SEME_CANTIERE).catch(e => ({ errore: e.message }));
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (setup.errore) { di(false, '3. FONDO-ANGOLO', 'BANCO: scena non costruita — ' + setup.errore); }
       else {
         const r = await pag.evaluate(ASPETTA_BATTUTA);
@@ -266,14 +276,14 @@ const ASPETTA_BATTUTA = `
        PROVA 4 — FONDO-RINVIO. Stessa scena, ultimo tocco dell'attacco
        (team 1): attesa tipo 'rinvio', squadra 0 (la difesa). */
     {
-      const setup = await pag.evaluate((seme) => {
+      const setup = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
         t.save.sponde = 'campo';
         t.setCpuVsCpu(true);
-        t.startMatch(1, 1, { size: 5 });
+        t.startMatch(1, 1, { size: taglia });
         return SCENA_FONDO(1);
-      }, SEME_CANTIERE).catch(e => ({ errore: e.message }));
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (setup.errore) { di(false, '4. FONDO-RINVIO', 'BANCO: scena non costruita — ' + setup.errore); }
       else {
         const r = await pag.evaluate(ASPETTA_BATTUTA);
@@ -292,14 +302,14 @@ const ASPETTA_BATTUTA = `
        rimbalzare col coefficiente di sempre (~0,82), misurato al
        fotogramma del rimbalzo — non dedotto dal codice, letto dal vivo. */
     {
-      const setup = await pag.evaluate((seme) => {
+      const setup = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
         t.save.sponde = 'gabbia';
         t.setCpuVsCpu(true);
-        t.startMatch(1, 1, { size: 5 });
+        t.startMatch(1, 1, { size: taglia });
         return SCENA_FASCIA(0);
-      }, SEME_CANTIERE).catch(e => ({ errore: e.message }));
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (setup.errore) { di(false, '5. GABBIA', 'BANCO: scena non costruita — ' + setup.errore); }
       else {
         const r = await pag.evaluate(`
@@ -332,14 +342,14 @@ const ASPETTA_BATTUTA = `
        verdetto vero e' "si scioglie da sola, palla viva" entro 5 s in
        piu' dopo averla vista. */
     {
-      const setup = await pag.evaluate((seme) => {
+      const setup = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
         t.save.sponde = 'campo';
         t.setCpuVsCpu(true);
-        t.startMatch(1, 1, { size: 5 });
+        t.startMatch(1, 1, { size: taglia });
         return SCENA_FASCIA(0);
-      }, SEME_CANTIERE).catch(e => ({ errore: e.message }));
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (setup.errore) { di(false, '6. ANTI-STALLO', 'BANCO: scena non costruita — ' + setup.errore); }
       else {
         const rBattuta = await pag.evaluate(ASPETTA_BATTUTA);
@@ -380,14 +390,14 @@ const ASPETTA_BATTUTA = `
        12631: `tira ? {act:'shot',...} : {act:'slide',...,off:...}`) —
        rossa per costruzione, qualunque cosa succeda alla palla. */
     {
-      const setup = await pag.evaluate((seme) => {
+      const setup = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
         t.save.sponde = 'campo';
         t.setCpuVsCpu(false);
-        t.startMatch(1, 1, { size: 5 });
+        t.startMatch(1, 1, { size: taglia });
         return SCENA_FASCIA(1);
-      }, SEME_CANTIERE).catch(e => ({ errore: e.message }));
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (setup.errore) { di(false, '7. TIRA-SPENTO', 'BANCO: scena non costruita — ' + setup.errore); }
       else {
         const r = await pag.evaluate(`
