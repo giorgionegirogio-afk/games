@@ -6040,6 +6040,51 @@ function pallaRinvio(u,o){
   const dw=Math.abs(u-ti);
   o[3]=dw<0.05?0.45*(1-dw/0.05):0;
 }
+/* RIMESSA con le due mani sopra la testa (voce #87, compito 3): corpo
+   eretto, le braccia SIMMETRICHE (aR=aL, il pattern di posePresa) che
+   salgono a portare la palla dietro il capo, la frustata del busto in
+   avanti la lancia, il rientro la riporta a riposo. Le gambe restano
+   FERME - angoli fissi, nessuna animazione: chi rimette in gioco lo fa
+   con le braccia, non con le gambe. */
+function poseRimessa(u){
+  const su=sm(u,0.02,0.40);        // le braccia salgono sopra la testa
+  const frusta=sm(u,0.40,0.60);    // il busto frusta in avanti: la palla parte
+  const rientro=sm(u,0.60,0.95);   // il rientro a riposo
+  const pelvY=0.90;                // corpo eretto: il bacino non scende ne' salta
+  const lean=-0.10+0.35*frusta-0.35*rientro;   // -0,10 -> +0,25 sulla fase 0,4-0,6
+  corpo(pelvY,0,lean,0);
+  const sl=Math.sin(lean), cl=Math.cos(lean);
+  const shY=pelvY+0.44*cl, shZ=0.44*sl;
+  const aB=0.20+2.40*su-2.40*rientro;   // simmetriche: aR=aL, sopra la testa al culmine
+  const eB=0.45-0.05*su;                // gomiti chiusi: restano piegati, non si tendono
+  const outB=0.05+0.05*su;              // vicine, non una V aperta: la palla sta fra le mani
+  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aB,eB, outB, 1);
+  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aB,eB, outB,-1);
+  // gambe ferme divaricate: angoli fissi, il lancio non le anima
+  gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, 0,  0.12, 0.22,  0.16);
+  gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, 0, -0.12, 0.22, -0.16);
+}
+/* palla della rimessa: sale con le mani dietro la testa, la frustata
+   la porta in avanti restando alle mani, poi il volo libero - parabola
+   vera come pallaRinvio */
+function pallaRimessa(u,o){
+  const T1=0.40, T2=0.60;
+  if(u<T1){
+    const f=sm(u,0.02,T1);
+    o[0]=0; o[1]=1.00+0.55*f; o[2]=0.35-0.20*f;
+  }else if(u<T2){
+    const f=sm(u,T1,T2);
+    o[0]=0; o[1]=1.55+0.10*f; o[2]=0.15+0.35*f;
+  }else{
+    const f=(u-T2)/(1-T2), e=1-(1-f)*(1-f);
+    o[0]=0; o[2]=0.50+3.30*e;
+    o[1]=1.65+4.20*f-3.60*f*f;   // parabola vera nel tempo, come pallaRinvio
+  }
+  // o[3]: piena alla grandezza delle sorelle (0,30-0,45) mentre e' alle
+  // mani, sparisce alla fine della frustata (T2) - non 1,0 letterale:
+  // sq=1 appiattirebbe la palla a quota zero (disegnaPalla, ry=r*(1-sq))
+  o[3]=0.35*(1-sm(u,T2-0.05,T2));
+}
 
 /* =====================================================================
    LE TRE MANI CHE PARANO SENZA PRENDERE (29 agosto 2026).
@@ -6750,6 +6795,7 @@ const CLIPS={
   tuffo:     {freq:0.45,pose:poseTuffo,     palla:pallaTuffo, polvere:{t:0.56,d:0.20}},
   presa:     {freq:0.55,pose:posePresa,     palla:pallaPresa},
   rinvio:    {freq:0.55,pose:poseRinvio,    palla:pallaRinvio},
+  rimessa:   {freq:0.8, pose:poseRimessa,   palla:pallaRimessa},
   /* I TRE ESITI CHE NON PRENDONO. freq 1,0 come 'testa' e 'contrasto',
      e per la stessa ragione: in partita la fase e' st.u/freq, e con 1,0
      la fase disegnata E' quella che rigStato calcola — nessuna
@@ -12666,7 +12712,7 @@ function touchBtnLayout(t){
      dipendenza nuova entra qui — _q-precedenza ricostruisce questa
      funzione e ogni nome nuovo l'ha gia' uccisa due volte. */
   return dentroGliInserti(pollicePosa([
-    tira  ? { act:'shot',    label:'TIRA',      x:bx+s*64,  y:VH-60,  r:40 }
+    tira  ? { act:'shot',    label:'TIRA',      x:bx+s*64,  y:VH-60,  r:40, off:inBattuta(ctrlPlayer(t)) }
           : { act:'slide',   label:'CONTRASTA', x:bx+s*64,  y:VH-60,  r:40, off:grandeSpento },
     /* PASSA E PASSAGGIO NON POSSONO STARE NELLA STESSA SCHERMATA, e per
        due ragioni indipendenti. La prima e' che il primo nome e' il
@@ -14562,7 +14608,10 @@ function doPassaggio(t){
   if(!puoPassare(t)) return;
   const p=ctrlPlayer(t);
   if(p.charge>=0 && !p.chargeGo) chiudiAnticipo(p);   // stava caricando il tiro: cambia idea
-  if(anticipa(p, 'passo', PASS_CAR_U, eseguiPassUmano)) p.chargeClip='passaggio';
+  /* IN BATTUTA IL PASSAGGIO E' UNA RIMESSA (voce #87, compito 3):
+     stesso anticipo, stesso lancio - solo la clip cambia, per dire al
+     pollice che quello che sta per partire e' il verbo di casa. */
+  if(anticipa(p, 'passo', PASS_CAR_U, eseguiPassUmano)) p.chargeClip=inBattuta(p)?'rimessa':'passaggio';
 }
 /* il CROSS col tasto suo. Da ogni meta' campo: dalla propria e' il
    lancio lungo, stesso gesto e stessa palla alta — un disco che dicesse
@@ -14584,7 +14633,9 @@ function doCrossUmano(t){
       if(d<bd){ bd=d; dest=i; }
     }
     doCross(q, 0, 0, null, dest);
-  })) p.chargeClip='cross';
+  /* IN BATTUTA IL CROSS E' UNA RIMESSA (voce #87, compito 3): stesso
+     meccanismo, la clip dice al pollice che e' il verbo di casa. */
+  })) p.chargeClip=inBattuta(p)?'rimessa':'cross';
 }
 /* PRESSA: il raddoppio di L1.5, senza il trascinamento — la direzione
    la da' il portatore stesso. Con il pallone di nessuno TACE, per la
@@ -15497,12 +15548,18 @@ function doCross(p,nx,ny,mira,dest){
 
 /* --- tiro con carica: startCharge/releaseCharge (tastiera) --- */
 function startCharge(t){
+  const p=ctrlPlayer(t);
+  /* LA BATTUTA E' DEL POLLICE (voce #87, compito 3): TIRA e' spento
+     sul battitore finche' non batte - stessa guardia inBattuta letta
+     da touchBtnLayout per la cella, cosi' la cella e l'atto non
+     divergono mai. Copre la tastiera e ogni via non-touch (pattern
+     L3.1: il rifiuto VISIBILE, non un no muto). */
+  if(inBattuta(p)){ rifiutoVerbo(t,p); return; }
   /* LA GUARDIA CHE C'ERA QUI ADESSO HA UN NOME, ed e' la stessa che
      legge l'etichetta del disco grande. Non e' una copia: e' questa,
      spostata. Percio' «il disco dice TIRA» e «startCharge apre
      qualcosa» sono la stessa proposizione, e non possono divergere. */
   if(!puoTirare(t)) return;
-  const p=ctrlPlayer(t);
   const pi=G.players.indexOf(p);
   if(G.ball.owner!==pi && len(G.ball.x-p.x,G.ball.y-p.y)>KICK_R*1.4){
     /* TIRA con la palla ALTA che scende nella finestra: e' la rovesciata
@@ -16247,6 +16304,15 @@ function contrastoPasso(p){
    difetto stesso che questa voce cura, girato dall'altra parte. Nome
    nuovo, ma di primo livello e sotto i 2.000 caratteri: _q-precedenza
    lo estrae da sola, nessuna modifica al banco. */
+/* LA BATTUTA E' DEL BATTITORE SOLO (voce #87, compito 3): guardia
+   unica, letta da due posti che non devono mai divergere -
+   touchBtnLayout per la cella (TIRA si spegne) e startCharge per
+   l'atto (rifiuta) - col pattern di puoContrastoPremuto qui sotto.
+   Una terza lettura, su un portatore invece che sul giocatore
+   comandato, serve al rispetto degli avversari in aiDecide. */
+function inBattuta(p){
+  return !!(G.battuta && G.players[G.battuta.battitore]===p);
+}
 function puoContrastoPremuto(p){
   return !!(p && !(p.out>0 || p.slide>=0 || p.recover>0 || p.rove>=0));
 }
@@ -20111,6 +20177,15 @@ function aiDecide(p, b, carrier, weHaveBall, myGoalX, opGoalX, isCpuTeam, D){
       if(d<cd){ cd=d; chaser=q; }
     }
   }
+  /* IL RISPETTO DEL BATTITORE (voce #87, compito 3): durante la
+     finestra di battuta nessun avversario lo candida come bersaglio da
+     pressare - ne' dal ruolo che teamBrain assegna sopra, ne' dal
+     ripiego per distanza appena sopra. Un solo veto, DOPO tutte e due
+     le vie: il ramo di copertura piu' sotto tiene gia' il portatore
+     fuori da 'danger' (o===carrier e' escluso), quindi senza un
+     chaser dedicato la squadra tiene la zona invece di accerchiare chi
+     sta battendo. */
+  if(inBattuta(carrier)) chaser=null;
   const ballNearOurGoal = Math.abs(b.x-myGoalX)<FW*0.42;
 
   /* =====================================================================

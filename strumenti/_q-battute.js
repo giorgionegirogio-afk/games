@@ -73,6 +73,24 @@
    3 riservato a "prova nulla" sul modello di _q-replay.js/_q-l16.js —
    nessuna delle sette prove di oggi lo usa: ciascuna o misura o e' rossa
    per costruzione, non c'e' un caso "non misurabile" distinto dal rosso.
+
+   RETTIFICA (17 settembre 2026, compito 3): la riga 20-21 qui sopra
+   diceva "questo file non cambia piu' dopo, sono le prove che smettono
+   di fallire" — era la promessa del compito 1, superata dal piano
+   stesso: il compito 3 aggiunge DUE prove nuove (il piano lo prevede
+   esplicitamente, "Modificare: strumenti/_q-battute.js, due prove
+   nuove"), le sette di sopra restano scritte come allora e non
+   cambiano una virgola:
+     8. BATTUTA-UMANA — squadra 0 umana, rimessa al team 0: attesa la
+        finestra viva (state torna 'play' con battuta ancora pendente),
+        poi un tocco sintetico sul disco PASSA (pattern del COPIONE di
+        _q-replay.js). Entro 0,5s la battuta deve sciogliersi.
+     9. RISPETTO — CPU contro CPU: dalla comparsa della battuta allo
+        scioglimento (o al tetto di 5s), nessun avversario deve mai
+        scendere sotto 40 unita' di distanza dal battitore (la guardia
+        in aiDecide, voce #87 compito 3).
+   Il file adesso e' a nove prove; l'exit code 3 resta non usato da
+   nessuna delle nove.
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -440,6 +458,151 @@ const ASPETTA_BATTUTA = `
         di(r.trovato, '7. TIRA-SPENTO — un giocatore, rimessa al team 0, TIRA spento (act:shot, off:true) nella finestra',
           r.trovato ? 'trovata cella shot con off:true'
                     : ('mai off:true su ' + r.campioni + ' fotogrammi con cella shot presente; esempio: ' + JSON.stringify(r.esempi[0] || null)));
+      }
+    }
+
+    /* ===================================================================
+       PROVA 8 — BATTUTA-UMANA (voce #87, compito 3). Campo vero, squadra
+       0 umana (setCpuVsCpu(false)), rimessa al team 0 (stessa geometria
+       di TIRA-SPENTO: ultimo tocco della squadra 1). Si aspetta prima la
+       comparsa della battuta, poi la FINESTRA VIVA (t.state torna 'play'
+       con t.battuta ancora pendente — la correzione del compito 2), poi
+       si preme il disco PASSA con un tocco sintetico secco (pattern del
+       COPIONE di _q-replay.js: Touch5.start seguito da Touch5.chiudi
+       nello stesso istante, sulle coordinate vere lette da
+       __test.pulsanti(0)). Entro 0,5 s la battuta deve sciogliersi
+       (t.battuta===null) — kickBall e' l'imbuto che la azzera a ogni
+       battuta vera, da qualunque via arrivi. */
+    {
+      const setup = await pag.evaluate(({ seme, taglia }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.save.sponde = 'campo';
+        t.setCpuVsCpu(false);
+        t.startMatch(1, 1, { size: taglia });
+        return SCENA_FASCIA(1);
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+      if (setup.errore) { di(false, '8. BATTUTA-UMANA', 'BANCO: scena non costruita — ' + setup.errore); }
+      else {
+        const rBattuta = await pag.evaluate(ASPETTA_BATTUTA);
+        if (!rBattuta.vista || !rBattuta.battuta || rBattuta.battuta.team !== 0) {
+          di(false, '8. BATTUTA-UMANA — PASSA scioglie la rimessa entro 0,5s',
+            'la battuta al team 0 non e\' mai comparsa in 2s: ' + JSON.stringify(rBattuta.battuta));
+        } else {
+          const r = await pag.evaluate(`
+            (function(){
+              const t = window.__test;
+              const nFermo = 90; // fino a 1,5s per lasciare il fermo minimo (soglia di spec 0,8-1,2s)
+              let uscita = false;
+              for(let f=0; f<nFermo; f++){
+                t.simulate(1/60);
+                if(t.state==='play' && t.battuta){ uscita = true; break; }
+              }
+              if(!uscita) return { uscita:false };
+              const celle = t.pulsanti(0);
+              const passa = celle.find(c=>c.act==='pass');
+              if(!passa) return { uscita:true, passa:null };
+              const id = 777001;
+              Touch5.start(id, passa.x, passa.y);
+              Touch5.chiudi(id, false);
+              const n = 30; // 0,5s dal tocco
+              for(let f=0; f<n; f++){
+                t.simulate(1/60);
+                if(t.battuta===null){
+                  return { uscita:true, passa:true, sciolta:true, fotogramma:f,
+                           ownerDopo:t.ball.owner, velDopo:Math.hypot(t.ball.vx,t.ball.vy) };
+                }
+              }
+              return { uscita:true, passa:true, sciolta:false, ownerDopo:t.ball.owner };
+            })()
+          `);
+          const ok = r.uscita && r.passa && r.sciolta === true;
+          di(ok, '8. BATTUTA-UMANA — PASSA scioglie la rimessa entro 0,5s',
+            !r.uscita ? 'la scena non e\' mai tornata a play con battuta pendente in 1,5s'
+              : !r.passa ? 'BANCO: cella act:pass non trovata in t.pulsanti(0)'
+              : r.sciolta ? ('battuta sciolta al fotogramma ' + r.fotogramma + ' dal tocco, owner=' + r.ownerDopo + ', velocita=' + r.velDopo.toFixed(1))
+                          : ('battuta MAI sciolta in 0,5s dal tocco, owner=' + r.ownerDopo));
+        }
+      }
+    }
+
+    /* ===================================================================
+       PROVA 9 — RISPETTO (voce #87, compito 3). CPU contro CPU, campo
+       vero, rimessa alla fascia nord (stessa geometria della prova 2).
+
+       PERCHE' SI MISURA IL BERSAGLIO (aiTX/aiTY) E NON LA POSIZIONE VERA:
+       misurato a mano prima di scrivere la prova (diagnosi frame-per-
+       frame, non committata) — la finestra CPU-contro-CPU e' cortissima
+       (il fermo dura ~0,8s congelato, poi la CPU batte al suo timer
+       ~0,5s dopo: sul file curato, in questa scena, restano vivi 5-25
+       fotogrammi, 0,08-0,4s), troppo poco perche' un inseguitore si
+       sposti fisicamente di piu' di pochi metri anche mirando dritto
+       al bersaglio — la distanza VERA resta larga (>240 unita') sia sul
+       gioco curato sia su quello senza la guardia, e non condanna mai:
+       misura il tempo che manca, non il rispetto. La guardia in
+       aiDecide invece decide un'altra cosa, subito e senza aspettare il
+       moto: DOVE punta il passo del difensore (p.aiTX/p.aiTY, lo stesso
+       campo che muove il corpo un fotogramma dopo). Sul gioco pre-cura,
+       misurato: un avversario punta a 1,7 unita' dal battitore (lo sta
+       aggredendo, anche se il tempo non basta per arrivarci) — sul
+       gioco curato lo stesso bersaglio non scende mai sotto 140 unita'.
+       La prova misura quindi, a ogni fotogramma della finestra, la
+       distanza minima fra OGNI bersaglio-passo di un avversario
+       (squadra diversa dal battitore, portiere escluso: la sua meta e'
+       un'altra funzione) e la posizione VERA del battitore: deve
+       restare sempre >= 40 unita'.
+
+       L'ORDINE setCpuVsCpu/startMatch E' INVERTITO rispetto alle altre
+       prove di questo file (qui prima startMatch, poi setCpuVsCpu):
+       startMatch riscrive SEMPRE G.cpu=[false,...] in testa a se
+       stesso, quindi un setCpuVsCpu(true) chiamato PRIMA viene
+       cancellato in silenzio e la squadra 0 resta "umana" (ferma, senza
+       tocchi). Le prove 2/5/6 non se ne accorgono perche' non guardano
+       il moto della squadra 0; questa si', e senza l'inversione
+       misurerebbe una squadra congelata invece di una CPU vera
+       (misurato: con l'ordine vecchio il "vic" di prova non si muove
+       di un pixel per l'intera finestra). */
+    {
+      const setup = await pag.evaluate(({ seme, taglia }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.save.sponde = 'campo';
+        t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
+        return SCENA_FASCIA(0);
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+      if (setup.errore) { di(false, '9. RISPETTO', 'BANCO: scena non costruita — ' + setup.errore); }
+      else {
+        const rBattuta = await pag.evaluate(ASPETTA_BATTUTA);
+        if (!rBattuta.vista || !rBattuta.battuta) {
+          di(false, '9. RISPETTO — nessun avversario punta entro 40 unita\' dal battitore per tutta la finestra',
+            'la battuta di rimessa non e\' mai comparsa in 2s: nessuna finestra da misurare');
+        } else {
+          const r = await pag.evaluate(`
+            (function(){
+              const t = window.__test;
+              const n = 300; // 5s, lo stesso tetto di ANTI-STALLO
+              let minTarget = Infinity, chi = -1, frameMin = -1, risolta = false, fineFotogramma = n;
+              for(let f=0; f<n; f++){
+                t.simulate(1/60);
+                if(!t.battuta){ risolta = true; fineFotogramma = f; break; }
+                const bat = t.players[t.battuta.battitore];
+                if(!bat) continue;
+                for(let i=0;i<t.players.length;i++){
+                  const q = t.players[i];
+                  if(q.team === t.battuta.team || q.role==='gk' || q.aiTX===undefined) continue;
+                  const d = Math.hypot(q.aiTX-bat.x, q.aiTY-bat.y);
+                  if(d < minTarget){ minTarget = d; chi = i; frameMin = f; }
+                }
+              }
+              return { minTarget, chi, frameMin, risolta, fineFotogramma };
+            })()
+          `);
+          const ok = r.minTarget >= 40;
+          di(ok, '9. RISPETTO — nessun avversario punta entro 40 unita\' dal battitore per tutta la finestra',
+            'bersaglio (aiTX/aiTY) piu\' vicino osservato: ' + (r.minTarget === Infinity ? 'nessun fotogramma misurato' : r.minTarget.toFixed(1) + ' unita\' (giocatore ' + r.chi + ') al fotogramma ' + r.frameMin) +
+            '  (finestra ' + (r.risolta ? ('sciolta al fotogramma ' + r.fineFotogramma) : ('MAI sciolta in ' + n + ' fotogrammi')) + ')');
+        }
       }
     }
 
