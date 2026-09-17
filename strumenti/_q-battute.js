@@ -110,6 +110,23 @@
         pendente, sono la chiave stabile: il campo esiste gia' e basta,
         nessuna estensione dell'hook).
    Il file e' adesso a dieci prove; l'exit code 3 resta non usato.
+
+   RETTIFICA (voce #87, compito 4 — il fondo e' vero: l'angolo e il
+   rinvio). FONDO-ANGOLO e FONDO-RINVIO (prove 3/4, scritte al compito 1
+   e rosse fino ad oggi) diventano verdi con questo compito: ballWalls()
+   sa ormai smistare il fondo fuori dalla luce fra angolo e rinvio, e
+   posaBattuta() sa piazzarli entrambi. QUESTO FILE GUADAGNA L'UNDICESIMA
+   PROVA, la condanna dedicata all'angolo giocato (non solo assegnato):
+    11. ANGOLO-IN-AREA — CPU contro CPU, campo vero, taglia 5 (stessa
+        geometria di FONDO-ANGOLO): dalla RIPRESA (il fotogramma in cui
+        G.battuta si azzera, lo stesso riferimento di CLIP-RIMESSA)
+        entro 2,5s la palla deve entrare nel rettangolo d'area della
+        porta attaccata (VERNICE.areaProf/areaSemi da t.proporzioni(),
+        la stessa formula del disegno del campo) oppure essere toccata
+        da un corpo che si trova dentro quel rettangolo (raggio KICK_R).
+        Nata rossa sul gioco pre-compito 4 (l'angolo non esiste: la
+        battuta di tipo 'angolo' non compare mai), verde sul curato.
+   Il file e' adesso a undici prove; l'exit code 3 resta non usato.
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -697,6 +714,82 @@ const ASPETTA_BATTUTA = `
               r.fClear < 0 ? ('G.battuta non si e\' mai azzerato in ' + 300 + ' fotogrammi (5s)')
                 : ('battuta azzerata al fotogramma ' + r.fClear + ', clip nei 6 fotogrammi seguenti: [' + r.trace.join(', ') + ']'));
           }
+        }
+      }
+    }
+
+    /* ===================================================================
+       PROVA 11 — ANGOLO-IN-AREA (voce #87, compito 4). CPU contro CPU,
+       campo vero, taglia 5 (SCENA_FONDO(0): fondo sinistro fuori luce,
+       ultimo tocco della difesa - team 0 - la STESSA geometria di
+       FONDO-ANGOLO, prova 3, che qui produce un angolo per il team 1 sul
+       quadrante nord-ovest). La condanna: dalla RIPRESA - il fotogramma
+       in cui G.battuta si azzera, il calcio d'angolo e' partito davvero,
+       lo stesso riferimento di CLIP-RIMESSA (prova 10) - entro 2,5s la
+       palla entra nel rettangolo d'area della porta attaccata, OPPURE
+       viene toccata da un corpo (un giocatore qualunque) che si trova
+       dentro quel rettangolo nello stesso istante.
+
+       IL RETTANGOLO D'AREA si legge da t.proporzioni() (VERNICE.areaProf/
+       areaSemi), la STESSA formula del disegno del campo (gRett, vicino a
+       CALCETTO-il-gioco.html:28198: x da 0 a AREA_W per la porta
+       sinistra, o da FW-AREA_W a FW per la destra; y da FH/2-AREA_H/2 a
+       FH/2+AREA_H/2, con AREA_H=areaSemi*2) - non un numero scritto a
+       mano. IL RAGGIO DI CONTATTO e' KICK_R (26 unita', letto anch'esso
+       da t.proporzioni()), la stessa soglia con cui kickBall decide se un
+       calcio e' calciabile: "un corpo in area tocca la palla" vuol dire
+       che un giocatore dentro il rettangolo sta a quella distanza o meno
+       dal pallone. */
+    {
+      const setup = await pag.evaluate(({ seme, taglia }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.save.sponde = 'campo';
+        t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
+        return SCENA_FONDO(0);
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+      if (setup.errore) { di(false, '11. ANGOLO-IN-AREA', 'BANCO: scena non costruita — ' + setup.errore); }
+      else {
+        const rBattuta = await pag.evaluate(ASPETTA_BATTUTA);
+        if (!rBattuta.vista || !rBattuta.battuta || rBattuta.battuta.tipo !== 'angolo') {
+          di(false, '11. ANGOLO-IN-AREA — la palla entra in area (o vi viene toccata) entro 2,5s dalla ripresa',
+            'l\'angolo non e\' mai comparso in 2s: ' + JSON.stringify(rBattuta.battuta));
+        } else {
+          const atkTeam = rBattuta.battuta.team;
+          const r = await pag.evaluate(({ atkTeam }) => {
+            const t = window.__test;
+            const prop = t.proporzioni();
+            const gx = atkTeam === 0 ? prop.FW : 0;
+            const x0 = gx === 0 ? 0 : prop.FW - prop.VERNICE.areaProf;
+            const x1 = x0 + prop.VERNICE.areaProf;
+            const y0 = prop.FH / 2 - prop.VERNICE.areaSemi;
+            const y1 = prop.FH / 2 + prop.VERNICE.areaSemi;
+            const KICK_R = prop.KICK_R;
+            const dentro = (v, a, c) => v >= a && v <= c;
+            const n = 450; // margine ampio: attesa fClear + 2,5s di misura vera
+            let fClear = -1, esito = null;
+            for (let f = 0; f < n; f++) {
+              t.simulate(1 / 60);
+              if (fClear < 0) {
+                if (t.battuta === null) fClear = f;
+                continue;
+              }
+              const tempo = (f - fClear + 1) / 60;
+              const b = t.ball;
+              const ballInArea = dentro(b.x, x0, x1) && dentro(b.y, y0, y1);
+              const corpoInArea = t.players.some(q =>
+                dentro(q.x, x0, x1) && dentro(q.y, y0, y1) && Math.hypot(q.x - b.x, q.y - b.y) <= KICK_R);
+              if (ballInArea || corpoInArea) { esito = { fotogramma: f, tempo, ballInArea, corpoInArea }; break; }
+              if (tempo > 2.5) break;
+            }
+            return { fClear, esito };
+          }, { atkTeam });
+          const ok = r.fClear >= 0 && r.esito !== null;
+          di(ok, '11. ANGOLO-IN-AREA — la palla entra in area (o vi viene toccata) entro 2,5s dalla ripresa',
+            r.fClear < 0 ? 'G.battuta non si e\' mai azzerato in 7,5s: nessuna ripresa da cui misurare'
+              : (r.esito ? ('entrata al fotogramma ' + r.esito.fotogramma + ', ' + r.esito.tempo.toFixed(3) + 's dalla ripresa (ballInArea=' + r.esito.ballInArea + ', corpoInArea=' + r.esito.corpoInArea + ')')
+                         : 'mai entrata ne\' toccata in area entro 2,5s dalla ripresa'));
         }
       }
     }

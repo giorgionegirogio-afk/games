@@ -16849,7 +16849,30 @@ function step(){
     const bp=G.players[G.battuta.battitore];
     const cpu=G.cpu[G.battuta.team];
     if(bp && ((cpu && G.battuta.hold<=BATTUTA_HOLD-BATTUTA_CPU) || G.battuta.hold<=0)){
-      eseguiAiPass(bp, manopoleDi(G.battuta.team));
+      /* L'ANGOLO SI BATTE COL PIEDE (voce #87, compito 4): stesso verbo
+         del cross umano (doCrossUmano), ma con un bersaglio FISSO al
+         posto della normale puntoCross - il dischetto di rigore della
+         porta attaccata (VERNICE.dischetto), cosi' il destinatario e'
+         sempre qualcuno piazzato in area da posaBattutaAngolo, non chi
+         capita vicino al secondo palo calcolato per un cross a meta'
+         azione. Zero dado() nuovo: doCross non ne consuma. Il tipo
+         'rinvio' non arriva mai qui - G.battuta e' gia' azzerato
+         all'uscita dalla scena 'battuta' (ramo qui sopra, :16701) -
+         quindi questo blocco vede solo rimessa/angolo. */
+      if(G.battuta.tipo==='angolo'){
+        const gx = bp.team===0?FW:0;
+        const dischX = gx===0?VERNICE.dischetto:FW-VERNICE.dischetto;
+        let dest, bd=1e9;
+        for(let i=0;i<G.players.length;i++){
+          const w=G.players[i];
+          if(w.team!==bp.team || w===bp || w.out>0 || w.role==='gk') continue;
+          const d=len(w.x-dischX, w.y-FH/2);
+          if(d<bd){ bd=d; dest=i; }
+        }
+        doCross(bp, 0, 0, null, dest);
+      }else{
+        eseguiAiPass(bp, manopoleDi(G.battuta.team));
+      }
       if(G.battuta){
         /* nessun compagno valido: si scioglie comunque, palla verso il centro */
         const dx=FW/2-bp.x, dy=FH/2-bp.y, l=Math.max(1,len(dx,dy));
@@ -19046,20 +19069,30 @@ function pallaFuori(tipo, team, x, y){
   b.vx=0; b.vy=0;
   G.battuta = { tipo, team, battitore:-1, x, y, hold:BATTUTA_HOLD };
   posaBattuta();
-  showBanner(tipo.toUpperCase(), TEAMCOL[team], 0.9);
+  /* RINVIO E' GRIGIO DI CASA (voce #87, compito 4), lo stesso hex di
+     ALTA! (ballOverBar, :19268) - in sostanza e' lo stesso evento, un
+     rinvio dal fondo. Rimessa e angolo restano nel colore della squadra
+     che batte, invariato dal compito 2. */
+  showBanner(tipo.toUpperCase(), tipo==='rinvio'?'#96ab9e':TEAMCOL[team], 0.9);
   Audio5.whistle(false);
   setScene('battuta');
 }
 
-/* piazza il battitore e la palla sul punto di uscita. Per ora solo il
-   tipo 'rimessa' (angolo e rinvio arrivano ai compiti 3 e 4): il
-   battitore e' il compagno di movimento (mai il portiere, mai chi e'
-   fuori per un'espulsione) piu' vicino al punto; gli avversari entro
-   BATTUTA_RAGGIO vengono spinti fuori radialmente, senza pressare chi
-   batte durante la finestra. */
+/* piazza il battitore e la palla sul punto di uscita. RIMESSA (sotto,
+   invariata dal compito 2): il battitore e' il compagno di movimento
+   (mai il portiere, mai chi e' fuori per un'espulsione) piu' vicino al
+   punto; gli avversari entro BATTUTA_RAGGIO vengono spinti fuori
+   radialmente, senza pressare chi batte durante la finestra. ANGOLO e
+   RINVIO (voce #87, compito 4) vivono nelle due funzioni sorelle qui
+   sotto, posaBattutaAngolo/posaBattutaRinvio - delegate invece di
+   annidate, cosi' il ramo rimessa resta carattere per carattere quello
+   di sempre (vedi il commento in testa all'attrezzo per il perche'). */
 function posaBattuta(){
   const st=G.battuta;
-  if(!st || st.tipo!=='rimessa') return;
+  if(!st) return;
+  if(st.tipo==='angolo') return posaBattutaAngolo(st);
+  if(st.tipo==='rinvio') return posaBattutaRinvio(st);
+  if(st.tipo!=='rimessa') return;
   const team=st.team;
   let bt=null, bd=1e9;
   for(const q of G.players){
@@ -19088,6 +19121,101 @@ function posaBattuta(){
     if(d<BATTUTA_RAGGIO){ q.x=bt.x+dx/d*BATTUTA_RAGGIO; q.y=bt.y+dy/d*BATTUTA_RAGGIO; }
   }
   if(!G.cpu[team]) G.ctrl[team]=bi;
+}
+
+/* ANGOLO (voce #87, compito 4): st.x/st.y sono gia' il quadrante esatto
+   (0/FW, 0/FH) scritto da ballWalls - qui si traduce nel punto vero
+   sull'arco, 10 unita' dentro la linea di fondo e la fascia (gli archi
+   da 14 sono gia' dipinti, :27894). Battitore = compagno di movimento
+   piu' vicino all'arco. ATTACCANTI IN AREA: i 2 (taglia 5) o 3 (7/11)
+   compagni di movimento (battitore escluso) piu' avanzati verso la
+   porta attaccata, alle tre quote fisse del brief. DIFENSORI: per
+   ciascun attaccante piazzato, l'avversario di movimento piu' vicino
+   (non ancora assegnato a un altro attaccante) va a marcarlo 18 unita'
+   verso la propria porta. PORTIERE sulla linea. Gli altri restano dove
+   sono. Tutto deterministico, zero dado(). */
+function posaBattutaAngolo(st){
+  const team=st.team, dif=1-team;
+  const gx = st.x;                          // 0 = porta sinistra, FW = destra
+  const dirIn = gx===0 ? 1 : -1;             // dalla linea di fondo verso il centro
+  const bx = gx===0 ? 10 : FW-10;
+  const by = st.y===0 ? 10 : FH-10;
+  let bt=null, bd=1e9;
+  for(const q of G.players){
+    if(q.team!==team || q.out>0 || q.role==='gk') continue;
+    const d=len(q.x-bx, q.y-by);
+    if(d<bd){ bd=d; bt=q; }
+  }
+  if(!bt) return;
+  const bi=G.players.indexOf(bt);
+  st.battitore=bi;
+  bt.x=bx; bt.y=by; bt.vx=0; bt.vy=0;
+  bt.fx=dirIn; bt.fy=0;
+  const b=G.ball;
+  b.owner=bi; b.x=bt.x+dirIn*CARRY_DIST; b.y=bt.y;
+  segnaTocco(bi);
+  /* gli stessi latch che il fischio azzera in resetKickoff (voce #87,
+     precedente dichiarato in posaBattuta): il battitore non eredita una
+     scivolata o un anticipo aperto da prima del fermo. */
+  bt.slide=-1; bt.recover=0; chiudiAnticipo(bt); bt.rove=-1; bt.kickT=0; bt.kickB=0; bt.rimT=0;
+  const N = TAGLIA>5?3:2;
+  const areaY=[0,-44,44];
+  const attaccanti = G.players
+    .filter(q=>q.team===team && q.out<=0 && q.role!=='gk' && q!==bt)
+    .sort((p,q)=>Math.abs(p.x-gx)-Math.abs(q.x-gx))
+    .slice(0,N);
+  const marcati=new Set();
+  for(let i=0;i<attaccanti.length;i++){
+    const a=attaccanti[i];
+    a.x = gx + dirIn*VERNICE.areaProf*0.6;
+    a.y = FH/2 + areaY[i];
+    a.vx=0; a.vy=0;
+    let dm=null, dd=1e9;
+    for(const r of G.players){
+      if(r.team!==dif || r.out>0 || r.role==='gk' || marcati.has(r)) continue;
+      const d=len(r.x-a.x, r.y-a.y);
+      if(d<dd){ dd=d; dm=r; }
+    }
+    if(dm){
+      marcati.add(dm);
+      dm.x = a.x - dirIn*18; dm.y = a.y;
+      dm.vx=0; dm.vy=0;
+    }
+  }
+  const gk = portiereDi(dif);
+  if(gk){ gk.x = gx + dirIn*8; gk.y = FH/2; gk.vx=0; gk.vy=0; }
+  if(!G.cpu[team]) G.ctrl[team]=bi;
+}
+
+/* RINVIO DAL FONDO (voce #87, compito 4): la palla torna fra le mani del
+   portiere (o del piu' arretrato, pattern di ballOverBar, :19277-19290)
+   - y=FH/2 FISSO, NIENTE rnd(-70,70): ballOverBar lo usa perche' nasce a
+   meta' di un'azione viva e la variazione serve a non sembrare un
+   teletrasporto meccanico; questo invece e' un fermo dichiarato con la
+   camera sul punto - il centro della porta e' gia' la posizione onesta,
+   non serve mascherare nulla con un dado. Il flusso esistente
+   (owner===portiere && kickCd<=0 -> rinvioPortiere) fa il resto con la
+   sua clip: nessuna guardia G.ctrl qui, il rinvio del portiere e' sempre
+   automatico, umano o CPU che sia (censimento RIMESSE-E-ANGOLI.md §4). */
+function posaBattutaRinvio(st){
+  const team=st.team;
+  const gx = team===0?0:FW;
+  let deep=portiereDi(team), dd=1e9;
+  if(!deep) for(const q of G.players){
+    if(q.team!==team||q.out>0) continue;
+    const d=Math.abs(q.x-gx);
+    if(d<dd){ dd=d; deep=q; }
+  }
+  if(!deep) return;
+  const bi=G.players.indexOf(deep);
+  st.battitore=bi;
+  deep.x = team===0? 58 : FW-58;
+  deep.y = FH/2;
+  deep.vx=0; deep.vy=0;
+  const b=G.ball;
+  b.owner=bi; b.x=deep.x+(team===0?1:-1)*CARRY_DIST; b.y=deep.y;
+  deep.kickCd=0.5;
+  segnaTocco(bi);
 }
 
 function ballWalls(b){
@@ -19129,11 +19257,30 @@ function ballWalls(b){
     if(b.x > FW+GOAL_D-B_R){ b.x=FW+GOAL_D-B_R; b.vx*=-0.3; }
   }else{
     /* sponde corte (con eventuale palo) */
+    /* IL FONDO E' UNA LINEA VERA (voce #87, compito 4): a campo vero il
+       fondo fuori dalla luce non rimbalza piu'. squadraDelPallone()
+       (:14309) dice chi ha toccato per ultimo: la difesa di quella porta
+       -> angolo per l'avversario; l'attacco - O chi<0, regola fissa
+       commentata, zero dado(), lo stesso letterale gia' scelto per le
+       fasce lunghe - -> rinvio dal fondo per chi difende. In GABBIA i
+       due rami sotto restano identici al bit. */
     if(b.x<B_R){
+      if(G.campoVero){
+        const chi=squadraDelPallone();
+        if(chi===0) pallaFuori('angolo', 1, 0, b.y<FH/2?0:FH);
+        else pallaFuori('rinvio', 0, 0, b.y);
+        return;
+      }
       b.x=B_R; b.vx=Math.abs(b.vx)*0.82;
       hitWall(sp, Math.abs(b.y-GY0)<16||Math.abs(b.y-GY1)<16, 1, 0);
     }
     if(b.x>FW-B_R){
+      if(G.campoVero){
+        const chi=squadraDelPallone();
+        if(chi===1) pallaFuori('angolo', 0, FW, b.y<FH/2?0:FH);
+        else pallaFuori('rinvio', 1, FW, b.y);
+        return;
+      }
       b.x=FW-B_R; b.vx=-Math.abs(b.vx)*0.82;
       hitWall(sp, Math.abs(b.y-GY0)<16||Math.abs(b.y-GY1)<16, -1, 0);
     }
@@ -29452,7 +29599,14 @@ function drawGoals(){
    minimo, alla prima ripartenza lunga si torna alla telecamera da satellite. */
 const camVicini=[];
 function updateCamera(rdt){
-  const inPlay = G.scene==='play'||G.scene==='golden'||G.scene==='kickoff'||G.scene==='freekick';
+  /* 'battuta' manca qui dal compito 2 (voce #87): senza, la guardia poco
+     sotto ("if(!(inPlay || G.moviola) || !G.ball)") intercetta la scena
+     PRIMA che arrivi al codice "cerimonia" che gia' esiste per snappare
+     la camera sul pallone (piu' sotto, controlla gia' G.scene==='battuta'
+     ma non veniva mai raggiunto) - misurato con uno screenshot vero
+     durante il fermo: senza questa riga la camera mostra il centro
+     campo della vista home, non il punto di battuta. */
+  const inPlay = G.scene==='play'||G.scene==='golden'||G.scene==='kickoff'||G.scene==='freekick'||G.scene==='battuta';
   if(G.scene==='goal' && G.ball && !G.moviola){
     if(G.golStop>0) return;            // fermo immagine: la camera non stringe
     /* la festa del gol: giocatore a 60 px, raggiunto in 0,35 s, con la
