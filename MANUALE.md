@@ -567,6 +567,21 @@ Qui il registro completo, a edizioni.
   (`700f775`): **12/13**, la sola tredicesima rossa (un nastro vecchio
   passava per buono e avviava la partita).
 
+  **L'ESPERIENZA DEL PRIMO AVVIO DOPO L'AGGIORNAMENTO** (m10, onda di
+  correzione della revisione finale, 18 settembre 2026): al primo avvio
+  dopo che il motore è salito di versione, OGNI replay ancora in lista
+  registrato prima dell'aggiornamento è a versione 0 (o comunque diversa
+  da `MOTORE_V` di oggi) — non uno alla volta, tutti insieme, perché
+  nessuno di loro porta il campo nuovo. Non c'è un avviso unico per
+  l'intera lista: il messaggio onesto compare quando il giocatore APRE
+  quel replay (`Sfida.guarda`, non al solo caricamento della lista), UNA
+  VOLTA per quel replay — e la stessa riga che mostra il messaggio scrive
+  anche `this.vistoQui[id]=1` PRIMA di ridipingere (`dipingi()`), cosicché
+  quel replay smette di comparire come "nuovo/non visto" nella lista da
+  quel momento in poi. Riaprirlo una seconda volta mostra di nuovo lo
+  stesso messaggio onesto (non è un divieto, resta un film che si può
+  rileggere): quello che cambia è solo il badge di lista, non l'accesso.
+
   **Perché `Sfida.gioca`/`chiudiSfida` restano fuori dal perimetro di
   questo controllo (rilievo Minore, correzione di revisione del compito
   4)**: non è una svista, è per costruzione. `Sfida.gioca` (~42182) CREA
@@ -578,9 +593,23 @@ Qui il registro completo, a edizioni.
   `Sfida.guarda`, che non arriva mai a chiamare `startMatch` (e quindi
   mai a `chiudiSfida`) quando `Reg.motoreV !== MOTORE_V`.
 
-  **La voce #96 (cancello di pubblicazione) SI CHIUDE**: la condizione era
-  "il nastro porta la versione del motore, e il messaggio dice la causa
-  vera" — soddisfatta e provata dal banco. Il prossimo APK si sblocca. Le
+  **La voce #96 (cancello di pubblicazione) SI CHIUDE**: la condizione
+  originaria (6 settembre 2026, §"La giornata del 6 settembre") era
+  DISGIUNTIVA — "il nastro porta la versione del motore, **o** il
+  messaggio dice la causa vera (entrambe le cause possibili, mai solo il
+  profilo)" — non una congiunzione. RETTIFICA (onda di correzione della
+  revisione finale, voce #107, m9/#96, 18 settembre 2026): una lettura
+  precedente di questa voce l'aveva citata con una "e", come se
+  servissero entrambi i pezzi; bastava UNO solo. Consegnato il PRIMO
+  disgiunto per intero (`MOTORE_V` nel nastro, `Sfida.guarda` che
+  intercetta prima di `startMatch`): gia' sufficiente da solo a
+  soddisfare la condizione e a chiudere la voce. Il SECONDO disgiunto —
+  `chiudiSfida` che dichiari da sola entrambe le cause possibili
+  (profilo cambiato O motore cambiato) quando il punteggio non torna —
+  NON e' stato fatto: `chiudiSfida` continua a citare solo il profilo
+  cambiato, perche' il caso motore-diverso e' ormai intercettato PRIMA,
+  dentro `Sfida.guarda`, e non arriva mai fin li'. Soddisfatta e provata
+  dal banco. Il prossimo APK si sblocca. Le
   voci #104/#105/#106 restano aperte.
 
   **Cancelli**: `_q-regole.js` **13/13** (12/13 sulla base `700f775`,
@@ -635,6 +664,137 @@ Qui il registro completo, a edizioni.
   Verbale completo: spec `docs/superpowers/specs/2026-09-18-regole-leva-
   corta-design.md`, piano `docs/superpowers/plans/2026-09-18-regole-leva-
   corta.md`, rapporti `.git/sdd/brief/107-compito-*-report.md`.
+
+  **ONDA DI CORREZIONE DELLA REVISIONE FINALE** (voce #107, ramo
+  `voce-107-regole-leva-corta`, 18 settembre 2026, un commit). La
+  revisione finale del ramo (dopo il compito 4) ha misurato un rilievo
+  **CRITICO** e tre **Importanti**, più una postilla di metodo.
+
+  **C1 (CRITICO) — il retropassaggio non mordeva a taglia 11.** Il ramo
+  di respinta di `tentaPresa` riposizionava il pallone a `(P_R+B_R)*
+  dist_` dal portiere; la raccolta generica di `updateBall` lo riafferra
+  a `d<KICK_R*0.8` (**20,8**, `KICK_R` è una COSTANTE fissa, mai scalata
+  dalla taglia). La tavola `CORPI` dà `P_R+B_R=21` a 5/7 — un margine di
+  **0,2 unità: un rasoio** — ma **solo 7,5** a 11 (`P_R=5, B_R=2.5`): la
+  palla respinta restava DENTRO il cerchio della raccolta, e il portiere
+  la riprendeva un fotogramma dopo per la via generica (misurato: presa
+  al fotogramma 99). Il retropassaggio, curato al compito 2, **non
+  mordeva mai** a quella taglia. CURA: il raggio diventa
+  `Math.max((P_R+B_R)*dist_, KICK_R*0.8+0.5)` — la respinta esce SEMPRE
+  dal cerchio della raccolta, a ogni taglia. Cancello:
+  `_q-regole.js --taglia 11` — le prove **3 (RETRO-PRESA) e 7
+  (RETRO-FERMO) diventano VERDI** (rosse prima della cura); a taglia 5
+  resta **16/16** (13+3, vedi I2/I3/I5 sotto).
+
+  **I2 — il cartellino non attraversava le partite.** `startMatch` non
+  azzerava `G.vantaggio`: un sentinel con un cartellino pendente
+  (`{team:-1,...,card}`, lasciato da un vantaggio CONCESSO per intero
+  nella partita precedente) sopravviveva, e `resetKickoff` (dentro
+  `startMatch` stesso) lo leggeva già con la rosa NUOVA —
+  `scaricaCardVantaggio()` ammoniva un giocatore INNOCENTE al fischio
+  d'inizio della partita nuova (misurato). CURA: `G.vantaggio=null;`
+  accanto a `G.rigori=null`. Prova nuova **CARD-NON-ATTRAVERSA**
+  (quattordicesima), nata rossa su `b837824`.
+
+  **I3 — la palla ferma non perdonava due volte.** `setScene` scaricava
+  il cartellino pendente ANCHE con una finestra di vantaggio ANCORA VIVA
+  (`team>=0`): un pallone spedito fuori campo durante la finestra faceva
+  sparire il cartellino SENZA fischio né punizione — il **5,1%
+  "silenzioso"** della contabilità arbitrale del compito 3, mai spiegato
+  allora. CURA, in tre parti: (a) il ramo SFUMATO di `step()` (era
+  inline) si estrae nella funzione `eseguiSfumato(vTeam,vx,vy)`; (b)
+  `pallaFuori()`, PRIMA di costruire la battuta, intercetta una finestra
+  ANCORA VIVA e le dà l'esito vero — SFUMATO, fischio ritardato dal
+  punto salvato, **il fallo originario vince sulla rimessa**, come la
+  regola vera; (c) `setScene` scarica il cartellino SOLO per il
+  sentinel (`G.vantaggio.team<0`). Prova nuova
+  **PALLA-FUORI-IN-FINESTRA** (quindicesima), nata rossa: fallo →
+  finestra viva → palla spedita fuori → fischio dal punto salvato
+  (punizione rapida o duello, secondo l'area), NIENTE battuta,
+  cartellino (se dovuto) al fischio. **Questa cura chiude anche il
+  seguito #111** (sotto): il caso "silenzioso" sarebbe stato altrimenti
+  un follow-up aperto, ed è invece assorbito qui per intero.
+
+  **I4 — il censimento vero di #108, e la PROVA 1 resa robusta.** Il
+  censimento del compito 3 ("dieci strumenti") era incompleto: il conto
+  vero è **25 file** sotto `strumenti/` che chiamano `setCpuVsCpu`
+  PRIMA di `startMatch` (misurato per pattern, non per sospetto),
+  COMPRESI **`_q-regole.js` (11 siti) e `_q-battute.js` (5 siti)** —
+  entrambi **IN BATTERIA** (`strumenti/tutti.js`, `conta:true`), non
+  strumenti diagnostici isolati. Conseguenza pratica: applicare oggi la
+  cura di #108 (ordine `setCpuVsCpu`/`startMatch` a prova d'ordine)
+  farebbe CADERE la PROVA 1 (RIGORE-DENTRO) di `_q-regole.js`, perché
+  con la CPU vera il duello verrebbe battuto e lo stato al fotogramma
+  200 non sarebbe più `freekick`. **RISCRITTA (I4b)**: l'asserzione
+  della PROVA 1 non legge più lo stato FINALE, legge se la scena
+  `freekick` è stata ATTRAVERSATA in qualunque fotogramma (campionata a
+  ogni passo) — verde oggi, e robusta a un futuro #108. Vedi **#110**
+  sotto.
+
+  **I5 — il vantaggio si apre ANCHE in area** (commento nuovo,
+  `checkSlideContact`, nessun codice cambiato: il comportamento era già
+  quello giusto). La riga che apre `G.vantaggio` non guarda mai
+  `dentroArea()` — un fallo dentro l'area non è mai un rigore SUBITO, un
+  rigore SFUMATO arriva con un ritardo di **0,85-2,85 s**
+  (`VANT_VALUTA`/`VANT_T` meno lo stordimento). Misurato (sonda
+  dedicata, 21 finestre aperte da un fallo in area): **~0 casi su 21
+  restano PIENI** — la geometria di "restare più avanti mentre si resta
+  ancora dentro l'area" è una striscia stretta, non una regola che
+  favorisce l'area. Prova nuova **VANTAGGIO-IN-AREA** (sedicesima),
+  CONTROLLO DISCRIMINANTE, nata verde: fallo in area con azione che
+  prosegue → niente rigore immediato, finestra aperta; se sfuma →
+  RIGORE dal punto (scena `freekick`).
+
+  **m7 — la correzione del commento di `scaricaCardVantaggio()`**: diceva
+  "tre punti", ma i siti veri erano già CINQUE prima di questa onda —
+  `resetKickoff`, `setScene`, `checkSlideContact` (due volte: il fischio
+  immediato e la micro-coda) ed `eseguiSfumato()` (il quinto, estratto
+  da I3a e oggi RAGGIUNGIBILE DA DUE chiamanti — `step()` quando la
+  conservazione si perde da sola, `pallaFuori()` quando la palla esce
+  dal campo con la finestra ancora viva — non uno solo).
+
+  **m6 — attrezzo retroattivo `strumenti/_t-vantaggio-sentinel.js`**:
+  riproduce, a posteriori, l'hunk di gioco della chiusura arbitrale
+  `832cff2` (il sentinel che non chiude più la finestra) — verificato a
+  specchio, byte-identico sul hunk, applicando l'attrezzo a
+  `git show 700f775:...` e confrontando con `git show 832cff2:...`. La
+  garanzia è PIÙ DEBOLE di un attrezzo nato insieme al suo commit (prova
+  che l'attrezzo riproduce l'edit già fatto, non che l'edit sia nato
+  ancorato) — lo stesso precedente dichiarato in coda alla voce #87 per
+  `_t-sfide-sponde.js`.
+
+  **m9 — la precisione sui cancelli in batteria.** `strumenti/tutti.js`
+  registra **31** strumenti con `conta:true` in tutto, non 28: tre di
+  loro (`giocata`, `prestazione`, `avvio-telefono`) portano `solo:true`
+  — girano SOLO se invocati per nome (`--solo`), mai dentro un `--tutto`
+  nudo, perché sono cronometrici (girano meglio in isolamento) o
+  (`avvio-telefono`) chiedono un telefono vero. **28 cancelli che
+  contano nei 4 spezzoni di serie** di questo cantiere resta la cifra
+  corretta per QUELLA convenzione (i quattro comandi `--solo` di questa
+  voce, che includono esplicitamente `giocata`/`prestazione`), non 31 —
+  la differenza non è un errore, è la distinzione fra "registrato" e
+  "incluso in una corsa data".
+
+  **Seguiti nuovi**: **#109** "il corpo del portiere scala come il
+  campo" — `P_R+B_R` (tavola `CORPI`, scala con la taglia) e `KICK_R*0.8`
+  (costante fissa) vivono sotto DUE verità di scala diverse, riconciliate
+  qui solo con un pavimento (`Math.max`, C1) in UN punto; un seguito
+  vero controllerebbe ogni altro punto del file dove le due grandezze si
+  confrontano per lo stesso motivo (anti-tunneling ad alta velocità
+  quando il corpo del portiere si rimpicciolisce più in fretta del passo
+  di simulazione; il caso dichiarato ma non ricostruito qui di una
+  punizione-senza-movimento che potrebbe urtare lo stesso confine). **NON
+  MISURATO in questa onda**: dichiarato per chi aprirà il seguito, non
+  investigato a fondo. **#110** "il banco che non congela" — il
+  censimento vero dei 25 strumenti (I4 sopra) e la PROVA 1 di
+  `_q-regole.js` ormai resa robusta (I4b) sono il prerequisito che
+  mancava per decidere #108 senza rompere la batteria: la decisione
+  resta del committente, ma il costo di prenderla oggi è più basso di
+  ieri. **#111** — sarebbe stato il seguito per il 5,1% "silenzioso"
+  della contabilità arbitrale del compito 3 (la palla ferma durante una
+  finestra viva): **CHIUSO nello stesso respiro dall'onda I3 sopra**, mai
+  rimasto aperto.
+
 - **Rimesse laterali e calci d'angolo** (#87) — **CURATA il 18 settembre
   2026** (cinque compiti più il verbale, dal merge-base `7ed570a` fino
   alla coda della revisione finale — l'intervallo non si fissa su uno

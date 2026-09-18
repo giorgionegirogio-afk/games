@@ -187,6 +187,67 @@
          Sfida.guarda, un nastro a versione 0 passerebbe per buono.
    Il file e' adesso a tredici prove.
 
+   ONDA DI CORREZIONE DELLA REVISIONE FINALE (voce #107, ramo voce-107-
+   regole-leva-corta, 18 settembre 2026). La revisione finale del ramo
+   ha misurato TRE rilievi (uno CRITICO) e ha chiesto la riscrittura di
+   una prova esistente. Il file guadagna TRE prove nuove:
+     14. CARD-NON-ATTRAVERSA (I2) -- startMatch non azzerava G.vantaggio:
+         un sentinel con un cartellino pendente sopravviveva a una
+         partita nuova, e resetKickoff (dentro startMatch stesso) lo
+         leggeva con la rosa APPENA rifatta, ammonendo un giocatore
+         innocente al fischio d'inizio. CURA: G.vantaggio=null accanto a
+         G.rigori=null. NATA ROSSA su b837824.
+     15. PALLA-FUORI-IN-FINESTRA (I3) -- setScene scaricava il
+         cartellino anche con una finestra ANCORA VIVA (team>=0): una
+         palla spedita fuori campo durante la finestra faceva sparire il
+         cartellino SENZA fischio ne' punizione (il 5,1% "silenzioso"
+         della contabilita' arbitrale del compito 3, mai spiegato
+         allora). CURA: pallaFuori intercetta una finestra viva PRIMA di
+         costruire la battuta e le da' l'esito SFUMATO vero
+         (eseguiSfumato(), estratta dal ramo che viveva inline in
+         step()); setScene scarica il cartellino SOLO per il sentinel
+         (team<0). NATA ROSSA su b837824.
+     16. VANTAGGIO-IN-AREA (I5) -- CONTROLLO DISCRIMINANTE, nasce verde:
+         checkSlideContact apre la finestra ANCHE per un fallo dentro
+         l'area (nessun dentroArea() sulla riga che apre G.vantaggio);
+         un rigore sfumato arriva quindi con un ritardo di 0,85-2,85 s,
+         mai un fischio subito. Nessun codice cambiato: mancava solo un
+         controllo che lo dichiarasse.
+   Il file e' adesso a SEDICI prove.
+
+   RISCRITTURA (I4b): la PROVA 1 (RIGORE-DENTRO) leggeva lo stato
+   FINALE al fotogramma 200 ("freekick"), un'asserzione vera oggi solo
+   per un artefatto del banco -- il SEGUITO #108 (censimento corretto:
+   25 strumenti sotto strumenti/ chiamano setCpuVsCpu PRIMA di
+   startMatch, COMPRESO QUESTO STESSO FILE, 11 siti) fa si' che la
+   squadra 0 (che difende) resti "umana" immobile per tutta la prova:
+   nessun avversario vero conduce mai il duello, e lo stato resta
+   'freekick' fino al fotogramma 200 per assenza di un difensore, non
+   per la regola. Se #108 venisse curato lato gioco (proposta gia' in
+   MANUALE.md), la squadra 0 diventerebbe CPU vera e potrebbe battere
+   il duello PRIMA del fotogramma 200 -- questa prova cadrebbe senza che
+   il rigore fosse cambiato di un bit. L'asserzione diventa "la scena
+   freekick e' stata ATTRAVERSATA" (campionata a ogni fotogramma):
+   verde oggi, e robusta a un futuro #108.
+
+   NOTA DICHIARATA (C1, non curata: fuori dal perimetro di questa onda).
+   Le prove 6 (VANTAGGIO-FISCHIA-SEMPRE) e 8 (VANTAGGIO-SFUMATO) restano
+   ROSSE a taglia 7/11 con questo seme (misurato: taglia 7, entrambe
+   rosse; taglia 11, solo la 6). La causa e' un artefatto di SCALA nel
+   BANCO, non nella regola: SOSTIENI_AVANTI e SCENA_VANTAGGIO_SFUMATO_
+   ESEGUI corrono un numero FISSO di fotogrammi (230/260/FOTOGRAMMI_
+   ATTESA) pensato per il kickoff piu' corto (taglia 5); il kickoff vero
+   sale a ~1,5 s alle taglie grandi (formation piu' larga da
+   raggiungere), e la finestra di vantaggio misura da VANT_VALUTA=0,5s a
+   VANT_T~2,867s (F1) DAL MOMENTO in cui il fallito si rialza -- la somma
+   dei due margini supera il budget fisso della scena prima che la
+   valutazione finale (banner VANTAGGIO o SFUMATO) abbia il tempo di
+   comparire. Non tocca checkSlideContact, tentaPresa ne' il blocco di
+   valutazione del vantaggio: e' il banco che non allarga il proprio
+   orologio con la taglia, dichiarato qui invece di curato (fuori dal
+   perimetro dei rilievi C1/I2/I3/I5 di questa onda, che non toccano i
+   tempi delle scene 6/8).
+
    ZERO dado() NUOVI. Le scene si scrivono direttamente sullo stato del
    gioco (G.players/G.ball, la stessa tecnica di _q-battute.js) e il
    fallo da scivolata si ottiene con un'entrata DA DIETRO: la vittima
@@ -204,10 +265,11 @@
    esce 0 se tutte le prove sono verdi, 1 se almeno una e' rossa,
    2 se il banco stesso e' esploso (pagina, hook mancante, eccezione).
    Il 3 resta riservato (convenzione di _q-battute.js/_q-replay.js) e
-   non e' usato da nessuna delle tredici prove di oggi (RETTIFICA, voce
+   non e' usato da nessuna delle sedici prove di oggi (RETTIFICA, voce
    #107 compito 4: il numero era rimasto scritto "sette" da quando il
    file ne aveva solo sette, senza aggiornarlo alle rette successive --
-   corretto qui invece di lasciarlo scaduto).
+   corretto allora; salito di nuovo a sedici con l'onda di correzione
+   della revisione finale, sopra).
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -687,6 +749,146 @@ function INIETTA_SCENE() {
       aperto2, vantaggioDopo2, statoFinale: t.state,
     };
   };
+  /* =====================================================================
+     ONDA DI CORREZIONE DELLA REVISIONE FINALE (voce #107, 18 settembre
+     2026): TRE funzioni nuove, per I2/CARD-NON-ATTRAVERSA, I3/
+     PALLA-FUORI-IN-FINESTRA e I5/VANTAGGIO-IN-AREA.
+
+     SCENA_CARD_NON_ATTRAVERSA_ESEGUI (I2): costruisce il sentinel
+     esattamente come SCENA_GRAZIA_DOPO_CARD_ESEGUI (un fallo da giallo,
+     sostenuto fino a VANT_T: VANTAGGIO concesso per intero, il
+     cartellino resta pendente in {team:-1,...,card}) -- poi chiama
+     startMatch DI NUOVO, con la STESSA taglia, la "partita nuova" che
+     il rilievo I2 misurava: PRIMA della cura G.vantaggio sopravviveva a
+     startMatch, e resetKickoff (dentro startMatch stesso, via
+     setupPlayers()) lo leggeva con la rosa APPENA rifatta -- un indice
+     valido ma un titolare diverso, innocente. */
+  window.SCENA_CARD_NON_ATTRAVERSA_ESEGUI = function (taglia) {
+    const t = window.__test;
+    const s1 = SCENA_FALLO('lontano');
+    if (s1.errore) return s1;
+    let aperto1 = false;
+    for (let i = 0; i < 180 && !aperto1; i++) {
+      t.simulate(1 / 60);
+      if (typeof G !== 'undefined' && G.vantaggio && G.vantaggio.team >= 0) aperto1 = true;
+    }
+    if (!aperto1) return { errore: "G.vantaggio non si e' mai aperto entro 3 s" };
+    if (G.vantaggio.card == null) return { errore: 'il fallo scriptato non ha prodotto un cartellino dovuto (card null)' };
+    const sost = SOSTIENI_AVANTI(s1.vittimaIdx, 230);
+    if (!sost.vistoVantaggio) return Object.assign({ errore: "il vantaggio non e' mai stato concesso entro 230 fotogrammi" }, sost);
+    const sentinelFinePartita = (typeof G !== 'undefined' && G.vantaggio) ? Object.assign({}, G.vantaggio) : null;
+    if (!sentinelFinePartita || sentinelFinePartita.team !== -1) {
+      return { errore: "atteso il sentinel {team:-1,...} a fine partita, trovato: " + JSON.stringify(sentinelFinePartita) };
+    }
+    /* LA PARTITA NUOVA. Nessuno azzera G.vantaggio a mano qui: e'
+       esattamente il caso che I2 cura (o non cura) dentro startMatch. */
+    t.setCpuVsCpu(true);
+    t.startMatch(1, 1, { size: taglia });
+    const vantaggioDopoStartMatch = (typeof G !== 'undefined') ? G.vantaggio : 'non definito';
+    let bannerCartellinoVisto = false;
+    for (let i = 0; i < 30; i++) {
+      t.simulate(1 / 60);
+      const ban = t.banner;
+      if (ban && ban.text && String(ban.text).toUpperCase().indexOf('CARTELLINO') >= 0) bannerCartellinoVisto = true;
+    }
+    const gialliDopo = t.disciplina.gialli.slice();
+    return {
+      ok: true, sentinelCardFinePartita: sentinelFinePartita.card,
+      vantaggioDopoStartMatch, bannerCartellinoVisto, gialliDopo,
+    };
+  };
+  /* SCENA_PALLA_FUORI_IN_FINESTRA_ESEGUI (I3): lo stesso fallo lontano
+     di SCENA_FALLO('lontano') apre la finestra come sempre; appena e'
+     viva (team>=0, ben prima che VANT_VALUTA la valuti), il pallone si
+     manda fuori dal campo sulla fascia lunga (y<B_R, G.campoVero
+     richiesto: opts.sponde:'campo', dichiarato -- di serie la taglia 5
+     nasce in gabbia, dove pallaFuori non scatta mai) esattamente sul
+     punto salvato -- lo stesso imbuto fisico (ballWalls) che le
+     partite vere userebbero, non una chiamata diretta a pallaFuori().
+     PRIMA della cura questo sarebbe scivolato in setScene('battuta'),
+     scaricando il cartellino pendente in silenzio (I3c) senza fischio
+     ne' punizione -- il 5,1% "silenzioso" della contabilita' arbitrale
+     del compito 3, mai spiegato allora. */
+  window.SCENA_PALLA_FUORI_IN_FINESTRA_ESEGUI = function () {
+    const t = window.__test;
+    const s = SCENA_FALLO('lontano');
+    if (s.errore) return s;
+    let aperto = false;
+    for (let i = 0; i < 180 && !aperto; i++) {
+      t.simulate(1 / 60);
+      if (typeof G !== 'undefined' && G.vantaggio && G.vantaggio.team >= 0) aperto = true;
+    }
+    if (!aperto) return { errore: "G.vantaggio non si e' mai aperto entro 3 s" };
+    const savedX = G.vantaggio.x, savedY = G.vantaggio.y, cardAttesa = G.vantaggio.card;
+    const foulTeam = 1 - G.vantaggio.team;
+    const gialliPrima = t.disciplina.gialli[foulTeam];
+    Object.assign(t.ball, { owner: -1, x: savedX, y: -30, vx: 0, vy: -80, z: 0, vz: 0 });
+    let vistoSfumato = false, battutaVista = false;
+    for (let i = 0; i < 60; i++) {
+      t.simulate(1 / 60);
+      const ban = t.banner;
+      if (ban && ban.text && String(ban.text).toUpperCase().indexOf('SFUMATO') >= 0) vistoSfumato = true;
+      if (t.state === 'battuta') battutaVista = true;
+    }
+    const gialliDopo = t.disciplina.gialli[foulTeam];
+    return {
+      ok: true, savedX, savedY, cardAttesa, foulTeam,
+      vistoSfumato, battutaVista, statoFinale: t.state,
+      gialliPrima, gialliDopo,
+    };
+  };
+  /* SCENA_VANTAGGIO_AREA_ESEGUI (I5): SCENA_FALLO('dentro') e' la
+     STESSA scena di PROVA 1 -- x=60, y=centro campo, dentro l'area vera
+     a ogni taglia. Fase 1: si aspetta che la finestra si apra davvero
+     (fino a 180 fotogrammi: la stessa attesa del kickoff che
+     SCENA_GRAZIA_DOPO_CARD_ESEGUI/SCENA_CARD_NON_SI_PERDE_ESEGUI gia'
+     rispettano -- il fallo non puo' registrarsi finche' la scena e'
+     ancora 'kickoff'), tracciando se un 'freekick' sia MAI comparso nel
+     frattempo: il codice non guarda mai dentroArea() sulla riga che
+     apre G.vantaggio (checkSlideContact), quindi un fallo in area non
+     e' mai un rigore SUBITO -- ma il PRIMO fallo di una partita non lo
+     sarebbe comunque (il ramo del fischio immediato chiede G.vantaggio
+     gia' esistente), quindi qui si misura semplicemente cio' che la
+     regola garantisce per costruzione, non un caso limite. Fase 2: la
+     conservazione si corrompe apposta (il pallone passa al colpevole
+     sul punto salvato, come PROVA 8) e si aspetta il fischio ritardato:
+     con inArea vera alla risoluzione, deve dare RIGORE (scena
+     'freekick'), mai una punizione rapida. */
+  window.SCENA_VANTAGGIO_AREA_ESEGUI = function (totale) {
+    const t = window.__test;
+    const s = SCENA_FALLO('dentro');
+    if (s.errore) return s;
+    /* NIENTE forzatura della velocita' qui (a differenza di PROVA 6/9/
+       10/11/12, che sostengono l'azione con SOSTIENI_AVANTI DOPO che la
+       finestra e' gia' aperta): a x=60 -- appena fuori dalla linea di
+       porta -- una vittima spinta a vx=-300 verso -x rischia di uscire
+       dal campo o segnare PRIMA che il fallo si registri, mentre la
+       scena e' ancora 'kickoff' e le posizioni non sono ancora vive.
+       Questa fase misura solo l'apertura della finestra e l'assenza di
+       un fischio immediato -- lo stesso pattern, identico, di
+       SCENA_GRAZIA_DOPO_CARD_ESEGUI/SCENA_CARD_NON_SI_PERDE_ESEGUI. */
+    let aperto = false, fischioImmediato = false;
+    for (let i = 0; i < 180 && !aperto; i++) {
+      t.simulate(1 / 60);
+      if (t.state === 'freekick') fischioImmediato = true;
+      if (typeof G !== 'undefined' && G.vantaggio && G.vantaggio.team >= 0) aperto = true;
+    }
+    if (!aperto) {
+      return { errore: "G.vantaggio non si e' mai aperto entro 3 s (fischio immediato visto: " + fischioImmediato + ')' };
+    }
+    const savedX = G.vantaggio.x, savedY = G.vantaggio.y;
+    Object.assign(t.ball, { owner: s.tacklerIdx, x: savedX, y: savedY, vx: 0, vy: 0, z: 0, vz: 0 });
+    let vistoSfumato = false;
+    for (let i = 0; i < totale && !vistoSfumato; i++) {
+      t.simulate(1 / 60);
+      const ban = t.banner;
+      if (ban && ban.text && String(ban.text).toUpperCase().indexOf('SFUMATO') >= 0) vistoSfumato = true;
+    }
+    return {
+      ok: true, fischioImmediato, vantaggioApertoSubito: aperto, vistoSfumato,
+      statoFinale: t.state, areaProf: s.areaProf, areaSemi: s.areaSemi,
+    };
+  };
 }
 
 /* fa scorrere n fotogrammi e torna lo stato finale -- copre il fermo del
@@ -756,6 +958,25 @@ const CORRI_TRACCIA_RETROFERMO = (n, gkIdx, ciIdx) => `
   return { presa, minDistRegime, vivo, vivoFotogramma };
 })()`;
 
+/* I4b (onda di correzione della revisione finale, voce #107, 18
+   settembre 2026): traccia se uno STATO e' mai comparso durante gli n
+   fotogrammi, non solo lo stato FINALE -- serve alla PROVA 1
+   (RIGORE-DENTRO), riscritta perche' oggi dipende da un artefatto del
+   banco (I4, SEGUITO #108: CPU vera contro CPU vera batterebbe il
+   duello prima del fotogramma 200, e lo stato finale non sarebbe piu'
+   'freekick'). "La scena e' stata ATTRAVERSATA" resta vera in entrambi
+   i mondi. */
+const CORRI_TRACCIA_STATO = (n, stato) => `
+(function(){
+  const t = window.__test;
+  let visto = false;
+  for(let i=0;i<${n};i++){
+    t.simulate(1/60);
+    if(t.state==='${stato}') visto = true;
+  }
+  return { visto, statoFinale: t.state };
+})()`;
+
 const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a 7/11) con largo margine
 
 (async () => {
@@ -790,15 +1011,34 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
     /* ===================================================================
        PROVA 1 -- RIGORE-DENTRO. Controllo discriminante: fallo a x=60,
        y=centro campo. Dentro l'area vera E dentro la vecchia fascia a
-       ogni taglia: deve aprire il duello sia oggi sia dopo la cura. */
+       ogni taglia: deve aprire il duello sia oggi sia dopo la cura.
+       RISCRITTA (I4b, onda di correzione della revisione finale, voce
+       #107, 18 settembre 2026): l'asserzione era "lo stato al
+       fotogramma 200 e' freekick" -- vera oggi solo perche' il
+       SEGUITO #108 (il censimento vero: 25 strumenti, COMPRESO questo
+       stesso file, chiamano setCpuVsCpu PRIMA di startMatch) e'
+       ancora aperto. Con l'idioma sbagliato, G.cpu=[false,true] scritto
+       da startMatch annulla il setCpuVsCpu(true) di nuovaScenaFallo:
+       la squadra 0 (che difende) resta "umana" immobile, nessuno
+       conduce il duello, e lo stato resta 'freekick' fino al
+       fotogramma 200 per assenza di un avversario, non per la regola.
+       Se #108 venisse curato lato gioco (setCpuVsCpu a prova d'ordine,
+       proposta gia' in MANUALE.md), la squadra 0 diventerebbe CPU vera
+       e potrebbe battere il duello PRIMA del fotogramma 200 -- lo stato
+       FINALE non sarebbe piu' 'freekick', e questa prova cadrebbe senza
+       che la regola del rigore fosse cambiata di un bit. L'asserzione
+       diventa quindi "la scena freekick e' stata ATTRAVERSATA" (si
+       campiona t.state a ogni fotogramma, verde se 'freekick' e'
+       comparso almeno una volta): verde oggi, E robusta a un futuro
+       #108. */
     {
       const scena = await nuovaScenaFallo('dentro');
       if (scena.errore) { di(false, '1. RIGORE-DENTRO', 'BANCO: scena non costruita -- ' + scena.errore); }
       else {
-        const r = await pag.evaluate(CORRI(FOTOGRAMMI_ATTESA));
-        const ok = r.stato === 'freekick';
-        di(ok, '1. RIGORE-DENTRO -- fallo a x=' + scena.x + ',y=' + scena.y + ' (centro campo): parte il duello (CONTROLLO DISCRIMINANTE, verde anche pre-cura)',
-          'stato dopo il fallo: ' + r.stato + ' (atteso freekick) -- areaProf=' + scena.areaProf + ', areaSemi=' + scena.areaSemi + ', FH=' + scena.FH);
+        const r = await pag.evaluate(CORRI_TRACCIA_STATO(FOTOGRAMMI_ATTESA, 'freekick'));
+        const ok = r.visto;
+        di(ok, '1. RIGORE-DENTRO -- fallo a x=' + scena.x + ',y=' + scena.y + ' (centro campo): la scena freekick e\' stata ATTRAVERSATA (CONTROLLO DISCRIMINANTE, riscritta I4b: robusta a un futuro #108)',
+          'freekick vista: ' + r.visto + ' (atteso true)   stato al fotogramma ' + FOTOGRAMMI_ATTESA + ': ' + r.statoFinale + ' -- areaProf=' + scena.areaProf + ', areaSemi=' + scena.areaSemi + ', FH=' + scena.FH);
       }
     }
 
@@ -1218,6 +1458,108 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
           'VECCHIO -- motoreV letto: ' + casoVecchio.motoreVLetto + ' (atteso 0)   partita avviata: ' + casoVecchio.replayInCorso + ' (atteso false)   ' +
           'messaggio: "' + casoVecchio.messaggio + '"' +
           '\n         ATTUALE -- motoreV letto: ' + casoAttuale.motoreVLetto + ' (atteso 1 = MOTORE_V)   partita avviata: ' + casoAttuale.replayInCorso + ' (atteso true)');
+      }
+    }
+
+    /* ===================================================================
+       PROVA 14 -- CARD-NON-ATTRAVERSA (I2, onda di correzione della
+       revisione finale, voce #107, 18 settembre 2026). startMatch non
+       azzerava G.vantaggio: un sentinel con un cartellino pendente
+       ({team:-1,...,card}, lasciato da un vantaggio CONCESSO per intero
+       nella partita precedente) sopravviveva a startMatch, e
+       resetKickoff (dentro startMatch stesso) lo leggeva gia' con la
+       rosa NUOVA -- scaricaCardVantaggio() ammoniva un giocatore
+       innocente al fischio d'inizio della partita nuova. NATA ROSSA su
+       b837824 (prima di questa onda): zero banner cartellino atteso,
+       gialli [0,0] attesi, ma G.vantaggio sopravviveva a startMatch e
+       il banner CARTELLINO GIALLO compariva al kickoff. */
+    {
+      const scena = await pag.evaluate(({ seme, taglia }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.setCpuVsCpu(true);
+        t.startMatch(1, 1, { size: taglia });
+        return SCENA_CARD_NON_ATTRAVERSA_ESEGUI(taglia);
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+      if (scena.errore) { di(false, '14. CARD-NON-ATTRAVERSA', 'BANCO: scena non costruita -- ' + scena.errore); }
+      else {
+        const vantaggioAzzerato = scena.vantaggioDopoStartMatch === null;
+        const zeroGialli = scena.gialliDopo[0] === 0 && scena.gialliDopo[1] === 0;
+        const ok = vantaggioAzzerato && !scena.bannerCartellinoVisto && zeroGialli;
+        di(ok, "14. CARD-NON-ATTRAVERSA -- sentinel con cartellino pendente a fine partita: startMatch nuova, zero banner cartellino, gialli [0,0]",
+          'cartellino pendente a fine partita: idx ' + scena.sentinelCardFinePartita +
+          '   G.vantaggio dopo startMatch: ' + JSON.stringify(scena.vantaggioDopoStartMatch) + ' (atteso null)   ' +
+          'banner CARTELLINO visto al kickoff: ' + scena.bannerCartellinoVisto + ' (atteso false)   ' +
+          'gialli dopo il kickoff: [' + scena.gialliDopo.join(',') + '] (atteso [0,0])');
+      }
+    }
+
+    /* ===================================================================
+       PROVA 15 -- PALLA-FUORI-IN-FINESTRA (I3, onda di correzione della
+       revisione finale, voce #107, 18 settembre 2026). setScene
+       scaricava il cartellino pendente anche con una finestra ANCORA
+       VIVA: una palla spedita fuori campo durante la finestra faceva
+       sparire il cartellino SENZA fischio ne' punizione -- il 5,1%
+       "silenzioso" della contabilita' arbitrale del compito 3, mai
+       spiegato allora. Dopo la cura, la palla ferma vera da' l'esito
+       SFUMATO -- fischio ritardato dal punto salvato, NIENTE battuta,
+       cartellino (se dovuto) al fischio -- perche' pallaFuori()
+       intercetta la finestra viva PRIMA di costruire G.battuta. NATA
+       ROSSA su b837824: nessun banner SFUMATO, la scena passava per
+       'battuta', il cartellino spariva senza salire in t.disciplina.
+       gialli. */
+    {
+      const scena = await pag.evaluate(({ seme, taglia }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.setCpuVsCpu(true);
+        t.startMatch(1, 1, { size: taglia, sponde: 'campo' });
+        return SCENA_PALLA_FUORI_IN_FINESTRA_ESEGUI();
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+      if (scena.errore) { di(false, '15. PALLA-FUORI-IN-FINESTRA', 'BANCO: scena non costruita -- ' + scena.errore); }
+      else {
+        const okCard = scena.cardAttesa == null || scena.gialliDopo === scena.gialliPrima + 1;
+        const ok = scena.vistoSfumato && !scena.battutaVista && scena.statoFinale === 'play' && okCard;
+        di(ok, "15. PALLA-FUORI-IN-FINESTRA -- palla spedita fuori con la finestra ancora viva: fischio dal punto salvato, NIENTE battuta, cartellino al fischio",
+          'banner SFUMATO visto: ' + scena.vistoSfumato + ' (atteso true)   scena battuta vista: ' + scena.battutaVista + ' (atteso false)   ' +
+          'stato finale: ' + scena.statoFinale + ' (atteso play, punizione rapida: il punto e\' lontano da ogni area)   ' +
+          'cartellino atteso: idx ' + scena.cardAttesa + '   gialli squadra ' + scena.foulTeam + ': ' + scena.gialliPrima + ' -> ' + scena.gialliDopo + ' (atteso +1 se il cartellino era dovuto)');
+      }
+    }
+
+    /* ===================================================================
+       PROVA 16 -- VANTAGGIO-IN-AREA (I5, onda di correzione della
+       revisione finale, voce #107, 18 settembre 2026). CONTROLLO
+       DISCRIMINANTE, nasce verde: non esercita codice nuovo, dichiara un
+       comportamento che il codice aveva gia' -- checkSlideContact apre
+       la finestra ANCHE per un fallo dentro l'area (nessun dentroArea()
+       sulla riga che apre G.vantaggio), e la decisione punizione-
+       immediata-vs-rigore si prende SOLO alla risoluzione
+       (eseguiSfumato, inArea=dentroArea(vTeam,vx,vy)), mai al momento
+       del fallo. SCENA_FALLO('dentro') e' la STESSA scena di PROVA 1
+       (x=60, y=centro campo: dentro l'area vera a ogni taglia). Due
+       condanne insieme: niente fischio immediato prima che la finestra
+       si apra (che copre anche l'attesa del kickoff, come tutte le
+       altre scene del vantaggio); se la conservazione si perde (come
+       PROVA 8), il fischio ritardato deve dare RIGORE dal punto --
+       scena 'freekick', perche' il punto e' dentro l'area. */
+    {
+      const totale = 200;
+      const scena = await pag.evaluate(({ seme, taglia, totale }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.setCpuVsCpu(true);
+        t.startMatch(1, 1, { size: taglia });
+        return SCENA_VANTAGGIO_AREA_ESEGUI(totale);
+      }, { seme: SEME, taglia: TAGLIA_BANCO, totale }).catch(e => ({ errore: e.message }));
+      if (scena.errore) { di(false, '16. VANTAGGIO-IN-AREA', 'BANCO: scena non costruita -- ' + scena.errore); }
+      else {
+        const okNiente = !scena.fischioImmediato && scena.vantaggioApertoSubito;
+        const okRigore = scena.vistoSfumato && scena.statoFinale === 'freekick';
+        const ok = okNiente && okRigore;
+        di(ok, "16. VANTAGGIO-IN-AREA -- fallo DENTRO l'area con azione che prosegue: niente rigore immediato, finestra aperta; se sfuma, RIGORE dal punto (CONTROLLO DISCRIMINANTE)",
+          'fischio immediato prima che la finestra si aprisse: ' + scena.fischioImmediato + ' (atteso false)   finestra aperta: ' + scena.vantaggioApertoSubito + ' (atteso true)   ' +
+          'banner SFUMATO visto: ' + scena.vistoSfumato + '   stato finale: ' + scena.statoFinale + " (atteso freekick, il punto e' dentro l'area: areaProf=" + scena.areaProf + ', areaSemi=' + scena.areaSemi + ')');
       }
     }
 

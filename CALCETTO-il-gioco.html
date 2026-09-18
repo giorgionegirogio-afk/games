@@ -10834,6 +10834,15 @@ function startMatch(mode, diff, opts){
   G.kickTeam = dado()<0.5?0:1;
   G.score=[0,0]; G.timeLeft=durataPartita(); G.golden=false;
   G.goldenT=0; G.rigori=null;
+  /* I2 (onda di correzione della revisione finale, voce #107, 18
+     settembre 2026): G.vantaggio non si azzerava qui. Un sentinel con
+     un cartellino pendente ({team:-1,...,card}, lasciato da un
+     vantaggio CONCESSO per intero nella partita PRECEDENTE) sopravviveva
+     a startMatch, e resetKickoff (sotto, via setupPlayers()) lo leggeva
+     gia' con la rosa NUOVA: scaricaCardVantaggio() ammoniva un
+     giocatore innocente al fischio d'inizio della partita nuova, con lo
+     stesso indice ma un titolare diverso (misurato). */
+  G.vantaggio=null;
   G.stats={ tiri:[0,0], perfetti:[0,0], rubate:[0,0], falli:[0,0], parate:[0,0], gialli:[0,0], espulsi:[0,0], pallonetti:[0,0], volee:[0,0], possesso:[0,0], inPorta:[0,0], filtranti:[0,0], cross:[0,0], rovesciate:[0,0] };
   G.stats.acciacchi=[0,0];
   /* i tre contatori della panchina rinascono col resto della partita.
@@ -11154,7 +11163,16 @@ function setScene(s){
      setScene: e' li' che si scarica (mai qui, e mai dentro addGoal --
      la festa del gol tace su ogni banner per legge di questo file,
      vedi "la striscia degli eventi tace sul gol" in addGoal). */
-  if(G.vantaggio && (s==='battuta'||s==='freekick')) scaricaCardVantaggio();
+  /* I3c (onda di correzione della revisione finale, voce #107, 18
+     settembre 2026): la scarica qui resta SOLO per il sentinel
+     (G.vantaggio.team<0, il cartellino in differita di un vantaggio
+     gia' CONCESSO per intero) -- una finestra ANCORA VIVA (team>=0) non
+     arriva mai fin qui con G.battuta da costruire: pallaFuori() (I3b,
+     ~19428) la intercetta PRIMA, con l'esito SFUMATO vero. Senza questa
+     guardia, un pallone spedito fuori campo mentre il vantaggio era
+     ancora aperto faceva scomparire il cartellino pendente SENZA
+     fischio ne' punizione. */
+  if(G.vantaggio && G.vantaggio.team<0 && (s==='battuta'||s==='freekick')) scaricaCardVantaggio();
   if(s!=='end') G.frozen=false;
   if(s!=='goal'){ G.confScreen.length=0; G.confPend=null; G.confPop=null; }
   /* durante il gol il riquadro del tutorial sparisce: la scritta e la
@@ -17024,69 +17042,14 @@ function step(){
       const vTeam=G.vantaggio.team, vDir=vTeam===0?1:-1;
       const conserva = squadraDelPallone()===vTeam && (G.ball.x-G.vantaggio.x)*vDir>0;
       if(!conserva){
-        /* VANTAGGIO SFUMATO: il fischio, ritardato, torna al punto
-           SALVATO -- non a dove sono finiti i giocatori nel frattempo.
-           startFreeKick non porta mai una posizione (e' un duello dal
-           dischetto, la stessa distanza per rigore e punizione: firma
-           verificata prima di scrivere questo attrezzo), quindi la
-           palla si riporta al punto salvato PRIMA di decidere -- cosi'
-           anche punizioneRapida (che legge solo il giocatore che le si
-           passa, mai un punto per conto suo) parte dal posto giusto.
-           IL CARTELLINO SI SCARICA SUBITO, PRIMA del banner (rilievo
-           misurato scrivendo il banco: infliggiCartellino chiama
-           showBanner('CARTELLINO GIALLO',...), e se girasse DOPO
-           cancellerebbe "VANTAGGIO SFUMATO" nello stesso fotogramma --
-           l'ultimo banner scritto e' quello che si vede. E' la STESSA
-           legge che governava gia' questo file prima del compito 3:
-           anche li' infliggiCartellino girava PRIMA del banner del
-           fallo, mai dopo, perche' il banner dell'AZIONE ("FALLO
-           CATTIVO!"/"PUNIZIONE!") vinceva sempre su quello del
-           cartellino. startFreeKick chiama scaricaCardVantaggio() da
-           solo (dentro setScene, sul ramo 'freekick'): chiamarla gia'
-           qui, prima, la rende innocua a lui -- G.vantaggio e' gia'
-           null quando setScene la richiede. */
-        const vx=G.vantaggio.x, vy=G.vantaggio.y;
-        const foulTeam=1-vTeam;
-        const inArea=dentroArea(vTeam, vx, vy);
-        const cumulo=G.stats.falli[foulTeam]>=3;
-        scaricaCardVantaggio();
-        const b=G.ball;
-        b.owner=-1; b.x=vx; b.y=vy; b.z=0; b.vz=0; b.vx=0; b.vy=0;
-        b.curve=0; b.perfectT=0; b.saveRolled=false; b.passTo=-1;
-        showBanner('VANTAGGIO SFUMATO', TEAMCOL[vTeam], 1.2);
-        Audio5.whistle(false);
-        if(inArea || cumulo){
-          startFreeKick(vTeam, foulTeam);
-        }else{
-          /* punizioneRapida vuole un giocatore vero: il compagno offeso
-             piu' vicino al punto salvato -- il portatore originale e'
-             altrove ormai, la partita e' andata avanti fino a qui. */
-          let fallito=null, fd=1e9;
-          for(const q of diMovimentoInCampo(vTeam)){
-            const d=len(q.x-vx,q.y-vy);
-            if(d<fd){ fd=d; fallito=q; }
-          }
-          if(fallito){
-            /* F3 (correzione di revisione, voce #107 compito 3): la
-               "punizione dal punto" reggeva un solo fotogramma -- il
-               sostituto restava dov'era (fd unita' dal punto salvato,
-               non zero: la partita e' andata avanti durante la finestra)
-               e punizioneRapida non sposta mai b.x/b.y, quindi la palla
-               restava al punto salvato per UN fotogramma, poi la molla
-               del dribbling di updateBall (bersaglio o.x+o.fx*avanti) la
-               trascinava verso il sostituto vero (misurato: ~38 unita' in
-               0,33 s). Il sostituto va CO-LOCATO sul punto PRIMA della
-               battuta -- lo stesso pattern di posaBattuta col suo
-               battitore, ma senza l'offset di CARRY_DIST: qui la palla
-               non si sposta rispetto al giocatore, quindi il giocatore
-               deve arrivare esattamente dove sta gia' la palla.
-               clampPlayer riusa il confine di campo che il moto normale
-               gia' rispetta -- nessun secondo clamp scritto a mano. */
-            fallito.x=vx; fallito.y=vy; fallito.vx=0; fallito.vy=0;
-            clampPlayer(fallito);
-            punizioneRapida(fallito, null);
-          }
-        }
+        /* I3a (onda di correzione della revisione finale, voce #107, 18
+           settembre 2026): questo ramo viveva qui, inline -- ESTRATTO in
+           eseguiSfumato() (vedi la funzione, fra punizioneRapida e
+           checkSlideContact) perche' pallaFuori() ha bisogno dello
+           STESSO esito quando la palla esce dal campo con una finestra
+           ancora viva (I3b): il corpo non e' cambiato di un carattere,
+           solo il posto dove vive. */
+        eseguiSfumato(vTeam, G.vantaggio.x, G.vantaggio.y);
       } else if(G.vantaggio.t>=VANT_T){
         /* VANTAGGIO: la finestra intera e' passata in conservazione.
            Il fallo e' perdonato; il cartellino dovuto (se c'e') resta
@@ -18273,12 +18236,20 @@ function infliggiCartellino(p){
 /* IL CARTELLINO IN DIFFERITA (voce #107, compito 3): infligge il
    cartellino pendente di un vantaggio, se c'e' (G.vantaggio.card,
    l'indice del giocatore da ammonire -- null quando il fallo perdonato
-   non lo meritava), e chiude comunque lo stato. Chiamata da tre punti
-   -- checkSlideContact (un fallo nuovo chiude subito uno vecchio
-   pendente), lo scioglimento della finestra dentro step() (sfumato o,
-   in differita, alla prossima palla ferma) e resetKickoff (la ripresa,
-   gol compreso) -- ed e' sicura da richiamare anche quando non c'e'
-   niente da scaricare: G.vantaggio finisce sempre null. */
+   non lo meritava), e chiude comunque lo stato.
+   RETTIFICA (m7, onda di correzione della revisione finale, voce #107,
+   18 settembre 2026): "tre punti" era scaduto gia' prima di questa
+   onda -- i siti VERI sono CINQUE: resetKickoff (il fischio d'inizio o
+   la ripresa, gol compreso), setScene (la prima palla ferma vera, oggi
+   guardata da G.vantaggio.team<0 -- I3c, solo il sentinel),
+   checkSlideContact DUE VOLTE (il fischio immediato su una finestra
+   gia' viva, e la micro-coda che scarica il sentinel prima di aprirne
+   uno nuovo) ed eseguiSfumato() -- il quinto sito, che PRIMA di I3a era
+   inline dentro step() ed e' oggi RAGGIUNGIBILE DA DUE chiamanti
+   (step(), quando la conservazione si perde da sola, e pallaFuori(),
+   quando la palla esce dal campo con la finestra ancora viva) invece
+   che da uno solo. E' sicura da richiamare anche quando non c'e' niente
+   da scaricare: G.vantaggio finisce sempre null. */
 function scaricaCardVantaggio(){
   if(G.vantaggio && G.vantaggio.card!=null && G.players[G.vantaggio.card]){
     infliggiCartellino(G.players[G.vantaggio.card]);
@@ -18307,6 +18278,76 @@ function punizioneRapida(fallito, autore){
   }
   G.freeze=0.16;
   Audio5.beep(360);
+}
+
+/* ESEGUISFUMATO (I3a, onda di correzione della revisione finale, voce
+   #107, 18 settembre 2026): ESTRATTA da step() -- era il ramo
+   "if(!conserva)" del blocco di valutazione del vantaggio, carattere
+   per carattere -- perche' pallaFuori() (I3b, ~19428) ne ha bisogno
+   anche lei: una finestra ANCORA VIVA che incontra la palla ferma (il
+   pallone esce dal campo) e' un altro modo di perdere la conservazione,
+   non solo "l'azione si e' fermata dentro step()".
+   VANTAGGIO SFUMATO: il fischio, ritardato, torna al punto SALVATO --
+   non a dove sono finiti i giocatori nel frattempo. startFreeKick non
+   porta mai una posizione (e' un duello dal dischetto, la stessa
+   distanza per rigore e punizione: firma verificata prima di scrivere
+   questo attrezzo), quindi la palla si riporta al punto salvato PRIMA
+   di decidere -- cosi' anche punizioneRapida (che legge solo il
+   giocatore che le si passa, mai un punto per conto suo) parte dal
+   posto giusto.
+   IL CARTELLINO SI SCARICA SUBITO, PRIMA del banner (rilievo misurato
+   scrivendo il banco: infliggiCartellino chiama showBanner('CARTELLINO
+   GIALLO',...), e se girasse DOPO cancellerebbe "VANTAGGIO SFUMATO"
+   nello stesso fotogramma -- l'ultimo banner scritto e' quello che si
+   vede. E' la STESSA legge che governava gia' questo file prima del
+   compito 3: anche li' infliggiCartellino girava PRIMA del banner del
+   fallo, mai dopo, perche' il banner dell'AZIONE ("FALLO CATTIVO!"/
+   "PUNIZIONE!") vinceva sempre su quello del cartellino. startFreeKick
+   chiama scaricaCardVantaggio() da solo (dentro setScene, sul ramo
+   'freekick'): chiamarla gia' qui, prima, la rende innocua a lui --
+   G.vantaggio e' gia' null quando setScene la richiede. */
+function eseguiSfumato(vTeam, vx, vy){
+  const foulTeam=1-vTeam;
+  const inArea=dentroArea(vTeam, vx, vy);
+  const cumulo=G.stats.falli[foulTeam]>=3;
+  scaricaCardVantaggio();
+  const b=G.ball;
+  b.owner=-1; b.x=vx; b.y=vy; b.z=0; b.vz=0; b.vx=0; b.vy=0;
+  b.curve=0; b.perfectT=0; b.saveRolled=false; b.passTo=-1;
+  showBanner('VANTAGGIO SFUMATO', TEAMCOL[vTeam], 1.2);
+  Audio5.whistle(false);
+  if(inArea || cumulo){
+    startFreeKick(vTeam, foulTeam);
+  }else{
+    /* punizioneRapida vuole un giocatore vero: il compagno offeso
+       piu' vicino al punto salvato -- il portatore originale e'
+       altrove ormai, la partita e' andata avanti fino a qui. */
+    let fallito=null, fd=1e9;
+    for(const q of diMovimentoInCampo(vTeam)){
+      const d=len(q.x-vx,q.y-vy);
+      if(d<fd){ fd=d; fallito=q; }
+    }
+    if(fallito){
+      /* F3 (correzione di revisione, voce #107 compito 3): la
+         "punizione dal punto" reggeva un solo fotogramma -- il
+         sostituto restava dov'era (fd unita' dal punto salvato,
+         non zero: la partita e' andata avanti durante la finestra)
+         e punizioneRapida non sposta mai b.x/b.y, quindi la palla
+         restava al punto salvato per UN fotogramma, poi la molla
+         del dribbling di updateBall (bersaglio o.x+o.fx*avanti) la
+         trascinava verso il sostituto vero (misurato: ~38 unita' in
+         0,33 s). Il sostituto va CO-LOCATO sul punto PRIMA della
+         battuta -- lo stesso pattern di posaBattuta col suo
+         battitore, ma senza l'offset di CARRY_DIST: qui la palla
+         non si sposta rispetto al giocatore, quindi il giocatore
+         deve arrivare esattamente dove sta gia' la palla.
+         clampPlayer riusa il confine di campo che il moto normale
+         gia' rispetta -- nessun secondo clamp scritto a mano. */
+      fallito.x=vx; fallito.y=vy; fallito.vx=0; fallito.vy=0;
+      clampPlayer(fallito);
+      punizioneRapida(fallito, null);
+    }
+  }
 }
 
 /* ---------- contatto della scivolata ---------- */
@@ -18443,6 +18484,19 @@ function checkSlideContact(p){
            se stessa (riga 18242), un'unica convenzione per "un
            cartellino e' dovuto". */
         if(G.vantaggio && G.vantaggio.card!=null) scaricaCardVantaggio();
+        /* I5 (onda di correzione della revisione finale, voce #107, 18
+           settembre 2026): la finestra si apre ANCHE per un fallo
+           DENTRO l'area -- questa riga non guarda mai dentroArea(), a
+           differenza del ramo del fischio immediato qui sopra. Un
+           rigore sfumato arriva quindi con un ritardo di 0,85-2,85 s
+           (VANT_VALUTA/VANT_T meno lo stordimento), mai un fischio
+           subito: e' voluto, lo stesso vantaggio che vale ovunque nel
+           campo. Misurato (sonda dedicata, 21 finestre aperte da un
+           fallo in area): ~0 casi su 21 restano PIENI -- la geometria
+           di "restare piu' avanti mentre si resta ancora dentro l'area"
+           e' una striscia stretta, non una regola nuova che favorisce
+           l'area. Vedi VANTAGGIO-IN-AREA in strumenti/_q-regole.js, e
+           la frase gemella in MANUALE.md. */
         G.vantaggio = { team:carrier.team, x:p.x, y:p.y, t:-(carrier.recover>0?carrier.recover:0), card: cattivo?G.players.indexOf(p):null };
         return;
       }
@@ -19171,10 +19225,17 @@ function tentaPresa(p,b,disteso){
      ramo gira OGNI fotogramma finche' il pallone e' a portata (nessun
      kickCd nuovo): tentaPresa e' chiamata prima di updateBall (vedi
      step(), updatePlayer prima di updateBall), quindi ricaccia il
-     pallone appena fuori dal cerchio della RACCOLTA (KICK_R*0.8=20,8 <
-     P_R+B_R=21) PRIMA che quella sezione abbia mai la possibilita' di
-     leggerlo -- "puo' sempre giocarla coi piedi" resta vero altrove nel
-     file (un compagno, un avversario, un pallone libero qualunque), qui
+     pallone appena fuori dal cerchio della RACCOLTA A OGNI TAGLIA (C1,
+     onda di correzione della revisione finale, voce #107, 18 settembre
+     2026: il raggio adesso e' Math.max(P_R+B_R, KICK_R*0.8+0.5), vedi
+     sotto -- PRIMA di questa cura era solo P_R+B_R*dist_, vero a 5/7 con
+     un margine di 0,2 unita' (21 contro KICK_R*0.8=20,8) ma FALSO a 11,
+     dove CORPI da' P_R+B_R=7,5: la palla respinta restava DENTRO il
+     cerchio della raccolta e il portiere la riprendeva un fotogramma
+     dopo per la via generica, misurato al fotogramma 99) PRIMA che
+     quella sezione abbia mai la possibilita' di leggerlo -- "puo'
+     sempre giocarla coi piedi" resta vero altrove nel file (un
+     compagno, un avversario, un pallone libero qualunque), qui
      e' semplicemente un respingente, non un ricevitore.
      IL QUASI FERMO, MISURATO (revisione, voce #107, correzione compito
      2). Un retropassaggio molto lento (velocita' 40, ben sotto
@@ -19192,7 +19253,13 @@ function tentaPresa(p,b,disteso){
   if(b.toccoPiede===true && lt>=0 && lt!==ki && G.players[lt] && G.players[lt].team===p.team){
     const d=Math.max(0.01, len(dx,dy));
     const nx=dx/d, ny=dy/d;
-    const raggio=(P_R+B_R)*dist_;
+    /* C1 (onda di correzione della revisione finale, voce #107): il
+       pavimento KICK_R*0.8+0.5 garantisce l'uscita dal cerchio della
+       raccolta generica (updateBall, ~18769) a OGNI taglia -- non
+       scalato da dist_, perche' e' un fatto sulla raccolta generica,
+       non sul tuffo del portiere (dettaglio sopra, in testa alla
+       funzione). */
+    const raggio=Math.max((P_R+B_R)*dist_, KICK_R*0.8+0.5);
     b.x=p.x+nx*raggio; b.y=p.y+ny*raggio;
     const dot=b.vx*nx+b.vy*ny;
     if(dot<0){ b.vx-=1.6*dot*nx; b.vy-=1.6*dot*ny; }
@@ -19426,6 +19493,22 @@ function duraBattuta(){
    pulizia di ballOverBar, poco sotto), apre G.battuta, piazza chi batte
    (posaBattuta) e ferma il gioco un istante. */
 function pallaFuori(tipo, team, x, y){
+  /* I3b (onda di correzione della revisione finale, voce #107, 18
+     settembre 2026): una finestra di vantaggio ANCORA VIVA (G.vantaggio.
+     team>=0) che incontra la palla ferma non deve mai scivolare in una
+     rimessa qualunque -- il fallo originario vince sulla rimessa, come
+     la regola vera. PRIMA di questa guardia, la palla che usciva dal
+     campo durante la finestra arrivava a setScene('battuta'), che
+     scaricava il cartellino pendente in silenzio (nessun dentroArea, il
+     vecchio guardiano li' era solo "G.vantaggio", vedi I3c) -- il 5,1%
+     "silenzioso" della contabilita' arbitrale del compito 3, mai
+     spiegato allora. eseguiSfumato() e' lo STESSO esito che step()
+     applica quando la conservazione si perde da sola (I3a): fischio
+     ritardato dal punto SALVATO, mai una rimessa dal punto di uscita. */
+  if(G.vantaggio && G.vantaggio.team>=0){
+    eseguiSfumato(G.vantaggio.team, G.vantaggio.x, G.vantaggio.y);
+    return;
+  }
   const b=G.ball;
   b.z=0; b.vz=0; b.curve=0; b.perfectT=0; b.passTo=-1; b.crossTo=-1; b.saveRolled=false;
   b.vx=0; b.vy=0;
