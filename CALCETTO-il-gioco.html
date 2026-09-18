@@ -18389,6 +18389,19 @@ function checkSlideContact(p){
            controlli (VANT_VALUTA/VANT_T) restano invariati carattere per
            carattere -- la finestra adesso misura MOTO LIBERO dal momento
            in cui il fallito torna in piedi, non dal momento del fallo. */
+        /* MICRO-CODA (voce #107, micro-coda del compito 3, 18 settembre
+           2026): il ramo qui sopra si arriva quando G.vantaggio e' null
+           OPPURE il sentinel {team:-1,...,card} lasciato da VANT_T (riga
+           17057) -- W1 (chiusura arbitrale 3b) gli fa aprire la propria
+           finestra invece di fischiare subito, ma l'assegnazione qui
+           sotto SOVRASCRIVE G.vantaggio senza mai controllare se portava
+           un cartellino dovuto: quel cartellino spariva in silenzio,
+           mai inflitto. card!=null, non la verita' di card: l'indice di
+           un giocatore puo' essere zero, e zero e' falso in JavaScript
+           -- la stessa guardia che scaricaCardVantaggio() usa gia' su
+           se stessa (riga 18242), un'unica convenzione per "un
+           cartellino e' dovuto". */
+        if(G.vantaggio && G.vantaggio.card!=null) scaricaCardVantaggio();
         G.vantaggio = { team:carrier.team, x:p.x, y:p.y, t:-(carrier.recover>0?carrier.recover:0), card: cattivo?G.players.indexOf(p):null };
         return;
       }

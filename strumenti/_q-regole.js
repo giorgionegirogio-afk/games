@@ -140,6 +140,29 @@
          Verde dopo W1.
    Il file e' adesso a undici prove.
 
+   MICRO-CODA (voce #107, micro-coda del compito 3, 18 settembre 2026).
+   La chiusura arbitrale 3b ha lasciato un dubbio dichiarato (i Dubbi del
+   suo rapporto): quando G.vantaggio porta il sentinel del cartellino in
+   differita ({team:-1,...,card}, parcheggiato dopo un vantaggio concesso
+   per intero) e un secondo fallo apre una finestra NUOVA (W1 lo permette,
+   giustamente), l'assegnazione che costruisce il nuovo G.vantaggio
+   SOVRASCRIVE il sentinel senza mai scaricarlo: il cartellino dovuto del
+   PRIMO fallo sparisce in silenzio, mai inflitto. CURA (attrezzo
+   strumenti/_t-card-non-si-perde.js): PRIMA di costruire il nuovo G.
+   vantaggio, se quello vecchio porta un cartellino pendente (card!=null,
+   non la sua verita': un indice puo' essere zero) lo si scarica con
+   scaricaCardVantaggio() -- la stessa funzione, nessuna fonte nuova. Il
+   file guadagna una dodicesima prova:
+     12. CARD-NON-SI-PERDE -- vantaggio concesso per intero con un
+         cartellino pendente, POI un secondo fallo che apre la propria
+         finestra: il giallo del PRIMO fallo deve essere stato inflitto
+         (disciplina di squadra +1) E la finestra nuova deve esistere
+         davvero (G.vantaggio.team>=0) -- le due cose insieme, non l'una
+         al posto dell'altra. NATA ROSSA sulla chiusura arbitrale 3b
+         (832cff2): la finestra nuova si apre gia' (W1), ma il cartellino
+         del primo fallo non arriva mai. Verde dopo la cura.
+   Il file e' adesso a dodici prove.
+
    ZERO dado() NUOVI. Le scene si scrivono direttamente sullo stato del
    gioco (G.players/G.ball, la stessa tecnica di _q-battute.js) e il
    fallo da scivolata si ottiene con un'entrata DA DIETRO: la vittima
@@ -589,6 +612,54 @@ function INIETTA_SCENE() {
       statoFinale: t.state,
     };
   };
+  /* SCENA_CARD_NON_SI_PERDE_ESEGUI (micro-coda del compito 3, voce #107,
+     18 settembre 2026): il dubbio dichiarato dalla chiusura arbitrale
+     3b, chiuso qui. STESSA costruzione di SCENA_GRAZIA_DOPO_CARD_ESEGUI
+     fino al sentinel confermato (un primo fallo da giallo, sostenuto
+     fino a VANT_T, il cartellino resta pendente nel sentinel {team:-1,
+     ...,card}) -- ma la misura che discrimina non e' piu' se la seconda
+     finestra si apre (W1 lo garantisce gia', chiusura arbitrale 3b): e'
+     se il cartellino pendente del PRIMO fallo viene inflitto PRIMA che
+     il secondo fallo lo sovrascriva. La disciplina di squadra
+     (t.disciplina.gialli[foulTeam]) e' l'unico testimone che conta:
+     scaricaCardVantaggio() chiama infliggiCartellino sincronamente,
+     nello stesso fotogramma in cui il secondo fallo apre la propria
+     finestra -- se il conteggio non e' salito, il cartellino e' morto
+     sovrascritto. */
+  window.SCENA_CARD_NON_SI_PERDE_ESEGUI = function () {
+    const t = window.__test;
+    const s1 = SCENA_FALLO('lontano');
+    if (s1.errore) return s1;
+    let aperto1 = false;
+    for (let i = 0; i < 180 && !aperto1; i++) {
+      t.simulate(1 / 60);
+      if (typeof G !== 'undefined' && G.vantaggio && G.vantaggio.team >= 0) aperto1 = true;
+    }
+    if (!aperto1) return { errore: "G.vantaggio (primo fallo) non si e' mai aperto entro 3 s" };
+    if (G.vantaggio.card == null) return { errore: 'il primo fallo scriptato non ha prodotto un cartellino dovuto (card null)' };
+    const foulTeam = 1 - G.vantaggio.team;
+    const sost = SOSTIENI_AVANTI(s1.vittimaIdx, 230);
+    if (!sost.vistoVantaggio) return Object.assign({ errore: "il primo vantaggio non e' mai stato concesso entro 230 fotogrammi" }, sost);
+    const sentinelDopoPrimo = (typeof G !== 'undefined' && G.vantaggio) ? Object.assign({}, G.vantaggio) : null;
+    if (!sentinelDopoPrimo || sentinelDopoPrimo.team !== -1) {
+      return { errore: "atteso il sentinel {team:-1,...} dopo il vantaggio concesso, trovato: " + JSON.stringify(sentinelDopoPrimo) };
+    }
+    const gialliPrimaDelSecondo = t.disciplina.gialli[foulTeam];
+    const s2 = SCENA_FALLO('lontano');
+    if (s2.errore) return s2;
+    let aperto2 = false;
+    for (let i = 0; i < 180 && !aperto2; i++) {
+      t.simulate(1 / 60);
+      if (typeof G !== 'undefined' && G.vantaggio && G.vantaggio.team >= 0) aperto2 = true;
+    }
+    const vantaggioDopo2 = (typeof G !== 'undefined' && G.vantaggio) ? Object.assign({}, G.vantaggio) : null;
+    const gialliDopoIlSecondo = t.disciplina.gialli[foulTeam];
+    return {
+      ok: true, foulTeam, sentinelCardDopoPrimo: sentinelDopoPrimo.card,
+      gialliPrimaDelSecondo, gialliDopoIlSecondo,
+      aperto2, vantaggioDopo2, statoFinale: t.state,
+    };
+  };
 }
 
 /* fa scorrere n fotogrammi e torna lo stato finale -- copre il fermo del
@@ -1013,6 +1084,39 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
           '   seconda finestra aperta (team>=0): ' + scena.aperto2 + ' (atteso true)   ' +
           'fischio immediato prima di aprire (banner FALLO/PUNIZIONE): ' + scena.fischioPrimaDiAprire + ' (atteso false)   ' +
           'G.vantaggio dopo il secondo fallo: ' + JSON.stringify(scena.vantaggioDopo2) + '   stato finale: ' + scena.statoFinale);
+      }
+    }
+
+    /* ===================================================================
+       PROVA 12 -- CARD-NON-SI-PERDE (micro-coda del compito 3, voce
+       #107, 18 settembre 2026). Il dubbio dichiarato dalla chiusura
+       arbitrale 3b: quando un secondo fallo apre una finestra NUOVA
+       sopra il sentinel del cartellino in differita, l'assegnazione che
+       costruisce il nuovo G.vantaggio sovrascriveva il sentinel senza
+       mai scaricarlo -- il cartellino del PRIMO fallo spariva in
+       silenzio. NATA ROSSA sulla chiusura arbitrale 3b (832cff2): la
+       finestra nuova si apre gia' (W1), ma la disciplina di squadra non
+       sale mai. Verde dopo la cura (scaricaCardVantaggio() PRIMA di
+       sovrascrivere il vecchio G.vantaggio). */
+    {
+      const scena = await pag.evaluate(({ seme, taglia }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.setCpuVsCpu(true);
+        t.startMatch(1, 1, { size: taglia });
+        return SCENA_CARD_NON_SI_PERDE_ESEGUI();
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+      if (scena.errore) { di(false, '12. CARD-NON-SI-PERDE', 'BANCO: scena non costruita -- ' + scena.errore); }
+      else {
+        const cardInflitto = scena.gialliDopoIlSecondo === scena.gialliPrimaDelSecondo + 1;
+        const finestraNuova = scena.aperto2 && !!scena.vantaggioDopo2 && scena.vantaggioDopo2.team >= 0;
+        const ok = cardInflitto && finestraNuova;
+        di(ok, "12. CARD-NON-SI-PERDE -- secondo fallo su un sentinel col cartellino pendente: il giallo del primo fallo deve essere inflitto E la finestra nuova deve esistere",
+          'cartellino pendente dopo il primo vantaggio: idx ' + scena.sentinelCardDopoPrimo +
+          '   gialli squadra ' + scena.foulTeam + ' prima del secondo fallo: ' + scena.gialliPrimaDelSecondo +
+          ' -> dopo: ' + scena.gialliDopoIlSecondo + ' (atteso +1)   ' +
+          'finestra nuova aperta (team>=0): ' + finestraNuova + ' (atteso true)   ' +
+          'G.vantaggio dopo il secondo fallo: ' + JSON.stringify(scena.vantaggioDopo2));
       }
     }
 
