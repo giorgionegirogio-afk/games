@@ -1,6 +1,6 @@
 /* =====================================================================
    _q-accessibile.js — LE ETICHETTE HANNO UN GIUDICE CHE LE ASPETTA
-   (voce #112, compiti 1, 2, 3 e 4 + correzione revisione compito 2,
+   (voce #112, compiti 1, 2, 3, 4 e 5 + correzione revisione compito 2,
    ramo voce-112-spiccioli-ux).
 
    IL PERCHE'. Il cantiere #112 chiude l'onda A del mandato con sei cure
@@ -36,7 +36,20 @@
    4): SAVE.sott non esiste ancora, il fischio d'inizio non produce
    nessun banner.
 
-   LE SEI PROVE:
+   IL COMPITO 5 aggiunge la settima: ANELLO-FIATO, l'arco di quarta
+   tinta (verde-lime) che anelloComandato(p) disegna sulla STESSA
+   ellisse dell'anello ambra, proporzionale a p.fiato/100. anelloComandato
+   e' una funzione di primo livello del gioco (bare, come showBanner e
+   buzz nelle prove sopra): si chiama diretta su un giocatore finto,
+   FUORI dal giro di rendering vero e con un trasporto identico a quello
+   che il gioco applica a inizio fotogramma (ctx.setTransform(DPR,...)),
+   cosi' la misura non dipende dalla camera di gioco (G.view/S2/Ax/Ay)
+   ne' da nessuno stato di partita — e' un test della funzione di
+   disegno, non uno screenshot della scena. Nasce rossa sul commit
+   3d8ff21 (base del compito 5): nessun pixel della quarta tinta esiste
+   sull'ellisse, a nessun fiato.
+
+   LE SETTE PROVE:
      1. ARIA — apre IMPOSTAZIONI (gearBtn -> PREFERENZE, la via vera del
         dito), e per ognuno dei cinque .voce.sw (btnSetAudio/Vib/Moto/
         Dalt/Moviola) verifica che aria-pressed esista E combaci con
@@ -112,17 +125,35 @@
         sottotitolo() e' un canale IN PIU', mai un filtro su showBanner.
         Condanna sul gioco di oggi (commit 92dc589, base del compito 4):
         SAVE.sott non esiste, il fischio d'inizio non produce banner.
+     7. ANELLO-FIATO (voce #112, compito 5) — SAVE.moto=0 ferma pl a 0,5
+        (arx/ary diventano numeri fissi, niente G.pulse da inseguire).
+        Un giocatore finto {x,y,fx,fy,fiato} si disegna con
+        anelloComandato(finto) chiamata BARE, dopo aver riportato ctx a
+        ctx.setTransform(DPR,0,0,DPR,0,0) (lo stesso trasporto che il
+        gioco applica a inizio di OGNI fotogramma vero) su un riquadro
+        appena pulito a nero: cosi' l'ellisse finisce a coordinate note
+        (centro (p.x+2,5;p.y+6,6)xP_DIS, semiassi arx/aryxP_DIS) senza
+        bisogno ne' di una partita vera ne' della camera di gioco. Si
+        campionano 360 angoli lungo quell'ellisse, dall'alto (-PI/2) in
+        senso orario, e si conta quanti hanno il canale G nettamente
+        sopra R (la lime, non l'ambra ne' il bianco del filo di luce):
+        la frazione accesa e' la misura. Si confrontano fiato 40 e 90
+        (il piu' alto deve coprire piu' arco) e fiato 0 (frazione zero,
+        arco degenere). Condanna sul gioco di oggi (commit 3d8ff21, base
+        del compito 5): anelloComandato non conosce ancora p.fiato,
+        nessun pixel della quarta tinta sull'ellisse a nessun fiato.
 
    ZERO dado() NUOVI in questo file, come in _q-battute.js: nessuna
-   delle sei prove decide niente per la CPU, tutte leggono markup,
-   stile calcolato, salvataggio e funzioni di interfaccia gia' esistenti
-   (o gia' introdotte da un compito precedente dello stesso cantiere).
+   delle sette prove decide niente per la CPU, tutte leggono markup,
+   stile calcolato, salvataggio, pixel del canvas e funzioni di
+   interfaccia gia' esistenti (o gia' introdotte da un compito
+   precedente dello stesso cantiere).
 
    IL SEME: 20260918, la data del piano d'esecuzione del cantiere (voce
-   #112), default del flag --seme. Non governa nessuna delle sei
-   prove (zero dado() coinvolti), ma si semina comunque per coerenza col
-   telaio di casa (_q-battute.js) e per lasciare la porta aperta a
-   prove future che ne avessero bisogno.
+   #112), default del flag --seme. Non governa la maggioranza delle
+   prove (zero dado() coinvolti nella quasi totalita'), ma si semina
+   comunque per coerenza col telaio di casa (_q-battute.js) e per
+   lasciare la porta aperta a prove future che ne avessero bisogno.
 
    uso:  node strumenti/_q-accessibile.js
          node strumenti/_q-accessibile.js --gioco fuori/a1-base.html
@@ -130,7 +161,7 @@
    esce 0 se tutte le prove sono verdi, 1 se almeno una e' rossa,
    2 se il banco stesso e' esploso (pagina, hook mancante, eccezione),
    3 riservato a "prova nulla" sul modello di _q-battute.js — nessuna
-   delle sei prove di oggi lo usa.
+   delle sette prove di oggi lo usa.
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -528,6 +559,122 @@ const INTERRUTTORI = ['btnSetAudio', 'btnSetVib', 'btnSetMoto', 'btnSetDalt', 'b
       di(guasti.length === 0, '6. SOTTOTITOLI — con SAVE.sott acceso il fischio d\'inizio porta G.banner a \'FISCHIO\'; spento lo tace, senza spegnere i banner preesistenti',
         guasti.length ? guasti.join('   ')
           : 'acceso: ' + JSON.stringify(r.accesoConFlag) + '   spento: ' + JSON.stringify(r.spentoConFlag) + '   preesistente (GOL) con sott=0: ' + JSON.stringify(r.bannerVecchioSopravvive));
+    }
+
+    /* ===================================================================
+       PROVA 7 — ANELLO-FIATO (voce #112, compito 5). anelloComandato(p)
+       e' una funzione di primo livello del gioco (bare, come showBanner
+       e buzz nelle prove sopra): si chiama diretta su un giocatore
+       finto, FUORI dal giro di rendering vero e senza nessuna partita.
+       SAVE.moto=0 ferma pl a 0,5 (la stessa formula di anelloComandato:
+       arx=19,2+1,4*pl, ary=8,4+0,61*pl), cosi' arx/ary diventano numeri
+       fissi e la misura non insegue G.pulse. ctx.setTransform(DPR,0,0,
+       DPR,0,0) e' lo STESSO trasporto che il gioco applica a inizio di
+       ogni fotogramma vero (le altre chiamate a setTransform nel file):
+       con quel trasporto in vigore, e nessuna camera di gioco (G.view)
+       sopra, le coordinate p.x/p.y passate ad anelloComandato diventano
+       coordinate canvas note al bit — la funzione stessa fa
+       ctx.translate(p.x,p.y);ctx.scale(P_DIS,P_DIS);ctx.translate(-p.x,-p.y),
+       quindi il centro dell'ellisse (p.x+2,5;p.y+6,6) e i semiassi
+       arx/ary vivono scalati di P_DIS attorno al pivot (p.x,p.y). Un
+       riquadro pulito a nero prima di ogni disegno isola la misura dal
+       fotogramma precedente. Si campionano 360 angoli lungo quella
+       ellisse, dall'alto (-PI/2) in senso orario come lo spec chiede,
+       e si conta quanti hanno il canale G nettamente sopra R: la lime
+       (190,255,120) ce l'ha, l'ambra (255,176,32) e il filo di luce
+       (255,232,186 a bassa alfa) no — restano R-dominanti anche dopo
+       la fusione col nero di fondo. La frazione accesa e' la misura.
+
+       LA FRECCIA DI DIREZIONE (disegnata DOPO l'arco del fiato, stesso
+       anelloComandato) si sovrappone al bordo dell'anello nell'angolo
+       dei piedi: e' un cuneo pieno, non lime, quindi non falsa mai un
+       "acceso" — ma DOVE cade puo' coprire pixel lime veri e far
+       leggere una frazione piu' bassa del vero. Non e' un difetto della
+       cura, e' un secondo strato che la stessa funzione disegna sempre
+       sopra: la prova sceglie la direzione finta (FA) in modo che il
+       cuneo cada nel margine SEMPRE spento (l'ultimo 20% del giro,
+       fiato 80 lascia un vuoto di 72 gradi contro i ~53 del cuneo), cosi'
+       la misura resta pulita a entrambi i fiato confrontati. */
+    {
+      const r = await pag.evaluate(({ fiatoBasso, fiatoAlto }) => {
+        SAVE.moto = 0;
+        const pl = 0.5;
+        const arx = 19.2 + 1.4 * pl, ary = 8.4 + 0.61 * pl;
+        const PD = P_DIS;
+        const px = 400, py = 200;
+        /* FA a meta' del margine spento di fiato 80 (dall'80% al 100%
+           del giro, dietro l'angolo di chiusura -PI/2+2*PI): il cuneo
+           della freccia (mezza larghezza 0,46 rad = 26,3 gradi, quindi
+           52,7 gradi di sviluppo) ci sta dentro i 72 gradi di margine
+           con 9,6 gradi liberi su ogni lato, e per fiato 40 (acceso solo
+           il 40% del giro) FA resta comunque ben dentro la zona spenta. */
+        const FA = -Math.PI / 2 + 0.9 * 2 * Math.PI;
+        const finto = { x: px, y: py, fx: Math.cos(FA), fy: Math.sin(FA), fiato: 0 };
+
+        function misura(fiato) {
+          ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+          const rx0 = px - 40, ry0 = py - 10, rw = 80, rh = 60;
+          ctx.fillStyle = '#000';
+          ctx.fillRect(rx0, ry0, rw, rh);
+          finto.fiato = fiato;
+          anelloComandato(finto);
+          const cx = px + 2.5 * PD, cy = py + 6.6 * PD;
+          const ARX = arx * PD, ARY = ary * PD;
+          const bx0 = Math.floor(rx0 * DPR), by0 = Math.floor(ry0 * DPR);
+          const bw = Math.ceil(rw * DPR), bh = Math.ceil(rh * DPR);
+          const buf = ctx.getImageData(bx0, by0, bw, bh).data;
+          const pixel = (sx, sy) => {
+            if (sx < 0 || sy < 0 || sx >= bw || sy >= bh) return [0, 0, 0, 0];
+            const idx = (sy * bw + sx) * 4;
+            return [buf[idx], buf[idx + 1], buf[idx + 2], buf[idx + 3]];
+          };
+          /* Il tratto e' sottile (lineWidth 2,0, ~2,4 px reali dopo
+             P_DIS): il canvas approssima gli archi con curve di Bezier,
+             e un singolo pixel campionato esattamente sulla curva
+             matematica puo' cadere per una frazione di pixel fuori dal
+             tratto vero, leggendo il colore sotto (l'ambra) invece del
+             nostro. Un vicinato 3x3 attorno al pixel teorico, tenendo il
+             migliore (G-R piu' alto), assorbe questo scarto senza
+             allargare la misura oltre l'angolo campionato. */
+          const leggiVicinato = (wx, wy) => {
+            const sx = Math.round(wx * DPR) - bx0, sy = Math.round(wy * DPR) - by0;
+            let migliore = [0, 0, 0, 0], punteggio = -1e9;
+            for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+              const d = pixel(sx + dx, sy + dy);
+              const s = d[1] - d[0];
+              if (s > punteggio) { punteggio = s; migliore = d; }
+            }
+            return migliore;
+          };
+          const N = 360;
+          let accesi = 0;
+          for (let i = 0; i < N; i++) {
+            const th = -Math.PI / 2 + (i / N) * 2 * Math.PI;
+            const wx = cx + ARX * Math.cos(th), wy = cy + ARY * Math.sin(th);
+            const d = leggiVicinato(wx, wy);
+            /* G nettamente sopra R e' la lime; ambra e filo di luce
+               restano R-dominanti anche fusi col nero di fondo, e il
+               nero di base ha tutto vicino a zero. */
+            if (d[1] > d[0] + 25 && d[1] > 50) accesi++;
+          }
+          return accesi / N;
+        }
+
+        const fZero = misura(0);
+        const fBasso = misura(fiatoBasso);
+        const fAlto = misura(fiatoAlto);
+        return { fZero, fBasso, fAlto };
+      }, { fiatoBasso: 40, fiatoAlto: 80 });
+
+      const TOLL = 0.05;   // 360 campioni (~0.3% l'uno) piu' un margine per la tessellazione a Bezier degli archi del canvas
+      const guasti = [];
+      if (r.fZero > 0.02) guasti.push('a fiato 0 la frazione accesa e\' ' + r.fZero.toFixed(3) + ' invece di ~0 (arco degenere)');
+      if (Math.abs(r.fBasso - 0.40) > TOLL) guasti.push('a fiato 40 la frazione accesa e\' ' + r.fBasso.toFixed(3) + ' invece di ~0.40');
+      if (Math.abs(r.fAlto - 0.80) > TOLL) guasti.push('a fiato 80 la frazione accesa e\' ' + r.fAlto.toFixed(3) + ' invece di ~0.80');
+      if (!(r.fAlto > r.fBasso)) guasti.push('fiato 80 (' + r.fAlto.toFixed(3) + ') non copre piu\' arco di fiato 40 (' + r.fBasso.toFixed(3) + ')');
+      di(guasti.length === 0, '7. ANELLO-FIATO — l\'arco di quarta tinta su anelloComandato copre una frazione dell\'ellisse ambra proporzionale a p.fiato/100',
+        guasti.length ? guasti.join('   ')
+          : 'fiato 0: ' + r.fZero.toFixed(3) + '   fiato 40: ' + r.fBasso.toFixed(3) + '   fiato 80: ' + r.fAlto.toFixed(3));
     }
 
     if (ecc.length) { di(false, 'BANCO — nessuna eccezione di pagina', 'eccezione: ' + ecc[0]); }

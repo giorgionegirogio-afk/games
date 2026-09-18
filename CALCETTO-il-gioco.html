@@ -34323,6 +34323,24 @@ function anelloComandato(p){
      all'ambra, che e' il segnale. */
   ctx.strokeStyle='rgba(255,232,186,.28)'; ctx.lineWidth=1.3;
   ctx.beginPath(); ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0, 0.80*Math.PI,1.40*Math.PI); ctx.stroke();
+  /* L'ANELLO DEL FIATO (voce #112, compito 5): arco parziale sulla
+     STESSA ellisse dell'ambra (stesso centro, stessi arx/ary -- non
+     un'ellisse propria come anelloContenimento, che invece vive PIU'
+     STRETTA per starci dentro). Parte dall'alto (-PI/2) e avanza in
+     SENSO ORARIO in proporzione a p.fiato/100: pieno a fiato 100
+     (arco = giro intero), sparisce a fiato 0 (arco degenere, zero
+     pixel). QUARTA tinta -- non ambra=controllo, non ciano=
+     contenimento -- verde-lime a bassa alfa, mai grigio/nero
+     (istantanea.js lo conterebbe come un'ombra sul manto). LineWidth
+     2,0 (meta' 1,0 < 1,7): resta dentro il budget gia' verificato
+     sopra per l'ambra stessa (arx+1,7)x1,18=29,3<30 -- nessuno sporgere
+     nuovo oltre l'ambra. Il buco della palla (bucoPalla, drawSegniTerra)
+     lo taglia da solo: e' lo stesso ctx, dentro la stessa finestra di
+     clip che gia' incornicia l'ambra e il contenimento. */
+  ctx.strokeStyle='rgba(190,255,120,.85)'; ctx.lineWidth=2.0;
+  ctx.beginPath();
+  ctx.ellipse(p.x+2.5,p.y+6.6,arx,ary,0, -Math.PI/2, -Math.PI/2+(p.fiato/100)*2*Math.PI);
+  ctx.stroke();
   /* LA FRECCIA DI DIREZIONE: cuneo pieno sul bordo dell'anello
      nell'angolo dei piedi (atan2(fy,fx)), base dentro il filo, punta
      appena fuori; schiacciata a terra come l'ellisse (ary/arx). */
