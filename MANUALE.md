@@ -62,7 +62,14 @@ Sei scelte, poi si scende in campo:
   laterali, calci d'angolo e rinvii dal fondo, con un fermo breve e la
   battuta comandata coi verbi di casa — PASSA/CROSS/FILTRANTE). **A 11 la
   riga si blocca su CAMPO VERO**: sul campo grande le rimesse sono
-  obbligatorie, non una scelta.
+  obbligatorie, non una scelta. *La scelta vale anche per Torneo e
+  Stagione* (in ogni partita, `startMatch` fotografa la scelta salvata in
+  `G.campoVero` a inizio partita). **Non vale per le SFIDE**: a 5/7 una
+  sfida gioca sempre LA GABBIA, qualunque cosa dica questa riga sul tuo
+  telefono — è la stessa gabbia su ogni telefono che gioca, e il verbale
+  della sfida regge solo se il motore che l'ha giocata è identico su
+  entrambi i lati (seguito #105: portare le sponde nel nastro, per sfide
+  a campo vero a 5/7).
 - **Mentalità** — Difesa (blocco basso e stretto) / Equilibrio / Attacco
   (linea alta e larga). È la postura della TUA squadra; si può cambiare anche
   in partita, dalla pausa.
@@ -197,7 +204,10 @@ in stagione CLASSIFICA, dopo una sfida ALTRA SFIDA. **MENU** torna alla home.
   7/11) o rinvio dal fondo (fermo ~0,8 s) se esce dietro la linea di porta,
   a seconda di chi l'ha toccata per ultimo. Il battitore è comandato coi
   verbi di casa (PASSA/CROSS/FILTRANTE, TIRA spento finché non batte);
-  senza tocco, la battuta parte da sola entro pochi secondi.
+  senza tocco, la battuta parte da sola entro pochi secondi. Vale per
+  amichevole, TORNEO e STAGIONE (la scelta salvata sul telefono); le
+  SFIDE fanno eccezione — a 5/7 giocano sempre LA GABBIA, per costruzione
+  identica su ogni telefono (voce #87, §3 e §11).
 - Il **portiere** è un giocatore vero: esce sulla bisettrice, para per
   contatto, e i suoi esiti si vedono (PRESA!, PUGNI!, RESPINTA!, SFUGGE!).
 - **Cartellini**: fallo da dietro o in ritardo = giallo; al secondo della
@@ -240,6 +250,12 @@ nome).
   difficoltà e durata fisse di serie, con la postura dell'avversario ricavata
   da come gioca davvero («l'indole») — e a fine partita l'esito parte da solo
   verso il server. Se manca la rete, resta in coda e riparte al prossimo giro.
+  **A 5/7 la sfida gioca sempre LA GABBIA** (a 11 il campo vero è comunque
+  obbligatorio), a prescindere dalla tua scelta di SPONDE in GIOCA: due
+  telefoni con SPONDE diverse devono rigiocare la stessa sfida sullo
+  stesso motore, o il verbale del replay non torna (voce #87, correzione
+  della revisione finale; seguito **#105** per portare le sponde nel
+  nastro).
 - **LE SFIDE CHE HAI SUBITO**: chi ti ha attaccato, con che risultato, e il
   bottone **GUARDA** — rivedi la partita **mossa per mossa**, perché ogni
   sfida viaggia col nastro dei comandi: quello che guardi è quello che è
@@ -471,7 +487,7 @@ Qui il registro completo, a edizioni.
   | calcio d'angolo | fondo fuori luce, tocco della difesa, fermo 1,2 s a 5 / 1,5 s a 7-11, camera sul punto |
   | rinvio dal fondo | fondo fuori luce, tocco dell'attacco, fermo ~0,8 s, dalle mani del portiere (y=FH/2 fisso, niente `rnd`) |
   | finestra di battuta | hold 3 s, auto-battuta se nessun tocco; la CPU batte al suo timer ~0,5 s dopo la comparsa |
-  | verbi del battitore | PASSA/CROSS/FILTRANTE (i verbi di casa); TIRA spento finché non batte (guardia unica `inBattuta`, letta da 5 punti: layout, `startCharge`, `doPassaggio`, `doCrossUmano`, `aiDecide`) |
+  | verbi del battitore | PASSA/CROSS/FILTRANTE (i verbi di casa); TIRA spento finché non batte (guardia unica `inBattuta`, letta da 3 punti: layout, `startCharge`, `aiDecide` — i ganci in `doPassaggio`/`doCrossUmano` furono rimossi dalla correzione di revisione del compito 3) |
   | rispetto dell'avversario | nessun avversario punta (bersaglio del passo, `aiTX/aiTY`) a meno di 40 unità dal battitore durante la finestra |
   | clip della rimessa | viaggia su `p.rimT` (non su `chargeClip`, cieco in partita vera: rettifica di revisione del compito 3), visibile ≥6 fotogrammi, arriva fino in moviola |
   | angolo giocato | battitore sull'arco, 2/3 attaccanti in area a `areaProf*0,6`, marcature senza doppioni (`Set`), portiere sulla linea, auto-battuta via `doCross`; la palla entra davvero in area entro 2,5 s dalla ripresa |
@@ -501,18 +517,20 @@ Qui il registro completo, a edizioni.
     taglie, cura di puro disegno; 4: 18/20) — numeri diversi perché presi
     contro basi diverse (il compito, non il merge-base), stessa causa.
   - **Giocabilità** (`strumenti/_eventi.js`, 20 partite, semi
-    20260803..20260822, contro l'HEAD pre-ramo `7ed570a`): a **11**
-    (campo vero obbligatorio anche ieri sulla stessa fisica del rimbalzo,
-    quindi confronto diretto) MOMENTI DA PORTA/minuto **1,96 contro 2,21**
-    (**88,9%**, soglia ≥80%), 0-0 **5% contro 0%** (soglia ≤33%). A **5
-    campo vero** (una variante non committata di `_eventi.js`, `fuori/
-    _eventi-campo.js`, che forza `save.sponde='campo'` prima di
-    `startMatch` — il banco del repo non ha il flag) contro **5 gabbia
-    del pre-ramo** (a 5 ieri il campo vero non esisteva: il confronto è
-    "5 gabbia di ieri contro 5 campo vero di oggi", la domanda giusta —
-    quanto costa il campo vero rispetto al gioco di ieri): **3,87 contro
-    4,36** (**88,9%**), 0-0 **10% contro 5%**. Tutte e due le taglie sopra
-    la soglia, nessuna manopola da tarare.
+    20260803..20260822, contro l'HEAD pre-ramo `7ed570a`): a `7ed570a`
+    `G.campoVero` non esiste ancora, a nessuna taglia — la 11 di ieri
+    rimbalzava come la gabbia. Tutte e due le righe sotto sono quindi lo
+    stesso confronto, "gabbia di ieri contro campo vero di oggi" — la
+    domanda giusta, quanto costa il campo vero rispetto al gioco di ieri.
+    A **11** (il confronto usa i banchi ufficiali: a questa taglia
+    `G.campoVero` è sempre acceso, non serve un flag `--sponde`) MOMENTI
+    DA PORTA/minuto **1,96 contro 2,21** (**88,9%**, soglia ≥80%), 0-0
+    **5% contro 0%** (soglia ≤33%). A **5 campo vero** (una variante non
+    committata di `_eventi.js`, `fuori/_eventi-campo.js`, che forza
+    `save.sponde='campo'` prima di `startMatch` — il banco del repo non
+    ha il flag) contro **5 gabbia del pre-ramo**: **3,87 contro 4,36**
+    (**88,9%**), 0-0 **10% contro 5%**. Tutte e due le taglie sopra la
+    soglia, nessuna manopola da tarare.
   - **La lezione del banco-più-forte-dello-spec** (compito 2): la prima
     stesura del banco pretendeva che la battuta si sciogliesse ESATTAMENTE
     al fotogramma d'uscita dalla scena — più dello spec — e la prima
@@ -545,17 +563,25 @@ Qui il registro completo, a edizioni.
     conto finale.
 
   **La copertura onesta**: i cancelli di batteria girano a **taglia 5
-  GABBIA** (default); il campo vero è coperto da `_q-battute.js` (che
-  gioca a 5 e a 11) e dalle corse dedicate di questo compito (`_eventi`
-  a 11 e a 5-campo-vero, `_c3-sorteggi` a 11 e la corsa dedicata
-  5-campo-vero sotto). Le due corse a 5-campo-vero vivono su varianti NON
-  committate (`fuori/` è gitignorato): `fuori/_eventi-campo.js` e
+  GABBIA** (default). `_q-battute.js` è IN batteria e tocca il campo vero
+  — la sua PROVA 1 fa un `startMatch(1,1,{size:11})` sincrono (una
+  fotografia, non un rendering) e 10 delle 11 prove impostano
+  `save.sponde='campo'` per costruire una scena ferma — ma questo non è
+  SIMULARE una partita: nessuna di quelle prove fa avanzare i fotogrammi
+  di una partita intera a quella taglia o con quella sponda, cosa che
+  fanno invece `_eventi.js` e `_c3-sorteggi.js`. Quel rendering esteso
+  vive solo nelle corse dedicate di questo compito (`_eventi` a 11 e a
+  5-campo-vero, `_c3-sorteggi` a 11 e la corsa dedicata 5-campo-vero
+  sotto), NON in batteria. Le due corse a 5-campo-vero vivono su varianti
+  NON committate (`fuori/` è gitignorato): `fuori/_eventi-campo.js` e
   `fuori/_c3-sorteggi-campo.js`, perché gli strumenti ufficiali
   (`strumenti/_eventi.js`, `strumenti/_c3-sorteggi.js`) non hanno un flag
   `--sponde`. **Intenzione dichiarata**: portare quel flag `--sponde` nei
   banchi ufficiali quando il campo vero entrerà in batteria — si aggancia
-  alla voce **#99**, che resta aperta: nessun cancello IN BATTERIA gira
-  mai a taglia 11 o forza `sponde='campo'`.
+  alla voce **#99**, che resta aperta in questo senso preciso: nessun
+  cancello IN BATTERIA SIMULA una partita intera a taglia 11 o a
+  `sponde='campo'` (le fotografie sincrone di `_q-battute.js` non
+  contano come simulazione).
 
   **Sorteggi**: `_q-determinismo --partite 4` **13/13** (convenzione del
   ramo; il piano scriveva 10/10, disallineamento già a registro dal
@@ -585,15 +611,74 @@ Qui il registro completo, a edizioni.
   (guardia `scena==='play'||'golden'`), i numeri non si muovono per
   costruzione, come previsto.
 
+  **CORREZIONE DELLA REVISIONE FINALE** (18 settembre 2026, un solo
+  commit). **C1, CRITICO**: `startMatch` fotografava `G.campoVero`
+  sempre da `SAVE.sponde`, il salvataggio DEL DISPOSITIVO — mai da un
+  parametro della chiamata. Le due partenze di sfida (`Sfida.gioca`,
+  `Sfida.guarda`) passavano a `startMatch` solo la taglia: a 5/7, due
+  telefoni con `SAVE.sponde` diversa rigiocavano la STESSA sfida (stesso
+  seme, stessa taglia, stesso nastro) su due motori diversi, e
+  `chiudiSfida` imputava lo scarto di punteggio solo al profilo cresciuto
+  nel frattempo, mai al motore diverso. Curato: `startMatch` onora
+  `opts.sponde` quando presente (vince su `SAVE.sponde` in tutti e due i
+  versi), e le due partenze di sfida passano sempre `sponde:'gabbia'` a
+  5/7 — la gabbia e' identica al bit su ogni telefono per costruzione
+  (voce #87, compito 2), quindi e' la sponda giusta per una sfida finche'
+  le sponde non viaggiano col nastro (seguito #105). A 11 nessun
+  cambiamento: il campo vero resta forzato comunque. **I5, Importante**:
+  le tre pose della battuta (`posaBattuta`/`posaBattutaAngolo`/
+  `posaBattutaRinvio`) lasciavano `G.battuta` pendente per sempre quando
+  la squadra che doveva battere non aveva un uomo di movimento
+  disponibile (rosa azzerata) — lo stesso buco gia' chiuso su
+  `ballOverBar` dopo un rilievo CRITICO. Cura centrale in `pallaFuori`,
+  sullo stesso modello: palla libera, `G.battuta=null`. Via attrezzo a
+  ancore `strumenti/_t-sfide-sponde.js` (4 ancoraggi, verificato
+  riproducendo byte per byte la patch sulla copia pre-correzione).
+  Cinque rilievi minori di solo testo chiusi in `MANUALE.md`/
+  `strumenti/_q-battute.js`/`strumenti/_t-gioca-sponde-fit.js` (numeri e
+  liste disallineati fra file, nessun cambio di comportamento). **Cancelli**:
+  `_q-battute` **11/11**, `_q-determinismo --partite 4` **13/13**,
+  `_c3-sorteggi` (`fuori/fw-base.html`, il gioco al commit pre-correzione,
+  contro `CALCETTO-il-gioco.html`, taglie 5/7/11) **0/60** — il percorso
+  amichevole/CPU-contro-CPU non passa mai `opts.sponde`, quindi C1 non lo
+  tocca; I5 e' un ramo morto li' salvo rose azzerate, che nessun banco di
+  batteria costruisce — `tocco.js` **722/722**, `_q-precedenza` **9/9**.
+  Sonda mirata di C1 (`fuori/_sonda-c1-sponde.js`, non committata): con
+  `SAVE.sponde` fissata sull'uno o sull'altro, `opts.sponde` la ribalta
+  sempre nei due versi, e senza `opts.sponde` la fotografia segue ancora
+  `SAVE.sponde` come prima — quattro casi, quattro verdi.
+
   **I seguiti nuovi**: **#102** (i piazzati evoluti — portiere che sale
   sul corner disperato e pressione per fase, dal paragone `MINIERA-FCM.md`
   scavo 7 — più la regia panoramica dell'angolo a 11, il cui quadro
   ordinario non fa entrare l'area coi corpi, scoperto al compito 4);
   **#103** (la coda dell'angolo: gol olimpico e statistica corner in
-  lavagnetta). **Nota**: la voce **#96** (cancello di pubblicazione) copre
-  anche questo ramo — i nastri delle sfide registrati col motore di ieri
-  non si riproducono più a 11/campo vero (`ballWalls`, `resetKickoff` e
-  dintorni sono cambiati); già a registro, si cita e basta.
+  lavagnetta); **#104** (la battuta è scena di partita anche per il
+  disegno: le sei liste di scena del disegno e `forceWinMatch` andrebbero
+  in una sola `fermoDiPartita(s)`; la soglia FERMO BREVE dovrebbe essere
+  proporzionale a `duraBattuta()`; l'HUD non deve lampeggiare a ogni
+  rimessa — misurato dalla revisione finale: zone toccabili 6→0→6);
+  **#105** (le sponde viaggiano col nastro delle sfide, per sfide a campo
+  vero a 5/7 — vedi C1 qui sotto); **#106** (`tocco.js` misura la
+  raggiungibilità del bersaglio ma non la sua TAGLIA: il bersaglio del
+  pollice a 37 px del compito 5, §"la regressione trovata e curata",
+  resta senza un pavimento misurato).
+
+  **Nota corretta (revisione finale)**: la voce **#96** (cancello di
+  pubblicazione) copre la VERSIONE del motore — i nastri delle sfide
+  registrati col motore di ieri non si riproducono più a 11/campo vero
+  perché `ballWalls`, `resetKickoff` e dintorni sono cambiati; questo
+  resta a registro, si cita e basta. Un caso DIVERSO, non coperto dalla
+  #96 perché non è un cambio di versione ma un'IMPOSTAZIONE PER
+  DISPOSITIVO: due telefoni sulla STESSA versione del motore ma con
+  SPONDE diversa in locale rigiocavano la stessa sfida su un motore
+  diverso (uno in gabbia, l'altro a campo vero), perché `startMatch`
+  leggeva sempre `SAVE.sponde` del dispositivo invece della sponda con
+  cui la sfida era stata giocata. Questo era il rilievo **C1** della
+  revisione finale, ora curato: le sfide a 5/7 forzano LA GABBIA su
+  entrambi i lati, per costruzione identica su ogni telefono (a 11 sono
+  già allineate, il campo vero è obbligatorio). Seguito **#105**
+  registrato per quando si vorranno sfide a campo vero anche a 5/7.
 
   Verbale completo: `docs/superpowers/specs/2026-09-17-rimesse-e-angoli-
   design.md`, `docs/superpowers/plans/2026-09-17-rimesse-e-angoli.md`,

@@ -74,6 +74,13 @@
    nessuna delle sette prove di oggi lo usa: ciascuna o misura o e' rossa
    per costruzione, non c'e' un caso "non misurabile" distinto dal rosso.
 
+   IL DENOMINATORE E' CONDIZIONALE: il riepilogo finale legge "N prove su
+   M" con M pari al numero di prove dichiarate qui sopra (11, a regime).
+   Se pero' durante la corsa la pagina lancia un'eccezione, si aggiunge
+   una prova in piu' ("BANCO — nessuna eccezione di pagina", sempre
+   rossa) e il riepilogo passa a N/12: compare solo a cancello gia' rosso
+   per conto suo, mai come unica causa del rosso.
+
    RETTIFICA (17 settembre 2026, compito 3): la riga 20-21 qui sopra
    diceva "questo file non cambia piu' dopo, sono le prove che smettono
    di fallire" — era la promessa del compito 1, superata dal piano
@@ -110,6 +117,14 @@
         pendente, sono la chiave stabile: il campo esiste gia' e basta,
         nessuna estensione dell'hook).
    Il file e' adesso a dieci prove; l'exit code 3 resta non usato.
+
+   NOTA su BATTUTA-UMANA (prova 8): resta VERDE anche sul codice di prima
+   di questa stessa correzione (il pre-cura del compito 3) — preme il
+   disco PASSA e misura la finestra viva del compito 2 (t.state torna
+   'play' con t.battuta ancora pendente), non il difetto di chargeClip
+   che questa rettifica cura. La condanna che avrebbe fermato quella
+   regressione la portano TIRA-SPENTO (prova 7, sulla guardia off) e
+   CLIP-RIMESSA (prova 10 qui sopra, sulla clip stessa).
 
    RETTIFICA (voce #87, compito 4 — il fondo e' vero: l'angolo e il
    rinvio). FONDO-ANGOLO e FONDO-RINVIO (prove 3/4, scritte al compito 1

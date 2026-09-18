@@ -2456,9 +2456,9 @@ button:active{transform:scale(.96)}
    ~70 px in piu' a 812x375: eti 16+margini, diff-row 42+margini prima di
    questa stessa toppa) ha rimangiato l'intero margine di 2 px che
    restava a 915x412 e ha riaperto IL DIFETTO STESSO DEL 28 AGOSTO su
-   CAMBIA CAMPO/#btnBackGioca, a 811x384, 812x375, 740x360 e 640x360
-   (misurato: tocco.js, 5 bersagli su 722 "a riposo si VEDE ma il colpo
-   va a #btnBackGioca"). Sono stati spesi i "dieci pixel" che il testo
+   CAMBIA CAMPO/#btnBackGioca, a 811x384, 812x375, 740x360, 640x360 e
+   568x320 (misurato: tocco.js, 5 bersagli su 722 "a riposo si VEDE ma il
+   colpo va a #btnBackGioca"). Sono stati spesi i "dieci pixel" che il testo
    del 28 agosto prevedeva: imbottitura delle pastiglie da 5px 4px a
    3px 4px (-4 px per riga), piu' margini di .eti/.diff-row e titolo
    ulteriormente ridotti. IL BERSAGLIO E' ORA 37 px — sette sotto i 44 di
@@ -10801,8 +10801,20 @@ function startMatch(mode, diff, opts){
      (la riga di GIOCA lo blocca gia' a schermo, questa e' la seconda
      guardia lato motore, quella che non si aggira toccando il
      salvataggio a mano). Letta una volta sola, mai da SAVE a partita in
-     corso: vive su G come G.mode/G.diff, per tutta la partita. */
-  G.campoVero = (TAGLIA===11) || SAVE.sponde==='campo';
+     corso: vive su G come G.mode/G.diff, per tutta la partita.
+     OPTS.SPONDE VINCE SU SAVE.SPONDE quando presente (rilievo C1 della
+     revisione finale, voce #87). Senza questa riga la fotografia leggeva
+     sempre il salvataggio DEL DISPOSITIVO: due telefoni con SAVE.sponde
+     diversa rigiocavano la stessa sfida su un motore diverso (uno in
+     gabbia, l'altro a campo vero), e chiudiSfida spiegava lo scarto di
+     punteggio solo col profilo cambiato, mai col motore diverso. Le
+     chiamate di sfida (Sfida.gioca/Sfida.guarda) ora passano sempre
+     opts.sponde:'gabbia' a 5/7 - questa riga e' quello che le rende
+     efficaci. A 11 il campo vero resta forzato comunque, opts o non
+     opts (seguito #105: le sponde nel nastro, per sfide a campo vero
+     anche a 5/7). */
+  G.campoVero = (TAGLIA===11) ||
+    (opts.sponde==='gabbia' ? false : opts.sponde==='campo' ? true : SAVE.sponde==='campo');
   G.mode = mode===2?2:1;
   if(diff!==undefined) G.diff = clamp(diff|0,0,2);
   G.cpu=[false, G.mode===2?false:true];
@@ -19087,6 +19099,21 @@ function pallaFuori(tipo, team, x, y){
   b.vx=0; b.vy=0;
   G.battuta = { tipo, team, battitore:-1, x, y, hold:BATTUTA_HOLD };
   posaBattuta();
+  /* NESSUN BATTITORE TROVATO (rilievo I5 della revisione finale, voce
+     #87): le tre pose (posaBattuta/posaBattutaAngolo/posaBattutaRinvio)
+     fanno tutte "if(!bt) return;" quando la squadra che deve battere non
+     ha un uomo di movimento disponibile (rosa azzerata da espulsioni/
+     infortuni) - senza questa guardia G.battuta restava pendente per
+     sempre con battitore:-1, la palla ferma, l'owner invariato: lo
+     stesso buco che ballOverBar chiudeva gia' (:19468 circa) dopo un
+     rilievo CRITICO. Cura CENTRALE qui invece che nelle tre pose: la
+     scena 'battuta' resta comunque per il fermo breve appena impostato
+     sotto, poi si torna a play con la palla libera, esattamente come fa
+     ballOverBar quando "deep" e' null. Zero dado(). */
+  if(G.battuta && G.battuta.battitore<0){
+    b.owner=-1;
+    G.battuta=null;
+  }
   /* RINVIO E' GRIGIO DI CASA (voce #87, compito 4), lo stesso hex di
      ALTA! (ballOverBar, :19268) - in sostanza e' lo stesso evento, un
      rinvio dal fondo. Rimessa e angolo restano nel colore della squadra
@@ -41810,6 +41837,17 @@ const Sfida = {
     Reg.scrivi(7, [mentMia, mentSua].concat(impaccaRosa(SAVE.rosa), impaccaRosa(a.rosa)));
     startMatch(1, SFIDA_DIFF, {
       size: taglia,
+      /* LA GABBIA, SEMPRE, A 5/7 (rilievo C1 della revisione finale, voce
+         #87). Una sfida la rigioca anche l'altro telefono, che ha la sua
+         SAVE.sponde locale: se la battuta seguisse quella, due dispositivi
+         diversi giocherebbero la STESSA sfida su due motori diversi (uno
+         in gabbia, l'altro a campo vero), e chiudiSfida imputerebbe lo
+         scarto di punteggio solo al profilo cresciuto, mai al motore
+         diverso. La gabbia e' identica al bit su ogni telefono per
+         costruzione (voce #87, compito 2): e' la sponda giusta finche' le
+         sponde non viaggiano col nastro (seguito #105). A 11 il campo
+         vero resta comunque obbligatorio, opts o non opts. */
+      sponde: 'gabbia',
       /* LA MIA POSTURA VIENE DALLA MIA INDOLE, non da SAVE.mentalita, e
          senza questa riga il replay non tornerebbe: chi guarda la partita
          che ha subito non ha modo di sapere che cosa avevo scelto nel mio
@@ -41949,6 +41987,15 @@ const Sfida = {
                 atteso:[s.gol_a|0, s.gol_d|0] };
     startMatch(1, SFIDA_DIFF, {
       size: taglia,
+      /* LA GABBIA, SEMPRE, A 5/7 (rilievo C1, vedi il commento gemello in
+         Sfida.gioca). Il replay rigioca i comandi del nastro sul motore
+         di OGGI di questo stesso telefono: se seguisse la SAVE.sponde
+         locale invece della sponda con cui la sfida fu giocata davvero,
+         un replay potrebbe divergere per il motore, non solo per la
+         rosa cresciuta - e la spiegazione qui sotto (S.atteso) imputa
+         gia' tutto alla rosa. A 5/7 la sfida e' sempre stata gabbia
+         (vedi sopra): rigiocarla in gabbia e' rigiocarla com'era. */
+      sponde: 'gabbia',
       /* chi ha attaccato prende il posto di chi gioca: e' la sua rosa che
          il nastro muove */
       mia: { n:String(att.nome || 'CHI TI HA ATTACCATO').slice(0,18),

@@ -16,9 +16,10 @@
    GIOCA — e la toppa del 28 agosto lasciava solo 2 px di margine a
    915x412 ("chi ha dieci pixel da spendere sa dove metterli", diceva il
    suo stesso commento). Il quinto blocco ha rimangiato quel margine e
-   riaperto il difetto su TUTTE le taglie di telefono coricato in
-   batteria tranne 915x412 e 811x384... anzi anche quella: misurato rosso
-   su tutte e cinque.
+   riaperto il difetto su tutte e cinque le taglie di telefono coricato
+   in batteria (811x384 compreso, non escluso): misurato rosso su tutte
+   e cinque. Resta fuori solo 915x412, la misura storica a 400 dpi, che
+   tiene ancora i suoi 2 px di margine.
 
    LA CURA e' solo CSS, sui breakpoint della schermata GIOCA gia'
    esistenti (nessuna riga nuova, nessun @media nuovo): si spende
