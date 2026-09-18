@@ -1,6 +1,6 @@
 /* =====================================================================
    _q-accessibile.js — LE ETICHETTE HANNO UN GIUDICE CHE LE ASPETTA
-   (voce #112, compiti 1 e 2 + correzione revisione compito 2, ramo
+   (voce #112, compiti 1, 2 e 3 + correzione revisione compito 2, ramo
    voce-112-spiccioli-ux).
 
    IL PERCHE'. Il cantiere #112 chiude l'onda A del mandato con sei cure
@@ -24,7 +24,12 @@
    rossa sul commit 24421ca (compito 2 cosi' com'era), verde dopo la
    cura del CSS.
 
-   LE QUATTRO PROVE:
+   IL COMPITO 3 aggiunge la quinta: RIVEDI IL TUTORIAL, la voce che
+   riapre la lezione vera (Tut) alla prossima amichevole a un giocatore.
+   Nasce rossa sul commit 5ee5068 (base del compito 3): #btnRivediTut
+   non esiste ancora.
+
+   LE CINQUE PROVE:
      1. ARIA — apre IMPOSTAZIONI (gearBtn -> PREFERENZE, la via vera del
         dito), e per ognuno dei cinque .voce.sw (btnSetAudio/Vib/Moto/
         Dalt/Moviola) verifica che aria-pressed esista E combaci con
@@ -61,14 +66,36 @@
         con .vib.sel: almeno una fra background-color e border-top-color
         deve differire, altrimenti lo stato scelto sarebbe invisibile.
         Zero dado() qui: solo stile, nessuna simulazione.
+     5. RIVEDI-TUTORIAL (voce #112, compito 3) — porta il gioco allo
+        stato "tutorial gia' visto tre volte e chiuso"
+        (t.save.tutorialDone=true; t.save.tutorialVisto=5, il caso reale
+        dopo la terza apertura), apre l'ingranaggio (gearBtn -> #extra,
+        LA VOLTA CHE NON PASSA DA PREFERENZE: il bottone vive accanto a
+        COME SI GIOCA, non nel pannello id=impostazioni) e clicca il
+        vero #btnRivediTut col .click() del DOM. Poi verifica TRE cose,
+        in un solo voto: (a) ENTRAMBI i flag azzerati — la trappola
+        della ricognizione e' che azzerare solo tutorialDone non basta,
+        perche' Tut.start() lo rimetterebbe a true prima di mostrare
+        niente se tutorialVisto fosse rimasto a TUT_APERTURE o piu'
+        (vedi :40513); (b) un toast vero appare (conta i figli di
+        #toasts prima e dopo, mai un'attestazione); (c) LA PARTE CHE
+        CONTA — non i flag, il tutorial vero: t.startMatch(1,1) e si
+        legge t.Tut.active (lo stesso oggetto del gioco, __test lo
+        espone bare, non una copia), che deve essere true al kickoff di
+        un'amichevole 1 giocatore. Subito dopo, t.startMatch(2,1)
+        verifica che la guardia di startMatch (:11156) REGGA: con gli
+        stessi flag appena azzerati, a due giocatori il tutorial non
+        deve ripartire. Condanna sul gioco di oggi: #btnRivediTut non
+        esiste, querySelector torna null, guasto leggibile invece di
+        un'eccezione cieca sul .click() di un elemento inesistente.
 
    ZERO dado() NUOVI in questo file, come in _q-battute.js: nessuna
-   delle quattro prove decide niente per la CPU, tutte leggono markup,
-   stile calcolato e funzioni di interfaccia gia' esistenti (o gia'
-   introdotte da un compito precedente dello stesso cantiere).
+   delle cinque prove decide niente per la CPU, tutte leggono markup,
+   stile calcolato, salvataggio e funzioni di interfaccia gia' esistenti
+   (o gia' introdotte da un compito precedente dello stesso cantiere).
 
    IL SEME: 20260918, la data del piano d'esecuzione del cantiere (voce
-   #112), default del flag --seme. Non governa nessuna delle quattro
+   #112), default del flag --seme. Non governa nessuna delle cinque
    prove (zero dado() coinvolti), ma si semina comunque per coerenza col
    telaio di casa (_q-battute.js) e per lasciare la porta aperta a
    prove future che ne avessero bisogno.
@@ -79,7 +106,7 @@
    esce 0 se tutte le prove sono verdi, 1 se almeno una e' rossa,
    2 se il banco stesso e' esploso (pagina, hook mancante, eccezione),
    3 riservato a "prova nulla" sul modello di _q-battute.js — nessuna
-   delle quattro prove di oggi lo usa.
+   delle cinque prove di oggi lo usa.
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -335,6 +362,89 @@ const INTERRUTTORI = ['btnSetAudio', 'btnSetVib', 'btnSetMoto', 'btnSetDalt', 'b
       di(guasti.length === 0, '4. VIBRAZIONE-STILE — .vib eredita lo stile di .diff/.taglia/.sponde, .vib.sel si distingue da .vib',
         guasti.length ? guasti.join('   ')
           : 'vib: ' + JSON.stringify(r.vib) + '   vib.sel: ' + JSON.stringify(r.vibSel) + '   riferimento .diff: ' + JSON.stringify(r.rif));
+    }
+
+    /* ===================================================================
+       PROVA 5 — RIVEDI-TUTORIAL (voce #112, compito 3). Il tutorial vero
+       (l'oggetto Tut, non la schermata COME SI GIOCA) riparte da solo al
+       prossimo fischio d'inizio quando SAVE.tutorialDone e' falso: la
+       voce RIVEDI IL TUTORIAL, nel pannello dell'ingranaggio (#extra,
+       accanto a COME SI GIOCA — non in PREFERENZE), non fa altro che
+       togliere il permesso negato. La guardia che decide SE il tutorial
+       parte resta quella di sempre, dentro startMatch (:11156).
+
+       LA TRAPPOLA (ricognizione, voce #112): azzerare solo tutorialDone
+       non basterebbe. Tut.start() scrive
+       `SAVE.tutorialVisto=(SAVE.tutorialVisto|0)+1; if(>=TUT_APERTURE)
+       SAVE.tutorialDone=true;` PRIMA di mostrare qualunque cosa (vedi
+       :40513): con tutorialVisto rimasto a 3 o piu', la primissima
+       Tut.start() della nuova amichevole richiuderebbe la porta nello
+       stesso istante in cui l'ha aperta. Per questo la prova non si
+       ferma ai due flag: arriva fino al kickoff vero e legge
+       t.Tut.active, che __test espone bare (lo stesso oggetto del
+       gioco, non una copia — vedi `G, Duel, Tut,` in fondo a __test).
+
+       Si porta il gioco allo stato "tutorial gia' visto tre volte e
+       chiuso" (il caso reale dopo la terza apertura), si clicca il
+       vero #btnRivediTut col .click() del DOM (mai una chiamata diretta
+       all'handler: e' il bottone che deve esistere ed essere
+       raggiungibile, non solo la funzione dietro), poi si verificano in
+       un solo voto: i due flag azzerati, un toast vero apparso (conta i
+       figli di #toasts, mai un'attestazione), il tutorial che riparte
+       DAVVERO in amichevole 1 giocatore, e la guardia che REGGE subito
+       dopo a due giocatori (stessi flag appena azzerati: se la guardia
+       leggesse solo tutorialDone e non anche G.mode, qui il tutorial
+       ripartirebbe anche a due giocatori). Condanna sul gioco di oggi:
+       #btnRivediTut non esiste, querySelector torna null, guasto
+       leggibile invece di un'eccezione cieca sul .click() di null. */
+    {
+      const r = await pag.evaluate(({ taglia }) => {
+        const t = window.__test;
+        /* lo stato reale dopo la terza apertura: chiuso, e la conta gia'
+           al soffitto */
+        t.save.tutorialDone = true;
+        t.save.tutorialVisto = 5;
+
+        document.getElementById('gearBtn').click();
+        const bottone = document.querySelector('#btnRivediTut');
+        const bottoneTrovato = !!bottone;
+
+        const toastsEl = document.getElementById('toasts');
+        const toastPrima = toastsEl ? toastsEl.children.length : -1;
+        if (bottone) bottone.click();
+        const toastDopo = toastsEl ? toastsEl.children.length : -1;
+
+        const tutorialDoneDopo = bottone ? t.save.tutorialDone : null;
+        const tutorialVistoDopo = bottone ? t.save.tutorialVisto : null;
+
+        let tutAttivo1p = null, tutAttivo2p = null;
+        if (bottone) {
+          t.startMatch(1, 1, { size: taglia });
+          tutAttivo1p = t.Tut.active;
+          /* la guardia deve reggere anche SUBITO dopo lo stesso
+             azzeramento: due giocatori non e' un caso a parte, e' lo
+             stesso salvataggio che ha appena riaperto la porta */
+          t.startMatch(2, 1, { size: taglia });
+          tutAttivo2p = t.Tut.active;
+        }
+
+        return { bottoneTrovato, toastPrima, toastDopo, tutorialDoneDopo, tutorialVistoDopo, tutAttivo1p, tutAttivo2p };
+      }, { taglia: TAGLIA_BANCO });
+
+      const guasti = [];
+      if (!r.bottoneTrovato) guasti.push('#btnRivediTut non trovato nel pannello dell\'ingranaggio (#extra)');
+      else {
+        if (r.tutorialDoneDopo !== false) guasti.push('SAVE.tutorialDone dopo il click vale ' + r.tutorialDoneDopo + ' invece di false');
+        if (r.tutorialVistoDopo !== 0) guasti.push('SAVE.tutorialVisto dopo il click vale ' + r.tutorialVistoDopo + ' invece di 0 (la trappola: solo tutorialDone lo richiuderebbe subito, vedi :40513)');
+        if (r.toastDopo <= r.toastPrima) guasti.push('nessun toast di conferma dopo il click (#toasts: ' + r.toastPrima + ' -> ' + r.toastDopo + ')');
+        if (r.tutAttivo1p !== true) guasti.push('t.Tut.active=' + r.tutAttivo1p + ' al kickoff dell\'amichevole 1 giocatore: il tutorial non e\' ripartito davvero');
+        if (r.tutAttivo2p !== false) guasti.push('t.Tut.active=' + r.tutAttivo2p + ' al kickoff a 2 giocatori: la guardia di :11156 non regge dopo il click');
+      }
+      di(guasti.length === 0, '5. RIVEDI-TUTORIAL — il bottone azzera ENTRAMBI i flag, un toast conferma, e il tutorial vero riparte al prossimo kickoff 1 giocatore (mai a 2)',
+        guasti.length ? guasti.join('   ')
+          : 'tutorialDone/Visto dopo il click: ' + r.tutorialDoneDopo + '/' + r.tutorialVistoDopo +
+            '   toast: ' + r.toastPrima + ' -> ' + r.toastDopo +
+            '   Tut.active 1p=' + r.tutAttivo1p + '  2p=' + r.tutAttivo2p);
     }
 
     if (ecc.length) { di(false, 'BANCO — nessuna eccezione di pagina', 'eccezione: ' + ecc[0]); }

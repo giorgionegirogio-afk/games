@@ -3115,6 +3115,13 @@ button:active{transform:scale(.96)}
     <div class="menu-voci">
       <button class="voce" id="btnImpost">PREFERENZE <small>audio, movimento, contrasto, controlli</small></button>
       <button class="voce" id="btnHow">COME SI GIOCA <small>regole e comandi</small></button>
+      <!-- RIVEDI IL TUTORIAL (voce #112, compito 3). Azzera SOLO i due
+           flag del salvataggio (tutorialDone e tutorialVisto): la
+           lezione vera (Tut) la accende da sola la guardia dentro
+           startMatch (:11156) alla prossima amichevole 1 giocatore.
+           Il sottotitolo lo dice chiaro per non promettere un tutorial
+           che parte subito, sopra questa stessa schermata. -->
+      <button class="voce" id="btnRivediTut">RIVEDI IL TUTORIAL <small>lo rivedi alla prossima amichevole a un giocatore</small></button>
       <!-- la porta della licenza: la OFL 1.1 obbliga ogni copia del
            gioco a portare con se' il testo della licenza dei font
            incorporati (condizione 2), e i woff2 sottoinsiemizzati non
@@ -40318,6 +40325,20 @@ refreshMentRow();
 $('btn1p').addEventListener('click', ()=>{ Audio5.unlock(); startMatch(1,G.diff); });
 $('btn2p').addEventListener('click', ()=>{ Audio5.unlock(); startMatch(2,G.diff); });
 $('btnHow').addEventListener('click', ()=>{ Audio5.unlock(); goScreen(ui.howto); });
+/* RIVEDI IL TUTORIAL (voce #112, compito 3). ENTRAMBI i flag, sempre
+   insieme: azzerare solo tutorialDone non basterebbe, perche'
+   Tut.start() lo rimetterebbe a true alla primissima apertura se
+   tutorialVisto fosse rimasto a TUT_APERTURE o piu' (vedi :40513).
+   Questo handler non chiama Tut.start(): non tocca la macchina del
+   tutorial, si limita a togliere il permesso negato. La guardia che
+   decide SE e QUANDO il tutorial riparte resta quella di sempre,
+   dentro startMatch. */
+$('btnRivediTut').addEventListener('click', ()=>{
+  Audio5.unlock();
+  SAVE.tutorialDone=false; SAVE.tutorialVisto=0;
+  persistSave();
+  toast('laurea','TUTORIAL RIAPERTO','Lo rivedi alla prossima amichevole a un giocatore.');
+});
 /* CREDITI: si apre dall'ingranaggio e torna all'ingranaggio, perche' e'
    da li' che si arriva — tornare al menu principale butterebbe l'utente
    due livelli piu' su di dove stava. */
