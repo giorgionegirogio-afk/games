@@ -490,8 +490,13 @@ Qui il registro completo, a edizioni.
   **4. I sottotitoli degli eventi sonori**: `SAVE.sott` (default 1),
   interruttore con `aria-pressed`, e le chiamate a `sottotitolo()`
   **aggiunte ai 4 fischi che ne erano privi** (inizio, fine, le due
-  ripresa gemelle dopo un gol) — gli altri 11 siti con banner
-  preesistente non toccati e non spenti dal flag.
+  ripresa gemelle dopo un gol) — gli altri **9 siti di codice** con
+  banner preesistente non toccati e non spenti dal flag (**correzione
+  di revisione del compito 6**: 13 occorrenze `Audio5.whistle(` totali
+  − 4 curate = 9; il numero scritto qui prima, 11, contava
+  RIMESSA/ANGOLO/RINVIO come tre voci mentre sono UN solo sito di
+  codice — `showBanner(tipo.toUpperCase(),...)` — con tre varianti
+  testuali dello stesso evento, non tre siti distinti).
 
   **5. L'anello del fiato**: arco parziale dentro `anelloComandato`,
   sulla stessa ellisse dell'ambra, quarta tinta lime
@@ -515,6 +520,24 @@ Qui il registro completo, a edizioni.
   Registrato in batteria (`strumenti/tutti.js`, `conta:true`), insieme a
   `_q-accessibile.js` (7/7, censito nel piano ma mai registrato prima
   d'ora).
+
+  **IL LIMITE DEL BANCO, DICHIARATO** (correzione di revisione del
+  compito 6): il banco filtra i lampi per ESCURSIONE di luminanza
+  (`PROMINENZA_MIN=1,5`, sulla scala 0-255 della luminanza percettiva
+  0,2126R+0,7152G+0,0722B) PRIMA di contarne la frequenza — è quindi
+  cieco a uno strobo la cui escursione resti sotto quella soglia, a
+  QUALUNQUE frequenza (dimostrato in revisione: una serie iniettata a
+  5 Hz con ampiezza 1,4 dà 0 lampi rilevati, VERDE; da 1,6 in su
+  condanna). È corretto in principio — un lampo che non raggiunge la
+  soglia di escursione non è un flash clinicamente pericoloso — ma la
+  taratura è **sul gioco di oggi**, e le sorgenti reali deboli (folla,
+  dischetto) stanno a cavallo della soglia. La frase onesta: il banco
+  garantisce «nessuno strobo FORTE (escursione oltre soglia) oltre
+  3 Hz», NON «il gioco è fotosensibile-safe» in senso assoluto (regola
+  di casa: non vendere più di quello che la misura garantisce). Limite
+  registrato come noto, seguito **#114**: ancorare `PROMINENZA_MIN` a
+  una soglia clinica documentata (tipo WCAG/Harding, sull'escursione di
+  luminanza relativa) invece che sulla taratura odierna del gioco.
 
   **UNA REGRESSIONE TROVATA E CURATA CHIUDENDO IL CANTIERE**: eseguendo
   per la prima volta la batteria intera su questo ramo (nessun compito
@@ -568,11 +591,12 @@ Qui il registro completo, a edizioni.
   prerequisito, e MIND v1). Seguito nominato **#113** (MIRA GUIDATA a
   due pesi sull'intent-resolution di #88, mandato §9.2, 2 g — tocca
   l'intent-resolution del gameplay, quasi una feature: fuori perimetro
-  del contorno), più due rifiniture minori a registro dall'anello del
-  fiato (compito 5): la freccia di direzione, disegnata sopra la stessa
-  ellisse, può coprire ~53° di lime quando la corsa cade nella zona
-  accesa; la leggibilità della quota intermedia (55% contro 70%) non è
-  stata misurata oltre i due estremi.
+  del contorno); **seguito #115** (correzione di revisione del compito
+  6: numerato invece che lasciato in prosa) per i due residui a
+  registro dall'anello del fiato (compito 5): la freccia di direzione,
+  disegnata sopra la stessa ellisse, può coprire ~53° di lime quando la
+  corsa cade nella zona accesa; la leggibilità della quota intermedia
+  (55% contro 70%) non è stata misurata oltre i due estremi.
 
   **Cancelli**: `_q-accessibile.js` **7/7**; `_q-fotosensibile.js`
   **6/6** (verde sul gioco, `--controllo` condannato **0/1**, come deve);

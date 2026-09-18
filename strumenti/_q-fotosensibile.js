@@ -60,6 +60,26 @@
    uscire ROSSO. E' la condanna che prova che il banco discrimina invece
    di attestare.
 
+   IL LIMITE DI QUESTO BANCO (dichiarato in revisione, voce #112,
+   correzione del compito 6, seguito #114 per generalizzarlo). Questo
+   banco misura la FREQUENZA dei lampi la cui escursione di luminanza
+   supera PROMINENZA_MIN=1,5 (unita': punti di luminanza percettiva
+   0-255, la stessa scala di __luce() qui sotto) — filtra per
+   ESCURSIONE PRIMA di contare la frequenza, non il contrario. E'
+   cieco per costruzione a uno strobo la cui escursione resti sotto
+   quella soglia, a QUALUNQUE frequenza. E' corretto in principio (un
+   lampo che non raggiunge la soglia non e' un flash clinicamente
+   pericoloso), ma PROMINENZA_MIN e' tarata SUL GIOCO DI OGGI (meta'
+   strada fra il rumore misurato e il piu' piccolo segnale vero QUI),
+   non su una soglia clinica documentata — e le sorgenti reali piu'
+   deboli (folla, dischetto) stanno a cavallo di quella soglia. Il
+   verdetto VERDE di questo banco garantisce «nessuno strobo FORTE
+   (escursione oltre PROMINENZA_MIN) oltre 3 Hz», NON «il gioco e'
+   fotosensibile-safe» in senso assoluto. `--calibra` stampa i numeri
+   grezzi per chi vuole ritarare la soglia; il seguito #114 la
+   ancorera' a un riferimento clinico (tipo WCAG/Harding, escursione di
+   luminanza relativa) invece che al gioco stesso.
+
    uso:
      node strumenti/_q-fotosensibile.js [--gioco file.html]
      node strumenti/_q-fotosensibile.js --controllo    (deve uscire rosso)
