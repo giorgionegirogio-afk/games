@@ -18348,8 +18348,19 @@ function checkSlideContact(p){
            STESSA decisione area/cumulo di sempre -- il ramo qui sotto
            e' carattere per carattere quello che checkSlideContact
            faceva PRIMA di questo compito (RETTIFICA voce #107, compito
-           1, per l'area vera al posto di zonaCalda: invariata). */
-        if(G.vantaggio){
+           1, per l'area vera al posto di zonaCalda: invariata).
+           W1 (chiusura arbitrale, voce #107 compito 3, 18 settembre
+           2026): la guardia qui sotto vuole ANCHE G.vantaggio.team>=0,
+           come il blocco di valutazione in step() (riga 16980) gia'
+           chiede. Senza quella guardia, il sentinel {team:-1,...} che
+           VANT_T lascia dietro di se' (riga 17057, cartellino ancora
+           da scaricare dopo un vantaggio CONCESSO per intero) e' un
+           G.vantaggio troncato ma non nullo: il fallo successivo lo
+           leggeva come "vantaggio gia' pendente" e fischiava SUBITO
+           invece di aprire la propria finestra. Misurato dall'arbitro:
+           un fallo su venti (5,0% in base, 4,7% su questa correzione)
+           riguadagna cosi' la grazia che gli spettava. */
+        if(G.vantaggio && G.vantaggio.team>=0){
           scaricaCardVantaggio();
           Audio5.whistle(false);
           if(cattivo) infliggiCartellino(p);

@@ -117,6 +117,29 @@
    unita', molto sotto le 120 generose della prima misura).
    Il file e' adesso a dieci prove.
 
+   CHIUSURA ARBITRALE (voce #107, compito 3, 18 settembre 2026). La
+   contabilita' vera dell'arbitro (150 partite CPU-CPU VERO, sonda a
+   quadratura) ha inchiodato W1: checkSlideContact (~18352) fischiava
+   SUBITO il fallo successivo a un vantaggio gia' CONCESSO per intero,
+   perche' controllava solo "if(G.vantaggio)" -- vero anche sul sentinel
+   {team:-1,...,card} che VANT_T lascia dietro di se' per portare il
+   cartellino pendente fino alla prossima palla ferma (riga 17057). Il
+   blocco di valutazione in step() (riga 16980) gia' chiedeva
+   G.vantaggio.team>=0: checkSlideContact no. Un fallo su venti (5,0% in
+   base, 4,7% sulla correzione di revisione) perdeva cosi' la propria
+   finestra. CURA: la stessa guardia, "G.vantaggio && G.vantaggio.
+   team>=0". Il file guadagna una undicesima prova, la prova che inchioda
+   il bug:
+     11. GRAZIA-DOPO-CARD -- un primo fallo da giallo apre il vantaggio,
+         l'azione regge fino a VANT_T (VANTAGGIO concesso, il cartellino
+         resta pendente nel sentinel team:-1), POI un secondo fallo,
+         PRIMA di qualunque palla ferma, DEVE aprire la propria finestra
+         (G.vantaggio.team>=0), non fischiare subito. NATA ROSSA sulla
+         correzione di revisione (senza W1): il secondo fallo leggeva il
+         sentinel come "vantaggio gia' pendente" e fischiava all'istante.
+         Verde dopo W1.
+   Il file e' adesso a undici prove.
+
    ZERO dado() NUOVI. Le scene si scrivono direttamente sullo stato del
    gioco (G.players/G.ball, la stessa tecnica di _q-battute.js) e il
    fallo da scivolata si ottiene con un'entrata DA DIETRO: la vittima
@@ -510,6 +533,62 @@ function INIETTA_SCENE() {
       statoDopoRipresa: t.state,
     };
   };
+  /* SCENA_GRAZIA_DOPO_CARD_ESEGUI (chiusura arbitrale, voce #107 compito
+     3, 18 settembre 2026): la prova che inchioda W1. Un PRIMO fallo da
+     giallo (SCENA_FALLO('lontano'), sempre un'entrata da dietro, sempre
+     cattivo) apre il vantaggio; SOSTIENI_AVANTI lo tiene in corsa fino a
+     VANT_T -- VANTAGGIO concesso per intero, il cartellino resta
+     pendente nel sentinel {team:-1,...,card} che il blocco di
+     valutazione lascia dietro di se' (CALCETTO-il-gioco.html ~17057).
+     PRIMA di qualunque palla ferma (niente setScene/resetKickoff nel
+     mezzo: scaricaCardVantaggio non gira mai), un SECONDO fallo si
+     costruisce da capo -- STESSA tecnica, un'altra chiamata a
+     SCENA_FALLO('lontano'), che riposiziona gli stessi due giocatori per
+     un'altra entrata da dietro garantita, zero dado() nuovo -- e deve
+     aprire la PROPRIA finestra (G.vantaggio.team>=0), non fischiare
+     subito. La misura che discrimina: G.vantaggio.team>=0 diventa vero
+     (finestra vera aperta) E nessun banner FALLO/PUNIZIONE compare prima
+     -- l'unico testo che matcherebbe quel pattern e' quello di un
+     fischio SUBITO (checkSlideContact chiama showBanner solo sul ramo
+     immediato; aprire una finestra nuova e' silenzioso, per costruzione
+     del file). Il banner 'VANTAGGIO' del primo fallo resta come testo
+     scaduto in G.banner finche' nessuno lo sovrascrive (get banner(),
+     CALCETTO-il-gioco.html ~43075: G.banner non si azzera da solo) ma
+     non contiene ne' 'FALLO' ne' 'PUNIZIONE', quindi non falsa la
+     misura. */
+  window.SCENA_GRAZIA_DOPO_CARD_ESEGUI = function () {
+    const t = window.__test;
+    const s1 = SCENA_FALLO('lontano');
+    if (s1.errore) return s1;
+    let aperto1 = false;
+    for (let i = 0; i < 180 && !aperto1; i++) {
+      t.simulate(1 / 60);
+      if (typeof G !== 'undefined' && G.vantaggio && G.vantaggio.team >= 0) aperto1 = true;
+    }
+    if (!aperto1) return { errore: "G.vantaggio (primo fallo) non si e' mai aperto entro 3 s" };
+    if (G.vantaggio.card == null) return { errore: 'il primo fallo scriptato non ha prodotto un cartellino dovuto (card null)' };
+    const sost = SOSTIENI_AVANTI(s1.vittimaIdx, 230);
+    if (!sost.vistoVantaggio) return Object.assign({ errore: "il primo vantaggio non e' mai stato concesso entro 230 fotogrammi" }, sost);
+    const sentinelDopoPrimo = (typeof G !== 'undefined' && G.vantaggio) ? Object.assign({}, G.vantaggio) : null;
+    if (!sentinelDopoPrimo || sentinelDopoPrimo.team !== -1) {
+      return { errore: "atteso il sentinel {team:-1,...} dopo il vantaggio concesso, trovato: " + JSON.stringify(sentinelDopoPrimo) };
+    }
+    const s2 = SCENA_FALLO('lontano');
+    if (s2.errore) return s2;
+    let aperto2 = false, fischioPrimaDiAprire = false;
+    for (let i = 0; i < 180 && !aperto2; i++) {
+      t.simulate(1 / 60);
+      const ban = t.banner;
+      if (!aperto2 && ban && ban.text && /FALLO|PUNIZIONE/.test(String(ban.text).toUpperCase())) fischioPrimaDiAprire = true;
+      if (typeof G !== 'undefined' && G.vantaggio && G.vantaggio.team >= 0) aperto2 = true;
+    }
+    const vantaggioDopo2 = (typeof G !== 'undefined' && G.vantaggio) ? Object.assign({}, G.vantaggio) : null;
+    return {
+      ok: true, sentinelCardDopoPrimo: sentinelDopoPrimo.card,
+      aperto2, fischioPrimaDiAprire, vantaggioDopo2,
+      statoFinale: t.state,
+    };
+  };
 }
 
 /* fa scorrere n fotogrammi e torna lo stato finale -- copre il fermo del
@@ -900,6 +979,40 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
           'gialli alla porta: ' + scena.gialliAlGol + ' (atteso ' + scena.gialliPrima + ', invariato)   ' +
           'gialli dopo la ripresa: ' + scena.gialliDopoRipresa + ' (atteso ' + (scena.gialliPrima + 1) + ')   ' +
           't del vantaggio all\'apertura: ' + scena.tAllApertura.toFixed(3) + '   stato dopo la ripresa: ' + scena.statoDopoRipresa);
+      }
+    }
+
+    /* ===================================================================
+       PROVA 11 -- GRAZIA-DOPO-CARD (chiusura arbitrale, voce #107 compito
+       3, 18 settembre 2026). La prova che inchioda W1: checkSlideContact
+       fischiava SUBITO il fallo successivo a un vantaggio gia' CONCESSO
+       per intero, perche' la guardia li' era "if(G.vantaggio)" senza
+       "team>=0" -- vera anche sul sentinel {team:-1,...,card} che VANT_T
+       lascia dietro di se' per il cartellino ancora da scaricare (App. D).
+       Un PRIMO fallo da giallo apre il vantaggio e regge fino a VANT_T
+       (VANTAGGIO concesso, sentinel confermato), poi un SECONDO fallo,
+       PRIMA di qualunque palla ferma, deve aprire la PROPRIA finestra
+       (G.vantaggio.team>=0) invece di fischiare all'istante. NATA ROSSA
+       sulla correzione di revisione (b241c43, senza W1): il secondo
+       fallo leggeva il sentinel come "vantaggio gia' pendente" e
+       fischiava subito (banner FALLO/PUNIZIONE, mai una finestra nuova).
+       Verde dopo W1. */
+    {
+      const scena = await pag.evaluate(({ seme, taglia }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.setCpuVsCpu(true);
+        t.startMatch(1, 1, { size: taglia });
+        return SCENA_GRAZIA_DOPO_CARD_ESEGUI();
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+      if (scena.errore) { di(false, '11. GRAZIA-DOPO-CARD', 'BANCO: scena non costruita -- ' + scena.errore); }
+      else {
+        const ok = scena.aperto2 && !scena.fischioPrimaDiAprire;
+        di(ok, "11. GRAZIA-DOPO-CARD -- secondo fallo su un vantaggio GIA' CONCESSO (sentinel pendente): deve aprire la propria finestra, non fischiare subito",
+          'cartellino pendente dopo il primo vantaggio: idx ' + scena.sentinelCardDopoPrimo +
+          '   seconda finestra aperta (team>=0): ' + scena.aperto2 + ' (atteso true)   ' +
+          'fischio immediato prima di aprire (banner FALLO/PUNIZIONE): ' + scena.fischioPrimaDiAprire + ' (atteso false)   ' +
+          'G.vantaggio dopo il secondo fallo: ' + JSON.stringify(scena.vantaggioDopo2) + '   stato finale: ' + scena.statoFinale);
       }
     }
 
