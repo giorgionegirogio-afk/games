@@ -478,10 +478,14 @@ Qui il registro completo, a edizioni.
 
   **I numeri chiave, con la prova accanto**:
   - Banco dedicato `strumenti/_q-battute.js`, in batteria da questo
-    compito: **11/11 verde** — nato 2/7 al compito 1 (le 5 prove di scena
-    dichiarate rosse per costruzione, la condanna a registro), portato a
-    11/11 dai compiti 2-4 (due prove aggiunte in corsa: CLIP-RIMESSA al
-    compito 3, ANGOLO-IN-AREA al compito 4).
+    compito: **11/11 verde** — nato **7 prove** al compito 1 (2/7 verdi,
+    le 5 prove di scena dichiarate rosse per costruzione, la condanna a
+    registro). **Quattro prove aggiunte in corsa**, non due: **+2 al
+    compito 3** (BATTUTA-UMANA e RISPETTO, prove 8-9) → **9**; **+1 nella
+    correzione di revisione del compito 3** (CLIP-RIMESSA, prova 10,
+    `strumenti/_q-battute.js` §F2) → **10**; **+1 al compito 4**
+    (ANGOLO-IN-AREA, prova 11) → **11** (fonte: brief e rapporto del
+    compito 3, rapporto del compito 4, ledger di questa voce).
   - GABBIA: **0/40 dal merge-base** (`7ed570a`, `_c3-sorteggi.js`) —
     **0/20 a taglia 5** e **0/20 a taglia 7** (100.829=100.829 e
     213.679=213.679 chiamate a `dado()`) — la promessa della gabbia
@@ -544,8 +548,14 @@ Qui il registro completo, a edizioni.
   GABBIA** (default); il campo vero è coperto da `_q-battute.js` (che
   gioca a 5 e a 11) e dalle corse dedicate di questo compito (`_eventi`
   a 11 e a 5-campo-vero, `_c3-sorteggi` a 11 e la corsa dedicata
-  5-campo-vero sotto). **La voce #99 resta aperta**: nessun cancello IN
-  BATTERIA gira mai a taglia 11 o forza `sponde='campo'`.
+  5-campo-vero sotto). Le due corse a 5-campo-vero vivono su varianti NON
+  committate (`fuori/` è gitignorato): `fuori/_eventi-campo.js` e
+  `fuori/_c3-sorteggi-campo.js`, perché gli strumenti ufficiali
+  (`strumenti/_eventi.js`, `strumenti/_c3-sorteggi.js`) non hanno un flag
+  `--sponde`. **Intenzione dichiarata**: portare quel flag `--sponde` nei
+  banchi ufficiali quando il campo vero entrerà in batteria — si aggancia
+  alla voce **#99**, che resta aperta: nessun cancello IN BATTERIA gira
+  mai a taglia 11 o forza `sponde='campo'`.
 
   **Sorteggi**: `_q-determinismo --partite 4` **13/13** (convenzione del
   ramo; il piano scriveva 10/10, disallineamento già a registro dal
@@ -567,7 +577,10 @@ Qui il registro completo, a edizioni.
   tabella `ATT[11].FH=1120` mai aggiornata dopo il compito 3 della voce
   #86 (dovrebbe essere 1490) — le fa fallire sulla coerenza campo/porta,
   causa estranea alle rimesse. I banchi-camera (`_z-verbo.js`,
-  `_z-verbo-prova.js`, `_t3-verbo.js`) girano puliti, zero eccezioni: la
+  `_z-verbo-prova.js`, `_t3-verbo.js`), lanciati a **`--partite 2-3`**
+  invece del default 16 per contenere il tempo (ogni partita costa
+  150-350 s di rendering reale — fonte: rapporto compito 5, Dubbi §4),
+  girano puliti, zero eccezioni: la
   scena `battuta` non compare nel campionamento camera-alto/bassa
   (guardia `scena==='play'||'golden'`), i numeri non si muovono per
   costruzione, come previsto.
