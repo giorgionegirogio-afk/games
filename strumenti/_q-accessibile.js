@@ -1,6 +1,7 @@
 /* =====================================================================
    _q-accessibile.js — LE ETICHETTE HANNO UN GIUDICE CHE LE ASPETTA
-   (voce #112, compiti 1 e 2 del ramo voce-112-spiccioli-ux).
+   (voce #112, compiti 1 e 2 + correzione revisione compito 2, ramo
+   voce-112-spiccioli-ux).
 
    IL PERCHE'. Il cantiere #112 chiude l'onda A del mandato con sei cure
    di UX/accessibilita' a rischio quasi zero (nessuna tocca dado(), una
@@ -9,10 +10,21 @@
    interruttori di IMPOSTAZIONI, e il rettangolo del banner dichiarato
    in zoneInterfaccia(). Il compito 2 aggiunge la terza: le tre
    intensita' della vibrazione. Ogni prova nasce PRIMA dell'attrezzo che
-   la applica e la condanna sul gioco di ieri: la terza, aggiunta oggi,
-   nasce rossa sulla base ec82689 (SAVE.vibInt non esiste ancora).
+   la applica e la condanna sul gioco di ieri: la terza, aggiunta al
+   compito 2, nasce rossa sulla base ec82689 (SAVE.vibInt non esiste
+   ancora).
 
-   LE TRE PROVE:
+   CORREZIONE REVISIONE COMPITO 2: la prova 3 misura solo lo stato
+   LOGICO di #vibRow (classList/SAVE.vibInt), mai il rendering. Il
+   compito 2 aveva copiato #vibRow dal pattern .diff-row solo in
+   markup+JS, saltando i due selettori CSS della famiglia — i tre
+   bottoni .vib rendevano con lo stile di default del browser, e
+   .vib.sel non si distingueva mai da .vib. La quarta prova,
+   VIBRAZIONE-STILE, chiude il buco misurando getComputedStyle: nasce
+   rossa sul commit 24421ca (compito 2 cosi' com'era), verde dopo la
+   cura del CSS.
+
+   LE QUATTRO PROVE:
      1. ARIA — apre IMPOSTAZIONI (gearBtn -> PREFERENZE, la via vera del
         dito), e per ognuno dei cinque .voce.sw (btnSetAudio/Vib/Moto/
         Dalt/Moviola) verifica che aria-pressed esista E combaci con
@@ -37,15 +49,27 @@
         non deve toccare navigator.vibrate — vibInt non ha voce in
         capitolo finche' la vibrazione stessa e' spenta. Zero dado() qui:
         un bottone, un salvataggio e uno spione sull'hardware finto.
+     4. VIBRAZIONE-STILE (correzione revisione compito 2) — dentro lo
+        STESSO pannello IMPOSTAZIONI, confronta via getComputedStyle un
+        bottone .vib non selezionato con il bottone .diff non
+        selezionato (la riga "Difficolta' predefinita CPU", stesso
+        pannello, mai toccata dal compito 2): background-color,
+        border-top-color e font-family devono combaciare, perche' sono
+        le tre proprieta' che il selettore condiviso
+        .diff,.tbtn,.taglia,.ment,.sponde{...} impone e che il default
+        del browser per un <button> NON riproduce. Poi confronta .vib
+        con .vib.sel: almeno una fra background-color e border-top-color
+        deve differire, altrimenti lo stato scelto sarebbe invisibile.
+        Zero dado() qui: solo stile, nessuna simulazione.
 
    ZERO dado() NUOVI in questo file, come in _q-battute.js: nessuna
-   delle tre prove decide niente per la CPU, tutte leggono markup e
-   funzioni di interfaccia gia' esistenti (o gia' introdotte da un
-   compito precedente dello stesso cantiere).
+   delle quattro prove decide niente per la CPU, tutte leggono markup,
+   stile calcolato e funzioni di interfaccia gia' esistenti (o gia'
+   introdotte da un compito precedente dello stesso cantiere).
 
    IL SEME: 20260918, la data del piano d'esecuzione del cantiere (voce
-   #112), default del flag --seme. Non governa nessuna delle due prove
-   (zero dado() coinvolti), ma si semina comunque per coerenza col
+   #112), default del flag --seme. Non governa nessuna delle quattro
+   prove (zero dado() coinvolti), ma si semina comunque per coerenza col
    telaio di casa (_q-battute.js) e per lasciare la porta aperta a
    prove future che ne avessero bisogno.
 
@@ -55,7 +79,7 @@
    esce 0 se tutte le prove sono verdi, 1 se almeno una e' rossa,
    2 se il banco stesso e' esploso (pagina, hook mancante, eccezione),
    3 riservato a "prova nulla" sul modello di _q-battute.js — nessuna
-   delle due prove di oggi lo usa.
+   delle quattro prove di oggi lo usa.
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -260,6 +284,57 @@ const INTERRUTTORI = ['btnSetAudio', 'btnSetVib', 'btnSetMoto', 'btnSetDalt', 'b
         guasti.length ? guasti.join('   ')
           : 'default=' + r.vibIntDefault + '   vib spento: buzz muto (' + r.chiamateAVibSpenta + ' chiamate)   ' +
             'forte: buzz(20)=' + r.chiamataForte + '   leggera: buzz(20)=' + r.chiamataLeggera);
+    }
+
+    /* ===================================================================
+       PROVA 4 — VIBRAZIONE-STILE (correzione revisione compito 2, voce
+       #112). Si torna in IMPOSTAZIONI con la stessa via del dito delle
+       prove precedenti (idempotente: goScreen ridisegna la stessa
+       schermata se e' gia' quella attiva). Il riferimento e' .diff (la
+       riga "Difficolta' predefinita CPU", ~riga 3667), nello STESSO
+       pannello di #vibRow e mai toccato dal compito 2: se .vib eredita
+       davvero il selettore condiviso, le tre proprieta' che quel
+       selettore impone (background-color, border-top-color,
+       font-family) devono combaciare esattamente. Sulla base 24421ca
+       (compito 2 cosi' com'era, prima di questa correzione) .vib non e'
+       elencato nel selettore e rende con lo stile di default del
+       browser: questa prova nasce rossa li'. */
+    {
+      const r = await pag.evaluate(() => {
+        document.getElementById('gearBtn').click();
+        document.getElementById('btnImpost').click();
+        const rif = document.querySelector('.diff:not(.sel)');
+        const vib = document.querySelector('.vib:not(.sel)');
+        const vibSel = document.querySelector('.vib.sel');
+        const leggi = el => {
+          if (!el) return null;
+          const c = getComputedStyle(el);
+          return { backgroundColor: c.backgroundColor, borderTopColor: c.borderTopColor, fontFamily: c.fontFamily };
+        };
+        return {
+          rif: leggi(rif), vib: leggi(vib), vibSel: leggi(vibSel),
+          rifTrovato: !!rif, vibTrovato: !!vib, vibSelTrovato: !!vibSel,
+        };
+      });
+      const guasti = [];
+      if (!r.rifTrovato) guasti.push('bottone .diff:not(.sel) di riferimento non trovato');
+      if (!r.vibTrovato) guasti.push('bottone .vib non selezionato non trovato');
+      if (!r.vibSelTrovato) guasti.push('bottone .vib.sel non trovato');
+      if (r.rifTrovato && r.vibTrovato) {
+        if (r.rif.backgroundColor !== r.vib.backgroundColor)
+          guasti.push('.vib background-color=' + r.vib.backgroundColor + ' diverso da .diff=' + r.rif.backgroundColor);
+        if (r.rif.borderTopColor !== r.vib.borderTopColor)
+          guasti.push('.vib border-top-color=' + r.vib.borderTopColor + ' diverso da .diff=' + r.rif.borderTopColor);
+        if (r.rif.fontFamily !== r.vib.fontFamily)
+          guasti.push('.vib font-family=' + r.vib.fontFamily + ' diverso da .diff=' + r.rif.fontFamily);
+      }
+      if (r.vibTrovato && r.vibSelTrovato) {
+        const diverso = r.vib.backgroundColor !== r.vibSel.backgroundColor || r.vib.borderTopColor !== r.vibSel.borderTopColor;
+        if (!diverso) guasti.push('.vib.sel indistinguibile da .vib non selezionato (stesso background e stesso bordo)');
+      }
+      di(guasti.length === 0, '4. VIBRAZIONE-STILE — .vib eredita lo stile di .diff/.taglia/.sponde, .vib.sel si distingue da .vib',
+        guasti.length ? guasti.join('   ')
+          : 'vib: ' + JSON.stringify(r.vib) + '   vib.sel: ' + JSON.stringify(r.vibSel) + '   riferimento .diff: ' + JSON.stringify(r.rif));
     }
 
     if (ecc.length) { di(false, 'BANCO — nessuna eccezione di pagina', 'eccezione: ' + ecc[0]); }
