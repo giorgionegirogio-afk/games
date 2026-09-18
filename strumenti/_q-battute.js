@@ -61,9 +61,11 @@
 
    ZERO dado() NUOVI in questo file: le scene si costruiscono scrivendo
    direttamente lo stato del pallone (owner/x/y/z/vx/vy/vz) e chiamando
-   segnaTocco(idx), la stessa funzione che il gioco chiama a ogni
+   segnaTocco(idx, true), la stessa funzione che il gioco chiama a ogni
    contatto vero — non si inventa un canale nuovo, si usa quello che
-   gia' esiste per dichiarare "chi ha toccato per ultimo".
+   gia' esiste per dichiarare "chi ha toccato per ultimo" (il secondo
+   argomento, aggiunto dalla voce #107, dice che e' un piede: il pallone
+   esce sempre sparato a velocita' alta, il gesto di un calcio).
 
    uso:  node strumenti/_q-battute.js
          node strumenti/_q-battute.js --gioco fuori/calcetto-base-7ed570a.html
@@ -194,9 +196,10 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
    numero scritto a mano); la difesa di quella porta e' la squadra 0
    (formation(): gl=0 per team 0, CALCETTO-il-gioco.html:10442).
 
-   In entrambe l'ultimo tocco si dichiara con segnaTocco(idx), la stessa
-   funzione che il gioco chiama a ogni contatto vero — non un canale
-   nuovo inventato per il banco.
+   In entrambe l'ultimo tocco si dichiara con segnaTocco(idx, true), la
+   stessa funzione che il gioco chiama a ogni contatto vero — non un
+   canale nuovo inventato per il banco (true: il pallone esce sparato,
+   e' un calcio di piede).
    ===================================================================== */
 function INIETTA_SCENE() {
   window.SCENA_FASCIA = function (teamUltimoTocco) {
@@ -205,7 +208,7 @@ function INIETTA_SCENE() {
     const idx = t.players.findIndex(p => p.team === teamUltimoTocco);
     if (idx < 0) return { errore: 'nessun giocatore trovato per la squadra ' + teamUltimoTocco };
     Object.assign(t.ball, { owner: -1, x: camp.FW / 2, y: 40, vx: 0, vy: -500, z: 0, vz: 0 });
-    segnaTocco(idx);
+    segnaTocco(idx, true);   // il pallone esce sparato a 500: e' un calcio di piede (voce #107, correzione revisione compito 2)
     return { ok: true };
   };
   window.SCENA_FONDO = function (teamUltimoTocco) {
@@ -214,7 +217,7 @@ function INIETTA_SCENE() {
     const idx = t.players.findIndex(p => p.team === teamUltimoTocco);
     if (idx < 0) return { errore: 'nessun giocatore trovato per la squadra ' + teamUltimoTocco };
     Object.assign(t.ball, { owner: -1, x: 60, y: camp.GY0 - 80, vx: -500, vy: 0, z: 0, vz: 0 });
-    segnaTocco(idx);
+    segnaTocco(idx, true);   // il pallone esce sparato a 500: e' un calcio di piede (voce #107, correzione revisione compito 2)
     return { ok: true };
   };
 }

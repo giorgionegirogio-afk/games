@@ -55,6 +55,21 @@
         nel file (grep fatto prima di scrivere questa prova: zero
         occorrenze come banner di gioco). Rossa fino al compito 3.
 
+   RETTIFICA (voce #107, correzione di revisione compito 2, 18 settembre
+   2026): il rilievo del revisore ha misurato un caso di mezzo che
+   RETRO-PRESA non isolava mai -- un retropassaggio a velocita' 40, quasi
+   fermo, che si ferma a distanza P_R+B_R dal portiere per una cinquantina
+   di fotogrammi prima che un compagno qualunque lo raggiunga e il gioco
+   torni vivo. IL FILE GUADAGNA LA SETTIMA PROVA, il controllo dedicato:
+     7. RETRO-FERMO -- CONTROLLO DISCRIMINANTE, nasce verde: non esercita
+        codice nuovo, misura il caso di mezzo con tre condanne che
+        RETRO-PRESA non copriva -- il portiere non deve mai prendere con
+        le mani, il pallone non deve mai attraversarlo (distanza mai
+        sotto P_R+B_R, con tolleranza, mentre il regime di negazione e'
+        attivo) e il pallone deve tornare vivo entro 5 s, cosi' un fermo
+        che non si scioglie mai non passerebbe per una regola sana.
+   Il file e' adesso a sette prove.
+
    ZERO dado() NUOVI. Le scene si scrivono direttamente sullo stato del
    gioco (G.players/G.ball, la stessa tecnica di _q-battute.js) e il
    fallo da scivolata si ottiene con un'entrata DA DIETRO: la vittima
@@ -72,7 +87,7 @@
    esce 0 se tutte le prove sono verdi, 1 se almeno una e' rossa,
    2 se il banco stesso e' esploso (pagina, hook mancante, eccezione).
    Il 3 resta riservato (convenzione di _q-battute.js/_q-replay.js) e
-   non e' usato da nessuna delle quattro prove di oggi.
+   non e' usato da nessuna delle sette prove di oggi.
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -225,6 +240,42 @@ function INIETTA_SCENE() {
     kickBall(avversario, dir, 0, 220, 0);
     return { ok: true, gkIdx: gi, avversarioIdx: ai };
   };
+  /* SCENA_RETROFERMO (voce #107, correzione di revisione compito 2): il
+     retropassaggio QUASI FERMO che il caso RETRO-PRESA non isolava mai --
+     lento abbastanza da non essere ne' presa ne' rinvio, un caso di
+     mezzo che il rilievo del revisore ha misurato a parte (velocita' 40,
+     ben sotto sogliaPresa=330 e sotto anche il rinvio). Il compagno
+     calcia DAVVERO (kickBall, l'imbuto vero: lastTouch/toccoPiede sono
+     il gesto, non un canale sintetico), poi il pallone si teletrasporta
+     -- STESSA TECNICA di SCENA_RETROTESTA -- a portata del portiere,
+     ancora alla velocita' dichiarata: a 40 unita'/s l'attrito del campo
+     spegnerebbe il pallone entro una ventina di unita' di corsa (misurato:
+     lanciato da 60 unita' di distanza si ferma sotto il solo attrito a
+     ~44 dal portiere, mai dentro l'ellisse di tentaPresa), e nel
+     frattempo un compagno qualunque -- non il portiere -- lo
+     raccoglierebbe per conto suo: la scena non arriverebbe mai a
+     esercitare il ramo che nega la presa. Il teletrasporto arriva a
+     P_R+B_R+9 dal portiere, sulla sua stessa fascia orizzontale: dentro
+     il semiasse lungo dell'ellisse (GK_REACH+B_R), fuori dal raggio di
+     riposo (P_R+B_R) -- cosi' la prova osserva davvero l'avvicinamento e
+     l'arresto, non parte gia' ferma. */
+  window.SCENA_RETROFERMO = function () {
+    const t = window.__test;
+    const gk = t.players.find(p => p.team === 0 && p.role === 'gk');
+    const compagno = t.players.find(p => p.team === 0 && p.role !== 'gk');
+    if (!gk || !compagno) return { errore: 'portiere o compagno non trovati (squadra 0)' };
+    const gi = t.players.indexOf(gk), ci = t.players.indexOf(compagno);
+    const dir = gk.x < compagno.x ? -1 : 1;
+    Object.assign(compagno, {
+      x: gk.x - dir * 40, y: gk.y, fx: dir, fy: 0, vx: 0, vy: 0,
+      slide: -1, recover: 0, rove: -1, charge: -1, out: 0, kickCd: 0,
+    });
+    Object.assign(t.ball, { owner: ci, x: compagno.x, y: compagno.y, z: 0, vx: 0, vy: 0, vz: 0 });
+    kickBall(compagno, dir, 0, 40, 0);
+    const raggioFermo = P_R + B_R, offerta = raggioFermo + 9;
+    Object.assign(t.ball, { x: gk.x - dir * offerta, y: gk.y, z: 0, vx: dir * 40, vy: 0, vz: 0 });
+    return { ok: true, gkIdx: gi, compagnoIdx: ci, raggioFermo };
+  };
 }
 
 /* fa scorrere n fotogrammi e torna lo stato finale -- copre il fermo del
@@ -267,6 +318,31 @@ const CORRI_TRACCIA_VANTAGGIO = (n) => `
     if(!fermata && t.ball.vx===0 && t.ball.vy===0){ fermata = true; fotogrammaFermata = i; }
   }
   return { vistoVantaggio, fermata, fotogrammaFermata, statoFinale: t.state };
+})()`;
+
+/* per RETRO-FERMO: traccia, fotogramma per fotogramma, TRE cose --
+   (i) se la presa e' MAI avvenuta (b.owner===gkIdx, come CORRI_TRACCIA_PRESA);
+   (ii) la distanza minima dal portiere MENTRE IL REGIME DI NEGAZIONE E'
+   ATTIVO (pallone libero, toccoPiede vero, ultimo tocco ancora il
+   compagno che ha calciato) -- fuori da quella finestra un compagno puo'
+   benissimo dribblare vicino al proprio portiere senza che sia un
+   attraversamento, quindi la soglia non si applica li';
+   (iii) il primo fotogramma in cui il pallone torna vivo (posseduto da
+   qualcuno o piu' veloce di 50), a partire dal fischio d'inizio. */
+const CORRI_TRACCIA_RETROFERMO = (n, gkIdx, ciIdx) => `
+(function(){
+  const t = window.__test;
+  let presa = false, minDistRegime = Infinity, vivo = false, vivoFotogramma = -1;
+  for(let i=0;i<${n};i++){
+    t.simulate(1/60);
+    const b = t.ball, gk = t.players[${gkIdx}];
+    const d = Math.hypot(b.x-gk.x, b.y-gk.y);
+    const regimeAttivo = b.owner<0 && b.toccoPiede===true && b.lastTouch===${ciIdx};
+    if(regimeAttivo && d<minDistRegime) minDistRegime=d;
+    if(b.owner===${gkIdx}) presa = true;
+    if(!vivo && (b.owner>=0 || Math.hypot(b.vx,b.vy)>50)){ vivo = true; vivoFotogramma = i; }
+  }
+  return { presa, minDistRegime, vivo, vivoFotogramma };
 })()`;
 
 const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a 7/11) con largo margine
@@ -431,6 +507,42 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
         di(ok, '6. VANTAGGIO-FISCHIA-SEMPRE -- fallo con azione che prosegue: atteso banner VANTAGGIO, nessun fischio',
           'banner VANTAGGIO visto: ' + r.vistoVantaggio + '   pallone azzerato di netto: ' + r.fermata +
           (r.fermata ? (' al fotogramma ' + r.fotogrammaFermata) : '') + ' (punizioneRapida azzera sempre, oggi; "VANTAGGIO" assente dal file)');
+      }
+    }
+
+    /* ===================================================================
+       PROVA 7 -- RETRO-FERMO (voce #107, correzione di revisione compito
+       2). CONTROLLO DISCRIMINANTE, nasce verde: non esercita codice
+       nuovo, misura il caso di mezzo -- un retropassaggio a velocita' 40,
+       quasi fermo -- che RETRO-PRESA non isolava mai. Tre condanne
+       possibili, tutte diverse dal semplice "presa si'/no" di RETRO-PRESA:
+       (i) il portiere non deve MAI prendere con le mani; (ii) il pallone
+       non deve MAI attraversarlo (distanza dal portiere mai sotto
+       P_R+B_R, con una tolleranza), mentre il regime di negazione e'
+       attivo; (iii) entro 5 s (300 fotogrammi) il pallone deve tornare
+       vivo -- posseduto da qualcuno o piu' veloce di 50 -- perche' un
+       fermo che non si scioglie mai sarebbe uno stallo, non una regola. */
+    {
+      const scena = await pag.evaluate(({ seme, taglia }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.setCpuVsCpu(true);
+        t.startMatch(1, 1, { size: taglia });
+        return SCENA_RETROFERMO();
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+      if (scena.errore) { di(false, '7. RETRO-FERMO', 'BANCO: scena non costruita -- ' + scena.errore); }
+      else {
+        const TOLLERANZA_FERMO = 2;   // assorbe il rumore in virgola mobile del rimbalzo, non un vero attraversamento
+        const r = await pag.evaluate(CORRI_TRACCIA_RETROFERMO(300, scena.gkIdx, scena.compagnoIdx));
+        const okPresa = !r.presa;
+        const okAttraversa = r.minDistRegime >= (scena.raggioFermo - TOLLERANZA_FERMO);
+        const okVivo = r.vivo && r.vivoFotogramma < 300;
+        const ok = okPresa && okAttraversa && okVivo;
+        const f2 = v => (isFinite(v) ? v.toFixed(2) : 'n/d');
+        di(ok, "7. RETRO-FERMO -- retropassaggio quasi fermo (velocita' 40): niente presa, niente attraversamento, il pallone torna vivo entro 5 s",
+          'presa: ' + r.presa + ' (atteso false)   distanza minima nel regime di negazione: ' + f2(r.minDistRegime) +
+          ' (atteso >= ' + f2(scena.raggioFermo - TOLLERANZA_FERMO) + ' = P_R+B_R-' + TOLLERANZA_FERMO + ')   ' +
+          'vivo: ' + r.vivo + (r.vivo ? (' al fotogramma ' + r.vivoFotogramma) : '') + ' su 300 (5 s)');
       }
     }
 

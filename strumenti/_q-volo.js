@@ -125,7 +125,7 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002, SEME_TENUTA = 88003;
     mate.x = FW - 90; mate.y = FH / 2; mate.vx = 0; mate.vy = 0;
     const b = G.ball;
     b.owner = pi; b.x = p.x + 8; b.y = p.y; b.vx = 0; b.vy = 0; b.vz = 0; b.z = 0;
-    segnaTocco(pi);
+    segnaTocco(pi, true);   // pallone posato ai piedi: e' un piede (voce #107, correzione revisione compito 2)
     /* il cross parte dal motore, come lo farebbe il dito */
     const mi = G.players.indexOf(mate);
     const dx = mate.x - p.x, dy = mate.y - p.y, l = Math.max(1, Math.hypot(dx, dy));
@@ -196,7 +196,7 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002, SEME_TENUTA = 88003;
     const o = G.players[k];
     o.x = p.x + 84; o.y = p.y; o.vx = 0; o.vy = 0;
     const b = G.ball; b.owner = k; b.x = o.x + 8; b.y = o.y; b.vx = 0; b.vy = 0; b.vz = 0; b.z = 0;
-    segnaTocco(k);
+    segnaTocco(k, true);   // pallone posato ai piedi: e' un piede (voce #107, correzione revisione compito 2)
     /* SI CONTANO LE BUGIE, NON I CAMBI (correzione del 2 settembre 2026,
        dopo il compito 5). La prima stesura chiedeva ZERO cambi di faccia
        in sei secondi: ma se il possesso cambia DAVVERO — e in questa
@@ -318,7 +318,7 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002, SEME_TENUTA = 88003;
       const o = G.players[k];
       o.x = p.x + 84; o.y = p.y; o.vx = 0; o.vy = 0;
       G.ball.owner = k; G.ball.x = o.x + 8; G.ball.y = o.y; G.ball.vx = 0; G.ball.vy = 0; G.ball.vz = 0; G.ball.z = 0;
-      segnaTocco(k);
+      segnaTocco(k, true);   // pallone posato ai piedi: e' un piede (voce #107, correzione revisione compito 2)
       for (let i = 0; i < 360; i++) { campiona('inseg' + i); t.simulate(1 / 60); }
     }
     return { bugieGrande, bugiePressa, campioni, primeBugie };
@@ -411,7 +411,7 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002, SEME_TENUTA = 88003;
     mate.x = FW - 90; mate.y = FH / 2; mate.vx = 0; mate.vy = 0;
     const b = G.ball;
     b.owner = pi; b.x = p.x + 8; b.y = p.y; b.vx = 0; b.vy = 0; b.vz = 0; b.z = 0;
-    segnaTocco(pi);
+    segnaTocco(pi, true);   // pallone posato ai piedi: e' un piede (voce #107, correzione revisione compito 2)
     const mi = G.players.indexOf(mate);
     const dx = mate.x - p.x, dy = mate.y - p.y, l = Math.max(1, Math.hypot(dx, dy));
     doCross(p, dx / l, dy / l, [mate.x, mate.y], mi);
@@ -675,7 +675,7 @@ const SEME_VOLO = 88001, SEME_INSEGUE = 88002, SEME_TENUTA = 88003;
       }
     };
     fissa();
-    segnaTocco(oi);
+    segnaTocco(oi, true);   // pallone posato ai piedi: e' un piede (voce #107, correzione revisione compito 2)
     const bt0 = t.pulsanti(0);
     const pressa0 = bt0.find(z => z.act === 'press');
     if (!pressa0) return { errore: 'il disco PRESSA non e\' offerto' };

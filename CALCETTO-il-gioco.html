@@ -11184,6 +11184,19 @@ function vigilaBottoniHUD(){
    istante — e la si legge a ritroso. */
 const TOCCO_FIN = 3;                     // finestra di attribuzione (s)
 function segnaTocco(pi, piede){
+  /* LA GUARDIA DELLA BANDIERA (voce #107, correzione di revisione compito
+     2). Il rischio era gia' vivo: nove chiamate a un solo argomento nei
+     banchi (strumenti/_q-battute.js, _q-l23.js, _q-volo.js, censite prima
+     di scrivere questa guardia) ereditavano piede=undefined in silenzio,
+     proprio la direzione PIU' SEVERA per il portiere (false = "non e' un
+     piede" = presa concessa dove andrebbe negata). La guardia NON cambia
+     il comportamento (undefined valeva gia' false, per !!piede qui sotto):
+     rende visibile la dimenticanza con un avviso, cosi' che un domani non
+     passi muto in un chiamante vero. */
+  if(typeof piede!=='boolean'){
+    piede=false;
+    if(typeof console!=='undefined' && console.warn) console.warn('segnaTocco senza flag piede: assumo false', pi);
+  }
   const b=G.ball;
   if(!b || pi<0 || !G.players[pi]) return;
   b.lastTouch=pi;
@@ -18937,7 +18950,19 @@ function tentaPresa(p,b,disteso){
      P_R+B_R=21) PRIMA che quella sezione abbia mai la possibilita' di
      leggerlo -- "puo' sempre giocarla coi piedi" resta vero altrove nel
      file (un compagno, un avversario, un pallone libero qualunque), qui
-     e' semplicemente un respingente, non un ricevitore. */
+     e' semplicemente un respingente, non un ricevitore.
+     IL QUASI FERMO, MISURATO (revisione, voce #107, correzione compito
+     2). Un retropassaggio molto lento (velocita' 40, ben sotto
+     sogliaPresa=330) entra qui gia' quasi esausto: il ramo sotto lo
+     riposiziona OGNI fotogramma esattamente al raggio P_R+B_R e ne
+     smorza la velocita', quindi la palla si FERMA li' -- non un
+     deadlock, un fermo. Misurato: resta ferma (velocita' sotto 5) per
+     circa 50-60 fotogrammi (~0,9 s) prima che l'inseguimento IA normale
+     (un compagno qualunque, non per forza chi ha calciato) la raggiunga
+     e il gioco torni vivo. Il banco dedicato e' RETRO-FERMO
+     (strumenti/_q-regole.js, settima prova): CONTROLLO DISCRIMINANTE,
+     nasce verde, e condanna sia un'eventuale presa sia un attraversamento
+     sia uno stallo che non si sciogliesse mai. */
   const lt=b.lastTouch;
   if(b.toccoPiede===true && lt>=0 && lt!==ki && G.players[lt] && G.players[lt].team===p.team){
     const d=Math.max(0.01, len(dx,dy));

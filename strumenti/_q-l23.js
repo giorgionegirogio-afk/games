@@ -215,7 +215,7 @@ function attrezziL23() {
       b.vx = 0; b.vy = 0; b.vz = 0; b.z = 0; b.curve = 0; b.perfectT = 0;
       b.passTo = -1; b.crossTo = -1; b.tiroT = -1;
       b.owner = pi; b.x = P[pi].x + 14; b.y = P[pi].y;
-      try { segnaTocco(pi); } catch (e) {}
+      try { segnaTocco(pi, true); } catch (e) {}   // il pallone e' posato ai piedi del portatore: e' un piede (voce #107, correzione revisione compito 2)
       /* le squadre ripensano subito, se no i ruoli sono quelli della
          scena precedente e il primo mezzo secondo misura il passato */
       try { G.brain[0].t = 0; G.brain[0].ruoloT = 0; G.brain[1].t = 0; G.brain[1].ruoloT = 0; } catch (e) {}
@@ -639,7 +639,7 @@ const pc = v => (v === null || !isFinite(v)) ? 'n/d' : n2(v * 100) + '%';
       const xConsegna = A.x;
       const b = G.ball;
       b.owner = s.iA; b.x = A.x + 14; b.y = A.y; b.vx = 0; b.vy = 0; b.vz = 0; b.z = 0; b.passTo = -1;
-      try { segnaTocco(s.iA); } catch (e) {}
+      try { segnaTocco(s.iA, true); } catch (e) {}   // consegnato ai piedi del chiamato: e' un piede (voce #107, correzione revisione compito 2)
       for (let f = 0; f < 48; f++) L.passo(inch);       // 0,8 s col pallone
       return { senzaMotore: false, xConsegna, xFine: A.x,
                avanti: A.x - xConsegna, indietro: xConsegna - A.x, owner: G.ball.owner, iA: s.iA };
