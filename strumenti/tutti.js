@@ -491,6 +491,39 @@ const CANCELLI = [
      tredicesima prova sostituisce Rete.replay con dati finti, zero
      rete vera): corre in compagnia. */
   { nome: 'regole',      cmd: ['strumenti/_q-regole.js'],                              conta: true,  lento: false },
+  /* accessibile: le sette prove degli spiccioli di UX/accessibilita' (voce
+     #112, 18 settembre 2026) — ARIA, BANNER-DICHIARATO, VIBRAZIONE,
+     VIBRAZIONE-STILE, RIVEDI-TUTORIAL, SOTTOTITOLI, ANELLO-FIATO.
+
+     PERCHE' STA IN BATTERIA: mancava (censita nel piano del cantiere ma
+     mai registrata) — senza di lei un futuro tocco a refreshImpostUI, a
+     buzz(), al pannello ingranaggio, a sottotitolo() o ad anelloComandato
+     puo' spegnere in silenzio un aria-pressed, disallineare lo stile di
+     un .diff-row nuovo dal suo stato logico, o rompere l'arco del fiato
+     senza che nessun altro banco se ne accorga: nessuno degli altri
+     quindici cancelli guarda questi pixel o questi attributi.
+     Nata ROSSA 0/2 al compito 1 (solo ARIA e BANNER-DICHIARATO
+     esistevano), arrivata a 7/7 col compito 5. Misura, non attesta:
+     aria-pressed letto dal DOM, lo stile confrontato con getComputedStyle,
+     l'arco del fiato campionato pixel per pixel.
+     Deterministico, zero dado() nuovi: corre in compagnia. */
+  { nome: 'accessibile', cmd: ['strumenti/_q-accessibile.js'],                          conta: true,  lento: false },
+  /* fotosensibile: il banco della fotosensibilita' (voce #112, compito 6,
+     18 settembre 2026). Misura la frequenza dei lampi A SCHERMO INTERO su
+     tre sorgenti (CROWD_FLASH, DUEL_FLASH, il lampo+raggi del gol), a
+     SAVE.moto acceso e spento: verde se nessuno supera 3 Hz.
+
+     PERCHE' STA IN BATTERIA: sorveglia che un futuro effetto luminoso
+     (un nuovo lampo, un'animazione di folla piu' vivace, un fondale che
+     lampeggia) non introduca uno strobo oltre 3 Hz senza che nessuno se
+     ne accorga — nessun altro cancello in lista guarda la luminanza a
+     schermo intero nel tempo. Nato verde 6/6 sul gioco di oggi;
+     `--controllo` (fuori dalla batteria: un lampo iniettato a 4 Hz)
+     condannato 0/1, la prova che il banco discrimina e non attesta.
+     Deterministico al seme del cantiere, zero dado() nuovi: corre in
+     compagnia (circa 20-25 s, il piu' lento dei banchi in compagnia
+     perche' rilegge l'intero canvas a ogni fotogramma vero). */
+  { nome: 'fotosensibile', cmd: ['strumenti/_q-fotosensibile.js'],                      conta: true,  lento: false },
   /* nomi: il punto cieco che il 28 agosto 2026 e' costato una bocciatura.
      Il gioco aveva gia' trovato e riparato «due uomini con lo stesso
      cognome nella stessa squadra» — l'elenco dei cognomi fu portato da

@@ -456,6 +456,136 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Spiccioli di UX e accessibilità — L'ONDA A SI CHIUDE** (#112) —
+  **CURATA il 18 settembre 2026** (sei compiti dal merge-base `73c1c64`,
+  ultima voce dell'onda A del mandato: `_analisi/MAPPA-MANDATO.md` aree 4
+  e 6, spec `docs/superpowers/specs/2026-09-18-spiccioli-ux-design.md`):
+  sei cure di puro contorno — nessuna tocca `dado()`, una decisione di
+  gioco o uno stato che la CPU legge — più il banco che sorveglia la
+  fotosensibilità.
+
+  **1. Le etichette parlano allo screen reader**: `aria-pressed`
+  sincronizzato con lo stato su tutti e **5** gli interruttori `.voce.sw`
+  di IMPOSTAZIONI (stesso booleano di `refreshImpostUI`), e il
+  rettangolo del banner — buco preesistente che `istantanea.js` contava
+  come ombra sul manto — **dichiarato in `zoneInterfaccia()`**.
+
+  **2. La vibrazione ha tre intensità**: `SAVE.vibInt` (0/1/2, default 1,
+  additivo e sanificato come `sponde` di #87), `buzz(p)` scala la durata
+  per `[0.5,1,1.6][vibInt]` prima di `navigator.vibrate`, ON/OFF resta.
+  **Corretta in revisione**: la riga dei tre bottoni copiava solo
+  markup e JS del pattern difficoltà, non il CSS — lo stato selezionato
+  era invisibile a schermo pur essendo giusto in memoria — nuova prova
+  **VIBRAZIONE-STILE** (via `getComputedStyle`) che protegge ogni
+  `.diff-row` futura dallo stesso buco stato-logico-contro-rendering.
+
+  **3. RIVEDI IL TUTORIAL**: voce nel pannello ingranaggio che azzera
+  **entrambi** `SAVE.tutorialDone` e `SAVE.tutorialVisto` (azzerare solo
+  il primo lo richiuderebbe subito, la trappola che la prova
+  **RIVEDI-TUTORIAL** verifica fino a `Tut.active===true` al kickoff 1
+  giocatore — e `false` a 2 giocatori, con gli stessi flag); sottotitolo
+  onesto («lo rivedi alla prossima amichevole a un giocatore»), la
+  macchina `Tut` e la sua guardia non toccate.
+
+  **4. I sottotitoli degli eventi sonori**: `SAVE.sott` (default 1),
+  interruttore con `aria-pressed`, e le chiamate a `sottotitolo()`
+  **aggiunte ai 4 fischi che ne erano privi** (inizio, fine, le due
+  ripresa gemelle dopo un gol) — gli altri 11 siti con banner
+  preesistente non toccati e non spenti dal flag.
+
+  **5. L'anello del fiato**: arco parziale dentro `anelloComandato`,
+  sulla stessa ellisse dell'ambra, quarta tinta lime
+  (`rgba(190,255,120,.85)`), pieno a `p.fiato`=100 e degenere a 0,
+  buco della palla ereditato per costruzione dallo stesso `clip` —
+  **misurato pixel per pixel** (0,000 / 0,419 / 0,828 a fiato 0/40/80),
+  non attestato.
+
+  **6. Il banco della fotosensibilità** (`strumenti/_q-fotosensibile.js`,
+  nuovo): misura la frequenza dei lampi **a schermo intero** su tre
+  sorgenti — non solo la folla, il «falso troppo gentile» che le regole
+  di casa mettono in guardia (§19) — `CROWD_FLASH`, `DUEL_FLASH` e il
+  lampo+nove raggi del gol (l'unico che copre l'intero schermo, spento
+  da `SAVE.moto` mentre i due flash di folla e dischetto non lo sono mai:
+  provati entrambi gli stati). Sei scene (gol ravvicinati, sera a fari
+  accesi come controllo negativo, il dischetto — ciascuna a moto acceso
+  e spento) tutte **verdi** (mai più di 1 lampo in nessuna finestra di un
+  secondo, contro un tetto di 3); un caso `--controllo` che inietta un
+  lampo vero a 4 Hz **condannato** (picco di 5 lampi nella stessa
+  finestra) — la prova che il banco discrimina invece di attestare.
+  Registrato in batteria (`strumenti/tutti.js`, `conta:true`), insieme a
+  `_q-accessibile.js` (7/7, censito nel piano ma mai registrato prima
+  d'ora).
+
+  **UNA REGRESSIONE TROVATA E CURATA CHIUDENDO IL CANTIERE**: eseguendo
+  per la prima volta la batteria intera su questo ramo (nessun compito
+  precedente aveva `disposizione.js` nell'elenco dei cancelli da
+  sorvegliare), `disposizione.js` — già in batteria da prima di #112,
+  verde sul merge-base — risultava **ROSSO** sul gioco di oggi: «1
+  ORFANO, 1 BUCATA» sulla riga di SOTTOTITOLI. Causa vera: prima del
+  compito 4 la sezione «Accessibilità» del pannello IMPOSTAZIONI aveva
+  due voci (MOVIMENTO, ALTO CONTRASTO), un numero pari che riempiva la
+  griglia a due colonne; il compito 4 ha aggiunto SOTTOTITOLI come terza
+  voce, dispari, lasciando l'ultima orfana sulla propria riga — la
+  stessa forma di difetto per cui il CSS aveva già una cura generica
+  pronta (`.setwrap>.sola{grid-column:1/-1}`, scritta apposta: «chi
+  domani aggiunge una sezione da una voce scrive `class="voce sola"` e
+  ha finito»), mai applicata quando serviva. Curata via attrezzo a àncore
+  (`strumenti/_t-sottotitoli-sola.js`, un ancoraggio: aggiunge `sola` alle
+  classi del bottone, nessuna riga di CSS nuova, nessun'altra voce
+  toccata) — `disposizione.js` torna **VERDE**, due-versioni ancora
+  **0/60**, `_q-accessibile` ancora **7/7**, `_q-determinismo` ancora
+  **13/13**: la cura è puro CSS, zero `dado()`.
+
+  **IL DUE-VERSIONI 0/60 DELL'INTERO CANTIERE, LA FIRMA DEL CONTORNO**:
+  `_c3-sorteggi.js` dal merge-base `73c1c64` a HEAD, taglie 5/7/11,
+  **0 partite su 60 con un conto di chiamate a `dado()` diverso**
+  (567.871 = 567.871) — nessuna delle sei cure, in nessuno dei sei
+  compiti, ha spostato un solo sorteggio. `_q-determinismo --partite 4`
+  **13/13**. È la promessa che l'intero piano aveva scritto in testa: il
+  contorno non tocca la simulazione.
+
+  **I DUE MINORI DEL COMPITO 4, CHIUSI QUI NEL TESTO**: (a) GOL non usa
+  `showBanner` ma un overlay canvas proprio (`G.banner` viene azzerato al
+  gol) — il flag SOTTOTITOLI non lo controlla e non potrebbe: GOL, PALO
+  e FALLO/CARTELLINO restano **sempre visibili**, a prescindere da
+  `SAVE.sott`, esattamente come i banner di casa già mostravano prima di
+  questa cura. Il sottotitolo del flag copre solo i **fischi** (inizio,
+  fine, ripresa, vantaggio) che ne erano privi. (b) Il sottotesto del
+  bottone («fischio, gol, palo — a video») può far credere che il flag
+  governi anche gol e palo: non è così, e questa nota lo chiarisce in
+  chiaro — un sottotesto più onesto (solo «fischio») è una rifinitura
+  futura, non bloccante.
+
+  **ONDA A DICHIARATA CHIUSA.** Le cinque voci del programma approvato
+  dal committente (`_analisi/MAPPA-MANDATO.md`, «Le decisioni del
+  committente») sono tutte curate: **#86** (la vernice, le proporzioni
+  ufficiali del campo, chiusa il 7 settembre), **#85** (la moviola
+  fluida, chiusa il 7 settembre), **#87** (rimesse laterali e calci
+  d'angolo, chiusa il 18 settembre), **#107** (le regole a leva corta e
+  la versione del motore nel nastro — chiude anche la voce #96, chiusa
+  il 18 settembre), **#112** (questi spiccioli di UX e accessibilità,
+  chiusa oggi). Cosa resta: **l'onda B** (il registro dei fatti,
+  prerequisito, e MIND v1). Seguito nominato **#113** (MIRA GUIDATA a
+  due pesi sull'intent-resolution di #88, mandato §9.2, 2 g — tocca
+  l'intent-resolution del gameplay, quasi una feature: fuori perimetro
+  del contorno), più due rifiniture minori a registro dall'anello del
+  fiato (compito 5): la freccia di direzione, disegnata sopra la stessa
+  ellisse, può coprire ~53° di lime quando la corsa cade nella zona
+  accesa; la leggibilità della quota intermedia (55% contro 70%) non è
+  stata misurata oltre i due estremi.
+
+  **Cancelli**: `_q-accessibile.js` **7/7**; `_q-fotosensibile.js`
+  **6/6** (verde sul gioco, `--controllo` condannato **0/1**, come deve);
+  `disposizione.js` tornato **VERDE**; `_q-determinismo --partite 4`
+  **13/13**; due-versioni dal merge-base **0/60** a tutte le taglie
+  (5/7/11). Batteria intera (`strumenti/tutti.js`, ora con `accessibile` e
+  `fotosensibile` registrati) eseguita in 8 spezzoni — 28 cancelli a
+  quattro alla volta più i due cronometrici (`giocata`, `prestazione`)
+  da soli — **29 cancelli che contano, tutti verdi**; il solo
+  informativo `istantanea.js` (non conta) segna «VERDE CON RISERVA»
+  contro un registro fermo al 20 agosto (una prova nulla, nessuna quota
+  vera da confrontare — non un peggioramento di questo cantiere).
+
 - **Le regole a leva corta, e la versione del motore nel nastro** (#107) —
   **CURATA il 18 settembre 2026** (quattro compiti dal merge-base `cabf7e4`,
   prima voce dell'onda A del mandato: `_analisi/MAPPA-MANDATO.md` aree 1 e
