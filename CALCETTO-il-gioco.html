@@ -18168,14 +18168,23 @@ function checkSlideContact(p){
         Audio5.whistle(false);
         if(cattivo) infliggiCartellino(p);
         /* CUMULO FALLI, come nel futsal: il duello dal dischetto si guadagna.
-           Si tira solo se il fallo e' in zona pericolosa oppure dal terzo
+           Si tira solo se il fallo e' dentro l'area vera oppure dal terzo
            fallo di squadra in poi. Gli altri sono punizioni a due, veloci:
-           la partita non si spezza a ogni contrasto. */
-        const goalX = carrier.team===0 ? FW : 0;   // porta che il fallito attacca
-        const zonaCalda = Math.abs(goalX-p.x) < 260;
+           la partita non si spezza a ogni contrasto.
+           RETTIFICA (voce #107, compito 1): qui c'era "zona pericolosa",
+           cioe' zonaCalda = Math.abs(goalX-p.x) < 260 -- una fascia 1D
+           sulla sola x, non scalata per taglia e diversa dall'area vera
+           gia' disegnata E applicata altrove nello stesso file (VERNICE.
+           areaProf/areaSemi, dentroArea(), usata da GK_AREA_X e dal
+           cross -- ramo #86). zonaCalda muore qui: era il suo unico uso
+           nel file. La decisione ora legge il rettangolo vero, alla
+           scala della taglia in corso -- a 5 la differenza misurata e'
+           260 contro un'area profonda 173 (piu' la semilarghezza 216
+           sulla y, che la vecchia fascia non vedeva affatto). */
+        const inArea = dentroArea(carrier.team, p.x, p.y);
         const cumulo = G.stats.falli[p.team] >= 3;
-        if(zonaCalda || cumulo){
-          showBanner(cumulo && !zonaCalda ? 'TERZO FALLO: SI TIRA!' : (cattivo?'FALLO CATTIVO!':'PUNIZIONE!'), '#ffb020', 1.2);
+        if(inArea || cumulo){
+          showBanner(cumulo && !inArea ? 'TERZO FALLO: SI TIRA!' : (cattivo?'FALLO CATTIVO!':'PUNIZIONE!'), '#ffb020', 1.2);
           startFreeKick(carrier.team, p.team);
         }else{
           showBanner(cattivo?'FALLO CATTIVO!':'FALLO!', '#ffb020', 1.0);
