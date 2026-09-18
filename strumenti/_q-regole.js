@@ -10,7 +10,8 @@
    nascesse verde su tutto non avrebbe misurato niente: qui la condanna
    e' il prodotto del compito 1, non un incidente.
 
-   QUATTRO PROVE (nomi vincolanti del piano):
+   SEI PROVE (nomi vincolanti del piano; le prove 4 e 5 nascono nel
+   compito 2, voce #107 -- RETRO-TESTA e RETRO-AVVERSARIO):
 
      1. RIGORE-DENTRO -- fallo da scivolata DENTRO l'area vera
         (VERNICE.areaProf/areaSemi, letta da t.proporzioni(), la stessa
@@ -34,7 +35,19 @@
         la presa avviene comunque. Rossa fino al compito 2 (mandato
         SS6.5/App. D, che dara' a b un campo tipo b.tockind scritto da
         kickBall stesso).
-     4. VANTAGGIO-FISCHIA-SEMPRE -- fallo mentre l'azione dell'attacco
+     4. RETRO-TESTA -- un compagno CROSSA/RILANCIA DI TESTA verso il
+        portiere (colpoDiTesta, CALCETTO-il-gioco.html ~18218): la presa
+        con le mani resta lecita, perche' non e' un calcio di piede.
+        CONTROLLO DISCRIMINANTE: verde ANCHE sul gioco di oggi (che
+        prende tutto senza guardare l'ultimo tocco) e verde dopo la cura
+        del compito 2 (che nega solo sul piede di un compagno, mai sulla
+        testa) -- prova che la negazione non sia diventata troppo larga.
+     5. RETRO-AVVERSARIO -- un AVVERSARIO tocca/passa col piede verso il
+        portiere: la presa resta lecita, perche' la regola vale solo sui
+        compagni. CONTROLLO DISCRIMINANTE, verde prima e dopo la cura --
+        prova che la negazione guardi la SQUADRA dell'ultimo tocco, non
+        solo se e' stato un piede.
+     6. VANTAGGIO-FISCHIA-SEMPRE -- fallo mentre l'azione dell'attacco
         prosegue (la vittima avanza col pallone): oggi punizioneRapida
         azzera SEMPRE la velocita' del pallone
         (CALCETTO-il-gioco.html, punizioneRapida: "b.vx=0;b.vy=0;
@@ -165,6 +178,52 @@ function INIETTA_SCENE() {
     Object.assign(t.ball, { owner: ci, x: compagno.x, y: compagno.y, z: 0, vx: 0, vy: 0, vz: 0 });
     kickBall(compagno, dir, 0, 220, 0);
     return { ok: true, gkIdx: gi, compagnoIdx: ci };
+  };
+  /* SCENA_RETROTESTA: un compagno del portiere colpisce di testa,
+     chiamando colpoDiTesta -- il gesto vero, non un canale sintetico --
+     cosi' b.lastTouch/b.toccoPiede portano la verita' del colpo (falso:
+     non e' un piede). colpoDiTesta punta SEMPRE alla porta che la
+     squadra ATTACCA (mai alla propria: non accetta una direzione a
+     scelta come kickBall), quindi il pallone riparte lontano dal
+     portiere -- lo si teletrasporta DOPO, sulla fascia del portiere e
+     a velocita' lenta (220, sotto sogliaPresa), la STESSA tecnica di
+     teletrasporto gia' usata da SCENA_FALLO: i due bit del tocco restano
+     quelli scritti dalla funzione vera, solo la posizione si sposta. */
+  window.SCENA_RETROTESTA = function () {
+    const t = window.__test;
+    const gk = t.players.find(p => p.team === 0 && p.role === 'gk');
+    const compagno = t.players.find(p => p.team === 0 && p.role !== 'gk');
+    if (!gk || !compagno) return { errore: 'portiere o compagno non trovati (squadra 0)' };
+    const gi = t.players.indexOf(gk), ci = t.players.indexOf(compagno);
+    Object.assign(compagno, {
+      x: t.ball.x, y: t.ball.y, fx: 1, fy: 0, vx: 0, vy: 0,
+      slide: -1, recover: 0, rove: -1, charge: -1, out: 0, kickCd: 0,
+    });
+    Object.assign(t.ball, { owner: -1, x: compagno.x, y: compagno.y, z: 30, vx: 0, vy: 0, vz: 0 });
+    colpoDiTesta(compagno, ci, t.ball);   // scrive lastTouch=ci, toccoPiede=false: la verita' del gesto
+    const dir = gk.x < compagno.x ? -1 : 1;
+    Object.assign(t.ball, { x: gk.x - dir * 40, y: gk.y, z: 0, vx: dir * 220, vy: 0, vz: 0 });
+    return { ok: true, gkIdx: gi, compagnoIdx: ci };
+  };
+  /* SCENA_RETROAVVERSARIO: un giocatore della squadra AVVERSARIA passa
+     col piede verso il portiere -- stessa tecnica di SCENA_RETROPASSO
+     (kickBall, l'imbuto vero), ma il battitore e' di squadra 1, non 0:
+     lastTouch resta di piede (vero) ma di una squadra DIVERSA da quella
+     del portiere, il controllo discriminante della regola. */
+  window.SCENA_RETROAVVERSARIO = function () {
+    const t = window.__test;
+    const gk = t.players.find(p => p.team === 0 && p.role === 'gk');
+    const avversario = t.players.find(p => p.team === 1 && p.role !== 'gk');
+    if (!gk || !avversario) return { errore: 'portiere o avversario non trovati (squadra 1 di movimento)' };
+    const gi = t.players.indexOf(gk), ai = t.players.indexOf(avversario);
+    const dir = gk.x < avversario.x ? -1 : 1;
+    Object.assign(avversario, {
+      x: gk.x - dir * 40, y: gk.y, fx: dir, fy: 0, vx: 0, vy: 0,
+      slide: -1, recover: 0, rove: -1, charge: -1, out: 0, kickCd: 0,
+    });
+    Object.assign(t.ball, { owner: ai, x: avversario.x, y: avversario.y, z: 0, vx: 0, vy: 0, vz: 0 });
+    kickBall(avversario, dir, 0, 220, 0);
+    return { ok: true, gkIdx: gi, avversarioIdx: ai };
   };
 }
 
@@ -299,7 +358,54 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
     }
 
     /* ===================================================================
-       PROVA 4 -- VANTAGGIO-FISCHIA-SEMPRE. Fallo lontano da ogni area/
+       PROVA 4 -- RETRO-TESTA. Un compagno del portiere colpisce di
+       testa (colpoDiTesta): toccoPiede resta falso, quindi la presa con
+       le mani DEVE restare lecita. CONTROLLO DISCRIMINANTE: verde sia
+       oggi (che prende tutto) sia dopo la cura (che nega solo il piede
+       di un compagno, mai la testa). */
+    {
+      const scena = await pag.evaluate(({ seme, taglia }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.setCpuVsCpu(true);
+        t.startMatch(1, 1, { size: taglia });
+        return SCENA_RETROTESTA();
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+      if (scena.errore) { di(false, '4. RETRO-TESTA', 'BANCO: scena non costruita -- ' + scena.errore); }
+      else {
+        const r = await pag.evaluate(CORRI_TRACCIA_PRESA(FOTOGRAMMI_ATTESA, scena.gkIdx));
+        const ok = r.presa;
+        di(ok, '4. RETRO-TESTA -- compagno colpisce di testa verso il portiere: la presa con le mani resta lecita (CONTROLLO DISCRIMINANTE)',
+          r.presa ? ('presa avvenuta al fotogramma ' + r.fotogramma)
+                  : ('mai presa in ' + FOTOGRAMMI_ATTESA + ' fotogrammi -- la negazione ha morso anche sulla testa: troppo larga'));
+      }
+    }
+
+    /* ===================================================================
+       PROVA 5 -- RETRO-AVVERSARIO. Un avversario passa col piede verso
+       il portiere: toccoPiede e' vero ma la squadra dell'ultimo tocco e'
+       diversa da quella del portiere, quindi la presa resta lecita.
+       CONTROLLO DISCRIMINANTE, verde prima e dopo la cura. */
+    {
+      const scena = await pag.evaluate(({ seme, taglia }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.setCpuVsCpu(true);
+        t.startMatch(1, 1, { size: taglia });
+        return SCENA_RETROAVVERSARIO();
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+      if (scena.errore) { di(false, '5. RETRO-AVVERSARIO', 'BANCO: scena non costruita -- ' + scena.errore); }
+      else {
+        const r = await pag.evaluate(CORRI_TRACCIA_PRESA(FOTOGRAMMI_ATTESA, scena.gkIdx));
+        const ok = r.presa;
+        di(ok, '5. RETRO-AVVERSARIO -- avversario passa col piede verso il portiere: la presa resta lecita (CONTROLLO DISCRIMINANTE)',
+          r.presa ? ('presa avvenuta al fotogramma ' + r.fotogramma)
+                  : ('mai presa in ' + FOTOGRAMMI_ATTESA + ' fotogrammi -- la negazione ha morso anche sull\'avversario: guarda solo il piede, non la squadra'));
+      }
+    }
+
+    /* ===================================================================
+       PROVA 6 -- VANTAGGIO-FISCHIA-SEMPRE. Fallo lontano da ogni area/
        fascia (niente duello, solo punizione rapida) MENTRE la vittima
        avanza col pallone (vx=-300, verso la propria porta d'attacco).
        Un vantaggio vero lascerebbe proseguire l'azione (banner
@@ -322,7 +428,7 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       else {
         const r = await pag.evaluate(CORRI_TRACCIA_VANTAGGIO(FOTOGRAMMI_ATTESA));
         const ok = r.vistoVantaggio;
-        di(ok, '4. VANTAGGIO-FISCHIA-SEMPRE -- fallo con azione che prosegue: atteso banner VANTAGGIO, nessun fischio',
+        di(ok, '6. VANTAGGIO-FISCHIA-SEMPRE -- fallo con azione che prosegue: atteso banner VANTAGGIO, nessun fischio',
           'banner VANTAGGIO visto: ' + r.vistoVantaggio + '   pallone azzerato di netto: ' + r.fermata +
           (r.fermata ? (' al fotogramma ' + r.fotogrammaFermata) : '') + ' (punizioneRapida azzera sempre, oggi; "VANTAGGIO" assente dal file)');
       }

@@ -10730,7 +10730,7 @@ function setupPlayers(){
   }
   G.panchina = [ rosaAvversaria('PANCHINA·'+G.teamName, 3, rInCampo).map(n=>({nome:n})),
                  rosaAvversaria('PANCHINA·'+G.oppName,  3, rInCampo).map(n=>({nome:n})) ];
-  G.ball = { x:FW/2, y:FH/2, vx:0, vy:0, owner:-1, lastTouch:-1, passTo:-1,
+  G.ball = { x:FW/2, y:FH/2, vx:0, vy:0, owner:-1, lastTouch:-1, toccoPiede:false, passTo:-1,
              z:0, vz:0, rot:0, curve:0, perfectT:0, saveRolled:false };
 }
 
@@ -10778,7 +10778,7 @@ function resetKickoff(){
       p.x=FW/2-dir*30; p.y=FH/2; p.fx=dir; p.fy=0;
       G.ball.x=p.x+dir*CARRY_DIST; G.ball.y=FH/2;
       G.ball.owner=G.players.indexOf(p);
-      segnaTocco(G.ball.owner);
+      segnaTocco(G.ball.owner, true);   // il calcio d'inizio e' un piede (voce #107, compito 2)
       if(!G.cpu[kt]) G.ctrl[kt]=G.players.indexOf(p);   // controlli subito chi batte
       break;
     }
@@ -11183,10 +11183,19 @@ function vigilaBottoniHUD(){
    un'autorete. Si tiene una storia corta — indice del giocatore e
    istante — e la si legge a ritroso. */
 const TOCCO_FIN = 3;                     // finestra di attribuzione (s)
-function segnaTocco(pi){
+function segnaTocco(pi, piede){
   const b=G.ball;
   if(!b || pi<0 || !G.players[pi]) return;
   b.lastTouch=pi;
+  /* LA BANDIERA DEL TOCCO (voce #107, compito 2): true se e' un calcio
+     di piede (kickBall, l'imbuto vero di ogni calcio, battute comprese),
+     false se e' un colpo di testa o un tocco di mani/corpo (portiere,
+     contrasti, blocchi). Scritta QUI, a OGNI chiamata: non resta mai
+     stantia da un tocco precedente (lezione hitPosts/crossTo, voce #88).
+     Ogni chiamante la dichiara; undefined vale false (!!piede), mai "come
+     prima" -- la stessa disciplina del censimento in
+     strumenti/_t-retropassaggio.js. */
+  b.toccoPiede = !!piede;
   G.touches.push({ i:pi, t:G.pulse });
   if(G.touches.length>16) G.touches.shift();
 }
@@ -14506,7 +14515,11 @@ function kickBall(p, nx, ny, speed, spinY){
     if(G.battuta.tipo==='rimessa') p.rimT=RIMESSA_CLIP_T;
     G.battuta=null;
   }
-  b.owner=-1; segnaTocco(G.players.indexOf(p));
+  /* LA BANDIERA DI PIEDE NASCE QUI (voce #107, compito 2): kickBall e'
+     l'imbuto vero di OGNI calcio del gioco (umano, CPU, battuta), quindi
+     e' sempre un tocco di piede -- la rimessa compresa: e' retropassabile
+     per davvero (App. D), non e' un'eccezione da scrivere qui. */
+  b.owner=-1; segnaTocco(G.players.indexOf(p), true);
   b.vx=nx*speed; b.vy=ny*speed+spinY;
   b.curve=0; b.perfectT=0; b.saveRolled=false;
   /* l'etichetta del tiro in volo muore qui: da questo istante il pallone
@@ -16317,7 +16330,10 @@ function contrastoPasso(p){
   if(dado()>=sp){ p.kickCd=CONTRASTO_CD; return 'fallito'; }
   b.owner=G.players.indexOf(p); b.passTo=-1;
   p.kickCd=0.35; o.kickCd=0.5;         // gli stessi due numeri del furto col corpo
-  segnaTocco(G.players.indexOf(p));
+  /* IL PIEDE TESO E' UN PIEDE (voce #107, compito 2): il contrasto in
+     piedi ruba con la gamba allungata (vedi il commento in testa a
+     questa funzione), non un rimpallo passivo col corpo. */
+  segnaTocco(G.players.indexOf(p), true);
   Audio5.beep(320);
   return 'preso';
 }
@@ -17545,7 +17561,7 @@ function provaStrappo(p, pi, s){
      La suola non ha quota per definizione: e' il gesto che FERMA. */
   const q = indietro ? 0 : STRAPPO_QUOTA;
   b.vx=p.vx*q + s.ux*spinta; b.vy=p.vy*q + s.uy*spinta; b.z=0; b.vz=0;
-  segnaTocco(pi);                                      // e' un tocco suo: la rete lo sa
+  segnaTocco(pi, true);              // e' un tocco suo, di piede (voce #107, compito 2): la rete lo sa
   p.kickCd=STRAPPO_TOCCO;
   p.strappoCd=STRAPPO_ATTESA;
   p.ax=s.ux*P_ACC; p.ay=s.uy*P_ACC;
@@ -18200,7 +18216,7 @@ function checkSlideContact(p){
      e D) pretende zero, ed e' la fisica a pretenderlo prima di lui. */
   if(!carrier && d<KICK_R && p.kickCd<=0 && b.z<=Z_SOPRA_TESTA){
     b.vx=p.slideDX*380; b.vy=p.slideDY*380;
-    segnaTocco(G.players.indexOf(p));
+    segnaTocco(G.players.indexOf(p), true);   // la scivolata spazza con la gamba: un piede (voce #107, compito 2)
     b.saveRolled=false;
     p.kickCd=0.3;
     Audio5.kick(0.5);
@@ -18234,7 +18250,7 @@ function colpoDiTesta(q, qi, b){
   b.vx=nx*v; b.vy=ny*v;
   b.vz=40;                               // riparte basso ma vivo
   b.tiroT = inZona ? t : -1;
-  segnaTocco(qi);
+  segnaTocco(qi, false);   // il colpo di testa non e' un piede (voce #107, compito 2): la presa resta lecita
   q.kickCd=0.5; q.kickT=0.2; q.kickB=0.24;
   /* LA RIGA CHE MANCAVA. Senza di lei rigStato ripiega su 'passaggio'
      e l'uomo incorna con la gamba. Non tocca la fisica: kickT e kickB
@@ -18303,7 +18319,7 @@ function updateBall(dt){
             continue;
           }
           b.owner=qi; q.kickCd=0.35; o.kickCd=0.5;
-          segnaTocco(qi);                // prendere palla col corpo e' un tocco
+          segnaTocco(qi, false);   // prendere palla col corpo e' un tocco, ma non di piede (voce #107, compito 2)
           Audio5.beep(320);
           break;
         }
@@ -18416,7 +18432,7 @@ function updateBall(dt){
         /* rimbalzo naturale: smorza e trasferisce parte del moto del corpo */
         b.vx=b.vx*0.5+p.vx*0.45; b.vy=b.vy*0.5+p.vy*0.45;
         if(sp>520) b.vz=Math.max(b.vz,rnd(50,110));  // sul blocco duro la palla si impenna
-        segnaTocco(pi); b.passTo=-1; b.saveRolled=false;
+        segnaTocco(pi, false); b.passTo=-1; b.saveRolled=false;   // rimpallo sul corpo, non un calcio (voce #107, compito 2)
         p.kickCd=Math.max(p.kickCd,0.18);
         /* IL MURO. Un corpo si e' messo davanti a una cannonata: e' il
            contrasto, ed e' l'altro momento — con il tiro — in cui il
@@ -18575,14 +18591,14 @@ function updateBall(dt){
           const resto = sp*(0.22 + 0.20*sporco);    // la corsa che resta al pallone
           b.vx = rx*resto; b.vy = ry*resto;
           b.passTo = -1;                            // il passaggio e finito, comunque sia andato
-          segnaTocco(pi);                           // l ha toccata: e un tocco suo, e la rete lo sa
+          segnaTocco(pi, true);                     // l ha toccata di piede (voce #107, compito 2): e un tocco suo
           p.kickCd = 0.22 + 0.20*sporco;            // il tempo di girarsi e riprenderla
           schiacciaPalla(0.09, rx, ry);             // il pallone si deforma: e stato colpito
           Audio5.beep(210);                         // e si sente che non e stato un controllo
           break;
         }
         b.owner=pi; b.passTo=-1;
-        segnaTocco(b.owner);             // anche il controllo e' un tocco
+        segnaTocco(b.owner, true);       // anche il controllo e' un tocco, di piede (voce #107, compito 2)
         break;
       }
     }
@@ -18879,6 +18895,7 @@ function manoPortiere(p, quale){
    tutte le chiamate di prima restano identiche al bit. */
 function tentaPresa(p,b,disteso){
   if(b.owner>=0) return;
+  const ki=G.players.indexOf(p);
   const dx=b.x-p.x, dy=b.y-p.y;
   /* corpo disteso: ellisse allungata lungo la direzione del tuffo */
   const ax=p.diveDX, ay=p.diveDY;
@@ -18888,15 +18905,58 @@ function tentaPresa(p,b,disteso){
   const A=(GK_REACH+B_R)*dist_, B=(P_R+B_R)*dist_;
   if((lungo*lungo)/(A*A) + (largo*largo)/(B*B) > 1) return;
   if(b.z>Z_SOPRA_PORTIERE) return;
+  /* IL RETROPASSAGGIO (voce #107, compito 2, mandato SS6.5/App. D, riga
+     72: "il portiere puo' solo parare/respingere coi piedi, non
+     afferrare con le mani"). Se il pallone e' a portata perche' arriva
+     da un calcio di PIEDE di un COMPAGNO -- b.toccoPiede vero e
+     G.players[b.lastTouch].team===p.team, MAI lui stesso: un compagno
+     e' un ALTRO giocatore -- le mani sono negate: niente presa, pugni,
+     sfugge o respinta, e NIENTE controllo col piede alla raccolta
+     (afferrare non e' respingere). Il colpo di testa di un compagno
+     (toccoPiede falso) e il tocco di un avversario (squadra diversa)
+     restano leciti apposta: i due controlli discriminanti del banco,
+     RETRO-TESTA e RETRO-AVVERSARIO. La rimessa e' retropassabile per
+     davvero (App. D): esce da kickBall con toccoPiede vero come ogni
+     calcio, e qui non fa eccezione.
+     IL CORPO NON DIVENTA UN BUCO, E NON DIVENTA UNA MANO TRAVESTITA.
+     "Puo' solo respingere" si prende alla lettera: il pallone rimbalza
+     via dal corpo, vivo, MAI posseduto (b.owner resta -1) -- la stessa
+     fisica del rimpallo sul corpo generico di updateBall (~18404), qui
+     riscritta sul raggio vero del portiere (P_R+B_R, scalato da disteso
+     come il resto della funzione) perche' quel ramo generico scatta solo
+     sopra sp>420 e un retropassaggio e' quasi sempre piu' lento.
+     b.lastTouch NON si riscrive su di lui: se lo facesse, il fotogramma
+     successivo lo troverebbe "toccato da se stesso" (lt!==ki sarebbe
+     falso) e la presa tornerebbe lecita un istante dopo -- un
+     ricongiungimento immediato che vanificherebbe la regola. L'embargo
+     resta acceso finche' non e' un ALTRO giocatore a toccarla. Questo
+     ramo gira OGNI fotogramma finche' il pallone e' a portata (nessun
+     kickCd nuovo): tentaPresa e' chiamata prima di updateBall (vedi
+     step(), updatePlayer prima di updateBall), quindi ricaccia il
+     pallone appena fuori dal cerchio della RACCOLTA (KICK_R*0.8=20,8 <
+     P_R+B_R=21) PRIMA che quella sezione abbia mai la possibilita' di
+     leggerlo -- "puo' sempre giocarla coi piedi" resta vero altrove nel
+     file (un compagno, un avversario, un pallone libero qualunque), qui
+     e' semplicemente un respingente, non un ricevitore. */
+  const lt=b.lastTouch;
+  if(b.toccoPiede===true && lt>=0 && lt!==ki && G.players[lt] && G.players[lt].team===p.team){
+    const d=Math.max(0.01, len(dx,dy));
+    const nx=dx/d, ny=dy/d;
+    const raggio=(P_R+B_R)*dist_;
+    b.x=p.x+nx*raggio; b.y=p.y+ny*raggio;
+    const dot=b.vx*nx+b.vy*ny;
+    if(dot<0){ b.vx-=1.6*dot*nx; b.vy-=1.6*dot*ny; }
+    b.vx*=0.6; b.vy*=0.6;        // un rimbalzo sul piede e' corto, non un rinvio
+    return;
+  }
   const sp=len(b.vx,b.vy);
-  const ki=G.players.indexOf(p);
   G.stats.parate[p.team]++;
   /* coerenza con hitPosts (rilievo CRITICO, revisione compito 9): il
      pallone fra le mani o respinto dal portiere non e' destinato a
      nessuno. Oggi il caso e' gia' mascherato dal segnaTocco qui sotto
      (cambia subito squadraDelPallone()), ma un difetto mascherato torna
      appena la maschera cade. */
-  segnaTocco(ki); b.passTo=-1; b.crossTo=-1; b.curve=0; b.perfectT=0; b.saveRolled=true;
+  segnaTocco(ki, false); b.passTo=-1; b.crossTo=-1; b.curve=0; b.perfectT=0; b.saveRolled=true;
   /* LO SPECCHIO SI CONTA QUI, e non dove si sperava. Se il pallone che
      il portiere tocca porta l'etichetta di un tiro avversario, quel tiro
      era nello specchio: e' la definizione, non una stima. */
@@ -19030,7 +19090,12 @@ function rinvioPortiere(p){
   const tx = best? best.x : (p.team===0?FW*0.55:FW*0.45);
   const ty = best? best.y : FH/2;
   const dx=tx-p.x, dy=ty-p.y, l=Math.max(1,len(dx,dy));
-  b.owner=-1; segnaTocco(G.players.indexOf(p));
+  /* IL RINVIO PARTE DALLE MANI (voce #107, compito 2): e' una
+     distribuzione da possesso di mano (o dal controllo col piede della
+     raccolta generica, che rinvioPortiere non distingue mai -- lo stesso
+     automatismo di sempre), non un calcio sull'ultimo tocco altrui:
+     toccoPiede resta falso anche se l'animazione e' quella di un calcio. */
+  b.owner=-1; segnaTocco(G.players.indexOf(p), false);
   /* LA VELOCITA' CONOSCE LA DISTANZA (23 ago 2026). 470 fisse coprivano
      ~600 unita' a 5 e ~1045 a 11 (150 in volo piu' v/attrito a terra),
      e il bersaglio di questo rinvio — il compagno piu' avanzato — a 11
@@ -19186,7 +19251,10 @@ function posaBattuta(){
   bt.fx=dir; bt.fy=0;
   const b=G.ball;
   b.owner=bi; b.x=bt.x+dir*CARRY_DIST; b.y=bt.y;
-  segnaTocco(bi);
+  /* LA RIMESSA E' UN PIEDE (voce #107, compito 2, App. D): il pallone e'
+     gia' posato ai piedi del battitore qui, prima ancora della battuta
+     vera che arriva poco dopo da kickBall (gia' vera anche li'). */
+  segnaTocco(bi, true);
   /* gli stessi latch che il fischio azzera in resetKickoff (voce #87,
      precedente dichiarato): il battitore non eredita una scivolata o un
      anticipo aperto da prima del fermo. */
@@ -19229,7 +19297,9 @@ function posaBattutaAngolo(st){
   bt.fx=dirIn; bt.fy=0;
   const b=G.ball;
   b.owner=bi; b.x=bt.x+dirIn*CARRY_DIST; b.y=bt.y;
-  segnaTocco(bi);
+  /* L'ANGOLO E' UN PIEDE (voce #107, compito 2): stessa bandiera della
+     rimessa, stesso motivo -- e' gia' posato ai piedi del battitore. */
+  segnaTocco(bi, true);
   /* gli stessi latch che il fischio azzera in resetKickoff (voce #87,
      precedente dichiarato in posaBattuta): il battitore non eredita una
      scivolata o un anticipo aperto da prima del fermo. */
@@ -19291,7 +19361,12 @@ function posaBattutaRinvio(st){
   const b=G.ball;
   b.owner=bi; b.x=deep.x+(team===0?1:-1)*CARRY_DIST; b.y=deep.y;
   deep.kickCd=0.5;
-  segnaTocco(bi);
+  /* IL RINVIO DAL FONDO TORNA FRA LE MANI (voce #107, compito 2): come
+     dice il commento in testa a questa funzione, il pallone qui torna
+     fra le mani del portiere, non ai piedi, e il flusso automatico lo
+     consegna a rinvioPortiere (anche lui falso). toccoPiede resta falso:
+     e' una ripresa di mano, non un calcio. */
+  segnaTocco(bi, false);
 }
 
 function ballWalls(b){
@@ -21735,7 +21810,7 @@ const Duel = {
              l'ultimo toccatore, che qui era chi aveva SUBITO il fallo.
              Il rigorista lo dice duelloUomini() — la stessa verita'
              della targa TIRA in scena — e il suo tocco si segna qui. */
-          { const u=duelloUomini(); if(u && u.tir) segnaTocco(G.players.indexOf(u.tir)); }
+          { const u=duelloUomini(); if(u && u.tir) segnaTocco(G.players.indexOf(u.tir), true); }   // il tiro del duello e' un piede (voce #107, compito 2)
           addGoal(s.shooter);
         }else{
           /* il gioco riprende: possesso al portiere che ha difeso */
@@ -42783,7 +42858,7 @@ window.__test = {
       const d=len(p.x-G.ball.x, p.y-G.ball.y);
       if(d<dm){ dm=d; mio=i; }
     }
-    if(mio>=0) segnaTocco(mio);
+    if(mio>=0) segnaTocco(mio, true);   // hook di test: si finge un tocco di piede (voce #107, compito 2)
     addGoal(t);
     return true;
   },
