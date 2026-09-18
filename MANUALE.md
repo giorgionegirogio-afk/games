@@ -49,7 +49,7 @@ secondi: non si toccano.
 
 ## 3. GIOCA — l'amichevole
 
-Cinque scelte, poi si scende in campo:
+Sei scelte, poi si scende in campo:
 
 - **Difficoltà CPU** — Facile / Normale / Duro. Governa velocità, reazione,
   rubata, potenza e portiere della macchina. Resta salvata come predefinita.
@@ -57,6 +57,12 @@ Cinque scelte, poi si scende in campo:
   campetto), **11 contro 11** (il campo grande). Cambia campo, porta, modulo,
   e anche la **durata**: i 90″ di base diventano 126″ a 7 e 180″ a 11.
   *La taglia scelta vale anche per Torneo e Stagione.*
+- **Sponde** (voce #87) — **LA GABBIA** (di serie a 5/7: le fasce e il fondo
+  rimbalzano come sempre, nessuna rimessa) o **IL CAMPO VERO** (rimesse
+  laterali, calci d'angolo e rinvii dal fondo, con un fermo breve e la
+  battuta comandata coi verbi di casa — PASSA/CROSS/FILTRANTE). **A 11 la
+  riga si blocca su CAMPO VERO**: sul campo grande le rimesse sono
+  obbligatorie, non una scelta.
 - **Mentalità** — Difesa (blocco basso e stretto) / Equilibrio / Attacco
   (linea alta e larga). È la postura della TUA squadra; si può cambiare anche
   in partita, dalla pausa.
@@ -183,8 +189,15 @@ in stagione CLASSIFICA, dopo una sfida ALTRA SFIDA. **MENU** torna alla home.
 
 ## 8. Le regole del campetto
 
-- **Le sponde tengono il pallone sempre in gioco**: niente rimesse, niente
-  angoli — la palla rimbalza e si continua.
+- **Le sponde** (scelta in GIOCA, voce #87): **LA GABBIA** tiene il pallone
+  sempre in gioco — niente rimesse, niente angoli, la palla rimbalza e si
+  continua (di serie a 5/7). **IL CAMPO VERO** — obbligatorio a 11, a scelta
+  a 5/7 — ferma il gioco quando il pallone esce: rimessa laterale (fermo
+  ~0,8 s) se esce dalla fascia, calcio d'angolo (fermo 1,2 s a 5, 1,5 s a
+  7/11) o rinvio dal fondo (fermo ~0,8 s) se esce dietro la linea di porta,
+  a seconda di chi l'ha toccata per ultimo. Il battitore è comandato coi
+  verbi di casa (PASSA/CROSS/FILTRANTE, TIRA spento finché non batte);
+  senza tocco, la battuta parte da sola entro pochi secondi.
 - Il **portiere** è un giocatore vero: esce sulla bisettrice, para per
   contatto, e i suoi esiti si vedono (PRESA!, PUGNI!, RESPINTA!, SFUGGE!).
 - **Cartellini**: fallo da dietro o in ritardo = giallo; al secondo della
@@ -427,6 +440,152 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Rimesse laterali e calci d'angolo** (#87) — **CURATA il 18 settembre
+  2026** (cinque compiti, commit `7ed570a..7dab275` più il verbale — questo
+  commit, compito 5; attrezzi ad ancore per compito in `strumenti/_t-*.js`:
+  `_t-sponde-interruttore` (1: l'interruttore), `_t-battuta-finestra` (2,
+  correzione di revisione: il fermo torna breve e la finestra vive),
+  `_t-battuta-verbi` (3: i verbi del battitore), `_t-rimessa-clip` (3,
+  correzione di revisione: la clip viaggia su `p.rimT`), `_t-battuta-fondo`
+  (4: l'angolo e il rinvio), `_t-gioca-sponde-fit` (5: la schermata GIOCA
+  ritrova il suo margine, sotto)): il campo impara le sue linee — a **11
+  sempre**, a **5/7 a scelta** — e la GABBIA resta byte-identica al gioco
+  di sempre dove il piano lo promette.
+
+  **Il perimetro deciso dal committente**: un interruttore solo,
+  `SAVE.sponde` (di serie **LA GABBIA**: le sponde rimbalzano come sempre,
+  nessuna rimessa), a scelta **IL CAMPO VERO** a 5/7, **obbligatorio a
+  11**. **Rettifica dichiarata rispetto al censimento** (`_analisi/
+  RIMESSE-E-ANGOLI.md`, che proponeva gli angoli SEMPRE su tutte e tre le
+  taglie anche restando in gabbia sulle fasce): il design approvato
+  (`docs/superpowers/specs/2026-09-17-rimesse-e-angoli-design.md`) lega
+  invece rimessa, angolo e rinvio allo STESSO interruttore — a 5/7 sono
+  tutti presenti insieme (campo vero) o tutti assenti insieme (gabbia),
+  mai gli angoli soli; solo a 11 il campo vero è un obbligo, non una
+  scelta, e la riga di GIOCA si blocca su di esso.
+
+  **La tavola di cosa esiste ora**:
+  | cosa | dove |
+  |---|---|
+  | rimessa laterale | fascia, ultimo tocco squadra opposta, fermo ~0,8 s |
+  | calcio d'angolo | fondo fuori luce, tocco della difesa, fermo 1,2 s a 5 / 1,5 s a 7-11, camera sul punto |
+  | rinvio dal fondo | fondo fuori luce, tocco dell'attacco, fermo ~0,8 s, dalle mani del portiere (y=FH/2 fisso, niente `rnd`) |
+  | finestra di battuta | hold 3 s, auto-battuta se nessun tocco; la CPU batte al suo timer ~0,5 s dopo la comparsa |
+  | verbi del battitore | PASSA/CROSS/FILTRANTE (i verbi di casa); TIRA spento finché non batte (guardia unica `inBattuta`, letta da 5 punti: layout, `startCharge`, `doPassaggio`, `doCrossUmano`, `aiDecide`) |
+  | rispetto dell'avversario | nessun avversario punta (bersaglio del passo, `aiTX/aiTY`) a meno di 40 unità dal battitore durante la finestra |
+  | clip della rimessa | viaggia su `p.rimT` (non su `chargeClip`, cieco in partita vera: rettifica di revisione del compito 3), visibile ≥6 fotogrammi, arriva fino in moviola |
+  | angolo giocato | battitore sull'arco, 2/3 attaccanti in area a `areaProf*0,6`, marcature senza doppioni (`Set`), portiere sulla linea, auto-battuta via `doCross`; la palla entra davvero in area entro 2,5 s dalla ripresa |
+
+  **I numeri chiave, con la prova accanto**:
+  - Banco dedicato `strumenti/_q-battute.js`, in batteria da questo
+    compito: **11/11 verde** — nato 2/7 al compito 1 (le 5 prove di scena
+    dichiarate rosse per costruzione, la condanna a registro), portato a
+    11/11 dai compiti 2-4 (due prove aggiunte in corsa: CLIP-RIMESSA al
+    compito 3, ANGOLO-IN-AREA al compito 4).
+  - GABBIA: **0/40 dal merge-base** (`7ed570a`, `_c3-sorteggi.js`) —
+    **0/20 a taglia 5** e **0/20 a taglia 7** (100.829=100.829 e
+    213.679=213.679 chiamate a `dado()`) — la promessa della gabbia
+    mantenuta fino all'ultimo compito. Il compito 3 aveva già misurato un
+    risultato ANCORA più forte per la sua sola cura (0/60 A TUTTE LE
+    TAGLIE, 11 compresa: quella toppa era di puro disegno, la divergenza
+    a 11 nasce solo dal compito 4).
+  - Divergenza a 11 **dichiarata, non nascosta**: dal merge-base,
+    **18/20** partite con un conto diverso (284.912 → 275.636 chiamate a
+    `dado()`), causa unica il campo vero obbligatorio (rimesse/angoli/
+    rinvii che il gioco di ieri non conosceva). Coerente con le
+    divergenze già a registro per compito (2: 15/20; 3: 0/60 a tutte le
+    taglie, cura di puro disegno; 4: 18/20) — numeri diversi perché presi
+    contro basi diverse (il compito, non il merge-base), stessa causa.
+  - **Giocabilità** (`strumenti/_eventi.js`, 20 partite, semi
+    20260803..20260822, contro l'HEAD pre-ramo `7ed570a`): a **11**
+    (campo vero obbligatorio anche ieri sulla stessa fisica del rimbalzo,
+    quindi confronto diretto) MOMENTI DA PORTA/minuto **1,96 contro 2,21**
+    (**88,9%**, soglia ≥80%), 0-0 **5% contro 0%** (soglia ≤33%). A **5
+    campo vero** (una variante non committata di `_eventi.js`, `fuori/
+    _eventi-campo.js`, che forza `save.sponde='campo'` prima di
+    `startMatch` — il banco del repo non ha il flag) contro **5 gabbia
+    del pre-ramo** (a 5 ieri il campo vero non esisteva: il confronto è
+    "5 gabbia di ieri contro 5 campo vero di oggi", la domanda giusta —
+    quanto costa il campo vero rispetto al gioco di ieri): **3,87 contro
+    4,36** (**88,9%**), 0-0 **10% contro 5%**. Tutte e due le taglie sopra
+    la soglia, nessuna manopola da tarare.
+  - **La lezione del banco-più-forte-dello-spec** (compito 2): la prima
+    stesura del banco pretendeva che la battuta si sciogliesse ESATTAMENTE
+    al fotogramma d'uscita dalla scena — più dello spec — e la prima
+    implementazione aveva piegato il design per superarla (fermo umano
+    3,8 s, la finestra viva non esisteva mai). Curato ripristinando il
+    design approvato E la prova (FERMO BREVE ≤1,2 s + SCIOGLIMENTO ≤5 s),
+    con doppia ri-condanna prima di fidarsene.
+  - **La cura camera del compito 4**: lo snap-camera sulla battuta,
+    scritto al compito 2, era CODICE MORTO dietro la guardia `inPlay` di
+    `updateCamera` — la camera inquadrava il centrocampo durante ogni
+    rimessa/angolo/rinvio. Cura di una parola, zero sorteggi, verificata
+    con screenshot pre/post.
+  - **La regressione trovata e curata da questa stessa batteria**
+    (compito 5): `tocco.js` rosso **5/722** — `#btnCambiaCampo` sulla
+    schermata GIOCA, visibile ma dietro la barra fissa a 811x384,
+    812x375, 740x360, 640x360, 568x320. Causa: la riga SPONDE (compito 1)
+    costa ~70 px in più su una schermata che la toppa del 28 agosto 2026
+    aveva già portata a un margine di soli 2 px a 915x412 — lo stesso
+    difetto di allora, riaperto. Cura SOLO CSS (`_t-gioca-sponde-fit.js`,
+    4 ancore, zero `dado()`): imbottitura delle pastiglie 5px→3px sotto i
+    540 px, margini di `.eti`/`.diff-row`/titolo ristretti, e
+    un'omissione chiusa (`.sponde` non era mai stata aggiunta alle regole
+    che comprimono/nascondono `.taglia`/`.ment` sotto i 540 e i 340 px).
+    Bersaglio del pollice **42→37 px** (sette sotto il riferimento di 44,
+    dichiarato nel commento del gioco in stile edizioni, non addolcito).
+    `tocco.js` torna **722/722**. Il rosso isolato di `collaudo` visto UNA
+    volta dentro la batteria a tre cancelli insieme ("nessun errore in
+    console", 399 s invece dei ~35 s tipici) è un **artefatto di contesa**
+    — rilanciato da solo più volte, sempre 36/36: non è entrato nel
+    conto finale.
+
+  **La copertura onesta**: i cancelli di batteria girano a **taglia 5
+  GABBIA** (default); il campo vero è coperto da `_q-battute.js` (che
+  gioca a 5 e a 11) e dalle corse dedicate di questo compito (`_eventi`
+  a 11 e a 5-campo-vero, `_c3-sorteggi` a 11 e la corsa dedicata
+  5-campo-vero sotto). **La voce #99 resta aperta**: nessun cancello IN
+  BATTERIA gira mai a taglia 11 o forza `sponde='campo'`.
+
+  **Sorteggi**: `_q-determinismo --partite 4` **13/13** (convenzione del
+  ramo; il piano scriveva 10/10, disallineamento già a registro dal
+  compito 4). Una corsa DEDICATA a **5-campo-vero** (variante non
+  committata `fuori/_c3-sorteggi-campo.js`, flag `--sponde` che il banco
+  del repo non ha): **17/20 DIVERGE** (100.829 → 85.358) — fuori canone
+  per costruzione (confronta "5 gabbia di ieri" con "5 campo vero di
+  oggi"), dichiarata e non nascosta.
+
+  **Batteria**: intera verde in quattro spezzoni, **27 cancelli che
+  contano** (incluso `battute`, nuovo da questo compito, con un commento
+  che dichiara cosa protegge: l'interruttore, la classificazione delle
+  uscite, la gabbia identica, la finestra di battuta, la clip). I banchi
+  a rischio del censimento (§8): le sei copie sorelle di `collaudo.js`
+  (`_p/_q/_t-p/_tb/_z/_x-collaudo.js`) sono tutte **VERDI** sul controllo
+  "nessuno esce dal mondo" (il difetto storico della voce #66) a campo
+  vero taglia 11 — **provato, non dedotto**; condividono però (scoperta
+  fuori perimetro, non curata qui: non è un difetto di questo ramo) una
+  tabella `ATT[11].FH=1120` mai aggiornata dopo il compito 3 della voce
+  #86 (dovrebbe essere 1490) — le fa fallire sulla coerenza campo/porta,
+  causa estranea alle rimesse. I banchi-camera (`_z-verbo.js`,
+  `_z-verbo-prova.js`, `_t3-verbo.js`) girano puliti, zero eccezioni: la
+  scena `battuta` non compare nel campionamento camera-alto/bassa
+  (guardia `scena==='play'||'golden'`), i numeri non si muovono per
+  costruzione, come previsto.
+
+  **I seguiti nuovi**: **#102** (i piazzati evoluti — portiere che sale
+  sul corner disperato e pressione per fase, dal paragone `MINIERA-FCM.md`
+  scavo 7 — più la regia panoramica dell'angolo a 11, il cui quadro
+  ordinario non fa entrare l'area coi corpi, scoperto al compito 4);
+  **#103** (la coda dell'angolo: gol olimpico e statistica corner in
+  lavagnetta). **Nota**: la voce **#96** (cancello di pubblicazione) copre
+  anche questo ramo — i nastri delle sfide registrati col motore di ieri
+  non si riproducono più a 11/campo vero (`ballWalls`, `resetKickoff` e
+  dintorni sono cambiati); già a registro, si cita e basta.
+
+  Verbale completo: `docs/superpowers/specs/2026-09-17-rimesse-e-angoli-
+  design.md`, `docs/superpowers/plans/2026-09-17-rimesse-e-angoli.md`,
+  `_analisi/RIMESSE-E-ANGOLI.md`, `_analisi/MAPPA-MANDATO.md` §1, rapporti
+  `.git/sdd/brief/87-compito-*-report.md`.
 - **La moviola fluida** (#85, con le voci #68 e #98 a bordo) — **CURATA il
   7 settembre 2026** (diagnosi `15410bf`, piano `90fe5b9`, cinque compiti
   in commit `3c560d6..3372268` — dal banco che nasce rosso al verbale, con

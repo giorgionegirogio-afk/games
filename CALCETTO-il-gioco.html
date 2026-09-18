@@ -2432,9 +2432,11 @@ button:active{transform:scale(.96)}
   #gioca .azioni{margin-top:14px;padding-top:18px}
 }
 /* C — sotto i 540: il telefono coricato, che e' come il gioco si gioca.
-   Le pastiglie perdono 3 px di imbottitura sopra e 3 sotto (da 8px 4px a
-   5px 4px).
-   QUANTO RESTANO ALTE, MISURATO IL 28 AGOSTO 2026 A SERA coi caratteri
+   Le pastiglie perdono imbottitura sopra e sotto: 8px 4px alla nascita
+   (28 agosto 2026) -> 5px 4px lo stesso giorno -> 3px 4px il 18
+   settembre 2026 (voce #87, vedi la rettifica sotto: la riga SPONDE ha
+   preteso il resto del margine).
+   QUANTO RESTAVANO ALTE PRIMA DI QUESTA TOPPA, MISURATO IL 28 AGOSTO 2026 A SERA coi caratteri
    veri del gioco, a 915x412 e a 812x375: la DIFFICOLTA' 29 px (non ha la
    riga piccola), la ROSA 42, la MENTALITA' 42.
    QUI C'ERA SCRITTO «42 e 54: sopra i 44 px di bersaglio per il pollice»,
@@ -2443,19 +2445,35 @@ button:active{transform:scale(.96)}
    il gioco scriveva nel ripiego di sistema, largo un terzo in piu' dei
    suoi caratteri veri, e da stamattina non succede piu'. E «sopra i 44»
    era falso anche allora, perche' 42 non e' mai stato sopra 44.
-   IL NUMERO VERO, DICHIARATO INVECE CHE ADDOLCITO: qui il bersaglio del
-   pollice e' alto 42 px, due sotto i 44 di riferimento e quattro sotto i
-   46 che il FISCHIO FINALE si e' dato. Non si alza in questa toppa:
-   costerebbe una decina di pixel di altezza a una schermata che a
-   915x412 ne avanza due (eccedenza misurata 2 px). Resta scritto, e chi
-   ha dieci pixel da spendere sa dove metterli. */
+   IL NUMERO VERO, DICHIARATO INVECE CHE ADDOLCITO (28 agosto 2026): qui
+   il bersaglio del pollice era alto 42 px, due sotto i 44 di riferimento
+   e quattro sotto i 46 che il FISCHIO FINALE si e' dato. Non si alza in
+   questa toppa: costerebbe una decina di pixel di altezza a una
+   schermata che a 915x412 ne avanza due (eccedenza misurata 2 px). Resta
+   scritto, e chi ha dieci pixel da spendere sa dove metterli.
+
+   RETTIFICA (18 settembre 2026, voce #87): la riga SPONDE (eti+diff-row,
+   ~70 px in piu' a 812x375: eti 16+margini, diff-row 42+margini prima di
+   questa stessa toppa) ha rimangiato l'intero margine di 2 px che
+   restava a 915x412 e ha riaperto IL DIFETTO STESSO DEL 28 AGOSTO su
+   CAMBIA CAMPO/#btnBackGioca, a 811x384, 812x375, 740x360 e 640x360
+   (misurato: tocco.js, 5 bersagli su 722 "a riposo si VEDE ma il colpo
+   va a #btnBackGioca"). Sono stati spesi i "dieci pixel" che il testo
+   del 28 agosto prevedeva: imbottitura delle pastiglie da 5px 4px a
+   3px 4px (-4 px per riga), piu' margini di .eti/.diff-row e titolo
+   ulteriormente ridotti. IL BERSAGLIO E' ORA 37 px — sette sotto i 44 di
+   riferimento, nove sotto i 46 — dichiarato, non addolcito: tocco.js
+   torna verde (722/722, zero "si vede e non si tocca"). Se una sesta
+   voce dovesse entrare in questa colonna, la strada dell'imbottitura e'
+   finita: serve un'altra architettura (non un ottavo pixel da qui). */
 @media (max-height:540px){
-  #gioca.ov{padding:8px 16px}
-  #gioca .sotto-titolo{font-size:26px;margin:0 0 4px;padding-bottom:8px}
+  #gioca.ov{padding:6px 16px}
+  #gioca .sotto-titolo{font-size:22px;margin:0 0 2px;padding-bottom:5px}
   #gioca .giocariga{gap:14px;margin:0 auto}
-  #gioca .eti{margin:2px 0 2px}
-  #gioca .diff,#gioca .taglia,#gioca .ment{padding:5px 4px}
-  #gioca .taglia small,#gioca .ment small{margin-top:1px}
+  #gioca .eti{margin:1px 0 1px}
+  #gioca .diff-row{margin:1px auto 0}
+  #gioca .diff,#gioca .taglia,#gioca .ment,#gioca .sponde{padding:3px 4px}
+  #gioca .taglia small,#gioca .ment small,#gioca .sponde small{margin-top:0}
   #gioca .frase.stretta{padding:3px 14px;font-size:12.5px}
   #gioca .azioni{margin-top:4px;padding-top:12px}
 }
@@ -2498,7 +2516,7 @@ button:active{transform:scale(.96)}
    che sta sotto i 340 e' 568x320, ed e' l'unica dove la riga piccola
    della MENTALITA' risulta display:none (misurato). */
 @media (max-height:340px){
-  #gioca .taglia small,#gioca .ment small{display:none}
+  #gioca .taglia small,#gioca .ment small,#gioca .sponde small{display:none}
   #gioca .eti{margin:1px 0 1px}
   #gioca .diff-row{margin:2px auto 0}
   #gioca .sotto-titolo{font-size:22px;padding-bottom:6px;margin:0 0 2px}

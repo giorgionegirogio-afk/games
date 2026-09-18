@@ -435,6 +435,35 @@ const CANCELLI = [
      Deterministico ai semi dichiarati (20260803 per il nastro, 20260907
      per SCATTO/CAMPI): corre in compagnia. */
   { nome: 'replay',      cmd: ['strumenti/_q-replay.js'],                                conta: true,  lento: false },
+  /* battute: il campo impara le sue linee, e resta il gioco di ieri dove
+     deve (voce #87, 17-18 settembre 2026). Undici prove sull'interruttore
+     SAVE.sponde/G.campoVero, la scena nuova 'battuta' e la battuta coi
+     verbi di casa: INTERRUTTORE (a 11 sempre campo vero), RIMESSA/
+     FONDO-ANGOLO/FONDO-RINVIO (la classificazione dell'uscita da
+     squadraDelPallone, zero dado()), GABBIA (la soglia 1 del piano: a 5/7
+     default il rimbalzo resta ~0,82, mai una battuta), ANTI-STALLO (fermo
+     <=1,2s, sciolta <=5s), TIRA-SPENTO (il battitore non puo' tirare),
+     BATTUTA-UMANA (PASSA scioglie la rimessa), RISPETTO (nessun
+     avversario punta a meno di 40 unita' dal battitore, guardia in
+     aiDecide), CLIP-RIMESSA (la posa viaggia su p.rimT fino in moviola,
+     non su chargeClip: rettifica di revisione del compito 3) e
+     ANGOLO-IN-AREA (l'angolo giocato, non solo assegnato: la palla entra
+     davvero nel rettangolo vero, VERNICE.areaProf/areaSemi).
+
+     PERCHE' STA IN BATTERIA: e' l'unico banco che si accorge se un futuro
+     tocco a ballWalls, a resetKickoff o alla pulsantiera torna a far
+     rimbalzare il fondo/la fascia a 11, riapre lo stallo della battuta,
+     dimentica di spegnere TIRA sul battitore, o stacca la clip dal suo
+     cronometro. Nato ROSSO 2/7 al compito 1 (solo INTERRUTTORE e GABBIA
+     verdi, le cinque scene di battuta non esistevano ancora), arrivato a
+     11/11 coi compiti 2-4. La gabbia (5/7 default) resta byte-identica al
+     gioco di sempre per costruzione: e' la soglia 1 del piano, e questo
+     banco e' il suo giudice permanente.
+     Deterministico al seme dichiarato del cantiere (20260917), zero
+     dado() nuovi (le scene si costruiscono scrivendo lo stato del
+     pallone e chiamando segnaTocco, la stessa funzione del gioco vero):
+     corre in compagnia. */
+  { nome: 'battute',     cmd: ['strumenti/_q-battute.js'],                              conta: true,  lento: false },
   /* nomi: il punto cieco che il 28 agosto 2026 e' costato una bocciatura.
      Il gioco aveva gia' trovato e riparato «due uomini con lo stesso
      cognome nella stessa squadra» — l'elenco dei cognomi fu portato da
