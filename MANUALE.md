@@ -457,8 +457,10 @@ Qui il registro completo, a edizioni.
 ## A registro — ciò che resta, e in che stato
 
 - **Rimesse laterali e calci d'angolo** (#87) — **CURATA il 18 settembre
-  2026** (cinque compiti, commit `7ed570a..7dab275` più il verbale — questo
-  commit, compito 5; attrezzi ad ancore per compito in `strumenti/_t-*.js`:
+  2026** (cinque compiti più il verbale, dal merge-base `7ed570a` fino
+  alla coda della revisione finale — l'intervallo non si fissa su uno
+  SHA finale, che la coda stessa ha già superato una volta; attrezzi ad
+  ancore per compito in `strumenti/_t-*.js`:
   `_t-sponde-interruttore` (1: l'interruttore), `_t-battuta-finestra` (2,
   correzione di revisione: il fermo torna breve e la finestra vive),
   `_t-battuta-verbi` (3: i verbi del battitore), `_t-rimessa-clip` (3,
@@ -630,13 +632,26 @@ Qui il registro completo, a edizioni.
   `posaBattutaRinvio`) lasciavano `G.battuta` pendente per sempre quando
   la squadra che doveva battere non aveva un uomo di movimento
   disponibile (rosa azzerata) — lo stesso buco gia' chiuso su
-  `ballOverBar` dopo un rilievo CRITICO. Cura centrale in `pallaFuori`,
-  sullo stesso modello: palla libera, `G.battuta=null`. Via attrezzo a
-  ancore `strumenti/_t-sfide-sponde.js` (4 ancoraggi, verificato
-  riproducendo byte per byte la patch sulla copia pre-correzione).
-  Cinque rilievi minori di solo testo chiusi in `MANUALE.md`/
-  `strumenti/_q-battute.js`/`strumenti/_t-gioca-sponde-fit.js` (numeri e
-  liste disallineati fra file, nessun cambio di comportamento). **Cancelli**:
+  `ballOverBar` dopo un rilievo CRITICO. Cura centrale in `pallaFuori`:
+  palla libera, `G.battuta=null` (questa prima cura era incompleta —
+  vedi la rettifica subito sotto, coda della revisione finale). Via
+  attrezzo a ancore `strumenti/_t-sfide-sponde.js` (4 ancoraggi,
+  verificato riproducendo byte per byte la patch sulla copia
+  pre-correzione). **Due postille del ri-verdetto sul metodo, non sul
+  comportamento**: (a) l'attrezzo NON e' una ricetta completa di quel
+  commit — una riga di solo testo (M3, l'allineamento delle due liste di
+  risoluzioni nel commento RETTIFICA del gioco, vicino a righe
+  2455-2468) resta un edit a mano, fuori dall'attrezzo, dichiarato nel
+  rapporto del compito 5 e non nell'attrezzo stesso; (b) la verifica
+  "byte per byte" prova che l'attrezzo RIPRODUCE l'edit gia' fatto, non
+  che l'edit sia NATO ancorato — l'ordine vero fu edit a mano prima,
+  attrezzo scritto a specchio dopo (Dubbi §1 del rapporto del compito
+  5), l'inverso della disciplina di casa "attrezzo prima, applicato da
+  esso": una garanzia piu' debole, annotata come tale, non una
+  regressione di comportamento. Cinque rilievi minori di solo testo
+  chiusi in `MANUALE.md`/`strumenti/_q-battute.js`/
+  `strumenti/_t-gioca-sponde-fit.js` (numeri e liste disallineati fra
+  file, nessun cambio di comportamento). **Cancelli**:
   `_q-battute` **11/11**, `_q-determinismo --partite 4` **13/13**,
   `_c3-sorteggi` (`fuori/fw-base.html`, il gioco al commit pre-correzione,
   contro `CALCETTO-il-gioco.html`, taglie 5/7/11) **0/60** — il percorso
@@ -647,6 +662,46 @@ Qui il registro completo, a edizioni.
   `SAVE.sponde` fissata sull'uno o sull'altro, `opts.sponde` la ribalta
   sempre nei due versi, e senza `opts.sponde` la fotografia segue ancora
   `SAVE.sponde` come prima — quattro casi, quattro verdi.
+
+  **CODA DELLA REVISIONE FINALE** (rettifica successiva, 18 settembre
+  2026, un solo commit in piu'). Il ri-verdetto ha bocciato la cura I5
+  appena descritta: **bloccante**, la guardia liberava l'owner ma NON
+  riportava il pallone dentro la banda — la palla restava ferma
+  esattamente FUORI dal campo. A campo vero `ballWalls()` gira ogni
+  fotogramma sulla fisica libera del pallone (`updateBall`, mai gestito
+  dalla guardia di scena): al fotogramma successivo lo stesso varco si
+  ripresentava, `pallaFuori()` veniva richiamata, la guardia riliberava
+  di nuovo — la scena `play`/`battuta` si alternava a fotogrammi
+  alterni, all'infinito. Il commento che descriveva la cura era anche
+  lui falso («la scena battuta resta comunque per il fermo breve»):
+  `duraBattuta()` ritorna 0 quando `G.battuta` e' nullo (proprio lo
+  stato che questa guardia produce), quindi `setScene('play')` scatta
+  SUBITO — non c'e' nessun fermo da conservare, perche' non c'e' nessun
+  battitore ad aspettare. Misurato con una sonda dedicata (rosa di
+  movimento della squadra che deve battere tutta fuori, `out=99`,
+  rimessa provocata sulla fascia nord, 400 fotogrammi): **169 ingressi
+  in scena 'battuta' PRIMA della cura, 1 DOPO**. Cura, minima: dentro la
+  stessa guardia, PRIMA di azzerare, un `clamp` riporta la palla dentro
+  la banda (`B_R`/`FW-B_R` in orizzontale, `B_R`/`FH-B_R` in verticale) —
+  stesso PRINCIPIO di `ballOverBar` quando "deep" e' null (mai lasciare
+  la palla fuori dal mondo che la fisica ripete), non la stessa cura
+  carattere per carattere: `ballOverBar` assegna un owner su un punto di
+  gioco preciso, qui non c'e' nessun uomo disponibile a cui darla, la
+  palla torna libera sul bordo del campo. Il commento e' stato riscritto
+  con la storia vera. Rilievo minore accolto nella stessa coda: nessun
+  cancello in repo misurava la riga che le sfide attraversano per
+  davvero a taglia 11 (`startMatch` chiamato con `opts.sponde` esplicito,
+  non con `SAVE.sponde` impostato prima) — `_q-battute.js` PROVA 1
+  guadagna una quarta sotto-condizione,
+  `startMatch(1,1,{size:11,sponde:'gabbia'})` → `campoVero===true`. Via
+  attrezzo ad ancore `strumenti/_t-battuta-ripiego.js` (1 ancoraggio).
+  **Cancelli**: `_q-battute` **11/11** (col sotto-caso nuovo dentro la
+  PROVA 1), `_q-determinismo --partite 4` **13/13**, `_c3-sorteggi`
+  (`git show 4bd253f:CALCETTO-il-gioco.html`, il gioco alla coda
+  precedente, contro `CALCETTO-il-gioco.html`, taglie 5/7/11) **0/60** (i
+  due `clamp` vivono in un ramo irraggiungibile nei percorsi normali —
+  serve una rosa di movimento azzerata per l'intera squadra che deve
+  battere), `_q-precedenza` **9/9**.
 
   **I seguiti nuovi**: **#102** (i piazzati evoluti — portiere che sale
   sul corner disperato e pressione per fase, dal paragone `MINIERA-FCM.md`

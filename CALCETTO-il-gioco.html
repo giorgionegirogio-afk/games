@@ -19105,12 +19105,34 @@ function pallaFuori(tipo, team, x, y){
      ha un uomo di movimento disponibile (rosa azzerata da espulsioni/
      infortuni) - senza questa guardia G.battuta restava pendente per
      sempre con battitore:-1, la palla ferma, l'owner invariato: lo
-     stesso buco che ballOverBar chiudeva gia' (:19468 circa) dopo un
-     rilievo CRITICO. Cura CENTRALE qui invece che nelle tre pose: la
-     scena 'battuta' resta comunque per il fermo breve appena impostato
-     sotto, poi si torna a play con la palla libera, esattamente come fa
-     ballOverBar quando "deep" e' null. Zero dado(). */
+     stesso buco che ballOverBar chiudeva gia' (poco piu' sotto in
+     questo file) dopo un rilievo CRITICO.
+     LA CURA RIPORTA ANCHE LA PALLA IN BANDA (coda della revisione
+     finale, voce #87): la sola guardia precedente liberava l'owner ma
+     lasciava la palla ferma esattamente FUORI dal campo. A campo vero
+     ballWalls() gira ogni fotogramma sulla fisica libera della palla
+     (mai gestito dalla scena): al fotogramma successivo lo stesso varco
+     si ripresentava, pallaFuori() veniva richiamata, la guardia
+     riliberava di nuovo - PLAY e BATTUTA alternati a fotogrammi alterni,
+     all'infinito. Misurato dal ri-verdetto: 169 ingressi in scena
+     'battuta' su 400 fotogrammi senza il clamp qui sotto, 1 con.
+     LA STORIA VERA (il commento di prima la raccontava sbagliata): la
+     scena 'battuta' NON resta per un fermo breve - duraBattuta() torna
+     0 quando G.battuta e' nullo (qui sopra in questo stesso file), e
+     setScene('play') scatta SUBITO, al fotogramma successivo: non c'e'
+     nessun battitore ad aspettare, e va bene cosi'. Il clamp riporta la
+     palla dentro la banda PRIMA di azzerare, come fa ballOverBar col
+     riposizionamento vero quando "deep" e' null - stesso PRINCIPIO (mai
+     lasciare la palla fuori dal mondo che la fisica ripete), non la
+     stessa cura carattere per carattere: ballOverBar assegna un owner a
+     un punto di gioco preciso, qui non c'e' nessun uomo disponibile a
+     cui darla, quindi la palla torna libera sul bordo del campo. Il
+     caso resta irraggiungibile nei banchi normali (serve una rosa di
+     movimento azzerata per l'intera squadra che deve battere), costruito
+     apposta dalla sonda del ri-verdetto. Zero dado() nuovi. */
   if(G.battuta && G.battuta.battitore<0){
+    b.x=clamp(b.x, B_R, FW-B_R);
+    b.y=clamp(b.y, B_R, FH-B_R);
     b.owner=-1;
     G.battuta=null;
   }

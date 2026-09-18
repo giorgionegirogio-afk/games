@@ -270,12 +270,24 @@ const ASPETTA_BATTUTA = `
 
     /* ===================================================================
        PROVA 1 — INTERRUTTORE. Nessuna simulazione: la fotografia avviene
-       dentro startMatch, in modo sincrono. Tre sotto-condizioni, un solo
-       verdetto (e' UNA prova nel conto delle sette).
+       dentro startMatch, in modo sincrono. Quattro sotto-condizioni, un
+       solo verdetto (e' UNA prova nel conto delle undici).
        Prima dell'attrezzo __test.campoVero non esiste: leggerlo da'
        undefined, che non e' ===true ne' ===false — la prova esce rossa
        per costruzione, com'e' giusto (l'ordine dichiarato dal piano:
-       prima l'attrezzo, poi la condanna che conta e' 2,3,4,6,7). */
+       prima l'attrezzo, poi la condanna che conta e' 2,3,4,6,7).
+
+       RETTIFICA (rilievo minore del ri-verdetto, coda della revisione
+       finale, 18 settembre 2026): nessun cancello in repo misurava la
+       riga che le sfide (Sfida.gioca/Sfida.guarda, strumenti/
+       _t-sfide-sponde.js, rilievo C1) attraversano davvero a taglia 11 —
+       `startMatch` chiamato con `opts.sponde` ESPLICITO invece che con
+       `t.save.sponde` impostato prima. La quarta sotto-condizione lo
+       misura: `startMatch(1,1,{size:11,sponde:'gabbia'})` deve dare
+       comunque `campoVero===true` (la guardia di taglia vince sempre,
+       `opts.sponde` o non `opts.sponde` — la stessa promessa gia'
+       verificata via `t.save.sponde` dalla terza sotto-condizione, qui
+       verificata sulla via che le sfide usano per davvero). */
     {
       const r = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
@@ -286,13 +298,16 @@ const ASPETTA_BATTUTA = `
         const gabbiaA5 = t.campoVero;
         t.save.sponde = 'gabbia'; t.startMatch(1, 1, { size: 11 });
         const gabbiaA11 = t.campoVero;
-        return { campoA5, gabbiaA5, gabbiaA11 };
+        t.save.sponde = 'campo'; t.startMatch(1, 1, { size: 11, sponde: 'gabbia' });
+        const optsGabbiaA11 = t.campoVero;
+        return { campoA5, gabbiaA5, gabbiaA11, optsGabbiaA11 };
       }, { seme: SEME, taglia: TAGLIA_BANCO });
-      const ok = r.campoA5 === true && r.gabbiaA5 === false && r.gabbiaA11 === true;
+      const ok = r.campoA5 === true && r.gabbiaA5 === false && r.gabbiaA11 === true && r.optsGabbiaA11 === true;
       di(ok, '1. INTERRUTTORE — G.campoVero fotografa SAVE.sponde, e a 11 e\' sempre vero',
         'sponde=campo,taglia=' + TAGLIA_BANCO + ' -> campoVero=' + r.campoA5 + ' (atteso true)   ' +
         'sponde=gabbia,taglia=' + TAGLIA_BANCO + ' -> campoVero=' + r.gabbiaA5 + ' (atteso false)   ' +
-        'sponde=gabbia,taglia=11 -> campoVero=' + r.gabbiaA11 + ' (atteso true)');
+        'sponde=gabbia,taglia=11 -> campoVero=' + r.gabbiaA11 + ' (atteso true)   ' +
+        'save.sponde=campo,opts.sponde=gabbia,taglia=11 -> campoVero=' + r.optsGabbiaA11 + ' (atteso true, la via delle sfide)');
     }
 
     /* ===================================================================
