@@ -796,3 +796,16 @@ come corpo in campo, cerimoniale pre-partita, VAR scenografico; il fuorigioco
 3. Restano fuori salvo mandato futuro: due tempi + sostituzioni vere,
    infortuni completi, arbitro come corpo in campo, fuorigioco, i18n
    completa.
+
+## Rettifica del controllore (18 settembre)
+
+La revisione del compito 5 di #87 ha trovato un buco di questa mappa: la
+voce **#89** (meccaniche dei verbi — filtrante, cross e rovesciata sul
+modello del paragone), cantiere della decomposizione del committente del
+1° settembre, non compariva né nelle onde né in «fuori dal programma». Non
+è assorbita: il mandato la sfiora (§6.5, il verbario delle azioni) ma
+nessuna proposta delle onde A-E la copre. **#89 resta un cantiere a sé**,
+da collocare dopo l'onda A (è contenuto di gioco della decomposizione
+originaria, come lo era #87) o quando il committente lo chiama; il suo
+progetto dovrà scavare `MINIERA-FCM.md` (scavi 4-5: comandi e gioco aereo)
+come da direttiva di casa.
