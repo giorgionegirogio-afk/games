@@ -464,6 +464,33 @@ const CANCELLI = [
      pallone e chiamando segnaTocco, la stessa funzione del gioco vero):
      corre in compagnia. */
   { nome: 'battute',     cmd: ['strumenti/_q-battute.js'],                              conta: true,  lento: false },
+  /* regole: le quattro regole a leva corta esistono davvero? (voce #107,
+     18 settembre 2026). Tredici prove su area del rigore (RIGORE-DENTRO/
+     RIGORE-FUORI), retropassaggio (RETRO-PRESA/RETRO-TESTA/RETRO-
+     AVVERSARIO/RETRO-FERMO), vantaggio coi suoi casi limite (VANTAGGIO-
+     FISCHIA-SEMPRE/VANTAGGIO-SFUMATO/CARD-DIFFERITO/DOGSO-GOL/GRAZIA-
+     DOPO-CARD/CARD-NON-SI-PERDE) e la versione del nastro (NASTRO-
+     VERSIONE, chiude la voce #96: un nastro di un motore diverso si
+     chiude col messaggio a causa vera, non con l'accusa sbagliata «la
+     squadra e' cambiata da allora» che chiudiSfida darebbe se la
+     partita fosse lasciata correre fino in fondo).
+
+     PERCHE' STA IN BATTERIA: e' l'unico banco che si accorge se un
+     futuro tocco a checkSlideContact, tentaPresa, punizioneRapida,
+     Reg.serializza/deserializza o Sfida.guarda torna a far aprire il
+     duello sulla vecchia fascia invece dell'area vera, a lasciar
+     afferrare col piede un retropassaggio, a fischiare un vantaggio
+     sempre e comunque, o a rigiocare un nastro di un motore diverso
+     senza dirlo. Nato ROSSO 1/4 al compito 1 (solo RIGORE-DENTRO
+     verde, un controllo discriminante), 5/6 e poi 6/7 al compito 2,
+     ROSSO su piu' fronti in corsa al compito 3, arrivato a 13/13 col
+     compito 4 (che aggiunge NASTRO-VERSIONE, condannata 12/13 sulla
+     base pre-cura).
+     Deterministico al seme del cantiere (20260918), zero dado() nuovi
+     (le scene scrivono lo stato direttamente, come _q-battute.js; la
+     tredicesima prova sostituisce Rete.replay con dati finti, zero
+     rete vera): corre in compagnia. */
+  { nome: 'regole',      cmd: ['strumenti/_q-regole.js'],                              conta: true,  lento: false },
   /* nomi: il punto cieco che il 28 agosto 2026 e' costato una bocciatura.
      Il gioco aveva gia' trovato e riparato «due uomini con lo stesso
      cognome nella stessa squadra» — l'elenco dei cognomi fu portato da

@@ -163,6 +163,30 @@
          del primo fallo non arriva mai. Verde dopo la cura.
    Il file e' adesso a dodici prove.
 
+   COMPITO 4 (voce #107, 18 settembre 2026): IL NASTRO CONOSCE IL SUO
+   MOTORE, e la voce #96 si chiude. MOTORE_V (costante nuova, accanto a
+   Reg -- CALCETTO-il-gioco.html, grep MOTORE_V) viaggia nella testa del
+   nastro (Reg.serializza/deserializza, attrezzo
+   strumenti/_t-nastro-versione.js): un nastro vecchio (senza il campo,
+   o con un campo che non combacia) rende Sfida.guarda inaffidabile
+   sugli STESSI comandi, perche' le cure dei compiti 1-3 hanno gia'
+   cambiato la simulazione. Il file guadagna la tredicesima prova:
+     13. NASTRO-VERSIONE -- un nastro ARTEFATTO a versione 0 (il caso
+         "nessun campo", cioe' un nastro di prima della voce #107),
+         rigiocato via Sfida.guarda con dati finti (Rete.replay
+         sostituita, zero rete vera): deve chiudersi SUBITO col
+         messaggio a CAUSA VERA ("un'altra versione del motore") e
+         ZERO PENALITA' -- nessuna partita avviata (sfidaStato.replay
+         resta false), non l'accusa sbagliata "la squadra e' cambiata
+         da allora" che chiudiSfida darebbe se la partita fosse lasciata
+         correre fino in fondo. Un nastro alla versione CORRENTE (preso
+         dal gioco stesso, t.registra()+t.nastro()) deve rigiocare come
+         sempre: la partita si avvia (sfidaStato.replay diventa true).
+         NATA ROSSA sulla base pre-cura (fuori/r4-base.html, git show
+         700f775:...): senza MOTORE_V nel nastro e senza il controllo in
+         Sfida.guarda, un nastro a versione 0 passerebbe per buono.
+   Il file e' adesso a tredici prove.
+
    ZERO dado() NUOVI. Le scene si scrivono direttamente sullo stato del
    gioco (G.players/G.ball, la stessa tecnica di _q-battute.js) e il
    fallo da scivolata si ottiene con un'entrata DA DIETRO: la vittima
@@ -180,7 +204,10 @@
    esce 0 se tutte le prove sono verdi, 1 se almeno una e' rossa,
    2 se il banco stesso e' esploso (pagina, hook mancante, eccezione).
    Il 3 resta riservato (convenzione di _q-battute.js/_q-replay.js) e
-   non e' usato da nessuna delle sette prove di oggi.
+   non e' usato da nessuna delle tredici prove di oggi (RETTIFICA, voce
+   #107 compito 4: il numero era rimasto scritto "sette" da quando il
+   file ne aveva solo sette, senza aggiornarlo alle rette successive --
+   corretto qui invece di lasciarlo scaduto).
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -1117,6 +1144,80 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
           ' -> dopo: ' + scena.gialliDopoIlSecondo + ' (atteso +1)   ' +
           'finestra nuova aperta (team>=0): ' + finestraNuova + ' (atteso true)   ' +
           'G.vantaggio dopo il secondo fallo: ' + JSON.stringify(scena.vantaggioDopo2));
+      }
+    }
+
+    /* ===================================================================
+       PROVA 13 -- NASTRO-VERSIONE (voce #107, compito 4, chiude la voce
+       #96). MOTORE_V viaggia nella testa del nastro (Reg.serializza) e
+       Sfida.guarda lo confronta PRIMA di fidarsi del replay (grep
+       Reg.motoreV in CALCETTO-il-gioco.html). Sfida.guarda si esercita
+       con dati FINTI -- Rete.replay sostituita con una funzione che
+       risponde subito, zero rete vera, la stessa filosofia delle
+       SCENA_* (zero dado(), stato scritto direttamente) applicata al
+       lato rete invece che al campo. Una rosa minima (4 giocatori,
+       giusto il numero che la guardia "att.rosa.length<4" richiede) per
+       ATT e DIF, taglia quella del banco.
+
+       CASO A -- nastro ARTEFATTO a versione 0 ('1||', il formato v1 di
+       sempre ma senza il campo nuovo: esattamente un nastro di prima
+       della voce #107): Reg.motoreV resta 0 dopo la lettura, diverso da
+       MOTORE_V, e Sfida.guarda deve chiudersi SUBITO -- messaggio a
+       CAUSA VERA (il testo dichiara "un'altra versione del motore"),
+       nessuna partita avviata (sfidaStato.replay resta false: G.sfida
+       non viene mai scritto, la riga che lo farebbe sta DOPO il
+       controllo nuovo).
+       CASO B -- nastro alla versione CORRENTE, preso dal gioco stesso
+       (t.registra()+t.nastro(): non un testo scritto a mano, il
+       serializzatore vero) con zero comandi: Reg.motoreV deve leggere
+       MOTORE_V, e Sfida.guarda deve proseguire fino a startMatch come
+       sempre (sfidaStato.replay diventa true). */
+    {
+      const provaNastro = (nastro) => pag.evaluate(({ nastro, taglia }) => {
+        const t = window.__test;
+        t.reteBase('http://127.0.0.1:1');   // basta non-vuoto: Rete.replay e' sostituita, non chiama la rete vera
+        const rete = t.rete;
+        const rosaFinta = () => Array.from({ length: 4 }, (_, i) => ({ nome: 'GIOCATORE' + i, vel: 50, tiro: 50, tecnica: 50, tackle: 50 }));
+        const orig = rete.replay;
+        rete.replay = async () => ({
+          ok: true,
+          sfida: { attaccante: 'ATT', difensore: 'DIF', taglia, seme: '20260918', gol_a: 3, gol_d: 1, replay: nastro },
+          squadre: [
+            { allenatore: 'ATT', nome: 'CHI ATTACCA', colori: {}, indole: {}, rosa: rosaFinta() },
+            { allenatore: 'DIF', nome: 'CHI DIFENDE', colori: {}, indole: {}, rosa: rosaFinta() },
+          ],
+        });
+        return t.sfida.guarda(999).then(() => {
+          rete.replay = orig;   // ripristinata subito dopo l'uso, come Sfida.stato in _q-sfida.js
+          return {
+            motoreVLetto: t.registroMotoreV,
+            replayInCorso: t.sfidaStato.replay,
+            messaggio: (document.getElementById('sfStato') || {}).textContent || '',
+          };
+        });
+      }, { nastro, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+
+      const nastroVecchio = '1||';   // formato v1 di sempre, MOTORE_V assente per costruzione: versione 0
+      const casoVecchio = await provaNastro(nastroVecchio);
+      const nastroAttuale = await pag.evaluate(() => {
+        const t = window.__test;
+        t.registra(); const n = t.nastro(); t.fermaRegistro();
+        return n;
+      }).catch(e => ({ errore: e.message }));
+      const casoAttuale = (typeof nastroAttuale === 'string') ? await provaNastro(nastroAttuale) : { errore: 'nastro attuale non costruito' };
+
+      if (casoVecchio.errore || casoAttuale.errore) {
+        di(false, '13. NASTRO-VERSIONE', 'BANCO: ' + (casoVecchio.errore || casoAttuale.errore));
+      } else {
+        const okVecchio = casoVecchio.motoreVLetto === 0 && casoVecchio.replayInCorso === false &&
+          casoVecchio.messaggio.indexOf('versione del motore') >= 0 &&
+          casoVecchio.messaggio.indexOf('cambiata da allora') < 0;
+        const okAttuale = casoAttuale.motoreVLetto === 1 && casoAttuale.replayInCorso === true;
+        const ok = okVecchio && okAttuale;
+        di(ok, "13. NASTRO-VERSIONE -- nastro a versione 0 (artefatto): messaggio a causa vera, zero penalita'; nastro a versione corrente: rigioca normale",
+          'VECCHIO -- motoreV letto: ' + casoVecchio.motoreVLetto + ' (atteso 0)   partita avviata: ' + casoVecchio.replayInCorso + ' (atteso false)   ' +
+          'messaggio: "' + casoVecchio.messaggio + '"' +
+          '\n         ATTUALE -- motoreV letto: ' + casoAttuale.motoreVLetto + ' (atteso 1 = MOTORE_V)   partita avviata: ' + casoAttuale.replayInCorso + ' (atteso true)');
       }
     }
 

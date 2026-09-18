@@ -456,6 +456,143 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Le regole a leva corta, e la versione del motore nel nastro** (#107) —
+  **CURATA il 18 settembre 2026** (quattro compiti dal merge-base `cabf7e4`,
+  prima voce dell'onda A del mandato: `_analisi/MAPPA-MANDATO.md` aree 1 e
+  5, spec `docs/superpowers/specs/2026-09-18-regole-leva-corta-design.md`;
+  attrezzi ad ancore per compito in `strumenti/_t-*.js`: `_t-rigore-area`
+  (1), `_t-retropassaggio` + `_t-tocco-guardia` (2, correzione di
+  revisione), `_t-vantaggio` + `_t-vantaggio-taratura` + `_t-card-non-si-
+  perde` (3, con la chiusura arbitrale), `_t-nastro-versione` (4)): quattro
+  regole vere con le leve già in casa, e il nastro delle sfide impara la
+  sua versione.
+
+  **1. Il rigore legge l'area vera** (compito 1): la decisione che apre il
+  duello (`checkSlideContact`) leggeva `zonaCalda = |goalX-p.x| < 260`, una
+  fascia 1D fissa; ora legge `dentroArea(carrier.team,p.x,p.y)`, l'area
+  vera del ramo #86. Divergenza scelta nella BANDA-Y (non nella banda-x
+  173-260, che a 7/11 si inverte perché `areaProf` la supera): a x=60
+  (dentro fascia e area a ogni taglia) è la y a decidere — confine
+  dell'area a 64/104/304 unità (5/7/11), 30 unità oltre = fuori. `zonaCalda`
+  muore nel codice (0 usi vivi, il commento a edizioni la nomina per
+  dichiararne la morte).
+
+  **2. Il portiere rifiuta il retropassaggio** (compito 2): `b.toccoPiede`,
+  bandiera nuova scritta a ogni tocco del pallone — **17 siti censiti**
+  (`kickBall`, scivolate, contrasti, raccolte: piede; testa, furto-corpo,
+  prese, rinvii: non-piede) più la GUARDIA aggiunta in revisione
+  (`segnaTocco` senza flag esplicito → `false`, mai un default ereditato
+  dal tocco precedente). `tentaPresa` nega la presa con le mani su un
+  passaggio di piede di un COMPAGNO e **respinge da corpo** invece di un
+  `return` nudo (la prima stesura lasciava la raccolta generica dare
+  comunque possesso — bocciata dal banco stesso): il pallone resta vivo,
+  mai posseduto. Divergenza vera dichiarata per taglia: **3/20 (5), 7/20
+  (7), 2/20 (11)** partite con un conto di sorteggi diverso. `_eventi`
+  (compito 2): gol/90s **2,50 → 2,50**, invariato.
+
+  **3. Il vantaggio esiste** (compito 3, con taratura F1/F3 e chiusura
+  arbitrale): un fallo la cui azione prosegue apre `G.vantaggio` invece di
+  fischiare subito; se la squadra offesa CONSERVA e avanza fino a `VANT_T`
+  (2,5 s di moto libero dal momento in cui il fallito si rialza — F1),
+  banner VANTAGGIO e cartellino pendente; se la perde, fischio ritardato
+  dal punto SALVATO (F3: il sostituto viene co-locato, la punizione REGGE
+  nel tempo, non solo nel fotogramma del fischio). **LA CONTABILITÀ
+  ARBITRALE, RETTIFICATA** (sonda a quadratura, CPU-vero-contro-CPU-vero —
+  vedi «il giro che insegna» sotto): **~1 finestra/partita**, sfumato
+  **67,1% → 65,2%**, **PIENO 26,2% → 26,8%** (26-27%), silenzioso 3,4% →
+  5,1%, cascata 2,0% → 2,2%. F1 elimina le morti-lampo dello sfumato (età
+  reale sotto 0,6 s: **30% → 0%**) al prezzo dichiarato di `VANT_T` reale a
+  2,867 s. Il SENTINEL curato (W1): un secondo fallo su un vantaggio già
+  CONCESSO (il sentinel `{team:-1,...,card}` che porta il cartellino in
+  differita) fischiava subito invece di aprire la propria finestra —
+  **5,0% → 0,0%** dei falli (misurato 4,7% → 0,0% sulla contabilità
+  indipendente), guardia `G.vantaggio && G.vantaggio.team>=0`. Il
+  cartellino non muore più sovrascritto (micro-coda): il sentinel pendente
+  si scarica PRIMA che una finestra nuova lo rimpiazzi. Falli/partita
+  **~1,0** (148/150, CPU vera contro CPU vera). Banco `_q-regole.js` a
+  **12/12** dopo il compito 3.
+
+  **IL GIRO CHE INSEGNA, coi numeri rettificati in chiaro**: la prima
+  misura dell'implementatore diceva "vantaggio pieno 0/260, 93% degli
+  sfumati morti al primo controllo"; la rimisura del correttore dava 28% e
+  NON riproduceva lo zero; l'ARBITRO (sonda indipendente a quadratura, semi
+  dichiarati) ha trovato la CAUSA VERA — `setCpuVsCpu(true)` chiamato
+  PRIMA di `startMatch(...)` viene annullato in silenzio da
+  `G.cpu=[false,true]`, scritto dentro `startMatch` stesso: la squadra 0
+  restava un "umano" immobile per tutta la partita, e nessun difensore
+  vero tentava mai di rompere una conservazione — **un banco che congela
+  una squadra misura il banco, non il gioco** (lezione a registro, vedi
+  «Le regole pagate» in `PUNTO-DEL-LAVORO.md`). **SEGUITO #108**:
+  l'idioma sbagliato (`setCpuVsCpu` chiamato prima di `startMatch`) vive,
+  committato, in **dieci strumenti** (`strumenti/_c3-sorteggi.js`,
+  `_crit10-nome.js`, `_crit10-sorteggi.js`, `_crit10-tab.js`,
+  `_crit8-caccia.js`, `_crit8-foto.js`, `_crit8-pixel.js`,
+  `_crit8-radar.js`, `_crit8-sonda.js`, `_crit8-velo.js`) — i confronti
+  DUE-VERSIONI fatti con questi strumenti RESTANO validi (simmetrici: A e
+  B girano sotto lo stesso banco congelato), ma nessuno di quegli scenari
+  era mai stato CPU-CPU vero. Proposta di cura lato gioco (`setCpuVsCpu` a
+  prova d'ordine: l'intento si memorizza e si consuma dentro `startMatch`
+  qualunque sia l'ordine di chiamata) con una NOTA sulla comparabilità
+  storica — cambierebbe la semantica di tutte le corse due-versioni
+  passate appoggiate a quell'idioma — **decisione del committente**, non
+  applicata in questo cantiere.
+
+  **4. Il nastro conosce il suo motore, e la voce #96 SI CHIUDE** (compito
+  4): `MOTORE_V = 1` (costante nuova accanto a `Reg`/`SEME`, con commento:
+  sale di uno a ogni ramo che tocca la simulazione; nasce a **1**, non a
+  0, perché i rami #87 e #107 hanno già cambiato il motore prima che
+  questa costante esistesse — ogni nastro di ieri è già invalido di
+  fatto). `Reg.serializza()` porta la versione in un campo di testa nuovo
+  (`'1|MOTORE_V|tasti|pezzi'`, subito dopo il marcatore di formato che
+  c'era già — nessun tipo-riga nuovo, il posto meno invasivo);
+  `Reg.deserializza()` la legge, e un nastro SENZA quel campo (3 pezzi
+  invece di 4: ogni nastro di prima di oggi) vale **versione 0**, mai un
+  errore — retro-compatibilità provata (`_q-replay.js`, prova A: scritto,
+  riletto e riscritto, stesso testo). `Sfida.guarda()` confronta
+  `Reg.motoreV` con `MOTORE_V` SUBITO dopo la lettura, PRIMA di
+  `startMatch`: se non combaciano, il messaggio dice la CAUSA VERA
+  ("questa partita è stata giocata con un'altra versione del motore...
+  non quella che hai subito davvero") invece dell'accusa sbagliata "la
+  squadra è cambiata da allora" che `chiudiSfida` avrebbe dato lasciando
+  correre la partita fino in fondo. ZERO PENALITÀ dichiarata e verificata:
+  nessuna partita si avvia (`sfidaStato.replay` resta `false`), nessun
+  punto, nessuna classifica, nessun invio al server (un replay non paga
+  comunque) — si perde solo il film, come il caso già esistente del
+  duello dal dischetto (`fermaReplayAlDischetto`). Banco `_q-regole.js`
+  guadagna la **tredicesima prova, NASTRO-VERSIONE**: un nastro artefatto
+  a versione 0 rigiocato via `Sfida.guarda` con dati finti (`Rete.replay`
+  sostituita, zero rete vera) chiude col messaggio onesto e zero
+  penalità; un nastro a versione corrente (preso dal gioco stesso, non
+  scritto a mano) rigioca come sempre. NATA ROSSA sulla base pre-cura
+  (`700f775`): **12/13**, la sola tredicesima rossa (un nastro vecchio
+  passava per buono e avviava la partita).
+
+  **La voce #96 (cancello di pubblicazione) SI CHIUDE**: la condizione era
+  "il nastro porta la versione del motore, e il messaggio dice la causa
+  vera" — soddisfatta e provata dal banco. Il prossimo APK si sblocca. Le
+  voci #104/#105/#106 restano aperte.
+
+  **Cancelli**: `_q-regole.js` **13/13** (12/13 sulla base `700f775`,
+  la sola NASTRO-VERSIONE rossa); `_q-determinismo --partite 4` **13/13**;
+  `_q-replay.js` **10/10** (il round-trip serializza→deserializza,
+  prova A, regge il formato nuovo). Sorteggi complessivi del cantiere dal
+  merge-base `cabf7e4` (DIVERGE per costruzione, tre regole nuove sulla
+  simulazione): taglia 5 **19/20** (100.829→100.838 chiamate a `dado()`),
+  taglia 7 **20/20** (213.679→227.627), taglia 11 **18/20**
+  (275.636→286.471). `regole` registrato in batteria (`strumenti/tutti.js`,
+  `conta:true`); batteria intera verde in 4 spezzoni, **27 cancelli che
+  contano** (2+11+8+6 — `proporzioni` NON MISURATO, uscita BANCO
+  pre-esistente e identica su base e HEAD di questo compito, dichiarata e
+  non una regressione). `_eventi.js` dal merge-base, 60 partite: gol/90s
+  **2,50 → 2,50** (+0%, dentro la soglia ±20% dello spec), falli/partita
+  **1,0 → 1,0** (+0%); vantaggi PIENI/partita **~0,25** (misurato dalla
+  sonda arbitrale del compito 3 — `_eventi.js` non ha una colonna
+  dedicata, dichiarato). Banchi di contorno: `_q-battute` 11/11,
+  `_q-precedenza` 9/9, `_q-volo` 11/11.
+
+  Verbale completo: spec `docs/superpowers/specs/2026-09-18-regole-leva-
+  corta-design.md`, piano `docs/superpowers/plans/2026-09-18-regole-leva-
+  corta.md`, rapporti `.git/sdd/brief/107-compito-*-report.md`.
 - **Rimesse laterali e calci d'angolo** (#87) — **CURATA il 18 settembre
   2026** (cinque compiti più il verbale, dal merge-base `7ed570a` fino
   alla coda della revisione finale — l'intervallo non si fissa su uno
@@ -734,6 +871,10 @@ Qui il registro completo, a edizioni.
   entrambi i lati, per costruzione identica su ogni telefono (a 11 sono
   già allineate, il campo vero è obbligatorio). Seguito **#105**
   registrato per quando si vorranno sfide a campo vero anche a 5/7.
+  **AGGIORNAMENTO (voce #107, 18 settembre 2026): la voce #96 SI CHIUDE**
+  — il nastro porta `MOTORE_V` e `Sfida.guarda` dice la causa vera quando
+  non combacia, invece dell'accusa al profilo; vedi la voce #107 più in
+  alto in questa sezione.
 
   Verbale completo: `docs/superpowers/specs/2026-09-17-rimesse-e-angoli-
   design.md`, `docs/superpowers/plans/2026-09-17-rimesse-e-angoli.md`,
@@ -971,7 +1112,8 @@ Qui il registro completo, a edizioni.
   **CONSEGUENZA**: i nastri delle sfide registrati col motore precedente
   non si riproducono più (stessa conseguenza già a registro per la voce
   #88); la voce **#96** (cancello di pubblicazione) copre anche questo
-  ramo. Verbale completo:
+  ramo. **AGGIORNAMENTO (voce #107, 18 settembre 2026): la voce #96 SI
+  CHIUDE** — vedi la voce #107 in cima a questa sezione. Verbale completo:
   `docs/superpowers/plans/2026-09-06-proporzioni-ufficiali.md`, rapporti
   `.git/sdd/brief/86-compito-*-report.md`, misure con fonte in
   `_analisi/MISURE-UFFICIALI.md`.
