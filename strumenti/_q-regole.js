@@ -89,6 +89,34 @@
         VERO) il giallo arriva e t.disciplina.gialli sale di uno.
    Il file e' adesso a nove prove.
 
+   CORREZIONE DI REVISIONE (voce #107, compito 3, 18 settembre 2026). La
+   misura indipendente del revisore (150 partite, taglia 5, contabilita'
+   vera sulle finestre) trovava il vantaggio pieno a ZERO su 260 finestre
+   e il 93% degli sfumati morto al PRIMO controllo: lo stordimento
+   preesistente carrier.recover=0.35 s mangiava la finestra di grazia
+   VANT_VALUTA=0.5 s, perche' G.vantaggio.t partiva da zero anche mentre
+   il fallito era ancora a terra. F1 (attrezzo
+   strumenti/_t-vantaggio-taratura.js) fa partire t da -(carrier.recover)
+   invece che da zero: l'accumulo e i due controlli restano invariati, la
+   finestra adesso misura MOTO LIBERO. Un secondo rilievo, indipendente:
+   la "punizione dal punto" del ramo punizioneRapida reggeva un solo
+   fotogramma, perche' il sostituto non era co-locato sul punto salvato e
+   la molla del dribbling lo trascinava via appena la fisica ripartiva.
+   F3 (stesso attrezzo) co-loca il sostituto sul punto PRIMA della
+   battuta, come posaBattuta fa col suo battitore. Il file guadagna una
+   decima prova (F4, il controllo che nessuna prova esercitava ancora):
+     10. DOGSO-GOL -- fallo da giallo, l'azione prosegue, GOL segnato
+         DENTRO la finestra di vantaggio: il gol vale, nessun fischio del
+         fallo, il cartellino arriva SOLO alla ripresa dopo la festa
+         (niente doppio castigo). Nasce verde per costruzione (la guardia
+         di scena in step() esclude 'goal' dalla valutazione del
+         vantaggio): una rossa qui sarebbe un bug vero da curare.
+   La prova 8 (VANTAGGIO-SFUMATO) guadagna un'ESTENSIONE (F3): la
+   distanza dal punto salvato si traccia per 20 fotogrammi dopo il
+   fischio, non solo nell'istante del fischio (tolleranza stretta, 25
+   unita', molto sotto le 120 generose della prima misura).
+   Il file e' adesso a dieci prove.
+
    ZERO dado() NUOVI. Le scene si scrivono direttamente sullo stato del
    gioco (G.players/G.ball, la stessa tecnica di _q-battute.js) e il
    fallo da scivolata si ottiene con un'entrata DA DIETRO: la vittima
@@ -355,15 +383,31 @@ function INIETTA_SCENE() {
     const savedX = G.vantaggio.x, savedY = G.vantaggio.y, savedCard = G.vantaggio.card;
     const decoyX = savedX - 300;
     Object.assign(t.ball, { owner: s.tacklerIdx, x: decoyX, y: savedY, vx: 0, vy: 0, z: 0, vz: 0 });
+    /* F3 (correzione di revisione, voce #107 compito 3): "la punizione
+       resta sul punto" e' un fatto nel TEMPO, non solo nel fotogramma del
+       fischio -- prima della cura il sostituto non era co-locato e la
+       molla del dribbling di updateBall lo trascinava via appena la
+       fisica ripartiva (misurato dal revisore: ~38 unita' in 0,33 s).
+       maxDistPost20 traccia la distanza dal punto SALVATO per i 20
+       fotogrammi a partire dal fischio (compreso): deve restare piccola
+       per tutta la finestra, non solo scattare bassa un istante e poi
+       scappare. */
     let vistoSfumato = false, bxAlFischio = null, byAlFischio = null;
+    let contPost = -1, maxDistPost20 = 0;
     for (let i = 0; i < totale; i++) {
       t.simulate(1 / 60);
       const ban = t.banner;
       if (!vistoSfumato && ban && ban.text && String(ban.text).toUpperCase().indexOf('SFUMATO') >= 0) {
         vistoSfumato = true; bxAlFischio = t.ball.x; byAlFischio = t.ball.y;
+        contPost = 0;
+        maxDistPost20 = Math.hypot(bxAlFischio - savedX, byAlFischio - savedY);
+      } else if (contPost >= 0 && contPost < 20) {
+        const dd = Math.hypot(t.ball.x - savedX, t.ball.y - savedY);
+        if (dd > maxDistPost20) maxDistPost20 = dd;
+        contPost++;
       }
     }
-    return Object.assign({}, s, { savedX, savedY, savedCard, decoyX, vistoSfumato, bxAlFischio, byAlFischio, statoFinale: t.state });
+    return Object.assign({}, s, { savedX, savedY, savedCard, decoyX, vistoSfumato, bxAlFischio, byAlFischio, maxDistPost20, statoFinale: t.state });
   };
   /* SCENA_CARD_DIFFERITO_ESEGUI: lo stesso fallo cattivo (SCENA_FALLO
      garantisce sempre un'entrata da dietro, sempre cattivo) ma con
@@ -392,6 +436,79 @@ function INIETTA_SCENE() {
     for (let i = 0; i < 10; i++) t.simulate(1 / 60);
     const gialliDopo = t.disciplina.gialli[foulTeam];
     return { ok: true, foulTeam, gialliPrima, gialliDopo, statoDopo: t.state };
+  };
+  /* SCENA_DOGSO_GOL_ESEGUI (F4, correzione di revisione, voce #107
+     compito 3, 18 settembre 2026): il controllo discriminante che
+     nessuna prova esercitava ancora -- fallo da giallo, l'azione
+     prosegue, GOL segnato DENTRO la finestra di vantaggio. Lo stesso
+     fallo di SCENA_FALLO('lontano') (sempre un'entrata da dietro,
+     sempre cattivo: un cartellino resta pendente in G.vantaggio.card)
+     apre la finestra come sempre. Il gol si costruisce teletrasportando
+     la palla appena oltre la linea della porta che la squadra OFFESA
+     ATTACCA (team 0 -> +x, team 1 -> -x, la stessa convenzione di
+     dentroArea/resetKickoff in questo file) subito dopo l'apertura --
+     ben PRIMA di VANT_VALUTA (dopo F1 il fallito e' ancora a terra,
+     G.vantaggio.t parte negativo: vedi _t-vantaggio-taratura.js), cosi'
+     il blocco di valutazione dentro step() non ha mai occasione di
+     risolversi (SFUMATO o VANTAGGIO) prima che ballWalls veda la palla
+     oltre la linea e chiami addGoal da solo -- un gol vero, non un
+     canale sintetico.
+     ATTESO: il gol vale, checkSlideContact non rifischia mai da solo
+     (nessun banner di fallo/punizione fra l'apertura e il gol) e il
+     cartellino arriva SOLO alla ripresa dopo la festa (resetKickoff,
+     App. D): niente doppio castigo, il gol resta. Se invece la scena
+     'goal' tornasse indietro a 'freekick', o il gol non valesse, o il
+     giallo arrivasse PRIMA della ripresa, sarebbe un bug vero (la
+     finestra di vantaggio che interrompe una festa gia' iniziata): da
+     curare e dichiarare, non da nascondere.
+     saltaRipresa/saltaMoviola sono verbi VERI del gioco (lo stesso
+     tocco che un giocatore userebbe per non aspettare la festa): li si
+     richiama a ogni fotogramma finche' la scena non torna 'play', cosi'
+     la prova non dipende dalla durata (variabile) di ripresa e moviola. */
+  window.SCENA_DOGSO_GOL_ESEGUI = function () {
+    const t = window.__test;
+    const s = SCENA_FALLO('lontano');
+    if (s.errore) return s;
+    let aperto = false;
+    for (let i = 0; i < 180 && !aperto; i++) {
+      t.simulate(1 / 60);
+      if (typeof G !== 'undefined' && G.vantaggio) aperto = true;
+    }
+    if (!aperto) return { errore: "G.vantaggio non si e' mai aperto entro 3 s" };
+    if (G.vantaggio.card == null) return { errore: 'il fallo scriptato non ha prodotto un cartellino dovuto (card null)' };
+    const vTeam = G.vantaggio.team, foulTeam = 1 - vTeam;
+    const tAllApertura = G.vantaggio.t;
+    const gialliPrima = t.disciplina.gialli[foulTeam];
+    const scorePrima = t.score.slice();
+    const golX = vTeam === 0 ? (FW + 6) : -6;
+    Object.assign(t.ball, { owner: -1, x: golX, y: FH / 2, vx: (vTeam === 0 ? 1 : -1) * 150, vy: 0, z: 0, vz: 0 });
+    let fischioFallo = false;
+    for (let i = 0; i < 10 && t.state !== 'goal'; i++) {
+      t.simulate(1 / 60);
+      const ban = t.banner;
+      if (ban && ban.text && /VANTAGGIO|PUNIZIONE|FALLO/.test(String(ban.text).toUpperCase())) fischioFallo = true;
+    }
+    const golSegnato = t.state === 'goal';
+    const scoreAlGol = t.score.slice();
+    const vantaggioApertoAlGol = !!G.vantaggio;
+    const gialliAlGol = t.disciplina.gialli[foulTeam];
+    /* si corre fino alla ripresa (resetKickoff -> setScene('kickoff')),
+       saltando ripresa/moviola col verbo vero -- la loro durata non e'
+       una soglia di questa prova. */
+    for (let i = 0; i < 300 && t.state !== 'play'; i++) {
+      if (typeof G !== 'undefined') {
+        if (G.ripresa) saltaRipresa();
+        else if (G.moviola) saltaMoviola();
+      }
+      t.simulate(1 / 60);
+    }
+    const gialliDopoRipresa = t.disciplina.gialli[foulTeam];
+    return {
+      ok: true, vTeam, foulTeam, tAllApertura, fischioFallo,
+      gialliPrima, gialliAlGol, gialliDopoRipresa,
+      scorePrima, scoreAlGol, golSegnato, vantaggioApertoAlGol,
+      statoDopoRipresa: t.state,
+    };
   };
 }
 
@@ -684,7 +801,18 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
        ora: e' il controllo che la prova isola (tolleranza generosa,
        120 unita': il ramo punizioneRapida cede la palla al compagno
        offeso piu' vicino al punto salvato, non incolla la palla al
-       millimetro, e un fotogramma di fisica gira comunque dopo). */
+       millimetro, e un fotogramma di fisica gira comunque dopo).
+
+       ESTENSIONE F3 (correzione di revisione, 18 settembre 2026): "la
+       punizione resta sul punto" e' un fatto nel TEMPO, non solo nel
+       fotogramma del fischio -- prima della cura il sostituto non era
+       co-locato e la molla del dribbling di updateBall lo trascinava
+       via appena la fisica ripartiva (misurato dal revisore: ~38 unita'
+       in 0,33 s). maxDistPost20 (dentro SCENA_VANTAGGIO_SFUMATO_ESEGUI)
+       traccia la distanza dal punto salvato per i primi 20 fotogrammi a
+       partire dal fischio: deve restare stretta (25 unita', molto sotto
+       la tolleranza generosa di sopra) per TUTTA la finestra, non solo
+       nell'istante del fischio. */
     {
       const scena = await pag.evaluate(({ seme, taglia, n }) => {
         const t = window.__test;
@@ -696,14 +824,18 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       if (scena.errore) { di(false, '8. VANTAGGIO-SFUMATO', 'BANCO: scena non costruita -- ' + scena.errore); }
       else {
         const TOLLERANZA_PUNTO = 120;
+        const TOLLERANZA_TENUTA = 25;   // F3: la stessa punizione, sostenuta per 20 fotogrammi
         const dist = scena.vistoSfumato ? Math.hypot(scena.bxAlFischio - scena.savedX, scena.byAlFischio - scena.savedY) : Infinity;
         const distDaDecoy = scena.vistoSfumato ? Math.abs(scena.bxAlFischio - scena.decoyX) : 0;
-        const ok = scena.vistoSfumato && dist <= TOLLERANZA_PUNTO;
-        di(ok, "8. VANTAGGIO-SFUMATO -- palla persa in finestra: fischio ritardato dal punto SALVATO, non dal decoy",
+        const okTenuta = scena.vistoSfumato && scena.maxDistPost20 <= TOLLERANZA_TENUTA;
+        const ok = scena.vistoSfumato && dist <= TOLLERANZA_PUNTO && okTenuta;
+        di(ok, "8. VANTAGGIO-SFUMATO -- palla persa in finestra: fischio ritardato dal punto SALVATO, non dal decoy, e la punizione REGGE (F3)",
           'banner SFUMATO visto: ' + scena.vistoSfumato + '   punto salvato: (' + scena.savedX.toFixed(1) + ',' + scena.savedY.toFixed(1) +
           ')   decoy: ' + scena.decoyX.toFixed(1) + '   palla al fischio: (' + (scena.bxAlFischio == null ? 'n/d' : scena.bxAlFischio.toFixed(1)) + ',' +
           (scena.byAlFischio == null ? 'n/d' : scena.byAlFischio.toFixed(1)) + ')   distanza dal punto salvato: ' + (isFinite(dist) ? dist.toFixed(1) : 'n/d') +
-          ' (atteso <= ' + TOLLERANZA_PUNTO + ')   distanza dal decoy: ' + distDaDecoy.toFixed(1));
+          ' (atteso <= ' + TOLLERANZA_PUNTO + ')   distanza dal decoy: ' + distDaDecoy.toFixed(1) +
+          '   distanza MASSIMA nei 20 fotogrammi dopo il fischio: ' + (scena.maxDistPost20 == null ? 'n/d' : scena.maxDistPost20.toFixed(1)) +
+          ' (atteso <= ' + TOLLERANZA_TENUTA + ', F3)');
       }
     }
 
@@ -730,6 +862,44 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
         di(ok, "9. CARD-DIFFERITO -- vantaggio concesso su fallo da giallo: nessun fischio subito, il giallo arriva alla prima palla ferma",
           'squadra del fallo: ' + scena.foulTeam + '   gialli prima della palla ferma: ' + scena.gialliPrima +
           '   gialli dopo (atteso +1): ' + scena.gialliDopo + '   stato dopo la palla ferma: ' + scena.statoDopo);
+      }
+    }
+
+    /* ===================================================================
+       PROVA 10 -- DOGSO-GOL (F4, correzione di revisione compito 3, 18
+       settembre 2026). CONTROLLO DISCRIMINANTE che nessuna prova di
+       questo file esercitava ancora: fallo da giallo, l'azione prosegue,
+       GOL segnato DENTRO la finestra di vantaggio. Nasce verde per
+       costruzione del file (setScene('goal') passa da addGoal, che il
+       blocco di valutazione del vantaggio in step() non intercetta mai
+       -- la guardia G.scene!=='play'&&G.scene!=='golden' esce PRIMA di
+       arrivarci): se nascesse ROSSA sarebbe un bug vero (la finestra di
+       vantaggio che interrompe una festa di gol gia' iniziata), da
+       curare e dichiarare, non da nascondere. La condanna vera e' sui
+       quattro fatti insieme: il gol conta, nessun banner di fallo fra
+       l'apertura e il gol, il cartellino NON e' ancora arrivato al gol
+       (arriva dopo, alla ripresa) e ARRIVA per davvero dopo la festa. */
+    {
+      const scena = await pag.evaluate(({ seme, taglia }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.setCpuVsCpu(true);
+        t.startMatch(1, 1, { size: taglia });
+        return SCENA_DOGSO_GOL_ESEGUI();
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+      if (scena.errore) { di(false, '10. DOGSO-GOL', 'BANCO: scena non costruita -- ' + scena.errore); }
+      else {
+        const golContato = scena.scoreAlGol[scena.vTeam] === scena.scorePrima[scena.vTeam] + 1;
+        const nessunFischioAlGol = !scena.fischioFallo;
+        const cardNonAlGol = scena.gialliAlGol === scena.gialliPrima;
+        const cardAllaRipresa = scena.gialliDopoRipresa === scena.gialliPrima + 1;
+        const ok = scena.golSegnato && golContato && nessunFischioAlGol && cardNonAlGol && cardAllaRipresa;
+        di(ok, "10. DOGSO-GOL -- fallo da giallo, il gol arriva dentro la finestra: il gol vale, nessun fischio, il giallo arriva alla ripresa",
+          'gol segnato: ' + scena.golSegnato + '   punteggio ' + scena.scorePrima.join('-') + ' -> ' + scena.scoreAlGol.join('-') +
+          ' (squadra offesa ' + scena.vTeam + ', atteso +1)   fischio del fallo prima del gol: ' + scena.fischioFallo + ' (atteso false)   ' +
+          'gialli alla porta: ' + scena.gialliAlGol + ' (atteso ' + scena.gialliPrima + ', invariato)   ' +
+          'gialli dopo la ripresa: ' + scena.gialliDopoRipresa + ' (atteso ' + (scena.gialliPrima + 1) + ')   ' +
+          't del vantaggio all\'apertura: ' + scena.tAllApertura.toFixed(3) + '   stato dopo la ripresa: ' + scena.statoDopoRipresa);
       }
     }
 

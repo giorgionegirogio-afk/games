@@ -17025,7 +17025,26 @@ function step(){
             const d=len(q.x-vx,q.y-vy);
             if(d<fd){ fd=d; fallito=q; }
           }
-          if(fallito) punizioneRapida(fallito, null);
+          if(fallito){
+            /* F3 (correzione di revisione, voce #107 compito 3): la
+               "punizione dal punto" reggeva un solo fotogramma -- il
+               sostituto restava dov'era (fd unita' dal punto salvato,
+               non zero: la partita e' andata avanti durante la finestra)
+               e punizioneRapida non sposta mai b.x/b.y, quindi la palla
+               restava al punto salvato per UN fotogramma, poi la molla
+               del dribbling di updateBall (bersaglio o.x+o.fx*avanti) la
+               trascinava verso il sostituto vero (misurato: ~38 unita' in
+               0,33 s). Il sostituto va CO-LOCATO sul punto PRIMA della
+               battuta -- lo stesso pattern di posaBattuta col suo
+               battitore, ma senza l'offset di CARRY_DIST: qui la palla
+               non si sposta rispetto al giocatore, quindi il giocatore
+               deve arrivare esattamente dove sta gia' la palla.
+               clampPlayer riusa il confine di campo che il moto normale
+               gia' rispetta -- nessun secondo clamp scritto a mano. */
+            fallito.x=vx; fallito.y=vy; fallito.vx=0; fallito.vy=0;
+            clampPlayer(fallito);
+            punizioneRapida(fallito, null);
+          }
         }
       } else if(G.vantaggio.t>=VANT_T){
         /* VANTAGGIO: la finestra intera e' passata in conservazione.
@@ -18345,7 +18364,21 @@ function checkSlideContact(p){
           }
           return;
         }
-        G.vantaggio = { team:carrier.team, x:p.x, y:p.y, t:0, card: cattivo?G.players.indexOf(p):null };
+        /* F1 (correzione di revisione, voce #107 compito 3, 18 settembre
+           2026): la finestra parte quando il fallito SI RIALZA, non dal
+           fischio del fallo. carrier.recover e' appena stato scritto
+           (Math.max(carrier.recover,0.35) qui sopra, invariato) -- finche'
+           e' positivo il fallito e' incollato a terra (updatePlayerFisica,
+           "if(p.recover>0){...return;}"), e un t che partisse da zero
+           misurerebbe quello stordimento, non l'azione. Misura del
+           revisore (150 partite, taglia 5): con t da zero il 93% dei
+           vantaggi SFUMATI moriva al PRIMO controllo (t<0,6 s), pieno mai
+           una volta su 260 finestre. t negativo e' solo un differimento
+           dell'orologio: l'accumulo (t+=dt, sotto in step()) e i due
+           controlli (VANT_VALUTA/VANT_T) restano invariati carattere per
+           carattere -- la finestra adesso misura MOTO LIBERO dal momento
+           in cui il fallito torna in piedi, non dal momento del fallo. */
+        G.vantaggio = { team:carrier.team, x:p.x, y:p.y, t:-(carrier.recover>0?carrier.recover:0), card: cattivo?G.players.indexOf(p):null };
         return;
       }
     }
