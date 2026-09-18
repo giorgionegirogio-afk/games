@@ -10742,6 +10742,18 @@ function resetKickoff(){
      compiti) non avrebbe piu' senso su un campo appena rimesso in
      formazione. */
   G.battuta=null;
+  /* IL FISCHIO DEL GOL (E DI OGNI RIPRESA) UCCIDE UN VANTAGGIO PENDENTE
+     (voce #107, compito 3): resetKickoff gira sempre prima di ogni
+     ripresa -- partita nuova, dopo un gol, dopo i rigori -- ed e' la
+     "prima palla ferma" che l'App. D chiede per il cartellino in
+     differita: lo infligge (se dovuto) invece di limitarsi ad azzerare.
+     Il caso DOGSO-advantage-goal (gol segnato dentro la finestra di
+     vantaggio, niente doppio castigo: il gol resta, il cartellino
+     arriva qui, non al fischio del gol) si chiude proprio in questo
+     punto, mai dentro addGoal -- la festa del gol tace su ogni banner
+     per legge di questo file (vedi addGoal, "la striscia degli eventi
+     tace sul gol"). */
+  scaricaCardVantaggio();
   if(G.ball) G.ball.tiroT=-1;             // nessun tiro sopravvive al fischio
   for(const p of G.players){
     const f = formation(p.team)[p.idx];
@@ -11134,6 +11146,15 @@ function setScene(s){
      menu sono tarati li' */
   if(s==='menu') setTaglia(5);
   G.scene=s; G.sceneT=0;
+  /* IL CARTELLINO IN DIFFERITA (voce #107, compito 3, mandato App. D):
+     se un vantaggio ha lasciato un cartellino pendente (G.vantaggio.
+     card, concesso ma non ancora mostrato), la prima palla ferma vera
+     lo infligge -- qui per battuta/freekick. Il kickoff (dopo un gol
+     compreso) passa sempre da resetKickoff PRIMA di arrivare a questo
+     setScene: e' li' che si scarica (mai qui, e mai dentro addGoal --
+     la festa del gol tace su ogni banner per legge di questo file,
+     vedi "la striscia degli eventi tace sul gol" in addGoal). */
+  if(G.vantaggio && (s==='battuta'||s==='freekick')) scaricaCardVantaggio();
   if(s!=='end') G.frozen=false;
   if(s!=='goal'){ G.confScreen.length=0; G.confPend=null; G.confPop=null; }
   /* durante il gol il riquadro del tutorial sparisce: la scritta e la
@@ -16940,6 +16961,85 @@ function step(){
     }
   }
 
+  /* IL VANTAGGIO (voce #107, compito 3, mandato SS6.7): vive qui, a
+     mondo vivo, subito dopo l'hit-stop -- come la finestra di battuta
+     qui sopra, per la stessa ragione (passo fisso, non fotogrammi: la
+     ripetibilita' e' tutto il punto). checkSlideContact apre la
+     finestra (G.vantaggio = {team, x, y, t, card}, team la squadra
+     OFFESA) e non fischia piu' li': la valutazione vive tutta qui.
+     G.vantaggio.team>=0 e' la guardia di "finestra ancora viva" -- una
+     volta conservato il vantaggio a VANT_T il resto si azzera (team:-1,
+     vedi sotto) e resta solo il cartellino pendente, che questo blocco
+     non deve piu' rivalutare: un possesso perso molto piu' tardi non
+     puo' richiamare indietro un fischio ormai concesso.
+     Zero dado(): la conservazione e' squadraDelPallone()===team (owner
+     o lastTouch, la stessa regola di sempre) E la x della palla piu'
+     avanti della x salvata -- il verso dipende dalla squadra (team 0
+     attacca +x, team 1 -x, la stessa convenzione di dentroArea/
+     resetKickoff in questo file). */
+  if(G.vantaggio && G.vantaggio.team>=0){
+    G.vantaggio.t+=dt;
+    if(G.vantaggio.t>=VANT_VALUTA){
+      const vTeam=G.vantaggio.team, vDir=vTeam===0?1:-1;
+      const conserva = squadraDelPallone()===vTeam && (G.ball.x-G.vantaggio.x)*vDir>0;
+      if(!conserva){
+        /* VANTAGGIO SFUMATO: il fischio, ritardato, torna al punto
+           SALVATO -- non a dove sono finiti i giocatori nel frattempo.
+           startFreeKick non porta mai una posizione (e' un duello dal
+           dischetto, la stessa distanza per rigore e punizione: firma
+           verificata prima di scrivere questo attrezzo), quindi la
+           palla si riporta al punto salvato PRIMA di decidere -- cosi'
+           anche punizioneRapida (che legge solo il giocatore che le si
+           passa, mai un punto per conto suo) parte dal posto giusto.
+           IL CARTELLINO SI SCARICA SUBITO, PRIMA del banner (rilievo
+           misurato scrivendo il banco: infliggiCartellino chiama
+           showBanner('CARTELLINO GIALLO',...), e se girasse DOPO
+           cancellerebbe "VANTAGGIO SFUMATO" nello stesso fotogramma --
+           l'ultimo banner scritto e' quello che si vede. E' la STESSA
+           legge che governava gia' questo file prima del compito 3:
+           anche li' infliggiCartellino girava PRIMA del banner del
+           fallo, mai dopo, perche' il banner dell'AZIONE ("FALLO
+           CATTIVO!"/"PUNIZIONE!") vinceva sempre su quello del
+           cartellino. startFreeKick chiama scaricaCardVantaggio() da
+           solo (dentro setScene, sul ramo 'freekick'): chiamarla gia'
+           qui, prima, la rende innocua a lui -- G.vantaggio e' gia'
+           null quando setScene la richiede. */
+        const vx=G.vantaggio.x, vy=G.vantaggio.y;
+        const foulTeam=1-vTeam;
+        const inArea=dentroArea(vTeam, vx, vy);
+        const cumulo=G.stats.falli[foulTeam]>=3;
+        scaricaCardVantaggio();
+        const b=G.ball;
+        b.owner=-1; b.x=vx; b.y=vy; b.z=0; b.vz=0; b.vx=0; b.vy=0;
+        b.curve=0; b.perfectT=0; b.saveRolled=false; b.passTo=-1;
+        showBanner('VANTAGGIO SFUMATO', TEAMCOL[vTeam], 1.2);
+        Audio5.whistle(false);
+        if(inArea || cumulo){
+          startFreeKick(vTeam, foulTeam);
+        }else{
+          /* punizioneRapida vuole un giocatore vero: il compagno offeso
+             piu' vicino al punto salvato -- il portatore originale e'
+             altrove ormai, la partita e' andata avanti fino a qui. */
+          let fallito=null, fd=1e9;
+          for(const q of diMovimentoInCampo(vTeam)){
+            const d=len(q.x-vx,q.y-vy);
+            if(d<fd){ fd=d; fallito=q; }
+          }
+          if(fallito) punizioneRapida(fallito, null);
+        }
+      } else if(G.vantaggio.t>=VANT_T){
+        /* VANTAGGIO: la finestra intera e' passata in conservazione.
+           Il fallo e' perdonato; il cartellino dovuto (se c'e') resta
+           pendente -- si mostra alla prossima palla ferma (setScene o
+           resetKickoff, App. D). Azzera il resto: team:-1 spegne la
+           guardia qui sopra, la finestra chiusa non si rivaluta mai. */
+        showBanner('VANTAGGIO', TEAMCOL[vTeam], 1.0);
+        const vCard=G.vantaggio.card;
+        G.vantaggio = vCard!=null ? { team:-1, x:0, y:0, t:0, card:vCard } : null;
+      }
+    }
+  }
+
   /* timer di partita */
   if(!G.golden){
     G.timeLeft-=dt;
@@ -18110,6 +18210,22 @@ function infliggiCartellino(p){
   buzz([60,40,60]);
 }
 
+/* IL CARTELLINO IN DIFFERITA (voce #107, compito 3): infligge il
+   cartellino pendente di un vantaggio, se c'e' (G.vantaggio.card,
+   l'indice del giocatore da ammonire -- null quando il fallo perdonato
+   non lo meritava), e chiude comunque lo stato. Chiamata da tre punti
+   -- checkSlideContact (un fallo nuovo chiude subito uno vecchio
+   pendente), lo scioglimento della finestra dentro step() (sfumato o,
+   in differita, alla prossima palla ferma) e resetKickoff (la ripresa,
+   gol compreso) -- ed e' sicura da richiamare anche quando non c'e'
+   niente da scaricare: G.vantaggio finisce sempre null. */
+function scaricaCardVantaggio(){
+  if(G.vantaggio && G.vantaggio.card!=null && G.players[G.vantaggio.card]){
+    infliggiCartellino(G.players[G.vantaggio.card]);
+  }
+  G.vantaggio=null;
+}
+
 /* punizione a due, rapida: la palla resta al fallito sul posto e gli
    avversari sono respinti. Nessun overlay, nessuna pausa: si riparte. */
 function punizioneRapida(fallito, autore){
@@ -18194,31 +18310,42 @@ function checkSlideContact(p){
         carrier.cond=Math.max(0, carrier.cond - (cattivo?COND_URTO*2:COND_URTO));
         p.cond=Math.max(0, p.cond - COND_URTO*0.5);
         buzz(cattivo?[30,40,60]:40);
-        Audio5.whistle(false);
-        if(cattivo) infliggiCartellino(p);
-        /* CUMULO FALLI, come nel futsal: il duello dal dischetto si guadagna.
-           Si tira solo se il fallo e' dentro l'area vera oppure dal terzo
-           fallo di squadra in poi. Gli altri sono punizioni a due, veloci:
-           la partita non si spezza a ogni contrasto.
-           RETTIFICA (voce #107, compito 1): qui c'era "zona pericolosa",
-           cioe' zonaCalda = Math.abs(goalX-p.x) < 260 -- una fascia 1D
-           sulla sola x, non scalata per taglia e diversa dall'area vera
-           gia' disegnata E applicata altrove nello stesso file (VERNICE.
-           areaProf/areaSemi, dentroArea(), usata da GK_AREA_X e dal
-           cross -- ramo #86). zonaCalda muore qui: era il suo unico uso
-           nel file. La decisione ora legge il rettangolo vero, alla
-           scala della taglia in corso -- a 5 la differenza misurata e'
-           260 contro un'area profonda 173 (piu' la semilarghezza 216
-           sulla y, che la vecchia fascia non vedeva affatto). */
-        const inArea = dentroArea(carrier.team, p.x, p.y);
-        const cumulo = G.stats.falli[p.team] >= 3;
-        if(inArea || cumulo){
-          showBanner(cumulo && !inArea ? 'TERZO FALLO: SI TIRA!' : (cattivo?'FALLO CATTIVO!':'PUNIZIONE!'), '#ffb020', 1.2);
-          startFreeKick(carrier.team, p.team);
-        }else{
-          showBanner(cattivo?'FALLO CATTIVO!':'FALLO!', '#ffb020', 1.0);
-          punizioneRapida(carrier, p);
+        /* IL VANTAGGIO (voce #107, compito 3, mandato SS6.7): il fischio
+           non scatta piu' subito qui -- si apre una finestra di
+           valutazione (G.vantaggio = {team, x, y, t, card}, team la
+           squadra OFFESA -- carrier.team, mai l'autore --, x/y il
+           punto DI QUESTO fallo, quello di p: e' li' che il fischio
+           ritardato deve tornare). La valutazione vive nel passo fisso
+           del gioco vivo, dentro step(), subito dopo l'hit-stop -- come
+           la finestra di battuta della voce #87. card e' l'indice del
+           giocatore da ammonire SE il fallo lo meritava (null
+           altrimenti): il cartellino stesso resta pendente, non si
+           infligge mai qui.
+           UN FALLO MENTRE UN VANTAGGIO E' GIA' PENDENTE (scelta
+           dichiarata, la piu' semplice delle due offerte dal piano):
+           niente doppio vantaggio. Quello vecchio chiude SUBITO
+           (scaricaCardVantaggio -- il suo cartellino, se dovuto, si
+           infligge adesso) e il fallo nuovo fischia SUBITO, con la
+           STESSA decisione area/cumulo di sempre -- il ramo qui sotto
+           e' carattere per carattere quello che checkSlideContact
+           faceva PRIMA di questo compito (RETTIFICA voce #107, compito
+           1, per l'area vera al posto di zonaCalda: invariata). */
+        if(G.vantaggio){
+          scaricaCardVantaggio();
+          Audio5.whistle(false);
+          if(cattivo) infliggiCartellino(p);
+          const inArea = dentroArea(carrier.team, p.x, p.y);
+          const cumulo = G.stats.falli[p.team] >= 3;
+          if(inArea || cumulo){
+            showBanner(cumulo && !inArea ? 'TERZO FALLO: SI TIRA!' : (cattivo?'FALLO CATTIVO!':'PUNIZIONE!'), '#ffb020', 1.2);
+            startFreeKick(carrier.team, p.team);
+          }else{
+            showBanner(cattivo?'FALLO CATTIVO!':'FALLO!', '#ffb020', 1.0);
+            punizioneRapida(carrier, p);
+          }
+          return;
         }
+        G.vantaggio = { team:carrier.team, x:p.x, y:p.y, t:0, card: cattivo?G.players.indexOf(p):null };
         return;
       }
     }
@@ -19168,6 +19295,14 @@ const BATTUTA_T = { rimessa:0.8, rinvio:0.8 };   // il binario rapido del parago
 const BATTUTA_HOLD = 3.0;    // anti-stallo: entro questo tempo la battuta parte da sola
 const BATTUTA_CPU = 0.5;     // la CPU batte quando restano questi secondi di hold
 const BATTUTA_RAGGIO = 60;   // gli avversari vengono spinti fuori da questo raggio
+/* LE DUE MANOPOLE DEL VANTAGGIO (voce #107, compito 3), accanto a
+   BATTUTA_*: un posto solo per ogni soglia del cantiere. VANT_VALUTA e'
+   la prima occhiata dopo il fallo (il tempo che la palla ha per uscire
+   dal caos del contrasto prima che la conservazione conti per davvero);
+   VANT_T e' la scadenza intera della finestra, in secondi REALI di
+   gioco vivo (passo fisso, non fotogrammi). */
+const VANT_VALUTA = 0.5;
+const VANT_T = 2.5;
 /* LA CLIP DELLA RIMESSA VIAGGIA SU UN CRONOMETRO SUO (voce #87,
    correzione di revisione compito 3): non piu' chargeClip (cieco in
    partita vera - la carica umana dura 0-3 fotogrammi e la CPU non

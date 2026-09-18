@@ -68,7 +68,26 @@
         sotto P_R+B_R, con tolleranza, mentre il regime di negazione e'
         attivo) e il pallone deve tornare vivo entro 5 s, cosi' un fermo
         che non si scioglie mai non passerebbe per una regola sana.
-   Il file e' adesso a sette prove.
+
+   RETTIFICA (voce #107, compito 3, 18 settembre 2026): la 6.
+   VANTAGGIO-FISCHIA-SEMPRE diventa verde (l'azione sostenuta non fischia
+   piu', banner VANTAGGIO, nessun duello aperto) e il file guadagna DUE
+   prove nuove, con l'ADATTAMENTO DICHIARATO che la nota di registro del
+   compito chiedeva di dichiarare (la scena del fallo lontano muove il
+   GIOCATORE vittima con vx=-300 una volta sola, non il pallone: lasciata
+   a se stessa contro CPU l'azione si scioglie da sola ben prima di
+   VANT_T, un difensore ruba palla intorno a 1,6-1,7 s -- non un difetto
+   della regola. SOSTIENI_AVANTI tiene l'offeso in corsa e in possesso
+   per tutta la finestra, isolando la VALUTAZIONE dalla tenuta dell'IA):
+     8. VANTAGGIO-SFUMATO -- la conservazione si perde apposta (il
+        pallone passa al colpevole e si teletrasporta a un decoy, lontano
+        dal punto del fallo): il fischio ritardato deve tornare al punto
+        SALVATO, mai al decoy.
+     9. CARD-DIFFERITO -- lo stesso fallo da giallo, ma con l'azione
+        sostenuta fino a VANT_T: nessun fischio, il cartellino resta
+        pendente; alla prima palla ferma vera (una fascia lunga a campo
+        VERO) il giallo arriva e t.disciplina.gialli sale di uno.
+   Il file e' adesso a nove prove.
 
    ZERO dado() NUOVI. Le scene si scrivono direttamente sullo stato del
    gioco (G.players/G.ball, la stessa tecnica di _q-battute.js) e il
@@ -276,6 +295,104 @@ function INIETTA_SCENE() {
     Object.assign(t.ball, { x: gk.x - dir * offerta, y: gk.y, z: 0, vx: dir * 40, vy: 0, vz: 0 });
     return { ok: true, gkIdx: gi, compagnoIdx: ci, raggioFermo };
   };
+  /* =====================================================================
+     IL VANTAGGIO (voce #107, compito 3): tre funzioni nuove.
+
+     SOSTIENI_AVANTI(vittimaIdx, n) -- ADATTAMENTO DICHIARATO della scena
+     del fallo (nota di registro del compito: "quella scena muove il
+     GIOCATORE vittima con vx=-300, non il pallone"). Misurato PRIMA di
+     scrivere questa funzione: lasciata a se stessa (CPU contro CPU, la
+     vittima spinta una volta sola) l'azione si scioglie da sola --
+     il pallone diventa libero dopo mezzo secondo e un difensore lo ruba
+     intorno a 1,6-1,7 s, molto prima di VANT_T=2,5 s. La causa non e'
+     un difetto della regola: e' che una spinta UNA VOLTA SOLA non e' un
+     giocatore che continua a portare palla. SOSTIENI_AVANTI tiene
+     l'offeso in corsa E in possesso per n fotogrammi (owner forzato,
+     slide chiuso ogni passo, la stessa lezione gia' applicata alle
+     scene di _q-battute per isolare cio' che la prova vuole misurare
+     dalla tenuta dell'IA): cosi' la prova isola la VALUTAZIONE del
+     vantaggio, non la capacita' di un attaccante di resistere a un
+     pressing di CPU per due secondi e mezzo. Zero dado() nuovo: non
+     sceglie niente, forza uno stato gia' scelto dal chiamante. */
+  window.SOSTIENI_AVANTI = function (vittimaIdx, n) {
+    const t = window.__test;
+    let vistoVantaggio = false, vistoSfumato = false;
+    for (let i = 0; i < n; i++) {
+      const v = t.players[vittimaIdx];
+      if (v) { v.vx = -300; v.vy = 0; v.slide = -1; }
+      t.ball.owner = vittimaIdx;
+      t.simulate(1 / 60);
+      const ban = t.banner;
+      if (ban && ban.text) {
+        const up = String(ban.text).toUpperCase();
+        if (up.indexOf('SFUMATO') >= 0) vistoSfumato = true;
+        else if (up.indexOf('VANTAGGIO') >= 0) vistoVantaggio = true;
+      }
+    }
+    return { vistoVantaggio, vistoSfumato, statoFinale: t.state };
+  };
+  /* SCENA_VANTAGGIO_SFUMATO_ESEGUI: il fallo lontano da area/fascia di
+     SCENA_FALLO('lontano') (niente duello per costruzione: la prova
+     isola il vantaggio dalla cura del compito 1), lasciato correre fino
+     a quando G.vantaggio si apre davvero (checkSlideContact non gira
+     mai durante 'kickoff': la finestra non puo' aprirsi prima che la
+     scena sia 'play', quindi si aspetta invece di contare fotogrammi a
+     occhio), poi la conservazione si CORROMPE apposta: il pallone passa
+     al colpevole (squadraDelPallone() smette di essere la squadra
+     offesa) e si teletrasporta lontano dal punto SALVATO -- un decoy,
+     apposta per poter distinguere "il fischio ritardato torna al punto
+     del fallo" da "il fischio ritardato torna dove sta la palla ora". */
+  window.SCENA_VANTAGGIO_SFUMATO_ESEGUI = function (totale) {
+    const t = window.__test;
+    const s = SCENA_FALLO('lontano');
+    if (s.errore) return s;
+    let aperto = false;
+    for (let i = 0; i < 180 && !aperto; i++) {
+      t.simulate(1 / 60);
+      if (typeof G !== 'undefined' && G.vantaggio) aperto = true;
+    }
+    if (!aperto) return { errore: "G.vantaggio non si e' mai aperto entro 3 s" };
+    const savedX = G.vantaggio.x, savedY = G.vantaggio.y, savedCard = G.vantaggio.card;
+    const decoyX = savedX - 300;
+    Object.assign(t.ball, { owner: s.tacklerIdx, x: decoyX, y: savedY, vx: 0, vy: 0, z: 0, vz: 0 });
+    let vistoSfumato = false, bxAlFischio = null, byAlFischio = null;
+    for (let i = 0; i < totale; i++) {
+      t.simulate(1 / 60);
+      const ban = t.banner;
+      if (!vistoSfumato && ban && ban.text && String(ban.text).toUpperCase().indexOf('SFUMATO') >= 0) {
+        vistoSfumato = true; bxAlFischio = t.ball.x; byAlFischio = t.ball.y;
+      }
+    }
+    return Object.assign({}, s, { savedX, savedY, savedCard, decoyX, vistoSfumato, bxAlFischio, byAlFischio, statoFinale: t.state });
+  };
+  /* SCENA_CARD_DIFFERITO_ESEGUI: lo stesso fallo cattivo (SCENA_FALLO
+     garantisce sempre un'entrata da dietro, sempre cattivo) ma con
+     l'azione sostenuta fino a VANT_T (SOSTIENI_AVANTI): il vantaggio
+     regge, il cartellino resta pendente. Poi una palla ferma vera --
+     il campo VERO (opts.sponde:'campo', dichiarato: di serie la taglia
+     5 nasce in gabbia, dove pallaFuori non scatta mai) e il pallone
+     teletrasportato fuori da una fascia lunga, lontano dalla luce della
+     porta -- chiude la prima palla ferma dopo il vantaggio concesso. */
+  window.SCENA_CARD_DIFFERITO_ESEGUI = function (taglia) {
+    const t = window.__test;
+    const s = SCENA_FALLO('lontano');
+    if (s.errore) return s;
+    let aperto = false;
+    for (let i = 0; i < 180 && !aperto; i++) {
+      t.simulate(1 / 60);
+      if (typeof G !== 'undefined' && G.vantaggio) aperto = true;
+    }
+    if (!aperto) return { errore: "G.vantaggio non si e' mai aperto entro 3 s" };
+    if (G.vantaggio.card == null) return { errore: 'il fallo scriptato non ha prodotto un cartellino dovuto (card null)' };
+    const foulTeam = 1 - G.vantaggio.team;
+    const sost = SOSTIENI_AVANTI(s.vittimaIdx, 230);
+    if (!sost.vistoVantaggio) return Object.assign({ errore: 'il vantaggio non e\' mai stato concesso entro 230 fotogrammi' }, sost);
+    const gialliPrima = t.disciplina.gialli[foulTeam];
+    Object.assign(t.ball, { owner: -1, x: -5, y: 20, vx: -80, vy: 0, z: 0, vz: 0 });
+    for (let i = 0; i < 10; i++) t.simulate(1 / 60);
+    const gialliDopo = t.disciplina.gialli[foulTeam];
+    return { ok: true, foulTeam, gialliPrima, gialliDopo, statoDopo: t.state };
+  };
 }
 
 /* fa scorrere n fotogrammi e torna lo stato finale -- copre il fermo del
@@ -481,32 +598,42 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
     }
 
     /* ===================================================================
-       PROVA 6 -- VANTAGGIO-FISCHIA-SEMPRE. Fallo lontano da ogni area/
-       fascia (niente duello, solo punizione rapida) MENTRE la vittima
-       avanza col pallone (vx=-300, verso la propria porta d'attacco).
-       Un vantaggio vero lascerebbe proseguire l'azione (banner
-       VANTAGGIO, nessun azzeramento). Oggi punizioneRapida azzera
-       SEMPRE la velocita' del pallone e 'VANTAGGIO' non esiste nel
-       file: rossa fino al compito 3. */
+       PROVA 6 -- VANTAGGIO-FISCHIA-SEMPRE (voce #107, compito 3). Fallo
+       lontano da ogni area/fascia (niente duello per costruzione, la
+       cura del compito 1 non c'entra) MENTRE la vittima avanza col
+       pallone: un vantaggio vero lascia proseguire l'azione (banner
+       VANTAGGIO, nessun fischio, nessun duello aperto). PRIMA del
+       compito 3 punizioneRapida azzerava SEMPRE la velocita' del
+       pallone e 'VANTAGGIO' non esisteva nel file: era rossa per
+       costruzione.
+       ADATTAMENTO DICHIARATO (nota di registro del compito: la scena
+       muove il GIOCATORE con vx=-300 una volta sola, non il pallone):
+       misurato che l'azione, lasciata a se stessa, si scioglie da sola
+       molto prima di VANT_T=2,5 s (il pallone diventa libero a ~0,5 s e
+       un difensore CPU lo ruba a ~1,6-1,7 s) -- non un difetto della
+       regola, ma il fatto che una spinta una tantum non e' un giocatore
+       che continua a portare palla. SOSTIENI_AVANTI tiene l'offeso in
+       corsa e in possesso per tutta la finestra, isolando la
+       VALUTAZIONE del vantaggio dalla tenuta dell'IA (la stessa lezione
+       gia' applicata alle scene di _q-battute). La condanna vera resta
+       su vistoVantaggio E su nessun duello aperto (statoFinale==='play'):
+       un banner visto per un attimo e poi un fischio ritardato non
+       sarebbe questa prova, sarebbe la 8. */
     {
       const scena = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
         t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
-        const s = SCENA_FALLO('lontano');
-        if (s.errore) return s;
-        const vitt = t.players[s.vittimaIdx];
-        vitt.vx = -300; vitt.vy = 0;   // l'azione prosegue: la vittima avanza col pallone
-        return s;
+        return SCENA_FALLO('lontano');
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
-      if (scena.errore) { di(false, '4. VANTAGGIO-FISCHIA-SEMPRE', 'BANCO: scena non costruita -- ' + scena.errore); }
+      if (scena.errore) { di(false, '6. VANTAGGIO-FISCHIA-SEMPRE', 'BANCO: scena non costruita -- ' + scena.errore); }
       else {
-        const r = await pag.evaluate(CORRI_TRACCIA_VANTAGGIO(FOTOGRAMMI_ATTESA));
-        const ok = r.vistoVantaggio;
-        di(ok, '6. VANTAGGIO-FISCHIA-SEMPRE -- fallo con azione che prosegue: atteso banner VANTAGGIO, nessun fischio',
-          'banner VANTAGGIO visto: ' + r.vistoVantaggio + '   pallone azzerato di netto: ' + r.fermata +
-          (r.fermata ? (' al fotogramma ' + r.fotogrammaFermata) : '') + ' (punizioneRapida azzera sempre, oggi; "VANTAGGIO" assente dal file)');
+        const r = await pag.evaluate(({ vi, n }) => SOSTIENI_AVANTI(vi, n), { vi: scena.vittimaIdx, n: 260 });
+        const ok = r.vistoVantaggio && !r.vistoSfumato && r.statoFinale === 'play';
+        di(ok, "6. VANTAGGIO-FISCHIA-SEMPRE -- fallo con azione sostenuta: atteso banner VANTAGGIO, nessun fischio, nessun duello",
+          'banner VANTAGGIO visto: ' + r.vistoVantaggio + '   banner SFUMATO visto: ' + r.vistoSfumato +
+          '   stato finale: ' + r.statoFinale + " (atteso play, mai freekick)");
       }
     }
 
@@ -543,6 +670,66 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
           'presa: ' + r.presa + ' (atteso false)   distanza minima nel regime di negazione: ' + f2(r.minDistRegime) +
           ' (atteso >= ' + f2(scena.raggioFermo - TOLLERANZA_FERMO) + ' = P_R+B_R-' + TOLLERANZA_FERMO + ')   ' +
           'vivo: ' + r.vivo + (r.vivo ? (' al fotogramma ' + r.vivoFotogramma) : '') + ' su 300 (5 s)');
+      }
+    }
+
+    /* ===================================================================
+       PROVA 8 -- VANTAGGIO-SFUMATO (voce #107, compito 3, prova NUOVA).
+       Lo stesso fallo lontano da area/fascia di SCENA_FALLO('lontano'),
+       ma la conservazione si perde apposta appena la finestra si apre:
+       il pallone passa al colpevole (squadraDelPallone() smette di
+       essere la squadra offesa) e si teletrasporta a un DECOY, 300
+       unita' lontano dal punto salvato. Il fischio ritardato deve
+       tornare al punto SALVATO -- mai al decoy, mai a dove sta la palla
+       ora: e' il controllo che la prova isola (tolleranza generosa,
+       120 unita': il ramo punizioneRapida cede la palla al compagno
+       offeso piu' vicino al punto salvato, non incolla la palla al
+       millimetro, e un fotogramma di fisica gira comunque dopo). */
+    {
+      const scena = await pag.evaluate(({ seme, taglia, n }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.setCpuVsCpu(true);
+        t.startMatch(1, 1, { size: taglia });
+        return SCENA_VANTAGGIO_SFUMATO_ESEGUI(n);
+      }, { seme: SEME, taglia: TAGLIA_BANCO, n: FOTOGRAMMI_ATTESA }).catch(e => ({ errore: e.message }));
+      if (scena.errore) { di(false, '8. VANTAGGIO-SFUMATO', 'BANCO: scena non costruita -- ' + scena.errore); }
+      else {
+        const TOLLERANZA_PUNTO = 120;
+        const dist = scena.vistoSfumato ? Math.hypot(scena.bxAlFischio - scena.savedX, scena.byAlFischio - scena.savedY) : Infinity;
+        const distDaDecoy = scena.vistoSfumato ? Math.abs(scena.bxAlFischio - scena.decoyX) : 0;
+        const ok = scena.vistoSfumato && dist <= TOLLERANZA_PUNTO;
+        di(ok, "8. VANTAGGIO-SFUMATO -- palla persa in finestra: fischio ritardato dal punto SALVATO, non dal decoy",
+          'banner SFUMATO visto: ' + scena.vistoSfumato + '   punto salvato: (' + scena.savedX.toFixed(1) + ',' + scena.savedY.toFixed(1) +
+          ')   decoy: ' + scena.decoyX.toFixed(1) + '   palla al fischio: (' + (scena.bxAlFischio == null ? 'n/d' : scena.bxAlFischio.toFixed(1)) + ',' +
+          (scena.byAlFischio == null ? 'n/d' : scena.byAlFischio.toFixed(1)) + ')   distanza dal punto salvato: ' + (isFinite(dist) ? dist.toFixed(1) : 'n/d') +
+          ' (atteso <= ' + TOLLERANZA_PUNTO + ')   distanza dal decoy: ' + distDaDecoy.toFixed(1));
+      }
+    }
+
+    /* ===================================================================
+       PROVA 9 -- CARD-DIFFERITO (voce #107, compito 3, prova NUOVA). Un
+       fallo da giallo (SCENA_FALLO e' sempre un'entrata da dietro,
+       sempre cattivo) con l'azione sostenuta fino a VANT_T: nessun
+       fischio, il cartellino resta pendente in G.vantaggio.card. Alla
+       PRIMA palla ferma vera -- qui una fascia lunga a campo VERO
+       (opts.sponde:'campo', dichiarato: di serie la taglia 5 nasce in
+       gabbia, dove pallaFuori non scatta mai) -- il giallo arriva e il
+       conteggio di squadra (t.disciplina.gialli) sale di uno. */
+    {
+      const scena = await pag.evaluate(({ seme, taglia }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.setCpuVsCpu(true);
+        t.startMatch(1, 1, { size: taglia, sponde: 'campo' });
+        return SCENA_CARD_DIFFERITO_ESEGUI(taglia);
+      }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
+      if (scena.errore) { di(false, '9. CARD-DIFFERITO', 'BANCO: scena non costruita -- ' + scena.errore); }
+      else {
+        const ok = scena.gialliDopo === scena.gialliPrima + 1;
+        di(ok, "9. CARD-DIFFERITO -- vantaggio concesso su fallo da giallo: nessun fischio subito, il giallo arriva alla prima palla ferma",
+          'squadra del fallo: ' + scena.foulTeam + '   gialli prima della palla ferma: ' + scena.gialliPrima +
+          '   gialli dopo (atteso +1): ' + scena.gialliDopo + '   stato dopo la palla ferma: ' + scena.statoDopo);
       }
     }
 
