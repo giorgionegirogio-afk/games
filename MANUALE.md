@@ -681,7 +681,14 @@ Qui il registro completo, a edizioni.
   al fotogramma 99). Il retropassaggio, curato al compito 2, **non
   mordeva mai** a quella taglia. CURA: il raggio diventa
   `Math.max((P_R+B_R)*dist_, KICK_R*0.8+0.5)` — la respinta esce SEMPRE
-  dal cerchio della raccolta, a ogni taglia. Cancello:
+  dal cerchio della raccolta, a ogni taglia. **Il pavimento non è
+  innocuo nemmeno a 5/7**: con la respinta ravvicinata (`dist_=1`, il
+  portiere in piedi, non a metà di un tuffo) il raggio pre-cura era
+  esattamente **21** (`(P_R+B_R)*1`), e il pavimento nuovo lo alza a
+  **21,3** (`KICK_R*0.8+0.5`) — un morso piccolo ma vero anche dove il
+  margine sembrava già sufficiente (il rasoio di 0,2 unità sopra), ed è
+  parte del perché il confronto due-versioni diverge **3/20** a taglia
+  5 (Cancello 3 sotto), non zero. Cancello:
   `_q-regole.js --taglia 11` — le prove **3 (RETRO-PRESA) e 7
   (RETRO-FERMO) diventano VERDI** (rosse prima della cura); a taglia 5
   resta **16/16** (13+3, vedi I2/I3/I5 sotto).
@@ -719,8 +726,9 @@ Qui il registro completo, a edizioni.
   censimento del compito 3 ("dieci strumenti") era incompleto: il conto
   vero è **25 file** sotto `strumenti/` che chiamano `setCpuVsCpu`
   PRIMA di `startMatch` (misurato per pattern, non per sospetto),
-  COMPRESI **`_q-regole.js` (11 siti) e `_q-battute.js` (5 siti)** —
-  entrambi **IN BATTERIA** (`strumenti/tutti.js`, `conta:true`), non
+  COMPRESI **`_q-regole.js` (15 siti a HEAD — erano 11 a `b837824`: le
+  prove nuove di quest'onda ne hanno aggiunti 4) e `_q-battute.js` (5
+  siti)** — entrambi **IN BATTERIA** (`strumenti/tutti.js`, `conta:true`), non
   strumenti diagnostici isolati. Conseguenza pratica: applicare oggi la
   cura di #108 (ordine `setCpuVsCpu`/`startMatch` a prova d'ordine)
   farebbe CADERE la PROVA 1 (RIGORE-DENTRO) di `_q-regole.js`, perché
@@ -756,12 +764,18 @@ Qui il registro completo, a edizioni.
   **m6 — attrezzo retroattivo `strumenti/_t-vantaggio-sentinel.js`**:
   riproduce, a posteriori, l'hunk di gioco della chiusura arbitrale
   `832cff2` (il sentinel che non chiude più la finestra) — verificato a
-  specchio, byte-identico sul hunk, applicando l'attrezzo a
-  `git show 700f775:...` e confrontando con `git show 832cff2:...`. La
-  garanzia è PIÙ DEBOLE di un attrezzo nato insieme al suo commit (prova
-  che l'attrezzo riproduce l'edit già fatto, non che l'edit sia nato
-  ancorato) — lo stesso precedente dichiarato in coda alla voce #87 per
-  `_t-sfide-sponde.js`.
+  specchio: applicato a `git show b241c43:...` (l'antenato diretto di
+  `832cff2`), il risultato è BYTE-IDENTICO a `git show 832cff2:...` su
+  tutto il file. **RETTIFICA (ri-verdetto, micro-onda finale, 18
+  settembre 2026)**: questa voce diceva prima «applicato a `700f775`»,
+  una corsa impossibile — `700f775` è GIÀ successivo a `832cff2`, la
+  guardia è già presente, e l'attrezzo (che cerca l'ancora PRIMA
+  dell'inserimento) su quel commit esce con codice 1 e «trovato 0 volte»,
+  come dichiara la sua stessa intestazione: non un secondo successo, un
+  rifiuto onesto. La garanzia resta PIÙ DEBOLE di un attrezzo nato
+  insieme al suo commit (prova che l'attrezzo riproduce l'edit già
+  fatto, non che l'edit sia nato ancorato) — lo stesso precedente
+  dichiarato in coda alla voce #87 per `_t-sfide-sponde.js`.
 
   **m9 — la precisione sui cancelli in batteria.** `strumenti/tutti.js`
   registra **31** strumenti con `conta:true` in tutto, non 28: tre di

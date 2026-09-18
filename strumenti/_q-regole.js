@@ -219,7 +219,9 @@
    FINALE al fotogramma 200 ("freekick"), un'asserzione vera oggi solo
    per un artefatto del banco -- il SEGUITO #108 (censimento corretto:
    25 strumenti sotto strumenti/ chiamano setCpuVsCpu PRIMA di
-   startMatch, COMPRESO QUESTO STESSO FILE, 11 siti) fa si' che la
+   startMatch, COMPRESO QUESTO STESSO FILE -- 15 siti a HEAD, erano 11
+   quando il censimento fu misurato su b837824: le prove 14-16 di questa
+   stessa onda ne hanno aggiunti 4) fa si' che la
    squadra 0 (che difende) resti "umana" immobile per tutta la prova:
    nessun avversario vero conduce mai il duello, e lo stato resta
    'freekick' fino al fotogramma 200 per assenza di un difensore, non
@@ -247,6 +249,20 @@
    orologio con la taglia, dichiarato qui invece di curato (fuori dal
    perimetro dei rilievi C1/I2/I3/I5 di questa onda, che non toccano i
    tempi delle scene 6/8).
+
+   MICRO-ONDA DEL RI-VERDETTO (voce #107, ramo voce-107-regole-leva-corta,
+   18 settembre 2026). Il ri-verdetto sulla stessa onda ha misurato che
+   eseguiSfumato() (CALCETTO-il-gioco.html, ~18306-18345) azzerava
+   owner/x/y/z/vz/vx/vy/curve/perfectT/saveRolled/passTo ma NON b.crossTo
+   -- la stessa ferita della lezione hitPosts/crossTo (voce #88): un
+   pallone congelato al punto salvato restava "diretto" al destinatario
+   di un cross dichiarato PRIMA del fallo, letto dai consumatori veri
+   (tentaPresa, il verbo del pollice, la freccia HUD). CURA:
+   b.crossTo=-1 accanto a b.passTo=-1. PROVA 15 (PALLA-FUORI-IN-FINESTRA)
+   ESTESA: arma t.ball.crossTo=0 PRIMA di spedire la palla fuori,
+   verifica t.ball.crossTo===-1 dopo lo sfumato -- CONDANNA misurata sul
+   commit senza la cura, VERDE dopo. Nessuna prova nuova: il file resta a
+   SEDICI prove.
 
    ZERO dado() NUOVI. Le scene si scrivono direttamente sullo stato del
    gioco (G.players/G.ball, la stessa tecnica di _q-battute.js) e il
@@ -822,19 +838,36 @@ function INIETTA_SCENE() {
     const savedX = G.vantaggio.x, savedY = G.vantaggio.y, cardAttesa = G.vantaggio.card;
     const foulTeam = 1 - G.vantaggio.team;
     const gialliPrima = t.disciplina.gialli[foulTeam];
+    /* CROSSTO ARMATO PRIMA DELL'USCITA (ri-verdetto, voce #107, micro-onda
+       finale, 18 settembre 2026): un valore rancido come quello che un
+       cross lasciava PRIMA del fallo -- se eseguiSfumato() non lo
+       azzera, il pallone congelato al punto salvato resta "diretto" a
+       questo indice anche dopo lo sfumato. LETTO AL PRIMO FOTOGRAMMA DEL
+       BANNER, non a fine loop: punizioneRapida() da' il pallone al
+       fallito e lo lascia FERMO (G.freeze=0,16s), ma non lo calcia --
+       il prossimo calcio vero (kickBall, ~14626) azzera crossTo per
+       conto suo su OGNI calcio del gioco, sfumato o no. Leggerlo dopo i
+       60 fotogrammi interi avrebbe quasi certamente gia' visto quel
+       calcio successivo, e la prova sarebbe rimasta verde ANCHE senza
+       la cura di eseguiSfumato -- misurato: e' esattamente quello che
+       succedeva prima di questa correzione (falso verde su 288f4a1). */
+    t.ball.crossTo = 0;
     Object.assign(t.ball, { owner: -1, x: savedX, y: -30, vx: 0, vy: -80, z: 0, vz: 0 });
-    let vistoSfumato = false, battutaVista = false;
+    let vistoSfumato = false, battutaVista = false, crossToAlSfumato = null;
     for (let i = 0; i < 60; i++) {
       t.simulate(1 / 60);
       const ban = t.banner;
-      if (ban && ban.text && String(ban.text).toUpperCase().indexOf('SFUMATO') >= 0) vistoSfumato = true;
+      if (ban && ban.text && String(ban.text).toUpperCase().indexOf('SFUMATO') >= 0) {
+        if (!vistoSfumato) crossToAlSfumato = t.ball.crossTo;
+        vistoSfumato = true;
+      }
       if (t.state === 'battuta') battutaVista = true;
     }
     const gialliDopo = t.disciplina.gialli[foulTeam];
     return {
       ok: true, savedX, savedY, cardAttesa, foulTeam,
       vistoSfumato, battutaVista, statoFinale: t.state,
-      gialliPrima, gialliDopo,
+      gialliPrima, gialliDopo, crossToAlSfumato,
     };
   };
   /* SCENA_VANTAGGIO_AREA_ESEGUI (I5): SCENA_FALLO('dentro') e' la
@@ -1519,11 +1552,13 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       if (scena.errore) { di(false, '15. PALLA-FUORI-IN-FINESTRA', 'BANCO: scena non costruita -- ' + scena.errore); }
       else {
         const okCard = scena.cardAttesa == null || scena.gialliDopo === scena.gialliPrima + 1;
-        const ok = scena.vistoSfumato && !scena.battutaVista && scena.statoFinale === 'play' && okCard;
-        di(ok, "15. PALLA-FUORI-IN-FINESTRA -- palla spedita fuori con la finestra ancora viva: fischio dal punto salvato, NIENTE battuta, cartellino al fischio",
+        const okCross = scena.crossToAlSfumato === -1;
+        const ok = scena.vistoSfumato && !scena.battutaVista && scena.statoFinale === 'play' && okCard && okCross;
+        di(ok, "15. PALLA-FUORI-IN-FINESTRA -- palla spedita fuori con la finestra ancora viva: fischio dal punto salvato, NIENTE battuta, cartellino al fischio, crossTo non rancido",
           'banner SFUMATO visto: ' + scena.vistoSfumato + ' (atteso true)   scena battuta vista: ' + scena.battutaVista + ' (atteso false)   ' +
           'stato finale: ' + scena.statoFinale + ' (atteso play, punizione rapida: il punto e\' lontano da ogni area)   ' +
-          'cartellino atteso: idx ' + scena.cardAttesa + '   gialli squadra ' + scena.foulTeam + ': ' + scena.gialliPrima + ' -> ' + scena.gialliDopo + ' (atteso +1 se il cartellino era dovuto)');
+          'cartellino atteso: idx ' + scena.cardAttesa + '   gialli squadra ' + scena.foulTeam + ': ' + scena.gialliPrima + ' -> ' + scena.gialliDopo + ' (atteso +1 se il cartellino era dovuto)   ' +
+          'crossTo al fotogramma del banner SFUMATO: ' + scena.crossToAlSfumato + ' (atteso -1, armato a 0 prima dell\'uscita; letto SUBITO, prima che un calcio successivo lo azzeri comunque)');
       }
     }
 
