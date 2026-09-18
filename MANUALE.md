@@ -567,6 +567,17 @@ Qui il registro completo, a edizioni.
   (`700f775`): **12/13**, la sola tredicesima rossa (un nastro vecchio
   passava per buono e avviava la partita).
 
+  **Perché `Sfida.gioca`/`chiudiSfida` restano fuori dal perimetro di
+  questo controllo (rilievo Minore, correzione di revisione del compito
+  4)**: non è una svista, è per costruzione. `Sfida.gioca` (~42182) CREA
+  un nastro nuovo — `Reg.accendi()` da zero, mai `Reg.deserializza()` su
+  uno vecchio — quindi nasce già alla versione di oggi, non c'è nulla da
+  confrontare. `chiudiSfida` (~42487) serializza sempre col `MOTORE_V`
+  corrente di chi chiude la partita, mai con uno letto da altrove. Il
+  caso del motore diverso è già stato intercettato PRIMA, dentro
+  `Sfida.guarda`, che non arriva mai a chiamare `startMatch` (e quindi
+  mai a `chiudiSfida`) quando `Reg.motoreV !== MOTORE_V`.
+
   **La voce #96 (cancello di pubblicazione) SI CHIUDE**: la condizione era
   "il nastro porta la versione del motore, e il messaggio dice la causa
   vera" — soddisfatta e provata dal banco. Il prossimo APK si sblocca. Le
@@ -580,15 +591,46 @@ Qui il registro completo, a edizioni.
   simulazione): taglia 5 **19/20** (100.829→100.838 chiamate a `dado()`),
   taglia 7 **20/20** (213.679→227.627), taglia 11 **18/20**
   (275.636→286.471). `regole` registrato in batteria (`strumenti/tutti.js`,
-  `conta:true`); batteria intera verde in 4 spezzoni, **27 cancelli che
-  contano** (2+11+8+6 — `proporzioni` NON MISURATO, uscita BANCO
-  pre-esistente e identica su base e HEAD di questo compito, dichiarata e
-  non una regressione). `_eventi.js` dal merge-base, 60 partite: gol/90s
-  **2,50 → 2,50** (+0%, dentro la soglia ±20% dello spec), falli/partita
-  **1,0 → 1,0** (+0%); vantaggi PIENI/partita **~0,25** (misurato dalla
-  sonda arbitrale del compito 3 — `_eventi.js` non ha una colonna
-  dedicata, dichiarato). Banchi di contorno: `_q-battute` 11/11,
-  `_q-precedenza` 9/9, `_q-volo` 11/11.
+  `conta:true`); batteria intera verde in 4 spezzoni, **28 cancelli che
+  contano, tutti verdi** (2+11+8+7 — `proporzioni` incluso a pieno titolo,
+  vedi la RETTIFICA datata qui sotto). `_eventi.js` dal merge-base, 60
+  partite: gol/90s **2,50 → 2,50** (+0%, dentro la soglia ±20% dello
+  spec), falli/partita **1,0 → 1,0** (+0%); vantaggi PIENI/partita
+  **~0,25** (misurato dalla sonda arbitrale del compito 3 — `_eventi.js`
+  non ha una colonna dedicata, dichiarato). Banchi di contorno:
+  `_q-battute` 11/11, `_q-precedenza` 9/9, `_q-volo` 11/11.
+
+  **RETTIFICA DATATA (correzione di revisione del compito 4, 18
+  settembre 2026)**: il paragrafo qui sopra, come lo aveva scritto il
+  compito 4, dichiarava «27 cancelli che contano» e diceva l'uscita
+  BANCO di `proporzioni` «pre-esistente e non una regressione» —
+  **entrambe le affermazioni erano false**, trovate dal ri-verdetto
+  della revisione. Il colpevole non era il gioco, era il BANCO: lo
+  scenario PUGNI di `strumenti/_q-proporzioni.js` chiama `startMatch`
+  UNA sola volta e poi teletrasporta il pallone addosso al portiere
+  4000 volte SENZA MAI azzerare `b.lastTouch`/`b.toccoPiede`, che
+  restano quello che il calcio d'inizio aveva scritto — un tocco di
+  piede di un COMPAGNO del portiere. La guardia del retropassaggio
+  (giusta, nata nel compito 2, `tentaPresa` riga ~19192) nega quindi le
+  mani ad ogni singolo tentativo: **0/4000 rami PUGNI**, su tutte e tre
+  le taglie. Non era pre-esistente al cantiere: è nata insieme a quella
+  stessa guardia, in **81d8c59 (compito 2 di QUESTO cantiere)** —
+  «pre-esistente» era vero solo confrontato con la base immediata del
+  compito 4 (`700f775`, già successiva al compito 2), mai col
+  merge-base `cabf7e4`. È rimasta invisibile perché fra il compito 2 e
+  il compito 4 nessuno aveva rilanciato la batteria intera che include
+  `proporzioni` — la stessa lezione del «giro che insegna» sul
+  vantaggio, qui sopra, un'altra volta (vedi anche «Le regole pagate»,
+  lezione 21, in `PUNTO-DEL-LAVORO.md`). Cura, SOLO nel banco, non nel
+  gioco: ogni tentativo arma `b.lastTouch` su un AVVERSARIO del
+  portiere (`segnaTocco`) prima del teletrasporto, perché il pugno che
+  questo banco misura è sempre stato, semanticamente, un tiro
+  avversario — mai un compagno che passa al proprio portiere. Prova che
+  il gioco non era mai stato colpevole: banco curato **30/30 verde su
+  HEAD E su `81d8c59`** (`git show 81d8c59:CALCETTO-il-gioco.html`).
+  Zero `dado()` toccati dalla cura: `_c3-sorteggi.js` fra la base del
+  compito 4 e HEAD, taglie 5/7/11, **0/60** — la cura è solo banco più
+  documenti, come atteso.
 
   Verbale completo: spec `docs/superpowers/specs/2026-09-18-regole-leva-
   corta-design.md`, piano `docs/superpowers/plans/2026-09-18-regole-leva-

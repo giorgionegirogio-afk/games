@@ -11,6 +11,7 @@ file serve a riprendere senza rileggere niente altro.
 | 2 | **#96 CANCELLO DI PUBBLICAZIONE: CHIUSA.** Il nastro delle sfide porta `MOTORE_V` (nuova costante, nasce a 1 perché #87 e #107 hanno già cambiato il motore prima che esistesse) in un campo di testa del serializzato; `Sfida.guarda` confronta la versione PRIMA di `startMatch` e, se non combacia (o manca: nastri di prima di oggi = versione 0), chiude con la CAUSA VERA invece dell'accusa sbagliata al profilo cresciuto — zero penalità: nessuna partita si avvia, nessun punto, nessun invio al server. Prova NASTRO-VERSIONE (tredicesima di `_q-regole.js`), nata rossa 12/13 sulla base pre-cura. **L'APK SI SBLOCCA** |
 | 3 | **SEGUITO #108 nato** (dalla chiusura arbitrale del compito 3, portato qui in MANUALE/PUNTO come richiesto): LA TRAPPOLA DEL BANCO CONGELATO — `setCpuVsCpu(true)` chiamato prima di `startMatch(...)` viene annullato in silenzio da `G.cpu` scritto dentro `startMatch`, e la squadra 0 resta un "umano" immobile invece di una CPU vera. L'idioma sbagliato vive, committato, in **dieci strumenti** (`_c3-sorteggi.js` e i banchi `_crit8-*`/`_crit10-*`): i loro confronti due-versioni RESTANO validi (simmetrici), ma nessuno di quegli scenari era mai stato CPU-CPU vero. Proposta di cura lato gioco (`setCpuVsCpu` a prova d'ordine) con la nota sulla comparabilità storica (romperebbe la riproducibilità dei numeri due-versioni già pubblicati) — **decisione del committente**, non applicata. La LEZIONE: un banco che congela una squadra misura il banco, non il gioco (vedi «Le regole pagate» sotto) |
 | 4 | **RESTANO, in ordine**: il prossimo dell'**onda A** sono gli **spiccioli UX** (tutorial, anello del fiato, aria-label, cursore vibrazione, ~3 g) — ultima voce dell'onda A, che con #107 chiuso è quasi tutta incassata. Poi l'**onda B**: il registro dei fatti (P0, prerequisito) e **MIND v1** (mappa completa in `_analisi/MAPPA-MANDATO.md` §2). **Resta la voce #89** (meccaniche dei verbi, cantiere della decomposizione del 1° settembre, non assorbito dal programma). **Seguiti aperti, nessuno bloccante**: **#97, #98, #99, #101, #102, #103, #104, #105, #106, #108** (**#96 CHIUSO** dalla riga 2 sopra) |
+| 5 | **RETTIFICA — correzione di revisione del compito 4 (voce #107), stessa giornata**: il ri-verdetto ha trovato **due affermazioni false** nel rapporto del compito 4 — «27 cancelli che contano» e «`proporzioni` esce BANCO, pre-esistente e non una regressione». Colpevole: il BANCO, non il gioco. Lo scenario PUGNI di `strumenti/_q-proporzioni.js` teletrasportava il pallone 4000 volte senza mai azzerare `b.lastTouch`/`b.toccoPiede`, restati il tocco di un compagno del calcio d'inizio; la guardia del retropassaggio (giusta, compito 2) rifiutava quindi le mani per sempre — 0/4000. Nata in **81d8c59 (compito 2 di QUESTO cantiere)**, non pre-esistente: invisibile perché la batteria intera non era stata rilanciata fra il compito 2 e il compito 4. Cura nel banco (arma `b.lastTouch` su un avversario prima di ogni tentativo): **30/30 verde su HEAD e su `81d8c59`**, il gioco non era mai stato colpevole. Numero vero della batteria: **28 cancelli che contano, tutti verdi** (2+11+8+7), non 27. Zero `dado()` toccati (`_c3-sorteggi.js`, base compito 4 contro HEAD: 0/60). Lezione 21 in «Le regole pagate» sotto. Verbale in `MANUALE.md` §A registro, voce #107 |
 
 ## La giornata del 17-18 settembre, in breve
 
@@ -345,3 +346,21 @@ python android/costruisci.py && python android/verifica.py
     (voce #107, seguito #108): un confronto due-versioni fatto sotto lo
     stesso banco congelato resta valido perché simmetrico, ma lo scenario
     che misura non era mai stato quello dichiarato.
+21. **Un teletrasporto che non azzera lo stato derivato eredita l'ultimo
+    evento vero, e un banco può restare bloccato lì per sempre.** Lo
+    scenario PUGNI di `strumenti/_q-proporzioni.js` (voce #107) chiamava
+    `startMatch` una volta e poi spostava il pallone addosso al portiere
+    4000 volte di fila senza mai riscrivere `b.lastTouch`/`b.toccoPiede`:
+    restavano il tocco di piede di un compagno del calcio d'inizio, e la
+    guardia del retropassaggio (giusta, nata nel compito 2 della stessa
+    voce) rifiutava le mani ad ogni singolo tentativo — 0/4000, su tutte
+    le taglie, per sempre, perché nessun evento nuovo toccava mai quello
+    stato. Il gioco non era colpevole (30/30 verde anche sul commit dove
+    la guardia è nata, `81d8c59`, col banco curato). E una seconda
+    lezione dentro la prima: **«pre-esistente» va verificato contro
+    l'ORIGINE, non contro il commit immediatamente precedente.** Il
+    compito 4 aveva confrontato l'uscita rossa solo con la propria base
+    (`700f775`, già dopo la guardia) e l'aveva dichiarata pre-esistente
+    al cantiere — falso: la guardia, e quindi il guasto, erano nati
+    DENTRO lo stesso cantiere, due compiti prima, e nessuno aveva
+    rilanciato la batteria intera nel frattempo per accorgersene.

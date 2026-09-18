@@ -365,10 +365,27 @@ const pct = x => (x * 100).toFixed(1) + '%';
         const b = G.ball;
         b.owner = -1; b.passTo = -1; b.crossTo = -1; b.tiroT = -1; b.saveRolled = false;
         const dir = p.team === 0 ? 1 : -1;
-        /* la stessa situazione PUGNI di strumenti/_q-mani.js: pallone
-           fermo davanti al portiere (dy=0), alto (z=20>GK_PUGNO_Z=16) e
-           forte (sp=500>sogliaPresa=330) — tentaPresa sceglie il ramo,
-           non lo si impone */
+        /* IL TOCCO SI ARMA A UN AVVERSARIO, ogni tentativo (correzione di
+           revisione, voce #107, compito 4). Il teletrasporto qui sotto
+           non passa mai da kickBall: b.lastTouch/b.toccoPiede restano
+           quindi quello che l'ultimo evento vero aveva scritto. Al primo
+           giro e' startMatch (calcio d'inizio, segnaTocco(G.ball.owner,
+           true)) — e se quel calciatore era della stessa squadra del
+           portiere, la guardia del retropassaggio (voce #107, compito 2,
+           tentaPresa riga ~19192) nega le mani. Il ramo RETRO non chiama
+           mai segnaTocco (non deve: e' la stessa disciplina di "non
+           riscrivere b.lastTouch su chi respinge" del suo commento), cosi'
+           lo stato resta quello del calcio d'inizio per SEMPRE: non un
+           tentativo su 4000 sbagliato, TUTTI, perche' nessun evento nuovo
+           lo tocca mai. Guasto nato con quella guardia (81d8c59), mai
+           visto prima d'ora perche' fra il compito 2 e il compito 4
+           questa batteria non era stata rilanciata per intero. Il pugno
+           che questo banco misura e' sempre stato, semanticamente, un
+           tiro AVVERSARIO (mai un compagno che passa al proprio
+           portiere): si arma qui esplicitamente, cosi' il campione non
+           dipende piu' da chi ha vinto il sorteggio del calcio d'inizio. */
+        const avversario = G.players.find(pl => pl.team !== p.team);
+        if (avversario) segnaTocco(G.players.indexOf(avversario), true);
         b.x = p.x; b.y = p.y; b.z = 20; b.vx = -dir * 500; b.vy = 0; b.vz = 0;
         let banner = '';
         const sb0 = window.showBanner;
