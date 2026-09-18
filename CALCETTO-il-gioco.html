@@ -41644,6 +41644,15 @@ function refreshImpostUI(){
   $('btnSetMoto').classList.toggle('on', !!SAVE.moto);
   $('btnSetDalt').classList.toggle('on', !!SAVE.dalt);
   $('btnSetMoviola').classList.toggle('on', !!SAVE.moviola);
+  /* ARIA-PRESSED, per chi non vede ne' il colore ne' il rilievo della
+     pastiglia: lo stesso booleano appena scritto nella classe, ripetuto
+     come stringa 'true'/'false' (voce #112, compito 1). Un valore per
+     ogni refresh, mai attestato una volta sola. */
+  $('btnSetAudio').setAttribute('aria-pressed', !Audio5.muted?'true':'false');
+  $('btnSetVib').setAttribute('aria-pressed', SAVE.vib!==false?'true':'false');
+  $('btnSetMoto').setAttribute('aria-pressed', SAVE.moto?'true':'false');
+  $('btnSetDalt').setAttribute('aria-pressed', SAVE.dalt?'true':'false');
+  $('btnSetMoviola').setAttribute('aria-pressed', SAVE.moviola?'true':'false');
   /* LA VOCE COMANDI PORTA IL SUO STATO ADDOSSO, come tutte le altre di
      questa pagina: chi apre le Impostazioni legge la mano e le due
      percentuali senza dover entrare. La stringa la scrive
@@ -43449,6 +43458,24 @@ window.__test = {
         if(t.lab) q.lab=t.lab;
       }
       z.push(q);
+    }
+    /* IL BANNER DEGLI EVENTI, DICHIARATO (voce #112, compito 1). Stessa
+       geometria del punto che lo disegna (~riga 39667): bw/bh fissi,
+       bx0/bx1 centrati su VW/2, y a VH-58 salvo lo scarto verso l'alto
+       quando la bussola in basso a sinistra (MINI_RECT) gli sta sotto —
+       la STESSA guardia che il disegno applica, ricalcolata qui una
+       volta sola cosi' dichiarazione e disegno non possono divergere.
+       Spinta SOLO quando il banner e' davvero a schermo (bannerT>0 e
+       testo non vuoto), la STESSA condizione che il disegno usa per
+       entrare nel suo blocco: a bannerT<=0 i pixel sono gia' tornati
+       prato, e prima di questa riga il rettangolo non era dichiarato
+       affatto — istantanea.js lo contava come ombra sul manto. */
+    if(G.bannerT>0 && G.banner){
+      const bbw=Math.min(VW*0.62,420), bbh=42;
+      const bbx0=VW/2-bbw/2, bbx1=VW/2+bbw/2;
+      let bby=VH-58;
+      if(MINI_RECT && bby+40>MINI_RECT.y0-4 && bbx0<MINI_RECT.x1+8) bby=MINI_RECT.y0-46;
+      z.push({tipo:'banner', x0:bbx0, y0:bby, x1:bbx1, y1:bby+bbh, alfa:1});
     }
     return z;
   },
