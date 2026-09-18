@@ -1,7 +1,7 @@
 /* =====================================================================
    _q-accessibile.js — LE ETICHETTE HANNO UN GIUDICE CHE LE ASPETTA
-   (voce #112, compiti 1, 2 e 3 + correzione revisione compito 2, ramo
-   voce-112-spiccioli-ux).
+   (voce #112, compiti 1, 2, 3 e 4 + correzione revisione compito 2,
+   ramo voce-112-spiccioli-ux).
 
    IL PERCHE'. Il cantiere #112 chiude l'onda A del mandato con sei cure
    di UX/accessibilita' a rischio quasi zero (nessuna tocca dado(), una
@@ -29,7 +29,14 @@
    Nasce rossa sul commit 5ee5068 (base del compito 3): #btnRivediTut
    non esiste ancora.
 
-   LE CINQUE PROVE:
+   IL COMPITO 4 aggiunge la sesta: SOTTOTITOLI, il flag SAVE.sott che
+   porta a video (via showBanner, sotto l'helper sottotitolo()) i fischi
+   che oggi suonano muti — il fischio d'inizio, il piu' esercitato di
+   tutti in CPU-CPU. Nasce rossa sul commit 92dc589 (base del compito
+   4): SAVE.sott non esiste ancora, il fischio d'inizio non produce
+   nessun banner.
+
+   LE SEI PROVE:
      1. ARIA — apre IMPOSTAZIONI (gearBtn -> PREFERENZE, la via vera del
         dito), e per ognuno dei cinque .voce.sw (btnSetAudio/Vib/Moto/
         Dalt/Moviola) verifica che aria-pressed esista E combaci con
@@ -88,14 +95,31 @@
         deve ripartire. Condanna sul gioco di oggi: #btnRivediTut non
         esiste, querySelector torna null, guasto leggibile invece di
         un'eccezione cieca sul .click() di un elemento inesistente.
+     6. SOTTOTITOLI (voce #112, compito 4) — chiama t.startMatch(...)
+        due volte, la prima con t.save.sott=1 e la seconda con
+        t.save.sott=0: il fischio d'inizio (Audio5.whistle(false) dentro
+        startMatch) e' il piu' esercitato di tutti in CPU-CPU, non serve
+        costruire nessuna scena. Verifica in un solo voto: (a) col flag
+        acceso, subito dopo startMatch, t.banner porta {text:'FISCHIO',
+        t>0} — sottotitolo() e' sincrona, nessun fotogramma di attesa;
+        (b) col flag spento, lo stesso fischio non produce NESSUN banner
+        nuovo — startMatch azzera G.banner all'inizio della sua stessa
+        chiamata, quindi un banner sopravvissuto sarebbe un guasto vero,
+        non un residuo della chiamata precedente; (c) LA PARTE CHE CONTA
+        — il flag non spegne i banner preesistenti: showBanner('GOL',...)
+        chiamata BARE (come la chiama davvero il gol, la stessa via di
+        prova 2) accende G.banner anche con SAVE.sott=0, perche'
+        sottotitolo() e' un canale IN PIU', mai un filtro su showBanner.
+        Condanna sul gioco di oggi (commit 92dc589, base del compito 4):
+        SAVE.sott non esiste, il fischio d'inizio non produce banner.
 
    ZERO dado() NUOVI in questo file, come in _q-battute.js: nessuna
-   delle cinque prove decide niente per la CPU, tutte leggono markup,
+   delle sei prove decide niente per la CPU, tutte leggono markup,
    stile calcolato, salvataggio e funzioni di interfaccia gia' esistenti
    (o gia' introdotte da un compito precedente dello stesso cantiere).
 
    IL SEME: 20260918, la data del piano d'esecuzione del cantiere (voce
-   #112), default del flag --seme. Non governa nessuna delle cinque
+   #112), default del flag --seme. Non governa nessuna delle sei
    prove (zero dado() coinvolti), ma si semina comunque per coerenza col
    telaio di casa (_q-battute.js) e per lasciare la porta aperta a
    prove future che ne avessero bisogno.
@@ -106,7 +130,7 @@
    esce 0 se tutte le prove sono verdi, 1 se almeno una e' rossa,
    2 se il banco stesso e' esploso (pagina, hook mancante, eccezione),
    3 riservato a "prova nulla" sul modello di _q-battute.js — nessuna
-   delle cinque prove di oggi lo usa.
+   delle sei prove di oggi lo usa.
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -445,6 +469,65 @@ const INTERRUTTORI = ['btnSetAudio', 'btnSetVib', 'btnSetMoto', 'btnSetDalt', 'b
           : 'tutorialDone/Visto dopo il click: ' + r.tutorialDoneDopo + '/' + r.tutorialVistoDopo +
             '   toast: ' + r.toastPrima + ' -> ' + r.toastDopo +
             '   Tut.active 1p=' + r.tutAttivo1p + '  2p=' + r.tutAttivo2p);
+    }
+
+    /* ===================================================================
+       PROVA 6 — SOTTOTITOLI (voce #112, compito 4). Il fischio d'inizio
+       (dentro startMatch, Audio5.whistle(false) subito prima del punto
+       in cui questo compito aggiunge sottotitolo('FISCHIO',...)) scatta
+       a OGNI kickoff: e' il fischio piu' esercitato di tutti in
+       CPU-CPU, quindi non serve costruire nessuna scena, basta
+       chiamare t.startMatch(...) due volte, una col flag acceso e una
+       spento. startMatch azzera G.banner all'inizio della sua stessa
+       chiamata (vedi il commento a "LA STRISCIA DEGLI EVENTI TACE SUL
+       GOL" nel file, la stessa riga che azzera banner per il gol vale
+       anche qui): un banner rimasto dalla chiamata precedente non puo'
+       sopravvivere fino alla lettura, quindi se col flag spento il
+       banner resta vuoto e' perche' sottotitolo() ha davvero taciuto.
+       L'ULTIMO CONTROLLO e' il piu' importante: showBanner chiamata
+       BARE (come PALO!/GOL!/FALLO! la chiamano per davvero, la stessa
+       via di prova 2) deve accendere G.banner anche con SAVE.sott=0 --
+       il flag AGGIUNGE i fischi muti, non filtra i banner preesistenti.
+       IL PRIMO AVVIO si legge PRIMA di toccare niente: nessuna prova
+       precedente scrive t.save.sott, quindi il valore letto qui e'
+       ancora quello che defaultSave() ha scritto al caricamento della
+       pagina — non un valore che questa stessa prova ha appena forzato
+       (un t.save.sott=1 esplicito sarebbe vero anche sul gioco di ieri,
+       che accetta qualunque proprieta' su un oggetto JS: leggere PRIMA
+       di scrivere e' l'unico modo di misurare il default vero). */
+    {
+      const r = await pag.evaluate(({ taglia }) => {
+        const t = window.__test;
+        const sottDefault = t.save.sott;
+
+        t.save.sott = 1;
+        t.startMatch(1, 1, { size: taglia });
+        const accesoConFlag = t.banner;
+
+        t.save.sott = 0;
+        t.startMatch(1, 1, { size: taglia });
+        const spentoConFlag = t.banner;
+
+        /* il flag non spegne un banner GIA' esistente: showBanner resta
+           bare, come lo chiamano davvero PALO!/GOL!/FALLO! */
+        showBanner('GOL', '#ffb020', 1.0);
+        const bannerVecchioSopravvive = t.banner;
+
+        return { sottDefault, accesoConFlag, spentoConFlag, bannerVecchioSopravvive };
+      }, { taglia: TAGLIA_BANCO });
+
+      const guasti = [];
+      if (r.sottDefault !== 1) guasti.push('primo avvio: SAVE.sott=' + r.sottDefault + ' invece di 1 (acceso di serie)');
+      if (!(r.accesoConFlag && r.accesoConFlag.text === 'FISCHIO' && r.accesoConFlag.t > 0))
+        guasti.push('con sott=1 il fischio d\'inizio non produce banner FISCHIO (letto ' + JSON.stringify(r.accesoConFlag) + ')');
+      if (r.spentoConFlag && r.spentoConFlag.text === 'FISCHIO' && r.spentoConFlag.t > 0)
+        guasti.push('con sott=0 il fischio d\'inizio produce COMUNQUE un banner FISCHIO (letto ' + JSON.stringify(r.spentoConFlag) + ')');
+      if (!(r.bannerVecchioSopravvive && r.bannerVecchioSopravvive.text === 'GOL' && r.bannerVecchioSopravvive.t > 0))
+        guasti.push('con sott=0 un banner preesistente (GOL, via showBanner bare) non si accende: il flag lo spegnerebbe anche a lui (letto ' + JSON.stringify(r.bannerVecchioSopravvive) + ')');
+
+      di(guasti.length === 0, '6. SOTTOTITOLI — con SAVE.sott acceso il fischio d\'inizio porta G.banner a \'FISCHIO\'; spento lo tace, senza spegnere i banner preesistenti',
+        guasti.length ? guasti.join('   ')
+          : 'acceso: ' + JSON.stringify(r.accesoConFlag) + '   spento: ' + JSON.stringify(r.spentoConFlag) + '   preesistente (GOL) con sott=0: ' + JSON.stringify(r.bannerVecchioSopravvive));
     }
 
     if (ecc.length) { di(false, 'BANCO — nessuna eccezione di pagina', 'eccezione: ' + ecc[0]); }

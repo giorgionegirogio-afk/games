@@ -3670,6 +3670,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       <div class="eti">Accessibilit&agrave;</div>
       <button class="voce sw" id="btnSetMoto">MOVIMENTO: COMPLETO <small>scossa, coriandoli, transizioni</small></button>
       <button class="voce sw" id="btnSetDalt">ALTO CONTRASTO: NO <small>daltonismo: kit ben separati</small></button>
+      <!-- SOTTOTITOLI (voce #112, compito 4): il parlato vero del gioco
+           e' l'audio -- fischi, gol, palo -- e chi non lo sente ha
+           bisogno di leggerlo. Testo/classe/aria-pressed si scrivono in
+           refreshImpostUI, carbonio di btnSetDalt qui sopra. -->
+      <button class="voce sw" id="btnSetSott">SOTTOTITOLI: S&Igrave; <small>fischio, gol, palo — a video</small></button>
       <div class="eti">Difficolt&agrave; predefinita CPU</div>
       <div class="diff-row">
         <button class="diff" data-d="0">Facile</button>
@@ -8654,6 +8659,12 @@ function showBanner(text,col,dur){
   G.banner=text; G.bannerCol=col||'#ffb020';
   G.bannerDur=dur||1.4; G.bannerT=G.bannerDur;
 }
+/* SOTTOTITOLO (voce #112, compito 4): UNO SOLO punto che rispetta
+   SAVE.sott, per gli eventi sonori chiave che oggi non hanno un
+   showBanner adiacente (i fischi muti). Gli eventi che hanno GIA' un
+   banner (PALO/GOL/FALLO/CARTELLINO/VANTAGGIO...) restano su showBanner
+   bare, invariati: il flag AGGIUNGE i muti, non filtra i preesistenti. */
+function sottotitolo(testo,col,dur){ if(SAVE.sott) showBanner(testo,col,dur); }
 
 /* =====================================================================
    PROGRESSIONE — campi (STUDIO-03), kit, torneo, trofei
@@ -9774,6 +9785,11 @@ function defaultSave(){
        compito 2). */
     vibInt:1,
     moto:1, dalt:0, durata:90,     // accessibilita': effetti, contrasto divise, durata
+    /* SOTT: i sottotitoli degli eventi sonori chiave (i fischi, prima
+       muti). Default 1 = acceso: il parlato vero di CALCETTO e' l'audio
+       di gioco, e chi ha bisogno di leggerlo lo trova gia' acceso
+       (voce #112, compito 4). */
+    sott:1,
     taglia:5,                      // taglia di rosa dell'amichevole: 5, 7 o 11
     /* SPONDE: gabbia (il gioco di oggi, ogni sponda rimbalza) o campo
        vero (rimesse laterali, angoli, rinvii dal fondo). Default gabbia:
@@ -9901,6 +9917,9 @@ function loadSave(){
     if(j.touch===1||j.touch===0) s.touch=j.touch;
     if(j.moto===0||j.moto===1) s.moto=j.moto;
     if(j.dalt===0||j.dalt===1) s.dalt=j.dalt;
+    /* stesso modello di dalt: solo 0/1, un salvataggio manomesso non
+       puo' chiedere altro (voce #112, compito 4) */
+    if(j.sott===0||j.sott===1) s.sott=j.sott;
     if([90,120,180].indexOf(j.durata)>=0) s.durata=j.durata;
     if([5,7,11].indexOf(j.taglia)>=0) s.taglia=j.taglia;
     if(j.mentalita===0||j.mentalita===1||j.mentalita===2) s.mentalita=j.mentalita;
@@ -11153,6 +11172,10 @@ function startMatch(mode, diff, opts){
   scegliCapitani(); G.capT=CAP_DUR;
   Audio5.crowdLevel(1);
   Audio5.whistle(false);
+  /* SOTTOTITOLO (voce #112, compito 4): il fischio d'inizio non aveva
+     nessun banner adiacente -- e' il fischio che OGNI singola partita
+     CPU-CPU suona al kickoff, quindi il piu' esercitato di tutti. */
+  sottotitolo('FISCHIO','#96ab9e',0.9);
   /* tutorial: solo alla prima partita in assoluto, in 1 giocatore */
   /* IL TUTORIAL NON ENTRA IN UNA SFIDA. Non e' una questione di stile:
      Tut.tick gira dentro step(), col passo fisso, e chi rigioca il
@@ -11440,6 +11463,10 @@ function endMatch(){
      ===================================================================== */
   chiudiSfida();
   Audio5.whistle(true);
+  /* SOTTOTITOLO (voce #112, compito 4): il fischio finale non aveva
+     nessun banner -- 'FISCHIO FINALE' arriva solo un fotogramma piu'
+     tardi, scritto sulla schermata di fine partita (ui.endVinc). */
+  sottotitolo('FISCHIO FINALE','#96ab9e',0.9);
   Audio5.crowdLevel(0.4);
   /* IL RISULTATO LO PORTA L'OGGETTO-EROE: il segnapunti di compensato, a
      smalto bianco su lavagna scura, col minuto sulla lavagnetta. Le maglie
@@ -16977,12 +17004,18 @@ function step(){
       if(G.golden){ endMatch(); return; }
       G.rec.length=0;
       resetKickoff(); setScene('kickoff'); Audio5.whistle(false);
+      /* SOTTOTITOLO (voce #112, compito 4): il fischio della ripresa
+         dopo il gol non aveva un banner adiacente. */
+      sottotitolo('FISCHIO','#96ab9e',0.9);
       return;
     }
     if(G.sceneT>=2.7){
       if(G.golden){ endMatch(); return; }
       G.rec.length=0;
       resetKickoff(); setScene('kickoff'); Audio5.whistle(false);
+      /* SOTTOTITOLO (voce #112, compito 4): stesso fischio muto del
+         ramo moviola qui sopra, stessa cura. */
+      sottotitolo('FISCHIO','#96ab9e',0.9);
     }
     return;
   }
@@ -41702,6 +41735,7 @@ function refreshImpostUI(){
     ' <small>scossa, coriandoli, transizioni</small>';
   $('btnSetDalt').innerHTML='ALTO CONTRASTO: '+(SAVE.dalt?'SÌ':'NO')+
     ' <small>daltonismo: kit ben separati</small>';
+  $('btnSetSott').innerHTML='SOTTOTITOLI: '+(SAVE.sott?'SÌ':'NO')+' <small>fischio, gol, palo — a video</small>';
   /* LA VOCE DICE COSA SI STA SCEGLIENDO DAVVERO. Il numero del menu e' il
      tempo del 5 contro 5: sul campo a 7 e su quello a 11 il cronometro
      scala col campo (vedi durataPartita), e una voce che dicesse solo
@@ -41716,6 +41750,7 @@ function refreshImpostUI(){
   $('btnSetVib').classList.toggle('on', SAVE.vib!==false);
   $('btnSetMoto').classList.toggle('on', !!SAVE.moto);
   $('btnSetDalt').classList.toggle('on', !!SAVE.dalt);
+  $('btnSetSott').classList.toggle('on', !!SAVE.sott);
   $('btnSetMoviola').classList.toggle('on', !!SAVE.moviola);
   /* ARIA-PRESSED, per chi non vede ne' il colore ne' il rilievo della
      pastiglia: lo stesso booleano appena scritto nella classe, ripetuto
@@ -41725,6 +41760,7 @@ function refreshImpostUI(){
   $('btnSetVib').setAttribute('aria-pressed', SAVE.vib!==false?'true':'false');
   $('btnSetMoto').setAttribute('aria-pressed', SAVE.moto?'true':'false');
   $('btnSetDalt').setAttribute('aria-pressed', SAVE.dalt?'true':'false');
+  $('btnSetSott').setAttribute('aria-pressed', SAVE.sott?'true':'false');
   $('btnSetMoviola').setAttribute('aria-pressed', SAVE.moviola?'true':'false');
   /* LA VOCE COMANDI PORTA IL SUO STATO ADDOSSO, come tutte le altre di
      questa pagina: chi apre le Impostazioni legge la mano e le due
@@ -41837,6 +41873,9 @@ $('btnSetMoto').addEventListener('click', ()=>{
 });
 $('btnSetDalt').addEventListener('click', ()=>{
   SAVE.dalt = SAVE.dalt?0:1; persistSave(); applyKit(); refreshTeamRGB(); refreshImpostUI(); Audio5.beep(520);
+});
+$('btnSetSott').addEventListener('click', ()=>{
+  SAVE.sott = SAVE.sott?0:1; persistSave(); refreshImpostUI(); Audio5.beep(600);
 });
 $('btnSetTempo').addEventListener('click', ()=>{
   const giro=[90,120,180];
