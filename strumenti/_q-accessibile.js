@@ -1,18 +1,18 @@
 /* =====================================================================
    _q-accessibile.js — LE ETICHETTE HANNO UN GIUDICE CHE LE ASPETTA
-   (voce #112, compito 1, primo compito del ramo voce-112-spiccioli-ux).
+   (voce #112, compiti 1 e 2 del ramo voce-112-spiccioli-ux).
 
    IL PERCHE'. Il cantiere #112 chiude l'onda A del mandato con sei cure
    di UX/accessibilita' a rischio quasi zero (nessuna tocca dado(), una
-   decisione di gioco o uno stato che la CPU legge). Questo compito ne
-   porta due, entrambe di puro contorno: aria-pressed sui cinque
+   decisione di gioco o uno stato che la CPU legge). Il compito 1 ne ha
+   portate due, entrambe di puro contorno: aria-pressed sui cinque
    interruttori di IMPOSTAZIONI, e il rettangolo del banner dichiarato
-   in zoneInterfaccia(). Questo banco nasce PRIMA dell'attrezzo che le
-   applica (strumenti/_t-aria-etichette.js) e le condanna: sul gioco di
-   oggi (zero aria-pressed nel file, banner mai dichiarato) le due prove
-   sono rosse per costruzione.
+   in zoneInterfaccia(). Il compito 2 aggiunge la terza: le tre
+   intensita' della vibrazione. Ogni prova nasce PRIMA dell'attrezzo che
+   la applica e la condanna sul gioco di ieri: la terza, aggiunta oggi,
+   nasce rossa sulla base ec82689 (SAVE.vibInt non esiste ancora).
 
-   LE DUE PROVE:
+   LE TRE PROVE:
      1. ARIA — apre IMPOSTAZIONI (gearBtn -> PREFERENZE, la via vera del
         dito), e per ognuno dei cinque .voce.sw (btnSetAudio/Vib/Moto/
         Dalt/Moviola) verifica che aria-pressed esista E combaci con
@@ -26,10 +26,22 @@
         stesso nomina come pulita), poi verifica che
         __test.zoneInterfaccia() contenga una zona {tipo:'banner'} con
         un rettangolo non degenere (x1>x0, y1>y0).
+     3. VIBRAZIONE — una spia su navigator.vibrate (installata via
+        addInitScript PRIMA che il gioco carichi) registra ogni chiamata
+        vera. Rientrati in IMPOSTAZIONI, si sceglie il bottone .vib
+        forte (data-vi=2) col vero .click() del DOM: si verifica
+        SAVE.vibInt===2 e che buzz(20) — chiamato bare, come showBanner
+        in prova 2 — vibri per ~32ms (20 x 1.6). Poi si sceglie leggera
+        (data-vi=0) e si verifica ~10ms (20 x 0.5). In mezzo, un
+        controllo dell'interruttore ON/OFF: con SAVE.vib=false, buzz(20)
+        non deve toccare navigator.vibrate — vibInt non ha voce in
+        capitolo finche' la vibrazione stessa e' spenta. Zero dado() qui:
+        un bottone, un salvataggio e uno spione sull'hardware finto.
 
    ZERO dado() NUOVI in questo file, come in _q-battute.js: nessuna
-   delle due prove decide niente per la CPU, entrambe leggono markup e
-   una funzione di interfaccia gia' esistente.
+   delle tre prove decide niente per la CPU, tutte leggono markup e
+   funzioni di interfaccia gia' esistenti (o gia' introdotte da un
+   compito precedente dello stesso cantiere).
 
    IL SEME: 20260918, la data del piano d'esecuzione del cantiere (voce
    #112), default del flag --seme. Non governa nessuna delle due prove
@@ -87,6 +99,15 @@ const INTERRUTTORI = ['btnSetAudio', 'btnSetVib', 'btnSetMoto', 'btnSetDalt', 'b
   const ctx = await browser.newContext({ viewport: { width: 915, height: 412 }, isMobile: true, hasTouch: true, locale: 'it-IT' });
   const pag = await ctx.newPage();
   await pag.addInitScript(semeFisso, SEME);
+  /* LA SPIA SU navigator.vibrate, installata PRIMA che il gioco carichi
+     (voce #112, compito 2). window.__vibChiamate accumula ogni valore
+     passato a navigator.vibrate cosi' com'e' (numero o array): e'
+     l'unico modo di misurare cosa buzz() manda DAVVERO all'hardware
+     finto senza inventare uno stato che il gioco non ha. */
+  await pag.addInitScript(() => {
+    window.__vibChiamate = [];
+    navigator.vibrate = (x) => { window.__vibChiamate.push(x); return true; };
+  });
   const ecc = []; pag.on('pageerror', e => ecc.push(e.message));
   console.log('\n=== LE ETICHETTE HANNO UN GIUDICE CHE LE ASPETTA ===  ' + (provaAbs || 'CALCETTO-il-gioco.html (repo)'));
 
@@ -167,6 +188,78 @@ const INTERRUTTORI = ['btnSetAudio', 'btnSetVib', 'btnSetMoto', 'btnSetDalt', 'b
       di(ok, '2. BANNER-DICHIARATO — G.banner attivo (via showBanner) produce una zona tipo:banner in zoneInterfaccia()',
         'banner attivo: ' + JSON.stringify(r.stato) + '   zona trovata: ' + JSON.stringify(r.zona) +
         '   tipi presenti in zoneInterfaccia: [' + r.tipi.join(', ') + ']');
+    }
+
+    /* ===================================================================
+       PROVA 3 — VIBRAZIONE (voce #112, compito 2). Si torna in
+       IMPOSTAZIONI con la stessa via del dito di prova 1 (gearBtn ->
+       PREFERENZE -> IMPOSTAZIONI): funziona anche a partita in corso
+       perche' sono .click() DOM veri, non i controlli di visibilita' di
+       un dito. buzz() e' bare come showBanner in prova 2: e' una
+       funzione di primo livello del gioco, si chiama diretta dentro
+       page.evaluate. La spia su navigator.vibrate (installata PRIMA del
+       goto, vedi sopra) e' il solo giudice: registra la durata VERA che
+       arriva all'hardware finto.
+       Prova 1 ha gia' cliccato btnSetVib una volta (default true ->
+       false): si sfrutta quello stato per il controllo ON/OFF prima di
+       riaccenderlo — vibInt non deve avere voce in capitolo mentre la
+       vibrazione stessa e' spenta.
+       I bottoni .vib si cercano con querySelector (mai un .click() alla
+       cieca): sulla base ec82689 la riga #vibRow non esiste ancora, e
+       questa prova deve dichiararlo con un guasto leggibile — non far
+       esplodere il banco intero con un'eccezione su null. */
+    {
+      const r = await pag.evaluate(() => {
+        const t = window.__test;
+        document.getElementById('gearBtn').click();
+        document.getElementById('btnImpost').click();
+        const vibIntDefault = t.save.vibInt;
+
+        /* ON/OFF ancora primo cancello: a vib spento (l'eredita' di
+           prova 1) buzz(20) non deve toccare navigator.vibrate. */
+        const vibEraSpenta = (t.save.vib === false);
+        window.__vibChiamate.length = 0;
+        buzz(20);
+        const chiamateAVibSpenta = window.__vibChiamate.length;
+
+        /* si riaccende con un vero click su btnSetVib prima di misurare
+           le intensita': a vib spenta nessuna intensita' vibrerebbe. */
+        document.getElementById('btnSetVib').click();
+        const vibRiaccesa = (t.save.vib !== false);
+
+        const bForte = document.querySelector('.vib[data-vi="2"]');
+        if (bForte) bForte.click();
+        const vibIntForte = t.save.vibInt;
+        window.__vibChiamate.length = 0;   // pulisce l'assaggio del click appena fatto
+        buzz(20);
+        const chiamataForte = window.__vibChiamate[window.__vibChiamate.length - 1];
+
+        const bLeggera = document.querySelector('.vib[data-vi="0"]');
+        if (bLeggera) bLeggera.click();
+        const vibIntLeggera = t.save.vibInt;
+        window.__vibChiamate.length = 0;
+        buzz(20);
+        const chiamataLeggera = window.__vibChiamate[window.__vibChiamate.length - 1];
+
+        return { vibIntDefault, vibEraSpenta, chiamateAVibSpenta, vibRiaccesa,
+                 bottoneForteTrovato: !!bForte, bottoneLeggeraTrovato: !!bLeggera,
+                 vibIntForte, chiamataForte, vibIntLeggera, chiamataLeggera };
+      });
+      const guasti = [];
+      if (r.vibIntDefault !== 1) guasti.push('default SAVE.vibInt=' + r.vibIntDefault + ' invece di 1 (Normale)');
+      if (!r.vibEraSpenta) guasti.push('SAVE.vib non risultava spenta dopo prova 1: il controllo ON/OFF non e\' stato provato davvero');
+      if (r.chiamateAVibSpenta !== 0) guasti.push('a vib spento buzz(20) ha comunque chiamato navigator.vibrate ' + r.chiamateAVibSpenta + ' volte');
+      if (!r.vibRiaccesa) guasti.push('btnSetVib non ha riacceso SAVE.vib');
+      if (!r.bottoneForteTrovato) guasti.push('bottone .vib[data-vi="2"] non trovato: la riga #vibRow non esiste');
+      if (!r.bottoneLeggeraTrovato) guasti.push('bottone .vib[data-vi="0"] non trovato: la riga #vibRow non esiste');
+      if (r.vibIntForte !== 2) guasti.push('click su data-vi=2 non ha scritto SAVE.vibInt=2 (letto ' + r.vibIntForte + ')');
+      if (!(Math.abs(r.chiamataForte - 32) <= 1)) guasti.push('buzz(20) a vibInt=2 vale ' + r.chiamataForte + ' invece di ~32 (20 x 1.6)');
+      if (r.vibIntLeggera !== 0) guasti.push('click su data-vi=0 non ha scritto SAVE.vibInt=0 (letto ' + r.vibIntLeggera + ')');
+      if (!(Math.abs(r.chiamataLeggera - 10) <= 1)) guasti.push('buzz(20) a vibInt=0 vale ' + r.chiamataLeggera + ' invece di ~10 (20 x 0.5)');
+      di(guasti.length === 0, '3. VIBRAZIONE — SAVE.vibInt a tre valori, buzz(p) scala la durata prima di navigator.vibrate, ON/OFF resta il primo cancello',
+        guasti.length ? guasti.join('   ')
+          : 'default=' + r.vibIntDefault + '   vib spento: buzz muto (' + r.chiamateAVibSpenta + ' chiamate)   ' +
+            'forte: buzz(20)=' + r.chiamataForte + '   leggera: buzz(20)=' + r.chiamataLeggera);
     }
 
     if (ecc.length) { di(false, 'BANCO — nessuna eccezione di pagina', 'eccezione: ' + ecc[0]); }

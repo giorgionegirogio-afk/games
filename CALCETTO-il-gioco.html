@@ -3630,6 +3630,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       <div class="eti">Gioco</div>
       <button class="voce sw" id="btnSetAudio">AUDIO: ON</button>
       <button class="voce sw" id="btnSetVib">VIBRAZIONE: ON</button>
+      <!-- LE TRE INTENSITA', stesso pattern markup di .diff-row (~riga
+           3656): tre bottoni, la selezione segue SAVE.vibInt invece di
+           G.diff. Il "sel" di serie qui sotto e' solo lo stato a vuoto:
+           refreshVibRow lo riscrive a ogni apertura, cosi' il markup
+           statico non puo' mentire se il salvataggio dice altro
+           (voce #112, compito 2). -->
+      <div class="diff-row" id="vibRow">
+        <button class="vib" data-vi="0">Leggera</button>
+        <button class="vib sel" data-vi="1">Normale</button>
+        <button class="vib" data-vi="2">Forte</button>
+      </div>
       <!-- La scelta «Gesti / 3 pulsanti» non esiste piu': lo schema dei
            comandi touch e' UNICO (stick + due pulsanti contestuali, coi
            flick sempre attivi), quindi non c'era piu' niente da scegliere. -->
@@ -8613,7 +8624,23 @@ function icoSVG(name,size){
 }
 
 /* haptics: vibrazione brevissima se disponibile (spegnibile in Impostazioni) */
-function buzz(p){ try{ if(SAVE.vib!==false && navigator.vibrate) navigator.vibrate(p); }catch(e){} }
+/* VIBINT scala la durata PRIMA di navigator.vibrate: [0.5,1,1.6] per
+   leggera/normale/forte, SAVE.vibInt??1 se il salvataggio e' vecchio.
+   SCELTA DICHIARATA: un array [vibra,pausa,vibra,...] si scala TUTTO
+   uniformemente (ogni elemento, pause comprese) invece di scalare solo
+   gli elementi pari (le vibrazioni) e lasciare le pause fisse — cosi'
+   la cadenza percepita resta la stessa forma, cambia solo la lunghezza
+   totale del gesto. L'interruttore ON/OFF resta il primo cancello: a
+   SAVE.vib===false buzz esce subito come faceva prima, vibInt non ha
+   voce in capitolo (voce #112, compito 2). */
+function buzz(p){
+  try{
+    if(SAVE.vib!==false && navigator.vibrate){
+      const f=[0.5,1,1.6][SAVE.vibInt??1];
+      navigator.vibrate(Array.isArray(p) ? p.map(x=>Math.round(x*f)) : Math.round(p*f));
+    }
+  }catch(e){}
+}
 
 /* banner evento (PALO!, TIRO PERFETTO!, ...) */
 function showBanner(text,col,dur){
@@ -9734,6 +9761,11 @@ const INV_TETTO = 3;
 function defaultSave(){
   return {
     v:4, mute:false, vib:true, diff:1, touch:0,
+    /* VIBINT: l'intensita' della vibrazione, 0/1/2 = leggera/normale/
+       forte. Default 1 = normale: chi ha gia' un salvataggio non sente
+       nessuna differenza finche' non tocca la riga nuova (voce #112,
+       compito 2). */
+    vibInt:1,
     moto:1, dalt:0, durata:90,     // accessibilita': effetti, contrasto divise, durata
     taglia:5,                      // taglia di rosa dell'amichevole: 5, 7 o 11
     /* SPONDE: gabbia (il gioco di oggi, ogni sponda rimbalza) o campo
@@ -9854,6 +9886,10 @@ function loadSave(){
   if(j){
     if(typeof j.mute==='boolean') s.mute=j.mute;
     if(typeof j.vib==='boolean') s.vib=j.vib;
+    /* stesso modello di sponde/taglia: solo le tre chiavi conosciute,
+       un salvataggio manomesso non puo' chiedere una quarta intensita'
+       (voce #112, compito 2) */
+    if([0,1,2].indexOf(j.vibInt)>=0) s.vibInt=j.vibInt;
     if(typeof j.diff==='number') s.diff=clamp(j.diff|0,0,2);
     if(j.touch===1||j.touch===0) s.touch=j.touch;
     if(j.moto===0||j.moto===1) s.moto=j.moto;
@@ -40212,6 +40248,22 @@ document.querySelectorAll('.diff').forEach(b=>{
   });
 });
 refreshDiffRows();
+/* vibrazione: tre intensita' leggera/normale/forte, stesso pattern
+   binario di refreshDiffRows qui sopra — SAVE.vibInt al posto di
+   G.diff, persistSave perche' vibInt vive nel salvataggio e non in G
+   (voce #112, compito 2) */
+function refreshVibRow(){
+  document.querySelectorAll('.vib').forEach(b=>b.classList.toggle('sel', +b.dataset.vi===(SAVE.vibInt??1)));
+}
+document.querySelectorAll('.vib').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    SAVE.vibInt=+b.dataset.vi;
+    persistSave();
+    refreshVibRow();
+    buzz(30);   // assaggio: il giocatore SENTE l'intensita' appena scelta
+  });
+});
+refreshVibRow();
 /* taglia di rosa: 5 base, 7 e 11 in amichevole; persiste nel salvataggio */
 function refreshTaglieRow(){
   document.querySelectorAll('.taglia').forEach(b=>b.classList.toggle('sel', +b.dataset.t===(SAVE.taglia||5)));
@@ -41658,6 +41710,10 @@ function refreshImpostUI(){
      percentuali senza dover entrare. La stringa la scrive
      refreshComandiUI, cosi' esiste UNA sola frase per quello stato. */
   refreshComandiUI();
+  /* LA RIGA DELLE TRE INTENSITA' SI RIDIPINGE QUI, come le altre righe
+     di questa funzione: a ogni apertura di IMPOSTAZIONI e al primo
+     avvio, senza un secondo punto di chiamata (voce #112, compito 2). */
+  refreshVibRow();
 }
 /* =====================================================================
    LA PAGINA DEI COMANDI, VIVA.
