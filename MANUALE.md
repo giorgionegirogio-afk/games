@@ -456,6 +456,178 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Il banco fotosensibile ancorato a WCAG — #114 CHIUSO** (#114) —
+  **CURATA il 19 settembre 2026** (tre compiti dal merge-base `ebf6bb1`,
+  seguito del #112: spec
+  `docs/superpowers/specs/2026-09-19-fotosensibile-wcag-design.md`, piano
+  `docs/superpowers/plans/2026-09-19-fotosensibile-wcag.md`):
+  `strumenti/_q-fotosensibile.js` (nato col #112, compito 6, 18 settembre)
+  smette di misurare su una soglia TARATA sul gioco di oggi (`PROMINENZA_MIN`)
+  e misura ora sulle soglie CLINICHE di WCAG 2.3.1 "Three Flashes or Below
+  Threshold" (Livello A), W3C Recommendation WCAG 2.2, **5 ottobre 2023**
+  (invariata da WCAG 2.0, 11 dicembre 2008) —
+  https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html.
+
+  **Le soglie, con fonte e data**:
+  - **General flash threshold**: un flash è una coppia di transizioni
+    OPPOSTE nella luminanza relativa di almeno **0,10** (10% della
+    luminanza relativa massima, 1,0), dove la luminanza del più scuro
+    dei due estremi che la delimitano è **sotto 0,80**.
+  - **Criterio d'area**: il flash conta per 2.3.1 solo se l'area
+    combinata dei flash concorrenti supera **0,006 steradianti (25% di
+    un campo visivo di 10 gradi)** — risoluzione di riferimento WCAG:
+    rettangolo 341x256 px su schermo 1024x768 px, cioè **2,7751%**
+    dello schermo di riferimento (341×256×0,25 / (1024×768) =
+    0,0277506...; il commento del compito 2 nel banco arrotondava a
+    2,7753%, un refuso di calcolo a mano di due decimillesimi, corretto
+    in questo compito — `strumenti/_q-fotosensibile.js:437-455`).
+  - **Red flash threshold**: coppia di transizioni opposte dove almeno
+    uno dei due stati ha **R/(R+G+B) >= 0,8** (sui byte sRGB grezzi) e
+    la distanza fra i due stati nel diagramma di cromaticità CIE 1976
+    UCS (u',v') supera **0,2**.
+  - **Luminanza relativa WCAG** (glossario,
+    https://www.w3.org/TR/WCAG22/#dfn-relative-luminance):
+    `L = 0,2126·R + 0,7152·G + 0,0722·B`, dove per c in {R,G,B}:
+    `csRGB=c/255`, `c_lin = csRGB/12,92` se `csRGB<=0,04045` (soglia IN
+    VIGORE, corretta dal W3C nel 2021-2022 rispetto al vecchio 0,03928
+    di WCAG 2.0/2.1 — si cita quella attuale, non quella superata,
+    studi a edizioni), altrimenti `c_lin = ((csRGB+0,055)/1,055)^2,4`.
+  - Harding/PEAT/broadcast (ITU-R BT.1702, Ofcom — Fulton et al., ACM
+    TACCESS 2024/25, PMC11872230): usano cd/m2 assoluti e pattern
+    spaziali a strisce — **fuori perimetro** (CALCETTO non ha strisce ad
+    alto contrasto pulsanti; cd/m2 dipende dal display, non misurabile a
+    banco). La cifra ITU-R esatta della revisione in vigore NON è stata
+    verificata sul documento originale: non si cita un numero clinico
+    non verificato.
+
+  **Il banco, riscritto in tre compiti**: (1, 19 settembre) `__luce()`
+  misura ora la luminanza relativa WCAG VERA (LUT di linearizzazione
+  gamma per canale, 256 valori, calcolata una volta all'installazione),
+  non più la media pesata sui byte sRGB grezzi del #112; il rilevatore
+  (`trovaFlashWCAG`, su `trovaEstremi`) sostituisce `PROMINENZA_MIN=1,5`
+  con la definizione clinica — coppie di transizioni opposte sugli
+  estremi locali della serie, senza sovrapposizione, finestra di un
+  secondo, verdetto **<=3 flash in ogni finestra = <=3 Hz**. (2) Il
+  criterio d'area (`SOGLIA_AREA_FRAZ`, 2,7751%) filtra A VALLE i flash
+  già rilevati dalla media (non un rilevatore d'area indipendente: uno è
+  stato provato e scartato, misurato falso positivo 4-7%/s su SERA senza
+  nulla iniettato — dichiarato nel commento del banco); il red flash
+  (`trovaRedFlashWCAG`) è un canale indipendente sulla saturazione rossa
+  media, stessa lettura di `__luce()`, nessun secondo giro sui pixel.
+  (3, questo compito) la verifica autorevole e il verbale.
+
+  **I numeri veri, misurati oggi** (seme 112601, canvas 915×412,
+  `node strumenti/_q-fotosensibile.js` / `--controllo` / `--calibra`):
+  - **`--controllo` (il cancello obbligatorio)**: GRANDE (lampo bianco a
+    schermo intero, 4 Hz) **ROSSO** — 15 flash rilevati, tutti sopra
+    soglia d'area (100% di picco), **5 flash/s di picco** (cadenza vera
+    4,000 Hz esatti; il 5 è un effetto di bordo della finestra chiusa
+    [-0,5s,+0,5s] su un segnale a passo esatto — dichiarato nel commento
+    del banco, non un artefatto nascosto). PICCOLO (quadratino 100×100 px
+    sotto soglia d'area + lavaggio di sfondo sotto soglia d'ampiezza
+    pixel-per-pixel) **VERDE** — 15 flash rilevati ma **tutti e 15
+    esenti** (area di picco 2,65%, sotto soglia 2,7751%): l'esenzione
+    d'area esenta DAVVERO, non è solo "invisibile alla media". RED FLASH
+    (schermo intero, #ff0000, 4 Hz) **ROSSO** su entrambi i canali — 5
+    flash/s generali e 5 red flash/s di picco. Verdetto complessivo del
+    comando `--controllo`: **1 prova verde su 3, per costruzione** — è
+    il risultato atteso (due condanne, un'esenzione), non un fallimento.
+  - **Le sei scene reali, verifica autorevole di questo compito** (gol
+    ravvicinati, sera, dischetto; moto on/off), **TUTTE VERDI**:
+    - gol moto=on: 1 flash rilevato, 1 sopra soglia d'area (33,14% di
+      picco), **1 flash/s** di picco (a t=3,82 s); 0 red flash. La festa
+      del gol (schermo intero) qualifica per area ma resta a 1/s per il
+      tetto strutturale della sua durata (>1,25 s, blocca una nuova
+      festa finché non torna in play) — sotto 3 Hz per costruzione.
+    - gol moto=off: 0 flash rilevati (il lampo/raggi sono dietro
+      `SAVE.moto`); 0 red flash.
+    - sera moto=on/off: 0 flash rilevati (area di picco 0,00% — la
+      scena "più chiara" per i fari non legge mai come lampo: la sua
+      escursione whole-canvas misurata, 0,0062/0,0077, resta un ordine
+      di grandezza sotto la soglia 0,10); 0 red flash.
+    - dischetto moto=on/off: 0 flash rilevati (DUEL_FLASH, escursione
+      misurata 0,0022/0,0023, anch'essa un ordine di grandezza sotto
+      soglia); 0 red flash.
+    Nessuna scena supera 3 flash/s su nessun canale: **il gioco PASSA
+    tutte le soglie WCAG 2.3.1 (generale + area + red flash) sulle scene
+    provate, a seme fisso** — la verifica autorevole promessa dallo spec.
+  - **La saturazione rossa massima misurata** su tutte le tinte
+    disponibili del gioco (kit fissi + tutte le squadre CPU della rosa,
+    misurata al compito 2) è **0,623** di R/(R+G+B) — sotto 0,80 anche a
+    schermo intero: nessuna combinazione d'area farebbe mai qualificare
+    una tinta di questo gioco per il red flash. Sulle sei scene di oggi
+    la saturazione osservata resta fra 0,235 e 0,320, molto più bassa.
+
+  **IL LIMITE, IN CHIARO** (la disciplina di casa: i limiti si
+  dichiarano, non si nascondono dietro un verdetto verde):
+  **(a)** il criterio d'area è **PREVALENTEMENTE FORMALE per questo
+  gioco**: folla e duello (CROWD_FLASH, DUEL_FLASH) sono già sotto la
+  sensibilità della MEDIA whole-canvas PRIMA che il filtro d'area entri
+  in gioco — la loro escursione misurata (0,0092/0,0062/0,0077/0,0023,
+  tutte sotto la soglia di flash 0,10) non li fa nemmeno rilevare come
+  flash, non serve l'area a esentarli. È il limite già dichiarato dal
+  compito 1, non chiuso da un puro filtro a valle (per costruzione
+  aritmetica: v. il commento "IL DUBBIO ONESTO SUL FILTRO A VALLE" nel
+  banco).
+  **(b) ESISTE UN BUCO TEORICO**: il banco rileva i flash sulla MEDIA
+  whole-canvas, quindi un lampo che copra fra il ~2,77% e il ~10% dello
+  schermo ad alta frequenza sarebbe una violazione WCAG (l'area basta, la
+  frequenza pure) che QUESTO banco NON coglie — quell'area non sposta la
+  media abbastanza da qualificare come flash sulla luminanza whole-
+  canvas, quindi la media non lo vede affatto (né come flash "esente",
+  proprio come flash). Il gioco di oggi NON ha una sorgente in quella
+  fascia (folla/duello <2% del canvas → esenti/invisibili per
+  costruzione; il lampo del gol è ~100% del canvas → ampiamente
+  rilevato), quindi il verdetto VERDE è **corretto PER QUESTO GIOCO** —
+  ma il banco non è un analizzatore WCAG COMPLETO: per coprire quella
+  fascia servirebbe il rilevamento PER-REGIONE (una griglia di celle,
+  ciascuna con la propria serie di luminanza, non la sola media whole-
+  canvas). Registrato come **seguito #123 (rilevamento fotosensibile
+  per-regione)**.
+  **(c)** il red flash, sulla saturazione media whole-canvas, soffre
+  dello STESSO limite (b) — un red flash confinato a una piccola area
+  che sposti la media sotto la sensibilità del rilevatore non verrebbe
+  visto — e non ha nemmeno un filtro d'area PROPRIO (dichiarato già al
+  compito 2). Innocuo per QUESTO gioco (saturazione massima delle tinte
+  0,623, sotto soglia anche a schermo intero — nessuna combinazione
+  d'area la farebbe mai qualificare) ma non è una garanzia generale.
+
+  **RETTIFICA A EDIZIONI** della frase del #112 (sopra in questo stesso
+  registro, voce #112, "IL LIMITE DEL BANCO, DICHIARATO"): quella
+  diceva «nessuno strobo FORTE oltre 3 Hz» su una soglia TARATA
+  (`PROMINENZA_MIN=1,5`), dichiarando già allora di non garantire
+  "fotosensibile-safe" in senso clinico — non si cancella, si rettifica
+  in chiaro (con la data accanto, vedi il paragrafo aggiunto lì). **Da
+  oggi (19 settembre 2026, voce #114)**: il banco è **conforme a WCAG
+  2.3.1 sulle scene provate** (metrica di luminanza relativa vera,
+  soglie cliniche 10%/0,80 + il criterio d'area + il red flash), coi
+  limiti di copertura della media whole-canvas dichiarati sopra
+  (punti a/b/c).
+
+  **#114 CHIUSO**: le soglie sono ancorate a WCAG 2.3.1, non più tarate
+  sul gioco di oggi. **Seguito nuovo #123** (rilevamento fotosensibile
+  per-regione): estendere il banco a una griglia di celle indipendenti
+  per chiudere il buco teorico (b) — non bloccante (il gioco di oggi non
+  ha una sorgente nella fascia scoperta, misurato sopra).
+
+  **Cancelli**: verifica autorevole (sopra) **sei scene su sei VERDI** a
+  seme fisso; `--controllo` **1/3 per costruzione** (GRANDE e RED FLASH
+  condannati, PICCOLO esentato — il verdetto atteso, non un fallimento);
+  batteria (`strumenti/tutti.js`, `fotosensibile` registrato `conta:true`
+  dal #112, invariato — dà il suo verdetto sulle sei scene, non su
+  `--controllo`): eseguita per intero, **`fotosensibile` OK in 42 s**,
+  **31 cancelli su 31 che contano tutti VERDI** (nessun rosso nuovo).
+  `audio.js` (lento, escluso dalla corsa di default) verificato
+  SEPARATAMENTE (`node strumenti/audio.js`): **28/28 VERDE** — il rosso
+  pre-esistente del #120 resta curato dal #122, nessun rosso residuo da
+  dichiarare. Il solo informativo `istantanea.js` (non conta) segna
+  «NO» contro un riferimento NULLO del 20 agosto (nessuna quota vera da
+  confrontare — pattern già noto, non un peggioramento di questo
+  cantiere): verdetto complessivo «VERDE CON RISERVA», coerente con le
+  corse precedenti (voce #112, #122). `git diff CALCETTO-il-gioco.html`
+  vuoto in tutto il cantiere (tre compiti, zero righe toccate: banco
+  puro, nessuna decisione di gioco).
+
 - **Spiccioli di seguito: la parata, il sottotitolo onesto e la freccia che
   non copre il fiato** (#122) — **CURATA il 19 settembre 2026** (tre compiti
   dal merge-base `470149a`, cantierino di chiusura pendenze minori deciso dal
@@ -795,6 +967,17 @@ Qui il registro completo, a edizioni.
   registrato come noto, seguito **#114**: ancorare `PROMINENZA_MIN` a
   una soglia clinica documentata (tipo WCAG/Harding, sull'escursione di
   luminanza relativa) invece che sulla taratura odierna del gioco.
+
+  **RETTIFICA A EDIZIONI (19 settembre 2026, voce #114)**: il seguito
+  promesso nel paragrafo sopra è stato fatto — non si cancella il
+  paragrafo, si rettifica (studi a edizioni). `PROMINENZA_MIN` non
+  esiste più nel banco: la frase «nessuno strobo FORTE (escursione oltre
+  soglia) oltre 3 Hz» descrive il banco DI ALLORA (18 settembre), non
+  quello di oggi. Da oggi il banco è **conforme a WCAG 2.3.1 sulle scene
+  provate** (metrica di luminanza relativa vera, soglie cliniche
+  10%/0,80, il criterio d'area, il red flash), coi limiti di copertura
+  della media whole-canvas dichiarati in chiaro — fonti, date, numeri e
+  il limite per esteso nella voce **#114** più sotto in questo registro.
 
   **UNA REGRESSIONE TROVATA E CURATA CHIUDENDO IL CANTIERE**: eseguendo
   per la prima volta la batteria intera su questo ramo (nessun compito

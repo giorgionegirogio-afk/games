@@ -443,7 +443,11 @@ function trovaFlashWCAG(rec, fps, isteresi) {
    tipica di visione). Si scrive la formula per intero, non il numero
    arrotondato, cosi' la provenienza resta verificabile a colpo d'occhio:
    25% dell'area di riferimento (341*256*0,25 = 21824 px) sul totale
-   dell'area di riferimento (1024*768 = 786432 px) = 0,027753 (2,7753%).
+   dell'area di riferimento (1024*768 = 786432 px) = 0,027751 (2,7751%)
+   (correzione voce #114 compito 3: il commento del compito 2 arrotondava
+   a 0,027753/2,7753%, un refuso di calcolo a mano di due decimillesimi —
+   il valore VERO, quello che SOGLIA_AREA_FRAZ calcola davvero dalla
+   formula qui sotto, e' 0,0277506...).
    APPROSSIMAZIONE DICHIARATA: e' una frazione di SCHERMO derivata dalla
    risoluzione e distanza di riferimento WCAG, non una misura in
    steradianti del campo visivo REALE di chi gioca (che dipende dal
