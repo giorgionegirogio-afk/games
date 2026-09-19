@@ -219,9 +219,14 @@ function mediana(v) {
    ma resta comunque molto piu' piccola della soglia di flash (0,10):
    anche con ISTERESI=0 nessun falso lampo passerebbe il cancello di
    ampiezza qui sotto, il margine e' solo per non moltiplicare estremi
-   spuri inerti. VERIFICATO: --controllo resta rosso (30 flash su 4 s,
-   picco 9/s) e le tre scene del gioco restano verdi con zero falsi flash
-   su SERA e DISCHETTO (nessun lampo iniettato, nessuno rilevato). */
+   spuri inerti. VERIFICATO: --controllo resta rosso (15 flash su 4 s,
+   spaziati esattamente ogni 0,25 s = 4,000 Hz, picco 5 in una finestra di
+   1 s — il picco e' 5 e non 4 per un effetto di bordo: la finestra e'
+   CHIUSA su [-0,5s,+0,5s] e un segnale a passo esatto 0,25 s allinea
+   entrambi gli estremi della finestra su un flash, includendone 5 invece
+   di 4; la CADENZA reale, misurata sugli istanti, e' 4,000 Hz esatti) e
+   le tre scene del gioco restano verdi con zero falsi flash su SERA e
+   DISCHETTO (nessun lampo iniettato, nessuno rilevato). */
 const ISTERESI_ESTREMI = 0.02;
 function trovaEstremi(serie, isteresi) {
   const idx = [];
@@ -261,30 +266,54 @@ function trovaEstremi(serie, isteresi) {
    della coppia ha un'ampiezza di almeno 0,10 (10% della luminanza
    relativa massima, 1,0) E la luminanza relativa del piu' SCURO dei due
    estremi che la delimitano e' sotto 0,80.
-   Si opera sugli ESTREMI LOCALI della serie (trovaEstremi sopra): ogni
-   estremo interno E[k] (non il primo ne' l'ultimo, che non hanno due
-   transizioni complete) e' il centro di UN flash se la transizione
-   entrante (E[k-1]->E[k]) E la transizione uscente (E[k]->E[k+1])
-   qualificano ENTRAMBE (ampiezza>=0,10, piu' scuro<0,80) — sono sempre di
-   verso opposto per costruzione (due estremi consecutivi non possono
-   essere dello stesso tipo). NOTA sul conteggio: su un'onda quadra
-   periodica questo conta UN flash a ogni estremo interno (sia ai picchi
-   sia alle valli), quindi DUE flash per ciclo completo (uno "su poi giu'"
-   al picco, uno "giu' poi su'" alla valle immediatamente dopo) — lettura
-   letterale della definizione WCAG (entrambi i tipi di coppia sono flash
-   validi, non alternativi), quindi PIU' severa (non meno) del leggerla
-   come un flash per ciclo: un banco di sicurezza deve pendere dal lato
-   cauto, non dal lato comodo. */
+   Si opera sugli ESTREMI LOCALI della serie (trovaEstremi sopra): fra
+   estremi consecutivi c'e' una TRANSIZIONE (idx[k]->idx[k+1]); le
+   transizioni si raggruppano DUE a DUE, SENZA SOVRAPPOSIZIONE (una
+   transizione che ha gia' formato un flash non ne forma un altro).
+   QUESTA e' la correzione del compito 1 (revisione): la prima stesura
+   contava un flash a OGNI estremo interno (coppie SOVRAPPOSTE: la stessa
+   transizione contava sia come uscita del flash precedente sia come
+   entrata del successivo), il che raddoppiava il conteggio rispetto alla
+   frequenza fisica del segnale (un'onda quadra periodica a f Hz dava 2f
+   flash/s). Con le coppie NON sovrapposte, un segnale periodico a f Hz
+   da' f flash/s: il NUMERO diventa la FREQUENZA, che e' esattamente il
+   punto di un banco ANCORATO a WCAG 2.3.1 — la soglia "<=3 flash in
+   qualunque finestra di 1 s" e' notoriamente equivalente a "<=3 Hz", e lo
+   e' solo se il conteggio segue questa convenzione (altrimenti "3 flash"
+   nel banco varrebbe 1,5 Hz nel mondo, e il verdetto "conforme a WCAG
+   2.3.1" citerebbe una soglia che non e' quella misurata).
+   LA SCANSIONE E' GOLOSA, non a parita' fissa dell'indice: si scorre un
+   puntatore k lungo le transizioni; se (T[k], T[k+1]) qualificano
+   ENTRAMBE si conta un flash e il puntatore avanza di 2 (le due
+   transizioni sono consumate, non riusabili); altrimenti il puntatore
+   avanza di 1 sola posizione (NON di 2), cosi' la transizione T[k+1] resta
+   libera per essere provata insieme a T[k+2]. La differenza conta: nel
+   mezzo del gioco vero, prima e dopo un lampo vero ci sono estremi
+   REALI (non rumore: movimento di giocatori/palla che trovaEstremi vede
+   perche' supera ISTERESI ma non supera mai SOGLIA_AMPIEZZA_FLASH) in
+   numero imprevedibile. Una scansione a PARITA' FISSA (transizioni 0+1,
+   poi 2+3, poi 4+5, ...) puo' per puro accidente di conteggio associare
+   la transizione di entrata del lampo vero a UNA transizione di
+   contenuto precedente (fallendo) e la sua transizione di uscita a UNA
+   transizione di contenuto successiva (fallendo anch'essa) — orfanizzando
+   un flash vero per un disallineamento di parita' che non ha nulla a che
+   fare col flash. Misurato: la versione a parita' fissa faceva sparire
+   l'unico flash del gol (moto=on, che deve restare ~1, non 0) proprio per
+   questo motivo. La scansione golosa non ha questo problema: scorre le
+   transizioni non qualificanti una a una senza mai "sprecare" una
+   transizione buona abbinandola a una cattiva per un caso di parita'. */
 const SOGLIA_AMPIEZZA_FLASH = 0.10;   // WCAG 2.2, 10% della luminanza relativa massima
 const SOGLIA_SCURO_FLASH = 0.80;      // WCAG 2.2, luminanza del piu' scuro dei due estremi
 function trovaFlashWCAG(serie, fps, isteresi) {
   const idx = trovaEstremi(serie, isteresi);
   const flash = [];
-  for (let k = 1; k < idx.length - 1; k++) {
-    const a = serie[idx[k - 1]], b = serie[idx[k]], c = serie[idx[k + 1]];
+  let k = 0;
+  while (k + 2 < idx.length) {
+    const a = serie[idx[k]], b = serie[idx[k + 1]], c = serie[idx[k + 2]];
     const entrante = Math.abs(b - a) >= SOGLIA_AMPIEZZA_FLASH && Math.min(a, b) < SOGLIA_SCURO_FLASH;
     const uscente = Math.abs(c - b) >= SOGLIA_AMPIEZZA_FLASH && Math.min(b, c) < SOGLIA_SCURO_FLASH;
-    if (entrante && uscente) flash.push({ i: idx[k], t: idx[k] / fps, v: b });
+    if (entrante && uscente) { flash.push({ i: idx[k + 1], t: idx[k + 1] / fps, v: b }); k += 2; }
+    else k += 1;
   }
   return flash;
 }
