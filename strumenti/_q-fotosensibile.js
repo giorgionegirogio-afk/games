@@ -117,8 +117,10 @@
    red flash (fuori dal perimetro di questo compito): e' innocuo per
    QUESTO gioco perche' la tinta piu' satura fra tutte le maglie
    disponibili (kit fissi + tutte le squadre CPU della rosa, misurato: v.
-   nota nel verbale) e' 0,623 di R/(R+G+B) — sotto 0,80 anche a schermo
-   intero, quindi nessuna combinazione di area la farebbe qualificare.
+   nota nel verbale) e' 0,649 di R/(R+G+B) (#7a4200) — sotto 0,80 anche a
+   schermo intero, quindi nessuna combinazione di area la farebbe
+   qualificare. (Rettifica di revisione: il valore 0,623 scritto prima
+   era #ff4d4d, un accento d'interfaccia, non una maglia.)
    Il verdetto VERDE di QUESTO compito garantisce «nessun flash generale
    WCAG (luminanza relativa, 10%/0,80, area >=~2,77% del canvas) e nessun
    red flash (saturazione >=0,80, Δu'v'>0,2) oltre 3 Hz» sulle scene

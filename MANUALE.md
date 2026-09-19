@@ -551,12 +551,15 @@ Qui il registro completo, a edizioni.
     Nessuna scena supera 3 flash/s su nessun canale: **il gioco PASSA
     tutte le soglie WCAG 2.3.1 (generale + area + red flash) sulle scene
     provate, a seme fisso** — la verifica autorevole promessa dallo spec.
-  - **La saturazione rossa massima misurata** su tutte le tinte
-    disponibili del gioco (kit fissi + tutte le squadre CPU della rosa,
-    misurata al compito 2) è **0,623** di R/(R+G+B) — sotto 0,80 anche a
-    schermo intero: nessuna combinazione d'area farebbe mai qualificare
-    una tinta di questo gioco per il red flash. Sulle sei scene di oggi
-    la saturazione osservata resta fra 0,235 e 0,320, molto più bassa.
+  - **La saturazione rossa massima misurata** su tutte le tinte-maglia
+    del gioco (kit fissi + tutte le squadre CPU della rosa) è **0,649** di
+    R/(R+G+B) (#7a4200) — sotto 0,80 anche a schermo intero: nessuna
+    combinazione d'area farebbe mai qualificare una tinta di questo gioco
+    per il red flash. Sulle sei scene di oggi la saturazione osservata
+    resta fra 0,235 e 0,320, molto più bassa. (Rettifica di revisione, 19
+    settembre 2026: il valore **0,623** scritto al compito 2 era #ff4d4d,
+    un accento d'interfaccia, non una maglia; il massimo vero fra le
+    maglie è 0,649 — comunque ben sotto 0,80, la conclusione non cambia.)
 
   **IL LIMITE, IN CHIARO** (la disciplina di casa: i limiti si
   dichiarano, non si nascondono dietro un verdetto verde):
@@ -588,9 +591,10 @@ Qui il registro completo, a edizioni.
   dello STESSO limite (b) — un red flash confinato a una piccola area
   che sposti la media sotto la sensibilità del rilevatore non verrebbe
   visto — e non ha nemmeno un filtro d'area PROPRIO (dichiarato già al
-  compito 2). Innocuo per QUESTO gioco (saturazione massima delle tinte
-  0,623, sotto soglia anche a schermo intero — nessuna combinazione
-  d'area la farebbe mai qualificare) ma non è una garanzia generale.
+  compito 2). Innocuo per QUESTO gioco (saturazione massima delle
+  tinte-maglia 0,649, sotto soglia anche a schermo intero — nessuna
+  combinazione d'area la farebbe mai qualificare) ma non è una garanzia
+  generale.
 
   **RETTIFICA A EDIZIONI** della frase del #112 (sopra in questo stesso
   registro, voce #112, "IL LIMITE DEL BANCO, DICHIARATO"): quella
