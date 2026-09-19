@@ -11062,6 +11062,18 @@ function startMatch(mode, diff, opts){
      diritto a uno stato pulito anche acceso lontano da qui. Azzerare
      non consuma sorteggi: i banchi a seme fisso non si sfasano. */
   G.possOwner=-1; G.possT=0; G.pulse=0; G.crowdSndT=0;
+  /* IL SESTO CRONOMETRO FRATELLO (voce #117, compito 6, trovato dalla
+     batteria intera): G.swLock/G.swTimer (isteresi del cambio-giocatore
+     automatico, switchControlled) erano dichiarati una sola volta
+     nell'oggetto G iniziale e mai azzerati qui, come i cinque cronometri
+     sopra prima del 31 agosto 2026. La fase residua sopravviveva da una
+     partita all'altra sulla stessa pagina (misurato: strumenti/_q-replay.js
+     prova E, "registrare non cambia il gioco", usciva rossa dal compito 3
+     del cantiere #117 in poi -- il canale MIND e' il primo a far
+     dipendere una decisione della CPU da quale giocatore specifico e'
+     sotto controllo umano, e per questo la fase residua e' diventata
+     visibile). Azzerare non consuma sorteggi: nessun sorteggio qui. */
+  G.swLock=[0,0]; G.swTimer=[0,0];
   /* =====================================================================
      IL TOCCO NON SOPRAVVIVE PIU' ALLA PARTITA (voce #85, compito 2 —
      estende ai voce #68 la stessa famiglia dei cronometri fratelli qui
