@@ -8482,6 +8482,7 @@ const G = {
   /* moviola: anello di fotogrammi degli ultimi secondi, per rivedere il gol */
   fatti:[],                              // registro dei fatti (voce #117, compito 1): vedi emettiFatto
   spinta:[0,0], fattiVisti:0, fattiTot:0, // gli stati (voce #117, compito 2): derivati dai fatti, vedi applicaImpattoFatto
+  spintaScalino:[0,0],                   // il canale d'occhio (voce #117, compito 4): l'ultimo scalino di G.spinta mostrato per squadra, vedi controllaBannerSpinta
   rec:[], recT:0, moviola:null,
   /* la RIPRESA DEDICATA del gol in camera bassa (decisione 3): parte dopo
      il colpo nel sacco, per ogni rete con un marcatore (mai sull'autorete) */
@@ -11038,6 +11039,7 @@ function startMatch(mode, diff, opts){
      ===================================================================== */
   G.fatti.length=0;
   G.spinta=[0,0]; G.fattiVisti=0; G.fattiTot=0;
+  G.spintaScalino=[0,0];                 // il canale d'occhio (voce #117, compito 4): azzerato con gli altri stati
   G.rec.length=0; G.recT=0;
   /* I QUATTRO CRONOMETRI FRATELLI DI recT (31 agosto 2026). Stessa
      malattia del verbale qui sopra, altri quattro nomi: possOwner e
@@ -17108,10 +17110,21 @@ function step(){
     G.crowdSndT=0.3;
     const b=G.ball;
     const prox = Math.max(0, 1-Math.min(b.x, FW-b.x)/300);
-    Audio5.crowdLevel(1 + prox*0.9 + G.crowdHype*0.4);
-    /* LA CURVA: tamburo nei momenti caldi, tace a meta' campo */
+    /* LA FOLLA SEGUE LA SPINTA (voce #117, compito 4): squadraDelPallone()
+       dice chi attacca (il possesso; -1 se la palla e' libera e non ha
+       mai toccato nessuno -- nessuna squadra "attacca", contributo zero).
+       Si somma SOLO la spinta POSITIVA di quella squadra (max(0,...)):
+       una squadra in difficolta' non spegne la folla, la accende solo
+       chi sta creando. SOLO AUDIO: nessuna decisione legge questo
+       numero, il due-versioni lo prova. */
+    const teamAttacco = squadraDelPallone();
+    const spintaAttacco = (teamAttacco>=0 && G.spinta) ? Math.max(0, G.spinta[teamAttacco]) : 0;
+    Audio5.crowdLevel(1 + prox*0.9 + G.crowdHype*0.4 + 0.35*spintaAttacco);
+    /* LA CURVA: tamburo nei momenti caldi, tace a meta' campo -- ora
+       batte ANCHE quando la spinta della squadra che attacca supera
+       0,6 (voce #117, compito 4), oltre alle condizioni gia' in casa. */
     if(shopAttivo('curva'))
-      Audio5.curvaTamburo(prox>0.55 || G.golden || G.timeLeft<=15);
+      Audio5.curvaTamburo(prox>0.55 || G.golden || G.timeLeft<=15 || spintaAttacco>0.6);
   }
 
   /* hit-stop: congela la simulazione ma non il rendering */
@@ -17312,10 +17325,18 @@ function step(){
   const fattiNuovi = G.fattiTot - G.fattiVisti;
   if(fattiNuovi > 0){
     const daLeggere = Math.min(fattiNuovi, G.fatti.length);
-    for(let fi=G.fatti.length-daLeggere; fi<G.fatti.length; fi++) applicaImpattoFatto(G.fatti[fi]);
+    for(let fi=G.fatti.length-daLeggere; fi<G.fatti.length; fi++){
+      applicaImpattoFatto(G.fatti[fi]);
+      /* IL CANALE D'OCCHIO (voce #117, compito 4): p.mesto dai fatti
+         negativi, vedi applicaOcchioMestoDaFatto qui sopra. Stessa
+         passata, stesso fatto -- mai un ciclo a parte che rilegga
+         G.fatti una seconda volta. */
+      applicaOcchioMestoDaFatto(G.fatti[fi]);
+    }
     G.fattiVisti = G.fattiTot;
   }
   decayoSpinta(dt);
+  controllaBannerSpinta();              // il canale d'occhio (voce #117, compito 4): il banner sugli scalini
 }
 
 /* =====================================================================
@@ -35645,6 +35666,54 @@ function applicaImpattoFatto(f){
     case 'sfugge':
       if(p) p.umore = clampStato(p.umore - 0.15*molt, -1, 1);
       break;
+  }
+}
+
+/* =====================================================================
+   IL CANALE D'OCCHIO -- p.mesto DAI FATTI (voce #117, compito 4). Vedi
+   la lettera di testa di strumenti/_t-occhio-mind.js per il perche' di
+   ogni scelta (i tre "che" scelti, il tetto di un uomo per squadra, la
+   durata funzione di p.umore). SOLO DISEGNO: nessun sorteggio qui dentro,
+   nessuna decisione toccata -- il due-versioni lo prova. */
+function applicaOcchioMestoDaFatto(f){
+  let idx=-1;
+  switch(f.che){
+    case 'fallo':
+      if(f.esito && Number.isInteger(f.esito.vittima)) idx=f.esito.vittima;
+      break;
+    case 'giallo': case 'espulsione':
+      idx=f.chi;
+      break;
+    case 'legno':
+      idx=f.chi;                        // il tiratore: b.lastTouch al momento dell'emissione
+      break;
+    default: return;                    // gol/autorete: gia' coperti dal trigger esistente del gol
+  }
+  if(idx<0 || idx>=G.players.length) return;
+  const p=G.players[idx];
+  if(!p || p.out>0) return;
+  /* UN UOMO PER VOLTA PER SQUADRA: se un compagno (o lui stesso) e'
+     gia' mesto -- qualunque la fonte, anche il gol subito -- questo
+     fatto non ne accende un secondo. Non si sostituisce col piu'
+     recente (scelta dichiarata): si aspetta che il primo si spenga. */
+  for(const q of G.players) if(q.team===p.team && q.mesto>0) return;
+  p.mesto = clamp(1.2 - 1.8*p.umore, 0.3, 3.0);
+}
+
+/* IL BANNER SUGLI SCALINI DI SPINTA (voce #117, compito 4). Vedi la
+   lettera di testa dell'attrezzo per la tavola degli scalini e la
+   scelta del banner "piu' alto" sul salto in un solo fotogramma. SOLO
+   DISEGNO (showBanner, la stessa funzione di PALO/GOL): nessuna
+   decisione legge G.spintaScalino, il due-versioni lo prova. */
+function scalinoDiSpinta(v){ return v>=0.4 ? 2 : (v>=0 ? 1 : 0); }
+function controllaBannerSpinta(){
+  if(!G.spinta || !G.spintaScalino) return;
+  const TESTI = {1:'TESTA ALTA', 2:'CI CREDONO'};
+  for(let team=0; team<2; team++){
+    const nuovo = scalinoDiSpinta(G.spinta[team]);
+    const vecchio = G.spintaScalino[team];
+    if(nuovo>vecchio && TESTI[nuovo]) showBanner(TESTI[nuovo], TEAMCOL[team], 1.2);
+    G.spintaScalino[team]=nuovo;
   }
 }
 function decayoSpinta(dt){

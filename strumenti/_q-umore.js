@@ -96,6 +96,19 @@
    OSSERVATO SI STAMPA SEMPRE, mai un si/no cieco. NASCE ROSSA SULLA
    STESSA fuori/base3.html della prova CANALE.
 
+   PROVA TESTIMONE (compito 4). I due canali d'occhio (mesto dai fatti,
+   folla+banner sulla spinta) DISEGNO/AUDIO puri, vedi la lettera di testa
+   di strumenti/_t-occhio-mind.js. Sulla STESSA partita di REGISTRO/STATI:
+   (a) un cartellino forzato deve accendere mesto sull'ammonito se nessun
+   compagno era gia' mesto ("un uomo per volta per squadra"); (b) ogni
+   salita di scalino di G.spinta (tracciata indipendentemente dal test)
+   deve avere un banner "TESTA ALTA"/"CI CREDONO" O la folla misurata
+   sopra il livello base (Audio5.crowdLevel intercettata per registrare
+   il valore vero, non riletta da uno stato). NASCE ROSSA SUL GIOCO DEL
+   COMPITO 3 (`fuori/base4.html` = `git show 8824222:CALCETTO-il-gioco.html`):
+   G.spintaScalino non esiste la', 0-testimone lo dice con un guasto
+   leggibile.
+
    uso:  node strumenti/_q-umore.js
          node strumenti/_q-umore.js --gioco fuori/base.html
          node strumenti/_q-umore.js --taglia 5 --seme 20260919
@@ -162,6 +175,33 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
       t.semina(seme);
       t.dismissSplash && t.dismissSplash();
       if (t.save) t.save.tutorialDone = 1;
+      /* =================================================================
+         PROVA TESTIMONE (compito 4): LA FOLLA E' AUDIO, NON HA UNO STATO
+         LEGGIBILE su G -- si intercetta la CHIAMATA VERA a
+         Audio5.crowdLevel(v) (il sito unico, ~17111 storica), sostituendo
+         la funzione con una che registra v E, nella STESSA chiamata,
+         ricalcola quanto varrebbe v SENZA il termine di spinta, usando le
+         STESSE variabili bare che il sito vero legge (G.ball, FW,
+         G.crowdHype, squadraDelPallone -- verificate accessibili da
+         page.evaluate: window condivide l'ambiente lessicale globale
+         dello script di pagina con qualunque valutazione successiva nello
+         stesso contesto). La DIFFERENZA fra v registrato e questo
+         "atteso senza spinta" e' il contributo REALE del canale (b) --
+         la MISURA del risultato che il codice vero produce, non una sua
+         reimplementazione scollegata. La funzione originale non viene mai
+         richiamata: questo banco non ascolta audio, gli basta il numero. */
+      window.__follaLog = [];
+      if (typeof Audio5 !== 'undefined') {
+        Audio5.crowdLevel = function (v) {
+          const b = G.ball;
+          const prox = Math.max(0, 1 - Math.min(b.x, FW - b.x) / 300);
+          const teamAttacco = squadraDelPallone();
+          const spintaAttacco = (teamAttacco >= 0 && G.spinta) ? Math.max(0, G.spinta[teamAttacco]) : 0;
+          const attesoSenzaSpinta = 1 + prox * 0.9 + G.crowdHype * 0.4;
+          window.__follaLog.push({ v, attesoSenzaSpinta, teamAttacco, spintaAttacco,
+            contributoSpinta: v - attesoSenzaSpinta, t: durataPartita() - G.timeLeft });
+        };
+      }
     }, { seme: SEME });
 
     /* ===================================================================
@@ -225,18 +265,48 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
       const CARTELLINO_FRAME = 120;
       let cartellinoForzato = null;
       const eventiStati = [];
+      /* =================================================================
+         PROVA TESTIMONE (compito 4): tracciamento INDIPENDENTE, sulla
+         STESSA partita. compito4Esiste guarda una superficie che nasce
+         SOLO col compito 4 (G.spintaScalino): se assente, tutto il resto
+         qui sotto e' innocuo (i rami restano a zero) e la prova si
+         dichiara ASSENTE con un guasto leggibile, come gli "0-x" degli
+         altri compiti. */
+      const compito4Esiste = typeof t.G.spintaScalino !== 'undefined';
+      let ultimoScalino = [0, 0];
+      const salite = [];
+      const bannerVisti = [];
+      const mestoOrganico = { idonei: 0, acceso: 0, gia: 0 };
       const TETTO = 220 * 60;
       let fotogrammi = 0;
       for (; fotogrammi < TETTO && t.state !== 'end'; fotogrammi++) {
         if (statiEsistono && fattiEsisteva && fotogrammi === CARTELLINO_FRAME && t.state === 'play') {
+          /* "gia' mesto" del team che sta per ricevere il cartellino,
+             catturato PRIMA di t.cartellino(0): distingue "il canale non
+             si e' acceso" da "un compagno era gia' mesto, correttamente
+             non se ne accende un secondo" (la regola di un uomo per
+             volta per squadra, voce #117 compito 4). */
+          const giaMestoTeam0 = t.G.players.some(q => q.team === 0 && q.mesto > 0);
           t.cartellino(0);
           const ultimo = t.G.fatti[t.G.fatti.length - 1];
           if (ultimo && (ultimo.che === 'giallo' || ultimo.che === 'espulsione')) {
-            cartellinoForzato = { che: ultimo.che, chi: ultimo.chi };
+            cartellinoForzato = { che: ultimo.che, chi: ultimo.chi, giaMestoTeam0 };
           }
         }
         const primaLen = (statiEsistono && fattiEsisteva) ? t.G.fatti.length : 0;
         t.simulate(1 / 60);
+        /* PROVA TESTIMONE (compito 4) -- SALITE DI SCALINO: G.spinta
+           esiste gia' dal compito 2 su ENTRAMBE le versioni, quindi si
+           traccia sempre (non solo se compito4Esiste), per poter
+           confrontare "quante salite ci sono state" contro "quante sono
+           state coperte" anche sul gioco di ieri. */
+        for (let team = 0; team < 2; team++) {
+          const scalino = t.G.spinta[team] >= 0.4 ? 2 : (t.G.spinta[team] >= 0 ? 1 : 0);
+          if (scalino > ultimoScalino[team]) salite.push({ team, scalino, fotogramma: fotogrammi });
+          ultimoScalino[team] = scalino;
+        }
+        if (t.G.bannerT > 0 && (t.G.banner === 'CI CREDONO' || t.G.banner === 'TESTA ALTA'))
+          bannerVisti.push({ testo: t.G.banner, fotogramma: fotogrammi });
         if (statiEsistono && fattiEsisteva) {
           const dopoLen = t.G.fatti.length;
           if (dopoLen > primaLen) {
@@ -252,6 +322,21 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
                   umoreDopo: p.umore,
                   spintaBeneficiaria: (f.esito && typeof f.esito.team === 'number') ? t.G.spinta[f.esito.team] : null,
                 });
+              } else if (f.che === 'fallo' || f.che === 'giallo' || f.che === 'espulsione' || f.che === 'legno') {
+                /* PROVA TESTIMONE (compito 4): i fatti idonei al canale
+                   d'occhio (a), con la STESSA regola di bersaglio
+                   dichiarata nel gioco (vittima per fallo, chi per gli
+                   altri). Si osserva SUBITO DOPO se il bersaglio (o un
+                   compagno) e' mesto -- nello stesso fotogramma della sua
+                   emissione, perche' l'impatto gira nella STESSA passata
+                   di step() che ha appena emesso il fatto. */
+                const idx = f.che === 'fallo' ? (f.esito && f.esito.vittima) : f.chi;
+                if (Number.isInteger(idx) && idx >= 0 && idx < t.G.players.length) {
+                  const bersaglio = t.G.players[idx];
+                  mestoOrganico.idonei++;
+                  if (bersaglio.mesto > 0) mestoOrganico.acceso++;
+                  else if (t.G.players.some(q => q.team === bersaglio.team && q !== bersaglio && q.mesto > 0)) mestoOrganico.gia++;
+                }
               }
             }
           }
@@ -259,6 +344,7 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
             const p = t.G.players[cartellinoForzato.chi];
             cartellinoForzato.nerviDopo = p ? p.nervi : NaN;
             cartellinoForzato.umoreDopo = p ? p.umore : NaN;
+            cartellinoForzato.mestoDopo = p ? p.mesto : NaN;
           }
           aggiornaMinMax();
         }
@@ -276,6 +362,8 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
         cambi: t.G.cambi ? t.G.cambi.slice() : null,
         statiEsistono, statiInizialiTuttiZero, eventiStati, cartellinoForzato,
         umoreMin, umoreMax, nerviMin, nerviMax, spintaMin, spintaMax, statiFiniti,
+        compito4Esiste, salite, bannerVisti, mestoOrganico,
+        follaLog: (typeof window.__follaLog !== 'undefined') ? window.__follaLog.slice() : [],
       };
     }, { taglia: TAGLIA_BANCO });
 
@@ -548,6 +636,70 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
         '   slideP: ' + (rTetti.maxScartoSlideP * 100).toFixed(2) + '% (tetto 25%)' +
         '   standoff: ' + (rTetti.maxScartoStandoff * 100).toFixed(2) + '% (tetto 12%)' +
         (rTetti.nViolazioni ? '\n         VIOLAZIONI (' + rTetti.nViolazioni + '): ' + JSON.stringify(rTetti.violazioni) : ''));
+    }
+
+    /* =====================================================================
+       PROVA TESTIMONE (compito 4). "Sempre visibile": ogni stato che
+       supera una soglia dichiarata ha un canale d'occhio acceso -- vedi
+       la lettera di testa di strumenti/_t-occhio-mind.js. Due misure
+       GATING sulla STESSA partita gia' giocata per REGISTRO/STATI qui
+       sopra (un solo giro, come il resto della casa):
+         a-testimone. UN CARTELLINO FORZATO (stesso hook, stesso
+           fotogramma della prova STATI) e' un fatto idoneo al canale (a):
+           se nessun compagno di squadra era GIA' mesto, l'ammonito deve
+           diventare mesto entro la stessa passata. Se un compagno era
+           gia' mesto, la regola "un uomo per volta per squadra" impone
+           di NON accendersi: si dichiara non esercitata (non un guasto).
+         b-testimone. OGNI SALITA DI SCALINO DI G.spinta (tracciata IN
+           MODO INDIPENDENTE dal test, leggendo G.spinta -- non dal
+           codice del gioco) deve avere ALMENO UNO dei due canali acceso
+           entro una finestra di 90 fotogrammi (1,5 s, oltre la durata di
+           un banner): un banner col testo giusto mostrato, O la folla
+           con un contributo di spinta MISURATO (contributoSpinta>0.01,
+           dal monkeypatch di Audio5.crowdLevel nel setup -- la misura
+           del risultato vero, non una sua reimplementazione scollegata).
+       NIENTE stato "nervi" qui: non ha un canale d'occhio dichiarato in
+       questo compito (il suo canale e' la manopola del compito 3, una
+       DECISIONE, non un disegno) -- fuori perimetro, dichiarato.
+       NASCE ROSSA SU `fuori/base4.html` (= `git show 8824222:...`, lo
+       HEAD del compito 3): G.spintaScalino e' undefined la', e lo dice
+       con un guasto leggibile — 0-testimone. */
+    di(r.compito4Esiste, '0-testimone. il canale d\'occhio del compito 4 esiste (G.spintaScalino)',
+      r.compito4Esiste ? 'presente' : 'ASSENTE — il gioco di oggi non ha ancora i canali d\'occhio (mesto dai fatti, folla/banner da spinta)');
+
+    if (!r.compito4Esiste) {
+      di(false, '1-testimone. TESTIMONE — non misurabile senza i canali d\'occhio', 'prova saltata: nessuna superficie da leggere');
+    } else {
+      const cf = r.cartellinoForzato;
+      if (!cf) {
+        di(false, 'a-testimone. il cartellino forzato ha prodotto un fatto giallo/espulsione', 'nessun fatto giallo/espulsione ottenuto: prova non misurabile');
+      } else if (cf.giaMestoTeam0) {
+        di(true, 'a-testimone. cartellino forzato: un compagno era gia\' mesto — "un uomo per volta" impone di non accendersi (non esercitata)',
+          'che=' + cf.che + ' chi=' + cf.chi + ' giaMestoTeam0=true — comportamento atteso, non una prova');
+      } else {
+        di(cf.mestoDopo > 0, 'a-testimone. dopo un cartellino forzato (nessun compagno gia\' mesto) l\'ammonito diventa mesto: il canale (a) non e\' muto',
+          cf.che + ' chi=' + cf.chi + ' mestoDopo=' + cf.mestoDopo.toFixed(4) + ' umoreDopo=' + cf.umoreDopo.toFixed(4));
+      }
+
+      const FINESTRA_FRAME = 90;
+      const TESTI_SCALINO = { 1: 'TESTA ALTA', 2: 'CI CREDONO' };
+      const violazioniB = [];
+      for (const s of r.salite) {
+        const testoAtteso = TESTI_SCALINO[s.scalino];
+        if (!testoAtteso) continue;
+        const bannerOk = r.bannerVisti.some(b => b.testo === testoAtteso && Math.abs(b.fotogramma - s.fotogramma) <= FINESTRA_FRAME);
+        const follaOk = r.follaLog.some(fl => fl.teamAttacco === s.team && fl.contributoSpinta > 0.01 &&
+          Math.abs(fl.t - s.fotogramma / 60) <= FINESTRA_FRAME / 60);
+        if (!bannerOk && !follaOk) violazioniB.push(s);
+      }
+      di(r.salite.length === 0 ? true : violazioniB.length === 0,
+        'b-testimone. ogni salita di scalino di G.spinta ha un canale acceso (banner "TESTA ALTA"/"CI CREDONO" O folla sopra il livello base)',
+        r.salite.length === 0 ? 'nessuna salita di scalino in questa partita: prova non esercitata (non un si\')'
+          : r.salite.length + ' salite osservate, ' + (r.salite.length - violazioniB.length) + ' coperte da un canale' +
+            (violazioniB.length ? '\n         MUTE (' + violazioniB.length + '): ' + JSON.stringify(violazioniB) : ''));
+
+      console.log('         (informativo) fatti idonei al mesto (fallo/giallo/espulsione/legno) nella partita: ' + r.mestoOrganico.idonei +
+                  '   hanno acceso mesto: ' + r.mestoOrganico.acceso + '   gia\' coperti da un compagno mesto: ' + r.mestoOrganico.gia);
     }
 
     if (ecc.length) { di(false, 'BANCO — nessuna eccezione di pagina', 'eccezione: ' + ecc[0]); }
