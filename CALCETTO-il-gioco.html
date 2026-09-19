@@ -9362,6 +9362,61 @@ function manopole(t){
 function manopoleDi(t){ return (G.knob && G.knob[t]) || DIFF[G.diff]; }
 
 /* =====================================================================
+   IL CANALE DI GIOCO -- manopolaDi(p) (voce #117, compito 3, MIND v1).
+
+   manopoleDi(t) resta la manopola DI SQUADRA: il carattere, invariato,
+   G.knob[t] CONDIVISO dagli undici uomini della squadra t (popolato una
+   volta sola in startMatch, mai mutato in-place). manopolaDi(p) e' la
+   manopola DI QUEL GIOCATORE: parte da manopoleDi(p.team) e applica DOPO
+   il carattere i tre tetti del canale MIND, relativi e con la STESSA
+   formula per le due squadre:
+     passErr diviso (1 + 0.15*p.umore)       -- tetto +-15%: umore alto,
+                                                 meno errori di passaggio
+     slideP  moltiplicato (1 + 0.25*p.nervi) -- tetto +25%: nervi alti,
+                                                 piu' scivolate
+     standoff moltiplicato (1 - 0.12*G.spinta[team]) -- spinta alta, la
+                                                 squadra aspetta meno; su
+                                                 Duro standoff parte gia'
+                                                 da zero (DIFF[2].standoff)
+                                                 e zero per qualunque cosa
+                                                 fa zero: l'effetto li' e'
+                                                 invisibile, va bene cosi'
+
+   LA TRAPPOLA CHE QUESTA FUNZIONE EVITA: manopoleDi(p.team) restituisce
+   G.knob[t], LO STESSO oggetto per tutti gli undici. Scrivere sui suoi
+   campi corromperebbe ogni compagno di squadra (e il fotogramma dopo).
+   Percio' D non si tocca MAI: quando i tre tetti non sono neutri si
+   restituisce una COPIA nuova (uno spread, un oggetto per chiamata),
+   mai G.knob[t].
+
+   IL RITORNO NEUTRO E' ESATTO, MA SOLO A STATI ZERO: quando
+   p.umore===0 && p.nervi===0 && G.spinta[p.team]===0 l'if qui sotto
+   restituisce D stesso -- LO STESSO OGGETTO, allo stesso indirizzo di
+   manopoleDi(p.team), PRIMA di qualunque copia o calcolo. A stati zero
+   il gioco resta byte-identico a prima del canale: la divergenza dal
+   gioco pre-canale nasce SOLO dopo il primo fatto emotivo -- esattamente
+   come la garanzia dell'indirizzo identico di manopole() qui sopra, un
+   piano piu' in basso (per giocatore, non per squadra).
+
+   MAI SULL'INPUT UMANO: l'unico chiamante e' aiMove(p,dt), che gira SOLO
+   per chi non e' isHuman (vedi updatePlayer: humanMove per l'uomo,
+   aiMove per tutti gli altri). Il verbo che esce dal dito non passa mai
+   da qui -- ne' D.standoff ne' D.slideP (aiDecide) ne' D.passErr
+   (aiCarrier/aiPass/eseguiAiPass) leggono mai la manopola di un
+   giocatore comandato dal dito. */
+function manopolaDi(p){
+  const D = manopoleDi(p.team);
+  const spinta = G.spinta ? G.spinta[p.team] : 0;
+  if(p.umore===0 && p.nervi===0 && spinta===0) return D;
+  return {
+    ...D,
+    passErr: D.passErr / (1 + 0.15*p.umore),
+    slideP: D.slideP * (1 + 0.25*p.nervi),
+    standoff: Math.max(0, D.standoff * (1 - 0.12*spinta)),
+  };
+}
+
+/* =====================================================================
    GLI UNDICI NON SONO UNDICI COPIE.
 
    Chi non viene dalla rosa nominata riceveva quattro numeri uguali fra
@@ -20309,7 +20364,14 @@ function aiMove(p,dt){
      uomini in campo: due squadre non potevano giocare in due modi
      diversi nemmeno volendo. D scende poi in aiDecide e in aiCarrier
      come argomento, quindi cambiare qui cambia tutto il ramo. */
-  const D=manopoleDi(p.team);
+  /* IL CANALE MIND (voce #117, compito 3): D non e' piu' la manopola DI
+     SQUADRA, e' la manopola DI QUESTO GIOCATORE. manopolaDi(p) parte da
+     manopoleDi(p.team) (il carattere, invariato) e applica i tre tetti
+     di p.umore/p.nervi/G.spinta DOPO -- vedi la sua definizione qui
+     sopra per la garanzia dell'indirizzo identico a stati zero. aiMove
+     gira SOLO per chi non e' isHuman: il verbo del dito non passa mai
+     da qui. */
+  const D=manopolaDi(p);
   const b=G.ball;
   const pi=G.players.indexOf(p);
   const myTeam=p.team, opTeam=1-myTeam;
@@ -44123,6 +44185,20 @@ window.__test = {
      bisogno di questo getter). Questo e' un comodo extra a valore
      immutabile (slice), per un banco che non vuole toccare l'array vivo. */
   get spinta(){ return G.spinta ? G.spinta.slice() : [0,0]; },
+  /* IL CANALE (voce #117, compito 3): superficie per il banco CANALE/
+     TETTI. setUmore/setNervi scrivono lo stato di UN giocatore (indice
+     in G.players), clampati come clampStato (umore -1..+1, nervi 0..1);
+     setSpinta scrive lo stato di UNA squadra (-1..+1). manopolaDi(idx)
+     legge la manopola MODULATA di quel giocatore (i soli tre campi del
+     canale, non l'intero oggetto knob); manopoleDi(team) legge la
+     manopola DI SQUADRA, invariata -- lo stesso valore che il motore
+     legge quando i tre stati sono a zero (il neutro esatto). Nessun
+     sorteggio qui dentro: sola lettura e scrittura di stato. */
+  setUmore(idx,v){ const p=G.players[idx]; if(!p) return null; p.umore=clampStato(+v||0,-1,1); return p.umore; },
+  setNervi(idx,v){ const p=G.players[idx]; if(!p) return null; p.nervi=clampStato(+v||0,0,1); return p.nervi; },
+  setSpinta(team,v){ if(!G.spinta) G.spinta=[0,0]; const t2=team?1:0; G.spinta[t2]=clampStato(+v||0,-1,1); return G.spinta[t2]; },
+  manopolaDi(idx){ const p=G.players[idx]; if(!p) return null; const m=manopolaDi(p); return {passErr:m.passErr, slideP:m.slideP, standoff:m.standoff}; },
+  manopoleDi(team){ const m=manopoleDi(team?1:0); return {passErr:m.passErr, slideP:m.slideP, standoff:m.standoff}; },
   /* disciplina: stato di cartellini ed espulsioni temporanee */
   get disciplina(){
     return {

@@ -66,6 +66,36 @@
    punto) rende l'invariante consapevole degli stati ovunque, invece di
    una prova ad hoc in questo file che ne vedrebbe solo un angolo.
 
+   PROVA CANALE (compito 3). manopolaDi(p) modula PER GIOCATORE le tre
+   manopole di manopoleDi(p.team), DOPO il carattere (vedi
+   strumenti/_t-canale-mind.js). Non serve una partita intera: si avvia
+   una partita CPU-CPU a seme fisso (per avere G.players/G.knob popolati)
+   e si forza lo stato con la superficie di test (t.setUmore/setNervi/
+   setSpinta), leggendo t.manopolaDi(idx) contro t.manopoleDi(team). Si
+   verifica: (0) la superficie esiste; (a) a stati zero manopolaDi(p) ha
+   GLI STESSI VALORI di manopoleDi(p.team) -- il neutro esatto (la
+   garanzia dell'INDIRIZZO identico e' una proprieta' del codice, non
+   osservabile da qui: il confine page.evaluate serializza sempre un
+   oggetto nuovo, vedi il dubbio dichiarato nel rapporto del compito 3);
+   (b) umore=+1 ABBASSA passErr, esattamente base/(1+0.15*1); (c)
+   nervi=+1 ALZA slideP, esattamente base*(1+0.25*1); (d) spinta=+1
+   ABBASSA standoff, esattamente base*(1-0.12*1) (o resta 0 se il
+   carattere ha gia' standoff=0: l'effetto li' e' invisibile, dichiarato
+   dal progetto). NASCE ROSSA SUL GIOCO DEL COMPITO 2 (`fuori/base3.html`
+   = `git show 53007c5:CALCETTO-il-gioco.html`): manopolaDi non esiste,
+   0-canale lo dice con un guasto leggibile.
+
+   PROVA TETTI (compito 3). Su N=5 partite CPU-CPU a seme fisso, taglia
+   di casa, si campiona manopolaDi(idx) di OGNI giocatore ogni 30
+   fotogrammi (mezzo secondo) e si verifica che nessun campo superi il
+   tetto dichiarato: passErr entro +-15% (lo scarto e' |base/mod-1|, che
+   per costruzione vale 0.15*|umore| e non supera mai 0.15 perche' umore
+   e' clampato a +-1), slideP entro +25% (scarto mod/base-1 = 0.25*nervi,
+   nervi clampato 0..1), standoff entro il fattore 0.12 (scarto
+   1-mod/base = 0.12*spinta, spinta clampata +-1). IL MASSIMO SCARTO
+   OSSERVATO SI STAMPA SEMPRE, mai un si/no cieco. NASCE ROSSA SULLA
+   STESSA fuori/base3.html della prova CANALE.
+
    uso:  node strumenti/_q-umore.js
          node strumenti/_q-umore.js --gioco fuori/base.html
          node strumenti/_q-umore.js --taglia 5 --seme 20260919
@@ -377,6 +407,147 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
       di(clampOk, 'e-stati. umore/nervi/spinta restano nei loro intervalli per tutta la partita (clamp)',
         'umore [' + r.umoreMin.toFixed(3) + ',' + r.umoreMax.toFixed(3) + ']  nervi [' + r.nerviMin.toFixed(3) + ',' + r.nerviMax.toFixed(3) +
         ']  spinta [' + r.spintaMin.toFixed(3) + ',' + r.spintaMax.toFixed(3) + ']  tutti finiti: ' + r.statiFiniti);
+    }
+
+    /* =====================================================================
+       PROVA CANALE (compito 3). manopolaDi(p) modula PER GIOCATORE le tre
+       manopole di manopoleDi(p.team), DOPO il carattere -- vedi la lettera
+       di testa di questo file e strumenti/_t-canale-mind.js. Si avvia una
+       partita CPU-CPU a seme fisso (serve solo ad avere G.players/G.knob
+       popolati, non si simula nulla) e si forza lo stato con la
+       superficie di test. NASCE ROSSA SUL GIOCO DEL COMPITO 2
+       (`fuori/base3.html` = `git show 53007c5:CALCETTO-il-gioco.html`):
+       manopolaDi non esiste, 0-canale lo dice con un guasto leggibile. */
+    const rCanale = await pag.evaluate(({ taglia, seme }) => {
+      const t = window.__test;
+      t.semina(seme);
+      t.setCpuVsCpu(true);
+      t.startMatch(1, 1, { size: taglia });
+      const superficieEsiste = typeof t.manopolaDi === 'function' && typeof t.manopoleDi === 'function' &&
+        typeof t.setUmore === 'function' && typeof t.setNervi === 'function' && typeof t.setSpinta === 'function';
+      if (!superficieEsiste) return { superficieEsiste };
+
+      const idx = 0, team = t.players[idx].team;
+      t.setUmore(idx, 0); t.setNervi(idx, 0); t.setSpinta(team, 0);
+      const base = t.manopoleDi(team);
+      const neutro = t.manopolaDi(idx);
+      const neutroOk = neutro.passErr === base.passErr && neutro.slideP === base.slideP && neutro.standoff === base.standoff;
+
+      t.setUmore(idx, 1);
+      const conUmore = t.manopolaDi(idx);
+      t.setUmore(idx, 0);
+
+      t.setNervi(idx, 1);
+      const conNervi = t.manopolaDi(idx);
+      t.setNervi(idx, 0);
+
+      t.setSpinta(team, 1);
+      const conSpinta = t.manopolaDi(idx);
+      t.setSpinta(team, 0);
+
+      return { superficieEsiste, base, neutro, neutroOk, conUmore, conNervi, conSpinta };
+    }, { taglia: TAGLIA_BANCO, seme: SEME });
+
+    di(rCanale.superficieEsiste, '0-canale. la superficie del canale esiste (manopolaDi/manopoleDi/setUmore/setNervi/setSpinta)',
+      rCanale.superficieEsiste ? 'presente' : 'ASSENTE — il gioco di oggi non ha ancora il canale (manopolaDi)');
+
+    if (!rCanale.superficieEsiste) {
+      di(false, '1-canale. CANALE — non misurabile senza la superficie', 'prova saltata: nessuna superficie da leggere');
+    } else {
+      di(rCanale.neutroOk, 'a-canale. a stati zero manopolaDi(p) ha gli stessi valori di manopoleDi(p.team) (neutro esatto)',
+        'base={passErr:' + rCanale.base.passErr.toFixed(4) + ', slideP:' + rCanale.base.slideP.toFixed(4) + ', standoff:' + rCanale.base.standoff.toFixed(4) +
+        '}  modulata={passErr:' + rCanale.neutro.passErr.toFixed(4) + ', slideP:' + rCanale.neutro.slideP.toFixed(4) + ', standoff:' + rCanale.neutro.standoff.toFixed(4) + '}');
+
+      const attesoUmore = rCanale.base.passErr / 1.15;
+      const bCanaleOk = rCanale.conUmore.passErr < rCanale.base.passErr && Math.abs(rCanale.conUmore.passErr - attesoUmore) < 1e-9;
+      di(bCanaleOk, 'b-canale. umore=+1 abbassa passErr (diviso 1+0.15*umore, monotono e a numero)',
+        'base=' + rCanale.base.passErr.toFixed(4) + '  con umore=1: ' + rCanale.conUmore.passErr.toFixed(4) + '  atteso=' + attesoUmore.toFixed(4));
+
+      const attesoNervi = rCanale.base.slideP * 1.25;
+      const cCanaleOk = rCanale.conNervi.slideP > rCanale.base.slideP && Math.abs(rCanale.conNervi.slideP - attesoNervi) < 1e-9;
+      di(cCanaleOk, 'c-canale. nervi=+1 alza slideP (moltiplicato 1+0.25*nervi, monotono e a numero)',
+        'base=' + rCanale.base.slideP.toFixed(4) + '  con nervi=1: ' + rCanale.conNervi.slideP.toFixed(4) + '  atteso=' + attesoNervi.toFixed(4));
+
+      const attesoSpinta = Math.max(0, rCanale.base.standoff * 0.88);
+      const monotonoSpinta = rCanale.base.standoff === 0 ? rCanale.conSpinta.standoff === 0 : rCanale.conSpinta.standoff < rCanale.base.standoff;
+      const dCanaleOk = monotonoSpinta && Math.abs(rCanale.conSpinta.standoff - attesoSpinta) < 1e-9;
+      di(dCanaleOk, 'd-canale. spinta=+1 abbassa standoff (moltiplicato 1-0.12*spinta, guardia >=0)',
+        'base=' + rCanale.base.standoff.toFixed(4) + '  con spinta=1: ' + rCanale.conSpinta.standoff.toFixed(4) + '  atteso=' + attesoSpinta.toFixed(4) +
+        (rCanale.base.standoff === 0 ? '  (base standoff=0 su questo carattere: effetto invisibile, atteso dal progetto)' : ''));
+    }
+
+    /* =====================================================================
+       PROVA TETTI (compito 3). Su N=5 partite CPU-CPU a seme fisso, taglia
+       di casa, si campiona manopolaDi(idx) di OGNI giocatore ogni 30
+       fotogrammi (mezzo secondo a 60 Hz) e si verifica che nessun campo
+       superi il tetto dichiarato. manopoleDi(team) non cambia mai dentro
+       una partita (G.knob si scrive una sola volta in startMatch): si
+       cattura una volta per squadra a inizio partita (basi[team]) e si
+       confronta contro manopolaDi(idx) a ogni campione. Lo scarto e'
+       calcolato dal RAPPORTO fra manopola base e modulata (non dagli
+       stati direttamente): passErr |base/mod-1|<=0.15, slideP
+       (mod/base-1)<=0.25, standoff |1-mod/base|<=0.12 -- IL MASSIMO
+       OSSERVATO SI STAMPA SEMPRE. NASCE ROSSA SULLA STESSA fuori/base3.html
+       della prova CANALE. */
+    const N_PARTITE_TETTI = 5, CAMPIONA_OGNI = 30;
+    const rTetti = await pag.evaluate(({ taglia, seme0, n, campionaOgni }) => {
+      const t = window.__test;
+      const superficieEsiste = typeof t.manopolaDi === 'function' && typeof t.manopoleDi === 'function';
+      if (!superficieEsiste) return { superficieEsiste };
+
+      const TETTO_PASSERR = 0.15 + 1e-9, TETTO_SLIDEP = 0.25 + 1e-9, TETTO_STANDOFF = 0.12 + 1e-9;
+      let maxScartoPassErr = 0, maxScartoSlideP = 0, maxScartoStandoff = 0, campioni = 0;
+      const violazioni = [];
+      for (let k = 0; k < n; k++) {
+        t.semina(seme0 + k);
+        t.setCpuVsCpu(true);
+        t.startMatch(1, 1, { size: taglia });
+        const basi = [t.manopoleDi(0), t.manopoleDi(1)];
+        const TETTO_FRAME = 220 * 60;
+        for (let fotogrammi = 0; fotogrammi < TETTO_FRAME && t.state !== 'end'; fotogrammi++) {
+          t.simulate(1 / 60);
+          if (fotogrammi % campionaOgni !== 0) continue;
+          for (let i = 0; i < t.players.length; i++) {
+            const p = t.players[i];
+            const base = basi[p.team];
+            const mod = t.manopolaDi(i);
+            campioni++;
+            if (base.passErr > 1e-9) {
+              const scarto = Math.abs(base.passErr / mod.passErr - 1);
+              if (scarto > maxScartoPassErr) maxScartoPassErr = scarto;
+              if (scarto > TETTO_PASSERR) violazioni.push({ campo: 'passErr', partita: k, idx: i, scarto });
+            }
+            if (base.slideP > 1e-9) {
+              const scarto = mod.slideP / base.slideP - 1;
+              if (Math.abs(scarto) > maxScartoSlideP) maxScartoSlideP = Math.abs(scarto);
+              if (scarto > TETTO_SLIDEP || scarto < -1e-9) violazioni.push({ campo: 'slideP', partita: k, idx: i, scarto });
+            }
+            if (base.standoff > 1e-9) {
+              const scarto = 1 - mod.standoff / base.standoff;
+              if (Math.abs(scarto) > maxScartoStandoff) maxScartoStandoff = Math.abs(scarto);
+              if (Math.abs(scarto) > TETTO_STANDOFF) violazioni.push({ campo: 'standoff', partita: k, idx: i, scarto });
+            }
+          }
+        }
+      }
+      return {
+        superficieEsiste, campioni, maxScartoPassErr, maxScartoSlideP, maxScartoStandoff,
+        violazioni: violazioni.slice(0, 8), nViolazioni: violazioni.length,
+      };
+    }, { taglia: TAGLIA_BANCO, seme0: SEME, n: N_PARTITE_TETTI, campionaOgni: CAMPIONA_OGNI });
+
+    di(rTetti.superficieEsiste, '0-tetti. la superficie del canale esiste per il campionamento (manopolaDi/manopoleDi)',
+      rTetti.superficieEsiste ? 'presente' : 'ASSENTE — il gioco di oggi non ha ancora il canale (manopolaDi)');
+
+    if (!rTetti.superficieEsiste) {
+      di(false, '1-tetti. TETTI — non misurabile senza la superficie', 'prova saltata: nessuna superficie da leggere');
+    } else {
+      di(rTetti.nViolazioni === 0,
+        'a-tetti. nessun campo supera il tetto dichiarato su ' + N_PARTITE_TETTI + ' partite CPU-CPU (taglia ' + TAGLIA_BANCO + ')',
+        'campioni: ' + rTetti.campioni + '   MASSIMO SCARTO osservato — passErr: ' + (rTetti.maxScartoPassErr * 100).toFixed(2) + '% (tetto 15%)' +
+        '   slideP: ' + (rTetti.maxScartoSlideP * 100).toFixed(2) + '% (tetto 25%)' +
+        '   standoff: ' + (rTetti.maxScartoStandoff * 100).toFixed(2) + '% (tetto 12%)' +
+        (rTetti.nViolazioni ? '\n         VIOLAZIONI (' + rTetti.nViolazioni + '): ' + JSON.stringify(rTetti.violazioni) : ''));
     }
 
     if (ecc.length) { di(false, 'BANCO — nessuna eccezione di pagina', 'eccezione: ' + ecc[0]); }
