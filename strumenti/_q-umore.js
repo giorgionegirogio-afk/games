@@ -109,6 +109,19 @@
    G.spintaScalino non esiste la', 0-testimone lo dice con un guasto
    leggibile.
 
+   PROVA NIENTE-FALSI-BANNER (correzione di revisione, compito 4). La
+   revisione ha trovato che scalinoDiSpinta(0)===1 (lo zero e' il bucket
+   di riposo) ma G.spintaScalino partiva a [0,0]: al primo fotogramma di
+   scena 'play' (spinta ancora a zero, nessun fatto) "TESTA ALTA"
+   compariva ad OGNI fischio d'inizio — un banner bugiardo. Su una partita
+   FRESCA dal kickoff, per i primi 3 s di 'play' con lo stato ancora
+   perfettamente neutro (G.spinta=[0,0] e G.fatti vuoto), non deve
+   comparire nessun banner di scalino. Legge l'EFFETTO OSSERVABILE VERO
+   (t.G.banner/t.G.bannerT), non una reimplementazione dello scalino: un
+   banco che ricalcolasse la stessa formula/lo stesso [0,0] erediterebbe
+   il bug e non lo vedrebbe mai. NASCE ROSSA SUL COMMIT DEL COMPITO 4 COL
+   BUG (`fuori/base4b.html` = `git show b5f0858:CALCETTO-il-gioco.html`).
+
    uso:  node strumenti/_q-umore.js
          node strumenti/_q-umore.js --gioco fuori/base.html
          node strumenti/_q-umore.js --taglia 5 --seme 20260919
@@ -273,7 +286,13 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
          dichiara ASSENTE con un guasto leggibile, come gli "0-x" degli
          altri compiti. */
       const compito4Esiste = typeof t.G.spintaScalino !== 'undefined';
-      let ultimoScalino = [0, 0];
+      /* CORREZIONE DI REVISIONE: parte da [1,1], non [0,0]. Spinta=0 e'
+         GIA' il bucket di riposo (scalino 1): un tracciatore che partisse
+         da 0 vedrebbe una "salita" spuria al primissimo fotogramma (lo
+         stesso bug del gioco, qui nella sonda INDIPENDENTE — se non si
+         corregge anche qui, "b-testimone" scambia l'artefatto di questa
+         sonda per una salita vera). */
+      let ultimoScalino = [1, 1];
       const salite = [];
       const bannerVisti = [];
       const mestoOrganico = { idonei: 0, acceso: 0, gia: 0 };
@@ -700,6 +719,53 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
 
       console.log('         (informativo) fatti idonei al mesto (fallo/giallo/espulsione/legno) nella partita: ' + r.mestoOrganico.idonei +
                   '   hanno acceso mesto: ' + r.mestoOrganico.acceso + '   gia\' coperti da un compagno mesto: ' + r.mestoOrganico.gia);
+
+      /* =================================================================
+         PROVA NIENTE-FALSI-BANNER (correzione di revisione, compito 4).
+         Il rilievo: scalinoDiSpinta(0)===1 ma G.spintaScalino partiva a
+         [0,0] in startMatch — al primo fotogramma di scena 'play' (spinta
+         ancora [0,0], nessun fatto accaduto) "nuovo(1) > vecchio(0)" era
+         vero per ENTRAMBE le squadre e "TESTA ALTA" appariva ad OGNI
+         fischio d'inizio. La cura fa partire G.spintaScalino da [1,1] (lo
+         STESSO bucket a cui spinta=0 appartiene).
+         QUESTA PROVA NON CONDIVIDE FORMULA NE' INIZIALIZZAZIONE COL
+         GIOCO: legge l'EFFETTO OSSERVABILE VERO (t.G.banner/t.G.bannerT,
+         lo stesso banner che lo schermo mostra), non una reimplementazione
+         dello scalino — un banco che ricalcolasse scalinoDiSpinta/[0,0] in
+         proprio erediterebbe lo stesso bug e non lo vedrebbe mai.
+         Partita FRESCA (non quella di REGISTRO/STATI qui sopra, gia'
+         girata oltre il kickoff): dal fischio d'inizio, per i primi 3 s di
+         scena 'play' (180 fotogrammi, ben oltre il fotogramma 60 della
+         riproduzione del revisore), finche' lo stato resta PERFETTAMENTE
+         neutro (G.spinta ancora a zero per entrambe E nessun fatto ancora
+         emesso) non deve comparire un banner "TESTA ALTA"/"CI CREDONO". */
+      const rFalsi = await pag.evaluate(({ taglia, seme }) => {
+        const t = window.__test;
+        t.semina(seme);
+        t.setCpuVsCpu(true);
+        t.startMatch(1, 1, { size: taglia });
+        const FINESTRA_PLAY = 180;
+        let vistoPlay = false, frameDaPlay = -1;
+        const falsi = [];
+        for (let fr = 0; fr < 600 && !(vistoPlay && fr - frameDaPlay > FINESTRA_PLAY); fr++) {
+          t.simulate(1 / 60);
+          if (t.state === 'play' && !vistoPlay) { vistoPlay = true; frameDaPlay = fr; }
+          if (!vistoPlay) continue;
+          const neutro = t.G.spinta[0] === 0 && t.G.spinta[1] === 0 && t.G.fatti.length === 0;
+          if (neutro && t.G.bannerT > 0 && (t.G.banner === 'TESTA ALTA' || t.G.banner === 'CI CREDONO'))
+            falsi.push({ fr, dallaPlay: fr - frameDaPlay, banner: t.G.banner });
+        }
+        return { vistoPlay, frameDaPlay, falsi };
+      }, { taglia: TAGLIA_BANCO, seme: SEME });
+
+      if (!rFalsi.vistoPlay) {
+        di(false, 'e-testimone (NIENTE-FALSI-BANNER). la partita raggiunge la scena \'play\' entro 10 s', 'mai vista la scena play: prova non misurabile');
+      } else {
+        di(rFalsi.falsi.length === 0,
+          'e-testimone (NIENTE-FALSI-BANNER). nei primi 3 s di play, con G.spinta ancora a zero e nessun fatto, non compare un banner di scalino',
+          rFalsi.falsi.length === 0 ? 'nessun falso banner osservato (play dal fotogramma ' + rFalsi.frameDaPlay + ')'
+            : 'FALSI (' + rFalsi.falsi.length + '): ' + JSON.stringify(rFalsi.falsi));
+      }
     }
 
     if (ecc.length) { di(false, 'BANCO — nessuna eccezione di pagina', 'eccezione: ' + ecc[0]); }

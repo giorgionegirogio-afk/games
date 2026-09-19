@@ -67,26 +67,66 @@
    continuita' (l'EMA di decayoSpinta, compito 2): un banner ad OGNI
    fotogramma sopra soglia sarebbe un banner ogni fotogramma finche' resta
    li' sopra. G.spintaScalino[team] tiene l'ULTIMO SCALINO raggiunto (0 =
-   sotto zero, 1 = zero o sopra, 2 = 0,4 o sopra -- la soglia che il
+   sotto zero, 1 = zero o sopra -- IL RIPOSO, dove la partita parte E dove
+   torna un giocatore appena entrato, 2 = 0,4 o sopra -- la soglia che il
    progetto stesso porta come esempio) e il banner parte SOLO quando lo
    scalino CRESCE (la salita dichiarata dal progetto), mai sulla discesa
    -- la discesa aggiorna comunque il tracciato, cosi' una nuova salita
-   puo' ri-accendere il banner. Scalino 1 (il recupero di morale, la
-   squadra torna a testa alta dopo essere stata spinta indietro) ->
-   "TESTA ALTA"; scalino 2 (la spinta vera, la stessa soglia 0,4
-   dell'esempio del progetto) -> "CI CREDONO". Se in un solo fotogramma
-   la spinta salta direttamente da sotto zero a 0,4+ (scalino 0->2, un
-   caso limite con un EMA continuo), si mostra il banner dello scalino
-   PIU' ALTO raggiunto -- scelta dichiarata, non i due banner in sequenza.
-   showBanner e' la STESSA funzione di PALO/GOL/FALLO: nessuna coda
-   propria, nessuna precedenza sugli altri banner (un evento di gioco
-   importante nello stesso fotogramma vince per ultima scrittura -- lo
-   stesso comportamento che PALO/FALLO/CARTELLINO hanno gia' fra loro).
-   Vive in fondo a step(), DOPO decayoSpinta(dt): quel punto del file gira
-   SOLO a scena 'play'/'golden' (il ramo di step() che porta fin li' esce
-   prima per ogni altra scena), quindi G.spinta avanza e il controllo
-   scalino gira nella stessa finestra, senza bisogno di una guardia scena
-   propria.
+   puo' ri-accendere il banner.
+
+   CORREZIONE DI REVISIONE (compito 4, la prova NIENTE-FALSI-BANNER):
+   G.spintaScalino PARTE A [1,1] in startMatch, NON [0,0]. La spinta parte
+   sempre a zero (G.spinta=[0,0] in startMatch, compito 2) e zero e' GIA'
+   lo scalino 1 (>=0): se l'ultimo-scalino-mostrato partisse a 0, il primo
+   fotogramma a scena 'play' vedrebbe SEMPRE "nuovo(1) > vecchio(0)" per
+   ENTRAMBE le squadre e mostrerebbe "TESTA ALTA" a OGNI fischio d'inizio,
+   spinta ancora ferma a zero, nessun fatto accaduto -- un banner bugiardo
+   (trovato dalla revisione, riprodotto: fr=60, state=play, spinta=[0,0],
+   banner="TESTA ALTA"). Facendo combaciare il bucket di riposo con
+   l'inizializzazione (spintaScalino=[1,1], lo STESSO scalino a cui la
+   spinta=[0,0] appartiene) non c'e' nessuna salita spuria alla partenza:
+   "TESTA ALTA" appare SOLO quando una squadra RISALE da spinta negativa
+   (scalino 0->1, il vero "recupero di morale" dello spec, dopo essere
+   stata spinta indietro), "CI CREDONO" quando sale a spinta forte (->2).
+   NON si e' scelta la soglia `v>0` al posto di `v>=0`: renderebbe lo
+   stato neutro lo scalino 0 (non 1), e ogni oscillazione dell'EMA intorno
+   allo zero (che capita, essendo un segnale continuo) accenderebbe e
+   spegnerebbe il banner in continuazione -- piu' rumoroso, non la
+   semantica "un salto vero" che lo spec vuole.
+
+   Scalino 1 (il recupero di morale, la squadra torna a testa alta dopo
+   essere stata spinta indietro) -> "TESTA ALTA"; scalino 2 (la spinta
+   vera, la stessa soglia 0,4 dell'esempio del progetto) -> "CI CREDONO".
+   Se in un solo fotogramma la spinta salta direttamente da sotto zero a
+   0,4+ (scalino 0->2, un caso limite con un EMA continuo), si mostra il
+   banner dello scalino PIU' ALTO raggiunto -- scelta dichiarata, non i
+   due banner in sequenza. showBanner e' la STESSA funzione di PALO/GOL/
+   FALLO: nessuna coda propria, nessuna precedenza sugli altri banner (un
+   evento di gioco importante nello stesso fotogramma vince per ultima
+   scrittura -- lo stesso comportamento che PALO/FALLO/CARTELLINO hanno
+   gia' fra loro). Vive in fondo a step(), DOPO decayoSpinta(dt): quel
+   punto del file gira SOLO a scena 'play'/'golden' (il ramo di step()
+   che porta fin li' esce prima per ogni altra scena), quindi G.spinta
+   avanza e il controllo scalino gira nella stessa finestra, senza
+   bisogno di una guardia scena propria.
+
+   DUE RILIEVI MINORI DELLA REVISIONE, INNOCUI, DICHIARATI QUI (nessun
+   codice in piu', solo la dichiarazione richiesta):
+   1. La fase della posa 'delusione' (altrove nel file, ~riga 34725:
+      `st.u=Math.min(0.97, 0.97*(1-p.mesto/2.4))`) puo' superare 2,4 col
+      nostro tetto 3,0 s (quando p.mesto>2.4, cioe' umore<-0.667): la
+      frazione risulterebbe negativa. INNOCUO: il consumatore
+      (Rig3D.disegna, funzione `disegna(...)`) normalizza SEMPRE la fase
+      con un modulo sicuro (`let u=(tSec*clip.freq)%1; if(u<0)u+=1;`),
+      quindi nessun crash -- solo un possibile frame di partenza diverso
+      per la posa, un effetto cosmetico, non un difetto funzionale.
+   2. L'evento 'espulsione' non accende MAI il mesto dai fatti: `p.out`
+      viene impostato a ESPULSIONE_SEC PRIMA che emettiFatto('espulsione',
+      ...) emetta il fatto, e la guardia `if(!p || p.out>0) return;` in
+      applicaOcchioMestoDaFatto lo esclude. INNOCUO e voluto: l'espulso e'
+      fuori dal campo (aggiornaPosa/disegno non girano piu' per lui), un
+      lutto in posa su un giocatore che non si vede piu' non avrebbe
+      nessun canale che lo mostri.
 
    SAVE.moto (MOVIMENTO RIDOTTO): questo attrezzo non aggiunge NESSUN
    lampo/scossa/particella -- solo un trigger di posa (mesto, gia'
@@ -139,7 +179,7 @@ const ANCORE = [
   rec:[], recT:0, moviola:null,`,
   metti:
 `  spinta:[0,0], fattiVisti:0, fattiTot:0, // gli stati (voce #117, compito 2): derivati dai fatti, vedi applicaImpattoFatto
-  spintaScalino:[0,0],                   // il canale d'occhio (voce #117, compito 4): l'ultimo scalino di G.spinta mostrato per squadra, vedi controllaBannerSpinta
+  spintaScalino:[1,1],                   // il canale d'occhio (voce #117, compito 4): l'ultimo scalino di G.spinta mostrato per squadra -- 1 = il riposo (spinta=0 ci appartiene), vedi controllaBannerSpinta e la correzione di revisione qui sotto
   rec:[], recT:0, moviola:null,`,
 },
 
@@ -152,7 +192,15 @@ const ANCORE = [
   metti:
 `  G.fatti.length=0;
   G.spinta=[0,0]; G.fattiVisti=0; G.fattiTot=0;
-  G.spintaScalino=[0,0];                 // il canale d'occhio (voce #117, compito 4): azzerato con gli altri stati
+  /* IL CANALE D'OCCHIO (voce #117, compito 4) -- CORREZIONE DI REVISIONE:
+     spintaScalino parte a [1,1], NON [0,0]. G.spinta parte a zero, e zero
+     e' GIA' lo scalino 1 (di riposo): far partire l'ultimo-scalino-
+     mostrato da 0 avrebbe fatto scattare "TESTA ALTA" ad OGNI fischio
+     d'inizio (nuovo scalino 1 > vecchio 0, spinta ancora a zero, nessun
+     fatto accaduto -- un banner bugiardo, trovato dalla revisione). Con
+     [1,1] non c'e' nessuna salita spuria alla partenza: vedi la lettera
+     di testa di questo attrezzo per la semantica completa. */
+  G.spintaScalino=[1,1];
   G.rec.length=0; G.recT=0;`,
 },
 
@@ -310,8 +358,9 @@ if (mancanti.length) {
 /* CONTEGGI A DELTA. */
 const conta = (testo, s) => testo.split(s).length - 1;
 const rotti = [];
-if (conta(out, 'spintaScalino:[0,0],') !== 1) rotti.push('la dichiarazione di G.spintaScalino non e\' presente esattamente una volta');
-if (conta(out, 'G.spintaScalino=[0,0];') !== 1) rotti.push('l\'azzeramento di G.spintaScalino in startMatch non e\' presente esattamente una volta');
+if (conta(out, 'spintaScalino:[1,1],') !== 1) rotti.push('la dichiarazione di G.spintaScalino non e\' presente esattamente una volta');
+if (conta(out, 'G.spintaScalino=[1,1];') !== 1) rotti.push('l\'azzeramento di G.spintaScalino in startMatch (a [1,1], il bucket di riposo -- correzione di revisione) non e\' presente esattamente una volta');
+if (conta(out, 'G.spintaScalino=[0,0]') !== 0) rotti.push('IL BUG CORRETTO E\' TORNATO: G.spintaScalino si azzera ancora a [0,0], il banner "TESTA ALTA" tornerebbe falso a ogni fischio d\'inizio');
 if (conta(out, 'function applicaOcchioMestoDaFatto(f){') !== 1) rotti.push('applicaOcchioMestoDaFatto non e\' presente esattamente una volta');
 if (conta(out, 'function scalinoDiSpinta(v){') !== 1) rotti.push('scalinoDiSpinta non e\' presente esattamente una volta');
 if (conta(out, 'function controllaBannerSpinta(){') !== 1) rotti.push('controllaBannerSpinta non e\' presente esattamente una volta');

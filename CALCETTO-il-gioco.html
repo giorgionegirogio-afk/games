@@ -8482,7 +8482,7 @@ const G = {
   /* moviola: anello di fotogrammi degli ultimi secondi, per rivedere il gol */
   fatti:[],                              // registro dei fatti (voce #117, compito 1): vedi emettiFatto
   spinta:[0,0], fattiVisti:0, fattiTot:0, // gli stati (voce #117, compito 2): derivati dai fatti, vedi applicaImpattoFatto
-  spintaScalino:[0,0],                   // il canale d'occhio (voce #117, compito 4): l'ultimo scalino di G.spinta mostrato per squadra, vedi controllaBannerSpinta
+  spintaScalino:[1,1],                   // il canale d'occhio (voce #117, compito 4): l'ultimo scalino di G.spinta mostrato per squadra -- 1 = il riposo (spinta=0 ci appartiene), vedi controllaBannerSpinta e la correzione di revisione qui sotto
   rec:[], recT:0, moviola:null,
   /* la RIPRESA DEDICATA del gol in camera bassa (decisione 3): parte dopo
      il colpo nel sacco, per ogni rete con un marcatore (mai sull'autorete) */
@@ -11039,7 +11039,15 @@ function startMatch(mode, diff, opts){
      ===================================================================== */
   G.fatti.length=0;
   G.spinta=[0,0]; G.fattiVisti=0; G.fattiTot=0;
-  G.spintaScalino=[0,0];                 // il canale d'occhio (voce #117, compito 4): azzerato con gli altri stati
+  /* IL CANALE D'OCCHIO (voce #117, compito 4) -- CORREZIONE DI REVISIONE:
+     spintaScalino parte a [1,1], NON [0,0]. G.spinta parte a zero, e zero
+     e' GIA' lo scalino 1 (di riposo): far partire l'ultimo-scalino-
+     mostrato da 0 avrebbe fatto scattare "TESTA ALTA" ad OGNI fischio
+     d'inizio (nuovo scalino 1 > vecchio 0, spinta ancora a zero, nessun
+     fatto accaduto -- un banner bugiardo, trovato dalla revisione). Con
+     [1,1] non c'e' nessuna salita spuria alla partenza: vedi la lettera
+     di testa di questo attrezzo per la semantica completa. */
+  G.spintaScalino=[1,1];
   G.rec.length=0; G.recT=0;
   /* I QUATTRO CRONOMETRI FRATELLI DI recT (31 agosto 2026). Stessa
      malattia del verbale qui sopra, altri quattro nomi: possOwner e
