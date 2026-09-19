@@ -44287,6 +44287,16 @@ window.__test = {
     };
   },
   cartellino(team){ const p=diMovimentoInCampo(team)[0]; if(p) infliggiCartellino(p); return this.disciplina; },
+  /* IL BANCO CHE CONDANNA (voce #117, compito 5): iniettaFatto espone
+     l'UNICO produttore di fatti del gioco (emettiFatto, gia' del compito
+     1) al banco, per costruire storie SPECCHIO a comando invece di
+     dipendere dal seme per farne uscire una coerente. Nessuna logica
+     nuova: e' la stessa emettiFatto(che,chi,dove,esito) che gol/fallo/
+     rubata/cartellino chiamano gia', con lo stesso schema, e lo stesso
+     G.fattiTot monotono che step() legge per applicare l'impatto alla
+     prossima simulate() -- il fatto iniettato non e' distinguibile da
+     uno vero per il motore. */
+  iniettaFatto(che,chi,dove,esito){ emettiFatto(che, chi|0, Array.isArray(dove)?dove:[0,0], esito||{}); return G.fatti[G.fatti.length-1]; },
   /* ---- progressione: monete, campi, torneo, trofei, salvataggio ---- */
   addCoins(n){ addCoinsInternal((+n||0)|0); persistSave(); return SAVE.coins; },
   get coins(){ return SAVE.coins; },

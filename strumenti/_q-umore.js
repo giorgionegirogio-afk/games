@@ -122,6 +122,111 @@
    il bug e non lo vedrebbe mai. NASCE ROSSA SUL COMMIT DEL COMPITO 4 COL
    BUG (`fuori/base4b.html` = `git show b5f0858:CALCETTO-il-gioco.html`).
 
+   PROVA SPECCHIO (compito 5). Il banco chiude qui: due squadre con
+   storie di eventi A SPECCHIO devono produrre stati speculari AL BIT.
+   VIA SCELTA (dichiarata, non nascosta): __test.iniettaFatto(che, chi,
+   dove, esito), un guscio sottile aggiunto da strumenti/_t-banco5.js
+   attorno a emettiFatto -- LA STESSA funzione che gol/fallo/rubata/
+   cartellino chiamano gia', zero logica nuova. Costruzione: si avvia una
+   partita CPU-CPU a seme fisso, si avanza fino alla scena 'play' (in
+   'kickoff' step() ritorna presto e non processa mai i fatti: iniettare
+   li' sarebbe un'iniezione muta), poi per SEI tipi di fatto (gol,
+   autorete, fallo, giallo, espulsione, rubata) si inietta LA STESSA
+   COPPIA GEMELLA -- un fatto sulla squadra 0 e il suo gemello sulla
+   squadra 1 (stesso che, stesso esito con squadre/vittime scambiate) --
+   ENTRAMBI PRIMA DI UN SOLO simulate(1/60): stesso fotogramma, quindi
+   moltiplicatoreTempo() e' IDENTICO per i due (stesso G.timeLeft) e
+   l'ordine con cui applicaImpattoFatto() li scorre non puo' introdurre
+   un'asimmetria. Dopo tutta la batteria si confronta OGNI coppia di
+   giocatori corrispondenti (stesso idx, squadra diversa -- la mappa dei
+   ruoli e' verificata: makePlayer(t,i,...) usa lo stesso i per le due
+   squadre) per umore/nervi, e G.spinta[0] contro G.spinta[1], con ===
+   (bit a bit, mai una tolleranza).
+   UN DIFETTO TROVATO E RIPARATO IN QUESTO STESSO ATTREZZO, NON NEL
+   GIOCO (dichiarato per onesta', vincolo di casa "i limiti si
+   dichiarano"): la prima stesura della batteria RUBATA riusava lo
+   STESSO idx di ruolo come ladro E come vittima fra le due meta' della
+   coppia (il ladro della squadra 0 aveva come vittima il suo stesso
+   gemello di squadra 1, e viceversa) -- un giocatore diventava cosi'
+   bersaglio di DUE operazioni provenienti dai due fatti gemelli nello
+   STESSO fotogramma, applicate in un ORDINE diverso da un lato e
+   dall'altro: (u0+0.20*m)-0.15*m per un giocatore contro
+   (u0-0.15*m)+0.20*m per il suo gemello. In virgola mobile la somma di
+   tre termini NON E' ASSOCIATIVA (l'addizione a due termini si', per
+   questo gol/autorete/fallo/giallo/espulsione — che non hanno questo
+   incrocio — sono rimasti bit esatti anche PRIMA di questa cura): la
+   misura ha trovato uno scarto di un ULP (-0.34934068262187 contro
+   -0.34934068262187007, un errore sul 17-esimo digit significativo) --
+   NON un'asimmetria del modello (le formule restano identiche), un
+   artefatto della COSTRUZIONE della prova. La cura: ladro e vittima
+   della batteria RUBATA usano DUE idx di ruolo diversi (nessun
+   giocatore e' mai bersaglio di entrambi i fatti della stessa coppia),
+   esattamente come FALLO gia' faceva. Con la cura la batteria intera
+   torna bit esatta (verificato, vedi il rapporto del compito 5): la
+   riga qui sopra resta come promemoria per chi ritocchera' questo
+   attrezzo, non come rosso aperto.
+   NASCE ROSSA SUL GIOCO DEL COMPITO 4 (`fuori/base4.html` =
+   `git show 8824222:CALCETTO-il-gioco.html`): __test.iniettaFatto non
+   esiste la' (l'attrezzo del compito 5 non era ancora applicato),
+   0-specchio lo dice con un guasto leggibile.
+
+   PROVA INPUT-SACRO (compito 5). Lo spec vorrebbe "stesso nastro di
+   comandi umani e stesso seme, il verbo identico prima e dopo il
+   modello" (il modello di _q-replay.js, prova C). LIMITE DICHIARATO,
+   non nascosto: il gioco NON espone un registratore di comandi-dito
+   (nessun `__test.dita`) -- e' lo STESSO limite che _q-determinismo.js
+   prova C dichiara gia' da prima di questo cantiere ("il gioco non
+   espone __test.dita: la prova col dito non si puo' fare da qui"). Non
+   si e' aggiunto un hook nuovo per aggirarlo (scope creep dichiarato
+   fuori perimetro dal mandato del compito): la prova qui sotto e' la
+   variante FATTIBILE piu' vicina, per ISPEZIONE STRUMENTATA, non un
+   nastro di comandi vero.
+   Si avvia una partita CON UNA SQUADRA VERAMENTE UMANA (G.cpu[0]=false,
+   il comportamento di serie di startMatch(1,...): NON si chiama
+   setCpuVsCpu(true), altrimenti isHuman sarebbe sempre falso e la prova
+   misurerebbe la domanda sbagliata). Si monta uno stato ESTREMO
+   (umore=1, nervi=1 sul giocatore che G.ctrl[0] indica in quel momento,
+   G.spinta[0]=1) e si RI-MONTA a ogni fotogramma, cosi' CHIUNQUE sia il
+   comandato dal dito in quell'istante (il controllo puo' passare a un
+   altro uomo durante la partita: switchControlled gira anche per una
+   squadra umana) e' sempre alla massima provocazione. Poi si sostituisce
+   TEMPORANEAMENTE window.manopolaDi (una funzione GLOBALE dello script
+   di pagina, non un hook __test: verificato che la sostituzione
+   intercetta le chiamate che aiMove fa alla stessa identica funzione,
+   perche' in uno script non-modulo un riferimento non qualificato a un
+   nome dichiarato con `function` in cima allo script risolve attraverso
+   l'oggetto globale) con un contatore che, per OGNI chiamata, verifica
+   DAL VIVO se il giocatore passato e' in quell'istante il comandato dal
+   dito (p.team e G.ctrl[p.team]===indice, letti al momento della
+   chiamata, mai una copia presa all'inizio): se si', e' una VIOLAZIONE.
+   La misura e' diretta e osservabile (non una tautologia): si conta
+   quante volte manopolaDi gira in tutto (sanita', deve essere > 0 --
+   altrimenti la prova non ha esercitato niente) e quante volte gira per
+   il comandato dal dito (deve essere ESATTAMENTE 0).
+   LIMITE OSSERVATO DURANTE LA COSTRUZIONE, DICHIARATO: senza dita vere,
+   una partita con una squadra umana non raggiunge sempre 'end' entro il
+   tetto di sicurezza -- una scena 'freekick' (duello diretto) puo'
+   restare aperta all'infinito se tocca proprio alla squadra umana e
+   nessun dito la scioglie (misurato: bloccata li' per il resto del
+   tetto in piu' di una prova). Non e' uno stallo del banco: e' la
+   controprova dal vivo del limite dichiarato sopra (senza __test.dita
+   il nastro di comandi non e' testabile fino in fondo). La prova non
+   pretende 'end': misura quel che la partita gioca DAVVERO prima dello
+   stallo (il numero di chiamate osservate si stampa sempre) e non
+   inventa una copertura che non c'e'.
+
+   GIOCO-BUGIARDO (compito 5, sul modello di _crit-festa-dado.js). Due
+   attrezzi, DUE versioni bugiarde in fuori/ (mai committate, solo gli
+   attrezzi che le generano): strumenti/_crit-mind-tetto.js porta il
+   coefficiente di passErr in manopolaDi da 0.15 a 0.60 (il tetto
+   dichiarato dalla prova TETTI e' 0.15: deve condannarla); strumenti/
+   _crit-mind-muto.js spegne applicaOcchioMestoDaFatto con un return
+   immediato (il canale mesto dai fatti non si accende piu': la prova
+   TESTIMONE deve condannarla). Verificato (rapporto del compito 5): il
+   primo da' rosso su a-tetti (e su b-canale, la stessa formula), il
+   secondo da' rosso SOLO su a-testimone -- il difetto e' localizzato,
+   le altre prove restano verdi su ciascuna versione.
+
    uso:  node strumenti/_q-umore.js
          node strumenti/_q-umore.js --gioco fuori/base.html
          node strumenti/_q-umore.js --taglia 5 --seme 20260919
@@ -766,6 +871,183 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
           rFalsi.falsi.length === 0 ? 'nessun falso banner osservato (play dal fotogramma ' + rFalsi.frameDaPlay + ')'
             : 'FALSI (' + rFalsi.falsi.length + '): ' + JSON.stringify(rFalsi.falsi));
       }
+    }
+
+    /* =====================================================================
+       PROVA SPECCHIO (compito 5). Vedi la lettera di testa per la
+       costruzione (iniezione a coppie gemelle, stesso fotogramma) e il
+       difetto di costruzione trovato e riparato (RUBATA, l'associativita'
+       della virgola mobile). Una partita CPU-CPU a seme fisso, avanzata
+       fino a 'play' (in 'kickoff' i fatti non si processano), poi la
+       batteria delle sei coppie, poi il confronto sull'intero roster. */
+    const rSpecchio = await pag.evaluate(({ taglia, seme }) => {
+      const t = window.__test;
+      t.semina(seme);
+      t.setCpuVsCpu(true);
+      t.startMatch(1, 1, { size: taglia });
+      const superficieEsiste = typeof t.iniettaFatto === 'function';
+      if (!superficieEsiste) return { superficieEsiste };
+
+      let f = 0;
+      for (; f < 300 && t.state !== 'play'; f++) t.simulate(1 / 60);
+      const raggiuntoPlay = t.state === 'play';
+
+      const players = t.players;
+      const idxOf = (team, idx) => players.findIndex(p => p.team === team && p.idx === idx);
+      const mappa = players.filter(p => p.team === 0).map(p0 => {
+        const p1 = players.find(p => p.team === 1 && p.idx === p0.idx);
+        return { idx: p0.idx, i0: players.indexOf(p0), i1: p1 ? players.indexOf(p1) : -1, ruoloOk: !!p1 && p1.role === p0.role };
+      });
+      const mappaOk = mappa.length > 0 && mappa.every(m => m.i1 >= 0 && m.ruoloOk);
+
+      const statiZeroIniziali = raggiuntoPlay && mappaOk &&
+        players.every(p => p.umore === 0 && p.nervi === 0) && t.G.spinta[0] === 0 && t.G.spinta[1] === 0;
+
+      if (!raggiuntoPlay || !mappaOk) return { superficieEsiste, raggiuntoPlay, mappaOk, statiZeroIniziali };
+
+      /* SEI COPPIE GEMELLE. RUBATA usa DUE idx di ruolo (ladro/vittima)
+         DIVERSI -- vedi la lettera di testa: riusare lo stesso idx per
+         le due meta' della coppia rende un giocatore bersaglio di
+         entrambi i fatti gemelli nello stesso fotogramma, e la somma a
+         tre termini che ne segue non e' associativa in virgola mobile. */
+      const idxMov = players.filter(p => p.team === 0 && p.role !== 'gk').map(p => p.idx);
+      const coppie = [
+        { che: 'gol', s: idxMov[0] },
+        { che: 'autorete', s: idxMov[1] },
+        { che: 'fallo', v: idxMov[2] },
+        { che: 'giallo', s: idxMov[0] },
+        { che: 'espulsione', s: idxMov[1] },
+        { che: 'rubata', s: idxMov[2], v: idxMov[3] },
+      ];
+
+      const passi = [];
+      for (const c of coppie) {
+        let A, B;
+        if (c.che === 'gol') {
+          const chiA = idxOf(0, c.s), chiB = idxOf(1, c.s);
+          A = { che: 'gol', chi: chiA, dove: [100, 100], esito: { team: 0 } };
+          B = { che: 'gol', chi: chiB, dove: [500, 100], esito: { team: 1 } };
+        } else if (c.che === 'autorete') {
+          const chiA = idxOf(0, c.s), chiB = idxOf(1, c.s);
+          A = { che: 'autorete', chi: chiA, dove: [100, 100], esito: { team: 1 } };
+          B = { che: 'autorete', chi: chiB, dove: [500, 100], esito: { team: 0 } };
+        } else if (c.che === 'fallo') {
+          const vA = idxOf(0, c.v), vB = idxOf(1, c.v);
+          A = { che: 'fallo', chi: idxOf(1, c.v), dove: [100, 100], esito: { vittima: vA } };
+          B = { che: 'fallo', chi: idxOf(0, c.v), dove: [500, 100], esito: { vittima: vB } };
+        } else if (c.che === 'giallo' || c.che === 'espulsione') {
+          const chiA = idxOf(0, c.s), chiB = idxOf(1, c.s);
+          A = { che: c.che, chi: chiA, dove: [100, 100], esito: {} };
+          B = { che: c.che, chi: chiB, dove: [500, 100], esito: {} };
+        } else if (c.che === 'rubata') {
+          const chiA = idxOf(0, c.s), chiB = idxOf(1, c.s), vA = idxOf(1, c.v), vB = idxOf(0, c.v);
+          A = { che: 'rubata', chi: chiA, dove: [100, 100], esito: { vittima: vA } };
+          B = { che: 'rubata', chi: chiB, dove: [500, 100], esito: { vittima: vB } };
+        }
+        const primaLen = t.G.fatti.length;
+        t.iniettaFatto(A.che, A.chi, A.dove, A.esito);
+        t.iniettaFatto(B.che, B.chi, B.dove, B.esito);
+        t.simulate(1 / 60);
+        passi.push({
+          che: c.che, nuoviFatti: t.G.fatti.length - primaLen,
+          spinta0: t.G.spinta[0], spinta1: t.G.spinta[1], spintaOk: t.G.spinta[0] === t.G.spinta[1],
+        });
+      }
+
+      const rosterCheck = mappa.map(m => {
+        const p0 = players[m.i0], p1 = players[m.i1];
+        return { idx: m.idx, umoreOk: p0.umore === p1.umore, nerviOk: p0.nervi === p1.nervi,
+                 u0: p0.umore, u1: p1.umore, n0: p0.nervi, n1: p1.nervi };
+      });
+
+      return { superficieEsiste, raggiuntoPlay, mappaOk, statiZeroIniziali, passi, rosterCheck };
+    }, { taglia: TAGLIA_BANCO, seme: SEME });
+
+    di(rSpecchio.superficieEsiste, '0-specchio. la superficie di iniezione esiste (__test.iniettaFatto)',
+      rSpecchio.superficieEsiste ? 'presente' : 'ASSENTE — il gioco di oggi non ha ancora iniettaFatto (attrezzo del compito 5)');
+
+    if (!rSpecchio.superficieEsiste) {
+      di(false, '1-specchio. SPECCHIO — non misurabile senza la superficie', 'prova saltata: nessuna superficie da leggere');
+    } else {
+      di(rSpecchio.mappaOk, 'a-specchio. la mappa dei ruoli e\' simmetrica (ogni idx di squadra 0 ha un gemello di squadra 1 con lo stesso ruolo)',
+        rSpecchio.mappaOk ? JSON.stringify(rSpecchio.mappa) : 'mappa rotta: ' + JSON.stringify(rSpecchio.mappa));
+
+      if (!rSpecchio.raggiuntoPlay || !rSpecchio.mappaOk) {
+        di(false, '2-specchio. SPECCHIO — non misurabile (scena play non raggiunta o mappa rotta)', 'prova saltata');
+      } else {
+        di(rSpecchio.statiZeroIniziali, 'b-specchio. tutti gli stati sono a zero prima della batteria (la storia parte davvero da zero)',
+          rSpecchio.statiZeroIniziali ? 'tutti zero' : 'ALMENO uno stato non zero prima di iniettare');
+
+        const spintaOkTutti = rSpecchio.passi.every(p => p.spintaOk);
+        di(spintaOkTutti, 'c-specchio. G.spinta[0]===G.spinta[1] AL BIT dopo ogni coppia gemella iniettata',
+          rSpecchio.passi.map(p => p.che + ': spinta0=' + p.spinta0 + ' spinta1=' + p.spinta1 + ' (' + (p.spintaOk ? 'OK' : 'DIVERSI') + ', ' + p.nuoviFatti + ' fatti)').join('\n         '));
+
+        const umoreOkTutti = rSpecchio.rosterCheck.every(r => r.umoreOk);
+        di(umoreOkTutti, 'd-specchio. p.umore dei giocatori corrispondenti e\' UGUALE AL BIT su tutto il roster',
+          rSpecchio.rosterCheck.map(r => 'idx' + r.idx + ': ' + r.u0 + (r.umoreOk ? ' == ' : ' != ') + r.u1).join('   '));
+
+        const nerviOkTutti = rSpecchio.rosterCheck.every(r => r.nerviOk);
+        di(nerviOkTutti, 'e-specchio. p.nervi dei giocatori corrispondenti e\' UGUALE AL BIT su tutto il roster',
+          rSpecchio.rosterCheck.map(r => 'idx' + r.idx + ': ' + r.n0 + (r.nerviOk ? ' == ' : ' != ') + r.n1).join('   '));
+      }
+    }
+
+    /* =====================================================================
+       PROVA INPUT-SACRO (compito 5). Vedi la lettera di testa per il
+       limite dichiarato (nessun __test.dita) e la via scelta (ispezione
+       strumentata di manopolaDi, la funzione globale che aiMove chiama).
+       Squadra 0 VERAMENTE umana (G.cpu[0]=false, di serie): niente
+       setCpuVsCpu qui, altrimenti isHuman sarebbe sempre falso. */
+    const rInput = await pag.evaluate(({ taglia, seme }) => {
+      const t = window.__test;
+      t.semina(seme);
+      t.startMatch(1, 1, { size: taglia });
+      const superficieEsiste = typeof window.manopolaDi === 'function' &&
+        Array.isArray(t.G.ctrl) && Array.isArray(t.G.cpu) && t.G.cpu[0] === false;
+      if (!superficieEsiste) return { superficieEsiste };
+
+      const violazioni = [];
+      let chiamateTotali = 0, chiamateSquadraUmana = 0, ultimaChiamataFrame = -1, fotogramma = 0;
+      const orig = window.manopolaDi;
+      window.manopolaDi = function (p) {
+        chiamateTotali++;
+        ultimaChiamataFrame = fotogramma;
+        const pi = t.G.players.indexOf(p);
+        const isHumanOra = !t.G.cpu[p.team] && t.G.ctrl[p.team] === pi;
+        if (isHumanOra) { chiamateSquadraUmana++; if (violazioni.length < 5) violazioni.push({ pi, team: p.team, fotogramma }); }
+        return orig(p);
+      };
+
+      const TETTO = 220 * 60;
+      for (; fotogramma < TETTO && t.state !== 'end'; fotogramma++) {
+        /* stato ESTREMO rimontato ogni fotogramma su CHIUNQUE sia in
+           quell'istante il comandato dal dito: il controllo puo' passare
+           a un altro uomo durante la partita (switchControlled gira
+           anche per una squadra umana), e la provocazione deve seguirlo. */
+        const ci = t.G.ctrl[0];
+        if (ci >= 0 && t.G.players[ci]) { t.G.players[ci].umore = 1; t.G.players[ci].nervi = 1; }
+        t.G.spinta[0] = 1;
+        t.simulate(1 / 60);
+      }
+      window.manopolaDi = orig;
+      return { superficieEsiste, chiamateTotali, chiamateSquadraUmana, violazioni,
+               fotogrammiSimulati: fotogramma, ultimaChiamataFrame, statoFinale: t.state };
+    }, { taglia: TAGLIA_BANCO, seme: SEME });
+
+    di(rInput.superficieEsiste, '0-input. la superficie per l\'ispezione esiste (window.manopolaDi globale, G.ctrl/G.cpu, squadra 0 umana di serie)',
+      rInput.superficieEsiste ? 'presente' : 'ASSENTE — manopolaDi non e\' una funzione globale, o G.ctrl/G.cpu mancano, o la squadra 0 non e\' umana di serie');
+
+    if (!rInput.superficieEsiste) {
+      di(false, '1-input. INPUT-SACRO — non misurabile senza la superficie', 'prova saltata: nessuna superficie da leggere');
+    } else {
+      di(rInput.chiamateTotali > 0, 'a-input. l\'ispezione ha osservato attivita\' vera (sanita\': la misura non e\' vacua)',
+        'chiamate totali a manopolaDi in ' + rInput.fotogrammiSimulati + ' fotogrammi simulati (stato finale "' + rInput.statoFinale +
+        '", ultima chiamata al fotogramma ' + rInput.ultimaChiamataFrame + '): ' + rInput.chiamateTotali +
+        (rInput.statoFinale !== 'end' ? '\n         LIMITE OSSERVATO (dichiarato in testa al file): la partita non ha raggiunto \'end\' entro il tetto -- senza __test.dita una scena a dito (es. un duello diretto) puo\' restare aperta; la copertura reale e\' fino al fotogramma dell\'ultima chiamata, non l\'intera durata nominale.' : ''));
+
+      di(rInput.chiamateSquadraUmana === 0, 'b-input. manopolaDi non gira MAI per il giocatore comandato dal dito, nemmeno a stato estremo (umore=1, nervi=1, spinta=1)',
+        rInput.chiamateSquadraUmana === 0 ? '0 violazioni su ' + rInput.chiamateTotali + ' chiamate osservate'
+          : rInput.chiamateSquadraUmana + ' VIOLAZIONI: ' + JSON.stringify(rInput.violazioni));
     }
 
     if (ecc.length) { di(false, 'BANCO — nessuna eccezione di pagina', 'eccezione: ' + ecc[0]); }
