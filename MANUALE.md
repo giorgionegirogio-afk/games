@@ -495,9 +495,22 @@ Qui il registro completo, a edizioni.
 
   | manopola | formula | fattore dichiarato (tetto) | effetto REALE sul valore | massimo osservato dal banco (5 partite CPU-CPU, taglia 5) |
   |---|---|---|---|---|
-  | passErr | base ÷ (1+0,15·umore) | ±15% | umore=+1: **-13,04%** (base/1,15); umore=-1: **+17,65%** (base/0,85) — ASIMMETRICO: la divisione non rispetta il fattore dichiarato dalla formula | 15,00% (esattamente al tetto) |
-  | slideP | base × (1+0,25·nervi) | +25% | nervi=+1: **+25,00%** esatto — la moltiplicazione fa coincidere fattore ed effetto | 18,49% (sotto tetto) |
-  | standoff | base × (1-0,12·spinta), guardia ≥0 | ±12% | spinta=+1: **-12,00%**; spinta=-1: **+12,00%** — moltiplicazione, simmetrico, fattore ed effetto coincidono | 8,44% (sotto tetto) |
+  | passErr | base ÷ (1+0,15·umore) | ±15% | umore=+1: **-13,04%** (base/1,15); umore=-1: **+17,65%** (base/0,85) — ASIMMETRICO: la divisione non rispetta il fattore dichiarato dalla formula | ~~15,00% (esattamente al tetto)~~ EDIZIONE PRECEDENTE, ora **15,00%** (invariato, ri-ancorato 19/9/2026, voce #121 compito 2, vedi nota sotto) |
+  | slideP | base × (1+0,25·nervi) | +25% | nervi=+1: **+25,00%** esatto — la moltiplicazione fa coincidere fattore ed effetto | ~~18,49% (sotto tetto)~~ EDIZIONE PRECEDENTE, ora **11,57%** (ri-ancorato 19/9/2026, vedi nota sotto) |
+  | standoff | base × (1-0,12·spinta), guardia ≥0 | ±12% | spinta=+1: **-12,00%**; spinta=-1: **+12,00%** — moltiplicazione, simmetrico, fattore ed effetto coincidono | ~~8,44% (sotto tetto)~~ EDIZIONE PRECEDENTE, ora **10,08%** (ri-ancorato 19/9/2026, sotto tetto 12%, vedi nota sotto) |
+
+  **NOTA SULLA COLONNA "MASSIMO OSSERVATO" (studi a edizioni)**: i tre
+  numeri barrati sono stati misurati al compito 6 di #117 con
+  l'ARTEFATTO #108 aperto in `_q-umore.js` (`setCpuVsCpu(true)` chiamato
+  PRIMA di `startMatch`, riscritto subito da `startMatch`: la squadra 0
+  restava "umana immobile", solo la squadra 1 giocava da CPU vera). Il
+  cantiere #121 (compito 2, 19 settembre 2026) ha corretto l'ordine nei
+  5 siti del banco: la squadra 0 gioca ora da CPU vera anche lei, più
+  eventi, partite diverse, nuovi massimi. I tetti dichiarati (±15%/+25%/
+  ±12%, colonna "fattore dichiarato") sono proprietà della FORMULA, non
+  della partita: NESSUNO dei due scenari li supera, cambia solo il
+  massimo osservato. Dettaglio nel registro qui sotto (voce #121,
+  compito 2).
 
   **AVVERTENZA PER CHI LEGGE SOLO LA RIGA DEL FATTORE** (rilievo del
   revisore del compito 3): la prova TETTI del banco misura il FATTORE
@@ -1105,6 +1118,47 @@ Qui il registro completo, a edizioni.
   (archivio, fuori batteria) restano APERTI, fuori dal perimetro di
   questa voce (vedi `docs/superpowers/specs/2026-09-19-pulizia-108-
   design.md`).
+
+  **#108 CHIUSO anche su `_q-umore.js` (voce #121, compito 2, 19
+  settembre 2026, RISCHIO CONCRETO dichiarato dal progetto)**: stessa
+  cura, 5 siti (`:335-336`, `:636-637`, `:715-716`, `:850-851`,
+  `:886-887` — REGISTRO/STATI, CANALE, TETTI, NIENTE-FALSI-BANNER,
+  SPECCHIO). Qui il rischio non era teorico: le prove TETTI/TESTIMONE
+  misurano su partite CPU-CPU REALMENTE giocate, e con la squadra 0
+  congelata i tetti erano stati misurati su una CPU sola, non due.
+  Corretto l'ordine, **`_q-umore.js` 30/30 verde**, riletto riga per
+  riga. Nessuna partita bloccata in `freekick`: la partita di REGISTRO/
+  STATI/TESTIMONE finisce in `end` a 6427 fotogrammi (punteggio 0-2); le
+  5 partite di TETTI finiscono tutte in `end` (6425/6121/8019/7920/7107
+  fotogrammi, verificato con uno script diagnostico ad hoc che riproduce
+  il solo ciclo — il banco stesso non stampava lo stato finale per
+  partita) — coerente con la diagnosi #119 (esperimento A: ordine giusto
+  → 0/31 bloccate). SPECCHIO resta insensibile all'ordine (le sei coppie
+  gemelle si iniettano da stati ancora a zero, prima di qualunque
+  simulate() con eventi veri) e INPUT-SACRO resta a **0 violazioni** (il
+  numero di chiamate a `manopolaDi` sale a 19536 in questa corsa, la
+  squadra 0 ora gioca davvero e produce più attività, ma la garanzia — 0
+  chiamate per il comandato dal dito — non dipende dal conteggio). I due
+  bugiardi (`_crit-mind-tetto.js`, `_crit-mind-muto.js`) restano
+  condannati con un rosso localizzato: il primo dà **28/30** (rosso su
+  `a-tetti` e `b-canale`, la stessa formula di passErr forzata da 0,15 a
+  0,60), il secondo **29/30** (rosso SOLO su `a-testimone`, il canale
+  mesto spento) — il banco discrimina ancora.
+  **RI-ANCORAGGIO DEI MASSIMI OSSERVATI** (tavola del punto 3 più sopra,
+  "Il canale di gioco — `manopolaDi(p)`", misurata al compito 6 di
+  #117 con la squadra 0 congelata da #108): i vecchi massimi **15,00% /
+  18,49% / 8,44%** sono dichiarati SUPERATI da questa corsa a CPU-CPU
+  vera (stesso banco, stessa taglia 5, stesso seme 20260919, 5 partite):
+  nuovi massimi **passErr 15,00%** (invariato — il clamp di umore=±1
+  satura comunque: anche a squadra 0 congelata la squadra 1, già CPU
+  allora, raggiungeva lo stesso limite), **slideP 11,57%** (era 18,49%,
+  ora più basso), **standoff 10,08%** (era 8,44%, ora più alto, ma sotto
+  al tetto 12% dichiarato dalla formula). Nessun tetto superato in
+  nessuno dei due scenari: i tetti sono proprietà della formula
+  (passErr ±15%, slideP +25%, standoff ±12%), non della partita — solo
+  il massimo OSSERVATO cambia. Il vecchio numero resta scritto nella
+  tavola qui sopra, marcato superato: non si cancella una misura,
+  si dichiara chi l'ha rimpiazzata e perché.
 
   **I5 — il vantaggio si apre ANCHE in area** (commento nuovo,
   `checkSlideContact`, nessun codice cambiato: il comportamento era già

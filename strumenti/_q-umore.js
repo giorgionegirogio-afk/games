@@ -325,15 +325,17 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
     /* ===================================================================
        LA PARTITA E LA RACCOLTA. Tutto in un solo page.evaluate, come gli
        altri banchi di casa: un giro di sola andata, nessun rumore di
-       rete fra un fotogramma e l'altro. setCpuVsCpu(true) PRIMA di
-       startMatch (la lezione della voce #108, gia' pagata altrove):
+       rete fra un fotogramma e l'altro. setCpuVsCpu(true) DOPO
+       startMatch (correzione della voce #121, seguito #108: PRIMA
+       veniva riscritto da startMatch, che forza G.cpu=[false,...]
+       incondizionatamente, e la squadra 0 restava "umana immobile"):
        cosi' anche la squadra 0 e' CPU vera. t.simulate(1/60) a passo
        fisso fino a t.state==='end' o al tetto di sicurezza (220 s di
        gioco, ben oltre una qualunque durata di amichevole a taglia 5). */
     const r = await pag.evaluate(({ taglia }) => {
       const t = window.__test;
-      t.setCpuVsCpu(true);
       t.startMatch(1, 1, { size: taglia });
+      t.setCpuVsCpu(true);
       const fattiEsisteva = (typeof t.G !== 'undefined') && Array.isArray(t.G.fatti);
       const fattiVuotiAllInizio = fattiEsisteva && t.G.fatti.length === 0;
 
@@ -633,8 +635,8 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
     const rCanale = await pag.evaluate(({ taglia, seme }) => {
       const t = window.__test;
       t.semina(seme);
-      t.setCpuVsCpu(true);
       t.startMatch(1, 1, { size: taglia });
+      t.setCpuVsCpu(true);
       const superficieEsiste = typeof t.manopolaDi === 'function' && typeof t.manopoleDi === 'function' &&
         typeof t.setUmore === 'function' && typeof t.setNervi === 'function' && typeof t.setSpinta === 'function';
       if (!superficieEsiste) return { superficieEsiste };
@@ -712,8 +714,8 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
       const violazioni = [];
       for (let k = 0; k < n; k++) {
         t.semina(seme0 + k);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         const basi = [t.manopoleDi(0), t.manopoleDi(1)];
         const TETTO_FRAME = 220 * 60;
         for (let fotogrammi = 0; fotogrammi < TETTO_FRAME && t.state !== 'end'; fotogrammi++) {
@@ -847,8 +849,8 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
       const rFalsi = await pag.evaluate(({ taglia, seme }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         const FINESTRA_PLAY = 180;
         let vistoPlay = false, frameDaPlay = -1;
         const falsi = [];
@@ -883,8 +885,8 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
     const rSpecchio = await pag.evaluate(({ taglia, seme }) => {
       const t = window.__test;
       t.semina(seme);
-      t.setCpuVsCpu(true);
       t.startMatch(1, 1, { size: taglia });
+      t.setCpuVsCpu(true);
       const superficieEsiste = typeof t.iniettaFatto === 'function';
       if (!superficieEsiste) return { superficieEsiste };
 
