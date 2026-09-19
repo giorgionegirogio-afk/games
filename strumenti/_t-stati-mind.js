@@ -75,7 +75,7 @@
    esteso a leggerli (fuori da questo attrezzo, tocca solo il gioco: vedi
    strumenti/_q-determinismo.js, l'IMPRONTA).
 
-   9 ancore (init giocatore, dichiarazione iniziale su G, azzeramento in
+   8 ancore (init giocatore, dichiarazione iniziale su G, azzeramento in
    startMatch, emettiFatto+helpers degli stati, il decay in
    updatePlayerFisica, l'impatto in fondo a step(), il reset in
    faiCambio, la superficie __test).

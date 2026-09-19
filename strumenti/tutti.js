@@ -542,6 +542,36 @@ const CANCELLI = [
      Deterministico, tre partite aperte e nemmeno giocate, nessun
      cronometro: corre in compagnia e costa una decina di secondi. */
   { nome: 'nomi',        cmd: ['strumenti/_p-nomi.js'],                                  conta: true,  lento: false },
+  /* umore: il banco del MIND v1 (voce #117, 19 settembre 2026, sei
+     compiti dal merge-base f352af5). Sette prove sul canale emotivo:
+     REGISTRO (G.fatti trascrive gli eventi gia' decisi dal gioco, non li
+     inventa), STATI (umore/nervi/spinta derivati dai fatti, osservazione
+     pura), CANALE+TETTI (manopolaDi(p) modula passErr/slideP/standoff
+     entro i tetti dichiarati, il massimo scarto osservato stampato
+     sempre, mai un si/no cieco), TESTIMONE (nessuno stato emotivo resta
+     muto: mesto o banner o folla ne parlano), SPECCHIO (due squadre a
+     storie speculari producono stati speculari AL BIT), INPUT-SACRO (il
+     canale non tocca mai il verbo del dito umano, limite dichiarato nel
+     file: nessun __test.dita, quindi ispezione strumentata invece di un
+     nastro di comandi vero).
+
+     PERCHE' STA IN BATTERIA: e' l'unico cancello che si accorge se un
+     futuro tocco a manopolaDi, applicaImpattoFatto, emettiFatto o ai due
+     canali d'occhio (mesto dai fatti, folla+banner sulla spinta) rompe
+     un tetto, fa tacere uno stato, o rompe la simmetria fra le due
+     squadre — nessun altro dei cancelli in lista guarda il registro dei
+     fatti o gli stati emotivi.
+     Nato ROSSO con la sola prova REGISTRO al compito 1 (G.fatti non
+     esisteva sul gioco di allora), cresciuto compito per compito (STATI
+     al 2, CANALE+TETTI al 3, TESTIMONE al 4), arrivato verde su tutte le
+     prove col compito 5; le due versioni bugiarde generate apposta
+     (_crit-mind-tetto.js sul coefficiente di passErr, _crit-mind-muto.js
+     sul canale mesto) lo condannano ciascuna sulla propria prova,
+     verificato e dichiarato nel file — la prova che il banco discrimina.
+     Deterministico al seme del cantiere (20260919), zero dado() nuovi,
+     taglia 5 (#98: il determinismo e' instabile a 7/11, ogni misura del
+     modello si prende a 5): corre in compagnia. */
+  { nome: 'umore',       cmd: ['strumenti/_q-umore.js'],                                conta: true,  lento: false },
   /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici

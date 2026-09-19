@@ -1,7 +1,17 @@
 # Dove siamo, e cosa manca
 
-Aggiornato al **18 settembre 2026 (terza parte della giornata)**. Questo
-file serve a riprendere senza rileggere niente altro.
+Aggiornato al **19 settembre 2026**. Questo file serve a riprendere senza
+rileggere niente altro.
+
+## La giornata del 19 settembre, in breve
+
+| | cosa |
+|---|---|
+| 1 | **#117 CANTIERE CHIUSO — MIND v1** (il registro dei fatti e il modello emotivo, sei compiti dal merge-base `f352af5`, prima voce dell'onda B del mandato: `_analisi/MAPPA-MANDATO.md` §2, spec `docs/superpowers/specs/2026-09-19-mind-v1-design.md`). `G.fatti` (registro passivo, 15 tipi di evento), `p.umore`/`p.nervi`/`G.spinta` (tre stati derivati dai fatti, zero `dado()`), il canale `manopolaDi(p)` (passErr/slideP/standoff modulati per giocatore, mai sull'input umano), i due canali d'occhio (mesto dai fatti, folla+banner sulla spinta). `p.celeb`/`p.mesto` erano già due stati emotivi: il MIND li rende l'espressione di stati continui, non li inventa. Banco `strumenti/_q-umore.js` nato ROSSO con la sola prova REGISTRO, arrivato a **30 prove su 30** (REGISTRO/STATI/CANALE/TETTI/TESTIMONE/SPECCHIO/INPUT-SACRO), le due versioni bugiarde (`_crit-mind-tetto.js`, `_crit-mind-muto.js`) condannate ciascuna sulla propria prova |
+| 2 | **Giocabilità misurata, DENTRO BANDA**: `_eventi.js`, `f352af5` contro la punta, 300 partite CPU-CPU per versione (semi 20260803..20261102, taglia 5): gol/90s media 2,72→2,63 (**-3,3%**, ben dentro il ±20% del committente), MOMENTI DA PORTA/min -2,8%, EVENTI/min -0,3%. **Nota di metodo**: la MEDIANA di gol/90s è instabile a piccoli N (+50% a N=30, -33% a N=100, -17% a N=300, segni opposti sulla STESSA coppia di versioni) — è rumore di campionamento su un conteggio a piccoli interi, non il gioco: la MEDIA è l'indicatore stabile qui. L'hang #119 (freekick, preesistente) non si è manifestato in 860 partite campionate su nessuna delle due versioni |
+| 3 | **UNA REGRESSIONE TROVATA E RIPARATA RILANCIANDO LA BATTERIA INTERA** (quinta occorrenza della lezione ricorrente, la 22 in fondo a questo file: #86/#87/#107/#112 ne avevano già pagata una). `strumenti/_q-replay.js` è uscito ROSSO sulla prova E ("registrare non cambia il gioco"): accendere il registro del nastro spostava la fisica della stessa partita a seme fisso dal fotogramma 80. Bisecato ai quattro compiti: verde su `cb23512`/`53007c5` (compiti 1-2), rosso da `8824222` (compito 3) in poi. Causa vera PRE-ESISTENTE: `G.swLock`/`G.swTimer` (isteresi del cambio-giocatore automatico) non erano MAI azzerati da `startMatch` — il sesto cronometro fratello di `G.recT`/`G.vantaggio` (già riparati il 31 agosto e a #107). Si vede solo dal compito 3 perché `manopolaDi(p)` è la prima lettura a far dipendere una decisione della CPU da quale giocatore specifico è sotto controllo umano. **Irrilevante per ogni misura CPU-CPU** (verificato: numeri di giocabilità e sorteggi identici cifra per cifra prima/dopo la cura) — riguarda solo la squadra umana di una sfida vera. Curato (`strumenti/_t-swlock-reset.js`, un ancoraggio, zero sorteggi nuovi): `_q-replay.js` torna **10/10**. L'altro rosso della stessa corsa, `audio.js` (parata del portiere → crowdLevel×8-9 jingleTick), è **PRE-ESISTENTE** su `f352af5`, scollegato dal MIND: seguito **#120** aperto, non curato qui. Batteria intera rilanciata DOPO la cura: **36 cancelli eseguiti, 33 con verdetto valido che conta, 32 verdi, 1 rosso** (`audio.js`, pre-esistente) |
+| 4 | **La divergenza dei sorteggi, dichiarata per taglia** (`_c3-sorteggi.js`, `f352af5` contro la punta, per costruzione — il canale del compito 3 cambia le decisioni della CPU): taglia 5 **18/20**, taglia 7 **19/20**, taglia 11 **20/20**, totale **57/60**. `_q-determinismo --partite 4` resta **13/13** (l'invariante del multigiocatore, intatta). Verbale completo in `MANUALE.md` §A registro, voce #117 |
+| 5 | **RESTANO, in ordine**: **#118 (MIND v2)** — contagio nel tempo, peso del capitano, regolazione senza intervallo, la striscia del momento post-partita, il volto che cambia, il dischetto sotto pressione, l'HUD dell'umore (il "Fuori perimetro" dello spec §6); la **voce #89** (meccaniche dei verbi, cantiere della decomposizione del 1° settembre). **Seguiti nuovi**: **#119** (l'hang del freekick, ~metà delle partite CPU-CPU a taglia 5 bloccate, cantiere dedicato), **#120** (il rosso pre-esistente di `audio.js`, mai indagato prima perché mai emerso finché la batteria intera non è stata rilanciata). **Seguiti aperti, nessuno bloccante**: **#97, #98, #99, #101, #102, #103, #104, #105, #106, #108/#110, #109, #113, #114, #115, #118, #119, #120** |
 
 ## La giornata del 18 settembre, terza parte
 
@@ -378,13 +388,16 @@ python android/costruisci.py && python android/verifica.py
     compito, non solo i cancelli nominati dal piano.** Una regressione
     di contorno colpisce un banco che il compito in corso non ha motivo
     di guardare, e resta invisibile fino alla batteria di chiusura — non
-    un caso isolato: **almeno quattro occorrenze nel programma**: **#86**
+    un caso isolato: **almeno cinque occorrenze nel programma**: **#86**
     (il collaudo/i diritti FIFA), **#87** (il banco del tocco), **#107**
     (le proporzioni — è la lezione 21 sopra, il sottocaso "pre-esistente
     verificato contro il commit sbagliato"), **#112** (`disposizione.js`,
     riga 2 sopra: rosso da fine compito 4, mai rilanciato fino alla
-    batteria di chiusura del compito 6). La lezione 21 copre solo quel
-    sottocaso specifico; questa è la lezione generale che lo contiene:
-    la batteria intera, non i soli cancelli che il piano del compito
-    nomina, è l'unico modo di accorgersi di una regressione che cade
-    fuori dal proprio elenco.
+    batteria di chiusura del compito 6), **#117** (`_q-replay.js` prova
+    E, nato al compito 3: `G.swLock`/`G.swTimer` mai azzerati da
+    `startMatch`, il sesto cronometro fratello di `G.recT`/`G.vantaggio`
+    — trovato e riparato al compito 6, vedi la voce #117 in cima a questo
+    file). La lezione 21 copre solo quel sottocaso specifico; questa è la
+    lezione generale che lo contiene: la batteria intera, non i soli
+    cancelli che il piano del compito nomina, è l'unico modo di
+    accorgersi di una regressione che cade fuori dal proprio elenco.

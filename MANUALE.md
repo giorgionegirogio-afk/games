@@ -456,6 +456,189 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Il registro dei fatti e il MIND v1 — L'ONDA B COMINCIA** (#117) —
+  **CURATA il 19 settembre 2026** (sei compiti dal merge-base `f352af5`,
+  prima voce dell'onda B del mandato: `_analisi/MAPPA-MANDATO.md` §2,
+  spec `docs/superpowers/specs/2026-09-19-mind-v1-design.md`, piano
+  `docs/superpowers/plans/2026-09-19-mind-v1.md`): il modello emotivo che
+  il mandato mette al centro (§7) — un registro dei fatti passivo, tre
+  stati continui che li osservano, un canale che li fa contare sulle
+  decisioni della CPU entro tre tetti dichiarati, due canali d'occhio che
+  li rendono sempre visibili, e un banco che condanna chi bara.
+
+  **LA CONFERMA, non l'invenzione**: `p.celeb` e `p.mesto` erano già due
+  stati emotivi PRIMA di questo cantiere (trigger il gol, decadimento a
+  passo fisso, espressione nelle clip di posa) — il mandato §7.4 lo
+  conferma. Il MIND v1 non li inventa: li rende l'espressione di stati
+  CONTINUI (umore/nervi/spinta, aggiornati ogni fotogramma dai fatti)
+  invece che di un unico trigger puntuale.
+
+  **1. Il registro dei fatti** (`G.fatti`): un buffer PASSIVO, tetto 200
+  con push+shift (modello di `G.rec`), che trascrive quindici tipi di
+  evento già decisi altrove dal gioco (gol/autorete/rigore/giallo/
+  espulsione/rubata/fallo/presa/pugni/sfugge/respinta/parata/legno/
+  acciacco/cambio) con lo schema `{che,chi,dove,esito,t}`. Non decide
+  niente: il conteggio dei fatti combacia ESATTAMENTE con `G.stats`/
+  score/`G.cambi` per gli eventi che il gioco già contava altrove.
+
+  **2. Gli stati**: `p.umore` (-1..+1) e `p.nervi` (0..1) per giocatore,
+  `G.spinta[team]` (-1..+1) per squadra — derivati dai fatti, zero
+  `dado()`, decadimento a mezza vita (30 s per gli stati del giocatore,
+  20 s per la spinta di squadra via media mobile esponenziale),
+  moltiplicatore di tempo continuo `1+0,6·(1-timeLeft/durata)` che
+  scalda il finale.
+
+  **3. Il canale di gioco — `manopolaDi(p)`**: qui il MIND comincia a
+  contare sulle decisioni della CPU (mai sul dito umano — la squadra
+  umana resta senza carattere). Tre manopole, formula identica per le
+  due squadre, ritorno neutro esatto a stati zero:
+
+  | manopola | formula | fattore dichiarato (tetto) | effetto REALE sul valore | massimo osservato dal banco (5 partite CPU-CPU, taglia 5) |
+  |---|---|---|---|---|
+  | passErr | base ÷ (1+0,15·umore) | ±15% | umore=+1: **-13,04%** (base/1,15); umore=-1: **+17,65%** (base/0,85) — ASIMMETRICO: la divisione non rispetta il fattore dichiarato dalla formula | 15,00% (esattamente al tetto) |
+  | slideP | base × (1+0,25·nervi) | +25% | nervi=+1: **+25,00%** esatto — la moltiplicazione fa coincidere fattore ed effetto | 18,49% (sotto tetto) |
+  | standoff | base × (1-0,12·spinta), guardia ≥0 | ±12% | spinta=+1: **-12,00%**; spinta=-1: **+12,00%** — moltiplicazione, simmetrico, fattore ed effetto coincidono | 8,44% (sotto tetto) |
+
+  **AVVERTENZA PER CHI LEGGE SOLO LA RIGA DEL FATTORE** (rilievo del
+  revisore del compito 3): la prova TETTI del banco misura il FATTORE
+  della formula (`|0,15·umore|`, simmetrico ±15%), non l'effetto reale
+  sul valore. passErr dichiara "±15%" ma il valore vero si sposta fino
+  al **17,65%** quando l'umore è negativo, perché la formula limita
+  simmetricamente il fattore, e la DIVISIONE non è simmetrica come la
+  moltiplicazione (slideP e standoff, dove fattore ed effetto
+  coincidono).
+
+  **4. I due canali d'occhio**: `p.mesto` si accende anche dai fatti
+  negativi (non solo dal gol subìto), un uomo per volta per squadra;
+  la folla sale con la spinta di chi attacca, con banner "TESTA ALTA"/
+  "CI CREDONO" sui cambi di scalino — disegno/audio puri, rispettano
+  `SAVE.moto` (MOVIMENTO RIDOTTO).
+
+  **5. Il banco che condanna** (`strumenti/_q-umore.js`, nuovo, ora in
+  batteria): nato ROSSO con la sola prova REGISTRO al compito 1,
+  cresciuto compito per compito, arrivato a **30 prove su 30** verdi
+  (REGISTRO, STATI, CANALE, TETTI, TESTIMONE, SPECCHIO, INPUT-SACRO) —
+  le due versioni bugiarde costruite apposta (`_crit-mind-tetto.js` sul
+  coefficiente di passErr, `_crit-mind-muto.js` sul canale mesto) lo
+  condannano ciascuna sulla propria prova: il banco discrimina, non
+  attesta.
+
+  **6. La giocabilità, misurata non stimata** (`strumenti/_eventi.js`,
+  prima=`f352af5` dopo=la punta del cantiere, 300 partite CPU-CPU per
+  versione, stessi semi 20260803..20261102, taglia 5, Normale — la
+  numerosità più grande usata, per stabilizzare un conteggio a piccoli
+  interi):
+
+  | voce | prima (mediana / media) | dopo (mediana / media) | delta sulla media |
+  |---|---|---|---|
+  | gol nei 90 s | 3,00 / 2,72 | 2,50 / 2,63 | **-3,3%** |
+  | MOMENTI DA PORTA al minuto | 3,88 / 3,87 | 3,43 / 3,76 | -2,8% |
+  | EVENTI al minuto (tutti) | 63,8 / 63,7 | 63,6 / 63,5 | -0,3% |
+  | durata gioco vivo (s) | 92,5 / 96,9 | 92,5 / 96,5 | -0,4% |
+  | tiri per partita | 13,0 / 13,7 | 13,0 / 13,6 | -0,7% |
+  | parate per partita | 2,0 / 1,9 | 2,0 / 1,8 | -5,3% |
+
+  **VERDETTO DEL COMMITTENTE: DENTRO BANDA.** Il MIND cambia il feel per
+  disegno (è il suo scopo) ma non lo stravolge: -3,3% su gol/90s, ben
+  dentro il ±20% di guardia.
+
+  **NOTA METODOLOGICA ONESTA**: la MEDIANA di "gol nei 90 s" è un cattivo
+  indicatore a questo campione — è un conteggio a piccoli interi (0-7 a
+  partita) e vale +50% a N=30, -33% a N=100, -17% a N=300: tre segni e
+  ampiezze diverse sulla STESSA coppia di versioni, puro rumore di
+  campionamento sulla mediana di una variabile discreta a bassa
+  numerosità. La MEDIA è stabile su tutte e tre le numerosità (-2,3% a
+  N=30, -1,1% a N=100, -3,3% a N=300): è la media, non la mediana,
+  l'indicatore di feel da leggere qui.
+
+  **L'HANG #119** (bug preesistente, non di questo cantiere): guidando la
+  prova REGISTRO del banco (una partita CPU-CPU vera, seme del cantiere
+  20260919, taglia 5), la partita si è bloccata in scena 'freekick' dopo
+  13.200 fotogrammi simulati (220 s, il tetto di sicurezza del banco)
+  senza mai raggiungere 'end' — misurato direttamente, non dedotto. Nella
+  misura di giocabilità sopra (860 partite CPU-CPU in tutto fra le due
+  versioni, semi 20260803..20261102 a N=30/100/300 più un controllo di
+  60 partite a un seme lontano, 20250000..20250059) **zero partite su
+  860** si sono bloccate su nessuna delle due versioni: l'hang non si è
+  manifestato in questo campione, quindi il confronto prima/dopo resta
+  diretto, senza bisogno di scartare semi né di misurare su finestre
+  parziali. Seguito **#119** aperto per un cantiere dedicato: è un
+  difetto del motore (preesiste su `f352af5`), non del MIND.
+
+  **7. La divergenza dei sorteggi, dichiarata per taglia**
+  (`_c3-sorteggi.js`, `f352af5` contro la punta, 20 partite per taglia,
+  tre invocazioni isolate — atteso: DIVERGENZA, il canale del compito 3
+  cambia le decisioni della CPU): taglia 5 **18/20** partite divergenti
+  (103.573 → 101.201 sorteggi totali); taglia 7 **19/20** (222.495 →
+  208.468); taglia 11 **20/20** (274.986 → 275.325). Totale **57/60**,
+  dichiarato per costruzione, non un difetto. `_q-determinismo --partite
+  4` resta **13/13** (stessa versione, stesso seme, due corse identiche —
+  l'invariante che serve al multigiocatore, intatta).
+
+  **8. IL SESTO CRONOMETRO FRATELLO — UNA REGRESSIONE TROVATA E RIPARATA
+  RILANCIANDO LA BATTERIA INTERA** (quinta occorrenza della lezione
+  ricorrente: #86/#87/#107/#112 ne avevano già pagata una). La prima
+  esecuzione della batteria intera su questo ramo ha trovato
+  `strumenti/_q-replay.js` **ROSSO** sulla prova E ("registrare non
+  cambia il gioco"): accendere il registro del nastro spostava la fisica
+  della STESSA partita a seme fisso dal fotogramma 80 circa. Bisecato sui
+  quattro compiti: verde su `cb23512` (compito 1) e `53007c5` (compito
+  2), rosso da `8824222` (compito 3) in poi — nato dentro questo
+  cantiere. La CAUSA VERA è però un difetto PRE-ESISTENTE del motore, non
+  del canale MIND: `G.swLock`/`G.swTimer` (l'isteresi del cambio-
+  giocatore automatico, `switchControlled`) sono dichiarati una volta
+  sola nell'oggetto `G` iniziale e non venivano MAI azzerati da
+  `startMatch` — la stessa malattia dei "cinque cronometri fratelli" di
+  `G.recT` (riparata il 31 agosto 2026) e di `G.vantaggio` (voce #107):
+  la fase sopravviveva da una partita all'altra sulla STESSA pagina. Si
+  vede solo dal compito 3 perché prima `aiMove` leggeva `manopoleDi(p.team)`
+  — la stessa manopola per tutti e undici, indifferente a chi è
+  controllato in quel momento — mentre `manopolaDi(p)` è la prima lettura
+  a far dipendere una decisione della CPU da QUALE giocatore specifico è
+  sotto controllo umano: la fase residua di `G.swLock` sposta di alcuni
+  fotogrammi il cambio automatico, e la differenza si propaga nella
+  fisica. **Irrilevante per ogni misura CPU-CPU di questo verbale**
+  (`switchControlled` esce subito quando `G.ctrl[t]<0`, cioè quando
+  `setCpuVsCpu(true)` toglie il controllo umano a entrambe le squadre —
+  verificato: i numeri di giocabilità e i totali dei sorteggi ai punti 6
+  e 7 sono IDENTICI, cifra per cifra, prima e dopo la cura), riguarda
+  solo la squadra umana di una sfida vera. Cura (`strumenti/_t-swlock-reset.js`,
+  un ancoraggio, zero sorteggi nuovi): `G.swLock=[0,0]; G.swTimer=[0,0];`
+  accanto ai cinque cronometri fratelli in `startMatch`. Verificata:
+  `_q-replay.js` **10/10** su tre corse di controllo (era 9/10), `_q-umore.js`
+  ancora **30/30**, `_q-determinismo --partite 4` ancora **13/13**.
+  **L'altro rosso della prima esecuzione, `audio.js`** (27/28, "parata
+  del portiere → crowdLevel×N jingleTick" atteso `clack:true` — l'N
+  esatto oscilla di corsa in corsa, 8 o 9, ma la riga che fallisce e il
+  verdetto no), è **PRE-ESISTENTE**: riprodotto IDENTICO su `f352af5`
+  (stesso fallimento, prima ancora che questo cantiere cominciasse) —
+  non una regressione di #117, fuori perimetro di questa cura (voce di
+  audio/folla scollegata dal MIND). Seguito **#120** aperto
+  per chi vorrà indagarlo.
+
+  **Cancelli**: `_q-umore.js` **30/30**; `_eventi.js` (giocabilità)
+  dentro banda; sorteggi dal merge-base **57/60 divergenti per
+  costruzione** (dichiarato); `_q-determinismo --partite 4` **13/13**;
+  `_q-replay.js` **10/10** (dopo la cura del punto 8). Batteria intera
+  (`strumenti/tutti.js`, ora con `umore` registrato, `conta:true`)
+  rilanciata a fine cantiere, DOPO la cura del sesto cronometro: **36
+  cancelli eseguiti**, **33 con un verdetto valido che conta** (esclusi
+  `istantanea` e `avvio`, informativi/`conta:false`, e `avvio-telefono`,
+  PROVA NULLA — nessun telefono collegato in questo ambiente) — **32
+  verdi, 1 rosso** (`audio.js`, il punto 8, pre-esistente e fuori
+  perimetro). Nessun altro rosso: `replay` è tornato verde con la cura.
+
+  **SEGUITI**: **#118 (MIND v2)** — contagio nel tempo e peso del
+  capitano, regolazione senza intervallo, capitano che rallenta, la
+  striscia del momento post-partita, il volto che cambia, il dischetto
+  sotto pressione, l'HUD dell'umore (tutto il "Fuori perimetro" dello
+  spec, mai assorbito qui); **#119 (l'hang del freekick)** — un cantiere
+  dedicato al bug del motore misurato sopra, che colpisce entrambe le
+  versioni allo stesso modo; **#120 (l'audio della parata)** — il rosso
+  pre-esistente di `audio.js` (punto 8), scollegato dal MIND, mai
+  indagato prima d'ora perché mai emerso finché la batteria intera non è
+  stata rilanciata su questo file.
+
 - **Spiccioli di UX e accessibilità — L'ONDA A SI CHIUDE** (#112) —
   **CURATA il 18 settembre 2026** (sei compiti dal merge-base `73c1c64`,
   ultima voce dell'onda A del mandato: `_analisi/MAPPA-MANDATO.md` aree 4
