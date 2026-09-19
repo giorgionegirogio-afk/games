@@ -8480,6 +8480,7 @@ const G = {
      tranne il conto alla rovescia in step() e la scelta al fischio */
   capT:0, capIdx:[1,1],
   /* moviola: anello di fotogrammi degli ultimi secondi, per rivedere il gol */
+  fatti:[],                              // registro dei fatti (voce #117, compito 1): vedi emettiFatto
   rec:[], recT:0, moviola:null,
   /* la RIPRESA DEDICATA del gol in camera bassa (decisione 3): parte dopo
      il colpo nel sacco, per ogni rete con un marcatore (mai sull'autorete) */
@@ -10978,6 +10979,7 @@ function startMatch(mode, diff, opts){
      gioco, perche' un gol al primo secondo di una partita nuova
      rivedrebbe un fotogramma della partita di prima.
      ===================================================================== */
+  G.fatti.length=0;
   G.rec.length=0; G.recT=0;
   /* I QUATTRO CRONOMETRI FRATELLI DI recT (31 agosto 2026). Stessa
      malattia del verbale qui sopra, altri quattro nomi: possOwner e
@@ -11388,6 +11390,10 @@ function addGoal(team){
        faiCrescereRosa dava tutto all'uomo di indice 1. */
     G.golLog.push({ team, min:G.goalMin, chi:G.goalChi, num:G.goalNum,
                     auto:G.goalAuto, idx:G.goalIdx, s0:G.score[0], s1:G.score[1] });
+    /* REGISTRO DEI FATTI (voce #117, compito 1): G.goalIdx e G.goalAuto
+       sono gia' calcolati qui sopra da attribuisciRete -- si trascrive,
+       non si decide di nuovo. */
+    emettiFatto(G.goalAuto?'autorete':'gol', G.goalIdx, [G.goalSpot.x, G.goalSpot.y], {team});
   }
   /* cinematica: slow-motion, il pallone prosegue e gonfia la rete */
   G.goalCine = { side, vx:b?b.vx:0, vy:b?b.vy:0, done:false };
@@ -12351,9 +12357,9 @@ function prendiAcciacco(p){
   p.fiato=Math.min(p.fiato, 20);
   p.mesto=1.2;                        // il latch della delusione: gia' esiste, e dice questo
   if(G.stats.acciacchi) G.stats.acciacchi[p.team]++;
-  /* FATTO DA EMETTERE (registro dei fatti, in arrivo):
-     {che:'acciacco', chi:G.players.indexOf(p), dove:[p.x,p.y],
-      esito:{cond:p.cond, fiato:p.fiato}} */
+  /* IL FATTO E' EMESSO (registro dei fatti, voce #117, compito 1): lo
+     schema era gia' abbozzato qui in commento, ora e' una vera chiamata. */
+  emettiFatto('acciacco', G.players.indexOf(p), [p.x,p.y], {cond:p.cond, fiato:p.fiato});
   showBanner('ACCIACCO · '+cognomeBreve(p.nome), '#ff4d4d', 1.4);
   /* un colpo sordo e basso, non il fischio: il gioco NON si ferma per un
      acciacco (nel calcio l'arbitro fischia solo se il pallone e' morto o
@@ -12374,6 +12380,11 @@ function cognomeBreve(nome){
    G.players, e mutarlo a partita in corso sarebbe un difetto con dodici
    facce. Qui cambia l'uomo, non il posto. */
 function faiCambio(p, r){
+  /* REGISTRO DEI FATTI (voce #117, compito 1): il nome, la condizione e
+     il motivo di CHI ESCE si leggono ORA -- due righe piu' sotto le
+     stesse variabili del giocatore diventano quelle di CHI ENTRA, e il
+     fatto deve testimoniare l'uscita. Solo lettura, zero dado(). */
+  const _fEsce=p.nome, _fCondEsce=p.cond, _fMotivo=(p.acciacco?'acciacco':'riserva');
   p.nome=r.nome;
   /* IL RINCALZO ENTRA AL 94% DELL'UOMO CHE SOSTITUISCE, e non ha
      numeri suoi. La prima stesura gli dava attributi assoluti pari alla
@@ -12413,9 +12424,11 @@ function faiCambio(p, r){
   p.cond=100; p.fiato=100; p.acciacco=0; p.rincalzo=1;
   p.gialli=0;                          // i cartellini sono personali, e lui non ne ha
   p.mesto=0; p.celeb=0; p.fintaT=0; p.frenaT=0;
-  /* FATTO DA EMETTERE (registro dei fatti, in arrivo):
-     {che:'cambio', chi:G.players.indexOf(p), dove:[p.x,p.y],
-      esito:{esce, entra:p.nome, cond, motivo:'acciacco'|'riserva'}} */
+  /* IL FATTO E' EMESSO (registro dei fatti, voce #117, compito 1): esce,
+     cond e motivo sono quelli catturati in testa alla funzione, PRIMA che
+     queste stesse righe li sovrascrivessero con quelli di chi entra. */
+  emettiFatto('cambio', G.players.indexOf(p), [p.x,p.y],
+              {esce:_fEsce, entra:p.nome, cond:_fCondEsce, motivo:_fMotivo});
   showBanner('CAMBIO · '+cognomeBreve(p.nome), TEAMCOL[p.team], 1.4);
   Audio5.beep(520);
 }
@@ -18266,6 +18279,10 @@ function esitoRigore(segnato){
   R.tiri[R.turno]++;
   if(segnato) R.seg[R.turno]++;
   showBanner('RIGORI  '+R.seg[0]+' - '+R.seg[1], '#ffb020', 1.2);
+  /* REGISTRO DEI FATTI (voce #117, compito 1): chi=-1 DICHIARATO -- il
+     duello dei rigori vive a livello di SQUADRA (R.turno), il gioco di
+     oggi non tiene un indice del rigorista. */
+  emettiFatto('rigore', -1, [G.ball.x, G.ball.y], {segnato:!!segnato, team:R.turno});
   R.turno = 1-R.turno;
   programmaRigore();
   return true;
@@ -18290,6 +18307,7 @@ function infliggiCartellino(p){
   const inCampo = diMovimentoInCampo(p.team).length;
   const daEspellere = (G.stats.gialli[p.team] % CARTELLINI_PER_ESPULSIONE)===0 && inCampo>2 && p.role!=='gk';
   if(!daEspellere){
+    emettiFatto('giallo', G.players.indexOf(p), [p.x,p.y], {gialliTot:p.gialli});
     showBanner('CARTELLINO GIALLO', '#ffb020', 1.4);
     return;
   }
@@ -18304,6 +18322,7 @@ function infliggiCartellino(p){
   }
   /* il numero lo dice ESPULSIONE_SEC, non la mano: se la costante
      cambia, il cartello resta vero (31 agosto 2026) */
+  emettiFatto('espulsione', G.players.indexOf(p), [p.x,p.y], {gialliTot:p.gialli, secondi:ESPULSIONE_SEC});
   showBanner('FUORI '+ESPULSIONE_SEC+' SECONDI!', '#ff4d4d', 1.8);
   Audio5.whistle(true);
   buzz([60,40,60]);
@@ -18464,6 +18483,7 @@ function checkSlideContact(p){
         /* presa pulita: palla rubata + scatto di contropiede */
         b.owner=G.players.indexOf(p); b.passTo=-1;
         G.stats.rubate[p.team]++;
+        emettiFatto('rubata', G.players.indexOf(p), [p.x,p.y], {pulita:true, vittima:G.players.indexOf(carrier)});
         /* trofeo: 10 rubate pulite totali (carriera + partita in corso) */
         if(p.team===0 && !G.cpu[0] && Reg.modo!==2 && SAVE.stats.rubate+G.stats.rubate[0]>=10) unlockAch('rubate10');
         G.freeze=0.11;                       // hit-stop scivolata perfetta
@@ -18482,6 +18502,7 @@ function checkSlideContact(p){
         /* hai preso l'uomo: FALLO. Da dietro o in ritardo e' anche cattivo. */
         const cattivo = daDietro || !inTempo;
         G.stats.falli[p.team]++;
+        emettiFatto('fallo', G.players.indexOf(p), [p.x,p.y], {cattivo, vittima:G.players.indexOf(carrier)});
         /* IL FALLO. Stessa scossa della rubata ma piu' sorda e piu' lunga:
            qui non e' saltata la palla, e' saltato un uomo. Il gelo non c'e'
            — il fischio arriva subito dopo e due stacchi di fila si
@@ -19389,6 +19410,7 @@ function tentaPresa(p,b,disteso){
     b.owner=ki; b.vx=0; b.vy=0; b.vz=0; b.z=0;
     p.kickCd=0.9;
     showBanner('PRESA!','#39d3e6',0.9);
+    emettiFatto('presa', ki, [p.x,p.y], {});
   }else if(Math.abs(largo)<zonaMani && b.z>GK_PUGNO_Z){
     /* PUGNI: la palla e' ALTA e troppo forte per le mani.
        Sopra il petto (GK_PUGNO_Z = 16, e la presa alta del rig si arma
@@ -19433,6 +19455,7 @@ function tentaPresa(p,b,disteso){
        a pugno atterra fuori dall'area". */
     manoPortiere(p,'pugni');
     showBanner('PUGNI!','#39d3e6',0.85);
+    emettiFatto('pugni', ki, [p.x,p.y], {});
   }else if(Math.abs(largo)<zonaMani && sp<sogliaPresa*bandaSfugge){
     /* SE LA FA SFUGGIRE: ci ha provato con le mani e non l'ha tenuta.
        E' la palla in mezzo al corpo, oltre la soglia di blocco ma
@@ -19452,6 +19475,7 @@ function tentaPresa(p,b,disteso){
     b.vz = rnd(70,130);
     manoPortiere(p,'sfugge');
     showBanner('SFUGGE!','#ffb020',0.85);
+    emettiFatto('sfugge', ki, [p.x,p.y], {});
   }else{
     /* RESPINTA: devia verso l'esterno, mai al centro */
     const fuori = (b.y>FH/2?1:-1);
@@ -19467,6 +19491,7 @@ function tentaPresa(p,b,disteso){
     b.vz = rnd(40,110);
     manoPortiere(p,'respinta');
     showBanner('RESPINTA!','#39d3e6',0.85);
+    emettiFatto('respinta', ki, [p.x,p.y], {});
   }
   p.dive=Math.min(p.dive,0.10);
   /* LA PARATA. Il portiere ha fermato con le mani una palla che andava in
@@ -19983,6 +20008,7 @@ function hitPosts(b){
       spruzzo(cx, cy, nx, ny, 11, 1.4);
       lampo(cx, cy, nx, ny, 1.15);
       showBanner('PALO!','#39d3e6',1.0);
+      emettiFatto('legno', b.lastTouch, [cx,cy], {sp:Math.round(sp)});
       Audio5.post(); buzz(25);
       G.crowdHype=Math.max(G.crowdHype,0.9);
     }else Audio5.clack(false);
@@ -22221,7 +22247,14 @@ const Duel = {
         if(!s.contato){
           s.contato=true;
           if(s.outcome!=='fuori') G.stats.inPorta[s.shooter]=(G.stats.inPorta[s.shooter]||0)+1;
-          if(s.outcome==='parata') G.stats.parate[s.keeper]++;
+          if(s.outcome==='parata'){
+            G.stats.parate[s.keeper]++;
+            /* REGISTRO DEI FATTI (voce #117, compito 1): s.keeper e' la
+               SQUADRA, non l'uomo -- si cerca il portiere vero, la stessa
+               lettura che il gioco fa gia' altrove (mai un dado()). */
+            const gk = G.players.find(q=>q.team===s.keeper && q.role==='gk');
+            emettiFatto('parata', gk?G.players.indexOf(gk):-1, [G.ball.x,G.ball.y], {});
+          }
         }
         /* se siamo ai rigori l'esito non riapre il gioco: aggiorna la serie */
         if(G.rigori){
@@ -35411,6 +35444,23 @@ function drawLampi(){
    dell'ultimo tocco. */
 const REC_HZ = 20, REC_SEC = 9;
 const REC_MAX = REC_HZ*REC_SEC;
+
+/* =====================================================================
+   IL REGISTRO DEI FATTI (voce #117, compito 1 -- MIND v1, P0). G.fatti e'
+   un buffer PASSIVO: trascrive eventi che il gioco ha GIA' deciso nei
+   rami veri (addGoal, infliggiCartellino, checkSlideContact, tentaPresa,
+   hitPosts, esitoRigore, prendiAcciacco, faiCambio...), zero dado() qui
+   dentro e zero rami nuovi -- e' un testimone, non un giudice. Tetto
+   FATTI_MAX con push+shift, lo stesso modello di G.rec (qui sopra).
+   'chi' e' SEMPRE un indice intero (G.players.indexOf(p)), mai l'oggetto
+   giocatore: il replay deterministico confronta indici, non riferimenti.
+   't' e' lo stesso orologio che G.golLog gia' usa per il minuto del gol
+   (durataPartita()-G.timeLeft), non un cronometro nuovo. */
+const FATTI_MAX = 200;
+function emettiFatto(che, chi, dove, esito){
+  G.fatti.push({ che, chi, dove, esito, t: durataPartita()-G.timeLeft });
+  if(G.fatti.length > FATTI_MAX) G.fatti.shift();
+}
 
 function registraFotogramma(dt){
   G.recT -= dt;
