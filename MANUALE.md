@@ -456,6 +456,163 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **La mira guidata a due pesi — #113 CHIUSO** (#113, 19 settembre 2026, tre
+  compiti dal merge-base `d3169d3`, seguito §9.2 del mandato, chiude assieme
+  al #114 la coppia di accessibilità scelta dal committente dopo quella
+  voce). Spec `docs/superpowers/specs/2026-09-19-mira-guidata-design.md`,
+  piano `docs/superpowers/plans/2026-09-19-mira-guidata.md`.
+
+  **LA SCELTA (A), DICHIARATA.** «Mira guidata a due pesi» non è nel mandato
+  grezzo (che al §9.2 parla di profili Beginner/Standard/Pro con
+  auto-switch/auto-sprint/scudo) — è un conio della mappa di lavoro
+  (`_analisi/MAPPA-MANDATO.md` righe 398-401). Fra tre interpretazioni la
+  ricognizione ne ha messe tre sul tavolo, e il committente ha scelto **(A)**:
+  due pesi sullo SCOPE del salto di controllo post-passaggio
+  (`switchControlled`, meccanismo della voce #88), **NON** (B) un vero aiuto
+  geometrico alla precisione del tiro/passaggio, **NON** (C) un ibrido dei
+  due. **Perché non (B)/(C)**: entrambe avrebbero riaperto il codice
+  geometrico tarato di #88 (il cono della filtrante `scegliFiltrante`,
+  l'errore angolare di `fireShot`/`fireShotMirato`, 297 tiri misurati) — la
+  parte più delicata e già collaudata del motore dei verbi. (A) non la tocca
+  affatto: cambia solo CHI riceve il controllo dopo che la palla è già
+  partita, non DOVE va la palla. È la scelta più snella e a rischio più
+  basso, ed è per questo che il committente l'ha preferita.
+
+  **IL MECCANISMO.** `switchControlled` esiste dalla voce #88 ed è SEMPRE
+  attivo: dopo un passaggio/cross umano con un destinatario dichiarato
+  (`b.passTo`/`b.crossTo`), il controllo salta a quel destinatario invece che
+  al compagno più vicino alla palla. «Due pesi» = due AMPIEZZE di questo
+  salto: **'pieno'** (comportamento di sempre — salta per QUALSIASI
+  destinatario dichiarato, passaggio corto o cross) e **'essenziale'**
+  (ristretto ai soli cross/palloni alti — sui passaggi corti a terra il
+  salto non vale più, il controllo resta al compagno più vicino come se
+  nessun destinatario fosse dichiarato). Non esiste uno stato "OFF": il
+  salto è sempre esistito, questo cantiere lo rende configurabile in
+  AMPIEZZA. `SAVE.miraGuidata` vive in `{'pieno','essenziale'}`, **default
+  'pieno'** (additivo e sanificato con whitelist in `loadSave`, sul modello
+  di `SAVE.sponde`/`vibInt`/`sott`): un salvataggio vecchio senza il campo
+  rigioca bit-identico. Letto UNA VOLTA in `startMatch`
+  (`G.miraGuidata = opts.miraGuidata || SAVE.miraGuidata || 'pieno'`) e mai
+  più riletto da SAVE a partita in corso, come `G.campoVero`. La UI: una riga
+  in IMPOSTAZIONI a due bottoni (pattern `vibInt`/`sponde`), aria-pressed
+  sincronizzato, sottotitolo onesto («il controllo salta al ricevente solo
+  sui palloni alti, non sui passaggi corti»).
+
+  **LA CPU-CECITÀ, FIRMA DEL BASSO RISCHIO.** `switchControlled` salta già le
+  squadre CPU per costruzione (`if(G.ctrl[t]<0) continue`, riga di guardia
+  che esiste dalla #88): la mira guidata è strutturalmente scoped
+  all'input UMANO, senza bisogno di nessuna guardia nuova. Il due-versioni
+  CPU-CPU (`_c3-sorteggi.js`, base `fuori/base113.html` contro il curato,
+  taglie 5/7/11) è **0/60 PER COSTRUZIONE** a entrambi i pesi — il ramo
+  nuovo non gira mai in una partita CPU-contro-CPU, quindi non può spostare
+  un sorteggio. È una garanzia più netta del canale MIND (#117), che invece
+  divergeva per costruzione sulle stesse partite.
+
+  **L'ESITO MOTORE_V: NON INCREMENTATO.** La prova PIENO-IDENTICO
+  (`strumenti/_q-mira.js`) rigioca, col peso 'pieno' esplicito, le stesse
+  due scene (un cross e un passaggio corto, seme 113001, taglia 5) sia sul
+  gioco pre-cantiere (`fuori/base113.html`, dove `G.miraGuidata` non esiste
+  affatto) sia sul gioco curato, e confronta **fotogramma per fotogramma**
+  — controllo, pallone (posizione/velocità/quota/crossTo/passTo) e la
+  posizione/velocità di TUTTI i ventidue giocatori, non solo il giudizio
+  finale. Risultato: **0 differenze su 60 fotogrammi, su entrambe le
+  scene** (120 campioni totali) — il percorso 'pieno' è dimostrato
+  carattere per carattere identico a quello di ieri. `MOTORE_V` resta a
+  **1**, invariato: nessun nastro vecchio smette di rigiocarsi identico.
+
+  **IL LIMITE DELLE SFIDE ONLINE, A REGISTRO.** `Sfida.gioca`
+  (`CALCETTO-il-gioco.html:42908`) e `Sfida.guarda` (:43095) forzano
+  `miraGuidata:'pieno'` negli `opts` dello `startMatch` che aprono,
+  esattamente come già forzano `sponde:'gabbia'` — ignorando il
+  `SAVE.miraGuidata` locale di ciascun telefono. Senza questa riga, due
+  telefoni con un peso locale diverso (uno 'pieno', l'altro 'essenziale')
+  muoverebbero lo STESSO nastro su due motori diversi, e `chiudiSfida`
+  imputerebbe lo scarto di punteggio al profilo cresciuto invece che al
+  motore diverso — lo stesso ragionamento, e la stessa cura, di
+  `sponde:'gabbia'` prima del seguito #105 (le sponde nel nastro). **LIMITE
+  dichiarato**: la mira guidata non vale nelle sfide online in v1,
+  **parallelo al seguito #105**, a registro finché le due non viaggeranno
+  col nastro.
+  **Verificato dal vivo** (compito 3, `Sfida.gioca` invocata con un
+  risultato sintetico, bypassando la rete): con `SAVE.miraGuidata` locale
+  impostato a **'essenziale'**, dopo `Sfida.gioca(r)` `G.miraGuidata` legge
+  **'pieno'** — il SAVE locale è ignorato per costruzione. `_q-replay.js`
+  prova B (la partita rigiocata è identica campione per campione) resta
+  **verde** a peso fissato: **120 campioni** (due giri da 60), nessuna
+  divergenza.
+
+  **LA GIOCABILITÀ, MISURATA (seme 113001, taglia 5, input umano
+  simulato — soglia di lettura 20 fotogrammi = 0,33 s).** Col peso
+  'pieno': un cross fa saltare il controllo al fotogramma **13**, un
+  passaggio corto ANCH'ESSO al fotogramma **13** — nessuna distinzione,
+  il comportamento di sempre. Col peso 'essenziale': il cross salta
+  ANCORA al fotogramma **13** (identico al pieno: l'aiuto sul pallone
+  alto resta intatto, nessun nuovo fastidio introdotto lì), il passaggio
+  corto **NON salta più** entro la soglia — il controllo resta al
+  giocatore comandato dall'utente, e passa al compagno solo al fotogramma
+  **32**, quando quello diventa DAVVERO il più vicino al pallone (il
+  fallback naturale pre-#88, non il salto della mira guidata). Il
+  "fastidio" che il progetto #88 §4.2 aveva previsto come possibile
+  ripiego — il salto di controllo sui passaggi brevi — è risolto per chi
+  sceglie 'essenziale', senza far perdere l'aiuto utile sui cross.
+
+  **NOTA SU `_c3-sorteggi.js` (dal compito 1, riconfermata qui).**
+  Invocato as-is, questo banco usa l'ordine sbagliato di `setCpuVsCpu`
+  rispetto a `startMatch` — l'artefatto #108 (escluso dal censimento
+  batteria di #121 perché non è uno dei banchi IN batteria): testa un
+  lato CPU vera e un lato "umano" fermo, non due CPU vere l'una contro
+  l'altra. Per codice condizionato su `G.ctrl` umano (come questo ramo,
+  che salta solo se `G.ctrl[t]>=0`), l'ordine sbagliato può dare risultati
+  fuorvianti se non corretto: il compito 1 ha osservato, su un confronto
+  DIRETTO pieno-contro-essenziale (non il gate ufficiale) fatto con
+  l'ordine invertito, **58/60** partite con un conto di sorteggi diverso —
+  perché la squadra "umana ferma" resta dentro la guardia di
+  `switchControlled` (`G.ctrl[t]>=0` anche senza nessun dito vero), e il
+  peso decide quale giocatore resta "congelato" dopo un passaggio,
+  cambiando quale IA smette di tirare dadi in proprio e quindi l'intera
+  sequenza dei sorteggi successivi. Il gate ufficiale della voce #113 è un
+  altro confronto — base113 contro il curato, ENTRAMBI forzati a
+  'pieno' — e lì il verdetto non cambia con l'ordine: **0/60
+  pieno-contro-pieno in ENTRAMBI gli ordini** (quello sbagliato del tool e
+  quello corretto verificato a mano), perché i due file eseguono lo
+  STESSO codice 'pieno' (PIENO-IDENTICO lo dimostra bit a bit) — qualunque
+  cosa faccia la squadra "ferma", la fa identica su entrambi i lati, zero
+  divergenza per costruzione. Si registra comunque il **seguito #124**
+  (correggere l'ordine di `setCpuVsCpu` dentro `_c3-sorteggi.js`, sul
+  modello della cura già applicata a `_q-battute.js`/`_q-regole.js`/
+  `_q-umore.js` dal #121): finché non è corretto, ogni futuro banco che
+  legge `_c3-sorteggi.js` su codice condizionato sull'input umano deve
+  ripetere questa verifica a mano.
+
+  **Il banco `strumenti/_q-mira.js`** (calco di `_q-volo.js`/`_q-battute.js`,
+  seme 113001, taglia 5, zero `dado()` nuovi): SCOPE + SCOPE-BASE113 +
+  PIENO-IDENTICO (compito 1), MIRA-UI-STILE + MIRA-ARIA (compito 2) — **5/5
+  verdi**. Da questo compito **registrato in `strumenti/tutti.js`**
+  (`conta:true`, sul modello di `regole`/`accessibile`/`umore`/
+  `cpu-ordine`). **Cancelli**: `_q-mira` 5/5; `_c3-sorteggi` 0/60
+  pieno-contro-pieno (entrambi gli ordini di `setCpuVsCpu`, vedi la nota
+  sopra su #124); `_q-determinismo --partite 4` **13/13** (invariante del
+  multigiocatore, intatta); `_q-replay` **10/10** (prova B verificata a
+  peso fissato). **Batteria intera rilanciata con `_q-mira` dentro**
+  (`strumenti/tutti.js`, corsa di default, file 1c562e6a4d49): **33
+  cancelli eseguiti, 32 che contano tutti VERDI** (`mira` **OK, 12s, 5/5**
+  compreso), l'unico informativo `istantanea.js` (non conta) **«NO»,
+  46/56** contro il registro del 20 agosto — lo stesso schema noto già
+  dichiarato in voce #122/#114 (il riferimento era una prova NULLA:
+  «peggiorato» qui significa solo che oggi c'è una quota da confrontare,
+  non che qualcosa di questo cantiere abbia spostato un pixel) —
+  **PRE-ESISTENTE, non di questo compito**. `audio.js` e i lenti
+  (`abbandono`, `volti`, `avvio`, `avvio-telefono`) restano fuori dalla
+  corsa di default (`--tutto` per averli): `audio.js` verificato a parte,
+  **VERDE dopo #122** (stato dichiarato, non toccato da questo cantiere).
+  «VERDE CON RISERVA» complessivo, la stessa dizione delle voci #114/#122.
+  `git diff CALCETTO-il-gioco.html` vuoto per l'intero cantiere (il file
+  del gioco non è mai stato toccato da questo ultimo compito).
+
+  **#113 CHIUSO.** Seguito nuovo: **#124** (l'ordine di `setCpuVsCpu` in
+  `_c3-sorteggi.js`, sopra). Chiude, insieme al #114, la coppia di
+  accessibilità voluta dal committente dopo la chiusura dell'onda B/MIND.
+
 - **Il banco fotosensibile ancorato a WCAG — #114 CHIUSO** (#114) —
   **CURATA il 19 settembre 2026** (tre compiti dal merge-base `ebf6bb1`,
   seguito del #112: spec

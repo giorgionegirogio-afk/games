@@ -66,6 +66,21 @@
    salto") viene meno ed SCOPE e' rosso. E' un rosso leggibile: dice
    esattamente cosa manca, non "qualcosa non va".
 
+   IL COMPITO 3 (giocabilita', batteria, verbale) NON aggiunge prove
+   qui: la misura di giocabilita' che chiude il cantiere e' la STESSA
+   prova SCOPE qui sopra, letta come misura invece che come cancello --
+   "quante volte il controllo salta" e' esattamente saltoA(trace,mi) per
+   ciascuna combinazione peso/modo, gia' stampata nel dettaglio OK/NO
+   (fotogramma 13 per pieno/cross e pieno/passaggio ed essenziale/cross,
+   fotogramma 32 -- fuori soglia -- per essenziale/passaggio). Questo
+   file entra da qui in `strumenti/tutti.js` (conta:true). Le altre due
+   verifiche del compito 3 (SFIDA-DETERMINISTICA: una sfida forzata a
+   'pieno' ignora il SAVE.miraGuidata locale; _c3-sorteggi pieno-contro-
+   pieno 0/60 in entrambi gli ordini di setCpuVsCpu, col seguito #124
+   sull'ordine sbagliato del tool) restano FUORI da questo file, sullo
+   stesso principio di CPU-CIECA qui sopra -- sono cancelli a parte, coi
+   numeri nel verbale di MANUALE.md (voce #113).
+
    IL SEME: 113001, dichiarato, fisso di default (flag --seme). LA
    TAGLIA: 5, fissa (flag --taglia) — le due scene non dipendono dalla
    taglia, ma un numero solo rende ogni corsa confrontabile con l'altra.

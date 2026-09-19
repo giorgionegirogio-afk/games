@@ -593,6 +593,38 @@ const CANCELLI = [
      propri (la semina passa sempre da semeFisso di _posa.js): corre in
      compagnia. */
   { nome: 'cpu-ordine',  cmd: ['strumenti/_q-cpu-ordine.js'],                           conta: true,  lento: false },
+  /* mira: LA MIRA GUIDATA A DUE PESI DICE LA VERITA'? (voce #113, 19
+     settembre 2026, tre compiti). Cinque prove: SCOPE (input umano
+     simulato, seme fisso 113001, taglia 5 — col peso 'essenziale' un
+     cross salta ancora, un passaggio corto no; col peso 'pieno' entrambi
+     saltano) e SCOPE-BASE113 (la stessa misura sul gioco pre-cantiere,
+     nata rossa per costruzione: la' 'essenziale' non esiste); PIENO-
+     IDENTICO (col peso 'pieno' esplicito, base113 e curato combaciano
+     fotogramma per fotogramma — la prova che protegge MOTORE_V, che
+     NON si incrementa: 0 differenze su 60 fotogrammi per due scene);
+     MIRA-UI-STILE e MIRA-ARIA (compito 2: la riga IMPOSTAZIONI a due
+     bottoni rende col selettore CSS condiviso, aria-pressed sincronizzato
+     e SAVE.miraGuidata persistito). La CPU-cecita' (switchControlled
+     salta le squadre CPU per costruzione) e la SFIDA-DETERMINISTICA
+     (le sfide forzano 'pieno', il SAVE locale e' ignorato) sono cancelli
+     a parte (_c3-sorteggi, _q-replay prova B), non ripetuti qui.
+
+     PERCHE' STA IN BATTERIA (conta:TRUE, sul modello di regole/
+     accessibile/umore/cpu-ordine): e' l'unico banco che si accorge se un
+     futuro tocco a switchControlled, a startMatch (lettura di
+     G.miraGuidata), a defaultSave/loadSave (whitelist) o al pannello
+     IMPOSTAZIONI fa perdere lo scope ristretto di 'essenziale', fa
+     rileggere SAVE a partita in corso, o rompe l'accessibilita' della
+     riga a due bottoni — nessun altro cancello in lista guarda questo
+     campo.
+     Nato ROSSO su SCOPE al compito 1 (il gioco pre-cantiere non
+     distingue i due pesi), su MIRA-UI-STILE/MIRA-ARIA al compito 2
+     (nessun #miraRow), arrivato verde su tutte le prove col compito 2.
+     Deterministico al seme del cantiere (113001), taglia 5, zero dado()
+     nuovi (le scene scrivono lo stato di palla/giocatori e chiamano
+     kickBall/doCross/segnaTocco, le stesse funzioni del motore vero):
+     corre in compagnia. */
+  { nome: 'mira',        cmd: ['strumenti/_q-mira.js'],                                 conta: true,  lento: false },
   /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
