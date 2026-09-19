@@ -856,6 +856,14 @@ function ctrl(sez, ok, testo, conta = true, nota = '') {
     gk.kickCd = 0; gk.gkT = 0; gk.presaT = 0; gk.rinvT = 0;
     gk.x = c.FW - 18; gk.y = (c.GY0 + c.GY1) / 2; gk.vx = 0; gk.vy = 0;
     b.owner = -1; b.passTo = -1; b.z = 0; b.vz = 0; b.saveRolled = false;
+    /* AZZERAMENTO DEL TOCCO (voce #122, #120): senza questo il tiro
+       teletrasportato porta ancora il lastTouch/toccoPiede di prima. La
+       guardia del retropassaggio (voce #107, CALCETTO-il-gioco.html:19504-
+       19505) legge quello stato sporco e rifiuta il tiro come autopassaggio
+       del portiere: tentaPresa non raggiunge nessun esito, e Audio5.clack
+       (chiamato incondizionatamente a CALCETTO-il-gioco.html:19650) non
+       scatta mai. Il gioco e' sano: il difetto e' qui, nel banco. */
+    b.lastTouch = -1; b.toccoPiede = false;
     b.x = c.FW * 0.68; b.y = gk.y; b.vx = 420; b.vy = 0;
     __test.simulate(2.0);
   }, 100);
