@@ -9854,6 +9854,16 @@ function defaultSave(){
        campo additivo, chi gioca oggi non vede cambiare nulla (voce #87,
        compito 1). */
     sponde:'gabbia',
+    /* MIRA GUIDATA: due pesi sullo SCOPE del salto di controllo dopo un
+       passaggio/cross con destinatario dichiarato (switchControlled,
+       voce #113, interpretazione A). 'pieno' salta per qualunque
+       passaggio o cross con destinatario; 'essenziale' restringe il
+       salto ai soli cross/palloni alti (b.crossTo), escludendo i
+       passaggi corti a terra (b.passTo). NON c'e' uno stato "off": il
+       salto e' sempre esistito (voce #88), qui si rende configurabile
+       in AMPIEZZA. Default 'pieno' = comportamento di oggi: un
+       salvataggio vecchio (senza questo campo) rigioca identico. */
+    miraGuidata:'pieno',
     /* 1 = EQUILIBRIO. Il valore di serie e' la voce neutra, e la voce
        neutra e' il gioco di prima al bit: chi installa oggi non trova
        una partita diversa da quella di ieri per una scelta che non ha
@@ -9983,6 +9993,10 @@ function loadSave(){
     if(j.mentalita===0||j.mentalita===1||j.mentalita===2) s.mentalita=j.mentalita;
     if(j.moviola===0||j.moviola===1) s.moviola=j.moviola;
     if(j.sponde==='campo'||j.sponde==='gabbia') s.sponde=j.sponde;
+    /* stesso modello di sponde qui sopra: solo le due chiavi conosciute,
+       un salvataggio manomesso non puo' chiedere un terzo peso (voce
+       #113, compito 1) */
+    if(j.miraGuidata==='pieno'||j.miraGuidata==='essenziale') s.miraGuidata=j.miraGuidata;
     /* IL POLLICE, riletto con la disciplina del resto del blocco: solo le
        tre chiavi conosciute, solo numeri finiti, dentro l'intervallo che
        la pagina COMANDI offre. Un salvataggio manomesso non puo' chiedere
@@ -10948,6 +10962,13 @@ function startMatch(mode, diff, opts){
      anche a 5/7). */
   G.campoVero = (TAGLIA===11) ||
     (opts.sponde==='gabbia' ? false : opts.sponde==='campo' ? true : SAVE.sponde==='campo');
+  /* LA MIRA GUIDATA, fissata una volta sola come G.campoVero qui sopra
+     (voce #113, compito 1): mai riletta da SAVE a partita in corso.
+     opts.miraGuidata vince quando presente -- le sfide lo forzano a
+     'pieno' (Sfida.gioca/Sfida.guarda, vedi sotto), esattamente come
+     opts.sponde vince su SAVE.sponde qui sopra; altrimenti la scelta
+     salvata, altrimenti 'pieno' -- il comportamento di sempre. */
+  G.miraGuidata = (opts && opts.miraGuidata) || SAVE.miraGuidata || 'pieno';
   G.mode = mode===2?2:1;
   if(diff!==undefined) G.diff = clamp(diff|0,0,2);
   G.cpu=[false, G.mode===2?false:true];
@@ -17535,9 +17556,24 @@ function switchControlled(dt){
     const inVolo = G.ball.owner<0 && squadraDelPallone()===t;
     const dest = !inVolo ? -1
                : (G.ball.crossTo>=0 ? G.ball.crossTo : (G.ball.passTo>=0 ? G.ball.passTo : -1));
-    const qd = dest>=0 ? G.players[dest] : null;
+    /* LA MIRA GUIDATA (voce #113, compito 1): il peso 'essenziale'
+       restringe il salto ai soli cross/palloni alti (b.crossTo),
+       escludendo i passaggi corti a terra (b.passTo) -- il "fastidio"
+       che il progetto #88 (SS4.2) aveva gia' previsto come possibile
+       ripiego per chi ha difficolta' motorie. Il calcolo di dest qui
+       sopra resta CARATTERE PER CARATTERE quello di oggi: e' il
+       percorso 'pieno', invariato -- questo IF e' il SOLO ramo nuovo, e
+       tocca solo destFinale (dest non e' piu' letto oltre questo
+       punto). Se il destinatario era un passTo puro (crossTo<0) il
+       salto non vale per 'essenziale': destFinale torna a -1, e il
+       controllo ricade sul compagno piu' vicino al pallone nel ramo
+       ELSE qui sotto, come se non ci fosse nessun destinatario
+       dichiarato -- esattamente il comportamento pre-#88. */
+    let destFinale = dest;
+    if(G.miraGuidata==='essenziale' && G.ball.crossTo<0) destFinale = -1;
+    const qd = destFinale>=0 ? G.players[destFinale] : null;
     if(qd && qd.team===t && qd.out<=0 && qd.role!=='gk'){
-      best=dest; bd=0;
+      best=destFinale; bd=0;
     } else
     for(let i=0;i<G.players.length;i++){
       const p=G.players[i];
@@ -42802,6 +42838,16 @@ const Sfida = {
          sponde non viaggiano col nastro (seguito #105). A 11 il campo
          vero resta comunque obbligatorio, opts o non opts. */
       sponde: 'gabbia',
+      /* LA MIRA GUIDATA, SEMPRE PIENA, PER LO STESSO MOTIVO (voce #113,
+         compito 1). Due telefoni con SAVE.miraGuidata locale diversa
+         (uno 'pieno', l'altro 'essenziale') muoverebbero lo stesso
+         nastro su due motori diversi -- il salto di controllo umano
+         cambia scope. Forzare 'pieno' qui rende il nastro indipendente
+         dalla scelta di accessibilita' di ciascun telefono, esattamente
+         come sponde:'gabbia' qui sopra. LIMITE dichiarato: la mira
+         guidata non vale nelle sfide online (v1), come le sponde prima
+         del seguito #105. */
+      miraGuidata: 'pieno',
       /* LA MIA POSTURA VIENE DALLA MIA INDOLE, non da SAVE.mentalita, e
          senza questa riga il replay non tornerebbe: chi guarda la partita
          che ha subito non ha modo di sapere che cosa avevo scelto nel mio
@@ -42982,6 +43028,13 @@ const Sfida = {
          gia' tutto alla rosa. A 5/7 la sfida e' sempre stata gabbia
          (vedi sopra): rigiocarla in gabbia e' rigiocarla com'era. */
       sponde: 'gabbia',
+      /* LA MIRA GUIDATA, SEMPRE PIENA, PER LO STESSO MOTIVO (voce #113,
+         compito 1, vedi il commento gemello in Sfida.gioca): il replay
+         deve muoversi sullo stesso scope di controllo con cui la sfida
+         fu giocata davvero, non su quello del telefono di chi guarda. A
+         5/7 la sfida e' sempre stata 'pieno' (vedi sopra): rigiocarla
+         'pieno' e' rigiocarla com'era. */
+      miraGuidata: 'pieno',
       /* chi ha attaccato prende il posto di chi gioca: e' la sua rosa che
          il nastro muove */
       mia: { n:String(att.nome || 'CHI TI HA ATTACCATO').slice(0,18),
@@ -43715,6 +43768,10 @@ window.__test = {
      nuovo (Object.assign) a ogni lettura, cosi' il banco non puo'
      mutare lo stato vero tenendo un riferimento vivo. */
   get campoVero(){ return !!G.campoVero; },
+  /* LA MIRA GUIDATA, per il banco (voce #113, compito 1): fotografa cio'
+     che startMatch ha deciso, mai ricalcolata -- lo stesso pattern di
+     campoVero qui sopra. */
+  get miraGuidata(){ return G.miraGuidata; },
   get battuta(){ return G.battuta ? Object.assign({},G.battuta) : null; },
   get score(){ return G.score; },
   get timeLeft(){ return G.timeLeft; },
