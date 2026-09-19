@@ -39,6 +39,27 @@
         CALCETTO-il-gioco.html`, un cancello a parte (vedi il verbale
         di consegna del compito 1 per i numeri).
 
+   IL COMPITO 2 (la UI) aggiunge due prove, entrambe sul gioco CURATO
+   (--gioco, di default CALCETTO-il-gioco.html) -- non serve una seconda
+   pagina base per queste due, basta ripuntare --gioco su una copia
+   pre-compito-2 (vedi sotto):
+     MIRA-UI-STILE — la riga IMPOSTAZIONI a due bottoni (#miraRow, classe
+        .mira) deve RENDERE, non solo esistere nel DOM: misura
+        getComputedStyle contro il riferimento .diff (stesso pannello),
+        MAI lo stato logico da solo -- e' la lezione del #112 (compito 2,
+        correzione revisione): un bottone copiato senza i selettori CSS
+        condivisi rende col default del browser e lo stato scelto e'
+        invisibile a chi lo guarda, anche se SAVE.miraGuidata e' corretto.
+     MIRA-ARIA — aria-pressed del bottone attivo vale "true", degli altri
+        "false", sincronizzato DOPO il click; in coda, il click SCRIVE e
+        PERSISTE SAVE.miraGuidata (t.save live + localStorage via
+        t.saveKey, esattamente come persistSave lo scrive davvero).
+   ENTRAMBE nascono ROSSE sul gioco pre-compito-2 (526c989, prima di
+   questo compito): `node strumenti/_q-mira.js --gioco fuori/base113b.html`
+   (con `fuori/base113b.html` = `git show 526c989:CALCETTO-il-gioco.html`)
+   -- #miraRow non esiste ancora, querySelector torna null, guasto
+   leggibile invece di un'eccezione cieca sul .click() di null.
+
    NASCE ROSSA SU fuori/base113.html: la' G.miraGuidata non esiste, il
    salto e' sempre pieno per costruzione — chiedere 'essenziale' non ha
    alcun effetto, quindi PASSAGGIO-ESSENZIALE (che pretende "nessun
@@ -291,6 +312,112 @@ function saltoA(trace, mi) {
       di(tutteUguali, 'PIENO-IDENTICO — peso \'pieno\': base113 e curato combaciano fotogramma per fotogramma (cross e passaggio)',
         tutteUguali ? 'entrambe le scene, ' + FRAMES_TRACCIA + ' fotogrammi ciascuna, 0 differenze — MOTORE_V non si incrementa'
                     : primaDiff + '  -- MOTORE_V andrebbe incrementato, decisione da prendere');
+    }
+
+    /* ===================================================================
+       PROVA MIRA-UI-STILE (voce #113, compito 2) — la riga IMPOSTAZIONI
+       a due bottoni per SAVE.miraGuidata deve RENDERE, non solo esistere
+       nel DOM: la lezione del #112 (compito 2, correzione revisione) e'
+       che un bottone copiato senza i selettori CSS condivisi rende col
+       default del browser e lo stato scelto e' invisibile. Si misura
+       SOLO getComputedStyle, MAI lo stato logico (classList/SAVE) da
+       solo -- e' proprio la misura che quel buco avrebbe fatto passare.
+       Il riferimento e' .diff:not(.sel) (la riga "Difficolta' predefinita
+       CPU", stesso pannello IMPOSTAZIONI, mai toccata da questo compito):
+       se .mira eredita davvero il selettore condiviso, background-color,
+       border-top-color e font-family devono combaciare. Poi .mira contro
+       .mira.sel: almeno uno fra sfondo e bordo deve differire, altrimenti
+       lo stato scelto sarebbe invisibile. Nasce ROSSA sul gioco
+       pre-compito-2 (526c989: `node strumenti/_q-mira.js --gioco
+       fuori/base113b.html`) -- #miraRow non esiste ancora, querySelector
+       torna null, guasto leggibile invece di un'eccezione cieca. */
+    {
+      const r = await curato.pag.evaluate(() => {
+        document.getElementById('gearBtn').click();
+        document.getElementById('btnImpost').click();
+        const rif = document.querySelector('.diff:not(.sel)');
+        const mira = document.querySelector('.mira:not(.sel)');
+        const miraSel = document.querySelector('.mira.sel');
+        const leggi = el => {
+          if (!el) return null;
+          const c = getComputedStyle(el);
+          return { backgroundColor: c.backgroundColor, borderTopColor: c.borderTopColor, fontFamily: c.fontFamily };
+        };
+        return {
+          rif: leggi(rif), mira: leggi(mira), miraSel: leggi(miraSel),
+          rifTrovato: !!rif, miraTrovato: !!mira, miraSelTrovato: !!miraSel,
+        };
+      });
+      const guasti = [];
+      if (!r.rifTrovato) guasti.push('bottone .diff:not(.sel) di riferimento non trovato');
+      if (!r.miraTrovato) guasti.push('bottone .mira non selezionato non trovato (#miraRow assente?)');
+      if (!r.miraSelTrovato) guasti.push('bottone .mira.sel non trovato (#miraRow assente?)');
+      if (r.rifTrovato && r.miraTrovato) {
+        if (r.rif.backgroundColor !== r.mira.backgroundColor)
+          guasti.push('.mira background-color=' + r.mira.backgroundColor + ' diverso da .diff=' + r.rif.backgroundColor);
+        if (r.rif.borderTopColor !== r.mira.borderTopColor)
+          guasti.push('.mira border-top-color=' + r.mira.borderTopColor + ' diverso da .diff=' + r.rif.borderTopColor);
+        if (r.rif.fontFamily !== r.mira.fontFamily)
+          guasti.push('.mira font-family=' + r.mira.fontFamily + ' diverso da .diff=' + r.rif.fontFamily);
+      }
+      if (r.miraTrovato && r.miraSelTrovato) {
+        const diverso = r.mira.backgroundColor !== r.miraSel.backgroundColor || r.mira.borderTopColor !== r.miraSel.borderTopColor;
+        if (!diverso) guasti.push('.mira.sel indistinguibile da .mira non selezionato (stesso background e stesso bordo)');
+      }
+      di(guasti.length === 0, 'MIRA-UI-STILE — .mira eredita lo stile di .diff/.taglia/.sponde/.vib, .mira.sel si distingue da .mira',
+        guasti.length ? guasti.join('   ')
+          : 'mira: ' + JSON.stringify(r.mira) + '   mira.sel: ' + JSON.stringify(r.miraSel) + '   riferimento .diff: ' + JSON.stringify(r.rif));
+    }
+
+    /* ===================================================================
+       PROVA MIRA-ARIA (voce #113, compito 2) — aria-pressed del bottone
+       ATTIVO deve valere "true", degli altri "false", sincronizzato
+       DOPO ogni click (lezione di accessibilita' del #112: un valore per
+       ogni refresh, mai attestato una volta sola). In coda, la parte che
+       conta di piu': il click SCRIVE e PERSISTE SAVE.miraGuidata (letto
+       due volte, da t.save -- l'oggetto live -- e da localStorage via
+       t.saveKey, cosi' come persistSave lo scrive davvero). Nasce ROSSA
+       sul gioco pre-compito-2: nessun bottone .mira, nessun aria-pressed
+       da leggere. */
+    {
+      const r = await curato.pag.evaluate(() => {
+        const t = window.__test;
+        document.getElementById('gearBtn').click();
+        document.getElementById('btnImpost').click();
+        const bPieno = document.querySelector('.mira[data-mg="pieno"]');
+        const bEss = document.querySelector('.mira[data-mg="essenziale"]');
+        if (!bPieno || !bEss) return { trovati: false };
+        const leggi = () => ({
+          pienoAria: bPieno.getAttribute('aria-pressed'),
+          essAria: bEss.getAttribute('aria-pressed'),
+        });
+        const prima = leggi();
+        bEss.click();
+        const dopoEss = leggi();
+        const saveVivoDopoEss = t.save.miraGuidata;
+        const persistitoDopoEss = JSON.parse(localStorage.getItem(t.saveKey) || '{}').miraGuidata;
+        bPieno.click();
+        const dopoPieno = leggi();
+        const saveVivoDopoPieno = t.save.miraGuidata;
+        return { trovati: true, prima, dopoEss, saveVivoDopoEss, persistitoDopoEss, dopoPieno, saveVivoDopoPieno };
+      });
+      const guasti = [];
+      if (!r.trovati) {
+        guasti.push('bottoni .mira[data-mg="pieno"/"essenziale"] non trovati (#miraRow assente?)');
+      } else {
+        if (r.prima.pienoAria !== 'true' || r.prima.essAria !== 'false')
+          guasti.push('stato iniziale: pieno aria-pressed=' + r.prima.pienoAria + ', essenziale aria-pressed=' + r.prima.essAria + ' (atteso true/false, default \'pieno\')');
+        if (r.dopoEss.essAria !== 'true' || r.dopoEss.pienoAria !== 'false')
+          guasti.push('dopo il click su essenziale: essenziale=' + r.dopoEss.essAria + ', pieno=' + r.dopoEss.pienoAria + ' (atteso true/false)');
+        if (r.saveVivoDopoEss !== 'essenziale') guasti.push('SAVE.miraGuidata (t.save, live) dopo il click vale ' + r.saveVivoDopoEss + ' invece di \'essenziale\'');
+        if (r.persistitoDopoEss !== 'essenziale') guasti.push('SAVE.miraGuidata NON persiste in localStorage dopo il click (letto ' + r.persistitoDopoEss + ')');
+        if (r.dopoPieno.pienoAria !== 'true' || r.dopoPieno.essAria !== 'false')
+          guasti.push('dopo il click su pieno: pieno=' + r.dopoPieno.pienoAria + ', essenziale=' + r.dopoPieno.essAria + ' (atteso true/false)');
+        if (r.saveVivoDopoPieno !== 'pieno') guasti.push('SAVE.miraGuidata dopo il secondo click vale ' + r.saveVivoDopoPieno + ' invece di \'pieno\'');
+      }
+      di(guasti.length === 0, 'MIRA-ARIA — aria-pressed sincronizzato col bottone attivo, il click scrive e persiste SAVE.miraGuidata',
+        guasti.length ? guasti.join('   ')
+          : 'iniziale: ' + JSON.stringify(r.prima) + '   dopo essenziale: ' + JSON.stringify(r.dopoEss) + ' (persistito: ' + r.persistitoDopoEss + ')' + '   dopo pieno: ' + JSON.stringify(r.dopoPieno));
     }
 
     if (curato.ecc.length) di(false, 'BANCO — nessuna eccezione di pagina (curato)', curato.ecc[0]);

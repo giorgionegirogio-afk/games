@@ -516,7 +516,7 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
 .voce.primaria small{color:rgba(6,45,16,.72)}
 .voce.primaria:hover{color:#12210f;background:linear-gradient(180deg,#ffd77f,#f5a410)}
 .diff-row{display:flex;gap:8px;justify-content:center;margin:4px auto 2px;max-width:440px;width:100%}
-.diff,.tbtn,.taglia,.ment,.sponde,.vib{
+.diff,.tbtn,.taglia,.ment,.sponde,.vib,.mira{
   flex:1;font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--grigio);background:transparent;border:1px solid var(--linea);padding:8px 4px;cursor:pointer;
 }
@@ -527,7 +527,7 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
    accenti piu' i due bottoni, cioe' sei. Il segno di "questo e' quello
    attivo" e' il gesso pieno — si vede di piu' dell'ambra su fondo scuro e
    non compete col bottone che manda avanti. */
-.diff.sel,.tbtn.sel,.taglia.sel,.vib.sel{color:#12210f;background:var(--gesso);border-color:var(--gesso);font-weight:700}
+.diff.sel,.tbtn.sel,.taglia.sel,.vib.sel,.mira.sel{color:#12210f;background:var(--gesso);border-color:var(--gesso);font-weight:700}
 .taglia.sel small{opacity:.9}
 /* LE SPONDE: gabbia o campo vero, stessa pastiglia delle taglie e delle
    mentalita' (voce #87, compito 1) — una scelta fra due, ricordata nel
@@ -543,6 +543,17 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
 .ment small{display:block;font-weight:400;font-size:10px;letter-spacing:.14em;opacity:.75;margin-top:2px}
 .ment.sel{color:#12210f;background:var(--gesso);border-color:var(--gesso);font-weight:700}
 .ment.sel small{opacity:.9}
+/* LA MIRA GUIDATA: pieno o essenziale, stessa pastiglia di sponde/
+   taglia/mentalita' (voce #113, compito 2) -- una scelta fra due,
+   ricordata nel salvataggio. Il colore/sfondo/bordo di base e da
+   selezionato arrivano dai due selettori condivisi qui sopra (.mira e
+   .mira.sel sono gia' elencati li'): qui restano solo il sottotitolo
+   piccolo e la sua opacita' da selezionato, sullo stesso modello di
+   .sponde/.taglia/.ment -- la lezione del #112 (compito 2, correzione
+   revisione) e' che un bottone copiato SENZA i selettori condivisi
+   rende col default del browser e lo stato scelto e' invisibile. */
+.mira small{display:block;font-weight:400;font-size:10px;letter-spacing:.14em;opacity:.75;margin-top:2px}
+.mira.sel small{opacity:.9}
 /* =====================================================================
    LA SFIDA — la schermata, cucita con i pezzi che ci sono gia'.
 
@@ -3675,6 +3686,26 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
            bisogno di leggerlo. Testo/classe/aria-pressed si scrivono in
            refreshImpostUI, carbonio di btnSetDalt qui sopra. -->
       <button class="voce sw sola" id="btnSetSott">SOTTOTITOLI: S&Igrave; <small>fischio — a video</small></button>
+      <!-- MIRA GUIDATA (voce #113, compito 2). NON e' un aiuto alla
+           direzione o alla precisione del tiro: la geometria del cono
+           filtrante e dell'errore angolare (#88) resta intatta. E' lo
+           SCOPE del salto di controllo che gia' esiste da sempre
+           (switchControlled, #88) dopo un passaggio/cross umano con
+           destinatario dichiarato -- 'pieno' salta per qualunque
+           passaggio o cross, 'essenziale' lo restringe ai soli cross/
+           palloni alti, lasciando il controllo sul compagno piu'
+           vicino per i passaggi corti a terra. Stesso pattern markup
+           di .diff-row (~riga 3656, #vibRow): la classe .mira e' gia'
+           nei due selettori CSS condivisi (~righe 519 e 530), cosi' i
+           due bottoni e lo stato .sel non rendono col default del
+           browser (lezione #112, compito 2, correzione revisione).
+           Testo/classe/aria-pressed si scrivono in refreshMiraRow,
+           chiamata da refreshImpostUI. -->
+      <div class="eti">Mira guidata</div>
+      <div class="diff-row" id="miraRow">
+        <button class="mira sel" data-mg="pieno">PIENO <small>il controllo salta al ricevente su ogni passaggio e cross</small></button>
+        <button class="mira" data-mg="essenziale">ESSENZIALE <small>il salto resta solo su cross e palloni alti, non sui passaggi corti</small></button>
+      </div>
       <div class="eti">Difficolt&agrave; predefinita CPU</div>
       <div class="diff-row">
         <button class="diff" data-d="0">Facile</button>
@@ -40709,6 +40740,29 @@ document.querySelectorAll('.vib').forEach(b=>{
   });
 });
 refreshVibRow();
+/* MIRA GUIDATA: due pesi (pieno/essenziale) sullo SCOPE del salto di
+   controllo, stesso pattern binario di refreshVibRow qui sopra --
+   SAVE.miraGuidata al posto di SAVE.vibInt, persistSave perche' vive
+   nel salvataggio, non in G (voce #113, compito 2). aria-pressed
+   sincronizzato ACCANTO a ogni classList.toggle('sel',...), come i sei
+   interruttori di refreshImpostUI (lezione di accessibilita' del
+   #112): un valore per ogni refresh, mai attestato una volta sola. */
+function refreshMiraRow(){
+  document.querySelectorAll('.mira').forEach(b=>{
+    const scelto = b.dataset.mg===(SAVE.miraGuidata||'pieno');
+    b.classList.toggle('sel', scelto);
+    b.setAttribute('aria-pressed', scelto?'true':'false');
+  });
+}
+document.querySelectorAll('.mira').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    Audio5.unlock(); Audio5.beep(500);
+    SAVE.miraGuidata=b.dataset.mg;
+    persistSave();
+    refreshMiraRow();
+  });
+});
+refreshMiraRow();
 /* taglia di rosa: 5 base, 7 e 11 in amichevole; persiste nel salvataggio */
 function refreshTaglieRow(){
   document.querySelectorAll('.taglia').forEach(b=>b.classList.toggle('sel', +b.dataset.t===(SAVE.taglia||5)));
@@ -42176,6 +42230,10 @@ function refreshImpostUI(){
      di questa funzione: a ogni apertura di IMPOSTAZIONI e al primo
      avvio, senza un secondo punto di chiamata (voce #112, compito 2). */
   refreshVibRow();
+  /* LA RIGA DELLA MIRA GUIDATA SI RIDIPINGE QUI, stessa ragione di
+     refreshVibRow qui sopra: a ogni apertura di IMPOSTAZIONI e al primo
+     avvio, senza un secondo punto di chiamata (voce #113, compito 2). */
+  refreshMiraRow();
 }
 /* =====================================================================
    LA PAGINA DEI COMANDI, VIVA.
