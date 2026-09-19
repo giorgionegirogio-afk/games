@@ -456,6 +456,67 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Spiccioli di seguito: la parata, il sottotitolo onesto e la freccia che
+  non copre il fiato** (#122) — **CURATA il 19 settembre 2026** (tre compiti
+  dal merge-base `470149a`, cantierino di chiusura pendenze minori deciso dal
+  committente dopo #117/#121; piano
+  `docs/superpowers/plans/2026-09-19-spiccioli-seguiti.md`):
+
+  **1. #120 — la parata ritrova il suo clack** (un difetto del BANCO, non del
+  gioco): lo scenario "parata del portiere" di `strumenti/audio.js`
+  teletrasportava il pallone verso il portiere senza azzerare
+  `b.lastTouch`/`b.toccoPiede`. La guardia del retropassaggio (voce #107,
+  `CALCETTO-il-gioco.html:19504-19505`) leggeva quello stato sporco e
+  rifiutava il tiro come autopassaggio: `tentaPresa` non raggiungeva nessun
+  esito e `Audio5.clack` (chiamato incondizionatamente a `:19650`) non
+  scattava mai. Cura: `b.lastTouch=-1; b.toccoPiede=false;` accanto agli
+  altri azzeramenti del pallone nello stesso scenario, PRIMA che la
+  simulazione giri. Cancello: `node strumenti/audio.js` **28/28** (era
+  27/28), "parata del portiere" verde con `clack:true` emesso. Il gioco non
+  è toccato (`git diff CALCETTO-il-gioco.html` vuoto).
+
+  **2. #116 — il sottotitolo dice solo il vero**: le due stringhe identiche
+  del bottone SOTTOTITOLI («fischio, gol, palo — a video»,
+  `CALCETTO-il-gioco.html:3677` e `:42096`, nate col compito 4 di #112)
+  promettevano più di quanto `SAVE.sott` governi davvero — l'helper
+  `sottotitolo()` protegge solo i tre fischi (inizio/fine/ripresa); GOL e
+  PALO hanno banner sempre attivi, chiamati bare via `showBanner()`, mai
+  spenti dal flag. Cura: «fischio — a video», due sostituzioni verbatim via
+  attrezzo `strumenti/_t-sott-onesto.js`.
+
+  **3. #115 — la freccia non mangia più il fiato**: dentro
+  `anelloComandato(p)`, l'arco lime del fiato (voce #112, compito 5) si
+  disegnava PRIMA della freccia di direzione, sulla STESSA ellisse — quando
+  la corsa cadeva nella porzione accesa dell'arco, il cuneo pieno della
+  freccia poteva coprirne un tratto. Cura: ordine di disegno invertito (la
+  freccia PRIMA, l'arco del fiato DOPO, sopra di lei) — nessuna geometria
+  toccata, stessi `arx`/`ary`, stesso centro, stesso angolo di partenza, la
+  stessa proporzione `p.fiato/100`. Via attrezzo
+  `strumenti/_t-freccia-fiato.js` (un ancoraggio, che sposta anche il
+  commento originale insieme al suo codice, così la spiegazione resta
+  accanto al disegno che descrive davvero). `strumenti/_q-accessibile.js`,
+  prova 7 (ANELLO-FIATO), estesa con un confronto DIFFERENZIALE a fiato
+  55/70: la stessa frazione si misura due volte, stesso fiato — una con la
+  freccia nel margine sempre spento (il riferimento "pulito" già usato dai
+  tre confronti originali), una con la freccia DENTRO la zona accesa.
+  **RILIEVO ONESTO**: il cuneo della freccia si restringe dalla base (dove
+  è largo ~53°) alla punta, e l'arco vive quasi alla punta — l'overlap VERO
+  sul tratto sottile è molto più stretto dei 53° nominali (misurato: ~0,03
+  di scarto su 360 campioni, non i ~15 punti che 53/360 farebbe pensare); un
+  confronto ASSOLUTO con la tolleranza 0,05 delle altre righe non l'avrebbe
+  mai scoperto — il confronto differenziale (soglia 0,015) sì, verificato a
+  mano sul gioco PRE-#115 (diff 0,0333 a entrambi i fiato, ROSSO) e sul
+  gioco corrente (diff 0,0000, VERDE).
+
+  **Cancelli comuni a #116/#115**: due-versioni (`_c3-sorteggi`, base
+  `470149a` contro la punta, taglie 5/7/11) **0/60**; `_q-determinismo`
+  **10/10** intatto; `_q-accessibile.js` **7/7**; `istantanea.js` — stesso
+  identico schema OK/NO prima e dopo (47 OK, 10 NO, nessuna riga cambiata).
+  Attrezzi verificati a specchio: applicati a
+  `git show 470149a:CALCETTO-il-gioco.html` riproducono
+  `CALCETTO-il-gioco.html` byte per byte. Zero `dado()`/decisione CPU
+  toccati in tutte e tre le cure — contorno puro, come il piano chiedeva.
+
 - **Il registro dei fatti e il MIND v1 — L'ONDA B COMINCIA** (#117) —
   **CURATA il 19 settembre 2026** (sei compiti dal merge-base `f352af5`,
   prima voce dell'onda B del mandato: `_analisi/MAPPA-MANDATO.md` §2,
@@ -1210,6 +1271,26 @@ Qui il registro completo, a edizioni.
   la differenza non è un errore, è la distinzione fra "registrato" e
   "incluso in una corsa data".
 
+  **#121 compito 3 — la rete che coglie il prossimo banco rotto** (19
+  settembre 2026, commit `39810c4`; verbale mancante, aggiunto qui il 19
+  settembre 2026, voce #122 compito 3): il censimento di #108 (I4 sopra) è
+  una fotografia del passato — non vede quel che nasce DOPO, ed è proprio
+  così che `_q-umore.js` (compito 2 sopra) è nato con lo stesso difetto,
+  scoperto solo perché ha causato l'hang #119. Nuovo banco
+  anti-regressione `strumenti/_q-cpu-ordine.js`: due prove sullo stesso
+  schema in direzioni opposte. ORDINE-GIUSTO (`setCpuVsCpu(true)` DOPO
+  `startMatch`, il contratto di ogni banco CPU-CPU) verifica
+  `G.cpu=[true,true]` e una partita CPU-CPU a seme fisso che raggiunge
+  `'end'` entro 13200 fotogrammi senza incastrarsi in `'freekick'`;
+  ORDINE-SBAGLIATO (lo stesso schema invertito — il controllo
+  discriminante, non un contratto) verifica che `G.cpu[0]` risulti
+  `false`, la condanna che dimostra che la prima prova misura qualcosa di
+  reale e non una tautologia. Registrato in `strumenti/tutti.js`
+  (`conta:true`, dopo `umore`); un commento in testa a `posaFerma`
+  (`strumenti/_posa.js`) documenta l'ordine giusto per chi scrive un
+  banco CPU-CPU nuovo. `CALCETTO-il-gioco.html` non toccato. Cancello:
+  **3/3 verde**.
+
   **Seguiti nuovi**: **#109** "il corpo del portiere scala come il
   campo" — `P_R+B_R` (tavola `CORPI`, scala con la taglia) e `KICK_R*0.8`
   (costante fissa) vivono sotto DUE verità di scala diverse, riconciliate
@@ -1220,12 +1301,21 @@ Qui il registro completo, a edizioni.
   di simulazione; il caso dichiarato ma non ricostruito qui di una
   punizione-senza-movimento che potrebbe urtare lo stesso confine). **NON
   MISURATO in questa onda**: dichiarato per chi aprirà il seguito, non
-  investigato a fondo. **#110** "il banco che non congela" — il
+  investigato a fondo. **#110** "il banco che non congela" —
+  **CHIUSO (voce #121, compito 3, commit `39810c4`, 19 settembre 2026,
+  verbale registrato qui il 19 settembre 2026, voce #122 compito 3)**: il
   censimento vero dei 25 strumenti (I4 sopra) e la PROVA 1 di
-  `_q-regole.js` ormai resa robusta (I4b) sono il prerequisito che
-  mancava per decidere #108 senza rompere la batteria: la decisione
-  resta del committente, ma il costo di prenderla oggi è più basso di
-  ieri. **#111** — sarebbe stato il seguito per il 5,1% "silenzioso"
+  `_q-regole.js` resa robusta (I4b) erano il prerequisito, ma #110
+  chiedeva l'ANTI-REGRESSIONE vera e propria — una rete che veda un
+  banco NUOVO nascere rotto, non un elenco chiuso del passato. Quella
+  rete ora esiste (`strumenti/_q-cpu-ordine.js`, paragrafo sopra): due
+  prove che interrogano il comportamento del gioco ad ogni corsa in
+  batteria, in entrambe le direzioni dell'ordine `setCpuVsCpu`/
+  `startMatch`. La decisione se rendere il GIOCO stesso a-prova-d'ordine
+  (la cura lato-gioco proposta a I4, mai applicata) resta del
+  committente — #110 non chiedeva quella decisione, chiedeva la rete che
+  ne rendesse il costo visibile, ed è quella che chiude qui. **#111** —
+  sarebbe stato il seguito per il 5,1% "silenzioso"
   della contabilità arbitrale del compito 3 (la palla ferma durante una
   finestra viva): **CHIUSO nello stesso respiro dall'onda I3 sopra**, mai
   rimasto aperto.
