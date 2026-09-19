@@ -24,10 +24,12 @@
                   (le loro fasi leggono G.pulse/Duel.vt, mai SAVE.moto) —
                   si provano entrambi gli stati, come chiede il brief.
 
-   METODO. Non si guarda un pixel: si guarda lo SCHERMO INTERO, perche'
-   la soglia clinica e' sull'area totale che lampeggia, non su un
-   dettaglio (il criterio d'AREA vero e proprio arriva col #114 compito 2
-   — qui il proxy e' ancora la media whole-canvas, dichiarato piu' sotto).
+   METODO. Si guarda SIA lo schermo intero (la media whole-canvas, per
+   trovare i lampi E la loro frequenza) SIA il singolo pixel (la frazione
+   d'area che cambia, per il criterio d'AREA che poi FILTRA quei lampi —
+   voce #114 compito 2, vedi installaLettoreLuce e trovaFlashWCAG piu'
+   sotto): le due letture nascono dalla STESSA getImageData, un'unica
+   lettura del canvas per fotogramma.
    A ogni fotogramma VERO (bancoDiProva qui sotto intercetta
    requestAnimationFrame com'e' gia' in istantanea.js/folla.js: un passo
    e' un giro completo di step()+render(), stessa disciplina del gioco a
@@ -56,31 +58,72 @@
    ROSSO. E' la condanna che prova che il banco discrimina invece di
    attestare.
 
-   IL LIMITE DI QUESTO BANCO (dichiarato in revisione, voce #114, compito
-   1 — quello del #112, la soglia PROMINENZA_MIN tarata sul gioco e non
-   su una soglia clinica, e' STATO CHIUSO da questa riscrittura: la
-   metrica e' ora luminanza relativa WCAG vera e il rilevatore e' la
-   definizione WCAG di flash, non un numero tarato). Restano DUE limiti,
-   entrambi per costruzione di questo compito (il #114 compito 2 li
-   chiude):
-     1. NESSUN CRITERIO D'AREA: la media e' whole-canvas, quindi un flash
-        piccolo (pochi pixel, come i flash di folla/dischetto) sposta la
-        media di una frazione minuscola — quasi certamente sotto 0,10 di
-        luminanza relativa — e semplicemente non viene visto come flash,
-        qualunque sia la sua frequenza. Questo banco NON puo' ancora
-        dimostrare formalmente l'esenzione WCAG per area piccola: puo'
-        solo osservare che quei flash restano invisibili alla media (il
-        che li rende comunque innocui per QUESTO banco, ma non e' ancora
-        la prova WCAG "area sotto soglia" in senso proprio).
-     2. NESSUN RED FLASH: nessuna prova sul rosso saturo (R/(R+G+B)>=0,8,
-        Δ>0,2 in CIE 1976 UCS) — un flash che resta sotto 0,10 di
-        luminanza relativa (es. un rosso-su-rosso) potrebbe comunque
-        qualificare come red flash WCAG e questo banco, oggi, non lo
-        vedrebbe.
+   IL CRITERIO D'AREA (voce #114, compito 2 — chiude il limite 1 del
+   compito 1). E' un FILTRO A VALLE su trovaFlashWCAG (compito 1,
+   invariato): fra i fotogrammi della transizione di un flash gia'
+   rilevato dalla media whole-canvas, si guarda il picco della frazione
+   di pixel che e' cambiata di almeno 0,10 (vedi installaLettoreLuce); se
+   supera SOGLIA_AREA_FRAZ (~2,77%) il flash CONTA, altrimenti e' ESENTE
+   e non entra nel conteggio di frequenza. E' esattamente cio' che chiede
+   il mandato ("un flash RILEVATO conta solo se...").
+   UN RILEVATORE D'AREA INDIPENDENTE (non un filtro a valle, ma una
+   ricerca di estremi propria sulla serie di "area") E' STATO PROVATO E
+   SCARTATO in questa stessa revisione: misurato con --calibra sulle
+   scene vere (SERA/DISCHETTO, nessun lampo iniettato), la frazione
+   d'area oscilla per il semplice movimento di giocatori/palla fino al
+   5-7% del canvas fotogramma per fotogramma — sopra la soglia di
+   esenzione e ordini di grandezza sopra il segnale di un flash piccolo
+   vero (~0,07% per un quadratino di 15 px). Non esiste un'isteresi che
+   separi quel rumore dal segnale: un rilevatore indipendente sul canvas
+   intero produceva un FALSO POSITIVO misurato su SERA (4 flash/s di
+   picco, senza che nulla fosse mai stato iniettato) che il compito 1 non
+   aveva. Il filtro a valle, piu' semplice, non ha questo problema perche'
+   eredita la STESSA immunita' al rumore incoerente della media
+   whole-canvas (compito 1): il movimento di giocatori in direzioni
+   scorrelate si annulla nella media, non nella frazione d'area grezza.
+   IL DUBBIO ONESTO SUL FILTRO A VALLE, RISOLTO: per COSTRUZIONE
+   ARITMETICA, uno spostamento della media whole-canvas di 0,10 richiede
+   un'area di almeno il 10% SE lo sfondo resta immutato (area *
+   delta_max_pixel(1,0) >= 0,10 => area>=10%, gia' 4 volte la soglia
+   ~2,77%) — un flash isolato su sfondo fermo che la media rileva e'
+   quindi SEMPRE sopra soglia d'area, e il filtro sembrerebbe un dead
+   code sulle scene vere (difatti: folla/duello, con l'ampiezza che
+   hanno oggi, restano invisibili alla media anche PRIMA del filtro
+   d'area — limite 1 del compito 1, mai chiuso da un puro filtro a
+   valle). Il caso sintetico PICCOLO (vedi eseguiControlloLocale) prova
+   pero' che il filtro NON e' un dead code in generale: se lo SFONDO
+   cambia anch'esso, ma sotto la soglia di 0,10 per pixel (un lavaggio
+   di grigio, che NON entra nel conteggio d'area ma CONTRIBUISCE alla
+   media), un quadratino piccolo (sotto soglia d'area) puo' portare la
+   media whole-canvas sopra 0,10 pur restando, da solo, sotto la soglia
+   d'area — esattamente la distinzione che WCAG traccia fra "il flash e'
+   rilevabile" e "il flash e' abbastanza grande da contare": qui il
+   filtro ESENTA DAVVERO, misurato, non per costruzione impossibile.
+
+   IL RED FLASH (voce #114, compito 2 — chiude il limite 2 del compito 1).
+   trovaRedFlashWCAG (piu' sotto) opera sulla SATURAZIONE ROSSA media del
+   fotogramma (R/(R+G+B) sui valori sRGB NON linearizzati — la formula di
+   saturazione WCAG vuole i byte grezzi, non la luminanza relativa),
+   calcolata nella STESSA lettura di __luce() (nessun secondo passaggio
+   sui pixel). Una coppia di transizioni opposte conta come red flash
+   quando almeno uno dei due stati ha saturazione >=0,80 E la distanza fra
+   i due stati nel diagramma CIE 1976 UCS (u'v', conversione sRGB->lineare
+   ->XYZ->u'v', matrice D65 standard IEC 61966-2-1) supera 0,2.
+   LIMITE DICHIARATO: la saturazione e' una media whole-canvas, quindi
+   soffre della STESSA diluizione della luminanza whole-canvas del
+   compito 1 — un red flash confinato a una piccola area (che sposti la
+   media di un rosso saturo sotto la sensibilita' del rilevatore) non
+   verrebbe visto. Qui NON e' stato aggiunto un rilevatore d'area per il
+   red flash (fuori dal perimetro di questo compito): e' innocuo per
+   QUESTO gioco perche' la tinta piu' satura fra tutte le maglie
+   disponibili (kit fissi + tutte le squadre CPU della rosa, misurato: v.
+   nota nel verbale) e' 0,623 di R/(R+G+B) — sotto 0,80 anche a schermo
+   intero, quindi nessuna combinazione di area la farebbe qualificare.
    Il verdetto VERDE di QUESTO compito garantisce «nessun flash generale
-   WCAG (luminanza relativa, 10%/0,80) oltre 3 Hz sulla media whole-
-   canvas», NON ANCORA «il gioco e' conforme a WCAG 2.3.1» in senso
-   pieno (manca l'area e il red flash, compito 2).
+   WCAG (luminanza relativa, 10%/0,80, area >=~2,77% del canvas) e nessun
+   red flash (saturazione >=0,80, Δu'v'>0,2) oltre 3 Hz» sulle scene
+   provate — la verifica autorevole promessa dallo spec arriva col
+   compito 3 (batteria completa + verbale).
 
    uso:
      node strumenti/_q-fotosensibile.js [--gioco file.html]
@@ -169,24 +212,81 @@ function bancoDiProva() {
    La luminanza del fotogramma e' la MEDIA delle luminanze relative dei
    pixel campionati (qui: tutti, nessuno scarto, come nel #112), in scala
    0-1 (non piu' 0-255: chi confronta con vecchi numeri di calibrazione
-   del #112 li trova ~255 volte piu' piccoli). */
+   del #112 li trova ~255 volte piu' piccoli).
+
+   VOCE #114 COMPITO 2 — DUE LETTURE IN PIU', STESSA getImageData (un
+   unico accesso ai pixel per fotogramma, mai due):
+     (1) AREA: oltre alla media, si campiona (passo AREA_PASSO=4, "1
+         pixel ogni 4" in ciascuna dimensione — 16 volte meno pixel — come
+         suggerito dal mandato: il calcolo pixel-per-pixel di due
+         fotogrammi consecutivi a piena risoluzione e' evitabile, l'area
+         e' comunque una FRAZIONE statistica, non un conteggio esatto) la
+         luminanza relativa dei pixel scelti e la si confronta con lo
+         STESSO campione del fotogramma precedente (chiuso in questa
+         closure, azzerato da __areaReset fra una scena sintetica/reale e
+         l'altra — vedi eseguiScena/eseguiControllo*). La frazione di
+         campioni che cambia di almeno 0,10 di luminanza relativa (la
+         STESSA soglia WCAG del flash generale, applicata pixel per pixel
+         invece che sulla media) e' "area" del fotogramma — usata da
+         trovaFlashWCAG lato Node come filtro a valle (vedi il commento
+         "IL CRITERIO D'AREA" in cima al file per il perche' e' un filtro
+         e non un rilevatore proprio).
+         Primo fotogramma di ogni serie: nessun precedente, area=0.
+     (2) COLORE MEDIO GREZZO (r,g,b in 0-1, sRGB NON linearizzato — la
+         formula di saturazione rossa WCAG, R/(R+G+B), vuole i byte
+         grezzi, non la luminanza relativa): serve a trovaRedFlashWCAG.
+         Calcolato nello STESSO ciclo a piena risoluzione della luminanza
+         (tre accumulatori in piu', nessun secondo giro sui pixel).
+
+   NOTA TECNICA: questa funzione e' iniettata via page.addInitScript e
+   girera' DENTRO la pagina, isolata dallo scope Node — non puo' leggere
+   le const definite piu' sotto in questo file (SOGLIA_AMPIEZZA_FLASH,
+   ecc: quelle sono lato Node, per trovaFlashWCAG). Percio'
+   AREA_PASSO e la soglia dell'area sono ridichiarate QUI, localmente,
+   come gia' faceva bancoDiProva con PASSO=1000/60. Sono la STESSA cifra
+   e la STESSA fonte (WCAG 2.2, general flash threshold, 10%): se una
+   cambia, l'altra va cambiata a mano — un solo punto lato Node e uno
+   lato pagina, non automaticamente sincronizzati, dichiarato qui perche'
+   non sia una sorpresa in revisione. */
 function installaLettoreLuce() {
+  const AREA_PASSO = 4;                    // "1 pixel ogni 4" per lato, dichiarato nel mandato
+  const SOGLIA_AMPIEZZA_PIXEL = 0.10;      // WCAG 2.2 general flash threshold, 10% — v. SOGLIA_AMPIEZZA_FLASH lato Node
   const LUT_LIN = new Float64Array(256);
   for (let i = 0; i < 256; i++) {
     const csRGB = i / 255;
     LUT_LIN[i] = csRGB <= 0.04045 ? csRGB / 12.92 : Math.pow((csRGB + 0.055) / 1.055, 2.4);
   }
+  let campionePrec = null;   // Float32Array del fotogramma precedente, per l'area
+  window.__areaReset = function () { campionePrec = null; };
   window.__luce = function () {
     const cv = document.getElementById('gioco');
     const cx = cv.getContext('2d');
     const W = cv.width, H = cv.height;
     const d = cx.getImageData(0, 0, W, H).data;
-    let somma = 0;
     const n = d.length;
+    let sommaLum = 0, sommaR = 0, sommaG = 0, sommaB = 0;
     for (let i = 0; i < n; i += 4) {
-      somma += 0.2126 * LUT_LIN[d[i]] + 0.7152 * LUT_LIN[d[i + 1]] + 0.0722 * LUT_LIN[d[i + 2]];
+      sommaLum += 0.2126 * LUT_LIN[d[i]] + 0.7152 * LUT_LIN[d[i + 1]] + 0.0722 * LUT_LIN[d[i + 2]];
+      sommaR += d[i]; sommaG += d[i + 1]; sommaB += d[i + 2];
     }
-    return somma / (n / 4);
+    const nPix = n / 4;
+    /* l'area: un secondo giro, MOLTO piu' raro (passo AREA_PASSO in
+       entrambe le dimensioni), sullo STESSO buffer d gia' letto sopra */
+    const campioneOra = new Float32Array(Math.ceil(W / AREA_PASSO) * Math.ceil(H / AREA_PASSO));
+    let iCamp = 0, cambiati = 0;
+    for (let y = 0; y < H; y += AREA_PASSO) {
+      const riga = y * W;
+      for (let x = 0; x < W; x += AREA_PASSO) {
+        const i = (riga + x) * 4;
+        const lumPix = 0.2126 * LUT_LIN[d[i]] + 0.7152 * LUT_LIN[d[i + 1]] + 0.0722 * LUT_LIN[d[i + 2]];
+        campioneOra[iCamp] = lumPix;
+        if (campionePrec && Math.abs(lumPix - campionePrec[iCamp]) >= SOGLIA_AMPIEZZA_PIXEL) cambiati++;
+        iCamp++;
+      }
+    }
+    const area = campionePrec ? cambiati / iCamp : 0;
+    campionePrec = campioneOra;
+    return { lum: sommaLum / nPix, area, r: sommaR / nPix / 255, g: sommaG / nPix / 255, b: sommaB / nPix / 255 };
   };
 }
 
@@ -304,7 +404,13 @@ function trovaEstremi(serie, isteresi) {
    transizione buona abbinandola a una cattiva per un caso di parita'. */
 const SOGLIA_AMPIEZZA_FLASH = 0.10;   // WCAG 2.2, 10% della luminanza relativa massima
 const SOGLIA_SCURO_FLASH = 0.80;      // WCAG 2.2, luminanza del piu' scuro dei due estremi
-function trovaFlashWCAG(serie, fps, isteresi) {
+/* PARAMETRO: qui "rec" e' l'array di RECORD per fotogramma prodotto da
+   __luce() lato pagina ({lum,area,r,g,b}), non piu' un array di numeri
+   nudi (voce #114 compito 2 — serve anche "area" per il cancello sotto).
+   La logica di rilevamento e' INVARIATA dal compito 1: opera sulla serie
+   di LUMINANZA (rec[i].lum), estraendola qui. */
+function trovaFlashWCAG(rec, fps, isteresi) {
+  const serie = rec.map(x => x.lum);
   const idx = trovaEstremi(serie, isteresi);
   const flash = [];
   let k = 0;
@@ -312,7 +418,119 @@ function trovaFlashWCAG(serie, fps, isteresi) {
     const a = serie[idx[k]], b = serie[idx[k + 1]], c = serie[idx[k + 2]];
     const entrante = Math.abs(b - a) >= SOGLIA_AMPIEZZA_FLASH && Math.min(a, b) < SOGLIA_SCURO_FLASH;
     const uscente = Math.abs(c - b) >= SOGLIA_AMPIEZZA_FLASH && Math.min(b, c) < SOGLIA_SCURO_FLASH;
-    if (entrante && uscente) { flash.push({ i: idx[k + 1], t: idx[k + 1] / fps, v: b }); k += 2; }
+    if (entrante && uscente) {
+      /* IL CRITERIO D'AREA (voce #114 compito 2): fra i fotogrammi della
+         transizione (dall'estremo d'entrata a quello d'uscita), il picco
+         della frazione d'area che lampeggia. "conta" se supera
+         SOGLIA_AREA_FRAZ (vedi sotto): altrimenti il flash e' ESENTE
+         (rilevato, ma non qualifica per 2.3.1 — non entra nel conteggio
+         di frequenza, vedi frequenzaMassima(flashContano) piu' sotto). */
+      let areaPicco = 0;
+      for (let i = idx[k]; i <= idx[k + 2]; i++) if (rec[i].area > areaPicco) areaPicco = rec[i].area;
+      flash.push({ i: idx[k + 1], t: idx[k + 1] / fps, v: b, area: areaPicco, conta: areaPicco > SOGLIA_AREA_FRAZ });
+      k += 2;
+    } else k += 1;
+  }
+  return flash;
+}
+
+/* IL CRITERIO D'AREA — LA SOGLIA (voce #114 compito 2, spec/piano
+   19/9/2026). WCAG 2.2, "general flash and red flash thresholds",
+   Understanding SC 2.3.1: un flash conta per 2.3.1 solo se l'area
+   combinata supera 0,006 steradianti = 25% di un campo visivo di 10
+   gradi; risoluzione di riferimento WCAG per stimare quel campo: un
+   rettangolo di 341x256 px su uno schermo di 1024x768 px (a distanza
+   tipica di visione). Si scrive la formula per intero, non il numero
+   arrotondato, cosi' la provenienza resta verificabile a colpo d'occhio:
+   25% dell'area di riferimento (341*256*0,25 = 21824 px) sul totale
+   dell'area di riferimento (1024*768 = 786432 px) = 0,027753 (2,7753%).
+   APPROSSIMAZIONE DICHIARATA: e' una frazione di SCHERMO derivata dalla
+   risoluzione e distanza di riferimento WCAG, non una misura in
+   steradianti del campo visivo REALE di chi gioca (che dipende dal
+   dispositivo e dalla distanza vera) — il mandato la richiede come
+   proxy, e la dichiara "robusta in pratica" perche' folla/duello sono
+   due ordini di grandezza sotto (vedi i numeri nel verbale) e il gol e'
+   a schermo intero (due ordini di grandezza sopra): l'approssimazione
+   non decide nessun caso vicino al confine, in questo gioco. */
+const SOGLIA_AREA_FRAZ = (341 * 256 * 0.25) / (1024 * 768);
+
+/* PERCHE' NON SERVE UN SECONDO RILEVATORE (scoperta di progettazione,
+   misurata e non un'opinione — tentata e scartata in revisione). Un
+   "filtro d'area indipendente" (una serie propria, estremi propri sulla
+   FRAZIONE d'area anziche' sulla media) SEMBRA la scelta ovvia, ma
+   MISURATO sulle scene vere (--calibra, SERA/DISCHETTO: nessun lampo
+   iniettato) la frazione d'area campionata oscilla per il semplice
+   movimento di giocatori/palla fino al 5-7% del canvas fotogramma per
+   fotogramma — SOPRA la soglia di esenzione (~2,77%) e ORDINI DI
+   GRANDEZZA sopra il segnale vero di un flash piccolo sintetico (~0,07%
+   per un quadratino di 15 px): non esiste un'isteresi che separi il
+   rumore di movimento normale dal segnale, un rilevatore d'area
+   indipendente sul canvas intero condanna SERA (misurato: 4 flash/s
+   picco da pura animazione, in un run in cui non e' mai stato iniettato
+   nulla) — un FALSO POSITIVO che il compito 1 non aveva. Scartato.
+   Il criterio d'area RESTA quindi un FILTRO A VALLE su trovaFlashWCAG
+   (l'unico rilevatore, quello del compito 1, invariato), esattamente
+   come richiesto dal mandato ("un flash RILEVATO conta solo se..."). */
+
+/* ================================= IL RED FLASH (voce #114 compito 2) ===
+   WCAG 2.2, "red flash threshold", Understanding SC 2.3.1
+   (https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html):
+   una coppia di transizioni opposte conta come RED FLASH quando almeno
+   uno dei due stati che la delimitano e' un rosso saturo — R/(R+G+B) >=
+   0,8, sui valori sRGB 0-1 NON linearizzati (e' una formula di
+   saturazione del colore percepito, non di luminanza fisica: qui si
+   vuole il byte grezzo, non il valore linearizzato di __luce()) — E la
+   differenza fra i due stati nel diagramma di cromaticita' CIE 1976 UCS
+   (u',v') supera 0,2. */
+function linearizzaContinuo(c) {
+  // stessa formula della LUT lato pagina, ma per un valore CONTINUO 0-1
+  // (la media multi-pixel non e' un byte 0-255: la LUT non si applica)
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+/* sRGB (0-1) -> XYZ, matrice standard D65 (IEC 61966-2-1, la stessa
+   matrice di conversione sRGB->XYZ ovunque citata per questo spazio
+   colore) -> u'v' (CIE 1976 UCS): u'=4X/(X+15Y+3Z), v'=9Y/(X+15Y+3Z) —
+   formula citata nello spec del #114 (19/9/2026). */
+function srgbAUv(r, g, b) {
+  const R = linearizzaContinuo(r), G = linearizzaContinuo(g), B = linearizzaContinuo(b);
+  const X = 0.4124 * R + 0.3576 * G + 0.1805 * B;
+  const Y = 0.2126 * R + 0.7152 * G + 0.0722 * B;
+  const Z = 0.0193 * R + 0.1192 * G + 0.9505 * B;
+  const den = Math.max(X + 15 * Y + 3 * Z, 1e-9);   // guardia: nero puro (0,0,0) darebbe 0/0
+  return { u: 4 * X / den, v: 9 * Y / den };
+}
+function deltaUV(c1, c2) {
+  const p1 = srgbAUv(c1.r, c1.g, c1.b), p2 = srgbAUv(c2.r, c2.g, c2.b);
+  return Math.hypot(p1.u - p2.u, p1.v - p2.v);
+}
+/* R/(R+G+B) sui byte grezzi sRGB 0-1: la formula di saturazione rossa
+   WCAG. Guardia sul nero puro (somma~0): non e' un rosso saturo, si
+   dichiara 0 invece di NaN (0/0). */
+function saturazioneRossa(c) {
+  const somma = c.r + c.g + c.b;
+  return somma > 1e-6 ? c.r / somma : 0;
+}
+const SOGLIA_SATURAZIONE_ROSSO = 0.80;   // WCAG 2.2, R/(R+G+B) >= 0,8
+const SOGLIA_DELTA_UV = 0.2;             // WCAG 2.2, distanza CIE 1976 UCS > 0,2
+/* ISTERESI_ROSSO: misurata con --calibra come ISTERESI_ESTREMI (v. sopra)
+   — sopra il rumore di saturazione osservato su SERA/DISCHETTO a riposo,
+   molto sotto SOGLIA_SATURAZIONE_ROSSO/SOGLIA_DELTA_UV (che restano il
+   vero cancello di qualificazione: l'isteresi qui serve solo a trovare
+   gli estremi della serie, non a decidere il verdetto). */
+const ISTERESI_ROSSO = 0.02;
+function trovaRedFlashWCAG(rec, fps) {
+  const serie = rec.map(saturazioneRossa);
+  const idx = trovaEstremi(serie, ISTERESI_ROSSO);
+  const flash = [];
+  let k = 0;
+  while (k + 2 < idx.length) {
+    const a = rec[idx[k]], b = rec[idx[k + 1]], c = rec[idx[k + 2]];
+    const dAB = deltaUV(a, b), dBC = deltaUV(b, c);
+    const sAB = Math.max(saturazioneRossa(a), saturazioneRossa(b));
+    const sBC = Math.max(saturazioneRossa(b), saturazioneRossa(c));
+    const entrante = dAB > SOGLIA_DELTA_UV && sAB >= SOGLIA_SATURAZIONE_ROSSO;
+    const uscente = dBC > SOGLIA_DELTA_UV && sBC >= SOGLIA_SATURAZIONE_ROSSO;
+    if (entrante && uscente) { flash.push({ i: idx[k + 1], t: idx[k + 1] / fps, sat: serie[idx[k + 1]] }); k += 2; }
     else k += 1;
   }
   return flash;
@@ -320,7 +538,10 @@ function trovaFlashWCAG(serie, fps, isteresi) {
 
 /* la frequenza di picco: per ogni lampo, quanti lampi (lui compreso)
    cadono in una finestra di un secondo CENTRATA sul suo istante. Il
-   massimo su tutta la corsa e' il numero che conta: >3 e' rosso. */
+   massimo su tutta la corsa e' il numero che conta: >3 e' rosso.
+   Generica: usa solo il campo ".t" — serve per il flash generale (solo
+   quelli che "contano" per area, vedi flashContano piu' sotto) e per il
+   red flash. */
 function frequenzaMassima(lampi) {
   let massimo = 0, centroMassimo = null;
   for (const L of lampi) {
@@ -335,6 +556,7 @@ const FPS = 60;
 
 async function eseguiScena(pag, tipo, moto, seme) {
   return pag.evaluate(({ tipo, moto, seme }) => {
+    window.__areaReset();   // ogni scena riparte con la sua base d'area (voce #114 compito 2)
     const t = window.__test;
     t.semina(seme);
     t.setMoto(moto ? 1 : 0);
@@ -389,6 +611,7 @@ async function eseguiScena(pag, tipo, moto, seme) {
 
 async function eseguiControllo(pag, hz) {
   return pag.evaluate(hz => {
+    window.__areaReset();
     const cv = document.getElementById('gioco');
     const cx = cv.getContext('2d');
     const W = cv.width, H = cv.height;
@@ -407,6 +630,94 @@ async function eseguiControllo(pag, hz) {
   }, hz);
 }
 
+/* IL CASO PICCOLO (voce #114 compito 2 — "il banco deve MISURARE, non
+   attestare"): la dimostrazione che l'esenzione d'area esenta DAVVERO, e
+   non che il flash e' semplicemente invisibile alla media (limite gia'
+   dichiarato del compito 1). UN QUADRATINO DA SOLO NON BASTA A
+   DIMOSTRARLO: per costruzione aritmetica un flash isolato su sfondo
+   fermo che sposta la media whole-canvas di 0,10 (la soglia che lo fa
+   RILEVARE) copre SEMPRE almeno il 10% del canvas — gia' quattro volte
+   la soglia di esenzione (~2,77%) — quindi non sarebbe mai esentato: si
+   limiterebbe a restare invisibile, come oggi (vedi il commento "IL
+   CRITERIO D'AREA" in cima al file per la prova per esteso).
+   LA COSTRUZIONE CHE FUNZIONA: uno SFONDO che lampeggia anch'esso, ma
+   SOTTO 0,10 di luminanza relativa per pixel (un lavaggio grigio — non
+   entra MAI nel conteggio d'area, che conta solo pixel con |Δ|>=0,10),
+   PIU' un quadratino piccolo che lampeggia a piena ampiezza (nero<->
+   bianco). Il quadratino da solo resta sotto soglia d'area; il lavaggio
+   da solo resta sotto 0,10 quindi trovaEstremi/trovaFlashWCAG non lo
+   vedrebbe nemmeno come lampo; ASSIEME, il loro contributo alla MEDIA
+   whole-canvas supera 0,10 (rilevato) mentre l'AREA che li supera
+   individualmente resta il solo quadratino (esente). Numeri (calcolati
+   con la stessa formula di luminanza relativa di installaLettoreLuce,
+   canvas 915x412):
+     LATO_PATCH=100 px (10000 px, 2,653% del canvas — sotto SOGLIA_AREA_FRAZ
+     ~2,7751%); V_SFONDO=81 (grigio #515151, luminanza relativa 0,0823 —
+     sotto 0,10, quindi MAI contato nell'area); ampiezza whole-canvas fra
+     "acceso" (patch bianco 1,0 + sfondo grigio 0,0823) e "spento" (tutto
+     nero, 0) = 0,02653*1,0 + 0,97347*0,0823 = 0,1066 — sopra
+     SOGLIA_AMPIEZZA_FLASH (0,10), con margine di sicurezza ~6,6%.
+   Posizione (8,8) e lato multiplo di AREA_PASSO=4: il campionamento
+   dell'area cade esattamente sui bordi del quadratino, senza rumore di
+   allineamento. DEVE restare VERDE anche a 4 Hz. */
+const LATO_PATCH_PICCOLO = 100;
+const V_SFONDO_PICCOLO = 81;
+async function eseguiControlloLocale(pag, hz) {
+  return pag.evaluate(({ hz, lato, vBg }) => {
+    window.__areaReset();
+    const cv = document.getElementById('gioco');
+    const cx = cv.getContext('2d');
+    const W = cv.width, H = cv.height;
+    const FPS = 60;
+    const periodo = FPS / hz;
+    const acceso = Math.max(2, Math.round(periodo * 0.30));
+    const N = 240;
+    const serie = [];
+    const grigio = 'rgb(' + vBg + ',' + vBg + ',' + vBg + ')';
+    const px = 8, py = 8;
+    for (let i = 0; i < N; i++) {
+      const on = (i % periodo) < acceso;
+      // "acceso": sfondo grigio (sotto soglia d'area) + quadratino bianco
+      // (sopra); "spento": tutto nero — un solo fillRect di sfondo, poi
+      // il quadratino, ogni fotogramma (niente stato residuo da pulire)
+      cx.fillStyle = on ? grigio : '#000000';
+      cx.fillRect(0, 0, W, H);
+      cx.fillStyle = on ? '#ffffff' : '#000000';
+      cx.fillRect(px, py, lato, lato);
+      serie.push(window.__luce());
+    }
+    return { serie };
+  }, { hz, lato: LATO_PATCH_PICCOLO, vBg: V_SFONDO_PICCOLO });
+}
+
+/* IL CASO RED FLASH (voce #114 compito 2): schermo intero che alterna un
+   rosso saturo (#ff0000, R/(R+G+B)=1,0 >= 0,80) e lo sfondo scuro del
+   gioco (#0c110d, non rosso), alla stessa cadenza/duty cycle dei casi
+   sopra. DEVE uscire ROSSO sul canale red flash (e, per costruzione,
+   anche sul canale generale: un'escursione di luminanza cosi' grande a
+   schermo intero qualifica per ENTRAMBI i criteri — coerente con WCAG,
+   dove i due criteri non si escludono a vicenda). */
+async function eseguiControlloRosso(pag, hz) {
+  return pag.evaluate(hz => {
+    window.__areaReset();
+    const cv = document.getElementById('gioco');
+    const cx = cv.getContext('2d');
+    const W = cv.width, H = cv.height;
+    const FPS = 60;
+    const periodo = FPS / hz;
+    const acceso = Math.max(2, Math.round(periodo * 0.30));
+    const N = 240;
+    const serie = [];
+    for (let i = 0; i < N; i++) {
+      const on = (i % periodo) < acceso;
+      cx.fillStyle = on ? '#ff0000' : '#0c110d';
+      cx.fillRect(0, 0, W, H);
+      serie.push(window.__luce());
+    }
+    return { serie };
+  }, hz);
+}
+
 (async () => {
   const provaPath = arg('gioco', '');
   const provaAbs = provaPath ? path.resolve(RADICE, provaPath) : '';
@@ -418,7 +729,7 @@ async function eseguiControllo(pag, hz) {
   const pag = await ctx.newPage();
   const ecc = []; pag.on('pageerror', e => ecc.push(e.message));
   console.log('\n=== IL BANCO FOTOSENSIBILITA\' ===  ' + (provaAbs || 'CALCETTO-il-gioco.html (repo)')
-    + (controllo ? '  [--controllo: lampo iniettato a 4 Hz, DEVE uscire rosso]' : '')
+    + (controllo ? '  [--controllo: 3 casi sintetici nati per condannare/esentare]' : '')
     + (calibra ? '  [--calibra: solo numeri, nessun verdetto]' : ''));
 
   await pag.addInitScript(bancoDiProva);
@@ -431,8 +742,19 @@ async function eseguiControllo(pag, hz) {
   const referti = [];
 
   if (controllo) {
-    const r = await eseguiControllo(pag, 4);
-    referti.push({ nome: 'CONTROLLO 4 Hz (lampo bianco a schermo intero, iniettato)', serie: r.serie });
+    /* I TRE CASI SINTETICI (voce #114 compito 2 — "ogni nuova regola
+       nasce in grado di condannare/esentare davvero", vedi spec/piano
+       19/9/2026). GRANDE prova il criterio generale+area insieme (deve
+       restare rosso come nel compito 1 — la stessa iniezione a 4 Hz);
+       PICCOLO prova che l'esenzione d'area esenta DAVVERO (deve restare
+       verde nonostante gli stessi 4 Hz); ROSSO prova il canale red flash
+       (deve uscire rosso). */
+    const rGrande = await eseguiControllo(pag, 4);
+    referti.push({ nome: 'CONTROLLO GRANDE 4 Hz (schermo intero, lampo bianco iniettato)', serie: rGrande.serie });
+    const rPiccolo = await eseguiControlloLocale(pag, 4);
+    referti.push({ nome: 'CONTROLLO PICCOLO 4 Hz (quadratino 100x100 px sotto soglia d\'area + lavaggio grigio sotto soglia d\'ampiezza)', serie: rPiccolo.serie });
+    const rRosso = await eseguiControlloRosso(pag, 4);
+    referti.push({ nome: 'CONTROLLO RED FLASH 4 Hz (schermo intero, rosso saturo #ff0000)', serie: rRosso.serie });
   } else {
     /* TRE SCENE, MOTO ON E OFF: sei corse. goal copre CROWD_FLASH + il
        lampo/raggi del gol (spento a moto off); sera e' il controllo
@@ -457,16 +779,24 @@ async function eseguiControllo(pag, hz) {
 
   if (calibra) {
     for (const rep of referti) {
-      const serie = rep.serie || [];
-      if (!serie.length) { console.log(rep.nome + ': nessun campione (' + (rep.errore || '') + ')'); continue; }
-      const base = mediana(serie);
+      const rec = rep.serie || [];
+      if (!rec.length) { console.log(rep.nome + ': nessun campione (' + (rep.errore || '') + ')'); continue; }
+      const lum = rec.map(x => x.lum), area = rec.map(x => x.area), sat = rec.map(saturazioneRossa);
+      const base = mediana(lum);
       let max = -Infinity, min = Infinity;
-      for (const v of serie) { if (v > max) max = v; if (v < min) min = v; }
+      for (const v of lum) { if (v > max) max = v; if (v < min) min = v; }
       let rumoreMax = 0;
-      for (let i = 1; i < serie.length; i++) { const d = Math.abs(serie[i] - serie[i - 1]); if (d > rumoreMax) rumoreMax = d; }
-      console.log(rep.nome + ':  n=' + serie.length + '  mediana=' + base.toFixed(2)
-        + '  min=' + min.toFixed(2) + '  max=' + max.toFixed(2)
-        + '  escursione=' + (max - base).toFixed(2) + '  salto max fra due fotogrammi=' + rumoreMax.toFixed(2));
+      for (let i = 1; i < lum.length; i++) { const d = Math.abs(lum[i] - lum[i - 1]); if (d > rumoreMax) rumoreMax = d; }
+      let areaMax = 0; for (const v of area) if (v > areaMax) areaMax = v;
+      let areaRumore = 0;
+      for (let i = 1; i < area.length; i++) { const d = Math.abs(area[i] - area[i - 1]); if (d > areaRumore) areaRumore = d; }
+      let satMax = -Infinity, satMin = Infinity;
+      for (const v of sat) { if (v > satMax) satMax = v; if (v < satMin) satMin = v; }
+      console.log(rep.nome + ':  n=' + lum.length + '  mediana=' + base.toFixed(4)
+        + '  min=' + min.toFixed(4) + '  max=' + max.toFixed(4)
+        + '  escursione=' + (max - base).toFixed(4) + '  salto max fra due fotogrammi=' + rumoreMax.toFixed(4)
+        + '  |  area: picco=' + (areaMax * 100).toFixed(3) + '%  salto max=' + (areaRumore * 100).toFixed(3) + '%'
+        + '  |  saturaz.rossa: min=' + satMin.toFixed(3) + ' max=' + satMax.toFixed(3));
     }
     await ctx.close(); await browser.close(); srv.chiudi();
     process.exit(0);
@@ -477,18 +807,41 @@ async function eseguiControllo(pag, hz) {
       di(false, rep.nome, 'BANCO: ' + rep.errore + ' — non ho misurato');
       continue;
     }
+    /* IL FLASH GENERALE: trovaFlashWCAG (compito 1, INVARIATO) rileva
+       sulla media whole-canvas; il CRITERIO D'AREA (compito 2) e' un
+       filtro A VALLE sui flash cosi' trovati — "conta" solo se l'area di
+       picco nella sua transizione supera SOGLIA_AREA_FRAZ, altrimenti e'
+       ESENTE (rilevato ma non qualifica per 2.3.1 — vedi il commento
+       "PERCHE' NON SERVE UN SECONDO RILEVATORE" sopra trovaRedFlashWCAG
+       per la scoperta che ha escluso un rilevatore d'area indipendente). */
     const lampi = trovaFlashWCAG(rep.serie, FPS, ISTERESI_ESTREMI);
-    const { massimo, centroMassimo } = frequenzaMassima(lampi);
+    const flashContano = lampi.filter(f => f.conta);
+    const esenti = lampi.length - flashContano.length;
+    const areaPicco = lampi.length ? Math.max(...lampi.map(f => f.area || 0)) : 0;
+    const { massimo, centroMassimo } = frequenzaMassima(flashContano);
+
+    /* IL RED FLASH: canale indipendente (voce #114 compito 2), stessa
+       finestra di 1 s, stesso criterio <=3. */
+    const redFlash = trovaRedFlashWCAG(rep.serie, FPS);
+    const { massimo: massimoRed, centroMassimo: centroRed } = frequenzaMassima(redFlash);
+
     const durata = (rep.serie.length / FPS).toFixed(1);
-    const dettaglio = lampi.length + ' flash WCAG su ' + durata + ' s, picco ' + massimo + ' in una finestra di 1 s'
+    const dettaglio = lampi.length + ' flash rilevati (' + flashContano.length + ' sopra soglia d\'area, '
+      + esenti + ' esenti), area di picco ' + (areaPicco * 100).toFixed(2) + '% (soglia '
+      + (SOGLIA_AREA_FRAZ * 100).toFixed(2) + '%), picco frequenza ' + massimo + '/s'
       + (centroMassimo !== null ? ' (a t=' + centroMassimo.toFixed(2) + 's)' : '')
+      + '  |  red flash: ' + redFlash.length + ' rilevati, picco ' + massimoRed + '/s'
+      + (centroRed !== null ? ' (a t=' + centroRed.toFixed(2) + 's)' : '')
+      + '  su ' + durata + ' s'
       + (rep.errore ? '  [nota: ' + rep.errore + ']' : '');
-    /* STESSO CRITERIO, SEMPRE: <=3 lampi in ogni finestra di un secondo e'
-       verde, >3 e' rosso. Con --controllo il lampo iniettato a 4 Hz DEVE
-       far scattare questo stesso criterio verso il rosso — nessuna
+    /* STESSO CRITERIO, SEMPRE: <=3 in ogni finestra di un secondo e'
+       verde (su ENTRAMBI i canali, generale e red flash), >3 su ALMENO
+       UNO e' rosso — coerente con WCAG 2.3.1 ("non piu' di 3 flash
+       generali E/O 3 red flash"). Con --controllo i tre casi sintetici
+       DEVONO far scattare questo stesso criterio come previsto — nessuna
        inversione di comodo: un "verde perche' il rosso era atteso"
        sarebbe l'attestazione che il mandato vieta. */
-    di(massimo <= 3, rep.nome, dettaglio);
+    di(massimo <= 3 && massimoRed <= 3, rep.nome, dettaglio);
   }
 
   if (ecc.length) di(false, 'nessuna eccezione di pagina', ecc[0]);
