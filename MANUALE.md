@@ -1076,6 +1076,36 @@ Qui il registro completo, a edizioni.
   ogni passo) — verde oggi, e robusta a un futuro #108. Vedi **#110**
   sotto.
 
+  **#108 CHIUSO su `_q-regole.js` e `_q-battute.js` (voce #121, compito
+  1, 19 settembre 2026)**: applicata qui la stessa cura #108 (ordine
+  `setCpuVsCpu`/`startMatch`) a `_q-regole.js` (15 siti) e
+  `_q-battute.js` (5 siti). `_q-battute.js` riletto riga per riga:
+  **11/11 verde**, nessuna partita bloccata in `freekick`, numeri
+  ri-ancorati (squadra 0 ora CPU vera). `_q-regole.js`, con la sola cura
+  dell'ordine, si scopriva **15/16**: la PROVA 1 (RIGORE-DENTRO, I4b) —
+  proprio quella già riscritta per essere "robusta a un futuro #108" —
+  tornava ROSSA, ma non per un hang in `freekick` (il sintomo #108/
+  #119): lo stato non attraversava mai `freekick`, la scena finiva
+  direttamente in `goal` ("freekick vista: false ... stato al
+  fotogramma 200: goal"). Causa: con la difesa (squadra 0) davvero
+  mobile, il vantaggio in area a volte si chiude con un gol della
+  squadra offesa prima che l'arbitro fischi il rigore ritardato — un
+  esito LECITO della regola del vantaggio (voce #107, già decisa: se
+  l'offesa segna nella finestra, il rigore non si batte più), non un
+  bug. L'asserzione I4b ("solo freekick attraversata") era tarata su
+  uno scenario a squadra 0 congelata e non copriva questo esito.
+  **RISCRITTA (#121)**: l'invariante diventa "freekick attraversata
+  OPPURE gol della squadra OFFESA nella finestra" (si verifica DI CHI è
+  il gol via `t.score`, non un gol qualsiasi — un gol della squadra che
+  ha commesso il fallo resterebbe rosso), condannando ancora l'esito
+  illecito (stabilizzarsi in `play`/punizione rapida come se il fallo
+  fosse fuori area, la condanna gemella di PROVA 2). Con la riscrittura,
+  `_q-regole.js` **16/16 verde**, letto riga per riga, nessuna partita
+  bloccata in `freekick`. Gli altri ~22 strumenti del censimento dei 25
+  (archivio, fuori batteria) restano APERTI, fuori dal perimetro di
+  questa voce (vedi `docs/superpowers/specs/2026-09-19-pulizia-108-
+  design.md`).
+
   **I5 — il vantaggio si apre ANCHE in area** (commento nuovo,
   `checkSlideContact`, nessun codice cambiato: il comportamento era già
   quello giusto). La riga che apre `G.vantaggio` non guarda mai

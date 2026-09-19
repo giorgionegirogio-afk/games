@@ -322,8 +322,8 @@ const ASPETTA_BATTUTA = `
         const t = window.__test;
         t.semina(seme);
         t.save.sponde = 'campo';
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_FASCIA(0);
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (setup.errore) { di(false, '2. RIMESSA', 'BANCO: scena non costruita — ' + setup.errore); }
@@ -345,8 +345,8 @@ const ASPETTA_BATTUTA = `
         const t = window.__test;
         t.semina(seme);
         t.save.sponde = 'campo';
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_FONDO(0);
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (setup.errore) { di(false, '3. FONDO-ANGOLO', 'BANCO: scena non costruita — ' + setup.errore); }
@@ -367,8 +367,8 @@ const ASPETTA_BATTUTA = `
         const t = window.__test;
         t.semina(seme);
         t.save.sponde = 'campo';
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_FONDO(1);
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (setup.errore) { di(false, '4. FONDO-RINVIO', 'BANCO: scena non costruita — ' + setup.errore); }
@@ -393,8 +393,8 @@ const ASPETTA_BATTUTA = `
         const t = window.__test;
         t.semina(seme);
         t.save.sponde = 'gabbia';
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_FASCIA(0);
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (setup.errore) { di(false, '5. GABBIA', 'BANCO: scena non costruita — ' + setup.errore); }
@@ -448,8 +448,8 @@ const ASPETTA_BATTUTA = `
         const t = window.__test;
         t.semina(seme);
         t.save.sponde = 'campo';
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_FASCIA(0);
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (setup.errore) { di(false, '6. ANTI-STALLO', 'BANCO: scena non costruita — ' + setup.errore); }

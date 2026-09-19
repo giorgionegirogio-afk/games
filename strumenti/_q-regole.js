@@ -216,21 +216,38 @@
    Il file e' adesso a SEDICI prove.
 
    RISCRITTURA (I4b): la PROVA 1 (RIGORE-DENTRO) leggeva lo stato
-   FINALE al fotogramma 200 ("freekick"), un'asserzione vera oggi solo
-   per un artefatto del banco -- il SEGUITO #108 (censimento corretto:
-   25 strumenti sotto strumenti/ chiamano setCpuVsCpu PRIMA di
-   startMatch, COMPRESO QUESTO STESSO FILE -- 15 siti a HEAD, erano 11
-   quando il censimento fu misurato su b837824: le prove 14-16 di questa
-   stessa onda ne hanno aggiunti 4) fa si' che la
-   squadra 0 (che difende) resti "umana" immobile per tutta la prova:
-   nessun avversario vero conduce mai il duello, e lo stato resta
+   FINALE al fotogramma 200 ("freekick"), un'asserzione vera allora solo
+   per un artefatto del banco -- il SEGUITO #108 (censimento del 18
+   settembre 2026: 25 strumenti sotto strumenti/ chiamavano setCpuVsCpu
+   PRIMA di startMatch, COMPRESO QUESTO STESSO FILE -- 15 siti a quella
+   HEAD, erano 11 quando il censimento fu misurato su b837824: le prove
+   14-16 di quella stessa onda ne avevano aggiunti 4) faceva si' che la
+   squadra 0 (che difende) restasse "umana" immobile per tutta la prova:
+   nessun avversario vero conduceva mai il duello, e lo stato restava
    'freekick' fino al fotogramma 200 per assenza di un difensore, non
-   per la regola. Se #108 venisse curato lato gioco (proposta gia' in
-   MANUALE.md), la squadra 0 diventerebbe CPU vera e potrebbe battere
-   il duello PRIMA del fotogramma 200 -- questa prova cadrebbe senza che
-   il rigore fosse cambiato di un bit. L'asserzione diventa "la scena
-   freekick e' stata ATTRAVERSATA" (campionata a ogni fotogramma):
-   verde oggi, e robusta a un futuro #108.
+   per la regola. L'asserzione fu riscritta come "la scena freekick e'
+   stata ATTRAVERSATA" (campionata a ogni fotogramma) proprio per restare
+   verde a prescindere da come venisse chiuso #108 su questo file.
+
+   #108 CHIUSO su questo banco (voce #121, compito 1, 19 settembre
+   2026): i 15 siti sono stati corretti spostando setCpuVsCpu(true) DOPO
+   startMatch (stessa cura su _q-battute.js, 5 siti, li' 11/11 verde).
+   La squadra 0 gioca ora da CPU vera in tutte le prove di questo file.
+   Applicata la cura, la PROVA 1 si e' scoperta ROSSA una prima volta --
+   non per l'hang in freekick del sintomo #108/#119 (il contrario: lo
+   stato non attraversava mai 'freekick', la scena finiva dritta in
+   'goal'). Causa: con la squadra 0 davvero mobile, il vantaggio in area
+   a volte si chiude con un gol della squadra offesa PRIMA che l'arbitro
+   fischi il rigore ritardato -- un esito LECITO della regola del
+   vantaggio (voce #107, gia' decisa), non un bug. L'asserzione
+   "solo freekick attraversata" era troppo stretta: RISCRITTA (vedi il
+   commento della PROVA 1 piu' sotto) come "freekick attraversata OPPURE
+   gol della squadra offesa nella finestra", verificando DI CHI e' il
+   gol (t.score) per restare un controllo discriminante vero e non una
+   tautologia. Con la riscrittura, 16/16 verde, letto riga per riga,
+   nessuna partita bloccata in freekick. Il vecchio censimento sopra
+   (18 settembre 2026, 25 strumenti/15 siti qui) resta per la cronaca
+   dello stato PRIMA di questa cura -- non e' piu' lo stato attuale.
 
    NOTA DICHIARATA (C1, non curata: fuori dal perimetro di questa onda).
    Le prove 6 (VANTAGGIO-FISCHIA-SEMPRE) e 8 (VANTAGGIO-SFUMATO) restano
@@ -798,8 +815,8 @@ function INIETTA_SCENE() {
     }
     /* LA PARTITA NUOVA. Nessuno azzera G.vantaggio a mano qui: e'
        esattamente il caso che I2 cura (o non cura) dentro startMatch. */
-    t.setCpuVsCpu(true);
     t.startMatch(1, 1, { size: taglia });
+    t.setCpuVsCpu(true);
     const vantaggioDopoStartMatch = (typeof G !== 'undefined') ? G.vantaggio : 'non definito';
     let bannerCartellinoVisto = false;
     for (let i = 0; i < 30; i++) {
@@ -991,25 +1008,6 @@ const CORRI_TRACCIA_RETROFERMO = (n, gkIdx, ciIdx) => `
   return { presa, minDistRegime, vivo, vivoFotogramma };
 })()`;
 
-/* I4b (onda di correzione della revisione finale, voce #107, 18
-   settembre 2026): traccia se uno STATO e' mai comparso durante gli n
-   fotogrammi, non solo lo stato FINALE -- serve alla PROVA 1
-   (RIGORE-DENTRO), riscritta perche' oggi dipende da un artefatto del
-   banco (I4, SEGUITO #108: CPU vera contro CPU vera batterebbe il
-   duello prima del fotogramma 200, e lo stato finale non sarebbe piu'
-   'freekick'). "La scena e' stata ATTRAVERSATA" resta vera in entrambi
-   i mondi. */
-const CORRI_TRACCIA_STATO = (n, stato) => `
-(function(){
-  const t = window.__test;
-  let visto = false;
-  for(let i=0;i<${n};i++){
-    t.simulate(1/60);
-    if(t.state==='${stato}') visto = true;
-  }
-  return { visto, statoFinale: t.state };
-})()`;
-
 const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a 7/11) con largo margine
 
 (async () => {
@@ -1036,42 +1034,74 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
     const nuovaScenaFallo = (modo) => pag.evaluate(({ seme, taglia, modo }) => {
       const t = window.__test;
       t.semina(seme);
-      t.setCpuVsCpu(true);
       t.startMatch(1, 1, { size: taglia });
+      t.setCpuVsCpu(true);
       return SCENA_FALLO(modo);
     }, { seme: SEME, taglia: TAGLIA_BANCO, modo }).catch(e => ({ errore: e.message }));
 
     /* ===================================================================
        PROVA 1 -- RIGORE-DENTRO. Controllo discriminante: fallo a x=60,
        y=centro campo. Dentro l'area vera E dentro la vecchia fascia a
-       ogni taglia: deve aprire il duello sia oggi sia dopo la cura.
-       RISCRITTA (I4b, onda di correzione della revisione finale, voce
-       #107, 18 settembre 2026): l'asserzione era "lo stato al
-       fotogramma 200 e' freekick" -- vera oggi solo perche' il
-       SEGUITO #108 (il censimento vero: 25 strumenti, COMPRESO questo
-       stesso file, chiamano setCpuVsCpu PRIMA di startMatch) e'
-       ancora aperto. Con l'idioma sbagliato, G.cpu=[false,true] scritto
-       da startMatch annulla il setCpuVsCpu(true) di nuovaScenaFallo:
-       la squadra 0 (che difende) resta "umana" immobile, nessuno
-       conduce il duello, e lo stato resta 'freekick' fino al
-       fotogramma 200 per assenza di un avversario, non per la regola.
-       Se #108 venisse curato lato gioco (setCpuVsCpu a prova d'ordine,
-       proposta gia' in MANUALE.md), la squadra 0 diventerebbe CPU vera
-       e potrebbe battere il duello PRIMA del fotogramma 200 -- lo stato
-       FINALE non sarebbe piu' 'freekick', e questa prova cadrebbe senza
-       che la regola del rigore fosse cambiata di un bit. L'asserzione
-       diventa quindi "la scena freekick e' stata ATTRAVERSATA" (si
-       campiona t.state a ogni fotogramma, verde se 'freekick' e'
-       comparso almeno una volta): verde oggi, E robusta a un futuro
-       #108. */
+       ogni taglia: deve produrre uno dei DUE esiti leciti di un fallo
+       in area, MAI il terzo (la punizione rapida da fuori-area, la
+       condanna gemella di PROVA 2).
+
+       STORIA (per la cronaca, non piu' lo stato attuale). RISCRITTA
+       (I4b, revisione finale, voce #107, 18 settembre 2026):
+       l'asserzione originale era "lo stato al fotogramma 200 e'
+       freekick" -- vera allora solo perche' il SEGUITO #108 (25
+       strumenti, compreso questo file, chiamavano setCpuVsCpu PRIMA di
+       startMatch) teneva la squadra 0 "umana" immobile: nessun
+       avversario vero conduceva il duello, lo stato restava 'freekick'
+       per assenza di un difensore, non per la regola. Fu riscritta come
+       "la scena freekick e' stata ATTRAVERSATA" (campionata a ogni
+       fotogramma), creduta "robusta a un futuro #108" -- ma quando la
+       cura dell'ordine e' arrivata davvero (voce #121, compito 1, 19
+       settembre 2026) la prova si e' scoperta ROSSA lo stesso: con la
+       difesa vera, il vantaggio in area a volte si chiude con un GOL
+       della squadra offesa PRIMA che l'arbitro fischi il rigore
+       ritardato (misurato: 'freekick' mai vista, stato finale 'goal').
+       Non e' un bug -- e' la regola del VANTAGGIO (voce #107, gia'
+       decisa): se l'offesa segna nella finestra, il rigore non si batte
+       piu', e resta un esito lecito del fallo in area. L'asserzione
+       "solo freekick" era percio' troppo stretta.
+
+       RISCRITTA DI NUOVO (#121, compito 1, 19 settembre 2026, QUESTA
+       VOLTA CHIUSA): l'invariante vero per un fallo IN AREA e' "rigore
+       fischiato (freekick attraversata) OPPURE vantaggio giocato e
+       segnato dalla squadra OFFESA" -- si verifica di chi e' il gol
+       (t.score per squadra, non un gol qualsiasi: un gol della squadra
+       che ha COMMESSO il fallo non conta come esito lecito e resta
+       rosso) per restare un controllo discriminante vero, non una
+       tautologia che accetta qualunque cosa. L'esito condannato resta
+       lo stesso: se la scena si stabilizza senza mai vedere 'freekick'
+       e senza che l'offesa segni (es. 'play'/punizione rapida, come se
+       il fallo fosse fuori area), la prova e' rossa -- esattamente il
+       comportamento che PROVA 2 chiede per un fallo VERAMENTE fuori
+       area, quindi la distinzione area-vera-vs-fascia resta preservata
+       fra le due prove gemelle. */
     {
       const scena = await nuovaScenaFallo('dentro');
       if (scena.errore) { di(false, '1. RIGORE-DENTRO', 'BANCO: scena non costruita -- ' + scena.errore); }
       else {
-        const r = await pag.evaluate(CORRI_TRACCIA_STATO(FOTOGRAMMI_ATTESA, 'freekick'));
-        const ok = r.visto;
-        di(ok, '1. RIGORE-DENTRO -- fallo a x=' + scena.x + ',y=' + scena.y + ' (centro campo): la scena freekick e\' stata ATTRAVERSATA (CONTROLLO DISCRIMINANTE, riscritta I4b: robusta a un futuro #108)',
-          'freekick vista: ' + r.visto + ' (atteso true)   stato al fotogramma ' + FOTOGRAMMI_ATTESA + ': ' + r.statoFinale + ' -- areaProf=' + scena.areaProf + ', areaSemi=' + scena.areaSemi + ', FH=' + scena.FH);
+        const r = await pag.evaluate(({ n, vIdx }) => {
+          const t = window.__test;
+          const offesa = t.players[vIdx].team;
+          const scorePrima = t.score.slice();
+          let freekickVisto = false;
+          for (let i = 0; i < n; i++) {
+            t.simulate(1 / 60);
+            if (t.state === 'freekick') freekickVisto = true;
+          }
+          const scoreDopo = t.score.slice();
+          return {
+            freekickVisto, statoFinale: t.state, offesa, scorePrima, scoreDopo,
+            golOffesa: scoreDopo[offesa] === scorePrima[offesa] + 1,
+          };
+        }, { n: FOTOGRAMMI_ATTESA, vIdx: scena.vittimaIdx });
+        const ok = r.freekickVisto || r.golOffesa;
+        di(ok, '1. RIGORE-DENTRO -- fallo a x=' + scena.x + ',y=' + scena.y + ' (centro campo): DUE esiti leciti (rigore fischiato O vantaggio giocato e segnato dall\'offesa), MAI la punizione rapida da fuori-area (CONTROLLO DISCRIMINANTE, riscritta #121)',
+          'freekick vista: ' + r.freekickVisto + '   gol squadra offesa (' + r.offesa + '): ' + r.golOffesa + ' (' + r.scorePrima.join('-') + ' -> ' + r.scoreDopo.join('-') + ')   stato al fotogramma ' + FOTOGRAMMI_ATTESA + ': ' + r.statoFinale + ' -- areaProf=' + scena.areaProf + ', areaSemi=' + scena.areaSemi + ', FH=' + scena.FH);
       }
     }
 
@@ -1103,8 +1133,8 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       const scena = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_RETROPASSO();
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (scena.errore) { di(false, '3. RETRO-PRESA', 'BANCO: scena non costruita -- ' + scena.errore); }
@@ -1127,8 +1157,8 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       const scena = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_RETROTESTA();
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (scena.errore) { di(false, '4. RETRO-TESTA', 'BANCO: scena non costruita -- ' + scena.errore); }
@@ -1150,8 +1180,8 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       const scena = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_RETROAVVERSARIO();
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (scena.errore) { di(false, '5. RETRO-AVVERSARIO', 'BANCO: scena non costruita -- ' + scena.errore); }
@@ -1190,8 +1220,8 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       const scena = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_FALLO('lontano');
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (scena.errore) { di(false, '6. VANTAGGIO-FISCHIA-SEMPRE', 'BANCO: scena non costruita -- ' + scena.errore); }
@@ -1220,8 +1250,8 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       const scena = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_RETROFERMO();
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (scena.errore) { di(false, '7. RETRO-FERMO', 'BANCO: scena non costruita -- ' + scena.errore); }
@@ -1267,8 +1297,8 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       const scena = await pag.evaluate(({ seme, taglia, n }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_VANTAGGIO_SFUMATO_ESEGUI(n);
       }, { seme: SEME, taglia: TAGLIA_BANCO, n: FOTOGRAMMI_ATTESA }).catch(e => ({ errore: e.message }));
       if (scena.errore) { di(false, '8. VANTAGGIO-SFUMATO', 'BANCO: scena non costruita -- ' + scena.errore); }
@@ -1302,8 +1332,8 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       const scena = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia, sponde: 'campo' });
+        t.setCpuVsCpu(true);
         return SCENA_CARD_DIFFERITO_ESEGUI(taglia);
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (scena.errore) { di(false, '9. CARD-DIFFERITO', 'BANCO: scena non costruita -- ' + scena.errore); }
@@ -1333,8 +1363,8 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       const scena = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_DOGSO_GOL_ESEGUI();
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (scena.errore) { di(false, '10. DOGSO-GOL', 'BANCO: scena non costruita -- ' + scena.errore); }
@@ -1372,8 +1402,8 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       const scena = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_GRAZIA_DOPO_CARD_ESEGUI();
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (scena.errore) { di(false, '11. GRAZIA-DOPO-CARD', 'BANCO: scena non costruita -- ' + scena.errore); }
@@ -1402,8 +1432,8 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       const scena = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_CARD_NON_SI_PERDE_ESEGUI();
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (scena.errore) { di(false, '12. CARD-NON-SI-PERDE', 'BANCO: scena non costruita -- ' + scena.errore); }
@@ -1510,8 +1540,8 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       const scena = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_CARD_NON_ATTRAVERSA_ESEGUI(taglia);
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (scena.errore) { di(false, '14. CARD-NON-ATTRAVERSA', 'BANCO: scena non costruita -- ' + scena.errore); }
@@ -1545,8 +1575,8 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       const scena = await pag.evaluate(({ seme, taglia }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia, sponde: 'campo' });
+        t.setCpuVsCpu(true);
         return SCENA_PALLA_FUORI_IN_FINESTRA_ESEGUI();
       }, { seme: SEME, taglia: TAGLIA_BANCO }).catch(e => ({ errore: e.message }));
       if (scena.errore) { di(false, '15. PALLA-FUORI-IN-FINESTRA', 'BANCO: scena non costruita -- ' + scena.errore); }
@@ -1583,8 +1613,8 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       const scena = await pag.evaluate(({ seme, taglia, totale }) => {
         const t = window.__test;
         t.semina(seme);
-        t.setCpuVsCpu(true);
         t.startMatch(1, 1, { size: taglia });
+        t.setCpuVsCpu(true);
         return SCENA_VANTAGGIO_AREA_ESEGUI(totale);
       }, { seme: SEME, taglia: TAGLIA_BANCO, totale }).catch(e => ({ errore: e.message }));
       if (scena.errore) { di(false, '16. VANTAGGIO-IN-AREA', 'BANCO: scena non costruita -- ' + scena.errore); }
