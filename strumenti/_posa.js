@@ -249,6 +249,21 @@ function semeFisso(seme) {
    pausa: servono proprio perche' la camera e' un inseguimento, e senza
    quelli la posa sarebbe un'inquadratura in viaggio. La cura del disegno
    idempotente si accende DOPO, uno scatto alla volta.
+
+   L'ORDINE DI setCpuVsCpu, E PERCHE' NON E' UN DETTAGLIO (voce #121,
+   seguito #108). Qui sotto startMatch parte PRIMA e setCpuVsCpu(cpu)
+   arriva DOPO -- CALCETTO-il-gioco.html:10953 riscrive
+   G.cpu=[false, G.mode===2?false:true] INCONDIZIONATAMENTE dentro
+   startMatch, quindi un setCpuVsCpu(true) chiamato PRIMA verrebbe
+   annullato in silenzio: la squadra 0 resterebbe "umana immobile", non
+   batterebbe le punizioni, e una partita CPU-CPU intera si incastra
+   nella scena 'freekick' (diagnosi #119). CHI SCRIVE UN BANCO CPU-CPU
+   NUOVO: usa posaFerma cosi' com'e', o se la partita si costruisce a
+   mano copia l'ordine di qui -- startMatch PRIMA, setCpuVsCpu(true)
+   DOPO. strumenti/_q-cpu-ordine.js e' la rete che condanna in batteria
+   l'ordine sbagliato (nato apposta perche' _q-umore.js e' nato rotto su
+   questo stesso punto DOPO il censimento originale di #108, e nessuno
+   se n'era accorto finche' non ha causato l'hang #119).
    --------------------------------------------------------------------- */
 async function posaFerma(pag, opz = {}) {
   const { secondi = 3.0, taglia = 5, cronometro = 89, cpu = true, assesta = 60 } = opz;

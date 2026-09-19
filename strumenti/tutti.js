@@ -572,6 +572,27 @@ const CANCELLI = [
      taglia 5 (#98: il determinismo e' instabile a 7/11, ogni misura del
      modello si prende a 5): corre in compagnia. */
   { nome: 'umore',       cmd: ['strumenti/_q-umore.js'],                                conta: true,  lento: false },
+  /* cpu-ordine: LA RETE CHE COGLIE IL PROSSIMO BANCO ROTTO (voce #121,
+     compito 3, seguito #108, 19 settembre 2026). Due prove sullo stesso
+     schema, in direzioni opposte: ORDINE-GIUSTO (setCpuVsCpu(true) DOPO
+     startMatch) deve dare G.cpu=[true,true] e una partita CPU-CPU a seme
+     fisso che raggiunge 'end' entro 13200 fotogrammi senza restare
+     incastrata in 'freekick'; ORDINE-SBAGLIATO (setCpuVsCpu(true) PRIMA
+     di startMatch, il controllo discriminante) deve dare G.cpu[0]===false
+     -- la prova che l'artefatto #108 esiste ancora nel gioco e che
+     l'ordine giusto resta obbligatorio, non una tautologia.
+
+     PERCHE' STA IN BATTERIA (conta:TRUE): _q-umore.js e' nato con questo
+     stesso difetto DOPO il censimento originale di #108, e nessuno se
+     n'e' accorto finche' non ha causato l'hang #119 -- un censimento e'
+     una fotografia, non vede quel che nasce dopo. Questo cancello
+     interroga il COMPORTAMENTO del gioco a ogni corsa, non un elenco di
+     file noti: nessun quarto banco CPU-CPU puo' nascere rotto su questo
+     punto senza che la prova 1 lo veda in batteria.
+     Deterministico al seme del cantiere (20260919), zero dado()/SEME
+     propri (la semina passa sempre da semeFisso di _posa.js): corre in
+     compagnia. */
+  { nome: 'cpu-ordine',  cmd: ['strumenti/_q-cpu-ordine.js'],                           conta: true,  lento: false },
   /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
