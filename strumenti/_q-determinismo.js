@@ -59,13 +59,24 @@ function servi(prova) {
 
 /* l'impronta: quel che basta a dire "e' la stessa partita".
    Si arrotonda al centesimo perche' il confronto sia sui numeri e non
-   sulla rappresentazione binaria dei float. */
+   sulla rappresentazione binaria dei float.
+   GLI STATI DEL MIND (voce #117, compito 2, VINCOLO #4): p.umore, p.nervi
+   e G.spinta entrano qui -- non in una prova a parte -- perche' l'impronta
+   e' GIA' il digest che tutte e quattro le prove (A/B/C/D) confrontano: un
+   solo punto di estensione rende l'invariante consapevole degli stati
+   ovunque, invece di una prova ad hoc che ne vedrebbe solo un angolo.
+   Arrotondato al millesimo (gli stati vivono in [-1,1] o [0,1], un
+   centesimo sarebbe troppo grosso per accorgersi di una divergenza).
+   ||0 e Array.isArray(...) reggono anche il gioco DI IERI (senza stati):
+   l'impronta resta definita, solo piu' corta -- mai un'eccezione. */
 const IMPRONTA = `(() => {
   const b=G.ball;
   let s = [Math.round(b.x*100), Math.round(b.y*100), Math.round((b.z||0)*100),
            Math.round(b.vx*100), Math.round(b.vy*100), b.owner, b.lastTouch,
            G.score[0], G.score[1], Math.round(G.timeLeft*100)];
-  for(const p of G.players) s.push(Math.round(p.x*100), Math.round(p.y*100), p.out|0);
+  for(const p of G.players) s.push(Math.round(p.x*100), Math.round(p.y*100), p.out|0,
+           Math.round((p.umore||0)*1000), Math.round((p.nervi||0)*1000));
+  if(Array.isArray(G.spinta)) s.push(Math.round(G.spinta[0]*1000), Math.round(G.spinta[1]*1000));
   return s.join(',');
 })()`;
 

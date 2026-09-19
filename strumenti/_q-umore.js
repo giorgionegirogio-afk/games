@@ -47,6 +47,25 @@
    window.__test.G.fatti e' undefined, e la prova deve dirlo con un
    guasto leggibile, non con un'eccezione cieca.
 
+   PROVA STATI (compito 2). p.umore (-1..+1), p.nervi (0..1) per
+   giocatore, G.spinta[team] (-1..+1) per squadra: OSSERVAZIONE PURA,
+   derivata dai fatti, zero dado() (vedi strumenti/_t-stati-mind.js). Si
+   riusa la STESSA partita della prova REGISTRO (un solo giro) e si
+   verifica: la superficie esiste; a inizio partita tutti gli stati sono
+   zero; dopo ogni gol/autorete lo scorer ha umore>0 (l'autore
+   dell'autorete umore<0) e la squadra beneficiaria ha spinta>0; dopo un
+   CARTELLINO FORZATO (t.cartellino(0), un hook di QA gia' esistente --
+   il seme di casa non ne produce uno spontaneo qui) l'ammonito ha
+   nervi>0; gli stati restano nei loro intervalli (clamp) per l'intera
+   partita, mai NaN/Infinity. NASCE ROSSA SUL GIOCO DEL COMPITO 1
+   (`fuori/base2.html` = `git show cb23512:CALCETTO-il-gioco.html`): gli
+   stati non esistono, 0-stati lo dice con un guasto leggibile.
+   IL DETERMINISMO DEGLI STATI (VINCOLO #4) non e' qui: e' in
+   strumenti/_q-determinismo.js, che confronta gia' un'IMPRONTA condivisa
+   da tutte le sue quattro prove (A/B/C/D) -- estenderla LI' (un solo
+   punto) rende l'invariante consapevole degli stati ovunque, invece di
+   una prova ad hoc in questo file che ne vedrebbe solo un angolo.
+
    uso:  node strumenti/_q-umore.js
          node strumenti/_q-umore.js --gioco fuori/base.html
          node strumenti/_q-umore.js --taglia 5 --seme 20260919
@@ -129,10 +148,90 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
       t.startMatch(1, 1, { size: taglia });
       const fattiEsisteva = (typeof t.G !== 'undefined') && Array.isArray(t.G.fatti);
       const fattiVuotiAllInizio = fattiEsisteva && t.G.fatti.length === 0;
+
+      /* =================================================================
+         GLI STATI (voce #117, compito 2). Si controlla la superficie
+         PRIMA di girare la partita, come fattiEsisteva qui sopra: se
+         p.umore/p.nervi non sono numeri o G.spinta non e' un array di 2,
+         il gioco di oggi non ha ancora gli stati (il caso atteso su
+         fuori/base2.html). */
+      const nGiocatoriIniziale = t.G.players ? t.G.players.length : 0;
+      const statiEsistono = nGiocatoriIniziale > 0 &&
+        typeof t.G.players[0].umore === 'number' && typeof t.G.players[0].nervi === 'number' &&
+        Array.isArray(t.G.spinta) && t.G.spinta.length === 2;
+      const statiInizialiTuttiZero = statiEsistono &&
+        t.G.players.every(p => p.umore === 0 && p.nervi === 0) &&
+        t.G.spinta[0] === 0 && t.G.spinta[1] === 0;
+
+      let umoreMin = Infinity, umoreMax = -Infinity, nerviMin = Infinity, nerviMax = -Infinity,
+          spintaMin = Infinity, spintaMax = -Infinity, statiFiniti = true;
+      const aggiornaMinMax = () => {
+        for (const p of t.G.players) {
+          if (!Number.isFinite(p.umore) || !Number.isFinite(p.nervi)) { statiFiniti = false; continue; }
+          if (p.umore < umoreMin) umoreMin = p.umore;
+          if (p.umore > umoreMax) umoreMax = p.umore;
+          if (p.nervi < nerviMin) nerviMin = p.nervi;
+          if (p.nervi > nerviMax) nerviMax = p.nervi;
+        }
+        for (const s of t.G.spinta) {
+          if (!Number.isFinite(s)) { statiFiniti = false; continue; }
+          if (s < spintaMin) spintaMin = s;
+          if (s > spintaMax) spintaMax = s;
+        }
+      };
+      if (statiEsistono) aggiornaMinMax();
+
+      /* UN CARTELLINO FORZATO, DETERMINISTICO (voce #117, compito 2): il
+         seme di casa non ne produce uno spontaneo in questa partita (la
+         prova REGISTRO lo mostra: 0 gialli), e la prova "dopo un
+         cartellino l'ammonito ha nervi>0" non puo' restare all'ombra di
+         un evento che magari non capita. t.cartellino(team) e' un hook
+         di QA gia' esistente (infliggiCartellino su un uomo vero, zero
+         dado() qui): si aziona a scena avviata (frame 120 = 2 s, ben
+         oltre il kickoff piu' lungo) e si legge l'indice del cartellinato
+         DIRETTAMENTE dall'ultimo fatto appena emesso, prima che
+         l'impatto abbia gia' girato -- poi si aspetta il simulate() di
+         questo stesso fotogramma perche' l'impatto (in step()) lo veda. */
+      const CARTELLINO_FRAME = 120;
+      let cartellinoForzato = null;
+      const eventiStati = [];
       const TETTO = 220 * 60;
       let fotogrammi = 0;
       for (; fotogrammi < TETTO && t.state !== 'end'; fotogrammi++) {
+        if (statiEsistono && fattiEsisteva && fotogrammi === CARTELLINO_FRAME && t.state === 'play') {
+          t.cartellino(0);
+          const ultimo = t.G.fatti[t.G.fatti.length - 1];
+          if (ultimo && (ultimo.che === 'giallo' || ultimo.che === 'espulsione')) {
+            cartellinoForzato = { che: ultimo.che, chi: ultimo.chi };
+          }
+        }
+        const primaLen = (statiEsistono && fattiEsisteva) ? t.G.fatti.length : 0;
         t.simulate(1 / 60);
+        if (statiEsistono && fattiEsisteva) {
+          const dopoLen = t.G.fatti.length;
+          if (dopoLen > primaLen) {
+            /* stesso trattamento robusto allo shift del cursore del
+               gioco: si guardano solo i fatti ancora in coda */
+            const nNuovi = Math.min(dopoLen - primaLen, dopoLen);
+            for (let i = dopoLen - nNuovi; i < dopoLen; i++) {
+              const f = t.G.fatti[i];
+              if ((f.che === 'gol' || f.che === 'autorete') && f.chi >= 0 && f.chi < t.G.players.length) {
+                const p = t.G.players[f.chi];
+                eventiStati.push({
+                  che: f.che, chi: f.chi,
+                  umoreDopo: p.umore,
+                  spintaBeneficiaria: (f.esito && typeof f.esito.team === 'number') ? t.G.spinta[f.esito.team] : null,
+                });
+              }
+            }
+          }
+          if (cartellinoForzato && cartellinoForzato.nerviDopo === undefined) {
+            const p = t.G.players[cartellinoForzato.chi];
+            cartellinoForzato.nerviDopo = p ? p.nervi : NaN;
+            cartellinoForzato.umoreDopo = p ? p.umore : NaN;
+          }
+          aggiornaMinMax();
+        }
       }
       const fatti = fattiEsisteva ? t.G.fatti.map(f => ({
         che: f.che, chi: f.chi,
@@ -145,6 +244,8 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
         fatti, nGiocatori,
         stats: t.stats, score: t.score.slice(),
         cambi: t.G.cambi ? t.G.cambi.slice() : null,
+        statiEsistono, statiInizialiTuttiZero, eventiStati, cartellinoForzato,
+        umoreMin, umoreMax, nerviMin, nerviMax, spintaMin, spintaMax, statiFiniti,
       };
     }, { taglia: TAGLIA_BANCO });
 
@@ -222,6 +323,60 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
                   '   rigore: ' + (conteggi.rigore || 0) + '   parata (duello): ' + (conteggi.parata || 0));
       console.log('         partita: ' + r.fotogrammi + ' fotogrammi simulati, stato finale "' + r.statoFinale + '", punteggio ' + r.score.join('-') +
                   ', totale fatti registrati: ' + r.fatti.length);
+    }
+
+    /* =====================================================================
+       PROVA STATI (compito 2). p.umore (-1..+1), p.nervi (0..1) per
+       giocatore, G.spinta[team] (-1..+1) per squadra: TRE STATI DERIVATI
+       DAI FATTI, zero dado(). Sulla STESSA partita gia' giocata qui sopra
+       (un solo giro, come il resto della casa) si verifica:
+         0-stati. la superficie esiste (numeri/array, non l'assenza del
+                  gioco di ieri);
+         a-stati. a inizio partita tutti gli stati sono zero;
+         b-stati. dopo ogni gol/autorete lo scorer ha umore>0 (autorete:
+                  l'autore ha umore<0 — vedi applicaImpattoFatto);
+         c-stati. dopo ogni gol/autorete la squadra beneficiaria ha
+                  spinta>0;
+         d-stati. dopo un cartellino FORZATO (t.cartellino(0), un hook di
+                  QA gia' esistente — il seme di casa non ne produce uno
+                  spontaneo in questa partita) l'ammonito ha nervi>0;
+         e-stati. umore/nervi/spinta restano nei loro intervalli (clamp)
+                  per l'intera partita, mai NaN/Infinity.
+       NASCE ROSSA SUL GIOCO DI IERI (dichiarato): su
+       `git show cb23512:CALCETTO-il-gioco.html` (fuori/base2.html) gli
+       stati non esistono ancora — 0-stati lo dice con un guasto leggibile,
+       non un'eccezione cieca, e le prove sotto si saltano di conseguenza. */
+    di(r.statiEsistono, '0-stati. gli stati esistono (p.umore/p.nervi numeri, G.spinta un array di 2)',
+      r.statiEsistono ? 'presente' : 'ASSENTE — il gioco di oggi non ha ancora gli stati (umore/nervi/spinta)');
+
+    if (!r.statiEsistono) {
+      di(false, '1-stati. STATI — non misurabile senza gli stati', 'prova saltata: nessuna superficie da leggere');
+    } else {
+      di(r.statiInizialiTuttiZero, 'a-stati. a inizio partita tutti gli stati sono a zero (umore/nervi/spinta)',
+        r.statiInizialiTuttiZero ? 'tutti zero' : 'ALMENO uno stato non parte da zero');
+
+      const golEventi = r.eventiStati;
+      const scorerOk = golEventi.length === 0 ? true : golEventi.every(e => e.che === 'gol' ? e.umoreDopo > 0 : e.umoreDopo < 0);
+      di(scorerOk, 'b-stati. dopo ogni gol lo scorer ha umore>0 (autorete: umore<0 per l\'autore)',
+        golEventi.length === 0 ? 'nessun gol in questa partita: prova non esercitata (non un si\')'
+          : golEventi.map(e => e.che + ' chi=' + e.chi + ' umoreDopo=' + e.umoreDopo.toFixed(3)).join('; '));
+
+      const spintaOk = golEventi.length === 0 ? true : golEventi.every(e => e.spintaBeneficiaria !== null && e.spintaBeneficiaria > 0);
+      di(spintaOk, 'c-stati. dopo ogni gol/autorete la squadra beneficiaria ha spinta>0',
+        golEventi.length === 0 ? 'nessun gol in questa partita: prova non esercitata (non un si\')'
+          : golEventi.map(e => e.che + ' spintaBeneficiaria=' + (e.spintaBeneficiaria === null ? 'n/d' : e.spintaBeneficiaria.toFixed(3))).join('; '));
+
+      const cf = r.cartellinoForzato;
+      di(!!cf && Number.isFinite(cf.nerviDopo) && cf.nerviDopo > 0,
+        'd-stati. dopo un cartellino forzato l\'ammonito ha nervi>0',
+        cf ? (cf.che + ' chi=' + cf.chi + ' nerviDopo=' + cf.nerviDopo + ' umoreDopo=' + cf.umoreDopo)
+           : 'il cartellino forzato (t.cartellino(0)) non ha prodotto un fatto giallo/espulsione');
+
+      const clampOk = r.statiFiniti && r.umoreMin >= -1 && r.umoreMax <= 1 &&
+        r.nerviMin >= 0 && r.nerviMax <= 1 && r.spintaMin >= -1 && r.spintaMax <= 1;
+      di(clampOk, 'e-stati. umore/nervi/spinta restano nei loro intervalli per tutta la partita (clamp)',
+        'umore [' + r.umoreMin.toFixed(3) + ',' + r.umoreMax.toFixed(3) + ']  nervi [' + r.nerviMin.toFixed(3) + ',' + r.nerviMax.toFixed(3) +
+        ']  spinta [' + r.spintaMin.toFixed(3) + ',' + r.spintaMax.toFixed(3) + ']  tutti finiti: ' + r.statiFiniti);
     }
 
     if (ecc.length) { di(false, 'BANCO — nessuna eccezione di pagina', 'eccezione: ' + ecc[0]); }

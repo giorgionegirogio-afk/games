@@ -8481,6 +8481,7 @@ const G = {
   capT:0, capIdx:[1,1],
   /* moviola: anello di fotogrammi degli ultimi secondi, per rivedere il gol */
   fatti:[],                              // registro dei fatti (voce #117, compito 1): vedi emettiFatto
+  spinta:[0,0], fattiVisti:0, fattiTot:0, // gli stati (voce #117, compito 2): derivati dai fatti, vedi applicaImpattoFatto
   rec:[], recT:0, moviola:null,
   /* la RIPRESA DEDICATA del gol in camera bassa (decisione 3): parte dopo
      il colpo nel sacco, per ogni rete con un marcatore (mai sull'autorete) */
@@ -10534,6 +10535,7 @@ function makePlayer(team, idx, x, y, role){
        0 = a secco. La consuma lo SPAZIO percorso (updatePlayerFisica),
        non i secondi: chi cammina paga poco. */
     cond:100,
+    umore:0, nervi:0,                  // gli stati (voce #117, compito 2): derivati dai fatti, vedi applicaImpattoFatto
     acciacco:0,                        // 1 = ha ceduto qualcosa: niente scatto, passo corto
     rincalzo:0,                        // 1 = e' entrato dalla panchina (non e' nella tua rosa)
     sprint:false,                      // sta scattando in questo istante
@@ -10980,6 +10982,7 @@ function startMatch(mode, diff, opts){
      rivedrebbe un fotogramma della partita di prima.
      ===================================================================== */
   G.fatti.length=0;
+  G.spinta=[0,0]; G.fattiVisti=0; G.fattiTot=0;
   G.rec.length=0; G.recT=0;
   /* I QUATTRO CRONOMETRI FRATELLI DI recT (31 agosto 2026). Stessa
      malattia del verbale qui sopra, altri quattro nomi: possOwner e
@@ -12422,6 +12425,11 @@ function faiCambio(p, r){
     p.hair=HAIR[(s>>>11)%HAIR.length]; p.taglio=(s>>>19)%4;
   }
   p.cond=100; p.fiato=100; p.acciacco=0; p.rincalzo=1;
+  /* IL RINCALZO ENTRA A STATI NEUTRI (voce #117, compito 2): un uomo
+     appena entrato non eredita l'umore ne' i nervi di chi ha sostituito
+     -- sono stati di runtime, mai persistiti, e un rincalzo non ne aveva
+     di suoi prima di entrare. */
+  p.umore=0; p.nervi=0;
   p.gialli=0;                          // i cartellini sono personali, e lui non ne ha
   p.mesto=0; p.celeb=0; p.fintaT=0; p.frenaT=0;
   /* IL FATTO E' EMESSO (registro dei fatti, voce #117, compito 1): esce,
@@ -17231,6 +17239,28 @@ function step(){
   const own=G.ball.owner;
   if(own>=0) G.stats.possesso[G.players[own].team]++;
   else if(G.ball.lastTouch>=0) G.stats.possesso[G.players[G.ball.lastTouch].team]+=0.35;
+
+  /* GLI STATI (voce #117, compito 2): L'IMPATTO DEI FATTI, UNA VOLTA PER
+     FRAME -- qui, in fondo a step(), non dentro il ciclo
+     "for(const p of G.players) updatePlayer(p,dt)" qui sopra, altrimenti
+     ogni fatto verrebbe applicato tante volte quanti sono i giocatori
+     invece di una sola. G.fattiTot e' un contatore MONOTONO (incrementato
+     in emettiFatto PRIMA dello shift): la differenza da G.fattiVisti dice
+     quanti fatti nuovi ci sono, anche se il buffer G.fatti (tetto
+     FATTI_MAX=200 con shift) nel frattempo ha scartato i piu' vecchi. Se
+     il tetto ha scartato piu' fatti di quanti l'array ne contenga oggi,
+     si leggono quelli rimasti in coda -- i soli ancora leggibili -- e si
+     perdono (mai due volte, mai fuori indice) quelli scartati: con
+     FATTI_MAX=200 e una partita a taglia 5 che ne produce una decina
+     (misurato dalla prova REGISTRO del compito 1), questo caso non scatta
+     mai in pratica, ma il codice non lo da' per scontato. */
+  const fattiNuovi = G.fattiTot - G.fattiVisti;
+  if(fattiNuovi > 0){
+    const daLeggere = Math.min(fattiNuovi, G.fatti.length);
+    for(let fi=G.fatti.length-daLeggere; fi<G.fatti.length; fi++) applicaImpattoFatto(G.fatti[fi]);
+    G.fattiVisti = G.fattiTot;
+  }
+  decayoSpinta(dt);
 }
 
 /* =====================================================================
@@ -17867,6 +17897,22 @@ function updatePlayer(p,dt){
 }
 
 function updatePlayerFisica(p,dt){
+  /* IL RILASSAMENTO DEGLI STATI (voce #117, compito 2): CONTINUO, per
+     ogni giocatore, OGNI FRAME -- anche per l'espulso e per il portiere.
+     DEVIAZIONE DICHIARATA dall'ancora di progetto ("dopo il blocco
+     p.fiato"): quel blocco non gira mai per un portiere (due righe sotto
+     p.role==='gk' esce verso updateKeeper) ne' per un espulso (esce
+     ancora prima, su p.out>0): un decay messo li' lascerebbe lo stato
+     del portiere e dell'espulso congelato per sempre. Qui in cima gira
+     per OGNI giocatore, OGNI frame, prima di qualunque ramo d'uscita.
+     L'IMPATTO dei fatti vive altrove (in step(), una volta per frame, non
+     qui: qui girerebbe una volta per GIOCATORE e conterebbe ogni fatto
+     piu' volte) -- decay e impatto non si mescolano mai. Mezza vita 30 s
+     per l'umore, 15 s per i nervi (si scaricano prima del morale, come
+     nel calcio vero): numeri scelti a buon senso, il mandato non li fissa
+     per una partita di 90-180 s. */
+  p.umore -= p.umore*(1-Math.pow(0.5, dt/30));
+  p.nervi -= p.nervi*(1-Math.pow(0.5, dt/15));
   /* espulso: aspetta a bordo campo, non tocca palla, non decide, non si disegna */
   if(p.out>0){
     p.out-=dt;
@@ -35460,6 +35506,99 @@ const FATTI_MAX = 200;
 function emettiFatto(che, chi, dove, esito){
   G.fatti.push({ che, chi, dove, esito, t: durataPartita()-G.timeLeft });
   if(G.fatti.length > FATTI_MAX) G.fatti.shift();
+  /* CONTATORE MONOTONO (voce #117, compito 2): non decresce mai, cresce
+     PRIMA dello shift qui sopra -- e' la base della robustezza del
+     cursore G.fattiVisti in step() contro il tetto FATTI_MAX: la
+     LUNGHEZZA dell'array puo' restare ferma o scendere (shift), il
+     TOTALE emesso no. */
+  G.fattiTot++;
+}
+
+/* =====================================================================
+   GLI STATI: UMORE, NERVI, SPINTA (voce #117, compito 2 -- MIND v1). Tre
+   stati DERIVATI DAI FATTI, nessun sorteggio qui dentro. OSSERVAZIONE PURA in
+   questo compito: non toccano nessuna decisione (il canale che li legge
+   arriva al compito 3). Vedi la lettera di testa di
+   strumenti/_t-stati-mind.js per la tavola completa dei pesi. */
+function moltiplicatoreTempo(){
+  /* CONTINUO, non le soglie 60'/85' del mandato (che su 90-180 s non
+     esistono), e NON G.capCond (fattore fisso di condizione, un'altra
+     cosa): l'ampiezza di ogni impatto cresce verso il finale. */
+  return 1 + 0.6*(1 - G.timeLeft/durataPartita());
+}
+function clampStato(v, lo, hi){ return v<lo?lo:(v>hi?hi:v); }
+function applicaGolSquadra(teamBeneficiario, molt){
+  G.spinta[teamBeneficiario] = clampStato(G.spinta[teamBeneficiario] + 0.30*molt, -1, 1);
+  const subisce = 1-teamBeneficiario;
+  for(const q of G.players){
+    if(q.team===subisce){
+      q.umore = clampStato(q.umore - 0.20*molt, -1, 1);
+      q.nervi = clampStato(q.nervi + 0.15*molt, 0, 1);
+    }
+  }
+}
+function applicaImpattoFatto(f){
+  const molt = moltiplicatoreTempo();
+  const p = (f.chi>=0 && f.chi<G.players.length) ? G.players[f.chi] : null;
+  switch(f.che){
+    case 'gol':
+      if(p) p.umore = clampStato(p.umore + 0.50*molt, -1, 1);
+      applicaGolSquadra(f.esito.team, molt);
+      break;
+    case 'autorete':
+      /* l'autore paga un conto suo, PIU' quello che paga tutta la sua
+         squadra (applicaGolSquadra qui sotto, che gira comunque su di
+         lui: e' cumulativo, dichiarato -- ha segnato nella propria
+         porta, la doppia penalita' e' voluta). */
+      if(p){ p.umore = clampStato(p.umore - 0.40*molt, -1, 1); p.nervi = clampStato(p.nervi + 0.20*molt, 0, 1); }
+      applicaGolSquadra(f.esito.team, molt);
+      break;
+    case 'rubata':
+      if(p) p.umore = clampStato(p.umore + 0.20*molt, -1, 1);
+      if(f.esito && f.esito.vittima>=0 && f.esito.vittima<G.players.length){
+        const v=G.players[f.esito.vittima];
+        v.umore = clampStato(v.umore - 0.15*molt, -1, 1);
+      }
+      break;
+    case 'fallo':
+      if(f.esito && f.esito.vittima>=0 && f.esito.vittima<G.players.length){
+        const v=G.players[f.esito.vittima];
+        v.nervi = clampStato(v.nervi + 0.12*molt, 0, 1);
+      }
+      break;
+    case 'giallo':
+      if(p){ p.nervi = clampStato(p.nervi + 0.25*molt, 0, 1); p.umore = clampStato(p.umore - 0.20*molt, -1, 1); }
+      break;
+    case 'espulsione':
+      if(p){ p.nervi = clampStato(p.nervi + 0.40*molt, 0, 1); p.umore = clampStato(p.umore - 0.35*molt, -1, 1); }
+      break;
+    /* IL PORTIERE: parata (il duello) e i tre esiti buoni di tentaPresa
+       sono la stessa famiglia -- ha tenuto il pallone fuori dalla rete.
+       sfugge e' l'UNICO dei quattro esiti che il gioco dichiara un
+       FALLIMENTO (vedi il commento di tentaPresa/GK_SFUGGE): il segno
+       opposto e' la stessa lettura, non un'invenzione. */
+    case 'parata': case 'presa': case 'pugni': case 'respinta':
+      if(p) p.umore = clampStato(p.umore + 0.20*molt, -1, 1);
+      break;
+    case 'sfugge':
+      if(p) p.umore = clampStato(p.umore - 0.15*molt, -1, 1);
+      break;
+  }
+}
+function decayoSpinta(dt){
+  /* SPINTA E' L'EMA STESSA (voce #117, compito 2): a differenza di
+     p.umore/p.nervi (impatto discreto in step(), decay continuo in
+     updatePlayerFisica -- MAI mescolati), qui i due gesti sono la STESSA
+     formula: l'EMA con alpha=1-0.5^(dt/20) e' insieme il modo in cui un
+     impatto entra (applicaGolSquadra aggiunge un impulso all'accumulo) E
+     il modo in cui rilassa verso zero quando i fatti tacciono -- e' la
+     definizione di media mobile esponenziale di un segnale a impulsi.
+     Vive qui, non in updatePlayerFisica: e' un valore di SQUADRA, non di
+     giocatore, e non ha un ciclo "per ogni giocatore" naturale senza
+     rischiare lo stesso doppio conteggio che l'impatto evita altrove. */
+  const alpha = 1 - Math.pow(0.5, dt/20);
+  G.spinta[0] -= G.spinta[0]*alpha;
+  G.spinta[1] -= G.spinta[1]*alpha;
 }
 
 function registraFotogramma(dt){
@@ -43978,6 +44117,12 @@ window.__test = {
      ===================================================================== */
   setTouchButtons(v){ return !!v; },
   get stats(){ return G.stats; },
+  /* GLI STATI (voce #117, compito 2): G.spinta e' gia' esposto per intero
+     via lo shorthand "G, Duel, Tut," in fondo a questo oggetto (referenza
+     viva: t.G.spinta e t.G.players[i].umore/nervi si leggono gia' senza
+     bisogno di questo getter). Questo e' un comodo extra a valore
+     immutabile (slice), per un banco che non vuole toccare l'array vivo. */
+  get spinta(){ return G.spinta ? G.spinta.slice() : [0,0]; },
   /* disciplina: stato di cartellini ed espulsioni temporanee */
   get disciplina(){
     return {
