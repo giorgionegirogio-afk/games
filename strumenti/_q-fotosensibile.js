@@ -1,9 +1,11 @@
 /* =====================================================================
-   _q-fotosensibile.js — IL BANCO DELLA FOTOSENSIBILITA' (voce #112,
-   compito 6). Misura la frequenza dei lampi A SCHERMO INTERO: verde se
-   nessuno supera 3 Hz (la soglia di casa, ripresa dal criterio d'uso
-   comune per l'epilessia fotosensibile: non piu' di tre lampi in un
-   secondo qualunque).
+   _q-fotosensibile.js — IL BANCO DELLA FOTOSENSIBILITA' (nato voce #112,
+   compito 6; riscritto voce #114, compito 1, sulle soglie CLINICHE
+   WCAG). Misura la frequenza dei lampi A SCHERMO INTERO: verde se nessuno
+   supera 3 Hz in una finestra di 1 secondo (WCAG 2.3.1 "Three Flashes or
+   Below Threshold", Livello A, W3C Recommendation WCAG 2.2, 5 ottobre
+   2023, invariata da WCAG 2.0, 11 dicembre 2008 —
+   https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html).
 
    TRE SORGENTI, NON SOLO LA FOLLA (il "falso troppo gentile" del
    mandato, §19 delle regole di casa: guardare solo il sospetto piu'
@@ -24,61 +26,61 @@
 
    METODO. Non si guarda un pixel: si guarda lo SCHERMO INTERO, perche'
    la soglia clinica e' sull'area totale che lampeggia, non su un
-   dettaglio. A ogni fotogramma VERO (bancoDiProva qui sotto intercetta
+   dettaglio (il criterio d'AREA vero e proprio arriva col #114 compito 2
+   — qui il proxy e' ancora la media whole-canvas, dichiarato piu' sotto).
+   A ogni fotogramma VERO (bancoDiProva qui sotto intercetta
    requestAnimationFrame com'e' gia' in istantanea.js/folla.js: un passo
    e' un giro completo di step()+render(), stessa disciplina del gioco a
    60 Hz) si legge l'intero canvas con getImageData e si fa la media
-   della luminanza percettiva (0.2126 R + 0.7152 G + 0.0722 B, la stessa
-   formula gia' in uso a :1457 di istantanea.js).
-   Un "lampo" non e' un campione isolato: e' un'escursione CONTINUA sopra
-   la mediana della serie (la mediana e' robusta ai lampi stessi, che
-   sono rari) che tocca almeno una volta la soglia PROMINENZA_MIN. Tutta
-   l'escursione conta come UN lampo solo (altrimenti il rumore di
-   quantizzazione nella discesa di un lampo che dura piu' fotogrammi
-   verrebbe contato come tre o quattro lampi separati — un falso troppo
-   severo, l'altro guasto che il mandato mette in guardia). Poi, per
-   ogni lampo, si contano quanti lampi (lui compreso) cadono in una
-   finestra di un secondo centrata sul suo istante: il MASSIMO su tutta
-   la corsa e' la frequenza di picco. Verde se quel massimo e' <= 3 in
-   ogni finestra, ovunque, sempre.
-
-   LA SOGLIA PROMINENZA_MIN E' MISURATA, non indovinata (vedi il blocco
-   di calibrazione stampato da --calibra): sul gioco di oggi, 915x412,
-   DPR 1, il rumore di fotogramma in fotogramma durante il gioco aperto
-   (nessun lampo) resta sotto 1.0 di luminanza media; il lampo del gol
-   (moto acceso) porta la media sopra i 20-40 punti; i flash di folla e
-   dischetto, piccoli, restano sotto i 2-4 punti. La soglia e' fissata a
-   meta' strada in scala logaritmica fra il rumore e il piu' piccolo
-   segnale vero, con margine: vedi PROMINENZA_MIN qui sotto per il
-   numero e la corsa che l'ha misurato.
+   della LUMINANZA RELATIVA WCAG (installaLettoreLuce piu' sotto:
+   linearizzazione gamma per canale, poi 0,2126 R + 0,7152 G + 0,0722 B,
+   scala 0-1 — NON la luminanza percettiva sui byte grezzi di
+   istantanea.js :1457, che serve a un altro scopo non clinico e resta
+   quella).
+   Un "lampo" (ora: un FLASH WCAG, trovaFlashWCAG piu' sotto) non e' un
+   campione isolato: e' una coppia di transizioni OPPOSTE fra ESTREMI
+   LOCALI della serie (trovaEstremi), qualificata quando ciascuna delle
+   due transizioni ha ampiezza >=0,10 (10% della luminanza relativa
+   massima) e luminanza del piu' scuro dei due estremi <0,80 (WCAG 2.2,
+   "general flash threshold" — dettagli nel commento di trovaFlashWCAG).
+   Poi, per ogni flash, si contano quanti flash (lui compreso) cadono in
+   una finestra di un secondo centrata sul suo istante: il MASSIMO su
+   tutta la corsa e' la frequenza di picco. Verde se quel massimo e' <= 3
+   in ogni finestra, ovunque, sempre (WCAG 2.3.1).
 
    IL --controllo (obbligatorio: senza di lui un banco sempre verde e'
    indistinguibile da un banco che non guarda). Inietta un lampo VERO a
    schermo intero a 4 Hz — bianco pieno acceso il 30% di ogni ciclo di
    1/4 di secondo, sullo stesso canvas del gioco, misurato con la STESSA
-   pipeline (stesso __luce(), stesso rilevatore di picchi) — e deve
-   uscire ROSSO. E' la condanna che prova che il banco discrimina invece
-   di attestare.
+   pipeline (stesso __luce(), stesso trovaFlashWCAG) — e deve uscire
+   ROSSO. E' la condanna che prova che il banco discrimina invece di
+   attestare.
 
-   IL LIMITE DI QUESTO BANCO (dichiarato in revisione, voce #112,
-   correzione del compito 6, seguito #114 per generalizzarlo). Questo
-   banco misura la FREQUENZA dei lampi la cui escursione di luminanza
-   supera PROMINENZA_MIN=1,5 (unita': punti di luminanza percettiva
-   0-255, la stessa scala di __luce() qui sotto) — filtra per
-   ESCURSIONE PRIMA di contare la frequenza, non il contrario. E'
-   cieco per costruzione a uno strobo la cui escursione resti sotto
-   quella soglia, a QUALUNQUE frequenza. E' corretto in principio (un
-   lampo che non raggiunge la soglia non e' un flash clinicamente
-   pericoloso), ma PROMINENZA_MIN e' tarata SUL GIOCO DI OGGI (meta'
-   strada fra il rumore misurato e il piu' piccolo segnale vero QUI),
-   non su una soglia clinica documentata — e le sorgenti reali piu'
-   deboli (folla, dischetto) stanno a cavallo di quella soglia. Il
-   verdetto VERDE di questo banco garantisce «nessuno strobo FORTE
-   (escursione oltre PROMINENZA_MIN) oltre 3 Hz», NON «il gioco e'
-   fotosensibile-safe» in senso assoluto. `--calibra` stampa i numeri
-   grezzi per chi vuole ritarare la soglia; il seguito #114 la
-   ancorera' a un riferimento clinico (tipo WCAG/Harding, escursione di
-   luminanza relativa) invece che al gioco stesso.
+   IL LIMITE DI QUESTO BANCO (dichiarato in revisione, voce #114, compito
+   1 — quello del #112, la soglia PROMINENZA_MIN tarata sul gioco e non
+   su una soglia clinica, e' STATO CHIUSO da questa riscrittura: la
+   metrica e' ora luminanza relativa WCAG vera e il rilevatore e' la
+   definizione WCAG di flash, non un numero tarato). Restano DUE limiti,
+   entrambi per costruzione di questo compito (il #114 compito 2 li
+   chiude):
+     1. NESSUN CRITERIO D'AREA: la media e' whole-canvas, quindi un flash
+        piccolo (pochi pixel, come i flash di folla/dischetto) sposta la
+        media di una frazione minuscola — quasi certamente sotto 0,10 di
+        luminanza relativa — e semplicemente non viene visto come flash,
+        qualunque sia la sua frequenza. Questo banco NON puo' ancora
+        dimostrare formalmente l'esenzione WCAG per area piccola: puo'
+        solo osservare che quei flash restano invisibili alla media (il
+        che li rende comunque innocui per QUESTO banco, ma non e' ancora
+        la prova WCAG "area sotto soglia" in senso proprio).
+     2. NESSUN RED FLASH: nessuna prova sul rosso saturo (R/(R+G+B)>=0,8,
+        Δ>0,2 in CIE 1976 UCS) — un flash che resta sotto 0,10 di
+        luminanza relativa (es. un rosso-su-rosso) potrebbe comunque
+        qualificare come red flash WCAG e questo banco, oggi, non lo
+        vedrebbe.
+   Il verdetto VERDE di QUESTO compito garantisce «nessun flash generale
+   WCAG (luminanza relativa, 10%/0,80) oltre 3 Hz sulla media whole-
+   canvas», NON ANCORA «il gioco e' conforme a WCAG 2.3.1» in senso
+   pieno (manca l'area e il red flash, compito 2).
 
    uso:
      node strumenti/_q-fotosensibile.js [--gioco file.html]
@@ -144,11 +146,36 @@ function bancoDiProva() {
 
 /* IL LETTORE DI LUMINANZA, installato una volta in pagina. Legge TUTTO
    il canvas (schermo intero, non una finestra) e fa la media della
-   luminanza percettiva (0.2126/0.7152/0.0722, la stessa combinazione di
-   istantanea.js :1457). Nessuno scarto (stride): a 915x412 senza DPR
-   sono 377.180 pixel, una somma piena costa sotto il millisecondo — lo
-   scarto avrebbe risparmiato tempo che qui non serve. */
+   LUMINANZA RELATIVA WCAG (voce #114, in luogo della luminanza
+   percettiva sui byte grezzi del #112 — quella e' rimasta la metrica di
+   istantanea.js :1457, buona per un uso non clinico, ma NON e' la
+   luminanza relativa che WCAG richiede: manca la linearizzazione gamma).
+
+   Definizione (WCAG 2.2, glossario "relative luminance",
+   https://www.w3.org/TR/WCAG22/#dfn-relative-luminance): per ogni canale
+   c in {R,G,B}, csRGB = byte/255; c_lin = csRGB/12,92 se csRGB<=0,04045,
+   altrimenti ((csRGB+0,055)/1,055)^2,4; L = 0,2126*R_lin + 0,7152*G_lin +
+   0,0722*B_lin. La soglia 0,04045 e' quella IN VIGORE (corretta dal W3C
+   nel 2021-2022 rispetto al vecchio 0,03928 di WCAG 2.0/2.1, un'errata
+   nota del gruppo di lavoro) — si cita quella attuale, non quella
+   superata (studi a edizioni).
+
+   LUT: la linearizzazione e' una funzione di UN SOLO byte (0-255), quindi
+   si calcola una volta sola all'installazione (256 valori) invece che per
+   ogni canale di ogni pixel a ogni fotogramma — piu' veloce di tre
+   Math.pow() per pixel, stesso risultato (l'input e' sempre un intero
+   0-255, mai una frazione intermedia).
+
+   La luminanza del fotogramma e' la MEDIA delle luminanze relative dei
+   pixel campionati (qui: tutti, nessuno scarto, come nel #112), in scala
+   0-1 (non piu' 0-255: chi confronta con vecchi numeri di calibrazione
+   del #112 li trova ~255 volte piu' piccoli). */
 function installaLettoreLuce() {
+  const LUT_LIN = new Float64Array(256);
+  for (let i = 0; i < 256; i++) {
+    const csRGB = i / 255;
+    LUT_LIN[i] = csRGB <= 0.04045 ? csRGB / 12.92 : Math.pow((csRGB + 0.055) / 1.055, 2.4);
+  }
   window.__luce = function () {
     const cv = document.getElementById('gioco');
     const cx = cv.getContext('2d');
@@ -156,7 +183,9 @@ function installaLettoreLuce() {
     const d = cx.getImageData(0, 0, W, H).data;
     let somma = 0;
     const n = d.length;
-    for (let i = 0; i < n; i += 4) somma += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+    for (let i = 0; i < n; i += 4) {
+      somma += 0.2126 * LUT_LIN[d[i]] + 0.7152 * LUT_LIN[d[i + 1]] + 0.0722 * LUT_LIN[d[i + 2]];
+    }
     return somma / (n / 4);
   };
 }
@@ -175,28 +204,89 @@ function mediana(v) {
   return n % 2 ? s[(n - 1) >> 1] : (s[n / 2 - 1] + s[n / 2]) / 2;
 }
 
-/* trova i LAMPI: ogni escursione CONTINUA sopra (base + meta' soglia)
-   che tocca almeno una volta (base + PROMINENZA_MIN) conta come UN
-   lampo solo, all'istante del suo massimo. Un'escursione che non
-   raggiunge mai la soglia piena non e' un lampo: e' rumore. */
-function trovaLampi(serie, fps, prominenzaMin) {
-  const base = mediana(serie);
-  const sogliaIngresso = base + prominenzaMin * 0.5;
-  const sogliaPiena = base + prominenzaMin;
-  const lampi = [];
-  let dentro = false, iMax = -1, vMax = -Infinity;
-  for (let i = 0; i < serie.length; i++) {
+/* GLI ESTREMI LOCALI della serie (picchi e valli), con una piccola
+   ISTERESI per non scambiare il rumore di quantizzazione fotogramma-a-
+   fotogramma per un'inversione di tendenza. Algoritmo a "candidato
+   corrente" (lo stesso principio degli indicatori zig-zag): finche' la
+   serie prosegue nella direzione in corso si allarga il candidato (il
+   punto piu' alto/basso visto finora); quando arriva un ripiegamento di
+   almeno ISTERESI dal candidato, il candidato si conferma come estremo e
+   la direzione si inverte. Il primo campione e l'ultimo candidato aperto
+   a fine serie sono sempre inclusi (bordi di misura). Misurata con
+   --calibra sulle scene senza lampi (SERA e DISCHETTO, moto on/off): il
+   salto massimo fotogramma-a-fotogramma non supera 0,01 di luminanza
+   relativa — ISTERESI qui sotto (0,02) sta sopra quel rumore misurato,
+   ma resta comunque molto piu' piccola della soglia di flash (0,10):
+   anche con ISTERESI=0 nessun falso lampo passerebbe il cancello di
+   ampiezza qui sotto, il margine e' solo per non moltiplicare estremi
+   spuri inerti. VERIFICATO: --controllo resta rosso (30 flash su 4 s,
+   picco 9/s) e le tre scene del gioco restano verdi con zero falsi flash
+   su SERA e DISCHETTO (nessun lampo iniettato, nessuno rilevato). */
+const ISTERESI_ESTREMI = 0.02;
+function trovaEstremi(serie, isteresi) {
+  const idx = [];
+  if (!serie.length) return idx;
+  idx.push(0);
+  let direzione = 0;            // 0 ignota, 1 salita in corso, -1 discesa in corso
+  let iCandidato = 0;           // indice del massimo (se direzione=1) o minimo (se -1) visto finora
+  for (let i = 1; i < serie.length; i++) {
     const v = serie[i];
-    if (v >= sogliaIngresso) {
-      if (!dentro) { dentro = true; iMax = i; vMax = v; }
-      else if (v > vMax) { vMax = v; iMax = i; }
-    } else if (dentro) {
-      if (vMax >= sogliaPiena) lampi.push({ i: iMax, t: iMax / fps, v: vMax });
-      dentro = false; iMax = -1; vMax = -Infinity;
+    if (direzione === 0) {
+      // ancora nessuna direzione stabilita: si confronta sempre contro
+      // l'ancora fissa idx[0] (il primo campione), non contro un
+      // candidato mobile, finche' un vero movimento non supera ISTERESI.
+      const d = v - serie[idx[0]];
+      if (d >= isteresi) { direzione = 1; iCandidato = i; }
+      else if (-d >= isteresi) { direzione = -1; iCandidato = i; }
+    } else if (direzione === 1) {
+      if (v >= serie[iCandidato]) iCandidato = i;
+      else if (serie[iCandidato] - v >= isteresi) { idx.push(iCandidato); direzione = -1; iCandidato = i; }
+    } else {
+      if (v <= serie[iCandidato]) iCandidato = i;
+      else if (v - serie[iCandidato] >= isteresi) { idx.push(iCandidato); direzione = 1; iCandidato = i; }
     }
   }
-  if (dentro && vMax >= sogliaPiena) lampi.push({ i: iMax, t: iMax / fps, v: vMax });
-  return { base, lampi };
+  if (direzione !== 0) idx.push(iCandidato);
+  return idx;
+}
+
+/* IL RILEVATORE DI FLASH WCAG (voce #114, in luogo di PROMINENZA_MIN/
+   trovaLampi del #112 — quella soglia era TARATA sul gioco di oggi, "a
+   meta' strada fra il rumore e il piu' piccolo segnale vero misurati QUI"
+   — non una soglia clinica). Definizione (WCAG 2.2, "general flash
+   threshold", Understanding SC 2.3.1,
+   https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html):
+   un FLASH e' una coppia di transizioni OPPOSTE (salita poi discesa, o
+   discesa poi salita) nella luminanza relativa, dove OGNI transizione
+   della coppia ha un'ampiezza di almeno 0,10 (10% della luminanza
+   relativa massima, 1,0) E la luminanza relativa del piu' SCURO dei due
+   estremi che la delimitano e' sotto 0,80.
+   Si opera sugli ESTREMI LOCALI della serie (trovaEstremi sopra): ogni
+   estremo interno E[k] (non il primo ne' l'ultimo, che non hanno due
+   transizioni complete) e' il centro di UN flash se la transizione
+   entrante (E[k-1]->E[k]) E la transizione uscente (E[k]->E[k+1])
+   qualificano ENTRAMBE (ampiezza>=0,10, piu' scuro<0,80) — sono sempre di
+   verso opposto per costruzione (due estremi consecutivi non possono
+   essere dello stesso tipo). NOTA sul conteggio: su un'onda quadra
+   periodica questo conta UN flash a ogni estremo interno (sia ai picchi
+   sia alle valli), quindi DUE flash per ciclo completo (uno "su poi giu'"
+   al picco, uno "giu' poi su'" alla valle immediatamente dopo) — lettura
+   letterale della definizione WCAG (entrambi i tipi di coppia sono flash
+   validi, non alternativi), quindi PIU' severa (non meno) del leggerla
+   come un flash per ciclo: un banco di sicurezza deve pendere dal lato
+   cauto, non dal lato comodo. */
+const SOGLIA_AMPIEZZA_FLASH = 0.10;   // WCAG 2.2, 10% della luminanza relativa massima
+const SOGLIA_SCURO_FLASH = 0.80;      // WCAG 2.2, luminanza del piu' scuro dei due estremi
+function trovaFlashWCAG(serie, fps, isteresi) {
+  const idx = trovaEstremi(serie, isteresi);
+  const flash = [];
+  for (let k = 1; k < idx.length - 1; k++) {
+    const a = serie[idx[k - 1]], b = serie[idx[k]], c = serie[idx[k + 1]];
+    const entrante = Math.abs(b - a) >= SOGLIA_AMPIEZZA_FLASH && Math.min(a, b) < SOGLIA_SCURO_FLASH;
+    const uscente = Math.abs(c - b) >= SOGLIA_AMPIEZZA_FLASH && Math.min(b, c) < SOGLIA_SCURO_FLASH;
+    if (entrante && uscente) flash.push({ i: idx[k], t: idx[k] / fps, v: b });
+  }
+  return flash;
 }
 
 /* la frequenza di picco: per ogni lampo, quanti lampi (lui compreso)
@@ -212,14 +302,6 @@ function frequenzaMassima(lampi) {
   return { massimo, centroMassimo };
 }
 
-/* PROMINENZA_MIN — misurata (non indovinata), vedi il blocco --calibra
-   nel commento di testa. Il rumore di fotogramma-a-fotogramma durante il
-   gioco aperto resta sotto 1,0; il piu' piccolo segnale vero (i flash
-   piccoli di folla/dischetto) supera gia' i 2 punti nei fotogrammi in
-   cui piu' teste lampeggiano insieme; il lampo del gol supera i 20. La
-   soglia sta a meta' strada FRA IL RUMORE E IL PIU' PICCOLO SEGNALE
-   VERO, con margine sopra il rumore: 5 volte il rumore misurato. */
-const PROMINENZA_MIN = 1.5;
 const FPS = 60;
 
 async function eseguiScena(pag, tipo, moto, seme) {
@@ -366,10 +448,10 @@ async function eseguiControllo(pag, hz) {
       di(false, rep.nome, 'BANCO: ' + rep.errore + ' — non ho misurato');
       continue;
     }
-    const { lampi } = trovaLampi(rep.serie, FPS, PROMINENZA_MIN);
+    const lampi = trovaFlashWCAG(rep.serie, FPS, ISTERESI_ESTREMI);
     const { massimo, centroMassimo } = frequenzaMassima(lampi);
     const durata = (rep.serie.length / FPS).toFixed(1);
-    const dettaglio = lampi.length + ' lampi su ' + durata + ' s, picco ' + massimo + ' in una finestra di 1 s'
+    const dettaglio = lampi.length + ' flash WCAG su ' + durata + ' s, picco ' + massimo + ' in una finestra di 1 s'
       + (centroMassimo !== null ? ' (a t=' + centroMassimo.toFixed(2) + 's)' : '')
       + (rep.errore ? '  [nota: ' + rep.errore + ']' : '');
     /* STESSO CRITERIO, SEMPRE: <=3 lampi in ogni finestra di un secondo e'
