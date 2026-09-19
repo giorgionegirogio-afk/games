@@ -143,6 +143,31 @@
         del compito 5): anelloComandato non conosce ancora p.fiato,
         nessun pixel della quarta tinta sull'ellisse a nessun fiato.
 
+        ESTENSIONE (voce #122, #115, cantierino "spiccioli seguiti") —
+        i tre confronti sopra scelgono apposta la direzione finta (FA)
+        nel margine SEMPRE spento dell'arco, per non far dipendere la
+        misura dalla freccia di direzione (disegnata sulla stessa
+        ellisse, in un angolo che #112 non controllava). A fiato 55 e
+        70 si aggiunge un CONFRONTO DIFFERENZIALE: la stessa frazione
+        si misura due volte, stesso fiato — una con la freccia nel
+        margine sempre spento (FA, il riferimento "pulito") e una con
+        la freccia DENTRO la porzione accesa (FA2, a 1/10 del giro).
+        E' il caso che i tre confronti sopra aggirano di proposito, e
+        che la ricognizione del 19 settembre 2026 ha isolato come buco
+        vero (#115). UN RILIEVO ONESTO: il cuneo della freccia si
+        RESTRINGE dalla base (raggio 14,2, mezza larghezza 26,3 gradi)
+        alla punta (raggio 20,9, larghezza zero), e l'arco vive quasi
+        alla punta (raggio arx=19,9) — l'intersezione VERA fra cuneo e
+        tratto e' quindi molto piu' stretta dei 53 gradi nominali della
+        base: un confronto ASSOLUTO con la tolleranza 0,05 delle altre
+        righe non avrebbe mai scoperto il buco (verificato sul gioco
+        PRE-#115: diff ~0,03, sotto quella soglia). Il confronto
+        DIFFERENZIALE (soglia 0,015) lo scopre: sul gioco PRE-#115 le
+        due letture (fuori/dentro) divergono di ~0,032 a entrambi i
+        fiato; DOPO la cura (arco disegnato per ultimo, sopra la
+        freccia) la posizione della freccia e' irrilevante per l'arco,
+        e le due letture combaciano esattamente.
+
    ZERO dado() NUOVI in questo file, come in _q-battute.js: nessuna
    delle sette prove decide niente per la CPU, tutte leggono markup,
    stile calcolato, salvataggio, pixel del canvas e funzioni di
@@ -585,18 +610,54 @@ const INTERRUTTORI = ['btnSetAudio', 'btnSetVib', 'btnSetMoto', 'btnSetDalt', 'b
        (255,232,186 a bassa alfa) no — restano R-dominanti anche dopo
        la fusione col nero di fondo. La frazione accesa e' la misura.
 
-       LA FRECCIA DI DIREZIONE (disegnata DOPO l'arco del fiato, stesso
-       anelloComandato) si sovrappone al bordo dell'anello nell'angolo
-       dei piedi: e' un cuneo pieno, non lime, quindi non falsa mai un
-       "acceso" — ma DOVE cade puo' coprire pixel lime veri e far
-       leggere una frazione piu' bassa del vero. Non e' un difetto della
-       cura, e' un secondo strato che la stessa funzione disegna sempre
-       sopra: la prova sceglie la direzione finta (FA) in modo che il
-       cuneo cada nel margine SEMPRE spento (l'ultimo 20% del giro,
-       fiato 80 lascia un vuoto di 72 gradi contro i ~53 del cuneo), cosi'
-       la misura resta pulita a entrambi i fiato confrontati. */
+       LA FRECCIA DI DIREZIONE (disegnata sopra l'arco del fiato PRIMA
+       della cura #115, DOPO la cura #115 — voce #122) si sovrappone al
+       bordo dell'anello nell'angolo dei piedi: e' un cuneo pieno, non
+       lime, quindi non falsa mai un "acceso" — ma se disegnato sopra il
+       lime puo' coprire pixel veri e far leggere una frazione piu' bassa
+       del vero. I primi tre confronti (fiato 0/40/80) scelgono la
+       direzione finta (FA) nel margine SEMPRE spento (l'ultimo 20% del
+       giro, fiato 80 lascia un vuoto di 72 gradi contro i ~53 del cuneo
+       MISURATO ALLA BASE del cuneo): e' la misura "pulita" che il
+       compito 5 di #112 aveva gia' provato.
+
+       ESTENSIONE (voce #122, #115, cantierino "spiccioli seguiti") —
+       DUE COPPIE di misure, a fiato 55 e 70, con la direzione finta
+       DENTRO la porzione accesa stavolta (FA2, a 1/10 del giro = 36
+       gradi: il cuneo, mezza larghezza 26,3 gradi, resta comunque
+       dentro [0,55%] e [0,70%] con margine). QUESTO e' il caso che i
+       primi tre confronti aggirano di proposito.
+
+       UN RILIEVO DELLA VERIFICA (onesto, non nel piano originale): il
+       cuneo e' un TRIANGOLO che si RESTRINGE dalla base (raggio 14,2,
+       mezza larghezza 26,3 gradi) alla punta (raggio 20,9, larghezza
+       zero) — e l'arco del fiato vive quasi alla punta (raggio
+       arx=19,9), non alla base. L'intersezione VERA fra il cuneo pieno
+       e il tratto sottile dell'arco (dove la prova campiona i pixel)
+       e' quindi molto piu' stretta dei 53 gradi nominali: la misura
+       empirica (sotto) mostra ~3 punti percentuali di frazione persa
+       sul giro intero (360 campioni), non i ~15 punti che 53/360
+       farebbe pensare. Un confronto assoluto con tolleranza 0,05 (la
+       stessa delle altre righe) NON l'avrebbe mai scoperto: la cura
+       resta comunque corretta e verificabile, ma serve un confronto
+       DIFFERENZIALE, non assoluto.
+
+       IL CONFRONTO DIFFERENZIALE. Per ogni fiato (55, 70) si misura la
+       stessa frazione accesa DUE volte, stesso file, stesso fiato:
+       una con la direzione finta nel margine sempre spento (FA, la
+       stessa dei tre confronti sopra — il "pulito" di riferimento) e
+       una con la direzione finta DENTRO la zona accesa (FA2). Sul
+       gioco DOPO #115 (arco disegnato per ultimo, sopra la freccia)
+       la posizione della freccia e' irrilevante per l'arco: le due
+       misure combaciano ESATTAMENTE, qualunque fiato. Sul gioco PRIMA
+       di #115 (arco disegnato per primo, sotto la freccia) le due
+       misure DIVERGONO di ~0.03 quando FA2 morde l'arco — verificato
+       a mano sul commit 470149a (base di #122, prima di #115): diff
+       0,0319 a fiato 55 e 70. La soglia TOLL2=0,015 sta a meta' strada
+       fra "0" (dopo la cura) e "0,03" (prima), con margine da
+       entrambi. */
     {
-      const r = await pag.evaluate(({ fiatoBasso, fiatoAlto }) => {
+      const r = await pag.evaluate(({ fiatoBasso, fiatoAlto, fiatoMedioBasso, fiatoMedioAlto }) => {
         SAVE.moto = 0;
         const pl = 0.5;
         const arx = 19.2 + 1.4 * pl, ary = 8.4 + 0.61 * pl;
@@ -605,18 +666,27 @@ const INTERRUTTORI = ['btnSetAudio', 'btnSetVib', 'btnSetMoto', 'btnSetDalt', 'b
         /* FA a meta' del margine spento di fiato 80 (dall'80% al 100%
            del giro, dietro l'angolo di chiusura -PI/2+2*PI): il cuneo
            della freccia (mezza larghezza 0,46 rad = 26,3 gradi, quindi
-           52,7 gradi di sviluppo) ci sta dentro i 72 gradi di margine
-           con 9,6 gradi liberi su ogni lato, e per fiato 40 (acceso solo
-           il 40% del giro) FA resta comunque ben dentro la zona spenta. */
+           52,7 gradi di sviluppo ALLA BASE) ci sta dentro i 72 gradi di
+           margine con 9,6 gradi liberi su ogni lato, e per fiato 40
+           (acceso solo il 40% del giro) FA resta comunque ben dentro la
+           zona spenta. Raddoppia da riferimento "pulito" anche per il
+           confronto differenziale di fiato 55/70 qui sotto. */
         const FA = -Math.PI / 2 + 0.9 * 2 * Math.PI;
+        /* FA2 (voce #122, #115): 1/10 del giro (36 gradi), DENTRO la
+           porzione accesa anche del piu' basso dei due fiato intermedi
+           (55% = 198 gradi). Il cuneo (mezza larghezza 26,3 gradi alla
+           base) copre da 9,7 a 62,3 gradi: dentro [0,198] e [0,252]
+           con margine su entrambi i lati per i due fiato provati. */
+        const FA2 = -Math.PI / 2 + 0.10 * 2 * Math.PI;
         const finto = { x: px, y: py, fx: Math.cos(FA), fy: Math.sin(FA), fiato: 0 };
 
-        function misura(fiato) {
+        function misura(fiato, angolo) {
           ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
           const rx0 = px - 40, ry0 = py - 10, rw = 80, rh = 60;
           ctx.fillStyle = '#000';
           ctx.fillRect(rx0, ry0, rw, rh);
           finto.fiato = fiato;
+          finto.fx = Math.cos(angolo); finto.fy = Math.sin(angolo);
           anelloComandato(finto);
           const cx = px + 2.5 * PD, cy = py + 6.6 * PD;
           const ARX = arx * PD, ARY = ary * PD;
@@ -660,21 +730,43 @@ const INTERRUTTORI = ['btnSetAudio', 'btnSetVib', 'btnSetMoto', 'btnSetDalt', 'b
           return accesi / N;
         }
 
-        const fZero = misura(0);
-        const fBasso = misura(fiatoBasso);
-        const fAlto = misura(fiatoAlto);
-        return { fZero, fBasso, fAlto };
-      }, { fiatoBasso: 40, fiatoAlto: 80 });
+        const fZero = misura(0, FA);
+        const fBasso = misura(fiatoBasso, FA);
+        const fAlto = misura(fiatoAlto, FA);
+        /* voce #122, #115: per ognuno dei due fiato intermedi si misura
+           la frazione DUE volte, stesso fiato — una con la freccia nel
+           margine sempre spento (FA, il riferimento "pulito"), una con
+           la freccia DENTRO la zona accesa (FA2). Il confronto e' fra
+           queste due letture, non contro un bersaglio assoluto. */
+        const fMedioBassoFuori = misura(fiatoMedioBasso, FA);
+        const fMedioBassoDentro = misura(fiatoMedioBasso, FA2);
+        const fMedioAltoFuori = misura(fiatoMedioAlto, FA);
+        const fMedioAltoDentro = misura(fiatoMedioAlto, FA2);
+        return { fZero, fBasso, fAlto, fMedioBassoFuori, fMedioBassoDentro, fMedioAltoFuori, fMedioAltoDentro };
+      }, { fiatoBasso: 40, fiatoAlto: 80, fiatoMedioBasso: 55, fiatoMedioAlto: 70 });
 
-      const TOLL = 0.05;   // 360 campioni (~0.3% l'uno) piu' un margine per la tessellazione a Bezier degli archi del canvas
+      const TOLL = 0.05;    // 360 campioni (~0.3% l'uno) piu' un margine per la tessellazione a Bezier degli archi del canvas
+      const TOLL2 = 0.015;  // voce #122, #115: soglia del confronto differenziale (dentro la zona accesa contro fuori) —
+                             // a meta' strada fra "0" (diff misurata dopo la cura) e "0,03" (diff misurata prima, commit 470149a)
       const guasti = [];
       if (r.fZero > 0.02) guasti.push('a fiato 0 la frazione accesa e\' ' + r.fZero.toFixed(3) + ' invece di ~0 (arco degenere)');
       if (Math.abs(r.fBasso - 0.40) > TOLL) guasti.push('a fiato 40 la frazione accesa e\' ' + r.fBasso.toFixed(3) + ' invece di ~0.40');
       if (Math.abs(r.fAlto - 0.80) > TOLL) guasti.push('a fiato 80 la frazione accesa e\' ' + r.fAlto.toFixed(3) + ' invece di ~0.80');
       if (!(r.fAlto > r.fBasso)) guasti.push('fiato 80 (' + r.fAlto.toFixed(3) + ') non copre piu\' arco di fiato 40 (' + r.fBasso.toFixed(3) + ')');
-      di(guasti.length === 0, '7. ANELLO-FIATO — l\'arco di quarta tinta su anelloComandato copre una frazione dell\'ellisse ambra proporzionale a p.fiato/100',
+      /* voce #122, #115: il fiato deve restare leggibile per intero
+         anche quando la corsa punta DENTRO la zona accesa — le due
+         letture (fuori/dentro) devono combaciare. Se la freccia coprisse
+         l'arco (il gioco PRE-#115), la lettura "dentro" cadrebbe sotto
+         quella "fuori" di un margine ben oltre TOLL2. */
+      if (Math.abs(r.fMedioBassoDentro - r.fMedioBassoFuori) > TOLL2)
+        guasti.push('a fiato 55 la lettura con la freccia DENTRO la zona accesa (' + r.fMedioBassoDentro.toFixed(4) + ') diverge da quella con la freccia fuori (' + r.fMedioBassoFuori.toFixed(4) + ') di ' + Math.abs(r.fMedioBassoDentro - r.fMedioBassoFuori).toFixed(4) + ' — la freccia potrebbe coprire l\'arco (voce #122, #115)');
+      if (Math.abs(r.fMedioAltoDentro - r.fMedioAltoFuori) > TOLL2)
+        guasti.push('a fiato 70 la lettura con la freccia DENTRO la zona accesa (' + r.fMedioAltoDentro.toFixed(4) + ') diverge da quella con la freccia fuori (' + r.fMedioAltoFuori.toFixed(4) + ') di ' + Math.abs(r.fMedioAltoDentro - r.fMedioAltoFuori).toFixed(4) + ' — la freccia potrebbe coprire l\'arco (voce #122, #115)');
+      di(guasti.length === 0, '7. ANELLO-FIATO — l\'arco di quarta tinta su anelloComandato copre una frazione dell\'ellisse ambra proporzionale a p.fiato/100, leggibile anche quando la freccia punta dentro la zona accesa',
         guasti.length ? guasti.join('   ')
-          : 'fiato 0: ' + r.fZero.toFixed(3) + '   fiato 40: ' + r.fBasso.toFixed(3) + '   fiato 80: ' + r.fAlto.toFixed(3));
+          : 'fiato 0: ' + r.fZero.toFixed(3) + '   fiato 40: ' + r.fBasso.toFixed(3) + '   fiato 80: ' + r.fAlto.toFixed(3) +
+            '   fiato 55 fuori/dentro: ' + r.fMedioBassoFuori.toFixed(4) + '/' + r.fMedioBassoDentro.toFixed(4) +
+            '   fiato 70 fuori/dentro: ' + r.fMedioAltoFuori.toFixed(4) + '/' + r.fMedioAltoDentro.toFixed(4));
     }
 
     if (ecc.length) { di(false, 'BANCO — nessuna eccezione di pagina', 'eccezione: ' + ecc[0]); }
