@@ -702,6 +702,60 @@ const CANCELLI = [
      due volte, stesso esito e stesso numero al bit entrambe le volte). */
   { nome: 'fuzzer',      cmd: ['strumenti/_q-fuzzer.js'],                              conta: true,  lento: false },
   /* =====================================================================
+     soak: IL TERZO E ULTIMO ANELLO DELL'ONDA C (voce #127, tre compiti
+     dal merge-base `ddf6604`, 20 settembre 2026 — spec `docs/superpowers/
+     specs/2026-09-20-soak-design.md`, piano `docs/superpowers/plans/
+     2026-09-20-soak.md`). Il mandato (S13.1.5) chiede "soak tests: 1,000
+     bot-vs-bot matches per night per profile ... zero crashes, zero
+     invariant violations, no match longer than the expected real
+     duration + 25%". `fuzzer` (sopra) cerca il caso avversariale con
+     INPUT CASUALE su pochi semi; questo banco e' complementare: guida un
+     VOLUME di partite CPU-CONTRO-CPU (nessun input umano) fino a 'end',
+     verificando su OGNI partita le dodici invarianti di
+     `_q-invarianti.js` (RIUSATE via require, non riscritte) piu' INV-15-
+     SU-VOLUME (durata<=TETTO_FOTOGRAMMI, la clausola "+25%" del mandato
+     gia' incorporata nel tetto) e le BANDE statistiche ancorate a taglia
+     5 (gol/90s, tiri, tiri in porta, parate, legni, durata gioco vivo,
+     % 0-0 — mediana dentro un margine dichiaratamente largo, non uno
+     steccato di Tukey alla lettera, lezione #112/#114).
+
+     LA SCOPERTA DEL COMPITO 1 (P0 vera, dichiarata non un difetto): a
+     volume alto (--partite 1000) 5/1000 partite SANE — un rigore a
+     oltranza legittimo (18 tiri, CALCETTO-il-gioco.html:18523) — sforavano
+     il vecchio TETTO_FOTOGRAMMI=13200 (220s), tarato sulla durata
+     ORDINARIA senza considerare il caso peggiore del proprio meccanismo a
+     oltranza. LA RICALIBRAZIONE (compito 2, in `_q-invarianti.js`, non
+     duplicata qui): 13200 -> 18000 (300s), somma del caso peggiore
+     misurato pre-rigori (180,9s) + 18 tiri x 328 fotogrammi (98,4s),
+     arrotondato con margine — l'hang vero (`--bugiardo durata`) resta
+     colto (nessun tetto finito lo salva). Il compito 2 ha anche corretto
+     EN PASSANT due bug nei banchi di questo stesso censimento, resi
+     visibili dalla ricalibrazione: `_q-cpu-ordine.js` teneva una copia
+     locale di `TETTO_FOTOGRAMMI` (mai importata nonostante il refactor
+     #126); `_q-invarianti.js` validava `--bugiardo` contro il proprio
+     elenco anche quando RICHIESTO come modulo, uccidendo `_q-soak.js
+     --bugiardo bande` — entrambi curati (require condiviso, guardia
+     `require.main===module`).
+
+     TAGLIA 5, IL CANCELLO ANCORATO (vincolo #98: rebuildCrowd/setTaglia
+     consuma PRNG in proporzione al perimetro a 7/11, causa isolata,
+     seguito #129). ROSA RIGENERATA (`nuovaRosa()`) a ogni partita, come
+     il fuzzer: SAVE.rosa cresce per carriera a ogni fine-partita vera,
+     desincronizzando le partite in sequenza sulla stessa pagina se non
+     rigenerata. Deterministico: due corse a `--semeBase`/`--partite`
+     identici stampano la STESSA impronta (hash FNV-1a di ogni partita).
+
+     PERCHE' STA IN BATTERIA MA `lento:TRUE` (a differenza di
+     invarianti/fuzzer): il CAMPIONE di batteria (default, 60 partite) sta
+     sulla soglia dei 30-40s che qui chiede lento (modello `audio.js`),
+     misurato **~30-33s** due volte di fila, stessa impronta (21f65940)
+     entrambe le volte — ESCLUSO dalla corsa di default di questa
+     batteria (`node strumenti/tutti.js`), verificato A PARTE come
+     `audio.js`. Il VOLUME del mandato (1000 partite/notte, ~493s) e' un
+     lancio manuale (`node strumenti/_q-soak.js --partite 1000`), non un
+     cancello di ogni batteria. */
+  { nome: 'soak',        cmd: ['strumenti/_q-soak.js'],                                conta: true,  lento: true  },
+  /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
      cancelli in lista ne ha visto uno.

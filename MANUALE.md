@@ -456,6 +456,70 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Il soak con bande — #127 CANTIERE CHIUSO, e L'ONDA C CHIUSA** (#127,
+  onda C — terzo e ultimo anello, 20 settembre 2026, tre compiti dal
+  merge-base `ddf6604` — spec `docs/superpowers/specs/2026-09-20-soak-design.md`,
+  piano `docs/superpowers/plans/2026-09-20-soak.md`).
+
+  **COSA FA.** Il mandato (§13.1.5) chiede "soak: 1.000 partite bot-vs-bot
+  a notte, zero crash, zero violazioni di invariante, nessuna partita più
+  lunga della durata attesa +25%". `strumenti/_q-soak.js` guida un VOLUME
+  di partite CPU-contro-CPU a taglia 5 (rosa rigenerata con `nuovaRosa()`
+  a ogni partita — la lezione di SAVE.rosa del fuzzer #126 — ordine
+  `setCpuVsCpu` dopo `startMatch`), e su OGNI partita riusa le invarianti
+  di `_q-invarianti.js` (`verificaTickInvarianti`/`verificaCronometriFratelli`,
+  via `require`) + INV-15 (arriva a `'end'` entro il tetto). È il
+  COMPLEMENTO del fuzzer: il fuzzer cerca il caso avversariale con input
+  casuale, il soak cerca il caso raro nel VOLUME. Campione di batteria
+  **60 partite, 17/17 verde**, 429.064 fotogrammi, max osservato
+  10.172/18.000 (56,5%), 32,9 s (`lento:true` in `tutti.js`); impronta
+  ripetibile `21f65940`; il volume del mandato resta un lancio manuale
+  `--partite 1000` (~8 min).
+
+  **LA RICALIBRAZIONE DEL TETTO INV-15 (13.200 → 18.000 fotogrammi), il
+  valore del soak sul volume.** Su 1.000 partite il soak ha trovato che
+  lo 0,5% supera i 13.200 fotogrammi (220 s): NON un hang (raggiungono
+  `'end'`), ma un raro **rigore a oltranza** (sudden-death, cap del gioco
+  a 18 tiri, `:18523`) che arriva a ~236 s — un caso LEGITTIMO. Il tetto
+  era tarato senza quel caso. Ricalibrato al caso peggiore MISURATO:
+  pre-rigori max 180,9 s su 427 partite + 18 tiri × 328 fotogrammi (il
+  tiro più lungo su 46.776 campionati) → **18.000 fotogrammi (300 s)**;
+  il +25% del mandato ora è speso sul caso peggiore legittimo, non sulla
+  durata ordinaria. L'HANG resta colto (è infinito: supera qualunque
+  tetto finito — `--bugiardo durata` ROSSO). Ancorato a taglia 5; 7/11
+  hanno orologi più lunghi, non ri-analizzati (stanno sotto in campione
+  piccolo, dichiarato). La ricalibrazione ha ESPOSTO e curato due bug dei
+  banchi: `_q-cpu-ordine.js` teneva un duplicato locale del tetto (ora
+  importa lo shared del #126); `_q-invarianti.js` validava i flag senza
+  la guardia `require.main` (crashava se requerito) — chiuso.
+
+  **LE BANDE.** Misurate su 150 partite a taglia 5 (gol/90 s, tiri, tiri
+  in porta, parate, legni, durata gioco vivo ~92,3 s, %0-0): ancorate come
+  costanti datate, con larghezza GENEROSA dichiarata (non una recinzione
+  di Tukey letterale: l'IQR della durata viva era ~0,7 s, troppo stretto
+  per un cambiamento legittimo domani — la filosofia di `_eventi.js`). Un
+  caso di controllo (`--bugiardo bande`, `tiri=0`) fa rossa SOLO la banda
+  tiri (le altre sei verdi): il cancello condanna una deviazione vera.
+  Le bande DIVERGONO da `_eventi.js` (tiri 13 vs 10, gol 3,00 vs 1,42) —
+  DICHIARATO onestamente, non un errore: il soak rigenera `SAVE.rosa` a
+  ogni partita, `_eventi.js` no. A 7/11 misurate ma solo informative (non
+  bit-ripetibili, #98).
+
+  **L'ONDA C È CHIUSA.** I suoi tre anelli sono in `main`: l'invariant-checker
+  (#125, la rete che verifica), il fuzzer (#126, l'input casuale che stana
+  il caso avversariale), il soak (#127, il volume che stana il caso raro).
+  Cosa ha dato l'onda C: una rete di robustezza PERMANENTE in batteria; DUE
+  P0 vere trovate dal fuzzer e curate (#128, cross-proiettile e battitore
+  espulso); la causa della voce #98 (determinismo instabile a 7/11)
+  ISOLATA (#129, `rebuildCrowd` consuma il PRNG in proporzione al campo); il
+  tetto di durata ancorato al caso peggiore reale. **Seguiti aperti**:
+  **#129** (togliere `rebuildCrowd`/`setTaglia` dallo stream del PRNG di
+  gioco, per il determinismo a 7/11); **INV-06/07** (validità del gol /
+  ripresa da fermo, servono asserzioni dedicate — il fuzzer/soak danno
+  l'esposizione, non l'assert); **#123** (banco fotosensibile per-regione);
+  la nota che la fase `power` del duello non ha un tetto a livello di
+  codice (il bound 18.000 è empirico su 46.776 tiri, non closed-form).
+
 - **Il fuzzer di comandi — #126 CANTIERE CHIUSO** (#126, onda C — secondo
   anello, 20 settembre 2026, tre compiti dal merge-base `f27d951` — spec
   `docs/superpowers/specs/2026-09-20-fuzzer-design.md`, piano
