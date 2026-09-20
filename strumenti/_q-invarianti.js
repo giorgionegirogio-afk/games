@@ -383,7 +383,13 @@ const arg = (n, d) => {
   return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : d;
 };
 
-if (process.argv.includes('--help') || process.argv.includes('-h')) {
+/* REFACTOR MINIMO (voce #126, onda C -- 2, compito 1): questo blocco esce
+   dal processo, quindi resta SOLO per l'uso diretto (node
+   strumenti/_q-invarianti.js). Se il file viene richiesto come modulo
+   (require.main !== module) -- caso nuovo, e' strumenti/_q-fuzzer.js che
+   vuole riusare le prove senza riscriverle -- questo blocco tace e non
+   tocca process.exit. Comportamento diretto INVARIATO. */
+if (require.main === module && (process.argv.includes('--help') || process.argv.includes('-h'))) {
   console.log('uso: node strumenti/_q-invarianti.js [--gioco file.html] [--taglia 5] [--seme N] [--semi 8]');
   console.log('                                     [--bugiardo nan|owner|punteggio|timeleft|durata|fiato|movimento|ballz|ballvel]');
   process.exit(3);
@@ -453,6 +459,106 @@ const esiti = [];
 const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' : 'NO  ') + nome + (det ? '\n         ' + det : '')); };
 
 /* =========================================================================
+   LE DUE FUNZIONI DI VERIFICA -- ESTRATTE PER ESSERE RIUSATE (voce #126,
+   onda C -- 2, compito 1). REFACTOR MINIMO, comportamento IDENTICO a
+   prima: e' lo STESSO codice che viveva scritto in linea dentro SONDA qui
+   sotto (prova 6 e prove 1/2/3/4/7/8/9), spostato in due funzioni con
+   nome, SELF-CONTAINED (nessuna chiusura su variabili esterne al modulo:
+   tutto cio' che serve arriva per parametro, comprese le due soglie della
+   prova 9). Il motivo del nome: strumenti/_q-fuzzer.js gira il suo
+   generatore di comandi TUTTO dentro un solo page.evaluate (come SONDA fa
+   qui), e da dentro una pagina non si puo' fare `require('./_q-invarianti.js')`
+   -- si puo' pero' prendere il CODICE SORGENTE di una funzione Node con
+   `.toString()` e incollarlo nello script che si manda alla pagina (lo
+   stesso trucco con cui SONDA stessa arriva li' sotto, vedi
+   `pag.evaluate('(' + SONDA + ')(...)')`). Chi riusa: require('./_q-invarianti.js'),
+   poi `${verificaTickInvarianti.toString()}` in testa al proprio script di
+   pagina. SONDA, qui sotto, le chiama al posto del codice che prima stava
+   scritto in linea: stessi campi, stessi nomi, stesso risultato -- questo
+   file, eseguito direttamente, si comporta ESATTAMENTE come prima. LE
+   PROVE 10/11 (DOCROSS/KICKOFF-ESPULSO, voce #128) NON entrano in questa
+   estrazione: sono scenari diretti one-shot (k===0), non un controllo
+   per-tick, e restano scritte in linea dentro SONDA (vedi piu' sotto) --
+   nessun chiamante esterno le ha richieste finora, e duplicare la loro
+   fotografia/ripristino in una terza funzione avrebbe complicato la firma
+   senza un bisogno reale. */
+function verificaCronometriFratelli(G, r, seme, indiceMatch) {
+  const guasti = [];
+  if (G.recT !== 0) guasti.push('G.recT=' + G.recT + ' (atteso 0)');
+  if (G.vantaggio !== null) guasti.push('G.vantaggio=' + JSON.stringify(G.vantaggio) + ' (atteso null)');
+  if (!(G.possOwner === -1)) guasti.push('G.possOwner=' + G.possOwner + ' (atteso -1)');
+  if (!(G.possT === 0)) guasti.push('G.possT=' + G.possT + ' (atteso 0)');
+  if (!(G.pulse === 0)) guasti.push('G.pulse=' + G.pulse + ' (atteso 0)');
+  if (!(G.crowdSndT === 0)) guasti.push('G.crowdSndT=' + G.crowdSndT + ' (atteso 0)');
+  if (!(G.swLock[0] === 0 && G.swLock[1] === 0)) guasti.push('G.swLock=' + JSON.stringify(G.swLock) + ' (atteso [0,0])');
+  if (!(G.swTimer[0] === 0 && G.swTimer[1] === 0)) guasti.push('G.swTimer=' + JSON.stringify(G.swTimer) + ' (atteso [0,0])');
+  if (guasti.length) r.cronometri.push({ seme, indiceMatch, guasti });
+  return guasti.length === 0;
+}
+
+function verificaTickInvarianti(G, r, seme, fotogramma, fase, stato, cfg) {
+  const CAMPI_BALL = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
+  const CAMPI_P = ['x', 'y', 'vx', 'vy', 'aiTX', 'aiTY'];
+  let violato = false;
+  const b = G.ball;
+  for (const kk of CAMPI_BALL) {
+    if (!Number.isFinite(b[kk])) { r.nan.push({ seme, fotogramma, fase, chi: 'ball.' + kk, val: b[kk] }); violato = true; }
+  }
+  /* PROVA 8 -- >=2 uomini di movimento in campo, per squadra. Stessa
+     definizione del gioco (CALCETTO-il-gioco.html:18508-18509,
+     diMovimentoInCampo): role!=='gk' && out<=0. */
+  const movimentoInCampo = [0, 0];
+  for (let i = 0; i < G.players.length; i++) {
+    const p = G.players[i];
+    if (p.role !== 'gk' && p.out <= 0) movimentoInCampo[p.team]++;
+  }
+  for (let tt = 0; tt < 2; tt++) {
+    if (movimentoInCampo[tt] < 2) {
+      r.movimento.push({ seme, fotogramma, fase, team: tt, inCampo: movimentoInCampo[tt] }); violato = true;
+    }
+  }
+  for (let i = 0; i < G.players.length; i++) {
+    const p = G.players[i];
+    for (const kk of CAMPI_P) {
+      if (!Number.isFinite(p[kk])) { r.nan.push({ seme, fotogramma, fase, chi: 'p' + i + '.' + kk + ' (' + p.role + ')', val: p[kk] }); violato = true; }
+    }
+    /* PROVA 7 -- clamp fiato/cond. */
+    if (!(p.fiato >= 0 && p.fiato <= 100)) { r.clamp.push({ seme, fotogramma, fase, chi: 'p' + i + '.fiato (' + p.role + ')', val: p.fiato }); violato = true; }
+    if (!(p.cond >= 0 && p.cond <= 100)) { r.clamp.push({ seme, fotogramma, fase, chi: 'p' + i + '.cond (' + p.role + ')', val: p.cond }); violato = true; }
+  }
+  const owner = G.ball.owner;
+  const ownerOk = owner === -1 || (Number.isInteger(owner) && owner >= 0 && owner < G.players.length && !(G.players[owner].out > 0));
+  if (!ownerOk) { r.owner.push({ seme, fotogramma, fase, owner, nGiocatori: G.players.length }); violato = true; }
+
+  /* PROVA 9 -- palla sotto il piano / velocita'. */
+  if (b.z < 0) { r.palla.push({ seme, fotogramma, fase, tipo: 'z', val: b.z }); violato = true; }
+  if (owner < 0) {
+    const sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+    if (sp > cfg.tettoVelPalla) { r.palla.push({ seme, fotogramma, fase, tipo: 'velocita', val: sp, vx: b.vx, vy: b.vy }); violato = true; }
+    if (Math.abs(b.vz) > cfg.tettoVzPalla) { r.palla.push({ seme, fotogramma, fase, tipo: 'vz', val: b.vz }); violato = true; }
+  }
+
+  if (G.score[0] < stato.prevScore[0] || G.score[1] < stato.prevScore[1]) {
+    r.punteggio.push({ seme, fotogramma, fase, prima: stato.prevScore.slice(), dopo: G.score.slice() }); violato = true;
+  }
+  stato.prevScore = [G.score[0], G.score[1]];
+
+  if (G.timeLeft > stato.prevTimeLeft + 1e-9 || G.timeLeft < 0) {
+    r.timeLeft.push({ seme, fotogramma, fase, prima: stato.prevTimeLeft, dopo: G.timeLeft }); violato = true;
+  }
+  stato.prevTimeLeft = G.timeLeft;
+  return violato;
+}
+
+/* ESPORTATE per il fuzzer (voce #126). TETTO_FOTOGRAMMI/TETTO_VEL_PALLA/
+   TETTO_VZ_PALLA/SEME_CANTIERE escono anche loro: un'unica fonte per le
+   soglie, invece di un secondo numero magico duplicato a mano altrove. */
+module.exports = {
+  verificaCronometriFratelli, verificaTickInvarianti,
+  TETTO_FOTOGRAMMI, TETTO_VEL_PALLA, TETTO_VZ_PALLA, SEME_CANTIERE,
+};
+
+/* =========================================================================
    LA SONDA -- gira dentro la pagina, in UN SOLO page.evaluate: come ogni
    banco di casa, nessun rumore di rete fra un fotogramma e l'altro. */
 const SONDA = (cfg) => {
@@ -462,8 +568,6 @@ const SONDA = (cfg) => {
     clamp: [], movimento: [], palla: [], docross: [], kickoffEspulso: [],
     semiAbortitiDaViolazione: [], semiEseguiti: 0, tickTotali: 0,
   };
-  const CAMPI_BALL = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
-  const CAMPI_P = ['x', 'y', 'vx', 'vy', 'aiTX', 'aiTY'];
 
   for (let k = 0; k < cfg.semi; k++) {
     const seme = cfg.seme0 + k;
@@ -480,18 +584,10 @@ const SONDA = (cfg) => {
       t.setCpuVsCpu(true);
     }
 
-    /* PROVA 6 -- CRONOMETRI-FRATELLI, SUBITO dopo startMatch. */
+    /* PROVA 6 -- CRONOMETRI-FRATELLI, SUBITO dopo startMatch. RIUSATA
+       (vedi la nota sopra servi()): stesso controllo, stesso risultato. */
     const G = t.G;
-    const guasti = [];
-    if (G.recT !== 0) guasti.push('G.recT=' + G.recT + ' (atteso 0)');
-    if (G.vantaggio !== null) guasti.push('G.vantaggio=' + JSON.stringify(G.vantaggio) + ' (atteso null)');
-    if (!(G.possOwner === -1)) guasti.push('G.possOwner=' + G.possOwner + ' (atteso -1)');
-    if (!(G.possT === 0)) guasti.push('G.possT=' + G.possT + ' (atteso 0)');
-    if (!(G.pulse === 0)) guasti.push('G.pulse=' + G.pulse + ' (atteso 0)');
-    if (!(G.crowdSndT === 0)) guasti.push('G.crowdSndT=' + G.crowdSndT + ' (atteso 0)');
-    if (!(G.swLock[0] === 0 && G.swLock[1] === 0)) guasti.push('G.swLock=' + JSON.stringify(G.swLock) + ' (atteso [0,0])');
-    if (!(G.swTimer[0] === 0 && G.swTimer[1] === 0)) guasti.push('G.swTimer=' + JSON.stringify(G.swTimer) + ' (atteso [0,0])');
-    if (guasti.length) r.cronometri.push({ seme, indiceMatch: k, guasti });
+    verificaCronometriFratelli(G, r, seme, k);
 
     /* PROVA 10 -- DOCROSS, il cross-proiettile (voce #128, compito 1,
        P0-1; vedi la lettera di testa per il perche' e i numeri attesi).
@@ -597,68 +693,10 @@ const SONDA = (cfg) => {
       }
     }
 
-    let prevScore = [G.score[0], G.score[1]];
-    let prevTimeLeft = G.timeLeft;
-
-    const verificaTick = (fotogramma, fase) => {
-      let violato = false;
-      const b = G.ball;
-      for (const kk of CAMPI_BALL) {
-        if (!Number.isFinite(b[kk])) { r.nan.push({ seme, fotogramma, fase, chi: 'ball.' + kk, val: b[kk] }); violato = true; }
-      }
-      /* PROVA 8 -- >=2 UOMINI DI MOVIMENTO IN CAMPO, per squadra. Stessa
-         definizione del gioco (CALCETTO-il-gioco.html:18508-18509,
-         diMovimentoInCampo): role!=='gk' && out<=0. Contata qui, non
-         chiamando la funzione del gioco (non esposta via __test) — la
-         doppia implementazione e' voluta: se la guardia del gioco regredisse,
-         questa prova indipendente la coglie comunque. */
-      const movimentoInCampo = [0, 0];
-      for (let i = 0; i < G.players.length; i++) {
-        const p = G.players[i];
-        if (p.role !== 'gk' && p.out <= 0) movimentoInCampo[p.team]++;
-      }
-      for (let tt = 0; tt < 2; tt++) {
-        if (movimentoInCampo[tt] < 2) {
-          r.movimento.push({ seme, fotogramma, fase, team: tt, inCampo: movimentoInCampo[tt] }); violato = true;
-        }
-      }
-      for (let i = 0; i < G.players.length; i++) {
-        const p = G.players[i];
-        for (const kk of CAMPI_P) {
-          if (!Number.isFinite(p[kk])) { r.nan.push({ seme, fotogramma, fase, chi: 'p' + i + '.' + kk + ' (' + p.role + ')', val: p[kk] }); violato = true; }
-        }
-        /* PROVA 7 -- CLAMP FIATO/COND. p.umore/p.nervi/G.spinta NON si
-           duplicano qui: gia' coperti da _q-umore.js, PROVA STATI
-           sub-prova "e-stati" (vedi la lettera di testa). */
-        if (!(p.fiato >= 0 && p.fiato <= 100)) { r.clamp.push({ seme, fotogramma, fase, chi: 'p' + i + '.fiato (' + p.role + ')', val: p.fiato }); violato = true; }
-        if (!(p.cond >= 0 && p.cond <= 100)) { r.clamp.push({ seme, fotogramma, fase, chi: 'p' + i + '.cond (' + p.role + ')', val: p.cond }); violato = true; }
-      }
-      const owner = G.ball.owner;
-      const ownerOk = owner === -1 || (Number.isInteger(owner) && owner >= 0 && owner < G.players.length && !(G.players[owner].out > 0));
-      if (!ownerOk) { r.owner.push({ seme, fotogramma, fase, owner, nGiocatori: G.players.length }); violato = true; }
-
-      /* PROVA 9 -- PALLA SOTTO IL PIANO / VELOCITA'. z>=0 SEMPRE; la
-         velocita' SOLO a palla libera (owner<0) -- vedi la lettera di
-         testa sul perche' escludere la palla posseduta (il ramo "furto
-         col corpo" riusa vx/vy come correzione, non come cinematica). */
-      if (b.z < 0) { r.palla.push({ seme, fotogramma, fase, tipo: 'z', val: b.z }); violato = true; }
-      if (owner < 0) {
-        const sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
-        if (sp > cfg.tettoVelPalla) { r.palla.push({ seme, fotogramma, fase, tipo: 'velocita', val: sp, vx: b.vx, vy: b.vy }); violato = true; }
-        if (Math.abs(b.vz) > cfg.tettoVzPalla) { r.palla.push({ seme, fotogramma, fase, tipo: 'vz', val: b.vz }); violato = true; }
-      }
-
-      if (G.score[0] < prevScore[0] || G.score[1] < prevScore[1]) {
-        r.punteggio.push({ seme, fotogramma, fase, prima: prevScore.slice(), dopo: G.score.slice() }); violato = true;
-      }
-      prevScore = [G.score[0], G.score[1]];
-
-      if (G.timeLeft > prevTimeLeft + 1e-9 || G.timeLeft < 0) {
-        r.timeLeft.push({ seme, fotogramma, fase, prima: prevTimeLeft, dopo: G.timeLeft }); violato = true;
-      }
-      prevTimeLeft = G.timeLeft;
-      return violato;
-    };
+    const stato = { prevScore: [G.score[0], G.score[1]], prevTimeLeft: G.timeLeft };
+    /* PROVE 1/2/3/4/7/8/9 -- RIUSATE (vedi la nota sopra servi()): stesso
+       controllo, stesso risultato, spostato in verificaTickInvarianti. */
+    const verificaTick = (fotogramma, fase) => verificaTickInvarianti(G, r, seme, fotogramma, fase, stato, cfg);
 
     let fotogrammi = 0, raggiuntoEnd = false, violatoQuiSeme = false;
     for (; fotogrammi < cfg.tetto; fotogrammi++) {
@@ -728,7 +766,14 @@ const SONDA = (cfg) => {
   return r;
 };
 
-(async () => {
+/* REFACTOR MINIMO (voce #126, onda C -- 2, compito 1): questa IIFE apre un
+   browser e stampa il verbale -- resta SOLO per l'uso diretto. Se il file
+   e' require()-ato da un altro banco (_q-fuzzer.js), require.main non e'
+   questo modulo e la IIFE non parte: nessun browser fantasma, nessuna
+   stampa estranea nell'output di chi ha fatto il require. Comportamento
+   diretto (node strumenti/_q-invarianti.js) INVARIATO: require.main===module
+   e' vero esattamente nel caso di sempre. */
+if (require.main === module) (async () => {
   const provaRel = arg('gioco', '');
   const provaAbs = provaRel ? path.resolve(RADICE, provaRel) : '';
   const srv = await servi(provaAbs);
@@ -752,11 +797,28 @@ const SONDA = (cfg) => {
       if (t.save) t.save.tutorialDone = 1;
     }, { seme: SEME });
 
-    const r = await pag.evaluate(`(${SONDA})(${JSON.stringify({
+    /* Le due funzioni riusabili vanno IN TESTA allo script di pagina, come
+       dichiarazioni dentro una IIFE: page.evaluate(stringa) vuole UNA sola
+       espressione (misurato: due `function` di seguito a livello di
+       statement danno "Unexpected token 'function'" -- Playwright
+       racchiude la stringa fra parentesi per farne un'espressione, e due
+       dichiarazioni consecutive dentro le stesse parentesi non sono
+       un'espressione valida). L'IIFE le rende UNA espressione sola: dentro,
+       tornano dichiarazioni di statement normalissime. SONDA le chiama per
+       nome (vedi sopra). Eseguito direttamente qui e' un giro a vuoto (le
+       stesse funzioni sono gia' nello scope del modulo) -- ma e' la STESSA
+       composizione che usera' chi fa require() da fuori pagina
+       (_q-fuzzer.js), quindi si tiene questa forma per esercitarla anche
+       qui. */
+    const r = await pag.evaluate(`(function(){
+      ${verificaCronometriFratelli.toString()}
+      ${verificaTickInvarianti.toString()}
+      return (${SONDA})(${JSON.stringify({
       taglia: TAGLIA_BANCO, seme0: SEME, semi: SEMI_BANCO, tetto: TETTO_FOTOGRAMMI,
       bugiardo: BUGIARDO, iniettaAlFrame: INIETTA_AL_FRAME, ordineSbagliato: BUGIARDO === 'durata',
       tettoVelPalla: TETTO_VEL_PALLA, tettoVzPalla: TETTO_VZ_PALLA,
-    })})`);
+    })});
+    })()`);
 
     const primi = (arr, n, f) => arr.slice(0, n).map(f).join('\n         ') + (arr.length > n ? '\n         … e altri ' + (arr.length - n) : '');
 
