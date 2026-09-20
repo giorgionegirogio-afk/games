@@ -1,6 +1,13 @@
 /* =====================================================================
-   _q-soak.js -- IL SOAK CON BANDE, COMPITO 1: IL SOAK BASE (voce #127,
-   onda C -- 3, ultimo anello).
+   _q-soak.js -- IL SOAK CON BANDE (voce #127, onda C -- 3, ultimo
+   anello). COMPITO 1: il soak base (invarianti riusate + INV-15 su
+   volume). COMPITO 2 (questo aggiornamento, 20 settembre 2026): la
+   ricalibrazione di TETTO_FOTOGRAMMI (la costante vive in
+   _q-invarianti.js, vedi la sua lettera di testa per il perche' del
+   nuovo valore) e LE BANDE statistiche (gol/90s, tiri, tiri in porta,
+   parate, legni, durata gioco vivo, % 0-0), ancorate a taglia 5 e
+   verificate su ogni corsa -- vedi il blocco `const BANDE`/
+   `BANDA_ZERO_ZERO` piu' sotto per l'ancora, la larghezza e la ragione.
 
    IL PERCHE'. Il mandato (S13.1.5) chiede "soak tests: 1,000 bot-vs-bot
    matches per night per profile ... zero crashes, zero invariant
@@ -65,16 +72,26 @@
    dichiarandola -- NON e' il cancello ripetibile.
 
    INV-15 SU VOLUME. Ogni partita deve raggiungere t.state==='end' entro
-   TETTO_FOTOGRAMMI (13200, 220 s di gioco a taglia 5 -- IMPORTATO da
+   TETTO_FOTOGRAMMI (18000, 300 s di gioco a taglia 5 -- IMPORTATO da
    _q-invarianti.js, non un secondo numero magico duplicato a mano: il
    tetto INCORPORA gia' il margine +25% del mandato, vedi la lettera di
    testa di quel file). Una partita che non arriva a 'end' entro il
    tetto e' un hang (come l'#119): SI FERMA li' (non si aspetta oltre),
    e conta come violazione di questo banco.
 
-   IL METODO BUGIARDO -- SOLO durata, e solo per dimostrare che INV-15-
-   su-volume sa condannare (le altre nove invarianti sono gia' provate
-   rosse da _q-invarianti.js: duplicare qui la stessa dimostrazione non
+   LA RICALIBRAZIONE (voce #127, onda C -- 3, compito 2, 20 settembre
+   2026): il tetto era 13200 (220s) fino a questo compito -- proprio
+   questo banco (compito 1) aveva scoperto che non bastava (5/1000
+   partite SANE, un rigore a oltranza legittimo, sforavano). La cura e'
+   in _q-invarianti.js (la costante e' li', vedi la sua lettera di testa
+   per la stima del caso peggiore e il perche' di 18000): questo file non
+   duplica il numero, lo importa, quindi non c'era niente da toccare qui
+   per far girare il tetto nuovo -- solo i commenti che lo citavano a
+   mano andavano aggiornati (questi).
+
+   IL METODO BUGIARDO -- durata (compito 1) e bande (compito 2), e SOLO
+   loro: le altre nove invarianti sono gia' provate rosse da
+   _q-invarianti.js (duplicare qui la stessa dimostrazione non
    aggiungerebbe nulla, la funzione riusata e' LETTERALMENTE la stessa).
      --bugiardo durata   inverte l'ordine setCpuVsCpu/startMatch per
                          TUTTE le partite della corsa (misurato altrove:
@@ -82,6 +99,15 @@
                          immobile" si blocca solo se il gioco la porta a
                          battere una punizione -- su un campione decente
                          di partite alcune condannano comunque il tetto).
+     --bugiardo bande    forza tiri=0 nella LETTURA delle statistiche di
+                         ogni partita (dopo che la partita vera e' gia'
+                         finita: non tocca la simulazione, vedi il
+                         commento accanto a `cfg.bugiardoBande` in
+                         SONDA_SOAK) -- il caso di controllo del compito
+                         2: dimostra che la banda "tiri per partita"
+                         condanna una corsa dove i tiri sono spariti,
+                         senza toccare le altre bande (che restano vere,
+                         quindi verdi).
 
    RIPETIBILITA'. Nessun dado()/Math.random in questo banco: solo
    t.semina(seme) (il PRNG del gioco) e nuovaRosa() (pura). Il banco
@@ -98,9 +124,10 @@
          node strumenti/_q-soak.js --semeBase 20260920 --taglia 5
          node strumenti/_q-soak.js --gioco fuori/bugiardo-qualcosa.html
          node strumenti/_q-soak.js --bugiardo durata
-   esce 0 se zero violazioni su tutte le partite (incluso INV-15), 1 se
-   almeno una e' rossa, 2 se il banco stesso e' esploso, 3 se l'uso e'
-   sbagliato.
+         node strumenti/_q-soak.js --bugiardo bande
+   esce 0 se zero violazioni su tutte le partite (incluso INV-15 e le
+   bande), 1 se almeno una e' rossa, 2 se il banco stesso e' esploso, 3
+   se l'uso e' sbagliato.
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -120,13 +147,13 @@ const arg = (n, d) => {
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log('uso: node strumenti/_q-soak.js [--gioco file.html] [--taglia 5] [--partite 60]');
-  console.log('                              [--semeBase 20260920] [--bugiardo durata]');
+  console.log('                              [--semeBase 20260920] [--bugiardo durata|bande]');
   process.exit(3);
 }
 
 const BUGIARDO = arg('bugiardo', '');
-if (BUGIARDO && BUGIARDO !== 'durata') {
-  console.error('USO: --bugiardo, se dato, deve essere "durata" (le altre nove invarianti sono gia\' provate rosse da _q-invarianti.js)');
+if (BUGIARDO && BUGIARDO !== 'durata' && BUGIARDO !== 'bande') {
+  console.error('USO: --bugiardo deve essere "durata" (le altre nove invarianti sono gia\' provate rosse da _q-invarianti.js) o "bande" (compito 2)');
   process.exit(3);
 }
 
@@ -145,6 +172,87 @@ if (!Number.isInteger(PARTITE) || PARTITE < 1) {
   process.exit(3);
 }
 
+/* =========================================================================
+   LE BANDE ANCORATE (voce #127, onda C -- 3, compito 2, 20 settembre
+   2026). L'ANCORA: 150 partite CPU-CPU, semeBase 20260920 (semi
+   20260920..20261069), taglia 5, diff Normale, ROSA RIGENERATA a ogni
+   partita (`node strumenti/_q-soak.js --partite 150`, vedi il commit di
+   questo compito per il log intero). Le sei voci continue e la
+   percentuale 0-0 (mediana / quartile-1 / quartile-3 misurati):
+     golRegol (gol nei 90s)         3,00  (2,00 - 3,00)
+     tiri per partita               13,00 (11,00 - 14,00)
+     tiri in porta per partita      4,00  (3,00 - 5,00)
+     parate per partita             2,00  (1,00 - 2,75)
+     legni per partita              1,00  (0,00 - 2,00)
+     durata gioco vivo (s)          92,39 (92,15 - 92,86)
+     partite 0-0 nei 90s            3,3%  (rigori: 4,0%)
+
+   PERCHE' QUESTI NUMERI DIVERGONO DA _eventi.js. La "prima fotografia"
+   storica di _eventi.js (18 agosto 2026, semi 20260803..852, 50
+   partite) misura tiri mediana 10,0, gol nei 90s 1,42, partite ai
+   rigori 18% -- diversi da quelli qui sopra (13,00 / 3,00 / 4,0%). LA
+   CAUSA NOTA, non un difetto della misura: quella corsa NON rigenera
+   SAVE.rosa fra una partita e l'altra (la rosa cresce lentamente,
+   vincolo che _eventi.js non ha mai avuto bisogno di risolvere), questo
+   banco SI' (vincolo del piano, vedi la lettera di testa) -- sono DUE
+   CONDIZIONI SPERIMENTALI DIVERSE, non la stessa domanda con una
+   risposta diversa. Le bande di QUESTO banco si ancorano alla misura DI
+   QUESTO banco, non ai numeri storici di un banco con un impianto
+   diverso (dichiarato, non taciuto).
+
+   LA LARGHEZZA E LA RAGIONE (lezione #112/#114: non tarata a favore).
+   NON si usa il classico "steccato di Tukey" (mediana +-1,5*IQR)
+   applicato alla lettera: durataViva ha un IQR di appena 0,7s su questo
+   campione (la stragrande maggioranza delle partite non tocca mai il
+   golden goal, quindi il tempo vivo resta incollato ai ~90s+overhead di
+   kickoff) -- uno steccato di Tukey su QUESTO IQR darebbe [91,2 - 93,7],
+   una banda che condannerebbe una corsa futura con anche solo qualche
+   partita in piu' decisa al golden/ai rigori, cioe' una VARIAZIONE
+   LEGITTIMA del campione (seed diversi, difficolta' diversa), non un
+   difetto. Si usa invece un MARGINE MOLTO PIU' LARGO, dichiarato a
+   mano, sulla MEDIANA (non sui singoli fotogrammi/partite): un
+   raddoppio abbondante verso l'alto per le voci "conteggio" (tiri,
+   specchio, parate, legni, gol), e per durataViva un intervallo che
+   assorbe un tasso di golden/rigori anche 5-10 volte piu' alto di
+   quello misurato oggi (che sposterebbe la mediana verso l'alto per il
+   contributo dei +40s di golden) SENZA condannarlo. Il costo dichiarato
+   di una banda cosi' larga: non misura il ritmo fine (non e' il suo
+   compito, per quello c'e' il METRO di _eventi.js) -- misura solo che
+   la promessa di fondo di ogni voce ("i tiri esistono, la porta esiste,
+   le partite non sono tutte 0-0, la durata non e' scappata altrove")
+   non si rompa in silenzio, la STESSA filosofia del --cancello di
+   _eventi.js ("un cancello stretto qui diventerebbe rumoroso, e un
+   cancello rumoroso viene disattivato la prima volta che sbaglia"). */
+const BANDE = {
+  golRegol: { min: 1, max: 6 },
+  tiri: { min: 6, max: 22 },
+  specchio: { min: 2, max: 8 },
+  parate: { min: 1, max: 5 },
+  legni: { min: 0, max: 3 },
+  durataViva: { min: 80, max: 140 },
+};
+/* Percentuale di partite 0-0 nei 90s: misurato 0%/3,3% su due campioni
+   (60 e 150 partite) -- il pavimento resta 0 (un 0% e' gia' stato
+   osservato, non e' un allarme), il tetto e' 35%, a meta' strada fra il
+   misurato oggi e la soglia di rottura conclamata che _eventi.js stesso
+   usa nel suo --cancello (<=50%, "la promessa di fondo... non venga
+   rotta in silenzio") -- abbastanza sotto quella soglia da condannare un
+   vero ritorno al difetto "PRIMA" (73% di 0-0, ZERO reti su azione in
+   50 partite, vedi la lettera di testa di _eventi.js), abbastanza sopra
+   il misurato da non condannare una normale oscillazione campionaria. */
+const BANDA_ZERO_ZERO = { min: 0, max: 35 };
+
+/* COERENZA CON _eventi.js (verificata, non un'ipotesi): _eventi.js NON
+   importa/duplica TETTO_FOTOGRAMMI -- il suo ciclo per-partita
+   (`while (t.state!=='end' && sim<600) t.simulate(10)`) si ferma da
+   solo a sim>=600, cioe' 600s/36000 fotogrammi (t.simulate(sec) fa
+   round(sec*60) fotogrammi, CALCETTO-il-gioco.html:44319-44329) --
+   quasi il DOPPIO del nuovo tetto di 18000 (300s). Nessuna incoerenza
+   da correggere: il tetto di _eventi.js resta ben sopra il caso
+   peggiore del rigore a oltranza (18000/300s) sia prima che dopo questa
+   ricalibrazione, quindi non tronca mai una partita legittima che
+   questo banco lascerebbe correre. */
+
 function servi(prova) {
   return new Promise(ok => {
     const s = http.createServer((req, res) => {
@@ -160,6 +268,13 @@ function servi(prova) {
 
 const esiti = [];
 const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' : 'NO  ') + nome + (det ? '\n         ' + det : '')); };
+
+/* MEDIANA/QUARTILI -- STESSA formula di strumenti/_eventi.js (interpolazione
+   lineare fra i due indici piu' vicini), non una seconda implementazione
+   diversa per lo stesso numero: se un giorno le due divergono per un
+   dettaglio di arrotondamento, e' un bug, non una scelta. */
+const mediana = a => { const b = a.slice().sort((x, y) => x - y); const n = b.length; return n % 2 ? b[(n - 1) / 2] : (b[n / 2 - 1] + b[n / 2]) / 2; };
+const quart = (a, q) => { const b = a.slice().sort((x, y) => x - y); const i = (b.length - 1) * q; const lo = Math.floor(i), hi = Math.ceil(i); return b[lo] + (b[hi] - b[lo]) * (i - lo); };
 
 /* FNV-1a, 32 bit -- solo per stampare un'IMPRONTA leggibile a occhio
    della corsa intera (vedi la lettera di testa): non e' un requisito
@@ -188,7 +303,25 @@ const SONDA_SOAK = (cfg) => {
     nan: [], owner: [], punteggio: [], timeLeft: [], cronometri: [],
     clamp: [], movimento: [], palla: [], confini: [], durata: [],
     perPartita: [], tickTotali: 0, fotogrammiTotali: 0, maxFotogrammi: 0,
+    bande: [],
   };
+
+  /* LE BANDE (voce #127, compito 2) -- LEGNI si contano avvolgendo
+     window.showBanner UNA SOLA VOLTA (la pagina vive per tutta la corsa),
+     come fa strumenti/_eventi.js per PALO!/TRAVERSA! (stessa tecnica,
+     stesso nome di banner: non si duplica la logica dei sei eventi che
+     _eventi.js traccia, solo questi due, i soli che servono a "legni"). Il
+     contatore si azzera a ogni partita (vedi dentro il ciclo), cosi'
+     legni_k conta SOLO i legni della partita k. */
+  const bandeC = { pali: 0, traverse: 0 };
+  const showBannerOriginale = window.showBanner;
+  if (typeof showBannerOriginale === 'function') {
+    window.showBanner = function (testo) {
+      if (testo === 'PALO!') bandeC.pali++;
+      else if (testo === 'TRAVERSA!') bandeC.traverse++;
+      return showBannerOriginale.apply(this, arguments);
+    };
+  }
 
   for (let k = 0; k < cfg.partite; k++) {
     const seme = cfg.semeBase + k;
@@ -222,6 +355,18 @@ const SONDA_SOAK = (cfg) => {
     const stato = { prevScore: [G.score[0], G.score[1]], prevTimeLeft: G.timeLeft };
     const verificaTick = (fotogramma, fase) => verificaTickInvarianti(G, r, seme, fotogramma, fase, stato, cfg);
 
+    /* LE BANDE, azzerate a ogni partita. golRegolSnap cattura il
+       punteggio nel MOMENTO in cui G.golden diventa vero per la prima
+       volta (il fischio dei 90s, prima di qualunque gol/rigore della
+       morte improvvisa) -- STESSA definizione di _eventi.js ("golRegol",
+       vedi la sua lettera di testa): se il golden non scatta mai, il
+       punteggio finale E' gia' quello regolamentare, letto a fine
+       partita. liveFrames conta i fotogrammi con scena 'play' o
+       'golden' (palla viva), non kickoff/gol/punizioni/rigori -- ANCORA
+       la stessa definizione di _eventi.js ("durata gioco vivo"). */
+    bandeC.pali = 0; bandeC.traverse = 0;
+    let golRegolSnap = null, liveFrames = 0;
+
     /* NOTA SUL CONTEGGIO: `fotogrammi` e' l'indice (0-based) passato a
        verificaTick per il messaggio d'errore -- lo stesso uso di
        _q-invarianti.js/_q-fuzzer.js. Per riportare un CONTEGGIO esatto
@@ -235,8 +380,36 @@ const SONDA_SOAK = (cfg) => {
     for (; fotogrammi < cfg.tetto; fotogrammi++) {
       t.simulate(1 / 60);
       r.tickTotali++;
+      if (G.scene === 'play' || G.scene === 'golden') liveFrames++;
+      if (G.golden && !golRegolSnap) golRegolSnap = G.score.slice();
       if (verificaTick(fotogrammi, 'normale')) { violatoQuiSeme = true; fotogrammi++; break; }
       if (t.state === 'end') { raggiuntoEnd = true; fotogrammi++; break; }
+    }
+
+    /* LE BANDE SI LEGGONO SOLO SU UNA PARTITA VERA (raggiuntoEnd): una
+       partita bloccata o violata non ha un tabellino da fidarsi, e non
+       deve sporcare la mediana con uno zero che non e' un vero zero-a-
+       zero. */
+    if (raggiuntoEnd) {
+      const golRegol = golRegolSnap || G.score.slice();
+      let tiri = (G.stats.tiri[0] | 0) + (G.stats.tiri[1] | 0);
+      /* --bugiardo bande (compito 2): forza tiri=0 DOPO che la partita
+         vera e' gia' finita -- non tocca la simulazione, corrompe solo
+         la LETTURA della statistica, la STESSA idea degli altri
+         --bugiardo di questo banco (nan/owner/punteggio/... corrompono
+         G, questo corrompe la lettura di G.stats) -- e' cio' che serve
+         a dimostrare che le bande condannano un caso di controllo. */
+      if (cfg.bugiardoBande) tiri = 0;
+      r.bande.push({
+        seme, tiri,
+        specchio: (G.stats.inPorta[0] | 0) + (G.stats.inPorta[1] | 0),
+        parate: (G.stats.parate[0] | 0) + (G.stats.parate[1] | 0),
+        legni: bandeC.pali + bandeC.traverse,
+        golRegol: (golRegol[0] | 0) + (golRegol[1] | 0),
+        zeroZero: ((golRegol[0] | 0) + (golRegol[1] | 0)) === 0,
+        aiRigori: !!G.rigori,
+        durataViva: liveFrames / 60,
+      });
     }
 
     /* INV-15 SU VOLUME -- vedi la lettera di testa: una partita che non
@@ -268,7 +441,7 @@ const SONDA_SOAK = (cfg) => {
   await pag.addInitScript(semeFisso, SEME_BASE);
   const ecc = []; pag.on('pageerror', e => ecc.push(e.message));
 
-  console.log('\n=== IL SOAK (voce #127, compito 1) ===  ' +
+  console.log('\n=== IL SOAK CON BANDE (voce #127, compiti 1+2) ===  ' +
     (provaAbs || 'CALCETTO-il-gioco.html (repo)') + '  taglia ' + TAGLIA_BANCO +
     '  semeBase ' + SEME_BASE + '  partite ' + PARTITE + (BUGIARDO ? '  bugiardo=' + BUGIARDO : ''));
 
@@ -284,7 +457,7 @@ const SONDA_SOAK = (cfg) => {
     const cfg = {
       taglia: TAGLIA_BANCO, partite: PARTITE, semeBase: SEME_BASE, tetto: TETTO_FOTOGRAMMI,
       tettoVelPalla: TETTO_VEL_PALLA, tettoVzPalla: TETTO_VZ_PALLA, marginBordi: MARGINE_CONFINI,
-      ordineSbagliato: BUGIARDO === 'durata',
+      ordineSbagliato: BUGIARDO === 'durata', bugiardoBande: BUGIARDO === 'bande',
     };
     /* STESSA COMPOSIZIONE di _q-invarianti.js/_q-fuzzer.js: le due
        funzioni riusate come sorgente, dentro una IIFE (page.evaluate
@@ -340,7 +513,68 @@ const SONDA_SOAK = (cfg) => {
     } else {
       detDurata = primi(r.durata, 5, v => 'seme ' + v.seme + ' (partita #' + v.indiceMatch + '): ' + v.fotogrammi + ' fotogrammi, stato finale \'' + v.statoFinale + '\' (non ha raggiunto \'end\')');
     }
-    di(r.durata.length === 0, 'INV-15 SU VOLUME -- ogni partita raggiunge \'end\' entro ' + TETTO_FOTOGRAMMI + ' fotogrammi (220 s, il tetto incorpora gia\' il margine +25% del mandato)', detDurata);
+    di(r.durata.length === 0, 'INV-15 SU VOLUME -- ogni partita raggiunge \'end\' entro ' + TETTO_FOTOGRAMMI + ' fotogrammi (300 s, ricalibrato sul caso peggiore del rigore a oltranza + margine, voce #127 compito 2)', detDurata);
+
+    /* LE BANDE (voce #127, compito 2) -- vedi la lettera di testa per
+       l'ancora, la larghezza e la ragione. Si legge la MEDIANA del
+       campione IN ESAME (questa corsa) e la si confronta con la banda
+       ANCORATA (una costante, misurata una volta, non ricalcolata qui:
+       una banda che si aggiorna da sola sulla corsa che sta giudicando
+       non condannerebbe mai niente). L'ANCORA E' A TAGLIA 5 -- la
+       STESSA ragione del cancello INV-15/ripetibilita' (vincolo #98,
+       vedi la lettera di testa): a 7/11 le statistiche SI MISURANO
+       (stampate qui sotto) ma NON SI GIUDICANO contro una banda pensata
+       per un campo/una rosa diversi, e la misura stessa non e'
+       bit-ripetibile a quelle taglie -- dichiarato, non taciuto,
+       nessun `di()` (non contano ne' per ne' contro il cancello). */
+    const vociBande = [
+      ['gol nei 90 s (golRegol, somma due squadre)', 'golRegol', ''],
+      ['tiri per partita (somma due squadre)', 'tiri', ''],
+      ['tiri in porta per partita (somma due squadre)', 'specchio', ''],
+      ['parate per partita (somma due squadre)', 'parate', ''],
+      ['legni per partita (palo+traversa, somma due squadre)', 'legni', ''],
+      ['durata gioco vivo per partita', 'durataViva', ' s'],
+    ];
+    if (TAGLIA_BANCO === 5) {
+      const campoBanda = (nome, chiave, unita) => {
+        const vals = r.bande.map(x => x[chiave]);
+        if (!vals.length) {
+          di(false, 'BANDA -- ' + nome, 'nessuna partita valida da misurare in questa corsa (tutte incastrate/violate)');
+          return;
+        }
+        const med = mediana(vals), q1 = quart(vals, 0.25), q3 = quart(vals, 0.75);
+        const banda = BANDE[chiave];
+        const ok = med >= banda.min && med <= banda.max;
+        di(ok, 'BANDA -- ' + nome + ' (mediana attesa in [' + banda.min + ', ' + banda.max + ']' + unita + ')',
+          'mediana=' + med.toFixed(2) + unita + '  quartili=' + q1.toFixed(2) + '-' + q3.toFixed(2) + '  su ' + vals.length + ' partite valide');
+      };
+      for (const [nome, chiave, unita] of vociBande) campoBanda(nome, chiave, unita);
+
+      const nValide = r.bande.length;
+      if (nValide) {
+        const quotaZero = 100 * r.bande.filter(x => x.zeroZero).length / nValide;
+        const quotaRigori = 100 * r.bande.filter(x => x.aiRigori).length / nValide;
+        const okZero = quotaZero >= BANDA_ZERO_ZERO.min && quotaZero <= BANDA_ZERO_ZERO.max;
+        di(okZero, 'BANDA -- partite 0-0 nei 90 s (attesa in [' + BANDA_ZERO_ZERO.min + '%, ' + BANDA_ZERO_ZERO.max + '%])',
+          quotaZero.toFixed(1) + '% su ' + nValide + ' partite valide (per confronto: ' + quotaRigori.toFixed(1) + '% decise ai rigori)');
+      } else {
+        di(false, 'BANDA -- partite 0-0 nei 90 s', 'nessuna partita valida da misurare in questa corsa');
+      }
+    } else {
+      console.log('\n  BANDE -- SOLO INFORMATIVO a taglia ' + TAGLIA_BANCO + ' (non ancorato, non bit-ripetibile, vincolo #98/#129):');
+      const nValide = r.bande.length;
+      for (const [nome, chiave, unita] of vociBande) {
+        const vals = r.bande.map(x => x[chiave]);
+        if (!vals.length) { console.log('    ' + nome + ': nessuna partita valida'); continue; }
+        console.log('    ' + nome + ': mediana=' + mediana(vals).toFixed(2) + unita +
+          '  quartili=' + quart(vals, 0.25).toFixed(2) + '-' + quart(vals, 0.75).toFixed(2) + '  su ' + vals.length + ' partite valide');
+      }
+      if (nValide) {
+        const quotaZero = 100 * r.bande.filter(x => x.zeroZero).length / nValide;
+        const quotaRigori = 100 * r.bande.filter(x => x.aiRigori).length / nValide;
+        console.log('    partite 0-0 nei 90 s: ' + quotaZero.toFixed(1) + '%  (rigori: ' + quotaRigori.toFixed(1) + '%)  su ' + nValide + ' partite valide');
+      }
+    }
 
     if (ecc.length) di(false, 'BANCO -- nessuna eccezione di pagina', 'eccezione: ' + ecc[0]);
 

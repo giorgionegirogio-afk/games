@@ -30,9 +30,14 @@
      4. timeLeft monotono  -- G.timeLeft non cresce mai fra due campioni
         e non e' mai < 0.
      5. durata<=tetto (INV-15) -- la partita raggiunge lo stato 'end'
-        entro 13200 fotogrammi (220 s di gioco a taglia 5, LO STESSO tetto
-        gia' misurato da _q-cpu-ordine.js per lo stesso scenario CPU-CPU).
-        Generalizzato a N semi (di serie 8, vedi --semi).
+        entro TETTO_FOTOGRAMMI fotogrammi (18000, 300 s di gioco a taglia 5
+        -- RICALIBRATO voce #127, onda C -- 3, compito 2, vedi la lettera
+        di testa della costante piu' sotto per il perche': il vecchio
+        13200/220s non copriva il caso peggiore del rigore a oltranza. Lo
+        STESSO tetto e' condiviso anche da _q-cpu-ordine.js, che prima di
+        questo compito ne teneva una copia locale scaduta -- vedi la nota
+        alla sua importazione, corretta qui). Generalizzato a N semi (di
+        serie 8, vedi --semi).
      6. cronometri-fratelli (LA PIU' A RISCHIO — cinque regressioni pagate
         a mano: #86/#87/#107/#117/#122) -- SUBITO dopo startMatch, prima
         di simulare un solo fotogramma, ogni cronometro della famiglia
@@ -420,7 +425,9 @@
           hash di replay corrispondente
        -> N/A: nessun sistema di submission/replay-hash in CALCETTO.
      INV-15 durata reale <= attesa + 25% (rileva stati bloccati)
-       -> QUI: prova 5 (durata<=13200 fotogrammi, 220 s a taglia 5).
+       -> QUI: prova 5 (durata<=TETTO_FOTOGRAMMI fotogrammi, 300 s a
+          taglia 5 -- RICALIBRATO voce #127 compito 2, vedi la lettera di
+          testa della costante).
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -448,7 +455,19 @@ if (require.main === module && (process.argv.includes('--help') || process.argv.
 
 const BUGIARDI_NOTI = new Set(['nan', 'owner', 'punteggio', 'timeleft', 'durata', 'fiato', 'movimento', 'ballz', 'ballvel', 'confini']);
 const BUGIARDO = arg('bugiardo', '');
-if (BUGIARDO && !BUGIARDI_NOTI.has(BUGIARDO)) {
+/* GUARDIA require.main===module (voce #127, compito 2, 20 settembre
+   2026 -- STESSA guardia gia' messa al blocco --help dal refactor #126,
+   ma dimenticata qui): senza di lei, `process.exit(3)` scattava anche
+   quando questo file viene RICHIESTO come modulo (require.main!==module)
+   da un banco che ha un proprio --bugiardo con valori DIVERSI dai
+   nostri -- scoperto da _q-soak.js, che ha aggiunto --bugiardo bande
+   (compito 2): la riga sotto leggeva lo STESSO process.argv del
+   processo (condiviso fra chi richiede e chi e' richiesto), vedeva
+   "bande" non in BUGIARDI_NOTI e uccideva l'intero processo PRIMA che
+   _q-soak.js potesse leggere il proprio flag. L'uso diretto di questo
+   file (node strumenti/_q-invarianti.js --bugiardo qualcosa) resta
+   IDENTICO: la guardia salta solo quando qualcun altro ci richiede. */
+if (require.main === module && BUGIARDO && !BUGIARDI_NOTI.has(BUGIARDO)) {
   console.error('USO: --bugiardo deve essere uno fra: ' + [...BUGIARDI_NOTI].join(', '));
   process.exit(3);
 }
@@ -477,9 +496,90 @@ const argSemiEsplicito = process.argv.includes('--semi');
    colpo di fortuna, quindi durata usa 10 semi di serie anche senza
    --semi esplicito. */
 const SEMI_BANCO = argSemiEsplicito ? +arg('semi', 8) : (BUGIARDO === 'durata' ? 10 : (BUGIARDO ? 1 : 8));
-/* 220 s di gioco -- lo stesso tetto di sicurezza gia' misurato da
-   _q-umore.js e _q-cpu-ordine.js per una partita CPU-CPU a taglia 5. */
-const TETTO_FOTOGRAMMI = 13200;
+/* TETTO_FOTOGRAMMI -- RICALIBRATO (voce #127, onda C -- 3, compito 2,
+   20 settembre 2026). QUESTO NUMERO HA GIA' SBAGLIATO UNA VOLTA:
+   scoperta P0 del compito 1 (_q-soak.js, commit precedente) -- a volume
+   (--partite 1000, stesso semeBase) 5/1000 partite (0,5%) SANE (nessun
+   hang, nessuna violazione delle altre undici invarianti) sforavano il
+   vecchio tetto di 13200/220s, tutte bloccate in scena 'freekick' a
+   esattamente 13200 fotogrammi. Con un tetto esteso (diagnosi usa-e-
+   getta) le cinque raggiungevano 'end' da sole in 13267-14181
+   fotogrammi (221,1-236,3s): non un hang infinito, un RIGORE A
+   OLTRANZA (sudden-death ai calci di rigore) che arriva al limite di
+   sicurezza del gioco stesso (CALCETTO-il-gioco.html:18523, 9 tiri a
+   testa = 18 rigori totali) prima che il vecchio tetto, tarato sulla
+   durata ORDINARIA, scadesse.
+
+   IL VECCHIO 13200 (220s) era gia' "attesa +25%" DEL MANDATO -- ma
+   applicato alla durata ORDINARIA di una partita CPU-CPU (_q-umore.js/
+   _q-cpu-ordine.js, ~176s "attesa" x1,25). Il rigore a oltranza e' un
+   esito LEGITTIMO del gioco (il gioco stesso lo decide cosi', non e' un
+   bug), quindi il +25% del mandato va applicato al CASO PEGGIORE
+   LEGITTIMO -- che include il rigore a oltranza -- non alla sola
+   durata media. Da qui la ricalibrazione, in due pezzi misurati
+   separatamente (diagnosi usa-e-getta, fuori/_misura-oltranza.js e
+   fuori/_misura-pre-rigori.js, non committate, gitignored):
+
+   1. IL PRE-RIGORI (tempo per arrivare al fischio che apre la serie).
+      MATCH_SEC=90 (CALCETTO-il-gioco.html:4086) e' ESATTO a taglia 5
+      (durataPartita()=round(90*FW/1150)=90 quando FW=1150, la taglia
+      5 stessa, riga 3956) + fino a 40s di golden goal (limite fisso,
+      riga ~17370: "G.goldenT>=40 && !G.rigori => avviaRigori()") = 130s
+      di OROLOGIO DI GIOCO, ma G.timeLeft/G.goldenT NON scorrono durante
+      kickoff/goal/punizioni (il gate e' "scene!=='play' && scene!==
+      'golden' => return", riga ~17217): il tempo REALE (fotogrammi) e'
+      quello + gli stacchi. Misurato su 427 partite reali (i 2 semi noti
+      del compito 1, 20261074/20261103, con tetto esteso, PIU' 400 semi
+      diversi con tetto esteso): 25/400 hanno raggiunto avviaRigori
+      naturalmente, fotogramma di innesco fra 8100 e 10854 (135-180,9s),
+      MASSIMO osservato 10854. Con margine (la coda a 27 campioni non e'
+      detto sia il vero massimo su volumi molto piu' grandi): 12000
+      fotogrammi (200s).
+   2. LA SERIE A OLTRANZA (fino a 18 tiri). Ogni tiro e' un duello
+      (Duel, CALCETTO-il-gioco.html:22144) con fasi zone->power->wait->
+      result. Le fasi zone/wait hanno un timeout ESPLICITO lato CPU
+      (cpuT<=1,1s in zone, 0,3s in wait -- vedi Duel.start/stopPower);
+      la fase power (la barra che il tiratore CPU ferma da solo, righe
+      ~22450-22456) NON ha un timeout in codice -- e' probabilistica
+      (dado() ogni fotogramma vicino al centro/al massimo della barra),
+      quindi non ha un tetto TEORICO a priori. Misurata empiricamente
+      forzando t.rigori() (l'hook di test gia' esposto dal gioco,
+      CALCETTO-il-gioco.html:43909) su 5000 serie a oltranza intere
+      (46776 tiri campionati, 1077/5000 arrivate al limite dei 18 tiri):
+      MASSIMO osservato per UN SOLO tiro = 328 fotogrammi (5,47s);
+      MASSIMO osservato per una SERIE INTERA (18 tiri) = 4105 fotogrammi
+      (68,4s). Il caso peggiore TEORICO (non l'osservato, per non
+      ri-sforare su volumi piu' grandi del campione misurato): 18 tiri,
+      OGNUNO al massimo storico di 328 fotogrammi = 5904 fotogrammi
+      (98,4s) -- gia' il 44% oltre la serie intera peggiore realmente
+      osservata (4105), perche' assume la coincidenza (mai vista in
+      46776 tiri) che TUTTI E DICIOTTO i tiri capitino nel loro
+      fotogramma peggiore insieme.
+
+   SOMMA: 12000 (pre-rigori, con margine) + 5904 (serie a oltranza,
+   teorico) = 17904 fotogrammi (298,4s). ARROTONDATO A 18000 (300s) --
+   un numero tondo, leggermente sopra la somma con margine, e ben sopra
+   sia il peggior caso REALE noto (14182 fotogrammi/236,4s, compito 1)
+   sia la somma "cruda" dei due massimi osservati senza margine
+   (10854+4105=14959): +20% su quella, +27% sul peggior caso reale.
+   VECCHIO 13200 (220s, senza rigore a oltranza) -> NUOVO 18000 (300s,
+   +36%): il +25% del mandato e' speso qui sul caso peggiore LEGITTIMO
+   (il rigore a oltranza), non piu' sulla sola durata ordinaria.
+
+   L'HANG (#119, timeLeft/scena congelati per sempre) resta colto da
+   QUALUNQUE tetto finito: un ciclo che non finisce mai supera 18000
+   fotogrammi esattamente come superava 13200 -- alzare il tetto non
+   nasconde un hang, sposta solo il confine fra "lento ma legittimo" e
+   "bloccato". Verificato: `node strumenti/_q-soak.js --bugiardo durata`
+   resta ROSSO col tetto nuovo (vedi il suo cancello).
+
+   CONDIVISA da _q-cpu-ordine.js (voce #121): quel banco teneva una
+   COPIA LOCALE di questa costante (13200, mai importata da qui, un
+   secondo numero magico duplicato a mano nonostante il refactor #126
+   avesse gia' esportato questa) -- scoperto e corretto in questo stesso
+   compito: ora importa TETTO_FOTOGRAMMI da qui, come _q-fuzzer.js/
+   _q-soak.js gia' facevano. */
+const TETTO_FOTOGRAMMI = 18000;
 /* Il fotogramma dell'iniezione per i bugiardi nan/owner/punteggio/
    timeleft: 150 = 2,5 s, ben oltre il kickoff piu' lungo (stesso ordine
    di grandezza del CARTELLINO_FRAME=120 di _q-umore.js), cosi' la scena
@@ -925,7 +1025,7 @@ if (require.main === module) (async () => {
     } else {
       detDurata = primi(r.durata, 5, v => 'seme ' + v.seme + ': ' + v.fotogrammi + ' fotogrammi, stato finale \'' + v.statoFinale + '\' (non ha raggiunto \'end\')');
     }
-    di(r.durata.length === 0, '5. durata<=tetto (INV-15) -- ogni partita raggiunge \'end\' entro ' + TETTO_FOTOGRAMMI + ' fotogrammi (220 s)', detDurata);
+    di(r.durata.length === 0, '5. durata<=tetto (INV-15) -- ogni partita raggiunge \'end\' entro ' + TETTO_FOTOGRAMMI + ' fotogrammi (300 s)', detDurata);
 
     di(r.cronometri.length === 0, '6. cronometri-fratelli -- recT/vantaggio/possOwner/possT/pulse/crowdSndT/swLock/swTimer al riposo subito dopo startMatch',
       r.cronometri.length === 0 ? r.semiEseguiti + ' partite (stessa pagina), tutti i cronometri a riposo a ogni startMatch'

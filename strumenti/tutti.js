@@ -576,7 +576,9 @@ const CANCELLI = [
      compito 3, seguito #108, 19 settembre 2026). Due prove sullo stesso
      schema, in direzioni opposte: ORDINE-GIUSTO (setCpuVsCpu(true) DOPO
      startMatch) deve dare G.cpu=[true,true] e una partita CPU-CPU a seme
-     fisso che raggiunge 'end' entro 13200 fotogrammi senza restare
+     fisso che raggiunge 'end' entro TETTO_FOTOGRAMMI (18000 fotogrammi,
+     ricalibrato voce #127 compito 2, importato da _q-invarianti.js dal
+     20 settembre 2026 -- prima una copia locale scaduta) senza restare
      incastrata in 'freekick'; ORDINE-SBAGLIATO (setCpuVsCpu(true) PRIMA
      di startMatch, il controllo discriminante) deve dare G.cpu[0]===false
      -- la prova che l'artefatto #108 esiste ancora nel gioco e che
@@ -630,9 +632,12 @@ const CANCELLI = [
      mandato (Appendice A, INV-01..15) chiede proprieta' che devono valere
      SEMPRE, a ogni fotogramma di qualunque partita: nove prove su partite
      CPU-CPU guidate a seme fisso -- NaN/Infinity su ball/players, owner
-     valido, punteggio monotono, timeLeft monotono, durata<=13200
-     fotogrammi (INV-15), i cronometri-fratelli (recT/vantaggio/possOwner/
-     possT/pulse/crowdSndT/swLock/swTimer) al riposo dopo startMatch, il
+     valido, punteggio monotono, timeLeft monotono, durata<=18000
+     fotogrammi (INV-15, ricalibrato voce #127 compito 2, 20 settembre
+     2026 -- il vecchio 13200 non copriva il caso peggiore del rigore a
+     oltranza, vedi _q-invarianti.js), i cronometri-fratelli
+     (recT/vantaggio/possOwner/possT/pulse/crowdSndT/swLock/swTimer) al
+     riposo dopo startMatch, il
      clamp fiato/cond in [0,100], >=2 uomini di movimento in campo per
      squadra, e la palla mai sotto il piano/velocita' entro un tetto
      calibrato (1353 u/s orizzontale, 402 u/s verticale, osservato x1,5 su

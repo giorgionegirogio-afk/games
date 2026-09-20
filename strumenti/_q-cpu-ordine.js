@@ -25,9 +25,9 @@
       t.setCpuVsCpu(true);` -- setCpuVsCpu DOPO startMatch. Si
       verifica che G.cpu risulti [true,true] (non solo cpu[0]), poi si
       guida la partita fotogramma per fotogramma (t.simulate(1/60))
-      fino a t.state==='end' o al tetto di sicurezza di 13200
-      fotogrammi (220 s di gioco -- lo stesso tetto gia' misurato da
-      _q-umore.js per lo stesso scenario): la partita DEVE raggiungere
+      fino a t.state==='end' o al tetto di sicurezza TETTO_FOTOGRAMMI
+      (18000 fotogrammi/300s, IMPORTATO da _q-invarianti.js -- voce
+      #127 compito 2): la partita DEVE raggiungere
       'end' entro il tetto, senza restare incastrata in 'freekick'
       (il sintomo #108/#119). Raggiungere 'end' entro il tetto e non
       restare bloccata sono la STESSA misura: se la scena restasse
@@ -90,6 +90,17 @@ const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
 const { semeFisso } = require('./_posa.js');
+/* TETTO_FOTOGRAMMI -- IMPORTATO (voce #127, onda C -- 3, compito 2, 20
+   settembre 2026), NON PIU' UNA COPIA LOCALE. Fino a questo compito
+   questo file teneva un proprio "const TETTO_FOTOGRAMMI = 13200" scritto
+   a mano, mai importato da _q-invarianti.js -- nonostante il refactor
+   #126 avesse gia' esportato la stessa costante e _q-fuzzer.js/
+   _q-soak.js la importassero gia' da allora: un secondo numero magico
+   duplicato per la STESSA cosa, scoperto mentre si ricalibrava il tetto
+   per il rigore a oltranza (vedi _q-invarianti.js per il perche' del
+   nuovo valore -- questo file non ha bisogno di saperlo, gli basta
+   importarlo). Corretto qui: un'unica fonte, come gli altri due banchi. */
+const { TETTO_FOTOGRAMMI } = require('./_q-invarianti.js');
 
 const RADICE = path.resolve(__dirname, '..');
 const arg = (n, d) => {
@@ -105,10 +116,10 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 const SEME_CANTIERE = 20260919;   // la data del piano d'esecuzione del cantiere (voce #121), default del flag --seme
 const TAGLIA_BANCO = +arg('taglia', 5);
 const SEME = +arg('seme', SEME_CANTIERE);
-/* 220 s di gioco -- lo stesso tetto di sicurezza gia' misurato da
-   _q-umore.js (TETTO = 220*60) per una partita CPU-CPU a taglia 5, ben
-   oltre la durata di una qualunque amichevole vera. */
-const TETTO_FOTOGRAMMI = 13200;
+/* TETTO_FOTOGRAMMI e' importato (vedi la nota accanto al require, in
+   testa al file): 18000 fotogrammi/300s da voce #127 compito 2, ben
+   oltre la durata di una qualunque amichevole vera E oltre il caso
+   peggiore del rigore a oltranza -- non piu' un numero locale. */
 
 function servi(prova) {
   return new Promise(ok => {
