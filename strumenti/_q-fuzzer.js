@@ -113,11 +113,23 @@
          riprodotta su pagina fresca con solo nastro+log-duelli, avrebbe
          giocato con una rosa diversa da quella vera -- lo stesso
          principio, applicato dove serve davvero.
-         Il confronto (impronte campionate ogni 20 tick, gli stessi due
-         semi scelti dentro la sequenza -- uno subito dopo la prima
-         partita, uno alla fine della batteria) verifica che la cura
-         basti: se un domani un'ALTRA fonte di stato persistente
+         Il confronto (impronte campionate ogni 20 tick) verifica che la
+         cura basti: se un domani un'ALTRA fonte di stato persistente
          emergesse, questa stessa prova la condannerebbe di nuovo.
+         RETTIFICA (revisione finale del ramo, MINORE 2, compito di
+         correzione): il primo giro di questo compito confrontava DUE
+         indici, k=1 e k=N_SEMI-1. Misurato dopo la revisione: k=1 (una
+         sola partita precedente) NON e' sensibile a questo residuo --
+         resta verde ANCHE con la cura rotta, perche' un solo incremento
+         di un attributo di un giocatore su cinque non sposta le
+         posizioni abbastanza da superare l'arrotondamento a 2 decimali
+         dell'impronta. Tenerlo nel cancello era un falso senso di
+         copertura: e' stato tolto. Resta il SOLO indice ALTO (N_SEMI-1,
+         quello che ha condannato il residuo la prima volta), sotto
+         SOGLIA_SEMI_CROSSCHECK (--semi < 8) il cancello si SALTA,
+         dichiarato, invece di passare verde senza aver esercitato
+         nulla -- vedi INDICE_CROSS_CHECK_ALTO/SOGLIA_SEMI_CROSSCHECK
+         piu' sotto.
 
    NESSUN HOOK NUOVO: tutto qui sotto e' gia' esposto "bare" via
    page.evaluate, esattamente come G in _q-invarianti.js --
@@ -213,14 +225,28 @@ const SOGLIA_ALLARME_RIGHE = 32000;
    abbastanza alta da garantire una risoluzione ben dentro il tetto
    TETTO_FOTOGRAMMI anche nel caso peggiore statisticamente plausibile. */
 const PROB_AZIONE_DUELLO = 0.35;
-/* DETERMINISMO CROSS-PARTITA (compito 2, punto d): due indici scelti
-   dentro la batteria, non a caso. k=1 e' il caso PIU' sensibile (la
-   diagnosi del residuo, CALCETTO-il-gioco.html:13220-13224, misurava gia'
-   una divergenza al SECONDO giro sulla stessa pagina, non al decimo); k
-   uguale all'ultimo seme della batteria e' il caso con PIU' stato
-   accumulato alle spalle (N_SEMI-1 partite prima). Filtrati e deduplicati
-   per restare dentro [0, N_SEMI). */
-const INDICI_CROSS_CHECK = [...new Set([1, N_SEMI - 1])].filter(k => k >= 0 && k < N_SEMI);
+/* DETERMINISMO CROSS-PARTITA (compito 2, punto d; MINORE 2 della
+   revisione finale, compito di correzione): un SOLO indice, quello con
+   PIU' stato accumulato alle spalle (N_SEMI-1 partite precedenti sulla
+   stessa pagina), non k=1. MISURATO (revisione del compito 2): k=1 (una
+   sola partita precedente) NON e' sensibile al residuo SAVE.rosa -- resta
+   verde ANCHE quando la cura e' rotta (un solo incremento casuale di UN
+   attributo di UN giocatore su cinque non sposta le posizioni abbastanza
+   da superare l'arrotondamento a 2 decimali dell'impronta entro la
+   finestra campionata). Tenerlo nel cancello sarebbe un falso senso di
+   copertura: e' proprio il motivo per cui e' stato tolto, non aggiunto a
+   fianco. L'indice ALTO (N_SEMI-1) e' quello che ha condannato il residuo
+   la prima volta (fotogramma 80, 19 partite precedenti): resta l'UNICO
+   indice del cancello.
+   SOGLIA_SEMI_CROSSCHECK: sotto una batteria troppo piccola la crescita
+   di SAVE.rosa non ha abbastanza partite per accumularsi in una
+   differenza di posizione misurabile (non bisecato al fotogramma esatto:
+   dichiarato conservativo, non una misura di soglia precisa). Sotto
+   soglia il cancello NON gira a vuoto: si SALTA, dichiarato (vedi piu'
+   sotto), invece di passare verde senza aver esercitato nulla. */
+const SOGLIA_SEMI_CROSSCHECK = 8;
+const INDICE_CROSS_CHECK_ALTO = N_SEMI - 1;
+const CROSSCHECK_ABILITATO = N_SEMI >= SOGLIA_SEMI_CROSSCHECK;
 
 function servi(prova) {
   return new Promise(ok => {
@@ -603,6 +629,18 @@ const SONDA_FUZZ = (cfg) => {
     return { seme, violatoQuiSeme, raggiuntoEnd, fotogrammi, righeReg, impronteSeed, logDuelli };
   }
 
+  /* MINORE 1 DELLA REVISIONE FINALE (voce #126, compito di correzione):
+     il campione per la RIPRODUZIONE non e' piu' "il primo seme pulito" --
+     con la config committata (semeGioco 20260920) quel primo seme (k=0)
+     non passa mai da un dischetto, quindi logDuelli resta vuoto e il ramo
+     di riapplicazione (il pezzo che la lettera di testa dichiara di
+     proteggere) non gira MAI in corsa verde. Si raccolgono TUTTI i semi
+     puliti della batteria in campioniPuliti e, dopo il giro, si preferisce
+     quello con logDuelli.length>0 (misurato: la macchina e' corretta, un
+     seme con duello riproduce identico -- vedi il verbale); se nessuno ne
+     porta, si ripiega sul primo pulito e lo si DICHIARA (r.campioneHaDuello
+     = false), non lo si nasconde. */
+  const campioniPuliti = [];
   for (let k = 0; k < cfg.semi; k++) {
     const semeCmdK = cfg.semeComandi0 + k;
     const esito = provaSeme(cfg.semeGioco0 + k, semeCmdK, true);
@@ -631,33 +669,51 @@ const SONDA_FUZZ = (cfg) => {
           };
         }
       }
-    }
-    if (!r.campione && !esito.violatoQuiSeme) {
-      r.campione = {
+    } else {
+      /* t.nastro() ORA, non dopo: Reg.righe appartiene a QUESTO seme solo
+         fino al prossimo t.registra() (il giro k+1). Si tiene un campione
+         per OGNI seme pulito (non solo il primo): serve a poter preferire
+         quello con duello alla fine del giro, senza dover rigiocare nulla. */
+      campioniPuliti.push({
         seme: esito.seme, fotogrammiEseguiti: esito.fotogrammi,
         nastro: t.nastro(), impronte: esito.impronteSeed, logDuelli: esito.logDuelli,
         raggiuntoEnd: esito.raggiuntoEnd,
-      };
+      });
     }
+  }
+  r.campioniPuliti = campioniPuliti.length;
+  r.campioniConDuello = campioniPuliti.filter(c => c.logDuelli.length > 0).length;
+  if (campioniPuliti.length) {
+    r.campione = campioniPuliti.find(c => c.logDuelli.length > 0) || campioniPuliti[0];
+    r.campioneHaDuello = r.campione.logDuelli.length > 0;
   }
   /* NESSUN SEME PRINCIPALE E' RIMASTO PULITO (tutti violati -- dal
      compito 2 nessuno si esclude piu' per duello): si cercano fino a
      cfg.extraCampione semi IN PIU', SENZA farli entrare nella statistica
      della batteria (contaStatistiche = false) -- dichiarato in
-     r.campioneExtra. */
+     r.campioneExtra. Anche qui si preferisce un seme CON duello: ci si
+     ferma appena se ne trova uno, altrimenti si esaurisce il budget e si
+     ripiega sul primo pulito trovato (dichiarato via campioneHaDuello). */
   if (!r.campione) {
+    const extraCandidati = [];
     for (let e = 0; e < cfg.extraCampione; e++) {
       const semeExtra = cfg.semeGioco0 + cfg.semi + e;
       const esito = provaSeme(semeExtra, cfg.semeComandi0 + cfg.semi + e, false);
       if (!esito.violatoQuiSeme) {
-        r.campione = {
+        extraCandidati.push({
           seme: esito.seme, fotogrammiEseguiti: esito.fotogrammi,
           nastro: t.nastro(), impronte: esito.impronteSeed, logDuelli: esito.logDuelli,
-          raggiuntoEnd: esito.raggiuntoEnd,
-        };
-        r.campioneExtra = e + 1;
-        break;
+          raggiuntoEnd: esito.raggiuntoEnd, extraIndice: e + 1,
+        });
+        if (esito.logDuelli.length > 0) break;   // trovato un seme con duello: basta
       }
+    }
+    if (extraCandidati.length) {
+      r.campione = extraCandidati.find(c => c.logDuelli.length > 0) || extraCandidati[0];
+      r.campioneExtra = r.campione.extraIndice;
+      r.campioneHaDuello = r.campione.logDuelli.length > 0;
+      r.campioniPuliti += extraCandidati.length;
+      r.campioniConDuello += extraCandidati.filter(c => c.logDuelli.length > 0).length;
     }
   }
   return r;
@@ -709,7 +765,8 @@ const primoScarto = (a, b) => {
       tetto: TETTO_FOTOGRAMMI, cadenzaMin: CADENZA_MIN, cadenzaMax: CADENZA_MAX,
       tettoVelPalla: TETTO_VEL_PALLA, tettoVzPalla: TETTO_VZ_PALLA, marginBordi: MARGINE_CONFINI,
       sogliaAllarmeRighe: SOGLIA_ALLARME_RIGHE, extraCampione: EXTRA_CAMPIONE,
-      probAzioneDuello: PROB_AZIONE_DUELLO, indiciCrossCheck: INDICI_CROSS_CHECK,
+      probAzioneDuello: PROB_AZIONE_DUELLO,
+      indiciCrossCheck: CROSSCHECK_ABILITATO ? [INDICE_CROSS_CHECK_ALTO] : [],
     };
     /* STESSA COMPOSIZIONE DI _q-invarianti.js: le due funzioni riusate,
        come sorgente, dentro una IIFE (page.evaluate(stringa) vuole
@@ -859,7 +916,19 @@ const primoScarto = (a, b) => {
     } else {
       if (r.campioneExtra) console.log('  (nessuno dei ' + N_SEMI + ' semi principali era pulito: il campione arriva dal ' + r.campioneExtra + 'o seme extra, dichiarato)');
       const camp = r.campione;
-      console.log('  campione: seme ' + camp.seme + ', ' + camp.fotogrammiEseguiti + ' fotogrammi, ' + camp.logDuelli.length + ' azioni di duello da riapplicare');
+      console.log('  semi puliti nel lotto: ' + r.campioniPuliti + ' (con duello: ' + r.campioniConDuello + ')');
+      /* MINORE 1 DELLA REVISIONE FINALE: si dichiara ESPLICITAMENTE se il
+         campione scelto esercita il ramo replay-con-duello-non-vuoto, o
+         se questa corsa non aveva materiale per farlo -- non si lascia
+         che un log vuoto passi per "provato" in silenzio. */
+      if (r.campioneHaDuello) {
+        console.log('  campione: seme ' + camp.seme + ', ' + camp.fotogrammiEseguiti + ' fotogrammi, ' +
+          camp.logDuelli.length + ' azioni di duello da riapplicare (scelto apposta: esercita il replay-con-duello)');
+      } else {
+        console.log('  campione: seme ' + camp.seme + ', ' + camp.fotogrammiEseguiti + ' fotogrammi, 0 azioni di duello');
+        console.log('  ATTENZIONE: nessun seme con duello in questa batteria (' + r.campioniPuliti +
+          ' puliti, 0 con duello): il replay-con-duello (log-duelli non vuoto) NON e\' esercitato in questa corsa -- ripiego dichiarato sul primo seme pulito');
+      }
       const ctx2 = await browser.newContext({ viewport: { width: 915, height: 412 }, isMobile: true, hasTouch: true, locale: 'it-IT' });
       const pag2 = await ctx2.newPage();
       await pag2.addInitScript(semeFisso, camp.seme);
@@ -907,43 +976,56 @@ const primoScarto = (a, b) => {
       if (ecc2.length) console.log('  (eccezioni sulla pagina di replay: ' + ecc2.slice(0, 2).join(' | ') + ')');
     }
 
-    /* ---- DETERMINISMO CROSS-PARTITA (compito 2, punto d) ---- */
-    console.log('\n-- DETERMINISMO CROSS-PARTITA (N semi in sequenza == N semi isolati) --');
-    for (const kTarget of INDICI_CROSS_CHECK) {
+    /* ---- DETERMINISMO CROSS-PARTITA (compito 2, punto d; MINORE 2 della
+       revisione finale, compito di correzione) ---- */
+    console.log('\n-- DETERMINISMO CROSS-PARTITA (ultimo seme in sequenza == isolato su pagina fresca) --');
+    if (!CROSSCHECK_ABILITATO) {
+      /* SALTATO, DICHIARATO -- non verde a vuoto (MINORE 2): con una
+         batteria piccola l'unico indice sensibile (N_SEMI-1) avrebbe
+         troppo poco stato accumulato alle spalle per far emergere il
+         residuo SAVE.rosa in posizione; un "verde" qui non proverebbe
+         nulla. Non conta in esiti/cancello: e' un'informazione, non una
+         prova mancata. */
+      console.log('  SALTATO: batteria troppo piccola (--semi ' + N_SEMI + ' < ' + SOGLIA_SEMI_CROSSCHECK +
+        ') -- il residuo SAVE.rosa si accumula di una crescita a partita e con poche partite precedenti' +
+        ' potrebbe non essere ancora visibile in posizione entro la finestra campionata; il cancello non passa' +
+        ' verde a vuoto, si dichiara non esercitato questa corsa.');
+    } else {
+      const kTarget = INDICE_CROSS_CHECK_ALTO;
       const impSeq = r.impronteCrossCheck[kTarget];
       if (!impSeq) {
         di(false, 'determinismo cross-partita, seme indice ' + kTarget, 'impronta della corsa in sequenza non catturata (bug del banco stesso)');
-        continue;
+      } else {
+        const semeGiocoIso = SEME_GIOCO + kTarget, semeComandiIso = SEME_COMANDI + kTarget;
+        const ctxIso = await browser.newContext({ viewport: { width: 915, height: 412 }, isMobile: true, hasTouch: true, locale: 'it-IT' });
+        const pagIso = await ctxIso.newPage();
+        await pagIso.addInitScript(semeFisso, semeGiocoIso);
+        const eccIso = []; pagIso.on('pageerror', e => eccIso.push(e.message));
+        await pagIso.goto(`http://127.0.0.1:${srv.porta}/CALCETTO-il-gioco.html`, { waitUntil: 'load' });
+        await pagIso.waitForFunction('window.__test !== undefined', null, { timeout: 20000 });
+        await pagIso.evaluate(() => {
+          const t = window.__test;
+          t.dismissSplash && t.dismissSplash();
+          if (t.save) t.save.tutorialDone = 1;
+        });
+        const cfgIso = Object.assign({}, cfg, {
+          semi: 1, semeGioco0: semeGiocoIso, semeComandi0: semeComandiIso,
+          extraCampione: 0, indiciCrossCheck: [0],
+        });
+        const rIso = await pagIso.evaluate(`(function(){
+          ${verificaCronometriFratelli.toString()}
+          ${verificaTickInvarianti.toString()}
+          return (${SONDA_FUZZ})(${JSON.stringify(cfgIso)});
+        })()`);
+        const impIso = rIso.impronteCrossCheck[0];
+        const kScartoIso = impIso ? primoScarto(impSeq, impIso) : 0;
+        di(!!impIso && kScartoIso < 0,
+          'seme indice ' + kTarget + ' (semeGioco=' + semeGiocoIso + '): in sequenza (dopo ' + kTarget + ' partite precedenti sulla stessa pagina) == isolato su pagina fresca',
+          (!impIso) ? 'la corsa isolata non ha prodotto un\'impronta (bug del banco stesso)'
+            : (kScartoIso < 0 ? impSeq.length + ' campioni identici' : 'divergono al campione ' + kScartoIso + ' (fotogramma ' + (kScartoIso * 20) + ') -- residuo cross-partita VERO'));
+        await ctxIso.close();
+        if (eccIso.length) console.log('  (eccezioni sulla pagina isolata: ' + eccIso.slice(0, 2).join(' | ') + ')');
       }
-      const semeGiocoIso = SEME_GIOCO + kTarget, semeComandiIso = SEME_COMANDI + kTarget;
-      const ctxIso = await browser.newContext({ viewport: { width: 915, height: 412 }, isMobile: true, hasTouch: true, locale: 'it-IT' });
-      const pagIso = await ctxIso.newPage();
-      await pagIso.addInitScript(semeFisso, semeGiocoIso);
-      const eccIso = []; pagIso.on('pageerror', e => eccIso.push(e.message));
-      await pagIso.goto(`http://127.0.0.1:${srv.porta}/CALCETTO-il-gioco.html`, { waitUntil: 'load' });
-      await pagIso.waitForFunction('window.__test !== undefined', null, { timeout: 20000 });
-      await pagIso.evaluate(() => {
-        const t = window.__test;
-        t.dismissSplash && t.dismissSplash();
-        if (t.save) t.save.tutorialDone = 1;
-      });
-      const cfgIso = Object.assign({}, cfg, {
-        semi: 1, semeGioco0: semeGiocoIso, semeComandi0: semeComandiIso,
-        extraCampione: 0, indiciCrossCheck: [0],
-      });
-      const rIso = await pagIso.evaluate(`(function(){
-        ${verificaCronometriFratelli.toString()}
-        ${verificaTickInvarianti.toString()}
-        return (${SONDA_FUZZ})(${JSON.stringify(cfgIso)});
-      })()`);
-      const impIso = rIso.impronteCrossCheck[0];
-      const kScartoIso = impIso ? primoScarto(impSeq, impIso) : 0;
-      di(!!impIso && kScartoIso < 0,
-        'seme indice ' + kTarget + ' (semeGioco=' + semeGiocoIso + '): in sequenza (dopo ' + kTarget + ' partite precedenti sulla stessa pagina) == isolato su pagina fresca',
-        (!impIso) ? 'la corsa isolata non ha prodotto un\'impronta (bug del banco stesso)'
-          : (kScartoIso < 0 ? impSeq.length + ' campioni identici' : 'divergono al campione ' + kScartoIso + ' (fotogramma ' + (kScartoIso * 20) + ') -- residuo cross-partita VERO'));
-      await ctxIso.close();
-      if (eccIso.length) console.log('  (eccezioni sulla pagina isolata: ' + eccIso.slice(0, 2).join(' | ') + ')');
     }
 
     if (ecc.length) di(false, 'BANCO -- nessuna eccezione di pagina', 'eccezione: ' + ecc[0]);
