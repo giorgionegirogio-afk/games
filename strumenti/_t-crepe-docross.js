@@ -29,14 +29,21 @@
    sempre): solo la velocita' ORIZZONTALE si clampa. Effetto fisico: a
    parita' di tempo in aria, un cross oltre il tetto non copre piu' tutta
    la distanza fino al secondo palo -- ricade prima, invece di volare
-   come un proiettile. IL CROSS NORMALE (dist tale che dist/T<=TIRO_TETTO,
-   cioe' per T=0.75 dist<=645, la stragrande maggioranza dei cross
-   tattici entro la meta' campo offensiva) NON cambia: Math.min(TIRO_TETTO,
-   x) vale x quando x<=TIRO_TETTO, quindi kickBall riceve lo STESSO numero
-   di prima, bit per bit -- verificato in strumenti/_q-invarianti.js
-   (prova 9, la velocita' massima osservata durante il gioco normale
-   resta 902 u/s, invariata) e a mano con una traiettoria tipica (vedi il
-   rapporto del compito).
+   come un proiettile. IL CROSS TIPICO (dist tale che dist/T<=TIRO_TETTO=860,
+   cioe' per T=0.75 dist<=645, mediana ~583 u/s nei semi di calibrazione, la
+   stragrande maggioranza dei cross tattici entro la meta' campo offensiva)
+   NON cambia: Math.min(TIRO_TETTO, x) vale x quando x<=TIRO_TETTO, quindi
+   kickBall riceve lo STESSO numero di prima, bit per bit -- e' l'identita'
+   di Math.min, non una misura a parte. RETTIFICA (correzione di revisione,
+   voce #128): questa NON e' un'invarianza generale sulla velocita' massima
+   del gioco normale. La prova 9 calibra un tetto DIVERSO (TETTO_VEL_PALLA=
+   1353, sulla palla libera owner<0) e osserva un massimo di 902 u/s --
+   sopra TIRO_TETTO=860. Un cross reale in gioco a 902 u/s NON resta
+   invariato: viene clampato a 860 da questa cura, ed e' parte della
+   divergenza due-versioni GIA' dichiarata (doCross 16/60 su
+   `_c3-sorteggi.js`, MANUALE.md voce #128), non un'invarianza. Verificato
+   solo a mano con una traiettoria tipica sotto il tetto (vedi il rapporto
+   del compito).
 
    ZERO dado() NUOVO: nessun sorteggio, nessun ramo nuovo -- una sola
    funzione (Math.min) applicata a un valore gia' calcolato.
@@ -65,7 +72,7 @@ const ANCORE = [
   metti:
 `  /* IL CLAMP (voce #128, compito 1, P0-1): dist/T non aveva tetto -- e'
      l'UNICO tiro del gioco che non passa da tiroVelocita()/TIRO_TETTO.
-     Math.min(TIRO_TETTO, dist/T) e' lo STESSO pavimento che tiroVelocita
+     Math.min(TIRO_TETTO, dist/T) e' lo STESSO tetto che tiroVelocita
      applica a ogni altro tiro (~:16186-16187): sotto il tetto il numero
      non cambia (il cross normale resta identico), sopra il tetto un
      cross lungo ricade prima invece di volare come un proiettile -- T

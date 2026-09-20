@@ -39,6 +39,17 @@ const arg = (n, d) => {
   return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : d;
 };
 
+/* IL LIMITE DEL BANCO (voce #98, causa isolata alla voce #128, 20
+   settembre 2026): il default resta TAGLIA 5, dove il determinismo
+   cross-pagina e' pieno (10/10). A taglia 7 e 11 questo stesso banco da'
+   8/10 (prove A/B): rebuildCrowd/setTaglia consuma il PRNG di gioco in
+   proporzione al perimetro del campo sulla PRIMA partita giocata a
+   quella taglia (CALCETTO-il-gioco.html:29922-29949), uno stato
+   PRE-esistente su main, non una regressione. NON si aggiungono qui
+   casi a taglia 7/11 nella batteria di serie: renderebbero questo
+   cancello ROSSO per un difetto gia' a registro (voce #98, seguito
+   #129 per la cura), rompendo la corsa automatica invece di misurarla.
+   Chi vuole vedere l'8/10 lo chiede a mano: --taglia 7 o --taglia 11. */
 const TAGLIA = [5, 7, 11].includes(+arg('taglia', 5)) ? +arg('taglia', 5) : 5;
 const PARTITE = parseInt(arg('partite', '3'), 10);
 const SEME = parseInt(arg('seme', '20260803'), 10) >>> 0;

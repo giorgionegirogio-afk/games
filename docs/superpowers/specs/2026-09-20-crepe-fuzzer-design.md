@@ -19,7 +19,11 @@ bloccato in [0.66, 0.75] ma `dist` NON limitato — l'UNICO tiro del gioco che n
 passa da `tiroVelocita()`/`Math.min(TIRO_TETTO, ...)`. Un cross lungo diventa un
 proiettile: misurato fino a 1446,9 u/s contro il tetto ~902 (la prova 9 di
 `_q-invarianti`, `TETTO_VEL_PALLA`). Riprodotto bit-per-bit (fuori/, seme 20260920,
-frame 856).
+frame 856). NOTA (correzione di revisione, voce #128): questo 1446,9 u/s (scoperta
+del fuzzer in-play, seme 20260920 frame 856) e il 1433,8 u/s misurato dalla prova
+10/DOCROSS con lo scenario diretto (`_q-invarianti.js`, crossatore in fondo al
+proprio campo) sono DUE CROSS DIVERSI, entrambi legittimi sopra il tetto — non una
+discrepanza fra due misure della stessa cosa.
 **Cura.** Clampare la velocita' del cross al tetto coerente col resto (il cross
 lungo ricade prima invece di volare come proiettile — comportamento piu' corretto e
 coerente con `TIRO_TETTO` gli altri tiri). L'implementatore verifica il design

@@ -15937,7 +15937,7 @@ function doCross(p,nx,ny,mira,dest){
   const T=clamp(dist/430, L14_T0, L14_T1);
   /* IL CLAMP (voce #128, compito 1, P0-1): dist/T non aveva tetto -- e'
      l'UNICO tiro del gioco che non passa da tiroVelocita()/TIRO_TETTO.
-     Math.min(TIRO_TETTO, dist/T) e' lo STESSO pavimento che tiroVelocita
+     Math.min(TIRO_TETTO, dist/T) e' lo STESSO tetto che tiroVelocita
      applica a ogni altro tiro (~:16186-16187): sotto il tetto il numero
      non cambia (il cross normale resta identico), sopra il tetto un
      cross lungo ricade prima invece di volare come un proiettile -- T

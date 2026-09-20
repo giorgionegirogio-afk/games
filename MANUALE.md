@@ -537,27 +537,62 @@ Qui il registro completo, a edizioni.
   VERSIONI diverse del gioco, non due corse della stessa versione).
 
   **IL RESIDUO DI DETERMINISMO CROSS-PARTITA, DIAGNOSTICATO come
-  artefatto — NON una P0 del gioco.** Durante la diagnosi di P0-2 era
-  emerso un dubbio: la stessa coppia di semi dava partite diverse a
-  seconda di quante partite la precedevano sulla stessa pagina. Isolato:
-  la simulazione resta deterministica rispetto a {seme, comandi} — una
-  pagina fresca e una pagina dopo N partite danno stati BYTE-IDENTICI a
-  parità di `startMatch` (`G.stats`/`G.players` sono già azzerati lì, e
-  restano gli unici stati che il sospetto poteva chiamare in causa). Il
-  canale che sopravvive fra partite sulla stessa pagina è quello dei
-  TOCCHI (input-a-dita): il gioco stesso lo documenta accanto a `Reg`
-  (~:13183 — la levetta misura la velocità del dito con
-  `performance.now()`), e uno stato di tocco lasciato a metà (la levetta
-  attiva, un verbo a tenuta non rilasciato) non viene azzerato da
-  `Reg.azzeraComandi()`/`Touch5.azzera()` a meno che sia il CHIAMANTE a
-  farlo prima della partita successiva. Non è un bug del motore: il
-  **SOAK (CPU-contro-CPU, #127) non ne è affetto** (zero dita, zero
-  levetta), è il **FUZZER (#126)** — che gioca «come un dito vero» — a
-  dover azzerare esplicitamente i tocchi (`Touch5`/`Reg`, o una pagina
-  fresca) fra una partita e la successiva prima di fidarsi di un
-  confronto seme-a-seme. **Nota per il #126, non una cura di qui**: si
-  dichiara e si passa il testimone, come previsto dal piano — nessuna
-  riga del motore è stata toccata per questo residuo.
+  artefatto A TAGLIA 5 — NON una P0 del gioco A QUELLA TAGLIA**
+  (correzione di revisione: la diagnosi originaria generalizzava oltre
+  quanto misurato — vedi il secondo canale, separato e vero, subito
+  sotto). Durante la diagnosi di P0-2 era emerso un dubbio: la stessa
+  coppia di semi dava partite diverse a seconda di quante partite la
+  precedevano sulla stessa pagina. Isolato **A TAGLIA 5**, la sola su cui
+  questo compito ha misurato: la simulazione resta deterministica
+  rispetto a {seme, comandi} — una pagina fresca e una pagina dopo N
+  partite danno stati BYTE-IDENTICI a parità di `startMatch`
+  (`G.stats`/`G.players` sono già azzerati lì, e restano gli unici stati
+  cross-partita che il sospetto poteva chiamare in causa, **a questa
+  taglia**). Il canale che sopravvive fra partite sulla stessa pagina, a
+  taglia 5, è quello dei TOCCHI (input-a-dita): il gioco stesso lo
+  documenta accanto a `Reg` (~:13183 — la levetta misura la velocità del
+  dito con `performance.now()`), e uno stato di tocco lasciato a metà
+  (la levetta attiva, un verbo a tenuta non rilasciato) non viene
+  azzerato da `Reg.azzeraComandi()`/`Touch5.azzera()` a meno che sia il
+  CHIAMANTE a farlo prima della partita successiva. **A taglia 5**, non
+  è un bug del motore: il SOAK (CPU-contro-CPU, #127) non ne è affetto
+  (zero dita, zero levetta), è il FUZZER (#126) — che gioca «come un
+  dito vero» — a dover azzerare esplicitamente i tocchi (`Touch5`/`Reg`,
+  o una pagina fresca) fra una partita e la successiva prima di fidarsi
+  di un confronto seme-a-seme, **a quella taglia**.
+
+  **UN SECONDO CANALE, SEPARATO E VERO, A TAGLIA 7/11 — LA VOCE #98, CON
+  LA CAUSA ORA ISOLATA.** «Zero dita» non è una garanzia di determinismo
+  cross-partita in generale: a taglia 7 e 11 esiste una divergenza
+  CPU-contro-CPU VERA fra due pagine fresche con lo stesso seme, zero
+  dita e zero levetta — già a registro come voce #98, `_q-determinismo`
+  **8/10** a taglia 7 e a taglia 11 (prove A e B, contro **10/10** a
+  taglia 5 — rimisurato in questo compito). La causa, cercata da tempo
+  in quella voce, è ORA ISOLATA: `startMatch` → `setTaglia` →
+  `rebuildCrowd` (`CALCETTO-il-gioco.html:29922-29949`) consuma
+  `dado()`/`SEME` in un numero PROPORZIONALE al perimetro del campo —
+  misurato **~114.026 estrazioni in più** alla prima partita giocata a
+  taglia 11 (`SEME.n` **114.093** contro **67** su una pagina che gioca
+  subito a taglia 5). `setTaglia` (:29977) ritorna subito se la taglia
+  richiesta è già quella corrente (`if(n===TAGLIA) return TAGLIA`), quindi
+  SOLO la prima partita giocata a una data taglia paga quelle estrazioni:
+  lo stream del PRNG di gioco SLITTA, e una pagina fresca produce una
+  partita CPU-contro-CPU DIVERSA da una pagina che ha già giocato N
+  partite alla stessa taglia, con lo stesso seme — un canale
+  cross-partita che non passa dai tocchi, e che colpisce anche il SOAK
+  (#127) se gira a 7/11. **PRE-ESISTENTE su `main` (verificato su
+  `bc2d802`, il merge-base di questo cantiere): non è una regressione
+  delle due cure P0-1/P0-2 né del passaggio MOTORE_V 1→2.** Non si cura
+  qui (fuori dal perimetro dei tre compiti): si dichiara la causa e si
+  apre il **seguito #129** (sotto l'ombrello della voce #98) per la cura
+  ingegneristica — un seme proprio per la folla (sul modello di
+  `usuraSeme` della grana pista), oppure sospendere `SEME` attorno a
+  `rebuildCrowd`, oppure chiamare `setTaglia` PRIMA della semina.
+  **Consegna a #126 (fuzzer) e #127 (soak)**: girare a TAGLIA 5 (dove il
+  determinismo cross-partita è pieno, 10/10) finché la voce #98 non è
+  curata, oppure dichiarare esplicitamente la #98 se si gira a 7/11. **Nota
+  per il #126/#127, non una cura di qui**: nessuna riga del motore è
+  stata toccata per questo residuo.
 
   **Batteria intera rilanciata** (le cure toccano la simulazione):
   `_q-invarianti.js` **11/11** (le nove ereditate da #125 + DOCROSS +
@@ -2328,6 +2363,19 @@ Qui il registro completo, a edizioni.
      stessa (il perimetro Touch5 è escluso per misura diretta, non per
      congettura).
 
+     **AGGIORNAMENTO (voce #128, correzione di revisione, 20 settembre
+     2026): la CAUSA è ORA ISOLATA.** `startMatch` → `setTaglia` →
+     `rebuildCrowd` (`CALCETTO-il-gioco.html:29922-29949`) consuma
+     `dado()`/`SEME` in un numero proporzionale al perimetro del campo
+     (misurato ~114.026 estrazioni in più alla prima partita a taglia 11,
+     pagata solo perché `setTaglia` (:29977) ritorna subito quando la
+     taglia richiesta è già quella corrente): lo stream del PRNG di
+     gioco slitta, e una pagina fresca diverge da una pagina che ha già
+     giocato N partite alla stessa taglia. Non è il tocco, non è un
+     difetto generico del motore: è QUESTA catena, ora isolata. Seguito
+     ingegneristico aperto: **#129** (verbale completo alla voce #128,
+     paragrafo del residuo di determinismo).
+
   **La nota onesta sull'occhio** (soglia 6 dello spec): la cura arriva
   fino al rig — la catena `kickB → posa` è stata verificata nel sorgente
   (gradi veri di gamba, nessuna quantizzazione a valle, LOD escluso) — ma
@@ -2445,7 +2493,12 @@ Qui il registro completo, a edizioni.
   **Scoperta fuori perimetro, voce #98**: `_q-determinismo --taglia 7`
   dà partite divergenti già al primo campione fra due corse sulla stessa
   pagina — PRE-esistente su `HEAD` prima di questo ramo (il banco di
-  batteria gira solo a taglia 5 e non l'aveva mai visto).
+  batteria gira solo a taglia 5 e non l'aveva mai visto). **AGGIORNAMENTO
+  (voce #128, 20 settembre 2026): la causa è ora isolata** —
+  `rebuildCrowd`/`setTaglia` consuma il PRNG di gioco in proporzione alla
+  taglia sulla prima partita giocata a quella taglia (dettaglio e numeri
+  alla voce #128, paragrafo del residuo di determinismo); seguito
+  ingegneristico **#129**.
 
   **Sorteggi**: `_q-determinismo` **10/10**. Il confronto due-versioni
   COMPLESSIVO del ramo (base `791877e`, prima del piano, contro
