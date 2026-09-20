@@ -499,7 +499,10 @@ Qui il registro completo, a edizioni.
      `pulse`/`crowdSndT`/`swLock`/`swTimer`) al riposo SUBITO dopo
      `startMatch` — LA PIÙ A RISCHIO: cinque regressioni pagate a mano
      (#86/#87/#107/#117/#122) — bugiardo: `_crit-inv-cronometri.js`, che
-     toglie solo l'azzeramento di `G.swLock`.
+     toglie l'azzeramento di `G.pulse` (NON `G.swLock`: vedi caveat (a) —
+     `swLock`/`swTimer` non sono esercitati in CPU-CPU, quindi un bugiardo
+     su di loro resterebbe verde; `G.pulse` cresce a ogni fotogramma e
+     condanna in modo affidabile).
   7. **clamp fiato/cond**: `p.fiato`/`p.cond` in [0,100] per ogni
      giocatore (`p.umore`/`p.nervi`/`G.spinta` restano coperti da
      `_q-umore.js`, non duplicati qui) — bugiardo: `fiato=150`.

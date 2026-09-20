@@ -421,7 +421,7 @@ const SONDA = (cfg) => {
         if (!Number.isFinite(b[kk])) { r.nan.push({ seme, fotogramma, fase, chi: 'ball.' + kk, val: b[kk] }); violato = true; }
       }
       /* PROVA 8 -- >=2 UOMINI DI MOVIMENTO IN CAMPO, per squadra. Stessa
-         definizione del gioco (CALCETTO-il-gioco.html:18504-18509,
+         definizione del gioco (CALCETTO-il-gioco.html:18508-18509,
          diMovimentoInCampo): role!=='gk' && out<=0. Contata qui, non
          chiamando la funzione del gioco (non esposta via __test) — la
          doppia implementazione e' voluta: se la guardia del gioco regredisse,
