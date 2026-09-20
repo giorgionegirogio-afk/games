@@ -456,6 +456,167 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Il banco delle invarianti — L'ONDA C COMINCIA, #125 e #124 CHIUSI** (#125,
+  20 settembre 2026, due compiti dal merge-base `a7561d0`, primo anello
+  dell'onda C del mandato — `_analisi/MAPPA-MANDATO.md` righe 574-641,
+  753-760; spec `docs/superpowers/specs/2026-09-20-invarianti-design.md`,
+  piano `docs/superpowers/plans/2026-09-20-invarianti.md`).
+
+  **PERCHE' UN BANCO, NON CODICE NEL MOTORE.** Il mandato (§13, Appendice A)
+  chiede un property-based test (input casuali per migliaia di tick che non
+  violino mai le invarianti) e un soak (1000 partite/notte, zero
+  violazioni, durata mai oltre l'attesa +25%) — ma prima di tutto chiede DI
+  SAPERE cosa cercare: senza le invarianti, input casuali non dicono
+  niente. `strumenti/_q-invarianti.js` è quel prerequisito, ed è un BANCO,
+  non codice sempre-attivo: legge lo stato vivo del motore via
+  `window.__test` (lo stesso canale di `_diag-nan.js`/`_q-determinismo.js`/
+  `_q-umore.js`), non una guardia dentro `CALCETTO-il-gioco.html`. La mappa
+  citava «dentro il motore, sotto un flag di collaudo» come opzione NON
+  decisa (riga 621 del progetto): resta un seguito futuro se il fuzzer lo
+  chiederà davvero (per fermarsi al primo tick rotto), non una scelta presa
+  qui. Il gioco non paga nessun costo a runtime, e non si rischia di
+  introdurre un bug nel motore per costruire lo strumento che lo misura —
+  la ragione dichiarata dal piano.
+
+  **LE NOVE PROVE, CIASCUNA NATA ROSSA SU UN BUGIARDO** (metodo di casa: una
+  invariante che non sa condannare non misura). Partite CPU-CPU a seme
+  fisso (20260920), taglia 5 (#98: il determinismo è instabile a 7/11), 8
+  semi, **56.984 fotogrammi campionati** per corsa (verificato di nuovo
+  oggi, 9/9 verde):
+  1. **NaN/Infinity** su `ball.{x,y,z,vx,vy,vz}` e `p.{x,y,vx,vy,aiTX,aiTY}`
+     (assorbe `_diag-nan.js` come invariante permanente) — bugiardo:
+     `ball.x=NaN`.
+  2. **owner valido**: -1 oppure 0..N-1, e se >=0 il giocatore non è
+     `out>0` — bugiardo: owner=999 (fuori range).
+  3. **punteggio monotono** (`G.score` non decresce mai fra due campioni)
+     — bugiardo: un decremento dopo una salita lecita.
+  4. **timeLeft monotono**, mai <0 — bugiardo: +5 secondi di risalita.
+  5. **durata<=13200 fotogrammi/220s (INV-15)**, generalizza
+     `_q-cpu-ordine.js` a N semi (10 semi di serie per questa sola prova,
+     perché l'ordine sbagliato non blocca ogni seme) — bugiardo: l'ordine
+     `setCpuVsCpu` invertito, lo scenario-hang #119.
+  6. **cronometri-fratelli** (`recT`/`vantaggio`/`possOwner`/`possT`/
+     `pulse`/`crowdSndT`/`swLock`/`swTimer`) al riposo SUBITO dopo
+     `startMatch` — LA PIÙ A RISCHIO: cinque regressioni pagate a mano
+     (#86/#87/#107/#117/#122) — bugiardo: `_crit-inv-cronometri.js`, che
+     toglie solo l'azzeramento di `G.swLock`.
+  7. **clamp fiato/cond**: `p.fiato`/`p.cond` in [0,100] per ogni
+     giocatore (`p.umore`/`p.nervi`/`G.spinta` restano coperti da
+     `_q-umore.js`, non duplicati qui) — bugiardo: `fiato=150`.
+  8. **>=2 uomini di movimento in campo** per squadra (`role!=='gk'` e
+     `out<=0` — la stessa regola che `infliggiCartellino` già rispetta,
+     qui ricontrollata dall'esterno, sulla stessa definizione) — bugiardo:
+     `out>0` su 3 uomini di movimento della stessa squadra, scavalcando di
+     proposito la guardia del gioco.
+  9. **palla mai sotto il piano** (`z>=0` sempre) e **velocità entro un
+     tetto SOLO a palla libera** (`owner<0`) — bugiardo: `z=-10`, oppure
+     `vx=999999` a `owner=-1`.
+
+  **IL TETTO DELLA PROVA 9, DICHIARATO EMPIRICO, NON TEORICO.**
+  `TETTO_VEL_PALLA=1353` u/s e `TETTO_VZ_PALLA=402` u/s vengono da una
+  calibrazione su 30 semi/222.282 fotogrammi a palla libera (massimo
+  osservato 902/268 u/s), poi osservato ×1,5 come margine dichiarato — non
+  un limite teorico del motore. Un'ancora più difendibile sarebbe
+  `TIRO_TETTO` (860 u/s, il tetto che il gioco stesso dichiara in
+  `fireShotMirato`/`sparaTiro`) più lo spin sommato dopo il clamp: **a
+  registro come seguito**, non fatto qui — la calibrazione empirica già
+  condanna il proprio bugiardo e non falso-positiva sul gioco vero, ma
+  resta tarata sul comportamento di oggi, non su una costante del gioco.
+
+  **LA MAPPA INV-01..15** (mandato, Appendice A — un mandato generico da
+  simulatore 11-a-side; CALCETTO è futsal a taglia 5/7/11, molte INV non
+  hanno un analogo, dichiarato onestamente invece di forzare una copertura
+  che non c'è):
+  - **QUI**: INV-02 (parziale — posizione finita e velocità/piano, non
+    «una sola palla» né l'equivalenza in m/s del mandato), INV-15
+    (durata<=tetto).
+  - **QUI, ADATTATA**: INV-03 (la regola di casa è ">=2 uomini di
+    movimento", non "mai <7" — CALCETTO è 5/7/11, non 11 fisso; e
+    l'espulsione è temporanea in secondi, non permanente).
+  - **QUI (parziale)**: INV-05 (timeLeft monotono; recupero calcolato e
+    cambi-solo-a-fermo non modellati, N/A), INV-11 (clamp fiato/cond;
+    "non crescente durante i fermi oltre il recupero base" non verificato
+    esplicitamente, dichiarato SCOPERTO).
+  - **ALTROVE**: INV-01 (`_q-determinismo.js`), INV-08 parziale
+    (`_q-regole.js` per la sequenza cartellino; "i conteggi non
+    diminuiscono mai" è vero per costruzione — unico sito `p.gialli++` —
+    ma NESSUN banco lo asserisce oggi, SCOPERTO NON TESTATO), INV-10
+    parziale (`_q-umore.js`, range con segno diversi dal mandato,
+    dichiarati), INV-12 (il metodo due-versioni/disegno-puro dei cantieri
+    di resa).
+  - **RIMANDATA al fuzzer/soak**: INV-04 (confini di campo dei
+    giocatori), INV-06 (validità del gol, non solo il conteggio), INV-07
+    (ripresa di gioco dopo un fermo, palla nel punto giusto).
+  - **N/A**: INV-09 (fuorigioco — non esiste in futsal), INV-13/INV-14
+    (rete/submission — CALCETTO è locale, nessun multiplayer nel gioco).
+
+  **TRE CAVEAT, IN CHIARO — candidati per il fuzzer (onda C-2).**
+  (a) `G.swLock`/`G.swTimer` (dentro la prova 6) sono scritti SOLO da un
+  cambio di controllo umano: un banco CPU-CPU come questo non li esercita
+  mai attivamente, quindi la prova 6 resta DEBOLE proprio su quei due
+  campi — verifica "sono a riposo dopo startMatch", non "vengono azzerati
+  attivamente da qualcosa che li aveva sporcati" — finché un fuzzer con
+  input umano-simulato non li mette sotto pressione vera.
+  (b) Il tetto della prova 9 (sopra) è tarato empiricamente su CPU-CPU di
+  serie, non ancorato a una costante del gioco: `TIRO_TETTO+spin` sarebbe
+  più difendibile, a registro come seguito.
+  (c) INV-08 ("i conteggi cartellino non diminuiscono mai") e INV-11
+  ("fatica non crescente durante i fermi oltre il recupero base") sono
+  scoperte-ma-non-testate: vere per come il codice è scritto oggi, ma
+  nessuna prova lo asserisce esplicitamente — a registro, non testate qui.
+
+  **#124 CHIUSO — il cambio di base di misura, dichiarato.**
+  `strumenti/_c3-sorteggi.js` (:46-47) faceva l'errore #108
+  (`setCpuVsCpu(true)` PRIMA di `startMatch`, che lo annulla
+  incondizionatamente): la squadra 0 restava "umana immobile" invece di
+  una CPU vera. Cura: scambio di due righe (`startMatch` PRIMA,
+  `setCpuVsCpu(true)` DOPO), sul modello già applicato a
+  `_q-battute.js`/`_q-regole.js`/`_q-umore.js` dal #121. **AVVISO
+  dichiarato**: correggere l'ordine cambia la BASE DI MISURA di questo
+  strumento, non il gioco — i totali dei sorteggi di ogni confronto
+  futuro non sono più comparabili con quelli di prima della cura. Misurato
+  su 15 partite identiche: ordine vecchio **300.424** sorteggi contro
+  ordine nuovo **322.283** (la squadra 0 ora gioca davvero e tira i suoi
+  dadi). I confronti storici RESTANO validi (erano simmetrici, entrambi i
+  lati sbagliati allo stesso modo su ogni confronto passato), ma i NUMERI
+  di oggi in poi non si confrontano con quelli di ieri senza dichiararlo.
+  `_q-cpu-ordine.js` non intercetta questo difetto (verifica il gioco, non
+  il codice degli strumenti): la correzione è stata a mano.
+
+  **LA NON-SCOPERTA SULLA PALLA.** Nessuna violazione P0: `z>=0` è vero
+  per costruzione (la fisica di volo, `updateBall`, integra `b.z` solo
+  quando `b.z>0 || b.vz>0` e lo schiaccia a 0 non appena scenderebbe
+  sotto), e la velocità resta sempre entro il tetto calibrato su 222.282
+  fotogrammi di calibrazione, zero eccezioni. Un ramo che sembrava violare
+  il tetto a un esame superficiale — il "furto col corpo"
+  (`b.vx=(tx-b.x)*14`, fino a 5974 u/s osservati a schermo fermo) — è una
+  CORREZIONE PER-FRAME verso il piede del portatore quando la palla è
+  POSSEDUTA, non cinematica di volo: escluso di proposito dalla prova 9
+  (che guarda solo `owner<0`), altrimenti il banco avrebbe prodotto un
+  falso allarme sul suo stesso meccanismo di dribbling — la lezione
+  #112/#114.
+
+  **Batteria**: `_q-invarianti` (**9/9 verde**, OK in 12 s) registrato in
+  `strumenti/tutti.js` (`conta:true`, modello `regole`/`umore`/
+  `cpu-ordine`/`accessibile`, corre in compagnia). Batteria intera
+  rilanciata (`strumenti/tutti.js`, corsa di default): **34 cancelli
+  eseguiti in 588 s di orologio (2,3 volte più veloce che in fila), 33
+  cancelli che contano tutti VERDI**; `audio.js` (lento, escluso dalla
+  corsa di default) verificato a parte **28/28 VERDE** (stato dichiarato
+  dal #122, non toccato qui); il solo informativo `istantanea.js` (non
+  conta) **NO 46/56**, PEGGIORATO rispetto al registro del 20 agosto
+  **per costruzione del confronto** (il riferimento era una prova NULLA,
+  «nessuna quota da confrontare» — non un peggioramento di questo
+  cantiere, lo stesso schema già dichiarato dalle voci #113/#114/#122) —
+  **«VERDE CON RISERVA»** complessivo. `git diff CALCETTO-il-gioco.html`
+  vuoto per l'intero cantiere: il gioco non è mai stato toccato (solo
+  `strumenti/_q-invarianti.js`, `strumenti/_c3-sorteggi.js`,
+  `strumenti/tutti.js`, questo verbale, il punto del lavoro). **Restano**:
+  il fuzzer (onda C-2) e il soak (onda C-3), che useranno queste nove
+  invarianti come rete; i tre caveat sopra come candidati specifici per il
+  fuzzer; **#123** (fotosensibile per-regione) resta fuori onda, a
+  registro.
+
 - **La mira guidata a due pesi — #113 CHIUSO** (#113, 19 settembre 2026, tre
   compiti dal merge-base `d3169d3`, seguito §9.2 del mandato, chiude assieme
   al #114 la coppia di accessibilità scelta dal committente dopo quella

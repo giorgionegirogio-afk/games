@@ -625,6 +625,37 @@ const CANCELLI = [
      kickBall/doCross/segnaTocco, le stesse funzioni del motore vero):
      corre in compagnia. */
   { nome: 'mira',        cmd: ['strumenti/_q-mira.js'],                                 conta: true,  lento: false },
+  /* invarianti: IL PRIMO ANELLO DELL'ONDA C (robustezza) DEL MANDATO (voce
+     #125, 20 settembre 2026, due compiti dal merge-base a7561d0). Il
+     mandato (Appendice A, INV-01..15) chiede proprieta' che devono valere
+     SEMPRE, a ogni fotogramma di qualunque partita: nove prove su partite
+     CPU-CPU guidate a seme fisso -- NaN/Infinity su ball/players, owner
+     valido, punteggio monotono, timeLeft monotono, durata<=13200
+     fotogrammi (INV-15), i cronometri-fratelli (recT/vantaggio/possOwner/
+     possT/pulse/crowdSndT/swLock/swTimer) al riposo dopo startMatch, il
+     clamp fiato/cond in [0,100], >=2 uomini di movimento in campo per
+     squadra, e la palla mai sotto il piano/velocita' entro un tetto
+     calibrato (1353 u/s orizzontale, 402 u/s verticale, osservato x1,5 su
+     30 semi di calibrazione, a palla libera). Ogni prova nasce rossa su un
+     bugiardo dedicato (--bugiardo nan|owner|punteggio|timeleft|durata|
+     fiato|movimento|ballz|ballvel), verificato nei compiti 1-2.
+
+     PERCHE' STA IN BATTERIA (conta:TRUE, sul modello di regole/umore/
+     cpu-ordine/accessibile): e' il PREREQUISITO del fuzzer e del soak
+     (onda C, anelli successivi) -- senza sapere COSA deve valere sempre,
+     input casuali non dicono niente. E' un BANCO, non codice in
+     produzione: legge G vivo via __test (nessun hook nuovo, nessun costo
+     a runtime, nessun rischio nel motore), come _diag-nan.js/
+     _q-determinismo.js/_q-umore.js prima di lui.
+     Nato con le sei prove solide al compito 1 (NaN, owner, punteggio,
+     timeLeft, durata, cronometri-fratelli), esteso a nove al compito 2
+     (clamp fiato/cond, movimento, palla) -- verde su tutte e nove dal
+     primo giorno, ciascuna gia' dimostrata capace di condannare il
+     proprio bugiardo.
+     Deterministico al seme del cantiere (20260920), taglia 5 (#98: il
+     determinismo e' instabile a 7/11), 8 semi/56984 fotogrammi campionati
+     per corsa: corre in compagnia (~5 s). */
+  { nome: 'invarianti',  cmd: ['strumenti/_q-invarianti.js'],                          conta: true,  lento: false },
   /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
