@@ -1,105 +1,158 @@
 /* =====================================================================
-   _q-fuzzer.js -- IL FUZZER DI COMANDI (voce #126, onda C -- 2, compito 1).
+   _q-fuzzer.js -- IL FUZZER DI COMANDI (voce #126, onda C -- 2).
 
    IL PERCHE'. Il mandato (Appendice A, INV-01..15, S13.1.2) chiede
    "property-based tests: random inputs for thousands of ticks must never
-   violate the invariants". Le nove invarianti esistono gia' in
-   strumenti/_q-invarianti.js (voce #125) ma le esercitano SOLO partite
-   CPU contro CPU: nessun input umano-vero, quindi G.swLock/G.swTimer
-   (scritti solo dal cambio-giocatore/strappo UMANO) restano vacui, e
-   nessuna posizione mai spinta a fondo scala verso i confini del campo.
-   Questo banco costruisce il generatore di input CASUALE (deterministico)
-   che manca: guida la squadra 0 come se un pollice vero premesse i
-   dischi e trascinasse lo stick, con un PRNG proprio, e verifica le
-   nove invarianti RIUSATE (require, non riscritte) dopo ogni fotogramma.
+   violate the invariants". Le dodici invarianti esistono gia' in
+   strumenti/_q-invarianti.js (voce #125/#128) ma le esercitano SOLO
+   partite CPU contro CPU: nessun input umano-vero, quindi G.swLock/
+   G.swTimer (scritti solo dal cambio-giocatore/strappo UMANO) restano
+   vacui, e nessuna posizione mai spinta a fondo scala verso i confini
+   del campo. Questo banco costruisce il generatore di input CASUALE
+   (deterministico) che manca: guida la squadra 0 come se un pollice vero
+   premesse i dischi e trascinasse lo stick, con un PRNG proprio, e
+   verifica le dodici invarianti RIUSATE (require, non riscritte) dopo
+   ogni fotogramma.
 
-   IL DUELLO NON E' GESTITO QUI (compito 2 dello stesso cantiere): quando
-   una partita arriva a G.scene==='freekick', __test.simulate chiama
-   Duel.update() invece di step() (CALCETTO-il-gioco.html:44278) e NIENTE
-   del duello passa dal registro Reg -- risolverlo richiede
-   Duel.pickZone/pickKeeper/stopPower con un log a parte, che qui non
-   c'e'. Un seme che arriva li' si ESCLUDE (contatore semiEsclusiDuello,
-   dichiarato, MAI nascosto nel conteggio) e si passa al seme successivo:
-   altrimenti la partita si incastrerebbe per sempre (falso hang,
-   indistinguibile da INV-15 rotta per davvero).
+   COMPITO 1 (fatto, ricostruito su main sano): il fuzzer base -- stick e
+   cinque dischi, cadenza realistica, nove invarianti riusate, tetto Reg
+   vigilato, ripetibilita' verificata. IL DUELLO NON era gestito: un seme
+   che arrivava a G.scene==='freekick' si ESCLUDEVA (contatore dichiarato).
+
+   COMPITO 2 (questo compito), tre pezzi piu' una verifica:
+     (a) IL DUELLO GESTITO. __test.simulate chiama Duel.update() invece
+         di step() quando G.scene==='freekick' (CALCETTO-il-gioco.html:
+         44322-44324): il tick del nastro Reg sta fermo e NIENTE del
+         duello vi finisce (il gioco stesso lo dichiara, vedi
+         CALCETTO-il-gioco.html:43301-43336, "IL REPLAY SI FERMA AL
+         DISCHETTO"). Senza intervento, la fase 'zone' (tiratore umano) e
+         la fase 'power' (idem) non hanno NESSUN timeout automatico --
+         restano ferme per sempre, un falso hang indistinguibile da INV-15
+         rotta per davvero (misurato leggendo Duel.update, che gestisce
+         SOLO il tiratore CPU in quei due rami; la fase 'wait', invece, ha
+         SEMPRE un timeout generico -- 0,3s se il portiere e' CPU, 3s se e'
+         umano -- quindi non si incastra mai da sola, ma qui si risolve
+         comunque ATTIVAMENTE per esercitare pickKeeper invece di aspettare
+         il ripiego). Questo compito intercetta G.scene==='freekick' a ogni
+         tick e, quando tocca al lato umano (squadra 0) decidere, chiama
+         t.Duel.pickZone(z,u,v) / t.Duel.stopPower() / t.Duel.pickKeeper(z)
+         col PRNG del fuzzer (STESSO xorshift dei comandi, nessun terzo
+         seme): z/u/v imitano un dito vero dentro lo specchio (stessa
+         geometria di duelMira, CALCETTO-il-gioco.html:22642-22657), il
+         MOMENTO in cui si agisce e' probabilistico (cfg.probAzioneDuello
+         per tick: un tempo di reazione, non un riflesso immediato). Ogni
+         chiamata si LOGGA A PARTE (array logDuelli, {seme, fotogramma,
+         metodo, argomenti}): Reg non lo cattura, e senza questo log un
+         replay del nastro si fermerebbe in eterno al primo dischetto,
+         esattamente come il gioco stesso dichiara. I semi che arrivano al
+         duello NON si escludono piu' (contatore semiEsclusiDuello sempre
+         a zero, dichiarato qui, non nascosto). Le invarianti continuano a
+         verificarsi a OGNI tick anche dentro 'freekick' (unTick non
+         distingue fase, vedi sotto).
+     (b) LA RIPRODUZIONE. Pagina fresca, t.semina(semeGioco), startMatch,
+         t.rigioca(nastro) -- ma stavolta il log-duelli va RIAPPLICATO per
+         tick nello stesso loop di t.simulate(): senza, un seme che passa
+         da un dischetto divergerebbe dal fotogramma del duello in poi
+         (Duel non lo sa che deve rifare le stesse scelte). Prova
+         RIPRODUZIONE: nastro+log-duelli rigiocati su pagina nuova
+         producono la STESSA impronta campionata, byte per byte (qui:
+         numero per numero) -- e la STESSA macchina serve a riprodurre una
+         violazione vera (mandato S13.3, "ogni crash riprodotto da un
+         replay").
+     (c) INV-04 -- CONFINI+MARGINE. Nuova invariante, aggiunta a
+         strumenti/_q-invarianti.js (prova 12, riusata qui come le altre
+         undici: vedi la sua lettera di testa per il margine, 110 unita',
+         e le due uscite legittime del motore che deve coprire senza
+         condannarle). Lo stick fuzzato a fondo scala verso i bordi (bias
+         gia' del compito 1, mai tolto) la stressa per la prima volta: un
+         banco CPU-CPU a seme fisso non spinge mai un giocatore vicino al
+         bordo.
+     (d) DETERMINISMO CROSS-PARTITA. La diagnosi del residuo (voce #128)
+         ha stabilito che a taglia 5 la SIMULAZIONE e' deterministica ma
+         il canale INPUT-A-TOCCHI aveva un residuo noto (l'origine della
+         levetta, stick.ox/oy, sopravvissuta da una partita alla
+         successiva sulla STESSA pagina -- CALCETTO-il-gioco.html:
+         13217-13247, l'autopsia della voce #68). Quella cura vive gia'
+         dentro Reg.accendi() (chiamato da t.registra(), che questo
+         fuzzer chiama a OGNI seme): azzeraComandi() svuota Touch5.stick
+         (ox/oy/dx/dy/hist) prima di ogni partita registrata -- VERIFICATO
+         qui a numeri (non dato per assunto), confrontando campo per campo
+         (non solo l'impronta arrotondata) i due Touch5.stick al fotogramma
+         della PRIMA divergenza trovata: IDENTICI. Il residuo anticipato
+         dal piano NON e' la causa: e' gia' sano.
+         LA CAUSA VERA, trovata misurando (fuori/_diag-crosspartita-
+         scratch.js, usa-e-getta, non committato): confrontando un seme
+         giocato in sequenza contro lo STESSO seme isolato, G.players[i].
+         tecnica differiva GIA' al fotogramma 0 (PRIMA di ogni comando) --
+         69 contro 63 per un giocatore, 55 contro 53 per un altro. Non e'
+         il canale input-a-tocchi: e' SAVE.rosa, la rosa di casa, creata
+         UNA sola volta per pagina (CALCETTO-il-gioco.html:10137,
+         "if(!SAVE.rosa) SAVE.rosa=nuovaRosa()") e fatta CRESCERE di un
+         attributo a caso a ogni fine-partita (righe 41623-41635: la
+         progressione-carriera, un pregio del gioco vero, non un difetto).
+         Su una pagina che gioca N semi in sequenza la rosa arriva al seme
+         k gia' cresciuta di k partite; su una pagina isolata nasce
+         sempre fresca -- le due partite NON POSSONO combaciare finche'
+         quella crescita resta accesa, indipendentemente da Touch5.
+         LA CURA (dentro provaSeme qui sotto, subito dopo t.semina e
+         prima di startMatch): t.save.rosa = window.nuovaRosa() -- non un
+         semplice azzeramento (misurato ROTTO: nullare SAVE.rosa non
+         "la fa rinascere", fa cadere setupPlayers nel ramo "nessuna
+         rosa", cloni a statistica media -- vedi il commento dentro
+         provaSeme per l'autopsia di questo primo tentativo sbagliato),
+         ma una RI-GENERAZIONE esplicita della stessa rosa-base che il
+         caricamento della pagina scrive una volta sola (nuovaRosa() e'
+         pura: stesso risultato ogni volta, verificato a numeri). Lo
+         STESSO principio del mandato ("azzera lo stato che sopravvive a
+         una partita sulla stessa pagina"), ma su un canale diverso da
+         quello anticipato (la carriera, non i tocchi) e con un verbo
+         diverso (rigenera, non azzera: azzerare qui avrebbe rotto tutto).
+         SENZA questa cura la riproduzione del punto (b) sarebbe
+         silenziosamente rotta per
+         OGNI seme oltre il primo: una violazione trovata al seme k>0,
+         riprodotta su pagina fresca con solo nastro+log-duelli, avrebbe
+         giocato con una rosa diversa da quella vera -- lo stesso
+         principio, applicato dove serve davvero.
+         Il confronto (impronte campionate ogni 20 tick, gli stessi due
+         semi scelti dentro la sequenza -- uno subito dopo la prima
+         partita, uno alla fine della batteria) verifica che la cura
+         basti: se un domani un'ALTRA fonte di stato persistente
+         emergesse, questa stessa prova la condannerebbe di nuovo.
 
    NESSUN HOOK NUOVO: tutto qui sotto e' gia' esposto "bare" via
    page.evaluate, esattamente come G in _q-invarianti.js --
-     t.semina/startMatch/registra/nastro/rigioca/simulate/pulsanti/G
+     t.semina/startMatch/registra/nastro/rigioca/simulate/pulsanti/G/Duel
    -- e Touch5.start/move/chiudi (CALCETTO-il-gioco.html:13430/13621/
    13770), che con Reg.modo===1 si auto-registrano (l'intercettore a
-   :43382-43415). Il gioco non si tocca: git diff CALCETTO-il-gioco.html
-   resta vuoto.
+   :43382-43415). t.Duel e' la STESSA referenza viva di Duel (esposta via
+   lo shorthand "G, Duel, Tut" in fondo a __test, CALCETTO-il-gioco.html:
+   44583) -- si usa t.Duel invece del bare Duel per lo stesso motivo per
+   cui il resto del banco usa t.G invece del bare G: un handle dichiarato
+   per questo scopo, non un accesso lessicale implicito. Il gioco non si
+   tocca: git diff CALCETTO-il-gioco.html resta vuoto.
 
-   DUE SEMI SEPARATI, DICHIARATI. `--semeGioco` governa SEME.accendi (IA e
-   fisica, come sempre): passato a t.semina(semeGioco0+k) per il seme k
-   della batteria, esattamente come fa _q-invarianti.js. `--semeComandi`
-   governa SOLO il generatore di comandi di QUESTO banco: un xorshift
-   PROPRIO (stessa formula di strumenti/_posa.js/semeFisso, stato
-   indipendente, MAI Math.random), seminato a `semeComandi0+k` -- cosi'
-   ogni coppia (semeGioco0+k, semeComandi0+k) e' riproducibile da sola,
-   senza dover rigiocare tutti i semi precedenti per ricostruire lo stato
-   del generatore.
+   DUE SEMI SEPARATI, DICHIARATI (INVARIATO dal compito 1). `--semeGioco`
+   governa SEME.accendi (IA e fisica); `--semeComandi` governa SOLO il
+   generatore di comandi E le decisioni del duello di QUESTO banco: lo
+   STESSO xorshift, un solo stato per seme, cosi' ogni coppia
+   (semeGioco0+k, semeComandi0+k) resta riproducibile da sola.
 
-   COME SI GENERANO I COMANDI. Non un comando a ogni tick (il tetto
-   Reg.righe>40000, CALCETTO-il-gioco.html:13285, tronca IN SILENZIO): una
-   decisione ogni 5-15 fotogrammi (--cadenzaMin/--cadenzaMax), a cadenza
-   scelta anch'essa dal PRNG dei comandi. Ogni decisione e' UNA fra:
-     - niente;
-     - avviare/muovere/rilasciare lo STICK (Touch5.start/move/chiudi),
-       con coordinate spesso vicine ai bordi dello schermo (bias verso il
-       25% esterno dell'intervallo, meta' delle volte) per spingere i
-       giocatori a fondo scala verso i confini del campo -- il caso che
-       il CPU-CPU non stressa mai (INV-04, rimandata al compito 2, ma
-       l'esposizione nasce qui);
-     - una FINTA/STRAPPO: due mosse ravvicinate dello stick, quasi al
-       centro (dentro la banda morta) e poi a piena corsa in una
-       direzione molto diversa (>90 gradi) dall'ultima -- la stessa
-       geometria che il gioco stesso chiama strappo (CALCETTO-il-gioco.
-       html:4452-4457, STRAPPO_MORTO/STRAPPO_LAMPO/STRAPPO_DOT): non
-       garantita (dipende dallo stato del comando prima e dalla cadenza),
-       ma PRIVILEGIATA, com'e' un verbo che il CPU-CPU non tocca mai;
-     - premere/rilasciare uno dei cinque dischi, alle coordinate VERE
-       lette da t.pulsanti(0) (contestuali: TIRA/CONTRASTA, FILTRANTE/
-       CAMBIO, PASSA/PRESSA, CROSS/SCIVOLATA, SCATTO/SCUDO) -- il disco 1
-       (FILTRANTE/CAMBIO, che senza palla e' `cambiaGiocatore`, il verbo
-       che scrive G.swLock) e' PRIVILEGIATO, con un peso piu' alto degli
-       altri quattro;
-     - azzerare tutti i tocchi (Touch5.azzera, raro).
-   La squadra 0 e' GIA' umana dopo startMatch(1,1,{size}) (G.cpu=[false,
-   true]): NON si chiama setCpuVsCpu (lo lascerebbe senza controllo,
-   difetto #108/#119 -- vedi la lettera di testa di _q-invarianti.js).
-
-   LE NOVE INVARIANTI SONO RIUSATE, NON RISCRITTE: strumenti/
-   _q-invarianti.js esporta ora (refactor minimo di quel file, stesso
-   compito, dichiarato nella sua stessa lettera di testa)
-   `verificaTickInvarianti` e `verificaCronometriFratelli` -- lo STESSO
-   codice che gia' verificava le nove prove nei banchi CPU-CPU, spostato
-   in due funzioni con nome invece che scritto in linea. Da qui (Node)
-   si fa `require('./_q-invarianti.js')` e si porta il CODICE SORGENTE di
-   quelle due funzioni (.toString()) dentro lo script che si manda alla
-   pagina, perche' da dentro un page.evaluate non si puo' fare require():
-   e' lo stesso trucco con cui SONDA stessa (qui sotto) arriva in pagina.
-
-   LA RIPETIBILITA'. Il primo seme che finisce PULITO (non escluso per
-   duello, nessuna violazione) diventa il "campione": si salva il suo
-   nastro (t.nastro()) e un'impronta dello stato a campione fisso (come
-   strumenti/_q-determinismo.js/_q-replay.js). Su una PAGINA FRESCA si
-   rifa' t.semina(semeGioco) -> startMatch -> t.rigioca(nastro) -> lo
-   stesso numero di t.simulate(1/60): l'impronta deve combaciare byte per
-   byte (qui: numero per numero). Al compito 1, senza duello, i semi che
-   non toccano un freekick sono PIENAMENTE riproducibili dal solo nastro
-   (nessun log-duelli ancora necessario -- arriva al compito 2).
+   LE DODICI INVARIANTI SONO RIUSATE, NON RISCRITTE: strumenti/
+   _q-invarianti.js esporta `verificaTickInvarianti`, `verificaCronometriFratelli`
+   e MARGINE_CONFINI (prova 12, questo stesso compito). Da qui (Node) si fa
+   `require('./_q-invarianti.js')` e si porta il CODICE SORGENTE di quelle
+   due funzioni (.toString()) dentro lo script che si manda alla pagina.
 
    uso:  node strumenti/_q-fuzzer.js
          node strumenti/_q-fuzzer.js --semi 20 --taglia 5
          node strumenti/_q-fuzzer.js --semeGioco 20260920 --semeComandi 71260920
          node strumenti/_q-fuzzer.js --cadenzaMin 5 --cadenzaMax 15
          node strumenti/_q-fuzzer.js --gioco fuori/bugiardo-qualcosa.html
-   esce 0 se le nove invarianti sono verdi su tutti i semi non esclusi, la
-   ripetibilita' e' verde e il tetto Reg non e' stato sfiorato; 1 se
-   qualcosa e' rosso; 2 se il banco stesso e' esploso; 3 se l'uso e'
-   sbagliato.
+   esce 0 se le dodici invarianti sono verdi su tutti i semi (nessuno
+   escluso: il duello e' gestito), la riproduzione e' verde, il
+   determinismo cross-partita e' verde e il tetto Reg non e' stato
+   sfiorato; 1 se qualcosa e' rosso; 2 se il banco stesso e' esploso; 3 se
+   l'uso e' sbagliato.
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -108,7 +161,7 @@ const { chromium } = require('playwright');
 const { semeFisso } = require('./_posa.js');
 const {
   verificaCronometriFratelli, verificaTickInvarianti,
-  TETTO_FOTOGRAMMI, TETTO_VEL_PALLA, TETTO_VZ_PALLA, SEME_CANTIERE,
+  TETTO_FOTOGRAMMI, TETTO_VEL_PALLA, TETTO_VZ_PALLA, SEME_CANTIERE, MARGINE_CONFINI,
 } = require('./_q-invarianti.js');
 
 const RADICE = path.resolve(__dirname, '..');
@@ -130,24 +183,44 @@ const TAGLIA_BANCO = [5, 7, 11].includes(+arg('taglia', 5)) ? +arg('taglia', 5) 
    (il seme di gioco, che governa IA/fisica). */
 const SEME_GIOCO = +arg('semeGioco', SEME_CANTIERE);
 /* IL SECONDO SEME, SEPARATO E DICHIARATO: governa SOLO il generatore di
-   comandi di questo banco, mai il gioco. Scelto arbitrariamente diverso
-   dal primo (nessuna relazione aritmetica voluta con SEME_GIOCO), cosi'
-   chi legge un log non li confonde a colpo d'occhio. */
+   comandi (e, dal compito 2, le decisioni del duello) di questo banco,
+   mai il gioco. Scelto arbitrariamente diverso dal primo (nessuna
+   relazione aritmetica voluta con SEME_GIOCO), cosi' chi legge un log non
+   li confonde a colpo d'occhio. */
 const SEME_COMANDI = +arg('semeComandi', 71260920);
 const N_SEMI = +arg('semi', 20);
 const CADENZA_MIN = +arg('cadenzaMin', 5);
 const CADENZA_MAX = +arg('cadenzaMax', 15);
 /* Quanti semi IN PIU', oltre agli N_SEMI della batteria, il banco prova
    a giocare SOLO per trovare un "campione" pulito per la prova di
-   ripetibilita', se nessuno degli N_SEMI principali resta pulito (tutti
-   esclusi per duello o tutti violati): non contano nella statistica
-   delle nove invarianti, servono solo a non lasciare la prova 2
-   (ripetibilita') senza materiale. Dichiarato nel verbale se scatta. */
+   riproduzione, se nessuno degli N_SEMI principali resta pulito (tutti
+   violati -- dal compito 2 nessun seme si esclude piu' per duello): non
+   contano nella statistica delle dodici invarianti, servono solo a non
+   lasciare la prova senza materiale. Dichiarato nel verbale se scatta. */
 const EXTRA_CAMPIONE = 10;
 /* Soglia di allarme sul tetto Reg.righe>40000 (CALCETTO-il-gioco.html:
    13285, tronca IN SILENZIO): l'80%, con margine per accorgersene PRIMA
    che tronchi davvero. */
 const SOGLIA_ALLARME_RIGHE = 32000;
+/* IL TEMPO DI REAZIONE DEL DUELLO (compito 2, punto a): probabilita' per
+   TICK di agire quando una decisione (pickZone/stopPower/pickKeeper) e'
+   pendente lato umano. 0,35 da' un'attesa attesa di ~2,9 tick (~48 ms a
+   60 Hz): abbastanza rapido da non consumare il tetto fotogrammi in
+   attese, abbastanza vario (col PRNG del fuzzer) da non essere un riflesso
+   a orologeria. Le fasi 'zone'/'power' del tiratore umano NON hanno un
+   timeout nel gioco (vedi la lettera di testa): senza questo intervento
+   si incastrerebbero per sempre, quindi la probabilita' deve restare
+   abbastanza alta da garantire una risoluzione ben dentro il tetto
+   TETTO_FOTOGRAMMI anche nel caso peggiore statisticamente plausibile. */
+const PROB_AZIONE_DUELLO = 0.35;
+/* DETERMINISMO CROSS-PARTITA (compito 2, punto d): due indici scelti
+   dentro la batteria, non a caso. k=1 e' il caso PIU' sensibile (la
+   diagnosi del residuo, CALCETTO-il-gioco.html:13220-13224, misurava gia'
+   una divergenza al SECONDO giro sulla stessa pagina, non al decimo); k
+   uguale all'ultimo seme della batteria e' il caso con PIU' stato
+   accumulato alle spalle (N_SEMI-1 partite prima). Filtrati e deduplicati
+   per restare dentro [0, N_SEMI). */
+const INDICI_CROSS_CHECK = [...new Set([1, N_SEMI - 1])].filter(k => k >= 0 && k < N_SEMI);
 
 function servi(prova) {
   return new Promise(ok => {
@@ -175,9 +248,11 @@ const SONDA_FUZZ = (cfg) => {
   const t = window.__test;
   const r = {
     nan: [], owner: [], punteggio: [], timeLeft: [], durata: [], cronometri: [],
-    clamp: [], movimento: [], palla: [],
+    clamp: [], movimento: [], palla: [], confini: [],
     semiEsclusiDuello: [], semiEseguiti: 0, tickTotali: 0,
     comandiEmessi: 0, finteTentate: 0, disco1Avvii: 0,
+    duelloAzioni: {}, swLockAttivo: 0, semiConSwLock: 0,
+    impronteCrossCheck: {},
     maxRigheReg: 0, allarmiRighe: [], campione: null, violazioni: {},
   };
 
@@ -186,7 +261,10 @@ const SONDA_FUZZ = (cfg) => {
      banchi visivi), ma UN GENERATORE INDIPENDENTE: stato locale a questa
      funzione, MAI Math.random, e MAI lo stesso oggetto del seme di gioco
      (SEME.accendi, dentro il motore). Riseminato PER SEME (vedi sotto),
-     cosi' ogni coppia (semeGioco, semeComandi) e' riproducibile da sola. */
+     cosi' ogni coppia (semeGioco, semeComandi) e' riproducibile da sola.
+     DAL COMPITO 2: lo STESSO generatore decide anche le mosse del duello
+     (pickZone/stopPower/pickKeeper) -- non un terzo seme, il piano
+     dichiara "il PRNG del fuzzer" al singolare. */
   function creaXorshift(seme) {
     let s = (seme >>> 0) || 1;
     return {
@@ -208,21 +286,71 @@ const SONDA_FUZZ = (cfg) => {
   }
 
   /* UN SEME, DALL'INIZIO ALLA FINE. `contaStatistiche` e' false SOLO per
-     i tentativi extra di trovare un campione per la ripetibilita' (vedi
+     i tentativi extra di trovare un campione per la riproduzione (vedi
      EXTRA_CAMPIONE in Node): in quel caso le violazioni NON entrano nei
      contenitori della batteria principale, per non falsare "N semi,
      tante invarianti verdi" con semi che non facevano parte del lotto
      dichiarato. */
   function provaSeme(seme, semeCmd, contaStatistiche) {
     t.semina(seme);
+    /* AZZERAMENTO ROSA-CARRIERA (compito 2, punto d -- la diagnosi
+       empirica di QUESTO compito, non il residuo #128 anticipato dal
+       piano). Misurato con un banco a parte (fuori/_diag-crosspartita-
+       scratch.js, usa-e-getta): a taglia 5, dopo N_SEMI in sequenza sulla
+       stessa pagina, un seme diverge da isolato NON per Touch5/stick.ox-oy
+       (confrontato campo per campo al fotogramma della prima divergenza:
+       IDENTICO) ma per G.players[i].tecnica (69 contro 63 al fotogramma 0,
+       PRIMA di ogni comando) -- SAVE.rosa, la rosa di casa, si crea UNA
+       sola volta AL CARICAMENTO DELLA PAGINA (CALCETTO-il-gioco.html:
+       10137, "if(!SAVE.rosa) SAVE.rosa=nuovaRosa()" -- riga di primo
+       livello dello script, non dentro startMatch: gira una volta sola
+       per pagina, non a ogni partita) e CRESCE di un attributo a caso a
+       ogni fine partita (righe 41623-41635: progressione-carriera, per
+       disegno, non un difetto). Su una pagina che gioca N semi in
+       sequenza la rosa arriva al seme k gia' cresciuta di k partite; su
+       una pagina isolata nasce fresca UNA volta e resta quella.
+       IL PRIMO TENTATIVO (t.save.rosa=null, senza altro) era SBAGLIATO,
+       misurato qui sopra: con SAVE.rosa nullo, setupPlayers
+       (CALCETTO-il-gioco.html:10734, "const MIA = G.miaRosa||SAVE.rosa")
+       non richiama nuovaRosa() -- quella riga gira UNA sola volta, al
+       caricamento -- ma cade nel ramo "nessuna rosa" (riga 10736-10756,
+       med=62 uniforme per tutti e cinque, p.piatto=1): una squadra di
+       cloni "medi", non la rosa vera. Misurato: il campione (seme
+       20260920 gia' k=0) cambiava di durata (7007 -> 8000 fotogrammi) e
+       smetteva di riprodursi identico su pagina fresca, perche' la
+       pagina fresca DI REPLAY *ha* SAVE.rosa (il suo caricamento, non
+       toccato) mentre la pagina del banco, nullata, cadeva nel ramo dei
+       cloni -- due partite diverse, non la stessa.
+       LA CURA VERA: richiamare nuovaRosa() DAVVERO (window.nuovaRosa,
+       una function-declaration a livello di script, quindi gia'
+       proprieta' di window come window.doCross/window.resetKickoff nelle
+       prove 10/11 di _q-invarianti.js) e RIMPIAZZARE SAVE.rosa col
+       risultato, invece di svuotarlo. nuovaRosa() e' PURA (semeRosa(i),
+       CALCETTO-il-gioco.html:9731, e' un hash del solo intero i, MAI di
+       SEME.s/dado()): richiamarla da' sempre la STESSA rosa-base, la
+       IDENTICA che il caricamento della pagina aveva gia' scritto la
+       prima volta -- verificato a numeri (fuori/_check-nuovarosa.js,
+       usa-e-getta): rosa di pagina e window.nuovaRosa() sono lo STESSO
+       JSON, tecnica 63/53/62/58/56. Cosi' ogni seme del fuzzer (in
+       sequenza o isolato) riparte dalla rosa-base vera, mai da quella
+       cresciuta ne' da quella dei cloni -- e la riproduzione del punto
+       (b) resta valida anche per k>0 (senza, si romperebbe in
+       silenzio). Un azzeramento diverso da Touch5.azzera() (quello,
+       verificato, serviva gia' da solo) ma la STESSA idea del mandato:
+       uno stato che sopravvive a una partita sulla stessa pagina va
+       riportato al suo valore vero prima della prossima. */
+    if (t.save && typeof window.nuovaRosa === 'function') t.save.rosa = window.nuovaRosa();
     t.startMatch(1, 1, { size: cfg.taglia });
     /* NON setCpuVsCpu: la squadra 0 e' GIA' umana (G.cpu=[false,true]). */
     t.registra();
 
     const G = t.G;
+    /* PROVA 12 (INV-04): FW/FH letti da t.campo DOPO startMatch, come in
+       _q-invarianti.js -- dipendono dalla taglia scelta da setTaglia. */
+    cfg.FW = t.campo.FW; cfg.FH = t.campo.FH;
     const rLocale = contaStatistiche ? r : {
       nan: [], owner: [], punteggio: [], timeLeft: [], durata: [], cronometri: [],
-      clamp: [], movimento: [], palla: [],
+      clamp: [], movimento: [], palla: [], confini: [],
     };
     verificaCronometriFratelli(G, rLocale, seme, 0);
 
@@ -261,6 +389,53 @@ const SONDA_FUZZ = (cfg) => {
     const discoId = [null, null, null, null, null];
     let prossimoId = 1;
     const nuovoId = () => prossimoId++;
+
+    /* IL LOG-DUELLI (compito 2, punto a) -- array PARALLELO al nastro Reg:
+       Reg non cattura pickZone/stopPower/pickKeeper (vedi la lettera di
+       testa), quindi si registra qui, {seme, fotogramma, metodo,
+       argomenti}, per poter riapplicare le STESSE scelte in riproduzione
+       (punto b). fotogramma e' il contatore GLOBALE di questo seme (la
+       variabile `fotogrammi` del loop qui sotto), COERENTE con l'indice
+       che la riproduzione user in `for (let f=0; f<fotogrammi; f++)`. */
+    const logDuelli = [];
+    let swLockVistoQuiSeme = false;
+
+    /* GESTIONE DEL DUELLO (compito 2, punto a). Chiamata da unTick PRIMA
+       di t.simulate, quando G.scene==='freekick': decide se e come agire
+       in base a t.Duel.phase, con lo STESSO xorshift dei comandi. Le fasi
+       'zone'/'power' del tiratore CPU e la risoluzione dell'esito NON
+       vengono mai toccate da qui (si scavalcano da sole dentro
+       Duel.update, chiamato da t.simulate): questa funzione agisce SOLO
+       quando tocca al lato umano decidere. */
+    function agisciDuello(fg) {
+      const D = t.Duel;
+      if (!D || D.phase === 'off' || D.phase === 'result') return;
+      if (rnd01() >= cfg.probAzioneDuello) return;   // tempo di reazione: non ogni tick
+      if (D.phase === 'zone' && D.shooterHuman) {
+        /* LA MIRA (duelMira, CALCETTO-il-gioco.html:22642-22657): u nello
+           specchio, bordo compreso (PK_ORLO=1,258 e' il bordo esterno del
+           mirino, riga 22069); z e' la STESSA soglia che un dito vero
+           userebbe per scegliere il terzo (u<-0,5 palo sinistro, u>0,5
+           palo destro, altrimenti centro). pkAudacia/pkArrivo/pkCopertura
+           clampano internamente ogni finito: nessun rischio di NaN anche
+           ai bordi estremi del range qui sotto. */
+        const u = -1.30 + rnd01() * 2.60;
+        const v = 0.12 + rnd01() * 0.76;
+        const z = u < -0.5 ? 0 : (u > 0.5 ? 2 : 1);
+        D.pickZone(z, u, v);
+        logDuelli.push({ seme, fotogramma: fg, metodo: 'pickZone', argomenti: [z, u, v] });
+        r.duelloAzioni.pickZone = (r.duelloAzioni.pickZone || 0) + 1;
+      } else if (D.phase === 'power' && D.shooterHuman) {
+        D.stopPower();
+        logDuelli.push({ seme, fotogramma: fg, metodo: 'stopPower', argomenti: [] });
+        r.duelloAzioni.stopPower = (r.duelloAzioni.stopPower || 0) + 1;
+      } else if (D.phase === 'wait' && D.keeperHuman && D.keeperZone < 0) {
+        const z = rndInt(3);
+        D.pickKeeper(z);
+        logDuelli.push({ seme, fotogramma: fg, metodo: 'pickKeeper', argomenti: [z] });
+        r.duelloAzioni.pickKeeper = (r.duelloAzioni.pickKeeper || 0) + 1;
+      }
+    }
 
     function decidiEAgisci(unTick) {
       const btns = t.pulsanti(0);
@@ -362,32 +537,50 @@ const SONDA_FUZZ = (cfg) => {
       return true;
     }
 
-    let fotogrammi = 0, raggiuntoEnd = false, violatoQuiSeme = false, escludiDuello = false;
+    let fotogrammi = 0, raggiuntoEnd = false, violatoQuiSeme = false;
     const impronteSeed = [];
 
     /* IL SOLO TICK, in un posto solo: cosi' decidiEAgisci puo' consumarne
        uno extra (la finta) senza duplicare la verifica. ORDINE (dal
-       piano, compito 1): simulate, POI le nove invarianti, POI il
-       controllo duello -- cosi' anche il fotogramma di transizione verso
-       'freekick' viene verificato prima di essere escluso. */
+       compito 2): se G.scene==='freekick', agisciDuello PRIMA di
+       t.simulate (un dito vero decide fra un fotogramma e l'altro, non
+       dentro), POI simulate (che dentro chiama Duel.update, non step()),
+       POI le dodici invarianti -- IL DUELLO NON SI ESCLUDE PIU': si
+       continua a verificare come qualunque altro tick. */
     function unTick(fase) {
+      if (G.scene === 'freekick') agisciDuello(fotogrammi);
       t.simulate(1 / 60);
       r.tickTotali++;
+      /* SWLOCK/SWTIMER ESERCITATI (compito 2, cancello): un tick con
+         swLock diverso da [0,0] e' un tick in cui uno swap/strappo umano
+         e' vivo -- nessuna partita CPU-CPU lo produce mai (vedi la lettera
+         di testa di _q-invarianti.js, prova 6). */
+      if (G.swLock[0] !== 0 || G.swLock[1] !== 0) {
+        r.swLockAttivo++;
+        if (!swLockVistoQuiSeme) { swLockVistoQuiSeme = true; r.semiConSwLock++; }
+      }
       const fg = fotogrammi;
       fotogrammi++;
       if (fg % 20 === 0) impronteSeed.push(leggiImpronta(G));
       if (verificaTick(fg, fase)) { violatoQuiSeme = true; return false; }
-      if (G.scene === 'freekick' || t.state === 'freekick') { escludiDuello = true; return false; }
       if (t.state === 'end') { raggiuntoEnd = true; return false; }
       return true;
     }
 
     let prossimoComando = cfg.cadenzaMin + rndInt(cfg.cadenzaMax - cfg.cadenzaMin + 1);
     while (fotogrammi < cfg.tetto) {
-      prossimoComando--;
-      if (prossimoComando <= 0) {
-        prossimoComando = cfg.cadenzaMin + rndInt(cfg.cadenzaMax - cfg.cadenzaMin + 1);
-        if (!decidiEAgisci(unTick)) break;
+      /* DENTRO IL DUELLO non si generano comandi stick/disco (l'overlay
+         #duel copre lo schermo di gioco, un dito vero interagirebbe SOLO
+         col dischetto): si lascia passare il tempo del duello (gestito da
+         unTick/agisciDuello) senza consumare la cadenza normale, che
+         riprende al valore gia' estratto appena la scena torna a essere
+         non-freekick. */
+      if (G.scene !== 'freekick') {
+        prossimoComando--;
+        if (prossimoComando <= 0) {
+          prossimoComando = cfg.cadenzaMin + rndInt(cfg.cadenzaMax - cfg.cadenzaMin + 1);
+          if (!decidiEAgisci(unTick)) break;
+        }
       }
       if (!unTick('normale')) break;
     }
@@ -397,64 +590,70 @@ const SONDA_FUZZ = (cfg) => {
       r.maxRigheReg = Math.max(r.maxRigheReg, righeReg);
       if (righeReg >= cfg.sogliaAllarmeRighe) r.allarmiRighe.push({ seme, righeReg });
 
-      if (escludiDuello) {
-        r.semiEsclusiDuello.push({ seme, fotogrammi });
-      } else if (!raggiuntoEnd && !violatoQuiSeme) {
+      if (!raggiuntoEnd && !violatoQuiSeme) {
         /* PROVA 5 (durata<=tetto), sullo stesso principio di
-           _q-invarianti.js: un seme che non ha ne' finito ne' violato
-           ne' e' stato escluso per duello, e ha esaurito il tetto, e' un
-           hang vero. */
+           _q-invarianti.js: un seme che non ha ne' finito ne' violato,
+           e ha esaurito il tetto, e' un hang vero -- IL DUELLO NON E'
+           PIU' UNA SCUSA (compito 1 lo escludeva qui). */
         r.durata.push({ seme, fotogrammi, statoFinale: t.state });
       }
       r.semiEseguiti++;
     }
 
-    return { seme, escludiDuello, violatoQuiSeme, raggiuntoEnd, fotogrammi, righeReg, impronteSeed };
+    return { seme, violatoQuiSeme, raggiuntoEnd, fotogrammi, righeReg, impronteSeed, logDuelli };
   }
 
   for (let k = 0; k < cfg.semi; k++) {
     const semeCmdK = cfg.semeComandi0 + k;
     const esito = provaSeme(cfg.semeGioco0 + k, semeCmdK, true);
+    if (cfg.indiciCrossCheck && cfg.indiciCrossCheck.includes(k)) {
+      r.impronteCrossCheck[k] = esito.impronteSeed;
+    }
     /* UNA VIOLAZIONE VERA: si cattura SUBITO il nastro (Reg.righe e'
        ancora quello di questo seme -- il prossimo t.registra(), al giro
-       dopo, lo azzera). PER TIPO DI INVARIANTE (non solo la primissima in
-       assoluto): due cause diverse possono condannare due prove diverse
-       su semi diversi, e appiattirle sulla prima sola ne nasconderebbe
-       una -- il mandato (S13.3, "ogni crash riprodotto da un replay") non
-       fa distinzione fra scoperte, solo la PRIMA occorrenza DI CIASCUN
-       TIPO, per non moltiplicare file quando la stessa causa condanna piu'
-       semi con lo stesso tipo. */
+       dopo, lo azzera) E il log-duelli di questo stesso seme (compito 2:
+       senza, la riproduzione di un seme che passa da un dischetto non
+       potrebbe rifare le stesse scelte del duello). PER TIPO DI
+       INVARIANTE (non solo la primissima in assoluto): due cause diverse
+       possono condannare due prove diverse su semi diversi, e appiattirle
+       sulla prima sola ne nasconderebbe una -- il mandato (S13.3, "ogni
+       crash riprodotto da un replay") non fa distinzione fra scoperte,
+       solo la PRIMA occorrenza DI CIASCUN TIPO, per non moltiplicare file
+       quando la stessa causa condanna piu' semi con lo stesso tipo. */
     if (esito.violatoQuiSeme) {
-      for (const chiave of ['nan', 'owner', 'punteggio', 'timeLeft', 'clamp', 'movimento', 'palla']) {
+      for (const chiave of ['nan', 'owner', 'punteggio', 'timeLeft', 'clamp', 'movimento', 'palla', 'confini']) {
         if (r.violazioni[chiave]) continue;
         const trovati = r[chiave].filter(v => v.seme === esito.seme);
         if (trovati.length) {
           r.violazioni[chiave] = {
             seme: esito.seme, semeComandi: semeCmdK, fotogrammi: esito.fotogrammi,
-            nastro: t.nastro(), dettaglio: trovati,
+            nastro: t.nastro(), logDuelli: esito.logDuelli, dettaglio: trovati,
           };
         }
       }
     }
-    if (!r.campione && !esito.escludiDuello && !esito.violatoQuiSeme) {
+    if (!r.campione && !esito.violatoQuiSeme) {
       r.campione = {
         seme: esito.seme, fotogrammiEseguiti: esito.fotogrammi,
-        nastro: t.nastro(), impronte: esito.impronteSeed, raggiuntoEnd: esito.raggiuntoEnd,
+        nastro: t.nastro(), impronte: esito.impronteSeed, logDuelli: esito.logDuelli,
+        raggiuntoEnd: esito.raggiuntoEnd,
       };
     }
   }
-  /* NESSUN SEME PRINCIPALE E' RIMASTO PULITO (tutti esclusi per duello o
-     violati): si cercano fino a cfg.extraCampione semi IN PIU', SENZA
-     farli entrare nella statistica della batteria (contaStatistiche =
-     false) -- dichiarato in r.campioneExtra. */
+  /* NESSUN SEME PRINCIPALE E' RIMASTO PULITO (tutti violati -- dal
+     compito 2 nessuno si esclude piu' per duello): si cercano fino a
+     cfg.extraCampione semi IN PIU', SENZA farli entrare nella statistica
+     della batteria (contaStatistiche = false) -- dichiarato in
+     r.campioneExtra. */
   if (!r.campione) {
     for (let e = 0; e < cfg.extraCampione; e++) {
       const semeExtra = cfg.semeGioco0 + cfg.semi + e;
       const esito = provaSeme(semeExtra, cfg.semeComandi0 + cfg.semi + e, false);
-      if (!esito.escludiDuello && !esito.violatoQuiSeme) {
+      if (!esito.violatoQuiSeme) {
         r.campione = {
           seme: esito.seme, fotogrammiEseguiti: esito.fotogrammi,
-          nastro: t.nastro(), impronte: esito.impronteSeed, raggiuntoEnd: esito.raggiuntoEnd,
+          nastro: t.nastro(), impronte: esito.impronteSeed, logDuelli: esito.logDuelli,
+          raggiuntoEnd: esito.raggiuntoEnd,
         };
         r.campioneExtra = e + 1;
         break;
@@ -464,7 +663,8 @@ const SONDA_FUZZ = (cfg) => {
   return r;
 };
 
-/* la stessa impronta, lato Node, per il confronto della ripetibilita' */
+/* la stessa impronta, lato Node, per il confronto della riproduzione /
+   del determinismo cross-partita */
 const LEGGI_IMPRONTA_REPLAY = (G) => {
   const b = G.ball;
   const s = [Math.round(b.x * 100), Math.round(b.y * 100), Math.round((b.z || 0) * 100),
@@ -507,8 +707,9 @@ const primoScarto = (a, b) => {
     const cfg = {
       taglia: TAGLIA_BANCO, semi: N_SEMI, semeGioco0: SEME_GIOCO, semeComandi0: SEME_COMANDI,
       tetto: TETTO_FOTOGRAMMI, cadenzaMin: CADENZA_MIN, cadenzaMax: CADENZA_MAX,
-      tettoVelPalla: TETTO_VEL_PALLA, tettoVzPalla: TETTO_VZ_PALLA,
+      tettoVelPalla: TETTO_VEL_PALLA, tettoVzPalla: TETTO_VZ_PALLA, marginBordi: MARGINE_CONFINI,
       sogliaAllarmeRighe: SOGLIA_ALLARME_RIGHE, extraCampione: EXTRA_CAMPIONE,
+      probAzioneDuello: PROB_AZIONE_DUELLO, indiciCrossCheck: INDICI_CROSS_CHECK,
     };
     /* STESSA COMPOSIZIONE DI _q-invarianti.js: le due funzioni riusate,
        come sorgente, dentro una IIFE (page.evaluate(stringa) vuole
@@ -524,15 +725,22 @@ const primoScarto = (a, b) => {
     const primi = (arr, n, f) => arr.slice(0, n).map(f).join('\n         ') + (arr.length > n ? '\n         … e altri ' + (arr.length - n) : '');
 
     console.log('\n-- LA BATTERIA --');
-    console.log('  semi lanciati: ' + N_SEMI + '   esclusi per duello (non gestito, compito 2): ' + r.semiEsclusiDuello.length +
+    console.log('  semi lanciati: ' + N_SEMI + '   esclusi per duello (gestito dal compito 2, sempre 0): ' + r.semiEsclusiDuello.length +
       '   semi eseguiti nella statistica: ' + r.semiEseguiti);
-    if (r.semiEsclusiDuello.length) {
-      console.log('    esclusi: ' + primi(r.semiEsclusiDuello, 10, v => 'seme ' + v.seme + ' (fotogramma ' + v.fotogrammi + ')'));
-    }
     console.log('  fotogrammi totali simulati: ' + r.tickTotali + '   comandi emessi: ' + r.comandiEmessi +
       '   finte/strappi tentati: ' + r.finteTentate + '   avvii disco1 (swap-privilegiato): ' + r.disco1Avvii);
 
-    console.log('\n-- LE NOVE INVARIANTI (riusate da _q-invarianti.js) --');
+    console.log('\n-- IL DUELLO (compito 2, punto a) --');
+    const azioniDuello = (r.duelloAzioni.pickZone || 0) + (r.duelloAzioni.stopPower || 0) + (r.duelloAzioni.pickKeeper || 0);
+    console.log('  chiamate lato umano: pickZone=' + (r.duelloAzioni.pickZone || 0) +
+      '  stopPower=' + (r.duelloAzioni.stopPower || 0) + '  pickKeeper=' + (r.duelloAzioni.pickKeeper || 0) +
+      '  (totale ' + azioniDuello + ' su ' + N_SEMI + ' semi, 0 esclusi)');
+
+    console.log('\n-- SWLOCK/SWTIMER ESERCITATI (cronometro-fratello #6, mai vivo in CPU-CPU) --');
+    di(r.semiConSwLock > 0, 'G.swLock e\' stato osservato attivo (!=[0,0]) in almeno un seme',
+      'semi con swLock attivo: ' + r.semiConSwLock + ' su ' + N_SEMI + '   fotogrammi-tick con swLock attivo: ' + r.swLockAttivo);
+
+    console.log('\n-- LE DODICI INVARIANTI (riusate da _q-invarianti.js) --');
     di(r.nan.length === 0, '1. NaN/Infinity -- ball.{x,y,z,vx,vy,vz} e p.{x,y,vx,vy,aiTX,aiTY} sempre finiti',
       r.nan.length === 0 ? r.tickTotali + ' fotogrammi campionati, nessun NaN/Infinity'
         : primi(r.nan, 5, v => 'seme ' + v.seme + ' fotogramma ' + v.fotogramma + ' (' + v.fase + '): ' + v.chi + '=' + v.val));
@@ -549,7 +757,7 @@ const primoScarto = (a, b) => {
       r.timeLeft.length === 0 ? r.tickTotali + ' fotogrammi campionati, timeLeft sempre non crescente e >=0'
         : primi(r.timeLeft, 5, v => 'seme ' + v.seme + ' fotogramma ' + v.fotogramma + ': ' + v.prima.toFixed(3) + ' -> ' + v.dopo.toFixed(3)));
 
-    di(r.durata.length === 0, '5. durata<=tetto (INV-15) -- ogni seme non escluso raggiunge \'end\' entro ' + TETTO_FOTOGRAMMI + ' fotogrammi',
+    di(r.durata.length === 0, '5. durata<=tetto (INV-15) -- ogni seme raggiunge \'end\' entro ' + TETTO_FOTOGRAMMI + ' fotogrammi (duello compreso)',
       r.durata.length === 0 ? r.semiEseguiti + ' semi eseguiti, nessun hang vero'
         : primi(r.durata, 5, v => 'seme ' + v.seme + ': ' + v.fotogrammi + ' fotogrammi, stato finale \'' + v.statoFinale + '\''));
 
@@ -569,28 +777,38 @@ const primoScarto = (a, b) => {
       r.palla.length === 0 ? r.tickTotali + ' fotogrammi campionati, sempre entro i tetti'
         : primi(r.palla, 5, v => 'seme ' + v.seme + ' fotogramma ' + v.fotogramma + ': ' + v.tipo + '=' + v.val));
 
+    di(r.confini.length === 0, '12. CONFINI+MARGINE (INV-04) -- ogni giocatore entro [-' + MARGINE_CONFINI + ', FW+' + MARGINE_CONFINI + '] x [-' + MARGINE_CONFINI + ', FH+' + MARGINE_CONFINI + '], anche nel duello',
+      r.confini.length === 0 ? r.tickTotali + ' fotogrammi campionati (stick spinto verso i bordi), nessuno oltre il margine di ' + MARGINE_CONFINI + ' unita\' (5 m)'
+        : primi(r.confini, 5, v => 'seme ' + v.seme + ' fotogramma ' + v.fotogramma + ' (' + v.fase + '): ' + v.chi + ' x=' + v.x.toFixed(1) + ' y=' + v.y.toFixed(1)));
+
     /* ---- P0: VIOLAZIONI VERE -- si catturano, non si nascondono. UNA
        fixture + UNA riproduzione per ciascun TIPO di invariante violata
        (la prima occorrenza di quel tipo): due cause diverse condannano
-       due prove diverse su semi diversi, e non e' la stessa scoperta. */
+       due prove diverse su semi diversi, e non e' la stessa scoperta.
+       DAL COMPITO 2: la riproduzione riapplica ANCHE il log-duelli, per
+       tick, nello stesso loop -- senza, un seme condannato dopo un
+       dischetto non si riprodurrebbe (Duel resterebbe fermo in 'zone'). */
     const tipiViolati = Object.keys(r.violazioni);
     if (tipiViolati.length) {
       if (!fs.existsSync(path.join(RADICE, 'fuori'))) fs.mkdirSync(path.join(RADICE, 'fuori'));
-      /* LA RIPRODUZIONE (mandato S13.3: "ogni crash riprodotto da un
-         replay"): pagina fresca, si rigioca lo STESSO nastro fino allo
-         STESSO fotogramma, si rilanciano le nove invarianti (le stesse,
-         riusate) sullo stesso G -- se la violazione e' vera, ricompare
-         identica, non per fortuna. */
       const SONDA_REPLAY_VIOLAZIONE = (cfg) => {
         const t = window.__test;
-        const r = { nan: [], owner: [], punteggio: [], timeLeft: [], durata: [], cronometri: [], clamp: [], movimento: [], palla: [] };
+        const r = { nan: [], owner: [], punteggio: [], timeLeft: [], durata: [], cronometri: [], clamp: [], movimento: [], palla: [], confini: [] };
         t.semina(cfg.seme);
         t.startMatch(1, 1, { size: cfg.taglia });
         t.rigioca(cfg.nastro);
         const G = t.G;
+        cfg.FW = t.campo.FW; cfg.FH = t.campo.FH;
         verificaCronometriFratelli(G, r, cfg.seme, 0);
         const stato = { prevScore: [G.score[0], G.score[1]], prevTimeLeft: G.timeLeft };
+        const porFrame = new Map();
+        for (const ev of (cfg.logDuelli || [])) {
+          if (!porFrame.has(ev.fotogramma)) porFrame.set(ev.fotogramma, []);
+          porFrame.get(ev.fotogramma).push(ev);
+        }
         for (let fg = 0; fg < cfg.fotogrammi; fg++) {
+          const eventi = porFrame.get(fg);
+          if (eventi) for (const ev of eventi) t.Duel[ev.metodo].apply(t.Duel, ev.argomenti);
           t.simulate(1 / 60);
           verificaTickInvarianti(G, r, cfg.seme, fg, 'replay', stato, cfg);
         }
@@ -602,9 +820,9 @@ const primoScarto = (a, b) => {
         console.log('  dettaglio: ' + JSON.stringify(v0.dettaglio));
         const nomeFixture = 'fuori/_fuzzer-violazione-' + chiave + '-' + v0.seme + '-' + v0.semeComandi + '.json';
         fs.writeFileSync(path.join(RADICE, nomeFixture), JSON.stringify({
-          cantiere: 'voce-126-fuzzer-compito1', taglia: TAGLIA_BANCO, tipo: chiave,
+          cantiere: 'voce-126-fuzzer-compito2', taglia: TAGLIA_BANCO, tipo: chiave,
           semeGioco: v0.seme, semeComandi: v0.semeComandi, fotogrammi: v0.fotogrammi,
-          dettaglio: v0.dettaglio, nastro: v0.nastro,
+          dettaglio: v0.dettaglio, nastro: v0.nastro, logDuelli: v0.logDuelli,
         }, null, 2));
         console.log('  fixture (usa-e-getta, non committata, promuovibile): ' + nomeFixture);
 
@@ -618,14 +836,14 @@ const primoScarto = (a, b) => {
           ${verificaCronometriFratelli.toString()}
           ${verificaTickInvarianti.toString()}
           return (${SONDA_REPLAY_VIOLAZIONE})(${JSON.stringify({
-            seme: v0.seme, taglia: TAGLIA_BANCO, nastro: v0.nastro, fotogrammi: v0.fotogrammi,
-            tettoVelPalla: TETTO_VEL_PALLA, tettoVzPalla: TETTO_VZ_PALLA,
+            seme: v0.seme, taglia: TAGLIA_BANCO, nastro: v0.nastro, fotogrammi: v0.fotogrammi, logDuelli: v0.logDuelli,
+            tettoVelPalla: TETTO_VEL_PALLA, tettoVzPalla: TETTO_VZ_PALLA, marginBordi: MARGINE_CONFINI,
           })});
         })()`);
         const riprodotta = r2[chiave] && r2[chiave].length > 0;
-        di(riprodotta, 'la violazione (' + chiave + ') si riproduce dal SOLO nastro su pagina fresca (stesso seme, stesso replay)',
+        di(riprodotta, 'la violazione (' + chiave + ') si riproduce dal SOLO nastro+log-duelli su pagina fresca (stesso seme, stesso replay)',
           riprodotta ? 'confermata: ' + JSON.stringify(r2[chiave][r2[chiave].length - 1])
-            : 'NON riprodotta identica al replay (' + (r2[chiave] || []).length + ' voci trovate) -- da indagare, potrebbe dipendere da uno stato non catturato dal nastro');
+            : 'NON riprodotta identica al replay (' + (r2[chiave] || []).length + ' voci trovate) -- da indagare, potrebbe dipendere da uno stato non catturato dal nastro/log');
         await ctx3.close();
       }
     }
@@ -634,13 +852,14 @@ const primoScarto = (a, b) => {
     di(r.maxRigheReg < 40000, 'max righe Reg osservato su un singolo seme: ' + r.maxRigheReg + ' (tetto 40000, soglia allarme ' + SOGLIA_ALLARME_RIGHE + ')',
       r.allarmiRighe.length ? 'ALLARME: ' + primi(r.allarmiRighe, 5, v => 'seme ' + v.seme + ': ' + v.righeReg + ' righe') : 'nessun seme oltre la soglia di allarme');
 
-    /* ---- LA RIPETIBILITA' ---- */
-    console.log('\n-- LA RIPETIBILITA\' (stessa coppia di semi -> stessa partita) --');
+    /* ---- LA RIPRODUZIONE (compito 2, punto b: nastro + log-duelli) ---- */
+    console.log('\n-- LA RIPRODUZIONE (stessa coppia di semi + log-duelli -> stessa partita) --');
     if (!r.campione) {
-      di(false, 'ripetibilita\'', 'NESSUN seme pulito trovato (ne\' fra i ' + N_SEMI + ' principali ne\' fra i ' + EXTRA_CAMPIONE + ' extra): impossibile provarla questa corsa');
+      di(false, 'riproduzione', 'NESSUN seme pulito trovato (ne\' fra i ' + N_SEMI + ' principali ne\' fra i ' + EXTRA_CAMPIONE + ' extra): impossibile provarla questa corsa');
     } else {
       if (r.campioneExtra) console.log('  (nessuno dei ' + N_SEMI + ' semi principali era pulito: il campione arriva dal ' + r.campioneExtra + 'o seme extra, dichiarato)');
       const camp = r.campione;
+      console.log('  campione: seme ' + camp.seme + ', ' + camp.fotogrammiEseguiti + ' fotogrammi, ' + camp.logDuelli.length + ' azioni di duello da riapplicare');
       const ctx2 = await browser.newContext({ viewport: { width: 915, height: 412 }, isMobile: true, hasTouch: true, locale: 'it-IT' });
       const pag2 = await ctx2.newPage();
       await pag2.addInitScript(semeFisso, camp.seme);
@@ -652,31 +871,79 @@ const primoScarto = (a, b) => {
         t.dismissSplash && t.dismissSplash();
         if (t.save) t.save.tutorialDone = 1;
       });
-      /* L'ORDINE (dal piano, compito 1): pagina fresca, t.semina(semeGioco),
-         startMatch (serve a creare la partita: senza, G.players non
-         esiste), t.rigioca(nastro) -- Reg.deserializza non tocca G, quindi
-         l'ordine fra rigioca e startMatch non cambia il risultato, ma si
-         segue alla lettera l'ordine dichiarato nel piano. */
-      const replay = await pag2.evaluate(([seme, nastro, taglia, fotogrammi, IMPR]) => {
+      /* L'ORDINE: pagina fresca, t.semina(semeGioco), startMatch (serve a
+         creare la partita: senza, G.players non esiste), t.rigioca(nastro)
+         -- Reg.deserializza non tocca G, quindi l'ordine fra rigioca e
+         startMatch non cambia il risultato. DAL COMPITO 2: il log-duelli
+         si riapplica per tick, PRIMA di ogni t.simulate, indicizzato per
+         fotogramma -- STESSO ordine (agisciDuello poi simulate) della
+         corsa originale che l'ha prodotto. */
+      const replay = await pag2.evaluate(([seme, nastro, taglia, fotogrammi, IMPR, logDuelli]) => {
         const t = window.__test;
         const G = window.__test.G;
         t.semina(seme);
         t.startMatch(1, 1, { size: taglia });
         t.rigioca(nastro);
         const leggi = new Function('G', 'return (' + IMPR + ')(G)');
+        const porFrame = new Map();
+        for (const ev of logDuelli) {
+          if (!porFrame.has(ev.fotogramma)) porFrame.set(ev.fotogramma, []);
+          porFrame.get(ev.fotogramma).push(ev);
+        }
         const impronte = [];
         for (let f = 0; f < fotogrammi; f++) {
+          const eventi = porFrame.get(f);
+          if (eventi) for (const ev of eventi) t.Duel[ev.metodo].apply(t.Duel, ev.argomenti);
           t.simulate(1 / 60);
           if (f % 20 === 0) impronte.push(leggi(G));
         }
         return { impronte, gol: [G.score[0], G.score[1]], righeRilette: t.registroRighe };
-      }, [camp.seme, camp.nastro, TAGLIA_BANCO, camp.fotogrammiEseguiti, LEGGI_IMPRONTA_REPLAY.toString()]);
+      }, [camp.seme, camp.nastro, TAGLIA_BANCO, camp.fotogrammiEseguiti, LEGGI_IMPRONTA_REPLAY.toString(), camp.logDuelli]);
       const kScarto = primoScarto(camp.impronte, replay.impronte);
-      di(kScarto < 0, 'la stessa coppia (semeGioco=' + camp.seme + ', semeComandi) rigiocata da\' la stessa partita',
-        kScarto < 0 ? camp.impronte.length + ' campioni, risultato ' + replay.gol.join('-') + ', ' + replay.righeRilette + ' comandi riletti'
+      di(kScarto < 0, 'la stessa coppia (semeGioco=' + camp.seme + ', semeComandi) + log-duelli rigiocata da\' la stessa partita',
+        kScarto < 0 ? camp.impronte.length + ' campioni, risultato ' + replay.gol.join('-') + ', ' + replay.righeRilette + ' comandi riletti' + (camp.logDuelli.length ? ', ' + camp.logDuelli.length + ' azioni di duello riapplicate' : '')
           : 'divergono al campione ' + kScarto + ' (fotogramma ' + (kScarto * 20) + ')');
       await ctx2.close();
       if (ecc2.length) console.log('  (eccezioni sulla pagina di replay: ' + ecc2.slice(0, 2).join(' | ') + ')');
+    }
+
+    /* ---- DETERMINISMO CROSS-PARTITA (compito 2, punto d) ---- */
+    console.log('\n-- DETERMINISMO CROSS-PARTITA (N semi in sequenza == N semi isolati) --');
+    for (const kTarget of INDICI_CROSS_CHECK) {
+      const impSeq = r.impronteCrossCheck[kTarget];
+      if (!impSeq) {
+        di(false, 'determinismo cross-partita, seme indice ' + kTarget, 'impronta della corsa in sequenza non catturata (bug del banco stesso)');
+        continue;
+      }
+      const semeGiocoIso = SEME_GIOCO + kTarget, semeComandiIso = SEME_COMANDI + kTarget;
+      const ctxIso = await browser.newContext({ viewport: { width: 915, height: 412 }, isMobile: true, hasTouch: true, locale: 'it-IT' });
+      const pagIso = await ctxIso.newPage();
+      await pagIso.addInitScript(semeFisso, semeGiocoIso);
+      const eccIso = []; pagIso.on('pageerror', e => eccIso.push(e.message));
+      await pagIso.goto(`http://127.0.0.1:${srv.porta}/CALCETTO-il-gioco.html`, { waitUntil: 'load' });
+      await pagIso.waitForFunction('window.__test !== undefined', null, { timeout: 20000 });
+      await pagIso.evaluate(() => {
+        const t = window.__test;
+        t.dismissSplash && t.dismissSplash();
+        if (t.save) t.save.tutorialDone = 1;
+      });
+      const cfgIso = Object.assign({}, cfg, {
+        semi: 1, semeGioco0: semeGiocoIso, semeComandi0: semeComandiIso,
+        extraCampione: 0, indiciCrossCheck: [0],
+      });
+      const rIso = await pagIso.evaluate(`(function(){
+        ${verificaCronometriFratelli.toString()}
+        ${verificaTickInvarianti.toString()}
+        return (${SONDA_FUZZ})(${JSON.stringify(cfgIso)});
+      })()`);
+      const impIso = rIso.impronteCrossCheck[0];
+      const kScartoIso = impIso ? primoScarto(impSeq, impIso) : 0;
+      di(!!impIso && kScartoIso < 0,
+        'seme indice ' + kTarget + ' (semeGioco=' + semeGiocoIso + '): in sequenza (dopo ' + kTarget + ' partite precedenti sulla stessa pagina) == isolato su pagina fresca',
+        (!impIso) ? 'la corsa isolata non ha prodotto un\'impronta (bug del banco stesso)'
+          : (kScartoIso < 0 ? impSeq.length + ' campioni identici' : 'divergono al campione ' + kScartoIso + ' (fotogramma ' + (kScartoIso * 20) + ') -- residuo cross-partita VERO'));
+      await ctxIso.close();
+      if (eccIso.length) console.log('  (eccezioni sulla pagina isolata: ' + eccIso.slice(0, 2).join(' | ') + ')');
     }
 
     if (ecc.length) di(false, 'BANCO -- nessuna eccezione di pagina', 'eccezione: ' + ecc[0]);

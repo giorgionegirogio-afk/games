@@ -7,16 +7,18 @@
    input casuali non dicono niente) e di un soak (1000 partite/notte, zero
    violazioni). Questo file e' un BANCO, non codice sempre-attivo: legge lo
    stato del motore via `__test` (come _diag-nan.js/_q-determinismo.js/
-   _q-umore.js) durante partite CPU-CPU guidate da qui, e verifica UNDICI
+   _q-umore.js) durante partite CPU-CPU guidate da qui, e verifica DODICI
    invarianti (le prime sei dal compito 1, le tre successive -- clamp
    fiato/cond, >=2 uomini di movimento, palla sotto il piano/velocita' --
    dal compito 2, stesso cantiere; la decima -- il cross-proiettile di
    doCross -- dal cantiere #128, compito 1; la undicesima -- il battitore
-   espulso di resetKickoff -- dal cantiere #128, compito 2).
+   espulso di resetKickoff -- dal cantiere #128, compito 2; la dodicesima
+   -- confini+margine (INV-04) -- dal cantiere #126, compito 2).
 
-   LE UNDICI PROVE (le prime nove nate rosse su un bugiardo, vedi sotto;
+   LE DODICI PROVE (le prime nove nate rosse su un bugiardo, vedi sotto;
    la decima e la undicesima nascono rosse sulla funzione REALE del
-   gioco, non su un bugiardo -- vedi le loro voci piu' sotto):
+   gioco, non su un bugiardo; la dodicesima torna a nascere rossa su un
+   bugiardo, come le prime nove -- vedi le loro voci piu' sotto):
      1. NaN/Infinity   -- isFinite su ball.{x,y,z,vx,vy,vz} e su
         p.{x,y,vx,vy,aiTX,aiTY} per ogni giocatore. Assorbe _diag-nan.js
         come invariante permanente di batteria.
@@ -169,6 +171,48 @@
         indipendente da --bugiardo: e' permanente in batteria (cancello
         del cantiere #128, compito 2), non una dimostrazione del banco.
 
+     12. CONFINI + MARGINE -- INV-04 (voce #126, onda C -- 2, compito 2).
+        Ogni giocatore resta entro i limiti del campo PIU' un margine
+        dichiarato, a OGNI tick campionato: -MARGINE_CONFINI <= p.x <=
+        FW+MARGINE_CONFINI e -MARGINE_CONFINI <= p.y <= FH+MARGINE_CONFINI
+        (FW/FH letti da t.campo, la taglia vera in corso). Verificata
+        ANCHE durante il duello (scena 'freekick'): strumenti/_q-fuzzer.js
+        (che riusa questa stessa funzione) continua a chiamarla li' pure,
+        vedi la sua lettera di testa.
+        IL MARGINE, tradotto dal mandato ("+5 m", Appendice A INV-04): il
+        gioco non dichiara una conversione unita'<->metri per OGNI taglia,
+        ma UNA sola calibrazione ESATTA esiste nel codice (riga ~3919 di
+        CALCETTO-il-gioco.html, voce #86 compito 3): a taglia 11,
+        FH:1490 = 68 m veri del campo IFAB, cioe' 1490/68 = 21,91
+        unita'/metro. Nessuna calibrazione diversa e' mai stata dichiarata
+        per la 5 o la 7: si usa la STESSA conversione ovunque, come
+        approssimazione dichiarata (non una misura per quella taglia):
+          MARGINE_CONFINI = round(5 * 1490/68) = 110 unita'.
+        PERCHE' QUEL NUMERO E NON UN ALTRO: due uscite dal rettangolo di
+        gioco sono gia' LEGITTIME nel motore, e il margine deve coprirle
+        senza sforzo, altrimenti l'invariante condannerebbe il gioco
+        sano invece di un bugiardo:
+          - il portiere in tuffo (updateKeeper, CALCETTO-il-gioco.html:
+            19382-19383) puo' arrivare a p.x=-(GOAL_D-8)=-26 (dentro la
+            propria porta, la profondita' della rete) o FW+26 dall'altra
+            parte -- GOAL_D=34, riga 4078;
+          - l'espulso in panchina (updatePlayerFisica riga 18136 e
+            resetKickoff riga 10929) viene piazzato a p.y=-P_R*2.4=-31,2
+            (fuori dal rettangolo, DI PROPOSITO: siede fuori campo finche'
+            il cronometro dell'espulsione non scade).
+        110 unita' e' ben oltre entrambe (26 e 31,2 rispettivamente): il
+        margine assorbe le uscite VERE e note del gioco, non le nasconde
+        -- resta comunque stretto rispetto al resto del piano (1150x560 a
+        taglia 5): un giocatore forzato a p.x=-500 o oltre (--bugiardo
+        confini, forza p.x molto oltre il limite) resta condannato.
+        NON e' una calibrazione EMPIRICA come le prove 9/10/11 (nessun
+        banco CPU-CPU a seme fisso ha mai spinto un giocatore vicino al
+        bordo -- e' proprio il motivo per cui questa prova era RIMANDATA
+        al fuzzer, vedi la mappa INV-01..15 piu' sotto): e' una
+        TRADUZIONE dichiarata del mandato, controllata contro le due
+        uscite note del motore, non contro una misura di migliaia di
+        fotogrammi.
+
    IL CLAMP GIA' NEL GIOCO (verificato prima di scrivere la prova 9).
    z: nessuna guardia nominata, ma la fisica di volo (updateBall,
    CALCETTO-il-gioco.html:18959-18963) integra b.z SOLO quando b.z>0 ||
@@ -270,8 +314,9 @@
          node strumenti/_q-invarianti.js --bugiardo movimento
          node strumenti/_q-invarianti.js --bugiardo ballz
          node strumenti/_q-invarianti.js --bugiardo ballvel
+         node strumenti/_q-invarianti.js --bugiardo confini
          node strumenti/_q-invarianti.js --taglia 5 --seme 20260920 --semi 8
-   esce 0 se le undici prove sono verdi, 1 se almeno una e' rossa, 2 se il
+   esce 0 se le dodici prove sono verdi, 1 se almeno una e' rossa, 2 se il
    banco stesso e' esploso (pagina, hook mancante, eccezione), 3 se l'uso
    e' sbagliato.
 
@@ -305,9 +350,15 @@
           falsa.
      INV-04 ogni giocatore dentro i confini del campo + 5 m di margine,
           salvo uscite permesse
-       -> RIMANDATA al fuzzer/soak: richiede posizioni limite che un banco
-          deterministico a seme fisso non forza di proposito; nessun banco
-          oggi verifica i confini di posizione dei giocatori.
+       -> QUI (RETTIFICA, voce #126, onda C -- 2, compito 2, 20 settembre
+          2026: era RIMANDATA al fuzzer/soak, riga sopra fino a oggi --
+          adesso la prova 12 la implementa, in QUESTO file, riusata da
+          strumenti/_q-fuzzer.js che spinge davvero lo stick verso i
+          bordi, il caso che un banco CPU-CPU/a seme fisso come questo
+          non forza mai di proposito). "Salvo uscite permesse": il
+          margine (110 unita', vedi la prova 12) copre le due uscite
+          note e dichiarate del motore (il tuffo del portiere, la
+          panchina dell'espulso) -- nessun'altra e' stata misurata.
      INV-05 cronometro di partita monotono; corre durante i fermi
           "diegetici", si ferma solo per tempo non-diegetico; recupero
           proporzionale ai fermi; cambi solo a palla ferma
@@ -391,11 +442,11 @@ const arg = (n, d) => {
    tocca process.exit. Comportamento diretto INVARIATO. */
 if (require.main === module && (process.argv.includes('--help') || process.argv.includes('-h'))) {
   console.log('uso: node strumenti/_q-invarianti.js [--gioco file.html] [--taglia 5] [--seme N] [--semi 8]');
-  console.log('                                     [--bugiardo nan|owner|punteggio|timeleft|durata|fiato|movimento|ballz|ballvel]');
+  console.log('                                     [--bugiardo nan|owner|punteggio|timeleft|durata|fiato|movimento|ballz|ballvel|confini]');
   process.exit(3);
 }
 
-const BUGIARDI_NOTI = new Set(['nan', 'owner', 'punteggio', 'timeleft', 'durata', 'fiato', 'movimento', 'ballz', 'ballvel']);
+const BUGIARDI_NOTI = new Set(['nan', 'owner', 'punteggio', 'timeleft', 'durata', 'fiato', 'movimento', 'ballz', 'ballvel', 'confini']);
 const BUGIARDO = arg('bugiardo', '');
 if (BUGIARDO && !BUGIARDI_NOTI.has(BUGIARDO)) {
   console.error('USO: --bugiardo deve essere uno fra: ' + [...BUGIARDI_NOTI].join(', '));
@@ -414,9 +465,9 @@ const argSemiEsplicito = process.argv.includes('--semi');
    pagina, condizione necessaria perche' una sopravvivenza si veda (la
    primissima partita dopo il caricamento e' gia' a riposo per
    dichiarazione iniziale, azzerata o no da startMatch). In modalita'
-   --bugiardo nan/owner/punteggio/timeleft/fiato/movimento/ballz/ballvel
-   basta UN seme a dimostrare la condanna (l'iniezione e' indipendente dal
-   seme): di serie si riduce a 1, salvo --semi esplicito.
+   --bugiardo nan/owner/punteggio/timeleft/fiato/movimento/ballz/ballvel/
+   confini basta UN seme a dimostrare la condanna (l'iniezione e'
+   indipendente dal seme): di serie si riduce a 1, salvo --semi esplicito.
    --bugiardo durata E' DIVERSO, MISURATO: l'ordine sbagliato NON blocca
    OGNI seme in 'freekick' (la squadra 0 "umana immobile" si incastra solo
    se il gioco la porta a battere una punizione) -- su 20 semi da
@@ -441,6 +492,15 @@ const OSSERVATO_SP_MAX_LIBERA = 902;   // u/s, len(vx,vy), palla libera
 const OSSERVATO_VZ_MAX = 268;          // u/s, |vz|, palla libera
 const TETTO_VEL_PALLA = OSSERVATO_SP_MAX_LIBERA * 1.5;   // 1353
 const TETTO_VZ_PALLA = OSSERVATO_VZ_MAX * 1.5;           // 402
+/* PROVA 12 -- INV-04, confini+margine (voce #126, onda C -- 2, compito 2;
+   vedi la lettera di testa per il perche' di questo numero: la sola
+   conversione unita'<->metri ESATTA dichiarata nel gioco, taglia 11,
+   FH:1490=68 m IFAB, applicata come approssimazione a qualunque taglia,
+   e verificata contro le due uscite legittime note del motore -- il
+   tuffo del portiere, -26/+26 unita', e la panchina dell'espulso,
+   -31,2 unita' -- che deve coprire senza condannare il gioco sano). */
+const U_PER_METRO_IFAB11 = 1490 / 68;              // 21,91 -- la sola calibrazione esatta nel gioco (taglia 11)
+const MARGINE_CONFINI = Math.round(5 * U_PER_METRO_IFAB11);   // 110 unita' (mandato: +5 m)
 
 function servi(prova) {
   return new Promise(ok => {
@@ -525,6 +585,14 @@ function verificaTickInvarianti(G, r, seme, fotogramma, fase, stato, cfg) {
     /* PROVA 7 -- clamp fiato/cond. */
     if (!(p.fiato >= 0 && p.fiato <= 100)) { r.clamp.push({ seme, fotogramma, fase, chi: 'p' + i + '.fiato (' + p.role + ')', val: p.fiato }); violato = true; }
     if (!(p.cond >= 0 && p.cond <= 100)) { r.clamp.push({ seme, fotogramma, fase, chi: 'p' + i + '.cond (' + p.role + ')', val: p.cond }); violato = true; }
+    /* PROVA 12 -- INV-04, confini+margine (voce #126, onda C -- 2, compito
+       2; vedi la lettera di testa per il perche' del margine). cfg.FW/
+       cfg.FH arrivano dal chiamante (letti da t.campo, la taglia vera in
+       corso); cfg.marginBordi e' MARGINE_CONFINI. */
+    if (p.x < -cfg.marginBordi || p.x > cfg.FW + cfg.marginBordi ||
+        p.y < -cfg.marginBordi || p.y > cfg.FH + cfg.marginBordi) {
+      r.confini.push({ seme, fotogramma, fase, chi: 'p' + i + ' (' + p.role + ')', x: p.x, y: p.y }); violato = true;
+    }
   }
   const owner = G.ball.owner;
   const ownerOk = owner === -1 || (Number.isInteger(owner) && owner >= 0 && owner < G.players.length && !(G.players[owner].out > 0));
@@ -551,11 +619,12 @@ function verificaTickInvarianti(G, r, seme, fotogramma, fase, stato, cfg) {
 }
 
 /* ESPORTATE per il fuzzer (voce #126). TETTO_FOTOGRAMMI/TETTO_VEL_PALLA/
-   TETTO_VZ_PALLA/SEME_CANTIERE escono anche loro: un'unica fonte per le
-   soglie, invece di un secondo numero magico duplicato a mano altrove. */
+   TETTO_VZ_PALLA/SEME_CANTIERE/MARGINE_CONFINI escono anche loro: un'unica
+   fonte per le soglie, invece di un secondo numero magico duplicato a
+   mano altrove. */
 module.exports = {
   verificaCronometriFratelli, verificaTickInvarianti,
-  TETTO_FOTOGRAMMI, TETTO_VEL_PALLA, TETTO_VZ_PALLA, SEME_CANTIERE,
+  TETTO_FOTOGRAMMI, TETTO_VEL_PALLA, TETTO_VZ_PALLA, SEME_CANTIERE, MARGINE_CONFINI,
 };
 
 /* =========================================================================
@@ -565,7 +634,7 @@ const SONDA = (cfg) => {
   const t = window.__test;
   const r = {
     nan: [], owner: [], punteggio: [], timeLeft: [], durata: [], cronometri: [],
-    clamp: [], movimento: [], palla: [], docross: [], kickoffEspulso: [],
+    clamp: [], movimento: [], palla: [], docross: [], kickoffEspulso: [], confini: [],
     semiAbortitiDaViolazione: [], semiEseguiti: 0, tickTotali: 0,
   };
 
@@ -588,6 +657,12 @@ const SONDA = (cfg) => {
        (vedi la nota sopra servi()): stesso controllo, stesso risultato. */
     const G = t.G;
     verificaCronometriFratelli(G, r, seme, k);
+
+    /* PROVA 12 -- INV-04, confini+margine: FW/FH letti da t.campo DOPO
+       startMatch (dipendono dalla taglia scelta da setTaglia). Fissi per
+       tutta la partita (la taglia non cambia a meta' seme): si rilegge a
+       ogni k per correttezza, il costo e' un getter, non un ciclo caldo. */
+    cfg.FW = t.campo.FW; cfg.FH = t.campo.FH;
 
     /* PROVA 10 -- DOCROSS, il cross-proiettile (voce #128, compito 1,
        P0-1; vedi la lettera di testa per il perche' e i numeri attesi).
@@ -742,6 +817,11 @@ const SONDA = (cfg) => {
         }
         else if (cfg.bugiardo === 'ballz') G.ball.z = -10;
         else if (cfg.bugiardo === 'ballvel') { G.ball.owner = -1; G.ball.vx = 999999; G.ball.vy = 0; }
+        /* PROVA 12 (INV-04) -- si forza p.x MOLTO oltre il limite (il
+           margine e' 110 unita', qui si va a -99999): un numero finito,
+           non NaN, cosi' la condanna e' isolata alla sola prova 12 (la
+           prova 1/NaN resterebbe verde, come deve). */
+        else if (cfg.bugiardo === 'confini') G.players[0].x = -99999;
         if (verificaTick(fotogrammi, 'iniettato')) violatoQuiSeme = true;
         break;
       }
@@ -816,7 +896,7 @@ if (require.main === module) (async () => {
       return (${SONDA})(${JSON.stringify({
       taglia: TAGLIA_BANCO, seme0: SEME, semi: SEMI_BANCO, tetto: TETTO_FOTOGRAMMI,
       bugiardo: BUGIARDO, iniettaAlFrame: INIETTA_AL_FRAME, ordineSbagliato: BUGIARDO === 'durata',
-      tettoVelPalla: TETTO_VEL_PALLA, tettoVzPalla: TETTO_VZ_PALLA,
+      tettoVelPalla: TETTO_VEL_PALLA, tettoVzPalla: TETTO_VZ_PALLA, marginBordi: MARGINE_CONFINI,
     })});
     })()`);
 
@@ -870,6 +950,10 @@ if (require.main === module) (async () => {
     di(r.kickoffEspulso.length === 0, '11. KICKOFF-ESPULSO -- il battitore espulso (resetKickoff, voce #128): dopo un cartellino differito che espelle l\'idx1 della squadra che batte, G.ball.owner non e\' mai un giocatore out>0',
       r.kickoffEspulso.length === 0 ? 'scenario diretto (cartellino differito su team0/idx1, secondo giallo di squadra, kickTeam=team0): il battitore scelto e\' sempre out<=0'
         : primi(r.kickoffEspulso, 5, v => v.errore ? ('seme ' + v.seme + ': ' + v.errore) : ('seme ' + v.seme + ': owner=' + v.owner + ' (team ' + v.team + ' idx ' + v.idx + ') ha out=' + v.out)));
+
+    di(r.confini.length === 0, '12. CONFINI+MARGINE (INV-04, voce #126) -- ogni giocatore entro [-' + MARGINE_CONFINI + ', FW+' + MARGINE_CONFINI + '] x [-' + MARGINE_CONFINI + ', FH+' + MARGINE_CONFINI + ']',
+      r.confini.length === 0 ? r.tickTotali + ' fotogrammi campionati, nessun giocatore oltre il margine di ' + MARGINE_CONFINI + ' unita\' (5 m)'
+        : primi(r.confini, 5, v => 'seme ' + v.seme + ' fotogramma ' + v.fotogramma + ' (' + v.fase + '): ' + v.chi + ' x=' + v.x.toFixed(1) + ' y=' + v.y.toFixed(1)));
 
     if (ecc.length) di(false, 'BANCO -- nessuna eccezione di pagina', 'eccezione: ' + ecc[0]);
   } catch (e) {
