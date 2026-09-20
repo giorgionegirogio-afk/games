@@ -15898,7 +15898,15 @@ function doCross(p,nx,ny,mira,dest){
      il tempo e' T, quindi il prodotto resta dist — cambia che un cross
      corto diventa piu' lento e piu' alto, che e' quello che un cross e'. */
   const T=clamp(dist/430, L14_T0, L14_T1);
-  if(kickBall(p, dx/dist, dy/dist, dist/T, 0)){
+  /* IL CLAMP (voce #128, compito 1, P0-1): dist/T non aveva tetto -- e'
+     l'UNICO tiro del gioco che non passa da tiroVelocita()/TIRO_TETTO.
+     Math.min(TIRO_TETTO, dist/T) e' lo STESSO pavimento che tiroVelocita
+     applica a ogni altro tiro (~:16186-16187): sotto il tetto il numero
+     non cambia (il cross normale resta identico), sopra il tetto un
+     cross lungo ricade prima invece di volare come un proiettile -- T
+     (il tempo di volo, quindi la quota b.vz=280*T qui sotto) NON cambia,
+     solo la velocita' orizzontale si ferma al tetto. */
+  if(kickBall(p, dx/dist, dy/dist, Math.min(TIRO_TETTO, dist/T), 0)){
     b.vz=280*T;                                // la quota del cross, sopra ogni testa
     b.passTo=-1;
     /* CHI E' ATTESO SOTTO IL PALLONE. Un cross senza destinatario resta

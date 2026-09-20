@@ -7,12 +7,15 @@
    input casuali non dicono niente) e di un soak (1000 partite/notte, zero
    violazioni). Questo file e' un BANCO, non codice sempre-attivo: legge lo
    stato del motore via `__test` (come _diag-nan.js/_q-determinismo.js/
-   _q-umore.js) durante partite CPU-CPU guidate da qui, e verifica NOVE
-   invarianti (le prime sei dal compito 1, le ultime tre -- clamp
+   _q-umore.js) durante partite CPU-CPU guidate da qui, e verifica DIECI
+   invarianti (le prime sei dal compito 1, le tre successive -- clamp
    fiato/cond, >=2 uomini di movimento, palla sotto il piano/velocita' --
-   dal compito 2, stesso cantiere).
+   dal compito 2, stesso cantiere; la decima -- il cross-proiettile di
+   doCross -- dal cantiere #128, compito 1).
 
-   LE NOVE PROVE (ciascuna nata rossa su un bugiardo, vedi sotto):
+   LE DIECI PROVE (le prime nove nate rosse su un bugiardo, vedi sotto;
+   la decima, DOCROSS, nasce rossa sulla funzione REALE del gioco, non su
+   un bugiardo -- vedi la sua voce piu' sotto):
      1. NaN/Infinity   -- isFinite su ball.{x,y,z,vx,vy,vz} e su
         p.{x,y,vx,vy,aiTX,aiTY} per ogni giocatore. Assorbe _diag-nan.js
         come invariante permanente di batteria.
@@ -86,6 +89,39 @@
         portatore, nessun moto visibile): includerlo qui avrebbe prodotto
         un falso allarme sul suo stesso meccanismo di dribbling, la
         lezione #112/#114 che il piano chiede di evitare.
+     10. DOCROSS -- il cross-proiettile (voce #128, compito 1, P0-1).
+        SUBITO dopo startMatch (k===0, PRIMA di ogni t.simulate()), uno
+        scenario DIRETTO -- non un bugiardo, la funzione REALE del
+        gioco -- forza un CROSS LUNGO: un giocatore di movimento della
+        squadra 0 viene piazzato in fondo al proprio campo (x=20,
+        y=FH/2), G.ball.owner viene puntato su di lui (bypassa il
+        raggio KICK_R di kickBall, che a quella distanza rifiuterebbe
+        il calcio), e si chiama window.doCross(p,0,0) -- window.doCross
+        esiste per costruzione (una function-declaration in uno script
+        non-modulo diventa una proprieta' di window; G/FW/FH restano
+        nella CHIUSURA originale della funzione, quindi la fisica
+        eseguita e' quella vera, non una copia). SENZA destinatario
+        (mira=undefined), doCross usa il bersaglio VERO di ogni cross,
+        puntoCross(p) (il secondo palo) -- non un punto sintetico.
+        Subito dopo, SENZA un altro simulate(), si legge
+        len(ball.vx,ball.vy): deve restare <= TETTO_VEL_PALLA (la
+        stessa soglia della prova 9). IL BUG (CALCETTO-il-gioco.html:
+        15888-15914): T=clamp(dist/430,0.66,0.75) e' bloccato ma dist
+        NON lo e' -- l'unico tiro del gioco che non passa da
+        tiroVelocita()/TIRO_TETTO. Su questo scenario (taglia 5,
+        dist~1075 dal crossatore al secondo palo) T satura a 0,75 e
+        speed=dist/T~1434 u/s, sopra il tetto.
+        ISOLAMENTO (perche' questa prova non e' un --bugiardo che puo'
+        permettersi di rompere il resto della partita): ball/touches/
+        stats/posizione del giocatore vengono fotografati PRIMA della
+        chiamata e RIPRISTINATI subito dopo la misura -- un pallone
+        lasciato a velocita' abnorme romperebbe la prova 9 al tick
+        successivo per lo STESSO seme, un effetto collaterale della
+        misura, non del gioco, e contaminerebbe anche la prova 5
+        (durata, il seme si fermerebbe presto) senza motivo. Gira UNA
+        sola volta (k===0), indipendente da --bugiardo: e' permanente
+        in batteria (cancello del cantiere #128), non una dimostrazione
+        del banco.
 
    IL CLAMP GIA' NEL GIOCO (verificato prima di scrivere la prova 9).
    z: nessuna guardia nominata, ma la fisica di volo (updateBall,
@@ -189,7 +225,7 @@
          node strumenti/_q-invarianti.js --bugiardo ballz
          node strumenti/_q-invarianti.js --bugiardo ballvel
          node strumenti/_q-invarianti.js --taglia 5 --seme 20260920 --semi 8
-   esce 0 se le nove prove sono verdi, 1 se almeno una e' rossa, 2 se il
+   esce 0 se le dieci prove sono verdi, 1 se almeno una e' rossa, 2 se il
    banco stesso e' esploso (pagina, hook mancante, eccezione), 3 se l'uso
    e' sbagliato.
 
@@ -377,7 +413,7 @@ const SONDA = (cfg) => {
   const t = window.__test;
   const r = {
     nan: [], owner: [], punteggio: [], timeLeft: [], durata: [], cronometri: [],
-    clamp: [], movimento: [], palla: [],
+    clamp: [], movimento: [], palla: [], docross: [],
     semiAbortitiDaViolazione: [], semiEseguiti: 0, tickTotali: 0,
   };
   const CAMPI_BALL = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
@@ -410,6 +446,47 @@ const SONDA = (cfg) => {
     if (!(G.swLock[0] === 0 && G.swLock[1] === 0)) guasti.push('G.swLock=' + JSON.stringify(G.swLock) + ' (atteso [0,0])');
     if (!(G.swTimer[0] === 0 && G.swTimer[1] === 0)) guasti.push('G.swTimer=' + JSON.stringify(G.swTimer) + ' (atteso [0,0])');
     if (guasti.length) r.cronometri.push({ seme, indiceMatch: k, guasti });
+
+    /* PROVA 10 -- DOCROSS, il cross-proiettile (voce #128, compito 1,
+       P0-1; vedi la lettera di testa per il perche' e i numeri attesi).
+       Gira UNA sola volta (k===0): lo scenario e' sintetico e non
+       dipende dal seme, ripeterlo su altri semi non aggiungerebbe
+       nulla. Indipendente da --bugiardo: e' permanente in batteria. */
+    if (k === 0) {
+      const p0 = G.players.find(pl => pl.team === 0 && pl.role !== 'gk' && pl.out <= 0);
+      if (!p0) {
+        r.docross.push({ seme, errore: 'nessun giocatore di movimento (squadra 0) trovato' });
+      } else {
+        const idx0 = G.players.indexOf(p0);
+        /* ISOLAMENTO (vedi la lettera di testa): si fotografa tutto cio'
+           che window.doCross(p0,0,0) puo' toccare -- ball intero (incl.
+           owner/vx/vy/vz/lastTouch/toccoPiede/crossTo...), G.touches
+           (segnaTocco vi spinge un elemento), G.stats.cross[team]
+           (contatore), e x/y/chargeClip del giocatore -- per poterlo
+           ripristinare SUBITO dopo la misura, prima che il resto del
+           tick loop riprenda su questo stesso seme. */
+        const ballSnap = Object.assign({}, G.ball);
+        const touchesSnap = G.touches.slice();
+        const crossStatSnap = G.stats.cross[p0.team] || 0;
+        const px0 = p0.x, py0 = p0.y, clip0 = p0.chargeClip;
+
+        const FH = t.campo.FH;
+        p0.x = 20; p0.y = FH / 2;             // in fondo al proprio campo -- un cross lungo VERO
+        G.ball.x = p0.x; G.ball.y = p0.y;      // coerenza di scena (non necessario alla fisica: kickBall legge p, non b)
+        G.ball.owner = idx0;                   // bypassa il raggio KICK_R di kickBall (vedi la lettera di testa)
+        window.doCross(p0, 0, 0);              // SENZA destinatario: usa il bersaglio vero, puntoCross(p0) (secondo palo)
+
+        const sp = Math.sqrt(G.ball.vx * G.ball.vx + G.ball.vy * G.ball.vy);
+        if (!(sp <= cfg.tettoVelPalla)) {
+          r.docross.push({ seme, sp, vx: G.ball.vx, vy: G.ball.vy, tetto: cfg.tettoVelPalla });
+        }
+
+        Object.assign(G.ball, ballSnap);
+        G.touches.length = 0; for (const el of touchesSnap) G.touches.push(el);
+        G.stats.cross[p0.team] = crossStatSnap;
+        p0.x = px0; p0.y = py0; p0.chargeClip = clip0;
+      }
+    }
 
     let prevScore = [G.score[0], G.score[1]];
     let prevTimeLeft = G.timeLeft;
@@ -614,6 +691,10 @@ const SONDA = (cfg) => {
     di(r.palla.length === 0, '9. palla sotto il piano/velocita\' -- z>=0 sempre; a palla libera len(vx,vy)<=' + TETTO_VEL_PALLA + ' e |vz|<=' + TETTO_VZ_PALLA,
       r.palla.length === 0 ? r.tickTotali + ' fotogrammi campionati, z sempre >=0 e velocita\' a palla libera sempre entro i tetti (osservato max ' + OSSERVATO_SP_MAX_LIBERA + '/' + OSSERVATO_VZ_MAX + ' u/s su 30 semi di calibrazione)'
         : primi(r.palla, 5, v => 'seme ' + v.seme + ' fotogramma ' + v.fotogramma + ' (' + v.fase + '): ' + v.tipo + '=' + v.val));
+
+    di(r.docross.length === 0, '10. DOCROSS -- il cross-proiettile (doCross, voce #128): dopo un cross lungo diretto, len(vx,vy)<=' + TETTO_VEL_PALLA,
+      r.docross.length === 0 ? 'scenario diretto (crossatore in fondo al proprio campo, bersaglio vero puntoCross): velocita\' del cross entro il tetto'
+        : primi(r.docross, 5, v => v.errore ? ('seme ' + v.seme + ': ' + v.errore) : ('seme ' + v.seme + ': velocita\'=' + v.sp.toFixed(1) + ' u/s (vx=' + v.vx.toFixed(1) + ', vy=' + v.vy.toFixed(1) + ') sopra il tetto ' + v.tetto)));
 
     if (ecc.length) di(false, 'BANCO -- nessuna eccezione di pagina', 'eccezione: ' + ecc[0]);
   } catch (e) {
