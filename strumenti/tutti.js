@@ -657,6 +657,46 @@ const CANCELLI = [
      per corsa: corre in compagnia (~5 s). */
   { nome: 'invarianti',  cmd: ['strumenti/_q-invarianti.js'],                          conta: true,  lento: false },
   /* =====================================================================
+     fuzzer: IL SECONDO ANELLO DELL'ONDA C (voce #126, tre compiti dal
+     merge-base f27d951, 20 settembre 2026 — spec `docs/superpowers/
+     specs/2026-09-20-fuzzer-design.md`, piano `docs/superpowers/plans/
+     2026-09-20-fuzzer.md`). Il mandato (S13.1.2) chiede "property-based
+     tests: random inputs for thousands of ticks must never violate the
+     invariants". `invarianti` (sopra) le sa VERIFICARE ma le esercita
+     solo con partite CPU-contro-CPU: G.swLock/G.swTimer (scritti solo da
+     un cambio-giocatore/strappo UMANO, mai dalla CPU) restano vacui, e
+     nessuna posizione e' mai spinta a fondo scala verso i confini del
+     campo. Questo banco genera INPUT CASUALE deterministico via Reg+
+     Touch5 (uno stick e cinque dischi, come un pollice vero) su una
+     squadra umana(fuzzata) contro CPU, RIUSA le dodici invarianti di
+     `_q-invarianti.js` (require, non riscritte) dopo ogni fotogramma, e
+     gestisce anche il duello dal dischetto (Duel.pickZone/pickKeeper/
+     stopPower, LOGGATO A PARTE perche' Reg non lo cattura) invece di
+     escluderlo.
+
+     PERCHE' STA IN BATTERIA (conta:TRUE): e' l'unico banco che esercita
+     swLock/swTimer (20 semi su 20 osservati attivi, 147.134 fotogrammi-
+     tick su 150.589) e INV-04 (confini+margine, 110 unita') — nessun
+     altro cancello in lista muove mai un dito verso i bordi del campo o
+     tocca il cambio-giocatore umano. Nato dal primo giro (compito 1 su
+     main sano, prima di questa ricostruzione) con DUE VIOLAZIONI VERE
+     (il cross-proiettile e il battitore espulso, cantiere dedicato #128,
+     entrambe curate), e' arrivato VERDE su tutte le dodici invarianti
+     dopo la cura, col duello gestito (0 semi esclusi) e la riproduzione
+     verificata (nastro+log-duelli su pagina fresca da' la stessa
+     partita, byte per byte). LA SCOPERTA DEL COMPITO 2: il residuo di
+     determinismo cross-partita a taglia 5 non era il canale dei tocchi
+     (stick.ox/oy, gia' sano, verificato campo per campo) ma SAVE.rosa —
+     la rosa di carriera cresce di un attributo a ogni fine-partita, per
+     disegno; il fuzzer rigenera la rosa (nuovaRosa()) a ogni seme, come
+     dichiarato nel file.
+     Deterministico ai due semi separati del cantiere (semeGioco
+     20260920, semeComandi 71260920), taglia 5 (#98: il determinismo e'
+     instabile a 7/11): **15/15**, 20 semi, 150.589 fotogrammi simulati,
+     max 745 righe Reg (tetto 40000), corre in compagnia (~17 s, misurato
+     due volte, stesso esito e stesso numero al bit entrambe le volte). */
+  { nome: 'fuzzer',      cmd: ['strumenti/_q-fuzzer.js'],                              conta: true,  lento: false },
+  /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
      cancelli in lista ne ha visto uno.

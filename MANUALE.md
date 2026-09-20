@@ -456,6 +456,196 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Il fuzzer di comandi — #126 CANTIERE CHIUSO** (#126, onda C — secondo
+  anello, 20 settembre 2026, tre compiti dal merge-base `f27d951` — spec
+  `docs/superpowers/specs/2026-09-20-fuzzer-design.md`, piano
+  `docs/superpowers/plans/2026-09-20-fuzzer.md`; il primo giro di questo
+  stesso cantiere aveva trovato le due P0 curate alla voce #128, sopra).
+
+  **COSA È E COSA ESERCITA.** Il mandato (§13.1.2) chiede "property-based
+  tests: random inputs for thousands of ticks must never violate the
+  invariants". `strumenti/_q-invarianti.js` (#125/#128) sa VERIFICARLE ma
+  le esercita solo con partite CPU-contro-CPU: `G.swLock`/`G.swTimer`
+  (scritti solo da un cambio-giocatore/strappo UMANO) restano vacui, e
+  nessuna posizione è mai spinta a fondo scala verso i confini del campo.
+  `strumenti/_q-fuzzer.js` genera INPUT CASUALE deterministico su DUE
+  semi separati e dichiarati (`semeGioco` governa IA/fisica, `semeComandi`
+  — un xorshift proprio del banco, mai `Math.random` — decide i comandi):
+  guida `Reg`+`Touch5` (lo stesso alfabeto di un pollice vero: lo stick e
+  i cinque dischi, letti da `pulsanti(0)`) su una squadra umana(fuzzata)
+  contro CPU, taglia 5, a cadenza REALISTICA (5-15 fotogrammi fra un
+  comando e l'altro, non ogni tick — vigilando il tetto
+  `Reg.righe>40000`, che tronca in silenzio: **max osservato 745 righe su
+  un singolo seme**, mai oltre la soglia di allarme di 32.000). Il disco
+  FILTRANTE/CAMBIO (peso doppio: è `cambiaGiocatore`, lo swap) e i
+  tentativi di strappo (`provaStrappo`) sono privilegiati apposta — i due
+  soli scrittori di `G.swLock` in tutto il gioco. Dopo ogni fotogramma le
+  DODICI invarianti di `_q-invarianti.js` sono RIUSATE, non riscritte
+  (`require` porta il codice sorgente, `.toString()`, di
+  `verificaCronometriFratelli`+`verificaTickInvarianti` dentro lo script
+  di pagina): DIECI si verificano a ogni fotogramma (le prove 1-9 più la
+  12, INV-04 confini+margine); le prove 10/11 (DOCROSS/KICKOFF-ESPULSO,
+  voce #128) restano scenari diretti one-shot dentro `_q-invarianti.js`
+  stesso — nessun traffico casuale garantisce da solo un cross lunghissimo
+  o un cartellino differito pendente — già verificate lì, **11/11**.
+
+  **IL DUELLO, GESTITO** (compito 2). `__test.simulate` chiama
+  `Duel.update()` quando `G.scene==='freekick'`, non `step()`: il nastro
+  `Reg` sta fermo e il duello non vi finisce, per dichiarazione del gioco
+  stesso (`CALCETTO-il-gioco.html:43301-43336`). Senza intervento le fasi
+  `zone`/`power` del tiratore umano non hanno nessun timeout e la partita
+  si incastrerebbe per sempre — un falso hang, indistinguibile da INV-15
+  rotta davvero. Il banco risolve con `Duel.pickZone/stopPower/pickKeeper`
+  (stesso PRNG dei comandi, tempo di reazione probabilistico: 0,35 per
+  tick), LOGGATO A PARTE (`logDuelli`: {seme, fotogramma, metodo,
+  argomenti}) perché `Reg` non lo cattura: **0 semi esclusi su 20**
+  (misurato due volte, stessa cifra entrambe le volte), 6 azioni di
+  duello osservate in una corsa (pickZone=1, stopPower=1, pickKeeper=4).
+
+  **SWLOCK/SWTIMER ESERCITATI** — il cronometro-fratello più a rischio
+  della prova 6 (cinque regressioni pagate a mano su questo campo: #86/
+  #87/#107/#117/#122), vacuo in ogni partita CPU-contro-CPU: **20 semi su
+  20** hanno osservato `G.swLock!=[0,0]` almeno una volta, **147.134
+  fotogrammi-tick su 150.589** (97,7%) con swLock attivo.
+
+  **INV-04 — CONFINI+MARGINE, nuova**, aggiunta a `_q-invarianti.js`
+  (prova 12) per questo cantiere: ogni giocatore entro
+  [-110, FW+110] × [-110, FH+110] unità (110 = 5 metri, mandato),
+  verificata anche dentro il duello. Lo stick a fondo scala verso i bordi
+  (il 55% delle coordinate cade nel 25% esterno dell'intervallo) la
+  stressa per la prima volta — un banco CPU-contro-CPU a seme fisso non
+  spinge mai un giocatore vicino al bordo. **Verde su 150.589 fotogrammi
+  campionati.**
+
+  **LA RIPRODUZIONE**: pagina fresca, `t.semina(semeGioco)`, `startMatch`,
+  `t.rigioca(nastro)` col log-duelli riapplicato per tick nello stesso
+  loop di `simulate` — senza, un seme che passa da un dischetto
+  divergerebbe dal fotogramma del duello in poi. **Verde**: 351 campioni
+  identici, risultato 0-3, 564 comandi riletti.
+
+  **LA SCOPERTA SAVE.ROSA, e la RETTIFICA A EDIZIONI della voce #128**
+  (20 settembre 2026, misurata durante la messa a punto del determinismo
+  cross-partita di questo stesso banco — compito 2, ripresa e riverificata
+  qui al compito 3). La voce #128 aveva scritto: «il canale che
+  sopravvive... a taglia 5 è quello dei TOCCHI» (`stick.ox/oy` e affini),
+  con la consegna esplicita al fuzzer di azzerarli fra le partite. Quella
+  era la miglior misura disponibile in quel momento — nessun fuzzer
+  esisteva ancora per generare partite in sequenza a dita vere — ma
+  generalizzava un sospetto plausibile senza il confronto campo-per-campo
+  che solo questo compito ha fatto: `Touch5.stick` è risultato IDENTICO
+  fra le due corse al fotogramma della prima divergenza — quel canale è
+  già sano, la cura preesistente di `Reg.accendi()`/`azzeraComandi()`
+  basta da sola. **LA CAUSA VERA**, trovata misurando
+  (`fuori/_diag-crosspartita-scratch.js`, usa-e-getta, non committato):
+  `G.players[i].tecnica` differiva GIÀ al fotogramma 0, PRIMA di ogni
+  comando (69 contro 63 per un giocatore, 55 contro 53 per un altro) — non
+  è il canale input-a-dita, è `SAVE.rosa`, la rosa di carriera, creata UNA
+  sola volta al caricamento della pagina
+  (`if(!SAVE.rosa) SAVE.rosa=nuovaRosa()`, `CALCETTO-il-gioco.html:10137`)
+  e fatta CRESCERE di un attributo a caso a ogni fine-partita (righe
+  41623-41635: la progressione di carriera, un pregio del gioco vero, non
+  un difetto). Su una pagina che gioca N semi in sequenza la rosa al seme
+  k è già cresciuta di k partite; su una pagina isolata nasce sempre
+  fresca. **Il primo tentativo di cura era sbagliato**, misurato:
+  nullare `SAVE.rosa` fa cadere `setupPlayers` nel ramo "nessuna rosa"
+  (cloni a statistica media, `p.piatto=1`), non nella rosa vera — un'ALTRA
+  partita, non la stessa. **La cura vera**: `t.save.rosa =
+  window.nuovaRosa()`, una RIGENERAZIONE esplicita (non un azzeramento)
+  della stessa rosa-base pura che il caricamento scrive una volta sola
+  (`nuovaRosa()` è pura, hash del solo indice `i`, mai di `SEME`/`dado()`
+  — verificato a numeri: stesso JSON, tecnica 63/53/62/58/56). **Il
+  gioco non è stato toccato**: la rigenerazione vive dentro il banco, a
+  ogni seme del fuzzer, prima di `startMatch`. Verificato sui due indici
+  scelti apposta (k=1, il più sensibile — la diagnosi originaria misurava
+  già una divergenza al secondo giro; k=19, l'ultimo della batteria, il
+  più carico di stato): **327 e 476 campioni identici** rispettivamente,
+  seme in sequenza contro seme isolato su pagina fresca. `Touch5`/`Reg`
+  restano parte della disciplina giusta (uno stato di tocco a metà va
+  comunque azzerato da chi chiama), ma NON erano la causa del residuo
+  osservato: quella era `SAVE.rosa`. **Consegna al SOAK #127**: rigenerare
+  la rosa (`nuovaRosa()`) a ogni partita in sequenza, come qui — il SOAK
+  non usa dita (zero `Touch5`), quindi non aveva mai avuto bisogno della
+  cura sui tocchi, ma avrebbe lo stesso questo residuo se girasse N
+  partite sulla stessa pagina senza rigenerare la rosa.
+
+  **NESSUNA P0 NUOVA**: le due violazioni vere trovate dal primo giro di
+  questo stesso fuzzer (il cross-proiettile e il battitore espulso,
+  cantiere dedicato #128, sopra) sono CURATE e CONFERMATE ASSENTI da
+  questa corsa — dodici invarianti tutte verdi (dieci a ogni tick, due
+  dedicate già verdi in #128), zero fixture nuove scritte in `fuori/`. Il
+  gioco regge lo stress del fuzzer. **Il fuzzer resta una RETE
+  PERMANENTE**: se un domani un tocco al motore riaprisse una di queste
+  dodici proprietà, la prossima corsa in batteria diventerebbe rossa — e
+  per il mandato (§13.3) una violazione vera sarebbe una P0 che blocca,
+  non un numero da rincorrere.
+
+  **COSA NON COPRE** (dichiarato dal piano, non regalato). **INV-06/07**
+  (validità del gol / ripresa da fermo): il fuzzer genera l'ESPOSIZIONE
+  (traffico denso di tiri/cross/scivolate ovunque) ma verificarle richiede
+  un'invariante DEDICATA che oggi non esiste — non "coperta gratis":
+  seguito aperto, un assert nuovo. **Umano-contro-umano** (due nastri,
+  `G.mode===2`): più complesso, nessun vantaggio chiaro per le invarianti,
+  rimandato — il fuzzer gioca solo umano(fuzzato) contro CPU.
+
+  **COMPITO 3 — BATTERIA E NUMERI VERI.** `_q-fuzzer` registrato in
+  `strumenti/tutti.js` (`conta:true`, sul modello di
+  `regole`/`umore`/`invarianti`/`cpu-ordine`): misurato due volte da solo,
+  stesso esito bit per bit entrambe le volte, **~17 s** (16,976 e
+  16,985 s) — ben sotto la soglia 30-40 s che avrebbe chiesto
+  `lento:true` (il modello `audio.js`/`avvio`): corre IN COMPAGNIA. **In
+  cifre, dalla corsa di verifica**: 20 semi lanciati, 0 esclusi per
+  duello, 20 eseguiti nella statistica, 150.589 fotogrammi totali
+  simulati, 11.812 comandi emessi, 1.096 finte/strappi tentati, 1.255
+  avvii del disco swap-privilegiato.
+
+  Batteria intera rilanciata DUE volte, per lo stesso motivo che chiede
+  il mandato («ogni bug ha prima un test fallito», qui rovesciato: ogni
+  rosso va indagato prima di richiuderlo). **Prima corsa** (banco
+  occupato 3,4 volte il suo minimo, misurato dalla guardia di `tutti.js`):
+  35 cancelli eseguiti in 713 s di orologio, ROSSO su `prestazione`
+  (cronometrico, gira da solo a campo libero per costruzione): «il 95°
+  percentile sotto: 141,7 → 183,4 ms (+29,4%, ammesso +25%)». **Indagato,
+  non richiuso a occhi chiusi**: `prestazione` è il cancello di casa già
+  documentato come rumoroso sotto contesa (vedi il commento in testa a
+  `tutti.js` — il 20 agosto ha dichiarato +26,9%/+26,3% su due file
+  BYTE-IDENTICI sotto carico), e la stessa corsa lo segnala da sola
+  («misura un tempo su un banco occupato 3,4x: sospetto, non condanna»).
+  Rimisurato DA SOLO (`node strumenti/tutti.js --solo prestazione`)
+  subito dopo, su banco più libero: **3 confronti su 3 passati, VERDE**.
+  **Seconda corsa intera**, di nuovo dall'inizio (nessuna riga toccata fra
+  le due): **35 cancelli eseguiti in 716 s di orologio (2,4 volte più
+  veloce che in fila), i 34 che contano TUTTI VERDI** — `prestazione`
+  incluso, questa volta pulito dal primo colpo (3/3), a conferma che il
+  rosso della prima corsa era contesa del banco, non un difetto
+  introdotto da questo cantiere (che oltretutto non tocca il motore).
+  `_q-fuzzer` **41 s** dentro la corsa in compagnia (contro i ~17 s
+  misurati da solo su banco libero: la differenza è la contesa dei
+  quattro cancelli paralleli, lo stesso motivo per cui `prestazione`/
+  `giocata` girano DA SOLI e non IN COMPAGNIA nella lista).
+
+  `_q-invarianti.js` **12/12** (11/11 di suo, più l'esercizio del
+  fuzzer); `_q-fuzzer.js` **15/15**; `audio.js` (lento, escluso dalla
+  corsa di default) stato dichiarato dal #122, non toccato qui; l'unico
+  informativo `istantanea.js` (non conta) **NO 46/56** in entrambe le
+  corse — lo stesso schema già dichiarato dalle voci #113/#114/#122/
+  #125/#128, non un peggioramento di questo cantiere. **Verdetto della
+  seconda corsa (quella pulita)**: «VERDE CON RISERVA: tutti i 34
+  cancelli che contano sono passati», la riserva è solo l'informativo
+  `istantanea` contro un riferimento del 20 agosto che era già una prova
+  NULLA (nessuna quota valida da confrontare). `git diff main --
+  CALCETTO-il-gioco.html` **VUOTO** per l'intero cantiere #126 (compiti
+  1-3): il gioco non è mai stato toccato da questo ramo — le due cure del
+  cross/kickoff vivono nel cantiere #128, non qui.
+
+  **DOMANDA APERTA, NON RISOLTA QUI**: se `SAVE.rosa` cresce per carriera
+  e le SFIDE (`Sfida.gioca`/`guarda`) portano un nastro fra due telefoni
+  diversi, la rosa di ciascun giocatore in quel momento può differire da
+  telefono a telefono — va verificato se le sfide già forzano una rosa
+  canonica nel nastro (come già fanno per `sponde:'gabbia'`/
+  `miraGuidata:'pieno'`, voci #105/#113) o se questo è un canale di
+  non-determinismo delle sfide non ancora censito. Non indagato da
+  questo cantiere di banco: bandiera per chi apre il prossimo.
+
 - **Le due crepe del fuzzer, curate — #128 CANTIERE CHIUSO** (#128, 20
   settembre 2026, tre compiti dal merge-base `bc2d802`, primo cantiere di
   MOTORE aperto dal primo giro del fuzzer #126 — spec
