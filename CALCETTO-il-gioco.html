@@ -10951,14 +10951,37 @@ function resetKickoff(){
      segnata non devono poter attribuire quella successiva. */
   G.touches.length=0;
   const kt=G.kickTeam?1:0, dir=kt===0?1:-1;
+  /* LA CURA (voce #128, compito 2, P0-2): "&& p.out<=0" in piu' sulla
+     condizione di sempre -- un espulso (p.out>0, appena marcato da
+     scaricaCardVantaggio/infliggiCartellino qui sopra) non e' mai piu'
+     scelto come battitore. FALLBACK se idx1 non e' eleggibile (espulso
+     o assente): il primo giocatore di movimento in campo
+     (diMovimentoInCampo, :18516-18518 -- lo STESSO pattern che
+     infliggiCartellino usa gia' per il cambio di controllo, ~:18537),
+     sempre non-vuoto per costruzione (la regola di casa vieta di
+     scendere sotto 2 uomini di movimento). Il kickoff NORMALE (idx1
+     eleggibile) non cambia: il ciclo lo trova come sempre e il break
+     esce PRIMA del fallback. */
+  let scelto=false;
   for(const p of G.players){
-    if(p.team===kt && p.idx===1){
+    if(p.team===kt && p.idx===1 && p.out<=0){
       p.x=FW/2-dir*30; p.y=FH/2; p.fx=dir; p.fy=0;
       G.ball.x=p.x+dir*CARRY_DIST; G.ball.y=FH/2;
       G.ball.owner=G.players.indexOf(p);
       segnaTocco(G.ball.owner, true);   // il calcio d'inizio e' un piede (voce #107, compito 2)
       if(!G.cpu[kt]) G.ctrl[kt]=G.players.indexOf(p);   // controlli subito chi batte
+      scelto=true;
       break;
+    }
+  }
+  if(!scelto){
+    const p=diMovimentoInCampo(kt)[0];
+    if(p){
+      p.x=FW/2-dir*30; p.y=FH/2; p.fx=dir; p.fy=0;
+      G.ball.x=p.x+dir*CARRY_DIST; G.ball.y=FH/2;
+      G.ball.owner=G.players.indexOf(p);
+      segnaTocco(G.ball.owner, true);
+      if(!G.cpu[kt]) G.ctrl[kt]=G.players.indexOf(p);
     }
   }
 }

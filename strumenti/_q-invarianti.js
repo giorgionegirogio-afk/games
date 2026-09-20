@@ -7,15 +7,16 @@
    input casuali non dicono niente) e di un soak (1000 partite/notte, zero
    violazioni). Questo file e' un BANCO, non codice sempre-attivo: legge lo
    stato del motore via `__test` (come _diag-nan.js/_q-determinismo.js/
-   _q-umore.js) durante partite CPU-CPU guidate da qui, e verifica DIECI
+   _q-umore.js) durante partite CPU-CPU guidate da qui, e verifica UNDICI
    invarianti (le prime sei dal compito 1, le tre successive -- clamp
    fiato/cond, >=2 uomini di movimento, palla sotto il piano/velocita' --
    dal compito 2, stesso cantiere; la decima -- il cross-proiettile di
-   doCross -- dal cantiere #128, compito 1).
+   doCross -- dal cantiere #128, compito 1; la undicesima -- il battitore
+   espulso di resetKickoff -- dal cantiere #128, compito 2).
 
-   LE DIECI PROVE (le prime nove nate rosse su un bugiardo, vedi sotto;
-   la decima, DOCROSS, nasce rossa sulla funzione REALE del gioco, non su
-   un bugiardo -- vedi la sua voce piu' sotto):
+   LE UNDICI PROVE (le prime nove nate rosse su un bugiardo, vedi sotto;
+   la decima e la undicesima nascono rosse sulla funzione REALE del
+   gioco, non su un bugiardo -- vedi le loro voci piu' sotto):
      1. NaN/Infinity   -- isFinite su ball.{x,y,z,vx,vy,vz} e su
         p.{x,y,vx,vy,aiTX,aiTY} per ogni giocatore. Assorbe _diag-nan.js
         come invariante permanente di batteria.
@@ -122,6 +123,51 @@
         sola volta (k===0), indipendente da --bugiardo: e' permanente
         in batteria (cancello del cantiere #128), non una dimostrazione
         del banco.
+     11. KICKOFF-ESPULSO -- il battitore espulso (voce #128, compito 2,
+        P0-2). SUBITO dopo startMatch (k===0, PRIMA di ogni t.simulate()),
+        uno scenario DIRETTO -- non un bugiardo, le funzioni REALI del
+        gioco -- stagiona un cartellino differito sul giocatore team0/
+        idx1 (il mezzalasinistra che batte sempre il calcio d'inizio,
+        formation ~:10690) e forza il prossimo kickoff a passare da lui:
+        G.vantaggio={team:-1,x:0,y:0,t:0,card:idx} (idx = l'indice del
+        giocatore team0/idx1 -- la stessa forma che il gioco stesso
+        scrive, vedi :17306/:18827), G.stats.gialli[0]=1 (il PROSSIMO
+        cartellino sale a 2, e CARTELLINI_PER_ESPULSIONE=2, :4508, fa
+        scattare l'espulsione dentro infliggiCartellino, :18519-18525),
+        G.kickTeam=false (kt=G.kickTeam?1:0, resetKickoff :10953 -- la
+        squadra 0 batte). Si chiama window.resetKickoff() -- esposto per
+        costruzione, come window.doCross della prova 10 -- e si legge
+        G.ball.owner: se il giocatore proprietario ha out>0, la prova e'
+        rossa (un espulso non puo' avere la palla, la STESSA definizione
+        della prova 2/owner-valido, qui su uno scenario diretto invece
+        che su un campionamento a tappeto).
+        IL BUG (CALCETTO-il-gioco.html:10904-10964): resetKickoff chiama
+        scaricaCardVantaggio() PRIMA (:10922 -> infliggiCartellino, che
+        marca p.out=ESPULSIONE_SEC e rilascia G.ball.owner correttamente
+        SE quel giocatore lo possedeva), MA la scelta del battitore, piu'
+        sotto (p.team===kt && p.idx===1, ~:10955), non controlla out<=0:
+        se l'appena-espulso e' proprio l'idx1 della squadra che batte,
+        resetKickoff lo rimette in campo (le sue x/y sovrascritte sul
+        punto di battuta, poche righe dopo l'aver gia' scritto la
+        posizione "fuori" per p.out>0 alla riga 10929) e G.ball.owner
+        torna a puntarlo -- un espulso in possesso della palla.
+        ISOLAMENTO (perche' questa prova non deve alterare il resto
+        della partita simulata, la STESSA cautela della prova 10): ogni
+        giocatore (clone completo per-oggetto, non solo i campi attesi
+        -- infliggiCartellino tocca anche slide/recover/vx/vy/ax/ay/
+        gialli/out, resetKickoff quasi tutto il resto), G.ball intero,
+        G.ctrl, G.touches, G.vantaggio, G.kickTeam, G.stats.gialli/
+        espulsi, G.battuta e G.fatti/G.fattiTot (emettiFatto('espulsione',
+        ...) dentro infliggiCartellino spinge un fatto vero, che
+        altrimenti verrebbe "visto" piu' tardi da step() e applicherebbe
+        un impatto umore/nervi per un'espulsione mai davvero accaduta nel
+        resto della partita) vengono fotografati PRIMA della chiamata e
+        RIPRISTINATI subito dopo la misura -- il kickoff VERO gia'
+        prodotto da startMatch (via setupPlayers, con G.kickTeam scelto
+        da dado()) resta quello che il resto del seme simula, non lo
+        scenario sintetico di questa prova. Gira UNA sola volta (k===0),
+        indipendente da --bugiardo: e' permanente in batteria (cancello
+        del cantiere #128, compito 2), non una dimostrazione del banco.
 
    IL CLAMP GIA' NEL GIOCO (verificato prima di scrivere la prova 9).
    z: nessuna guardia nominata, ma la fisica di volo (updateBall,
@@ -225,7 +271,7 @@
          node strumenti/_q-invarianti.js --bugiardo ballz
          node strumenti/_q-invarianti.js --bugiardo ballvel
          node strumenti/_q-invarianti.js --taglia 5 --seme 20260920 --semi 8
-   esce 0 se le dieci prove sono verdi, 1 se almeno una e' rossa, 2 se il
+   esce 0 se le undici prove sono verdi, 1 se almeno una e' rossa, 2 se il
    banco stesso e' esploso (pagina, hook mancante, eccezione), 3 se l'uso
    e' sbagliato.
 
@@ -413,7 +459,7 @@ const SONDA = (cfg) => {
   const t = window.__test;
   const r = {
     nan: [], owner: [], punteggio: [], timeLeft: [], durata: [], cronometri: [],
-    clamp: [], movimento: [], palla: [], docross: [],
+    clamp: [], movimento: [], palla: [], docross: [], kickoffEspulso: [],
     semiAbortitiDaViolazione: [], semiEseguiti: 0, tickTotali: 0,
   };
   const CAMPI_BALL = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
@@ -485,6 +531,69 @@ const SONDA = (cfg) => {
         G.touches.length = 0; for (const el of touchesSnap) G.touches.push(el);
         G.stats.cross[p0.team] = crossStatSnap;
         p0.x = px0; p0.y = py0; p0.chargeClip = clip0;
+      }
+    }
+
+    /* PROVA 11 -- KICKOFF-ESPULSO, il battitore espulso (voce #128,
+       compito 2, P0-2; vedi la lettera di testa per il perche', il bug
+       e l'isolamento). Gira UNA sola volta (k===0), indipendente da
+       --bugiardo: e' permanente in batteria. */
+    if (k === 0) {
+      const bersaglio = G.players.find(pl => pl.team === 0 && pl.idx === 1);
+      if (!bersaglio) {
+        r.kickoffEspulso.push({ seme, errore: 'nessun giocatore team0/idx1 trovato' });
+      } else {
+        const idxBersaglio = G.players.indexOf(bersaglio);
+        /* ISOLAMENTO (vedi la lettera di testa): si fotografa TUTTO cio'
+           che resetKickoff()/scaricaCardVantaggio()/infliggiCartellino
+           possono toccare -- clone completo di ogni giocatore (non solo
+           i campi attesi), G.ball intero, G.ctrl, G.touches, G.vantaggio,
+           G.kickTeam, G.stats.gialli/espulsi, G.battuta, G.fatti/
+           G.fattiTot -- per ripristinare ESATTAMENTE il kickoff vero
+           gia' prodotto da startMatch (via setupPlayers, G.kickTeam
+           scelto da dado()) subito dopo la misura. */
+        const playersSnap = G.players.map(p => Object.assign({}, p));
+        const ballSnap = Object.assign({}, G.ball);
+        const ctrlSnap = G.ctrl.slice();
+        const touchesSnap = G.touches.slice();
+        const vantaggioSnap = G.vantaggio;
+        const kickTeamSnap = G.kickTeam;
+        const gialliSnap = G.stats.gialli.slice();
+        const espulsiSnap = G.stats.espulsi.slice();
+        const battutaSnap = G.battuta;
+        const fattiSnap = G.fatti.slice();
+        const fattiTotSnap = G.fattiTot;
+
+        /* LO SCENARIO: un cartellino differito sul team0/idx1 (il
+           battitore di sempre, formation ~:10690), con la squadra gia'
+           a quota 1 giallo -- il PROSSIMO (il suo) sale a 2, e
+           CARTELLINI_PER_ESPULSIONE=2 fa scattare l'espulsione
+           (infliggiCartellino, :18519-18525). G.kickTeam=false forza la
+           squadra 0 a battere (kt=G.kickTeam?1:0, resetKickoff :10953). */
+        G.vantaggio = { team: -1, x: 0, y: 0, t: 0, card: idxBersaglio };
+        G.stats.gialli[0] = 1;
+        G.kickTeam = false;
+
+        window.resetKickoff();
+
+        const owner = G.ball.owner;
+        const ownerP = (owner >= 0 && owner < G.players.length) ? G.players[owner] : null;
+        if (ownerP && ownerP.out > 0) {
+          r.kickoffEspulso.push({ seme, owner, out: ownerP.out, team: ownerP.team, idx: ownerP.idx });
+        }
+
+        /* RIPRISTINO -- vedi ISOLAMENTO qui sopra. */
+        for (let i = 0; i < G.players.length; i++) Object.assign(G.players[i], playersSnap[i]);
+        Object.assign(G.ball, ballSnap);
+        G.ctrl[0] = ctrlSnap[0]; G.ctrl[1] = ctrlSnap[1];
+        G.touches.length = 0; for (const el of touchesSnap) G.touches.push(el);
+        G.vantaggio = vantaggioSnap;
+        G.kickTeam = kickTeamSnap;
+        G.stats.gialli[0] = gialliSnap[0]; G.stats.gialli[1] = gialliSnap[1];
+        G.stats.espulsi[0] = espulsiSnap[0]; G.stats.espulsi[1] = espulsiSnap[1];
+        G.battuta = battutaSnap;
+        G.fatti.length = 0; for (const el of fattiSnap) G.fatti.push(el);
+        G.fattiTot = fattiTotSnap;
       }
     }
 
@@ -695,6 +804,10 @@ const SONDA = (cfg) => {
     di(r.docross.length === 0, '10. DOCROSS -- il cross-proiettile (doCross, voce #128): dopo un cross lungo diretto, len(vx,vy)<=' + TETTO_VEL_PALLA,
       r.docross.length === 0 ? 'scenario diretto (crossatore in fondo al proprio campo, bersaglio vero puntoCross): velocita\' del cross entro il tetto'
         : primi(r.docross, 5, v => v.errore ? ('seme ' + v.seme + ': ' + v.errore) : ('seme ' + v.seme + ': velocita\'=' + v.sp.toFixed(1) + ' u/s (vx=' + v.vx.toFixed(1) + ', vy=' + v.vy.toFixed(1) + ') sopra il tetto ' + v.tetto)));
+
+    di(r.kickoffEspulso.length === 0, '11. KICKOFF-ESPULSO -- il battitore espulso (resetKickoff, voce #128): dopo un cartellino differito che espelle l\'idx1 della squadra che batte, G.ball.owner non e\' mai un giocatore out>0',
+      r.kickoffEspulso.length === 0 ? 'scenario diretto (cartellino differito su team0/idx1, secondo giallo di squadra, kickTeam=team0): il battitore scelto e\' sempre out<=0'
+        : primi(r.kickoffEspulso, 5, v => v.errore ? ('seme ' + v.seme + ': ' + v.errore) : ('seme ' + v.seme + ': owner=' + v.owner + ' (team ' + v.team + ' idx ' + v.idx + ') ha out=' + v.out)));
 
     if (ecc.length) di(false, 'BANCO -- nessuna eccezione di pagina', 'eccezione: ' + ecc[0]);
   } catch (e) {
