@@ -43,8 +43,18 @@ const SONDA = (cfg) => {
       const seme = cfg.seme0 + k;
       t.semina(seme);
       const s0 = t.sorteggi;
-      t.setCpuVsCpu(true);
+      /* L'ORDINE (voce #121, seguito #108; qui corretto dalla voce #125,
+         compito 1, #124): startMatch PRIMA, setCpuVsCpu(true) DOPO --
+         startMatch riscrive G.cpu=[false,...] INCONDIZIONATAMENTE, quindi
+         un setCpuVsCpu(true) chiamato PRIMA veniva annullato in silenzio e
+         la squadra 0 restava "umana immobile" (non batteva le punizioni,
+         sintomo #108/#119). AVVISO: correggere l'ordine qui cambia la BASE
+         DI MISURA di questo strumento -- i totali dei sorteggi di OGNI
+         confronto futuro non sono piu' comparabili con quelli di prima
+         della cura (la squadra 0 ora gioca davvero). E' il cambio di
+         metodo di misura atteso, dichiarato, non un difetto. */
       t.startMatch(1, 1, { size: taglia });
+      t.setCpuVsCpu(true);
       for (let g = 0; g < 400; g++) { t.simulate(1); if (t.state === 'end') break; }
       out.push({ taglia, seme, sorteggi: t.sorteggi - s0, score: t.score.join('-'), scena: t.state });
     }
