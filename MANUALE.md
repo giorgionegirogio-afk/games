@@ -456,6 +456,128 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Le due crepe del fuzzer, curate — #128 CANTIERE CHIUSO** (#128, 20
+  settembre 2026, tre compiti dal merge-base `bc2d802`, primo cantiere di
+  MOTORE aperto dal primo giro del fuzzer #126 — spec
+  `docs/superpowers/specs/2026-09-20-crepe-fuzzer-design.md`, piano
+  `docs/superpowers/plans/2026-09-20-crepe-fuzzer.md`).
+
+  **P0-1 — IL CROSS-PROIETTILE (`doCross`), curato** (compito 1).
+  `doCross` (`CALCETTO-il-gioco.html:15925`) calcolava `speed=dist/T` con
+  `T` bloccato in [0,66; 0,75] ma `dist` NON limitato — l'unico tiro del
+  gioco che non passava da `tiroVelocità()`/`TIRO_TETTO` (:16212, valore
+  860). Un cross lungo diventava un proiettile: **misurato 1433,8 u/s**,
+  il 67% sopra il tetto. Test (prova 10/DOCROSS di `_q-invarianti.js`,
+  scenario diretto — crossatore in fondo al proprio campo, bersaglio vero
+  `puntoCross`, zero `dado()` nuovo) nato ROSSO sul gioco di allora, VERDE
+  dopo la cura. Cura (attrezzo `strumenti/_t-crepe-docross.js`, un'ancora):
+  `Math.min(TIRO_TETTO, dist/T)` nella chiamata a `kickBall` (:15946) — lo
+  stesso pavimento già applicato agli altri tiri. Il cross NORMALE resta
+  bit-per-bit identico (verificato a mano: 399,07 u/s invariati).
+
+  **P0-2 — IL BATTITORE ESPULSO (`resetKickoff`), curato** (compito 2).
+  `resetKickoff` (:10904) scaricava il cartellino differito PRIMA
+  (`scaricaCardVantaggio`→`infliggiCartellino`, che marca `p.out`), ma
+  sceglieva il battitore del calcio d'inizio per team+idx FISSO
+  (`p.team===kt && p.idx===1`) SENZA controllare `out<=0`: un giocatore
+  appena espulso, se era l'idx1 della squadra che batte, veniva rimesso in
+  campo e riceveva `G.ball.owner` — **misurato: owner=1, out=12**
+  (ESPULSIONE_SEC). Test (prova 11/KICKOFF-ESPULSO di `_q-invarianti.js`,
+  scenario diretto — cartellino differito su team0/idx1, squadra già a un
+  giallo così il secondo la espelle, `kickTeam=team0`) nato ROSSO, VERDE
+  dopo la cura. Cura (attrezzo `strumenti/_t-crepe-kickoff.js`): `&&
+  p.out<=0` in più sulla condizione (:10967), con fallback a
+  `diMovimentoInCampo(kt)[0]` (:10978 — lo stesso pattern già usato da
+  `infliggiCartellino`) se idx1 non è eleggibile (mai vuoto per
+  costruzione: la regola di casa vieta di scendere sotto 2 uomini di
+  movimento). Il kickoff NORMALE resta bit-per-bit identico (20 semi
+  verificati: owner/ctrl/posizione invariati).
+
+  **MOTORE_V: 1 → 2** (compito 3, attrezzo `strumenti/_t-crepe-motorev.js`,
+  `CALCETTO-il-gioco.html:13190`). Le due cure toccano la SIMULAZIONE in
+  un modo che PUÒ cambiare come una partita rigiocata FINISCE — misurato,
+  non supposto: **(a)** un nastro con un cross lungo, seme **20260812**
+  (taglia 5, CPU-contro-CPU, `fuori/base128.html` = pre-cura P0-1 contro il
+  gioco curato) DIVERGE al **fotogramma 1059** (17,65 s) — riprodotto oggi
+  bit per bit; **(b)** un kickoff dopo un'espulsione differita, seme
+  **20260836** (taglia 5), fa uscire **3-4 invece di 1-2** (misurato nel
+  compito 2, con le 33 partite precedenti della stessa sequenza
+  bit-identiche fra le due versioni — la causa è isolata a quella
+  partita). Due sequenze di comandi identiche, due esiti diversi: un
+  nastro registrato a MOTORE_V=1 rigiocato oggi userebbe quegli stessi
+  comandi su un motore che si comporta diversamente in questi due casi.
+  **`Sfida.guarda` gestisce già la versione** (meccanismo della voce #107
+  compito 4, non toccato qui): confronta `Reg.motoreV !== MOTORE_V`
+  (:43051) PRIMA di `startMatch` e chiude con causa vera («un'altra
+  versione del motore») e ZERO PENALITÀ. **Verificato coi numeri**:
+  `strumenti/_q-regole.js`, prova 13/NASTRO-VERSIONE, estesa con un CASO C
+  — un nastro con MOTORE_V=1 ESPLICITO (`'1|1||'`, non il vecchio
+  artefatto senza campo del CASO A) rigiocato sul gioco a MOTORE_V=2 viene
+  RIFIUTATO (`motoreV letto: 1`, `partita avviata: false`, messaggio a
+  causa vera) — il caso preciso di questa cura, e un nastro vero v1
+  NON verrebbe mai lasciato passare per buono. **Un buco trovato e chiuso
+  nella prova stessa**: il CASO B (nastro alla versione corrente)
+  confrontava `motoreVLetto === 1` — un valore INCHIODATO che si sarebbe
+  rotto da solo proprio oggi, il giorno in cui MOTORE_V sale a 2 (misurato:
+  la corsa con la sola costante incrementata dava già `motoreV letto: 2`
+  contro un `atteso 1` scritto nel banco); riscritto `motoreVLetto > 0` —
+  un nastro scritto e riletto dalla stessa istanza porta per costruzione
+  la versione corrente, qualunque essa sia, e la prova non si romperà da
+  sola al prossimo incremento.
+
+  **IL DUE-VERSIONI, DICHIARATO PER TAGLIA** (`_c3-sorteggi.js`,
+  `fuori/base128.html`/`base128b.html` — pre-cura — contro il gioco
+  curato: DIVERGE per costruzione, è la firma delle due cure, non un
+  difetto): doCross **16 partite su 60** con un conto sorteggi/punteggio
+  diverso (taglie 5/7/11, semi 20260803..20260822 — misurato di nuovo in
+  questo compito); resetKickoff **1 partita su 120** (sequenza
+  CPU-contro-CPU, taglia 5, seme 20260836, misurato nel compito 2).
+  `_q-determinismo` resta **10/10** (l'invariante del multigiocatore,
+  stesso seme e stessi comandi, intatta — il due-versioni confronta
+  VERSIONI diverse del gioco, non due corse della stessa versione).
+
+  **IL RESIDUO DI DETERMINISMO CROSS-PARTITA, DIAGNOSTICATO come
+  artefatto — NON una P0 del gioco.** Durante la diagnosi di P0-2 era
+  emerso un dubbio: la stessa coppia di semi dava partite diverse a
+  seconda di quante partite la precedevano sulla stessa pagina. Isolato:
+  la simulazione resta deterministica rispetto a {seme, comandi} — una
+  pagina fresca e una pagina dopo N partite danno stati BYTE-IDENTICI a
+  parità di `startMatch` (`G.stats`/`G.players` sono già azzerati lì, e
+  restano gli unici stati che il sospetto poteva chiamare in causa). Il
+  canale che sopravvive fra partite sulla stessa pagina è quello dei
+  TOCCHI (input-a-dita): il gioco stesso lo documenta accanto a `Reg`
+  (~:13183 — la levetta misura la velocità del dito con
+  `performance.now()`), e uno stato di tocco lasciato a metà (la levetta
+  attiva, un verbo a tenuta non rilasciato) non viene azzerato da
+  `Reg.azzeraComandi()`/`Touch5.azzera()` a meno che sia il CHIAMANTE a
+  farlo prima della partita successiva. Non è un bug del motore: il
+  **SOAK (CPU-contro-CPU, #127) non ne è affetto** (zero dita, zero
+  levetta), è il **FUZZER (#126)** — che gioca «come un dito vero» — a
+  dover azzerare esplicitamente i tocchi (`Touch5`/`Reg`, o una pagina
+  fresca) fra una partita e la successiva prima di fidarsi di un
+  confronto seme-a-seme. **Nota per il #126, non una cura di qui**: si
+  dichiara e si passa il testimone, come previsto dal piano — nessuna
+  riga del motore è stata toccata per questo residuo.
+
+  **Batteria intera rilanciata** (le cure toccano la simulazione):
+  `_q-invarianti.js` **11/11** (le nove ereditate da #125 + DOCROSS +
+  KICKOFF-ESPULSO); `_q-regole.js` **16/16** (coerente con MOTORE_V=2,
+  prova 13 riscritta come sopra); `_q-replay.js` **10/10**;
+  `_q-determinismo` **10/10**. `node strumenti/tutti.js`: **34 cancelli
+  eseguiti in 949 s di orologio (2,3 volte più veloce che in fila), i 33
+  che contano tutti VERDI** (`abbandono`/`audio`/`volti`/`avvio`/
+  `avvio-telefono` esclusi dalla corsa di default, `lento:true`).
+  `audio.js` verificato a parte: **28/28 VERDE** (stato dichiarato dal
+  #122, non toccato qui). Il solo informativo `istantanea.js` (non conta)
+  **NO 46/56**, PEGGIORATO rispetto al registro SOLO perché quel
+  riferimento (20 agosto) era una prova NULLA — lo stesso schema già
+  dichiarato dalle voci #113/#114/#122/#125, non un peggioramento di
+  questo cantiere — **«VERDE CON RISERVA»** complessivo. `git diff
+  CALCETTO-il-gioco.html` per il solo compito 3: un'ancora (MOTORE_V
+  1→2, con la nota del perché accanto alla costante). Fixture delle due
+  P0 in `fuori/` (`base128.html`, `base128b.html`), promuovibili a prova
+  permanente se servirà rigiocarle.
+
 - **Il banco delle invarianti — L'ONDA C COMINCIA, #125 e #124 CHIUSI** (#125,
   20 settembre 2026, due compiti dal merge-base `a7561d0`, primo anello
   dell'onda C del mandato — `_analisi/MAPPA-MANDATO.md` righe 574-641,

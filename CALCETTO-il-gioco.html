@@ -13172,8 +13172,22 @@ function touchBtnLayout(t){
    fatto invalido, e nascere a 1 lo dice alla prima occasione utile
    invece di fingere che 0 fosse un motore vero. VERSIONE 0 resta
    riservata ai nastri che non portano nessun campo di versione
-   (quelli scritti prima di oggi: vedi Reg.deserializza). */
-const MOTORE_V = 1;
+   (quelli scritti prima di oggi: vedi Reg.deserializza).
+
+   SALE A 2 con la voce #128 (20 settembre 2026, compito 3): le due
+   cure P0 del cantiere (doCross, il cross-proiettile, compito 1 --
+   resetKickoff, il battitore espulso, compito 2) toccano la
+   SIMULAZIONE in un modo che cambia come una partita rigiocata
+   finisce, non solo com'e' oggi -- misurato: un cross lungo che
+   usciva a 1433,8 u/s adesso clampa a TIRO_TETTO (860 u/s, grep
+   TIRO_TETTO qui sotto), e un kickoff dopo un'espulsione differita
+   sull'idx1 che dava la palla all'espulso adesso la da' al primo
+   compagno di movimento eleggibile. Un nastro a MOTORE_V=1 rigiocato
+   oggi userebbe gli STESSI comandi su un motore che si comporta
+   diversamente in questi due casi: Sfida.guarda (piu' avanti nel
+   file, grep Reg.motoreV) lo rifiuta con lo STESSO confronto che gia'
+   protegge un nastro a versione 0, causa vera e zero penalita'. */
+const MOTORE_V = 2;
 
 const Reg = {
   modo: 0,          /* 0 spento · 1 scrivo · 2 rileggo */

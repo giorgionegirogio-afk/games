@@ -1474,7 +1474,21 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
        (t.registra()+t.nastro(): non un testo scritto a mano, il
        serializzatore vero) con zero comandi: Reg.motoreV deve leggere
        MOTORE_V, e Sfida.guarda deve proseguire fino a startMatch come
-       sempre (sfidaStato.replay diventa true). */
+       sempre (sfidaStato.replay diventa true). Il controllo NON inchioda
+       il valore numerico (motoreVLetto>0, non "===1"): un nastro scritto
+       e riletto dalla stessa istanza del gioco porta per costruzione la
+       versione CORRENTE, qualunque essa sia -- inchiodare "1" e' stato
+       il difetto esatto che ha rotto questa prova il giorno che la voce
+       #128 ha alzato MOTORE_V a 2 (vedi CASO C).
+
+       CASO C (voce #128, compito 3) -- nastro con MOTORE_V=1 ESPLICITO
+       ('1|1||': marcatore di formato, poi il campo di versione con un
+       numero vero, non assente come nel CASO A), rigiocato su un gioco
+       che oggi vale MOTORE_V=2: e' il caso concreto che le due cure P0
+       del cantiere (doCross, il cross-proiettile -- resetKickoff, il
+       battitore espulso) rendono pericoloso, perche' cambiano come uno
+       STESSO nastro finisce. Deve chiudersi come il CASO A: stesso
+       confronto (Reg.motoreV !== MOTORE_V), causa vera, zero penalita'. */
     {
       const provaNastro = (nastro) => pag.evaluate(({ nastro, taglia }) => {
         const t = window.__test;
@@ -1502,6 +1516,18 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
 
       const nastroVecchio = '1||';   // formato v1 di sempre, MOTORE_V assente per costruzione: versione 0
       const casoVecchio = await provaNastro(nastroVecchio);
+      /* CASO C (voce #128, compito 3, aggiunto quando MOTORE_V e' salito
+         da 1 a 2): un nastro che porta il campo ESPLICITO "MOTORE_V=1"
+         -- non il vecchio artefatto senza campo (versione 0), un vero
+         disaccordo di versione fra un nastro di IERI e il gioco di OGGI.
+         E' esattamente il caso che le due cure P0 del cantiere (doCross,
+         resetKickoff) rendono pericoloso: gli stessi comandi, un motore
+         che si comporta diversamente sui cross lunghi e sui kickoff
+         dopo un'espulsione. Deve chiudersi come il caso VECCHIO --
+         stesso confronto (Reg.motoreV !== MOTORE_V), un numero diverso
+         a sinistra. */
+      const nastroV1 = '1|1||';
+      const casoV1 = await provaNastro(nastroV1);
       const nastroAttuale = await pag.evaluate(() => {
         const t = window.__test;
         t.registra(); const n = t.nastro(); t.fermaRegistro();
@@ -1509,18 +1535,31 @@ const FOTOGRAMMI_ATTESA = 200;   // 3,33 s: copre il kickoff piu' lungo (1,5 s a
       }).catch(e => ({ errore: e.message }));
       const casoAttuale = (typeof nastroAttuale === 'string') ? await provaNastro(nastroAttuale) : { errore: 'nastro attuale non costruito' };
 
-      if (casoVecchio.errore || casoAttuale.errore) {
-        di(false, '13. NASTRO-VERSIONE', 'BANCO: ' + (casoVecchio.errore || casoAttuale.errore));
+      if (casoVecchio.errore || casoV1.errore || casoAttuale.errore) {
+        di(false, '13. NASTRO-VERSIONE', 'BANCO: ' + (casoVecchio.errore || casoV1.errore || casoAttuale.errore));
       } else {
         const okVecchio = casoVecchio.motoreVLetto === 0 && casoVecchio.replayInCorso === false &&
           casoVecchio.messaggio.indexOf('versione del motore') >= 0 &&
           casoVecchio.messaggio.indexOf('cambiata da allora') < 0;
-        const okAttuale = casoAttuale.motoreVLetto === 1 && casoAttuale.replayInCorso === true;
-        const ok = okVecchio && okAttuale;
-        di(ok, "13. NASTRO-VERSIONE -- nastro a versione 0 (artefatto): messaggio a causa vera, zero penalita'; nastro a versione corrente: rigioca normale",
-          'VECCHIO -- motoreV letto: ' + casoVecchio.motoreVLetto + ' (atteso 0)   partita avviata: ' + casoVecchio.replayInCorso + ' (atteso false)   ' +
+        const okV1 = casoV1.motoreVLetto === 1 && casoV1.replayInCorso === false &&
+          casoV1.messaggio.indexOf('versione del motore') >= 0 &&
+          casoV1.messaggio.indexOf('cambiata da allora') < 0;
+        /* ATTUALE: il numero non si inchioda (era "=== 1" quando MOTORE_V
+           valeva 1 -- si e' rotto da solo il giorno che la voce #128 ha
+           alzato la costante a 2, il difetto esatto che questa prova
+           deve evitare di ripetere ad ogni futuro incremento). Il nastro
+           e' scritto e riletto dalla STESSA istanza appena prima: se il
+           gioco sa di che versione e' (motoreVLetto>0, mai 0 = versione
+           assente/artefatto) e lascia proseguire il replay, la versione
+           corrente e' gestita correttamente qualunque sia il suo valore. */
+        const okAttuale = casoAttuale.motoreVLetto > 0 && casoAttuale.replayInCorso === true;
+        const ok = okVecchio && okV1 && okAttuale;
+        di(ok, "13. NASTRO-VERSIONE -- nastro a versione 0 (artefatto) e nastro a MOTORE_V=1 esplicito: messaggio a causa vera, zero penalita'; nastro a versione corrente: rigioca normale",
+          'VECCHIO (v0) -- motoreV letto: ' + casoVecchio.motoreVLetto + ' (atteso 0)   partita avviata: ' + casoVecchio.replayInCorso + ' (atteso false)   ' +
           'messaggio: "' + casoVecchio.messaggio + '"' +
-          '\n         ATTUALE -- motoreV letto: ' + casoAttuale.motoreVLetto + ' (atteso 1 = MOTORE_V)   partita avviata: ' + casoAttuale.replayInCorso + ' (atteso true)');
+          '\n         V1 ESPLICITO -- motoreV letto: ' + casoV1.motoreVLetto + ' (atteso 1)   partita avviata: ' + casoV1.replayInCorso + ' (atteso false)   ' +
+          'messaggio: "' + casoV1.messaggio + '"' +
+          '\n         ATTUALE -- motoreV letto: ' + casoAttuale.motoreVLetto + ' (atteso > 0 = MOTORE_V corrente)   partita avviata: ' + casoAttuale.replayInCorso + ' (atteso true)');
       }
     }
 
