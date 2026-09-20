@@ -8608,6 +8608,46 @@ function dado(){
 const rnd=(a,b)=>a+dado()*(b-a);
 
 /* =====================================================================
+   DECO -- IL PRNG DELLA COSMETICA (voce #129, opzione 2, cura della #98).
+   La diagnosi (misurata al compito 1 di #129, prima stesura): rebuildCrowd
+   (la folla) e soprattutto paintField (la texture del campo: grana del
+   piazzale, gradinate/pubblico, erba, insegne -- circa il 92% del
+   consumo, non l'8% di rebuildCrowd) tiravano dado()/rnd(), cioe' IL PRNG
+   DI GIOCO, in numero proporzionale al perimetro/densita' del campo.
+   setTaglia chiama questa cottura SOLO quando la taglia CAMBIA (guardia
+   if(n===TAGLIA) return): la PRIMA partita a una taglia paga quel
+   consumo, le successive no, e col medesimo seme la prima diverge dalle
+   successive (voce #98, cross-taglia).
+   C'ERANO ANCHE DUE CANALI DIVERSI dello stesso difetto: i banchi che
+   seminano SEME (SEME.accendi, __test.semina) e i banchi che seminano
+   Math.random GLOBALE (window.__caso in _q-determinismo.js prove A/B/C).
+   Un salva/ripristina sul solo SEME (la prima cura tentata, misurata e
+   scartata) e' un no-op quando SEME.on e' false: dado() allora fa
+   "return Math.random()" e non tocca mai SEME.s/SEME.n -- quindi non
+   cura il canale Math.random-globale.
+   LA CURA: la cosmetica (folla e texture) NON usa piu' dado()/rnd() --
+   usa DECO, un PRNG SEPARATO con stato proprio (DECO.s), che non legge
+   ne' scrive ne' SEME ne' Math.random. Ogni funzione cosmetica lo
+   RISEMINA con una costante fissa al proprio ingresso (vedi paintField e
+   rebuildCrowd): la texture/la folla diventano funzione deterministica
+   dei soli parametri (taglia, densita', tema), indipendenti da qualsiasi
+   stato globale -- e il PRNG di gioco, su ENTRAMBI i canali, non vede mai
+   una sola estrazione della cosmetica.
+   COSTO ACCETTATO E VOLUTO: la texture del campo e il layout della folla
+   CAMBIANO aspetto rispetto a prima (partono da un seme diverso): e' una
+   regressione cosmetica dichiarata, non un difetto (vedi istantanea). */
+const DECO={s:1};
+function dadoDeco(){
+  let s=DECO.s;
+  s ^= s << 13; s >>>= 0;
+  s ^= s >>> 17;
+  s ^= s <<  5; s >>>= 0;
+  DECO.s = s;
+  return s / 4294967296;
+}
+const rndDeco=(a,b)=>a+dadoDeco()*(b-a);
+
+/* =====================================================================
    ICONE SVG inline in palette (fluo/gesso/oro su verde).
    Sostituiscono ogni emoji della UI: resa identica su ogni OS.
    ===================================================================== */
@@ -27500,6 +27540,14 @@ function dipingiGabbia(c, TH, pX, pY, q, IL, DK, vivo){
   c.restore();                       // chiude il ritaglio "mai sul manto"
 }
 function paintField(c, TH, pX, pY, q, vivo){
+  /* RESEED FISSO (voce #129, opzione 2): paintField non tocca piu' il
+     PRNG di gioco. Da qui in poi ogni chiamata a dado e a rnd, in questa
+     funzione, e' dadoDeco e rndDeco (PRNG dedicato, vedi DECO vicino a
+     SEME): la texture cotta e' funzione deterministica dei soli
+     parametri (TH, q, dimensioni campo), sempre la stessa a parita' di
+     parametri, mai influenzata da quante estrazioni ha gia' fatto la
+     partita e mai capace di spostarle. */
+  DECO.s=0x9E3779B9;
   /* vivo=true solo quando si cuoce fieldTex (il campo che la camera
      inquadra): il testo delle insegne si rimanda a drawInsegneTesto.
      Le anteprime (CAMPI) restano cotte per intero. */
@@ -27521,9 +27569,9 @@ function paintField(c, TH, pX, pY, q, vivo){
   for(let y=-pY+34;y<FH+pY;y+=96){ c.beginPath(); c.moveTo(-pX,y); c.lineTo(FW+pX,y); c.stroke(); }
   /* grana del piazzale */
   for(let i=0;i<1500*q;i++){
-    const gx=-pX+dado()*W, gy=-pY+dado()*H;
+    const gx=-pX+dadoDeco()*W, gy=-pY+dadoDeco()*H;
     if(gx>-DK&&gx<FW+DK&&gy>-DK&&gy<FH+DK) continue;
-    c.fillStyle= dado()<0.5?'rgba(255,255,255,.045)':'rgba(0,0,0,.14)';
+    c.fillStyle= dadoDeco()<0.5?'rgba(255,255,255,.045)':'rgba(0,0,0,.14)';
     c.fillRect(gx,gy,1.8,1.8);
   }
   /* gradinate: pedane scure su 4 lati */
@@ -27601,14 +27649,14 @@ function paintField(c, TH, pX, pY, q, vivo){
       for(let r=0;r<G5.rows;r++){
         /* passo della fila variato del ±30%: due gradoni non hanno mai
            lo stesso ritmo, ed e' quello che rompe il reticolo */
-        const d = DK + G5.d0 + r*G5.rp*rnd(0.7,1.3);
+        const d = DK + G5.d0 + r*G5.rp*rndDeco(0.7,1.3);
         if(d>DK+GRAD_DEEP) continue;
         const x0=-d, y0=-d, x1=FW+d, y1=FH+d;
         const rw=x1-x0, rh=y1-y0, per=2*(rw+rh);
         /* a bassa densita' i posti si diradano: a 212px di anteprima due
            seggiolini distano meno di un pixel */
         const sp=G5.sp/Math.max(0.22,Math.sqrt(q));
-        for(let t=dado()*sp; t<per; t+=sp*rnd(0.82,1.24)){
+        for(let t=dadoDeco()*sp; t<per; t+=sp*rndDeco(0.82,1.24)){
           let sx,sy;
           if(t<rw){ sx=x0+t; sy=y0; }
           else if(t<rw+rh){ sx=x1; sy=y0+(t-rw); }
@@ -27617,20 +27665,20 @@ function paintField(c, TH, pX, pY, q, vivo){
           if(sx<-pX+2||sx>FW+pX-9||sy<-pY+2||sy>FH+pY-9) continue;
           /* trenta posti su cento restano vuoti: e' il vuoto che fa
              leggere il resto come gente e non come tappezzeria */
-          if(dado()>0.70) continue;
-          sx += rnd(-0.35,0.35)*sp;
-          sy += rnd(-0.35,0.35)*G5.rp;
+          if(dadoDeco()>0.70) continue;
+          sx += rndDeco(-0.35,0.35)*sp;
+          sy += rndDeco(-0.35,0.35)*G5.rp;
           if(G5.blur){
             /* file lontane: rumore, nessuna forma. Ricampionato a 1/3
                diventa la sfocatura della distanza. */
-            dst.fillStyle = dado()<0.5 ? s1 : s2;
-            dst.fillRect(sx,sy,rnd(4,7),rnd(3.5,6));
+            dst.fillStyle = dadoDeco()<0.5 ? s1 : s2;
+            dst.fillRect(sx,sy,rndDeco(4,7),rndDeco(3.5,6));
             continue;
           }
           const set=SCIARPE[((t/per*6)|0)%6];
-          const sciarpa = dado()<0.030
-            ? VIVACI[(dado()*VIVACI.length)|0]
-            : shade(set[(dado()*3)|0], G5.lum*0.6);
+          const sciarpa = dadoDeco()<0.030
+            ? VIVACI[(dadoDeco()*VIVACI.length)|0]
+            : shade(set[(dadoDeco()*3)|0], G5.lum*0.6);
           /* ombra sul gradone: la luce viene da sopra */
           dst.fillStyle='rgba(0,0,0,.40)';
           dst.beginPath(); dst.ellipse(sx+0.9, sy+2.6, 4.0, 2.2, 0,0,6.2832); dst.fill();
@@ -27638,8 +27686,8 @@ function paintField(c, TH, pX, pY, q, vivo){
           dst.fillStyle=sciarpa;
           dst.beginPath(); dst.ellipse(sx, sy+1.5, 3.7, 2.3, 0,0,6.2832); dst.fill();
           /* testa: piu' piccola e piu' chiara delle spalle */
-          dst.fillStyle=shade(TESTE[(dado()*TESTE.length)|0], G5.lum*0.5-8);
-          dst.beginPath(); dst.arc(sx+rnd(-0.7,0.7), sy-1.5, rnd(1.5,2.0), 0,6.2832); dst.fill();
+          dst.fillStyle=shade(TESTE[(dadoDeco()*TESTE.length)|0], G5.lum*0.5-8);
+          dst.beginPath(); dst.arc(sx+rndDeco(-0.7,0.7), sy-1.5, rndDeco(1.5,2.0), 0,6.2832); dst.fill();
         }
       }
     }
@@ -27656,12 +27704,12 @@ function paintField(c, TH, pX, pY, q, vivo){
     for(const top of [1,0]){
       let x=-pX+6;
       while(x<FW+pX-20){
-        const bw=rnd(26,58), bh=rnd(14,30);
+        const bw=rndDeco(26,58), bh=rndDeco(14,30);
         const by= top ? -pY+ (pY-DK-bh) : FH+DK+2;
         c.fillStyle='#0a0c12'; c.fillRect(x,by,bw,bh);
         c.fillStyle='rgba(255,220,140,.5)';
-        for(let i=0;i<bw*bh*0.012;i++) c.fillRect(x+2+dado()*(bw-5), by+2+dado()*(bh-5), 1.6,1.6);
-        x+=bw+rnd(4,14);
+        for(let i=0;i<bw*bh*0.012;i++) c.fillRect(x+2+dadoDeco()*(bw-5), by+2+dadoDeco()*(bh-5), 1.6,1.6);
+        x+=bw+rndDeco(4,14);
       }
     }
   }else if(TH.tipo==='spiaggia'){
@@ -27932,8 +27980,8 @@ function paintField(c, TH, pX, pY, q, vivo){
   }
   /* grana del terreno */
   for(let i=0;i<1400*q;i++){
-    const gx=dado()*FW, gy=dado()*FH;
-    c.fillStyle= dado()<0.5?TH.grana1:TH.grana2;
+    const gx=dadoDeco()*FW, gy=dadoDeco()*FH;
+    c.fillStyle= dadoDeco()<0.5?TH.grana1:TH.grana2;
     c.fillRect(gx,gy,1.4,1.4);
   }
   /* FILO D'ERBA — GRANA DIREZIONALE: seimila schegge da 1x3 unita' orientate
@@ -27951,10 +27999,10 @@ function paintField(c, TH, pX, pY, q, vivo){
     c.save();
     c.beginPath(); c.rect(0,0,FW,FH); c.clip();
     for(let i=0;i<6200*q;i++){
-      const gx=dado()*FW, gy=dado()*FH;
-      const chiaro=dado()<0.5;
+      const gx=dadoDeco()*FW, gy=dadoDeco()*FH;
+      const chiaro=dadoDeco()<0.5;
       c.fillStyle= chiaro ? 'rgba(196,214,120,.07)' : 'rgba(20,40,70,.09)';
-      c.fillRect(gx, gy, 1, rnd(1.6,3.4));
+      c.fillRect(gx, gy, 1, rndDeco(1.6,3.4));
     }
     c.restore();
   }
@@ -28833,7 +28881,7 @@ function paintField(c, TH, pX, pY, q, vivo){
     c.strokeStyle='rgba(30,16,6,.28)'; c.lineWidth=1;
     for(let y=18;y<FH;y+=22){ c.beginPath(); c.moveTo(0,y); c.lineTo(FW,y); c.stroke(); }
     for(let i=0;i<70;i++){
-      const y=18+((dado()*(FH/22))|0)*22, x=dado()*FW;
+      const y=18+((dadoDeco()*(FH/22))|0)*22, x=dadoDeco()*FW;
       c.beginPath(); c.moveTo(x,y); c.lineTo(x,Math.min(FH,y+22)); c.stroke();
     }
     /* righe degli altri sport, sbiadite. Erano ciano e rosa — cioe' la tinta
@@ -28847,9 +28895,9 @@ function paintField(c, TH, pX, pY, q, vivo){
     /* crepe del cemento + campana disegnata col gesso */
     c.strokeStyle='rgba(0,0,0,.3)'; c.lineWidth=1.4;
     for(let i=0;i<10;i++){
-      let x=dado()*FW, y=dado()*FH;
+      let x=dadoDeco()*FW, y=dadoDeco()*FH;
       c.beginPath(); c.moveTo(x,y);
-      for(let s=0;s<4;s++){ x+=rnd(-40,40); y+=rnd(-30,30); c.lineTo(x,y); }
+      for(let s=0;s<4;s++){ x+=rndDeco(-40,40); y+=rndDeco(-30,30); c.lineTo(x,y); }
       c.stroke();
     }
     c.strokeStyle='rgba(255,214,110,.16)'; c.lineWidth=2;
@@ -28857,8 +28905,8 @@ function paintField(c, TH, pX, pY, q, vivo){
   }else if(TH.tipo==='spiaggia'){
     /* impronte e conchiglie nella sabbia */
     for(let i=0;i<60;i++){
-      c.fillStyle= dado()<0.7?'rgba(40,30,14,.18)':'rgba(255,240,200,.16)';
-      c.beginPath(); c.arc(dado()*FW,dado()*FH,rnd(1.2,2.6),0,6.2832); c.fill();
+      c.fillStyle= dadoDeco()<0.7?'rgba(40,30,14,.18)':'rgba(255,240,200,.16)';
+      c.beginPath(); c.arc(dadoDeco()*FW,dadoDeco()*FH,rndDeco(1.2,2.6),0,6.2832); c.fill();
     }
   }else if(TH.tipo==='parcheggio'){
     /* macchie d'olio e una vecchia freccia di vernice */
@@ -29599,7 +29647,7 @@ function buildGrain(){
   const c=grainTex.getContext('2d');
   const im=c.createImageData(N,N);
   for(let i=0;i<N*N;i++){
-    const v=(dado()*255)|0;
+    const v=(dadoDeco()*255)|0;
     im.data[i*4]=v; im.data[i*4+1]=v; im.data[i*4+2]=v; im.data[i*4+3]=255;
   }
   c.putImageData(im,0,0);
@@ -29913,13 +29961,20 @@ const CROWD=[];
    confrontano la modifica e non una partita diversa. */
 function rebuildCrowd(){
   CROWD.length=0;
+  /* RESEED FISSO (voce #129, opzione 2): la folla non tocca piu' il PRNG
+     di gioco. Ogni dado()/rnd() qui sotto e' dadoDeco()/rndDeco() (PRNG
+     dedicato, vedi DECO vicino a SEME): il layout della tribuna e'
+     funzione deterministica dei soli parametri del campo (perimetro),
+     sempre lo stesso a parita' di taglia, mai capace di spostare le
+     estrazioni della partita ne' di esserne spostato. */
+  DECO.s=0x85EBCA6B;
   const DK=34;
   /* quattro anelli sui due gradoni piu' vicini al campo */
   for(const d0 of [DK+9, DK+28, DK+44, DK+62]){
     const x0=-d0, y0=-d0, x1=FW+d0, y1=FH+d0;
     const rw=x1-x0, rh=y1-y0, per=2*(rw+rh);
     const vicino = d0 < DK+34;               // prima fila: figurine piu' grandi
-    for(let t=dado()*20; t<per; t+=rnd(17,27)){
+    for(let t=dadoDeco()*20; t<per; t+=rndDeco(17,27)){
       let x,y;
       if(t<rw){ x=x0+t; y=y0; }
       else if(t<rw+rh){ x=x1; y=y0+(t-rw); }
@@ -29928,7 +29983,7 @@ function rebuildCrowd(){
       /* la tinta la decide il SETTORE, non il posto: tre sciarpe per
          spicchio di tribuna invece di un colore a caso per persona */
       const set=((t/per*6)|0)%6;
-      const ci=(set + ((dado()*3)|0)) % CROWD_TINTE.length;
+      const ci=(set + ((dadoDeco()*3)|0)) % CROWD_TINTE.length;
       /* h: hash intero del posto lungo il perimetro. Due bit bastano —
          uno decide la sciarpa, l'altro chi ha il telefono in mano. */
       let h=(t*97)|0; h^=h<<13; h>>>=0; h^=h>>>17; h^=h<<5; h>>>=0;
@@ -29937,16 +29992,23 @@ function rebuildCrowd(){
          un campetto di quartiere */
       const sc = (h%100)<36 ? 0 : (set%2 ? 2 : 1);
       const fu=(t/per)*12.566;             // due creste d'onda su tutto il giro
-      const px2=x+rnd(-4,4), py2=y+rnd(-3,3);
-      const w2=vicino?rnd(9.4,11.0):rnd(7.6,9.0);
-      /* L'ESTRAZIONE SI FA E SI BUTTA. La fase del dondolio adesso la
-         decide il POSTO (un hash della posizione lungo il perimetro) e non
-         il caso: il respiro della tribuna e' funzione di posizione e tempo,
-         come chiedeva il brief. Ma il sorteggio va CONSUMATO lo stesso, se
-         no la sequenza di Math.random slitta e cambiano rosa, avversario e
-         divise di ogni partita gia' fotografata: un confronto prima/dopo
-         mostrerebbe un'altra partita invece della modifica. */
-      dado();
+      const px2=x+rndDeco(-4,4), py2=y+rndDeco(-3,3);
+      const w2=vicino?rndDeco(9.4,11.0):rndDeco(7.6,9.0);
+      /* L'ESTRAZIONE SI FA E SI BUTTA (testo storico, voce ~#100): la
+         fase del dondolio la decide il POSTO (un hash della posizione
+         lungo il perimetro), non il caso -- ma il sorteggio andava
+         CONSUMATO lo stesso, se no la sequenza di Math.random slittava e
+         cambiavano rosa, avversario e divise di ogni partita gia'
+         fotografata: un confronto prima/dopo mostrava un'altra partita
+         invece della modifica.
+         RETTIFICA (voce #129, opzione 2, cura della #98): quella dado()
+         buttata e' ELIMINATA. Non serve piu' consumare-e-buttare per
+         tenere ferma la sequenza: da qui in poi la folla vive sul PRNG
+         DEDICATO (DECO, dadoDeco/rndDeco), risoseminato a costante fissa
+         all'ingresso di questa funzione -- il PRNG di gioco (SEME o
+         Math.random, i due canali della #98) non vede mai una sola
+         estrazione della folla, quindi non c'e' piu' niente da
+         proteggere consumando un numero pari di sorteggi. */
       CROWD.push({ x:px2, y:py2, i:ci, sc,
                    /* IL TELEFONO IN MANO sale dal 14% al 26%: e' il
                       serbatoio da cui escono i flash, e con un tifoso su
