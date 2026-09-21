@@ -28,6 +28,12 @@
    cosa con se stessa dice sempre di si'. Il mutante e' l'unico modo di
    sapere se il banco guarda davvero.
 
+   QUESTO BANCO NON COPRE LA QUANTIZZAZIONE DELLA MIRA (dichiarato, 21
+   settembre 2026, voce #131, correzione di revisione): il COPIONE qui
+   sotto porta u,v gia' a TRE decimali, quindi la quantizzazione a un
+   millesimo del compito 3 (duelMira) e' invisibile a questo banco — la
+   copre strumenti/_t-duello-tacca.js.
+
    uso:  node strumenti/_t-duello-rigioca.js
    esce 0 verde, 1 rosso, 2 banco esploso.
    ===================================================================== */

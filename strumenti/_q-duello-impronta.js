@@ -1,7 +1,17 @@
 /* =====================================================================
-   _t-duello-impronta.js — L'IMPRONTA CHE NON GUARDA IL NASTRO
+   _q-duello-impronta.js — L'IMPRONTA CHE NON GUARDA IL NASTRO
    (voce #131, compito 0: la rete di sicurezza, congelata PRIMA di
    toccare qualunque cosa).
+
+   PROMOSSO A CANCELLO DI QUALITA' (21 settembre 2026, voce #131,
+   correzione di revisione): si chiamava _t-duello-impronta.js, un
+   attrezzo di compito. Nessun _t-duello-* era registrato in
+   strumenti/tutti.js, e il commento accanto a MOTORE_V nel gioco
+   promette «si rimisura con quello strumento il giorno che qualcuno
+   tocchi di nuovo il duello» — un'istruzione a memoria senza cancello
+   dietro, proprio mentre l'onda D sta per rientrare nel duello col
+   GIUDICE (voce #133). Rinominato (git mv) e registrato in tutti.js con
+   conta:true: 3,1 secondi di corsa, misurati, non lento.
 
    PERCHE' ESISTE. Nel cantiere #131 registrazione e riproduzione del
    duello sono la STESSA riga di codice: ogni gancio piantato dentro il
@@ -44,9 +54,9 @@
    invece, questi decimali lo farebbero vedere subito.
 
    uso:
-     node strumenti/_t-duello-impronta.js --salva strumenti/duello-impronta.json
-     node strumenti/_t-duello-impronta.js            (confronta con la copia congelata)
-     node strumenti/_t-duello-impronta.js --gioco fuori/x.html
+     node strumenti/_q-duello-impronta.js --salva strumenti/duello-impronta.json
+     node strumenti/_q-duello-impronta.js            (confronta con la copia congelata)
+     node strumenti/_q-duello-impronta.js --gioco fuori/x.html
 
    esce 0 se l'impronta combacia, 1 se si e' mossa, 2 se il banco esplode,
    3 se non c'e' niente da confrontare (prova nulla).

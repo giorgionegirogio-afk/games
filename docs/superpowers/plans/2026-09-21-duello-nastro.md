@@ -19,7 +19,7 @@ commit ciascuno.
    `Duel.vt`: sono due orologi diversi, e non si sovrascrive un attrezzo
    storico. Qui si chiama `contatore`.)
 2. **L'impronta di non-regressione si rimisura a OGNI compito**
-   (`node strumenti/_t-duello-impronta.js`). Se si muove di un numero, la
+   (`node strumenti/_q-duello-impronta.js`). Se si muove di un numero, la
    cura e' sbagliata anche se tutti i test nuovi sono verdi: ci si ferma e
    si riferisce.
 3. Ogni difetto ha prima un TEST FALLITO (mandato S13.3).
@@ -34,7 +34,7 @@ commit ciascuno.
 ## Compito 0 — spec, piano e la rete di sicurezza
 
 Questo documento, la spec, il dossier (finora non tracciato) e
-`strumenti/_t-duello-impronta.js` con la sua impronta congelata
+`strumenti/_q-duello-impronta.js` con la sua impronta congelata
 (`strumenti/duello-impronta.json` — non `_z-dati/`, che e' nel
 `.gitignore`: un riferimento che non viaggia col repo non e' un
 riferimento).
@@ -68,7 +68,7 @@ se `_t-duello-nastro.js --gioco <mutante>` non esce rosso, il banco
 attesta invece di misurare.
 
 **Cancelli.** `_t-duello-nastro.js` ROSSO (dichiarato, misurato).
-`_t-duello-impronta.js` VERDE. `git diff main -- CALCETTO-il-gioco.html`
+`_q-duello-impronta.js` VERDE. `git diff main -- CALCETTO-il-gioco.html`
 vuoto. Batteria intera a gruppi.
 Commit `(voce #131, compito 1)`.
 
@@ -101,7 +101,7 @@ per aggiornamento; `dentroUpdate` e' vero dentro `Duel.update` e falso
 fuori; `Reg.tick` e `__test.sorteggi` a fine partita IDENTICI al gioco di
 prima (nessun comportamento cambia: sono solo contatori).
 
-**Cancelli.** Il test nuovo verde. `_t-duello-impronta.js` VERDE (e' il
+**Cancelli.** Il test nuovo verde. `_q-duello-impronta.js` VERDE (e' il
 cancello che conta: i contatori non devono spostare un numero).
 `_t-duello-nastro.js` ancora rosso (giusto: la cura vera non c'e').
 Batteria intera a gruppi.
@@ -124,7 +124,7 @@ non-regressione: il duello della CPU (che non passa da `duelMira`) resta
 identico alla cifra — e' l'impronta.
 
 **Cancelli.** Il test nuovo rosso prima, verde dopo.
-`_t-duello-impronta.js` VERDE. `_q-mira.js`, `_t-mira.js`,
+`_q-duello-impronta.js` VERDE. `_q-mira.js`, `_t-mira.js`,
 `_t-mira-ui.js`, `_t-mira-guidata.js` verdi. Batteria intera a gruppi.
 Commit `(voce #131, compito 3)`.
 
@@ -151,7 +151,7 @@ produce ZERO; il ripiego del portiere non finisce nel nastro; scritto,
 riletto e riscritto da' lo STESSO testo. Piu': `__test.sorteggi` a fine
 partita identico (scrivere nel nastro non consuma sorteggi).
 
-**Cancelli.** Il test nuovo verde. `_t-duello-impronta.js` VERDE.
+**Cancelli.** Il test nuovo verde. `_q-duello-impronta.js` VERDE.
 `_q-replay.js`, `_t-registro.js`, `_t-nastro-versione.js`, `_q-sfida.js`
 verdi. Batteria intera a gruppi.
 Commit `(voce #131, compito 4)`.
@@ -187,7 +187,7 @@ Commit `(voce #131, compito 4)`.
   punteggio finale).
 - Un nastro TRONCATO (le righe dell'ultimo duello tolte a mano) ferma il
   replay con causa vera invece di restare appeso.
-- `_t-duello-impronta.js` VERDE. Batteria intera a gruppi.
+- `_q-duello-impronta.js` VERDE. Batteria intera a gruppi.
 Commit `(voce #131, compito 5)`.
 
 ## Compito 6 — MOTORE_V, con la misura, e il verbale

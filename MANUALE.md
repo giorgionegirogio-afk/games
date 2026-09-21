@@ -464,6 +464,76 @@ Qui il registro completo, a edizioni.
   dell'onda D**: il #130 ha aggiustato il metro del giudice, questo gli dà
   qualcosa da misurare.
 
+  **CORREZIONI DI REVISIONE (21 settembre 2026, voce #131), applicate in
+  un commit a parte dopo il «Ready to merge: YES» col rilievo IMPORTANTE
+  e i tre MINORE. Cantiere di BANCO/DOCUMENTI: il gioco NON è stato
+  toccato.**
+  (1) **IMPORTANTE — la prova D era VUOTA.**
+  `strumenti/_t-duello-contatore.js` leggeva `Duel.nDuello` dopo
+  `Reg.accendi()` su una pagina che non aveva mai giocato un duello, dove
+  il contatore vale già zero per conto suo: l'asserzione `=== 0` passava
+  con o senza l'azzeramento vero. **MISURATO dal revisore**: un gioco
+  identico privato della sola riga `Duel.nDuello = 0` dentro
+  `Reg.azzeraComandi` (`CALCETTO-il-gioco.html:13406`) superava comunque
+  l'intera batteria del duello. **CURA**: il contatore si sporca a un
+  valore non nullo (3) PRIMA di ciascun azzeramento e si legge SUBITO
+  DOPO, sia per `Reg.accendi()` sia per `Reg.deserializza()` (prova nuova,
+  D bis). **VERIFICATO col mutante dedicato**
+  (`strumenti/_crit-duello-contatore.js`, che toglie `Duel.nDuello = 0` da
+  `azzeraComandi`): la prova corretta è **ROSSA sul falso** (7 prove su 9,
+  D e D bis entrambe NO, `nDuello` resta 3) e **VERDE sul gioco vero** (9
+  prove su 9, `nDuello` torna 0 in entrambi i casi).
+  (2) **MINORE — un'affermazione superata, rettificata a edizioni.**
+  `strumenti/_q-fuzzer.js` e `strumenti/tutti.js` dicevano ancora che il
+  duello «si LOGGA A PARTE … Reg non lo cattura». Dopo il #131 **Reg lo
+  cattura**: il `logDuelli` riapplicato a mano nel fuzzer è ormai
+  neutralizzato dalla guardia di rilettura del gioco (`Reg.modo===2 &&
+  !Reg.dentro && !daMotore`, `CALCETTO-il-gioco.html:43898`) — peso morto
+  senza doppio effetto, il cancello resta verde. Corretto in chiaro nei
+  due file, col testo vecchio lasciato accanto e non cancellato.
+  (3) **MINORE — due banchi non coprivano la quantizzazione della mira, e
+  non lo dichiaravano.** `_t-duello-nastro.js` e `_t-duello-rigioca.js`
+  portano il COPIONE già a tre decimali su u,v: la quantizzazione a un
+  millesimo del compito 3 (`duelMira`) vi è invisibile — la copre
+  `_t-duello-tacca.js` (3/4). Dichiarato ora in testata a entrambi, sul
+  modello di `_t-duello-impronta.js` (oggi `_q-duello-impronta.js`, vedi
+  punto 4) che già lo faceva.
+  (4) **MINORE — la rete di sicurezza non era in batteria.** Nessun
+  `_t-duello-*` era registrato in `strumenti/tutti.js`, mentre il
+  commento accanto a `MOTORE_V` nel gioco promette «si rimisura con
+  quello strumento il giorno che qualcuno tocchi di nuovo il duello» —
+  un'istruzione a memoria senza cancello dietro, proprio mentre l'onda D
+  sta per rientrare nel duello col GIUDICE (voce #133). **CURA**:
+  `strumenti/_t-duello-impronta.js` promosso a cancello di qualità,
+  rinominato (`git mv`) `strumenti/_q-duello-impronta.js` e registrato in
+  `tutti.js` (`conta:true`, `lento:false`: misurato 3,1 s). Tutti i
+  riferimenti al vecchio nome aggiornati (`strumenti/`, questo manuale,
+  `PUNTO-DEL-LAVORO.md`, `docs/superpowers/`). Il file congelato
+  `strumenti/duello-impronta.json` **non è stato toccato**
+  (`git diff` vuoto). **`_t-duello-rigioca.js` NON è stato promosso,
+  scelta dichiarata**: è più un attrezzo di compito (`_t-*`) che un
+  cancello generale — costruisce due mutanti via sottoprocesso
+  (`_crit-duello-scarto.js`/`_crit-duello-passo.js`) a OGNI corsa, quindi
+  un giorno un'ancora di testo spostata per un motivo qualunque lo
+  farebbe ESPLODERE (uscita 2) invece di dare un rosso vero; costa 23 s
+  contro i 3,1 s dell'impronta; e la fedeltà di registrazione/riproduzione
+  che dimostra è già coperta in permanenza dall'impronta promossa, a un
+  ottavo del costo. La sua prova C (i due mutanti, con la rettifica al
+  dossier sul mutante uniforme) resta preziosa ma puntuale: si rilancia a
+  mano quando il motore del duello cambia ancora, non ad ogni commit
+  qualunque nel gioco.
+  **BANCHI RIESEGUITI**: `_t-duello-contatore.js` 9/9,
+  `_q-duello-impronta.js` **44/44 — impronta non mossa di un numero**,
+  `_t-duello-nastro.js` 5/5, `_t-duello-rigioca.js` 7/7,
+  `_t-duello-tacca.js` 4/4, `_t-duello-porte.js` 8/8, `_q-fuzzer.js`
+  **14/14** (rimisurato due volte, stesso esito: il conteggio delle prove
+  del fuzzer non è lo stesso 15/15 registrato altrove in questo manuale —
+  differenza pre-esistente alla correzione di revisione, non toccata qui,
+  la modifica al fuzzer è stata solo nel commento). Batteria intera
+  rilanciata a gruppi, tutti i cancelli che contano verdi.
+  `git diff main -- CALCETTO-il-gioco.html` **IDENTICO** a prima di
+  questa correzione: il gioco non è stato toccato.
+
   **IL DIFETTO, in tre buchi.** I pointer del duello erano appesi a
   `#duel` e a `#powerWrap` e non passavano dalle quattro porte avvolte del
   registratore; la tastiera veniva registrata (tipo 4) ma `Reg.esegui` non
@@ -527,7 +597,7 @@ Qui il registro completo, a edizioni.
   passata per il motivo sbagliato.
 
   **LA RETE DI SICUREZZA, congelata prima di toccare qualunque cosa.**
-  `strumenti/_t-duello-impronta.js` misura il duello nudo a seme fisso —
+  `strumenti/_q-duello-impronta.js` misura il duello nudo a seme fisso —
   44 duelli su tre semi, in due regimi (CPU contro CPU e umano a copione
   deterministico) — e ne congela esito, cursore a cinque decimali,
   `powerQ`, terzi, passo e sorteggi

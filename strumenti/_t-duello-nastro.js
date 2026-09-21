@@ -45,6 +45,12 @@
    aver prodotto almeno quattro duelli veri, col copione che ha davvero
    toccato. Un confronto fra due liste vuote sarebbe un verde bugiardo.
 
+   QUESTO BANCO NON COPRE LA QUANTIZZAZIONE DELLA MIRA (dichiarato, 21
+   settembre 2026, voce #131, correzione di revisione): il COPIONE qui
+   sotto porta u,v gia' a TRE decimali, quindi la quantizzazione a un
+   millesimo del compito 3 (duelMira) e' invisibile a questo banco — la
+   copre strumenti/_t-duello-tacca.js.
+
    uso:  node strumenti/_t-duello-nastro.js
          node strumenti/_t-duello-nastro.js --gioco fuori/crit-duello-passo.html
    esce 0 verde, 1 il gioco e' rosso, 2 il banco e' esploso.

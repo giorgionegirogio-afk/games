@@ -142,7 +142,7 @@ aggiornamento cambia 6/132 esiti (5%), il conto dei sorteggi in 5/40
 partite e il PUNTEGGIO FINALE in 2/40.
 
 1. **L'impronta di non-regressione, congelata PRIMA di toccare qualunque
-   cosa e rimisurata a ogni compito** (`strumenti/_t-duello-impronta.js`,
+   cosa e rimisurata a ogni compito** (`strumenti/_q-duello-impronta.js`,
    congelata in `strumenti/duello-impronta.json`). Non guarda il
    nastro: misura il duello nudo a seme fisso, in due regimi (CPU contro
    CPU e umano a copione deterministico), e firma ogni duello con esito,
@@ -202,7 +202,7 @@ Condizioni:
   per esito; un nastro troncato si ferma con causa vera (il ripiego si
   riarma); il mutante resta bocciato.
 - `_t-duello-motorev.js` (C6): due versioni, 30 nastri senza duello.
-- `_t-duello-impronta.js`: verde a OGNI compito, dal compito 0 alla fine.
+- `_q-duello-impronta.js`: verde a OGNI compito, dal compito 0 alla fine.
 - Batteria INTERA a ogni compito (lezione 22), a gruppi.
 
 ## Vincoli

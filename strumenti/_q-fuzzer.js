@@ -44,7 +44,15 @@
          chiamata si LOGGA A PARTE (array logDuelli, {seme, fotogramma,
          metodo, argomenti}): Reg non lo cattura, e senza questo log un
          replay del nastro si fermerebbe in eterno al primo dischetto,
-         esattamente come il gioco stesso dichiara. I semi che arrivano al
+         esattamente come il gioco stesso dichiara.
+         RETTIFICA A EDIZIONI (21 settembre 2026, voce #131): dopo il
+         #131 Reg CATTURA il duello (le tre porte del dischetto entrano
+         nel nastro, tipo 6). Il logDuelli riapplicato a mano qui sopra
+         resta, ma e' ormai NEUTRALIZZATO dalla guardia di rilettura
+         (Reg.modo===2 && !Reg.dentro && !daMotore): un doppio effetto
+         che non arriva mai, peso morto che non sposta il cancello (resta
+         verde). Il testo vecchio non si cancella, si legge cosi'. I semi
+         che arrivano al
          duello NON si escludono piu' (contatore semiEsclusiDuello sempre
          a zero, dichiarato qui, non nascosto). Le invarianti continuano a
          verificarsi a OGNI tick anche dentro 'freekick' (unTick non

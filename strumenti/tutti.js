@@ -680,6 +680,13 @@ const CANCELLI = [
      gestisce anche il duello dal dischetto (Duel.pickZone/pickKeeper/
      stopPower, LOGGATO A PARTE perche' Reg non lo cattura) invece di
      escluderlo.
+     RETTIFICA A EDIZIONI (21 settembre 2026, voce #131): dopo il #131
+     Reg CATTURA il duello (le tre porte avvolte entrano nel nastro,
+     tipo 6); il logDuelli riapplicato a mano resta nel fuzzer ma e'
+     ormai NEUTRALIZZATO dalla guardia di rilettura del gioco
+     (Reg.modo===2 && !Reg.dentro && !daMotore, CALCETTO-il-gioco.html:
+     43898) — peso morto senza doppio effetto, il cancello resta verde.
+     Il testo vecchio non si cancella, si legge cosi'.
 
      PERCHE' STA IN BATTERIA (conta:TRUE): e' l'unico banco che esercita
      swLock/swTimer (20 semi su 20 osservati attivi, 147.134 fotogrammi-
@@ -823,6 +830,40 @@ const CANCELLI = [
      produzione: corrono in compagnia. */
   { nome: 'rete',        cmd: ['strumenti/_q-rete.js'],                                conta: true,  lento: false },
   { nome: 'sfida',       cmd: ['strumenti/_q-sfida.js'],                                conta: true,  lento: true  },
+  /* =====================================================================
+     duello-impronta: LA RETE DI SICUREZZA DEL DUELLO, PROMOSSA (voce
+     #131, correzione di revisione, 21 settembre 2026). Il cantiere #131
+     ha fatto entrare il duello dal dischetto nel nastro (le tre porte
+     avvolte, sopra e in `_q-fuzzer.js`), ma nessun `_t-duello-*` era
+     registrato in questa batteria — la convenzione vuole i `_t-*` come
+     attrezzi di compito, non cancelli permanenti, ed e' corretto per
+     `_t-duello-nastro.js`/`_t-duello-tacca.js`/`_t-duello-porte.js`/
+     `_t-duello-contatore.js`/`_t-duello-rigioca.js` (attrezzi legati a
+     compiti specifici del cantiere). Ma il commento accanto a `MOTORE_V`
+     nel gioco promette «si rimisura con quello strumento il giorno che
+     qualcuno tocchi di nuovo il duello» — un'istruzione a memoria SENZA
+     cancello dietro, proprio mentre l'onda D sta per rientrare nel
+     duello col GIUDICE (voce #133).
+
+     `strumenti/_t-duello-impronta.js` (compito 0, la rete congelata
+     PRIMA di toccare qualunque cosa: 44 duelli a seme fisso, in due
+     regimi, cursore a cinque decimali) e' l'unico dei sei attrezzi che
+     si presta a restare permanente — non dipende dal nastro (misura il
+     duello nudo, senza registrare/rigiocare) e non costruisce mutanti a
+     ogni corsa. Rinominato (`git mv`) `_q-duello-impronta.js` e
+     registrato qui. `_t-duello-rigioca.js` (il gemello che rigioca la
+     serie intera via nastro e condanna due mutanti) e' stato VALUTATO e
+     NON promosso: costruisce due mutanti via sottoprocesso a ogni corsa
+     (fragile — un'ancora di testo spostata per un motivo qualunque lo
+     farebbe esplodere, uscita 2, non dare un rosso vero), costa 23s
+     contro i 3,1s dell'impronta, e la fedelta' di registrazione/
+     riproduzione che dimostra e' gia' coperta in permanenza da questo
+     cancello a una frazione del costo. Motivazione estesa in
+     `MANUALE.md` §A, voce #131.
+
+     Deterministico (tre semi dichiarati nel file: 20260921/22/23),
+     nessun cronometro di produzione: misurato **3,1s**, non lento. */
+  { nome: 'duello-impronta', cmd: ['strumenti/_q-duello-impronta.js'],                 conta: true,  lento: false },
   /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici

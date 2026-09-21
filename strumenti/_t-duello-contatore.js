@@ -25,7 +25,22 @@
      E) il conto dei sorteggi e Reg.tick a fine partita sono identici a
         quelli del gioco di prima. Serve --prima <file>: senza, questa
         prova si dichiara NON MISURATA invece di darsi ragione da sola.
-        (La prova larga sta in _t-duello-impronta.js, 44 duelli.)
+        (La prova larga sta in strumenti/_q-duello-impronta.js, 44 duelli.)
+
+   RETTIFICA A EDIZIONI (21 settembre 2026, voce #131, correzione di
+   revisione). LA PROVA D ERA VUOTA: leggeva Duel.nDuello dopo
+   Reg.accendi() su una pagina che non aveva MAI giocato un duello, dove
+   il contatore vale gia' zero per conto suo — l'asserzione === 0
+   passava con o senza l'azzeramento vero, e un gioco identico privato
+   della riga `Duel.nDuello = 0` dentro `Reg.azzeraComandi`
+   (CALCETTO-il-gioco.html:13406) superava comunque tutta la batteria
+   del duello (misurato dal revisore: contatore 8/8, nastro 5/5, porte
+   8/8). CURA: adesso il contatore si SPORCA a un valore non nullo (3)
+   PRIMA di ciascun azzeramento, e si legge SUBITO DOPO — sia per
+   Reg.accendi() (D) sia per Reg.deserializza() (D bis, prima non
+   misurata affatto). Verificato col mutante dedicato
+   (strumenti/_crit-duello-contatore.js): la prova corretta e' ROSSA sul
+   falso e VERDE sul gioco vero.
 
    uso:  node strumenti/_t-duello-contatore.js
          node strumenti/_t-duello-contatore.js --prima fuori/gioco-131-base.html
@@ -70,11 +85,29 @@ function unGiro({ seme, taglia, maxf, conContatori }) {
   for (const k in window.__save0) t.save[k] = JSON.parse(JSON.stringify(window.__save0[k]));
   if (typeof Reg !== 'undefined') Reg.azzeraComandi();
 
-  t.registra();                       /* il registro acceso: serve a leggere Reg.tick */
+  /* PROVA D, SPORCATA APPOSTA (voce #131, correzione di revisione). Su
+     una pagina che non ha ancora giocato un duello Duel.nDuello vale
+     gia' zero: leggerlo dopo Reg.accendi()/Reg.deserializza() senza
+     averlo sporcato prima non distingue il gioco vero (che lo azzera)
+     dal falso che non lo tocca piu' — l'asserzione === 0 varrebbe in
+     entrambi i casi. Si sporca a un valore non nullo (3) PRIMA di
+     ciascun azzeramento e si legge SUBITO DOPO; poi si torna in
+     registrazione pulita con un vero t.registra() prima di cominciare
+     la partita, cosi' il resto del giro non vede la sporcatura. */
+  let nDuelloDopoAccendi = null, nDuelloDopoDeserializza = null;
+  if (conContatori) {
+    Duel.nDuello = 3; Duel.passo = 7;
+    t.registra();
+    nDuelloDopoAccendi = Duel.nDuello;
+    Duel.nDuello = 3; Duel.passo = 7;
+    Reg.deserializza('1||');          /* nastro minimo, valido e vuoto */
+    nDuelloDopoDeserializza = Duel.nDuello;
+  }
+
+  t.registra();                       /* il registro acceso davvero: serve a leggere Reg.tick */
   t.semina(seme);
   t.startMatch(1, 1, { size: taglia, sponde: 'gabbia', miraGuidata: 'pieno' });
   t.setCpuVsCpu(true);                /* ORDINE SACRO: startMatch prima */
-  const nDuelloDopoAccendi = conContatori ? Duel.nDuello : null;
   /* DUE SECONDI DI PARTITA VERA PRIMA DEL DISCHETTO, e non sono un
      capriccio: senza, Reg.tick varrebbe zero per tutta la corsa e la
      prova «il tick sta fermo durante il duello» sarebbe vera per il
@@ -133,7 +166,7 @@ function unGiro({ seme, taglia, maxf, conContatori }) {
   const out = {
     duelli, fotogrammi: f, stato: t.state, sorteggi: t.sorteggi, tickFine: Reg.tick,
     punteggio: [G.score[0], G.score[1]], passi, tickPrimaDelDischetto,
-    nDuelloDopoAccendi, passoVistoMax, saltiPasso,
+    nDuelloDopoAccendi, nDuelloDopoDeserializza, passoVistoMax, saltiPasso,
     tickDiversi: conContatori ? tickDuello.size : null,
     nDuelliDiversi: conContatori ? nDuelloVisti.size : null,
     dentroVisto: spia.dentroVisto, fuoriVisto: spia.fuoriVisto.filter(Boolean).length,
@@ -227,15 +260,21 @@ const nonMisurato = (nome, perche) => console.log('  ??  ' + nome + '\n         
     'C bis) dentroUpdate e\' FALSO fuori — anche dopo il return anticipato del ramo dei rigori',
     r.fuoriVisto + ' fotogrammi su ' + r.fotogrammi + ' con la spia rimasta accesa fuori da Duel.update');
 
-  /* D) l'ordinale riparte col nastro */
+  /* D) l'ordinale riparte col nastro — SPORCATO a 3 prima di leggere
+     (vedi commento in testa a unGiro): su pagina fresca nDuello vale
+     gia' zero, e leggerlo senza sporcare prima passerebbe anche senza
+     l'azzeramento vero (revisione del 21 settembre 2026, voce #131) */
   di(r.nDuelloDopoAccendi === 0,
-    'D) nDuello riparte da zero quando comincia un nastro (Reg.accendi -> azzeraComandi)',
-    'dopo registra(): nDuello = ' + r.nDuelloDopoAccendi);
+    'D) nDuello riparte da zero dopo Reg.accendi() (sporcato a 3 prima)',
+    'sporcato a 3, dopo registra(): nDuello = ' + r.nDuelloDopoAccendi);
+  di(r.nDuelloDopoDeserializza === 0,
+    'D bis) nDuello riparte da zero dopo Reg.deserializza() (sporcato a 3 prima)',
+    'sporcato a 3, dopo deserializza(\'1||\'): nDuello = ' + r.nDuelloDopoDeserializza);
 
   /* E) niente e' cambiato */
   if (!base) {
     nonMisurato('E) sorteggi e Reg.tick identici al gioco di prima',
-      'serve --prima <file del gioco non curato>. La prova larga sta in _t-duello-impronta.js.');
+      'serve --prima <file del gioco non curato>. La prova larga sta in strumenti/_q-duello-impronta.js.');
   } else {
     di(base.sorteggi === r.sorteggi && base.tickFine === r.tickFine &&
        base.punteggio.join() === r.punteggio.join() && base.duelli.length === r.duelli.length &&

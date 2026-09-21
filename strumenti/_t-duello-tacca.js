@@ -24,7 +24,7 @@
      D) NON-REGRESSIONE DELLA CPU: pickZone(z) senza u,v inventa ancora
         esattamente u=z-1 e v=0,50, e `mirato` resta falso. La CPU non
         chiama mai duelMira, e questa prova lo mette per iscritto.
-        (La prova larga e' _t-duello-impronta.js.)
+        (La prova larga e' strumenti/_q-duello-impronta.js.)
 
    uso:  node strumenti/_t-duello-tacca.js
    esce 0 verde, 1 rosso, 2 banco esploso.
