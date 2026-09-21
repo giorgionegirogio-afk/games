@@ -199,6 +199,18 @@ const fotoStato = P => P.pag.evaluate(() => ({
     dopoG = await fotoStato(Gt);
     dopoB = await fotoStato(Bt);
 
+    /* =================================================================
+       LO SCHERMO (voce #133, compito 3). Il nastro porta i tocchi in
+       COORDINATE DI SCHERMO, e dove finisce un tocco lo decidono
+       touchBtnLayout e SCALE/OX/OY, che vengono da innerWidth/
+       innerHeight. Su uno schermo diverso lo stesso nastro e' un'altra
+       partita — misurato, 800x360 contro 915x412: 0-3 dove il tabellone
+       dice 3-4. Il giudice deve RIFIUTARSI, non accusare. */
+    r.schermo = { dentroNastro: N.schermoDi(nastro) };
+    const Gs = await B.apri(browser, sg.porta, { width: 800, height: 360 });
+    r.altroSchermo = await giudizio(Gs, nastro, atteso, opz);
+    await Gs.ctx.close();
+
     if (At.errori.length || Bt.errori.length || Gt.errori.length)
       throw new Error('eccezione di pagina: ' + (At.errori[0] || Bt.errori[0] || Gt.errori[0]));
     await At.ctx.close(); await Bt.ctx.close(); await Gt.ctx.close();
@@ -302,6 +314,17 @@ const fotoStato = P => P.pag.evaluate(() => ({
   const visti = [...new Set([r.torna, r.gonfio, r.vuoto, r.motore, r.stretto].map(v))].sort();
   di(visti.length === 5 && VERDETTI.every(x => visti.includes(x)),
      'M) il banco vede tutti e cinque i verdetti, distinti fra loro', visti.join(' · '));
+
+  /* ---- O/P) lo schermo, il sesto canale ------------------------------- */
+  const scN = r.schermo && r.schermo.dentroNastro;
+  di(!!scN && scN[0] === 915 && scN[1] === 412,
+     'O) il nastro porta lo schermo su cui e\' stato registrato (riga di tipo 10)',
+     (scN ? scN.join('x') : 'ASSENTE') + ', atteso 915x412');
+  di(v(r.altroSchermo) === 'INCOMPLETO' && r.altroSchermo.causa === 'schermo-diverso' &&
+     Array.isArray(r.altroSchermo.schermo),
+     'P) su uno schermo diverso (800x360) il giudice si rifiuta e dice quale serve — MAI NON TORNA',
+     v(r.altroSchermo) + '/' + (r.altroSchermo && r.altroSchermo.causa) + ', serve ' +
+     ((r.altroSchermo && r.altroSchermo.schermo) ? r.altroSchermo.schermo.join('x') : '—'));
 
   /* ---- la prova che puo' non esercitarsi ------------------------------ */
   if (r.duello.saltata)

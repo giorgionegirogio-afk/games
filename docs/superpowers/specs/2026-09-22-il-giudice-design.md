@@ -205,6 +205,57 @@ banco normale non li vedrebbe:
   su `DECO` (`:8631-8655`), un generatore separato. Se la cura tiene, la
   dimensione della finestra del giudice non sposta un verdetto.
 
+## RETTIFICA A EDIZIONI (22 settembre 2026, voce #133, compito 3)
+
+**I canali erano cinque quando questa spec è stata scritta. Sono sei**, e
+il sesto è stato trovato MISURANDO, esattamente dove la spec diceva di
+guardare — il canale «la finestra» dell'elenco qui sopra — ma **per la
+ragione sbagliata**. La spec sospettava i sorteggi (voce #98), e quella
+cura tiene: la cosmetica pesca da `DECO` dalla voce #129 e non tocca il
+PRNG di gioco. Il canale vero **passa dai pixel**.
+
+Il nastro registra i tocchi in **coordinate di schermo**. Dove finisce un
+tocco lo decidono `touchBtnLayout` (i pulsanti virtuali) e `SCALE/OX/OY`
+(la conversione schermo → campo), e tutti e tre derivano da
+`innerWidth`/`innerHeight` (`function resize`). Lo stesso tocco a
+(841, 342) preme il disco grande su uno schermo 915x412 e non preme
+niente su uno 800x360, dove quel punto è fuori dalla finestra.
+
+MISURATO (`fuori/_sonda-133-finestra.js`, stesso nastro vero, nove viste,
+partita dichiarata 3-4): `915x413`, `916x412`, `930x412`, `915x430`
+tornano 3-4; `1024x460` dà **NON TORNA 1-3**; `1280x720` dà
+**INCOMPLETO/duello-senza-righe 0-4**; `844x390` (iPhone 14) e `800x360`
+danno **NON TORNA 0-3**. Non è una lama: quindici pixel non spostano
+niente, settanta spostano tutto.
+
+**E NON È UN DIFETTO DEL GIUDICE: C'È GIÀ, IN PRODUZIONE.** Misurato col
+replay vero (`fuori/_sonda-133-schermi.js`), due telefoni: schermi uguali
+→ 3-4 contro 3-4; `915x412` contro `844x390` → 0-3 contro 3-4; `844x390`
+contro `915x412` → 1-3 contro 3-4; `915x412` contro `800x360` → 0-3
+contro 3-4. E in tutti e tre i casi il gioco scrive, testualmente: «La
+squadra di chi ti ha attaccato è cambiata da allora». **L'innocente
+accusato** — la stessa frase e la stessa colpa attribuita alla cosa
+sbagliata che il cantiere #132 ha tolto di mezzo cinque volte. In
+produzione due telefoni con lo stesso schermo sono l'eccezione, non la
+regola: era quasi sempre la causa sbagliata.
+
+**LA CURA DI QUESTO CANTIERE, e non è la definitiva.** Il nastro porta lo
+schermo su cui è stato registrato (riga di **tipo 10**, due numeri), e da lì:
+
+- il **giudice**, su uno schermo diverso, si RIFIUTA — `INCOMPLETO`,
+  causa `schermo-diverso` — e dichiara quale schermo serve. Un
+  verificatore differito apre il browser di quella misura e giudica
+  davvero. Non accusa nessuno: è il punto 3 del contratto, e senza questa
+  riga il contratto sarebbe falso.
+- il **replay di produzione** continua a mostrare il film (rifiutarlo
+  vorrebbe dire spegnere la funzione per quasi tutti) ma quando il
+  punteggio non torna dà la CAUSA VERA invece di dare la colpa alla rosa
+  cresciuta di un altro.
+
+La cura definitiva — registrare i tocchi in coordinate che non dipendono
+dallo schermo — è un cantiere suo, ed è **fuori perimetro, dichiarata
+seguito**.
+
 ## MOTORE_V: si misura, non si deduce
 
 Oggi vale 2 (`:13407`). La catena che dice «resta 2» per questo cantiere

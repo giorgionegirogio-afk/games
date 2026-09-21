@@ -60,9 +60,21 @@ function spegniTipo(nastro, tipo) {
   return n ? rifai(p, fuori) : null;
 }
 
+/* LO SCHERMO SCRITTO NEL NASTRO (riga di tipo 10, voce #133), o null se
+   quel nastro e' di prima di quella cura. Si legge QUI, in Node, e non
+   chiedendolo al gioco: un banco che chiede al gioco se il gioco ha
+   fatto il suo lavoro non misura niente. */
+function schermoDi(nastro) {
+  for (const z of spacca(nastro).pezzi) {
+    const v = z.split(',');
+    if (v[1] === '10') return [+v[3], +v[4]];
+  }
+  return null;
+}
+
 module.exports = {
   allarga,
-  spacca, rifai,
+  spacca, rifai, schermoDi,
 
   /* LE DUE ROSE VIA (tipo 7). Il giudice deve rifiutare: senza le rose
      dovrebbe ripiegare sul profilo vivo, cioe' giudicare un'altra

@@ -148,13 +148,50 @@ riferisce.**
 
 Commit `(voce #133, compito 3)`.
 
+## RETTIFICA A EDIZIONI (22 settembre 2026, voce #133, compito 3)
+
+**Il compito 3 doveva essere solo una misura, ed è diventato anche una
+cura.** La misura ha dato quello che doveva dare — **0 falsi «NON TORNA»
+su 14 partite oneste**, taglie 5/7/11 — ma il terzo canale sospetto, la
+finestra, ha morso: su uno schermo diverso da quello di chi ha
+registrato, lo stesso nastro dà `NON TORNA` su una partita onesta. E c'è
+già in produzione, nel replay vero, con la frase del #132 («la squadra di
+chi ti ha attaccato è cambiata da allora») detta alla cosa sbagliata.
+
+Il testo del compito 3 qui sopra resta quello scritto prima e non si
+cancella. Quel che il compito ha davvero contenuto, in più:
+
+- `strumenti/_t-giudice-schermo.js`, nato ROSSO 2/5 sul difetto;
+- `strumenti/_toppa-giudice-schermo.js`, sei ancore: la riga di tipo 10
+  nel nastro (serializza, deserializza, `Sfida.gioca`), il rifiuto del
+  giudice (`INCOMPLETO/schermo-diverso`, con dentro lo schermo che
+  serve), e la causa vera in `chiudiSfida`;
+- `strumenti/_crit-giudice-cieco-schermo.js`, il falso che scrive la riga
+  e non la guarda mai — passa A, C, E e cade su B, D e P;
+- due prove in più in `_q-giudice.js` (O e P), così il sesto canale entra
+  in batteria insieme alla cura e non un cantiere dopo.
+
+Non è un allargamento di perimetro: senza quel rifiuto il **punto 3 del
+contratto** («non muove mai un punto su un verdetto diverso da NON
+TORNA») sarebbe falso, perché il giudice direbbe NON TORNA a gente che
+non ha barato. La cura DEFINITIVA — i tocchi registrati in coordinate che
+non dipendono dallo schermo — resta fuori perimetro e dichiarata seguito.
+
 ## Compito 4 — MOTORE_V, batteria, verbale
 
-- `strumenti/_t-133-motorev.js`: N nastri registrati su
-  `fuori/gioco-133-base.html` e rigiocati sul curato, impronta per
-  impronta. N su N identici -> `MOTORE_V` resta 2, e la misura si scrive
-  accanto alla costante nel gioco (per ancora, come hanno fatto il #131 e
-  il #132).
+- **MOTORE_V si misura con `strumenti/_t-132-motorev.js`**, puntato su
+  `fuori/gioco-133-base.html` con `--prima`. **RETTIFICA a quanto scritto
+  qui sotto** (22 settembre 2026): il piano prevedeva un
+  `_t-133-motorev.js` nuovo, e non si scrive. Sarebbe stata la copia di
+  un attrezzo di trecento righe per cambiare un valore di default — e in
+  questa casa una copia è un posto in più dove la stessa ferita si
+  riapre da sola («quando ripari uno strumento, cerca subito la stessa
+  ferita negli strumenti che l'hanno copiato»). L'attrezzo del #132
+  misura ESATTAMENTE la domanda giusta — stessi comandi, prima e dopo,
+  stessa partita? — e il gioco «di prima» è un parametro.
+  N su N identici -> `MOTORE_V` resta 2, e la misura si scrive accanto
+  alla costante nel gioco (per ancora, come hanno fatto il #131 e il
+  #132).
 - `_q-giudice.js` registrato in `strumenti/tutti.js` con `conta:true`.
 - Verbale in `MANUALE.md` §A, in cima.
 - Riga in `PUNTO-DEL-LAVORO.md`.
