@@ -9,9 +9,15 @@ commit ciascuno.
 ## Vincoli globali
 
 1. **Il gioco si tocca solo via attrezzo a ancore.** Ogni compito che
-   modifica `CALCETTO-il-gioco.html` porta il suo `strumenti/_t-*.js` che
-   cerca una stringa-ancora unica, la sostituisce, e scrive con `--out`
-   una copia o con `--dentro` il gioco stesso. Mai un Edit diretto.
+   modifica `CALCETTO-il-gioco.html` porta il suo `strumenti/_toppa-*.js`
+   che cerca una stringa-ancora unica, la sostituisce, e scrive con
+   `--out` una copia o con `--dentro` il gioco stesso. Mai un Edit
+   diretto. La cura e il suo test stanno in due file, secondo la
+   convenzione di `CLAUDE.md`: `_toppa-duello-X.js` applica,
+   `_t-duello-X.js` misura. (Il nome `_t-duello-orologio.js` era gia'
+   occupato dalla toppa del 31 agosto 2026 sull'orologio del DISEGNO,
+   `Duel.vt`: sono due orologi diversi, e non si sovrascrive un attrezzo
+   storico. Qui si chiama `contatore`.)
 2. **L'impronta di non-regressione si rimisura a OGNI compito**
    (`node strumenti/_t-duello-impronta.js`). Se si muove di un numero, la
    cura e' sbagliata anche se tutti i test nuovi sono verdi: ci si ferma e
