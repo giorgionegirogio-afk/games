@@ -22764,10 +22764,33 @@ function duelMira(x,y){
      traversa e legge come un segno appiccicato sopra la porta */
   const mx=clamp(x, g.gx0+g.GW*0.11, g.gx1-g.GW*0.11);
   const my=clamp(y, g.gy0+g.GH*0.21, g.GLY-g.GH*0.20);
-  const u=(mx-VW/2)/(g.GW*0.31);
-  const v=(my-g.gy0)/g.GH;
+  /* =====================================================================
+     LA MIRA SI POSA SU UNA TACCA INTERA, SEMPRE (voce #131, compito 3).
+
+     E' la stessa legge del pixel intero del dito (grep «IL DITO SI POSA
+     SU UN PIXEL INTERO»), e per la stessa ragione: nel nastro non possono
+     entrare clientX/clientY, perche' u e v dipendono da duelGeo(), cioe'
+     da VW/VH e dalle altezze vere delle due fasce lette dal DOM. Lo
+     stesso dito nello stesso punto dello schermo, su due telefoni di
+     forma diversa, da' due mire diverse. Nel nastro entra la MIRA.
+
+     E allora la mira deve stare in un numero che TORNA. Nel nastro i
+     numeri sono interi: u e v ci entrano per mille e arrotondati. Se qui
+     restasse la u piena a doppia precisione, la partita rigiocata
+     divergerebbe dal primo rigore — e di pochissimo, cioe' in silenzio.
+
+     Si arrotonda QUI e in TUTTE E TRE LE MODALITA', non solo quando il
+     registro e' acceso: se no il gioco di rete sarebbe un gioco
+     leggermente diverso da quello di casa. Un millesimo non e' niente —
+     u vive in [-1,258; +1,258] e la banda piu' stretta che il gioco
+     sappia posare, 0,095, e' novantacinque volte piu' larga.
+     ===================================================================== */
+  const u=Math.round(((mx-VW/2)/(g.GW*0.31))*1000)/1000;
+  const v=Math.round(((my-g.gy0)/g.GH)*1000)/1000;
   /* il terzo: e' il mirino a dirlo, con le due soglie a meta' strada fra
-     un bersaglio e l'altro */
+     un bersaglio e l'altro — e lo dice sulla u GIA' arrotondata, cosi'
+     il terzo che decide l'esito e il punto che il nastro porta non
+     possono divergere di un capello (voce #131) */
   const z = u<-0.5 ? 0 : (u>0.5 ? 2 : 1);
   return {u, v, z};
 }
