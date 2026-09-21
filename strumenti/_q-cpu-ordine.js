@@ -25,9 +25,11 @@
       t.setCpuVsCpu(true);` -- setCpuVsCpu DOPO startMatch. Si
       verifica che G.cpu risulti [true,true] (non solo cpu[0]), poi si
       guida la partita fotogramma per fotogramma (t.simulate(1/60))
-      fino a t.state==='end' o al tetto di sicurezza TETTO_FOTOGRAMMI
-      (18000 fotogrammi/300s, IMPORTATO da _q-invarianti.js -- voce
-      #127 compito 2): la partita DEVE raggiungere
+      fino a t.state==='end' o al tetto di sicurezza
+      tettoFotogrammi(taglia) (18000/300s a taglia 5, 21000/350s a
+      taglia 7, 27000/450s a taglia 11 -- IMPORTATO da _q-invarianti.js,
+      PER TAGLIA dalla voce #130, prima un flat unico voce #127 compito
+      2): la partita DEVE raggiungere
       'end' entro il tetto, senza restare incastrata in 'freekick'
       (il sintomo #108/#119). Raggiungere 'end' entro il tetto e non
       restare bloccata sono la STESSA misura: se la scena restasse
@@ -99,8 +101,14 @@ const { semeFisso } = require('./_posa.js');
    duplicato per la STESSA cosa, scoperto mentre si ricalibrava il tetto
    per il rigore a oltranza (vedi _q-invarianti.js per il perche' del
    nuovo valore -- questo file non ha bisogno di saperlo, gli basta
-   importarlo). Corretto qui: un'unica fonte, come gli altri due banchi. */
-const { TETTO_FOTOGRAMMI } = require('./_q-invarianti.js');
+   importarlo). Corretto qui: un'unica fonte, come gli altri due banchi.
+   IL TETTO E' PER TAGLIA (voce #130, 21 settembre 2026): TETTO_FOTOGRAMMI
+   resta importata (vale il numero di taglia 5, invariato) ma la prova 1b
+   qui sotto usa `tettoFotogrammi(TAGLIA_BANCO)` -- altrimenti questo
+   banco lanciato a --taglia 11 userebbe il tetto flat di taglia 5 (18000,
+   troppo stretto per una partita di regolamento da 180s), lo stesso falso
+   positivo che ha aperto il cantiere #130. */
+const { TETTO_FOTOGRAMMI, tettoFotogrammi } = require('./_q-invarianti.js');
 
 const RADICE = path.resolve(__dirname, '..');
 const arg = (n, d) => {
@@ -116,10 +124,12 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 const SEME_CANTIERE = 20260919;   // la data del piano d'esecuzione del cantiere (voce #121), default del flag --seme
 const TAGLIA_BANCO = +arg('taglia', 5);
 const SEME = +arg('seme', SEME_CANTIERE);
-/* TETTO_FOTOGRAMMI e' importato (vedi la nota accanto al require, in
-   testa al file): 18000 fotogrammi/300s da voce #127 compito 2, ben
-   oltre la durata di una qualunque amichevole vera E oltre il caso
-   peggiore del rigore a oltranza -- non piu' un numero locale. */
+/* tettoFotogrammi(TAGLIA_BANCO) e' importata (vedi la nota accanto al
+   require, in testa al file): 18000/300s a taglia 5, 21000/350s a taglia
+   7, 27000/450s a taglia 11 (voce #130) -- ben oltre la durata di una
+   qualunque amichevole vera E oltre il caso peggiore del rigore a
+   oltranza, PER OGNI taglia -- non piu' un numero locale ne' un flat
+   unico applicato a ogni taglia. */
 
 function servi(prova) {
   return new Promise(ok => {
@@ -179,13 +189,13 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
       }
       const statoFinale = t.state;
       return { cpuSubito, fotogrammi, statoFinale, raggiuntoEnd: statoFinale === 'end' };
-    }, { taglia: TAGLIA_BANCO, seme: SEME, tetto: TETTO_FOTOGRAMMI });
+    }, { taglia: TAGLIA_BANCO, seme: SEME, tetto: tettoFotogrammi(TAGLIA_BANCO) });
 
     const cpuOk = Array.isArray(rGiusto.cpuSubito) && rGiusto.cpuSubito[0] === true && rGiusto.cpuSubito[1] === true;
     di(cpuOk, '1a. ORDINE-GIUSTO -- dopo startMatch poi setCpuVsCpu(true), G.cpu e\' [true,true]',
       'G.cpu=' + JSON.stringify(rGiusto.cpuSubito));
 
-    di(rGiusto.raggiuntoEnd, '1b. ORDINE-GIUSTO -- una partita CPU-CPU a seme fisso raggiunge \'end\' entro ' + TETTO_FOTOGRAMMI + ' fotogrammi, senza restare bloccata',
+    di(rGiusto.raggiuntoEnd, '1b. ORDINE-GIUSTO -- una partita CPU-CPU a seme fisso raggiunge \'end\' entro ' + tettoFotogrammi(TAGLIA_BANCO) + ' fotogrammi (taglia ' + TAGLIA_BANCO + '), senza restare bloccata',
       'fotogrammi simulati: ' + rGiusto.fotogrammi + '  stato finale: \'' + rGiusto.statoFinale + '\'' +
       (rGiusto.raggiuntoEnd ? '' : '  -- NON ha raggiunto \'end\' entro il tetto (sintomo #108/#119 se lo stato e\' \'freekick\')'));
 

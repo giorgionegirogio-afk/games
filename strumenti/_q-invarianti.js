@@ -30,14 +30,17 @@
      4. timeLeft monotono  -- G.timeLeft non cresce mai fra due campioni
         e non e' mai < 0.
      5. durata<=tetto (INV-15) -- la partita raggiunge lo stato 'end'
-        entro TETTO_FOTOGRAMMI fotogrammi (18000, 300 s di gioco a taglia 5
-        -- RICALIBRATO voce #127, onda C -- 3, compito 2, vedi la lettera
-        di testa della costante piu' sotto per il perche': il vecchio
-        13200/220s non copriva il caso peggiore del rigore a oltranza. Lo
-        STESSO tetto e' condiviso anche da _q-cpu-ordine.js, che prima di
-        questo compito ne teneva una copia locale scaduta -- vedi la nota
-        alla sua importazione, corretta qui). Generalizzato a N semi (di
-        serie 8, vedi --semi).
+        entro tettoFotogrammi(taglia) fotogrammi (18000/300s a taglia 5,
+        21000/350s a taglia 7, 27000/450s a taglia 11 -- IL TETTO E' UNA
+        FUNZIONE DELLA TAGLIA dalla voce #130, "il metro prima del
+        giudice": prima era una costante unica tarata su taglia 5 e
+        applicata a ogni taglia, un falso positivo su taglia 11 misurato
+        e rettificato -- vedi la lettera di testa di tettoFotogrammi piu'
+        sotto per le misure). Il numero di taglia 5 resta quello
+        RICALIBRATO dalla voce #127 (il vecchio 13200/220s non copriva il
+        caso peggiore del rigore a oltranza). Lo STESSO tetto per taglia
+        e' condiviso anche da _q-cpu-ordine.js e _q-soak.js. Generalizzato
+        a N semi (di serie 8, vedi --semi).
      6. cronometri-fratelli (LA PIU' A RISCHIO — cinque regressioni pagate
         a mano: #86/#87/#107/#117/#122) -- SUBITO dopo startMatch, prima
         di simulare un solo fotogramma, ogni cronometro della famiglia
@@ -425,9 +428,10 @@
           hash di replay corrispondente
        -> N/A: nessun sistema di submission/replay-hash in CALCETTO.
      INV-15 durata reale <= attesa + 25% (rileva stati bloccati)
-       -> QUI: prova 5 (durata<=TETTO_FOTOGRAMMI fotogrammi, 300 s a
-          taglia 5 -- RICALIBRATO voce #127 compito 2, vedi la lettera di
-          testa della costante).
+       -> QUI: prova 5 (durata<=tettoFotogrammi(taglia) fotogrammi, 300 s
+          a taglia 5 -- RICALIBRATO voce #127 compito 2 -- 350 s a taglia
+          7, 450 s a taglia 11 -- IL TETTO E' PER TAGLIA dalla voce #130,
+          vedi la lettera di testa di tettoFotogrammi).
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -579,7 +583,84 @@ const SEMI_BANCO = argSemiEsplicito ? +arg('semi', 8) : (BUGIARDO === 'durata' ?
    avesse gia' esportato questa) -- scoperto e corretto in questo stesso
    compito: ora importa TETTO_FOTOGRAMMI da qui, come _q-fuzzer.js/
    _q-soak.js gia' facevano. */
-const TETTO_FOTOGRAMMI = 18000;
+/* =========================================================================
+   IL TETTO DIVENTA FUNZIONE DELLA TAGLIA (voce #130, 21 settembre 2026,
+   "IL METRO PRIMA DEL GIUDICE").
+
+   LA RETTIFICA CHE HA APERTO QUESTO CANTIERE. Il verbale #129 (MANUALE.md
+   SA registro) e PUNTO-DEL-LAVORO.md (riga 11) dichiaravano: "seme
+   20260924 a taglia 11 bloccato in freekick a 18000 fotogrammi,
+   PRE-ESISTENTE, difetto di gioco scollegato dalla cosmetica". MISURATO
+   DI NUOVO qui (fuori/_misura-seme-20260924.js, non committato --
+   convenzione di casa per le sonde usa-e-getta): la partita NON e'
+   bloccata, raggiunge 'end' al fotogramma 19502 (325,0s) con punteggio
+   2-1, passando per una serie a rigori (G.rigori===true). Il rosso era
+   IL TETTO (18000, tarato sul caso peggiore di TAGLIA 5), applicato a una
+   taglia dove durataPartita() (CALCETTO-il-gioco.html:4105-4123,
+   round(MATCH_SEC*FW/1150)) vale gia' 180s invece di 90s (FW=2300 contro
+   1150): un rigore a oltranza legittimo a quella taglia arriva molto
+   piu' vicino al tetto tarato per un'altra taglia, e lo sfonda. La
+   diagnosi "difetto di gioco" del #129 era un'inferenza sbagliata sopra
+   una misura vera (il taglio a 18000 leggeva probabilmente la scena
+   'freekick' di passaggio, non un blocco). Rettificato a edizioni in
+   MANUALE.md e PUNTO-DEL-LAVORO.md (voce #130, compito 3).
+
+   LE MISURE PER TAGLIA (fuori/_misura-preRigori.js, stesso metodo del
+   #127: simula ogni seme fino a che G.rigori diventa vero -- si apre la
+   serie -- o t.state==='end' -- vittoria diretta -- e riporta il
+   fotogramma di decisione; poi si somma la componente oltranza teorica).
+     TAGLIA 5  -- INVARIATA, il numero storico del #127 (campione 427
+                  partite, massimo osservato 10854, margine ~10,6% ->
+                  12000 pre-rigori, + 18*328=5904 oltranza, arrotondato a
+                  18000/300s). Nessun banco a taglia 5 cambia numero.
+     TAGLIA 7  -- MISURATO 21 settembre 2026 (--taglia 7 --n 100
+                  --semeBase 20260921 --tetto 25000): MASSIMO fotogramma
+                  di decisione 12252 su 100 partite (13 arrivate ai
+                  rigori, 0 incomplete). Margine +20% (piu' prudente del
+                  10,6% storico: il campione qui e' 100 contro 427) ->
+                  14702. + oltranza teorica 5904 = 20606, arrotondato a
+                  21000 (350s).
+     TAGLIA 11 -- MISURATO 21 settembre 2026 (--taglia 11 --n 150
+                  --semeBase 20260921 --tetto 35000): MASSIMO fotogramma
+                  di decisione 17136 su 150 partite (23 arrivate ai
+                  rigori, 0 incomplete). Margine +20% -> 20563. +
+                  oltranza teorica 5904 = 26467, arrotondato a 27000
+                  (450s). Copre il seme 20260924 (19502) con margine
+                  comodo.
+
+   L'OLTRANZA E' TAGLIA-INDIPENDENTE -- VERIFICATO, non solo ragionato.
+   La fase power del Duel (CALCETTO-il-gioco.html ~22479-22497) avanza il
+   cursore con `s.cursor+=s.dir*dt*1.15` e decide con `dado()` (probabilita'
+   legata alla difficolta', mai a FW/taglia): ne' l'incremento ne' la
+   decisione dipendono dalla dimensione del campo. Confermato con una
+   misura di controllo (fuori/_misura-oltranza.js, t.rigori() forzato
+   ripetuto): massimo per-un-solo-tiro 276 fotogrammi su 948 tiri
+   campionati a taglia 5, 277 su 2882 tiri a taglia 11 -- stesso ordine di
+   grandezza del 328/46776 storico di taglia 5 (voce #127, campione molto
+   piu' grande). Si tiene 328 (il campione piu' grande, quello storico)
+   come base del teorico 18*328=5904 per OGNI taglia: un numero diverso
+   per taglia qui non avrebbe alcuna giustificazione nel codice.
+
+   PERCHE' NON SI E' STIMATO IL PRE-RIGORI PER PROPORZIONE (scartato in
+   spec). Il rapporto fra durata-orologio (durataPartita()+40s golden) e
+   fotogrammi-reali-misurati NON e' costante fra le taglie sui campioni
+   raccolti: 200/130=1,538 a taglia 5 (campione 427), 204,2/166=1,230 a
+   taglia 7 (campione 100), 285,6/220=1,298 a taglia 11 (campione 150) --
+   probabile effetto della differenza di taglia-campione, non una legge
+   fisica affidabile da estrapolare. Misurare per ogni taglia resta piu'
+   onesto che dedurre da un rapporto che non torna. */
+const TETTI_PER_TAGLIA = { 5: 18000, 7: 21000, 11: 27000 };
+function tettoFotogrammi(taglia) {
+  const t = [5, 7, 11].includes(+taglia) ? +taglia : 5;
+  return TETTI_PER_TAGLIA[t];
+}
+/* RETROCOMPATIBILITA': chi importava la costante flat (_q-soak.js,
+   _q-cpu-ordine.js prima di questo compito) continua a funzionare senza
+   modifiche -- vale il numero di taglia 5, INVARIATO rispetto a prima di
+   questo compito. I due banchi sono stati aggiornati in questo stesso
+   compito a usare tettoFotogrammi(taglia): altrimenti riprodurrebbero,
+   a --taglia 11, lo stesso falso positivo che ha aperto questo cantiere. */
+const TETTO_FOTOGRAMMI = tettoFotogrammi(5);
 /* Il fotogramma dell'iniezione per i bugiardi nan/owner/punteggio/
    timeleft: 150 = 2,5 s, ben oltre il kickoff piu' lungo (stesso ordine
    di grandezza del CARTELLINO_FRAME=120 di _q-umore.js), cosi' la scena
@@ -721,10 +802,13 @@ function verificaTickInvarianti(G, r, seme, fotogramma, fase, stato, cfg) {
 /* ESPORTATE per il fuzzer (voce #126). TETTO_FOTOGRAMMI/TETTO_VEL_PALLA/
    TETTO_VZ_PALLA/SEME_CANTIERE/MARGINE_CONFINI escono anche loro: un'unica
    fonte per le soglie, invece di un secondo numero magico duplicato a
-   mano altrove. */
+   mano altrove. tettoFotogrammi/TETTI_PER_TAGLIA (voce #130): il tetto
+   per taglia, accanto alla costante flat che resta per chi non e' stato
+   aggiornato (vale il numero di taglia 5, identico a prima). */
 module.exports = {
   verificaCronometriFratelli, verificaTickInvarianti,
   TETTO_FOTOGRAMMI, TETTO_VEL_PALLA, TETTO_VZ_PALLA, SEME_CANTIERE, MARGINE_CONFINI,
+  tettoFotogrammi, TETTI_PER_TAGLIA,
 };
 
 /* =========================================================================
@@ -990,11 +1074,17 @@ if (require.main === module) (async () => {
        composizione che usera' chi fa require() da fuori pagina
        (_q-fuzzer.js), quindi si tiene questa forma per esercitarla anche
        qui. */
+    /* IL TETTO E' PER TAGLIA (voce #130): un banco lanciato con --taglia
+       11 usava fino a questo compito il tetto flat di taglia 5 (18000),
+       troppo stretto per una partita di regolamento da 180s -- lo stesso
+       falso positivo che ha aperto il cantiere (vedi la lettera di testa
+       di tettoFotogrammi). */
+    const TETTO_ATTIVO = tettoFotogrammi(TAGLIA_BANCO);
     const r = await pag.evaluate(`(function(){
       ${verificaCronometriFratelli.toString()}
       ${verificaTickInvarianti.toString()}
       return (${SONDA})(${JSON.stringify({
-      taglia: TAGLIA_BANCO, seme0: SEME, semi: SEMI_BANCO, tetto: TETTO_FOTOGRAMMI,
+      taglia: TAGLIA_BANCO, seme0: SEME, semi: SEMI_BANCO, tetto: TETTO_ATTIVO,
       bugiardo: BUGIARDO, iniettaAlFrame: INIETTA_AL_FRAME, ordineSbagliato: BUGIARDO === 'durata',
       tettoVelPalla: TETTO_VEL_PALLA, tettoVzPalla: TETTO_VZ_PALLA, marginBordi: MARGINE_CONFINI,
     })});
@@ -1020,12 +1110,12 @@ if (require.main === module) (async () => {
 
     let detDurata;
     if (r.durata.length === 0) {
-      detDurata = r.semiEseguiti + ' semi, tutte le partite non escluse hanno raggiunto \'end\' entro ' + TETTO_FOTOGRAMMI + ' fotogrammi';
+      detDurata = r.semiEseguiti + ' semi, tutte le partite non escluse hanno raggiunto \'end\' entro ' + TETTO_ATTIVO + ' fotogrammi (taglia ' + TAGLIA_BANCO + ')';
       if (r.semiAbortitiDaViolazione.length) detDurata += ' (' + r.semiAbortitiDaViolazione.length + ' semi esclusi: interrotti di proposito da --bugiardo ' + BUGIARDO + ', non un hang)';
     } else {
       detDurata = primi(r.durata, 5, v => 'seme ' + v.seme + ': ' + v.fotogrammi + ' fotogrammi, stato finale \'' + v.statoFinale + '\' (non ha raggiunto \'end\')');
     }
-    di(r.durata.length === 0, '5. durata<=tetto (INV-15) -- ogni partita raggiunge \'end\' entro ' + TETTO_FOTOGRAMMI + ' fotogrammi (300 s)', detDurata);
+    di(r.durata.length === 0, '5. durata<=tetto (INV-15) -- ogni partita raggiunge \'end\' entro ' + TETTO_ATTIVO + ' fotogrammi (' + (TETTO_ATTIVO / 60).toFixed(0) + ' s, tetto per taglia ' + TAGLIA_BANCO + ')', detDurata);
 
     di(r.cronometri.length === 0, '6. cronometri-fratelli -- recT/vantaggio/possOwner/possT/pulse/crowdSndT/swLock/swTimer al riposo subito dopo startMatch',
       r.cronometri.length === 0 ? r.semiEseguiti + ' partite (stessa pagina), tutti i cronometri a riposo a ogni startMatch'

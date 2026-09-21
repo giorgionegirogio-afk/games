@@ -1,13 +1,19 @@
 /* =====================================================================
    _q-soak.js -- IL SOAK CON BANDE (voce #127, onda C -- 3, ultimo
    anello). COMPITO 1: il soak base (invarianti riusate + INV-15 su
-   volume). COMPITO 2 (questo aggiornamento, 20 settembre 2026): la
-   ricalibrazione di TETTO_FOTOGRAMMI (la costante vive in
-   _q-invarianti.js, vedi la sua lettera di testa per il perche' del
-   nuovo valore) e LE BANDE statistiche (gol/90s, tiri, tiri in porta,
-   parate, legni, durata gioco vivo, % 0-0), ancorate a taglia 5 e
-   verificate su ogni corsa -- vedi il blocco `const BANDE`/
-   `BANDA_ZERO_ZERO` piu' sotto per l'ancora, la larghezza e la ragione.
+   volume). COMPITO 2 (20 settembre 2026): la ricalibrazione di
+   TETTO_FOTOGRAMMI (la costante vive in _q-invarianti.js, vedi la sua
+   lettera di testa per il perche' del nuovo valore) e LE BANDE
+   statistiche (gol/90s, tiri, tiri in porta, parate, legni, durata gioco
+   vivo, % 0-0), ancorate a taglia 5 e verificate su ogni corsa -- vedi il
+   blocco `const BANDE`/`BANDA_ZERO_ZERO` piu' sotto per l'ancora, la
+   larghezza e la ragione. IL TETTO E' PER TAGLIA (voce #130, 21
+   settembre 2026, "il metro prima del giudice"): il tetto flat era tarato
+   sul caso peggiore di taglia 5 e applicato tale e quale a --taglia 11,
+   un falso positivo misurato e curato -- questo file ora legge
+   `tettoFotogrammi(TAGLIA_BANCO)` da _q-invarianti.js invece della
+   costante `TETTO_FOTOGRAMMI` (che resta importata ed esportata per chi
+   non e' stato aggiornato, e vale ancora il numero di taglia 5).
 
    IL PERCHE'. Il mandato (S13.1.5) chiede "soak tests: 1,000 bot-vs-bot
    matches per night per profile ... zero crashes, zero invariant
@@ -136,7 +142,7 @@ const { chromium } = require('playwright');
 const { semeFisso } = require('./_posa.js');
 const {
   verificaCronometriFratelli, verificaTickInvarianti,
-  TETTO_FOTOGRAMMI, TETTO_VEL_PALLA, TETTO_VZ_PALLA, SEME_CANTIERE, MARGINE_CONFINI,
+  TETTO_FOTOGRAMMI, tettoFotogrammi, TETTO_VEL_PALLA, TETTO_VZ_PALLA, SEME_CANTIERE, MARGINE_CONFINI,
 } = require('./_q-invarianti.js');
 
 const RADICE = path.resolve(__dirname, '..');
@@ -454,8 +460,16 @@ const SONDA_SOAK = (cfg) => {
       if (t.save) t.save.tutorialDone = 1;
     });
 
+    /* IL TETTO E' PER TAGLIA (voce #130, "il metro prima del giudice"):
+       prima di questo compito qui girava il flat TETTO_FOTOGRAMMI (18000,
+       tarato su taglia 5) anche a --taglia 11, dove una partita di
+       regolamento dura gia' 180s -- il falso positivo misurato che ha
+       aperto il cantiere (seme 20260924, arrivava a 'end' regolarmente a
+       19502 fotogrammi, condannato dal tetto flat). Vedi la lettera di
+       testa di tettoFotogrammi in _q-invarianti.js per le misure. */
+    const TETTO_ATTIVO = tettoFotogrammi(TAGLIA_BANCO);
     const cfg = {
-      taglia: TAGLIA_BANCO, partite: PARTITE, semeBase: SEME_BASE, tetto: TETTO_FOTOGRAMMI,
+      taglia: TAGLIA_BANCO, partite: PARTITE, semeBase: SEME_BASE, tetto: TETTO_ATTIVO,
       tettoVelPalla: TETTO_VEL_PALLA, tettoVzPalla: TETTO_VZ_PALLA, marginBordi: MARGINE_CONFINI,
       ordineSbagliato: BUGIARDO === 'durata', bugiardoBande: BUGIARDO === 'bande',
     };
@@ -509,11 +523,11 @@ const SONDA_SOAK = (cfg) => {
 
     let detDurata;
     if (r.durata.length === 0) {
-      detDurata = PARTITE + ' partite, TUTTE hanno raggiunto \'end\' entro ' + TETTO_FOTOGRAMMI + ' fotogrammi (max osservato: ' + r.maxFotogrammi + ')';
+      detDurata = PARTITE + ' partite, TUTTE hanno raggiunto \'end\' entro ' + TETTO_ATTIVO + ' fotogrammi a taglia ' + TAGLIA_BANCO + ' (max osservato: ' + r.maxFotogrammi + ')';
     } else {
       detDurata = primi(r.durata, 5, v => 'seme ' + v.seme + ' (partita #' + v.indiceMatch + '): ' + v.fotogrammi + ' fotogrammi, stato finale \'' + v.statoFinale + '\' (non ha raggiunto \'end\')');
     }
-    di(r.durata.length === 0, 'INV-15 SU VOLUME -- ogni partita raggiunge \'end\' entro ' + TETTO_FOTOGRAMMI + ' fotogrammi (300 s, ricalibrato sul caso peggiore del rigore a oltranza + margine, voce #127 compito 2)', detDurata);
+    di(r.durata.length === 0, 'INV-15 SU VOLUME -- ogni partita raggiunge \'end\' entro ' + TETTO_ATTIVO + ' fotogrammi (' + (TETTO_ATTIVO / 60).toFixed(0) + ' s a taglia ' + TAGLIA_BANCO + ', tetto PER TAGLIA dalla voce #130 -- ricalibrato sul caso peggiore del rigore a oltranza + margine, misurato per taglia)', detDurata);
 
     /* LE BANDE (voce #127, compito 2) -- vedi la lettera di testa per
        l'ancora, la larghezza e la ragione. Si legge la MEDIANA del
@@ -584,7 +598,7 @@ const SONDA_SOAK = (cfg) => {
     const impronta = r.perPartita.map(p => p.seme + ':' + p.fotogrammi + ':' + p.statoFinale + ':' + p.punteggio.join('-')).join('|');
     console.log('\n  IMPRONTA (per la ripetibilita\', vedi cancello 2): ' + fnv1a(impronta) + '  (' + r.perPartita.length + ' partite)');
     console.log('  RIEPILOGO: ' + PARTITE + ' partite, ' + r.fotogrammiTotali + ' fotogrammi totali, ' +
-      'max osservato ' + r.maxFotogrammi + '/' + TETTO_FOTOGRAMMI + ' fotogrammi (' + (100 * r.maxFotogrammi / TETTO_FOTOGRAMMI).toFixed(1) + '% del tetto), ' +
+      'max osservato ' + r.maxFotogrammi + '/' + TETTO_ATTIVO + ' fotogrammi (' + (100 * r.maxFotogrammi / TETTO_ATTIVO).toFixed(1) + '% del tetto a taglia ' + TAGLIA_BANCO + '), ' +
       'durata banco ' + durataSecondi + ' s');
   } catch (e) {
     console.error('FALLITO: ' + e.message);
