@@ -13480,6 +13480,16 @@ const Reg = {
            il nastro NON basta a rifarla. Chi legge un nastro vecchio non
            lo trova e non cambia niente per lui. */
         pezzi.push(dT + ',5,' + dMs);
+      } else if(tipo === 6){
+        /* I COMANDI DEL DISCHETTO (voce #131). Lunghezza variabile come
+           il tipo 7 qui sotto, perche' i tre verbi hanno bisogno di un
+           numero diverso di argomenti: la mira ne porta tre (il terzo e
+           il punto), o uno solo se viene dalla tastiera; la barra
+           nessuno; il tuffo uno.
+           Il dT e' quasi sempre 0 — durante un duello Reg.tick sta fermo,
+           e' proprio per questo che esiste la coppia (nDuello, passo) —
+           quindi in media questa riga costa pochissimo. */
+        pezzi.push(dT + ',6,' + dMs + ',' + r.slice(3).map(x => x|0).join(','));
       } else if(tipo === 7){
         /* LE DUE SQUADRE. Interi e virgole, lunghezza variabile, scritti
            una volta sola in testa alla partita; in rilettura non fanno
@@ -13525,6 +13535,7 @@ const Reg = {
       else if(tipo === 3)   this.righe.push([tick, 3, ms]);
       else if(tipo === 4)   this.righe.push([tick, 4, ms, v[3], v[4]]);
       else if(tipo === 5)   this.righe.push([tick, 5, ms]);
+      else if(tipo === 6)   this.righe.push([tick, 6, ms].concat(v.slice(3)));
       else if(tipo === 7)   this.righe.push([tick, 7, ms].concat(v.slice(3)));
     }
     this.i = 0; this.tick = 0; this.modo = 2;
@@ -43656,6 +43667,62 @@ ui.endTrofeo.innerHTML = icoSVG('trofeo',24)+' HAI VINTO IL TORNEO! '+icoSVG('tr
       return veroUpdate.call(this, dt);
     }finally{ Duel.dentroUpdate = false; }
   };
+
+  /* =====================================================================
+     E LE TRE PORTE DEL DISCHETTO (voce #131, compito 4).
+
+     pickZone(z,u,v), stopPower() e pickKeeper(z) sono tutto cio' che un
+     dito puo' dire a un duello: il resto — quale terzo para, quanta
+     potenza, chi segna — lo ricava resolve() da questi stessi numeri.
+     I pointer stanno appesi a #duel e a #powerWrap e non passano dalle
+     quattro porte di Touch5: sono una superficie tutta loro, e questa e'
+     la sua.
+
+     LA RIGA CHE FA LA DIFFERENZA E' daMotore. Duel.update chiama da se'
+     tutte e tre — la CPU che tira, la CPU che ferma la barra, e il
+     ripiego del portiere a cpuT=3,0, che GIRA ANCHE COL PORTIERE UMANO.
+     Quelle non sono dita: non si registrano (il nastro le rifarebbe due
+     volte, e in rilettura keeperZone verrebbe fissato per primo, la
+     guardia s.keeperZone<0 fallirebbe, il dado() del ripiego non si
+     consumerebbe e tutti i sorteggi successivi slitterebbero di uno) e
+     non si sbarrano (senza di loro, in rilettura, il duello della CPU non
+     si deciderebbe mai).
+
+     QUI SI SCRIVE SOLTANTO, e la ragione e' un cancello rosso pagato.
+     La guardia che in rilettura ignora le dita vere — la gemella di
+     «IN RILETTURA LE DITA VERE SONO IGNORATE» delle quattro porte qui
+     sopra — arriva col compito 5, insieme alla rilettura vera. Messa qui
+     sbarrerebbe una strada che ancora non ha un'alternativa: chi rigioca
+     un nastro oggi non riceve le decisioni del duello da nessuna parte, e
+     sbarrargli anche la porta lo lascerebbe fermo. MISURATO: messa qui,
+     _q-fuzzer.js diventa rosso sulla riproduzione (il suo log-duelli lo
+     riapplica a mano, a registro in rilettura), e torna verde col
+     compito 5, quando le stesse decisioni arrivano dal nastro.
+
+     u e v ARRIVANO GIA' SU UNA TACCA INTERA da duelMira (grep «LA MIRA SI
+     POSA SU UNA TACCA INTERA»), quindi qui per mille e' una
+     moltiplicazione esatta, non un arrotondamento che perde qualcosa.
+     Quando non ci sono — la tastiera, che u e v non le sa scrivere — la
+     riga e' piu' corta di due numeri e in rilettura pickZone le ritrova
+     assenti: «mirato» resta falso, e il rigore da tastiera resta quello
+     di sempre.
+     ===================================================================== */
+  const porte = { pickZone:0, stopPower:1, pickKeeper:2 };
+  for(const nome in porte){
+    const verbo = porte[nome], vero = Duel[nome];
+    if(typeof vero !== 'function') continue;
+    Duel[nome] = function(a, b, c){
+      const daMotore = Duel.dentroUpdate;
+      if(Reg.modo === 1 && !daMotore){
+        if(verbo === 0) Reg.scrivi(6, (b == null)
+          ? [Duel.nDuello, Duel.passo, 0, a|0]
+          : [Duel.nDuello, Duel.passo, 0, a|0, Math.round(b*1000), Math.round(c*1000)]);
+        else if(verbo === 1) Reg.scrivi(6, [Duel.nDuello, Duel.passo, 1]);
+        else Reg.scrivi(6, [Duel.nDuello, Duel.passo, 2, a|0]);
+      }
+      return vero.call(this, a, b, c);
+    };
+  }
 })();
 
 
