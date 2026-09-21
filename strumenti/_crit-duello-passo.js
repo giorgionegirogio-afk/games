@@ -16,24 +16,41 @@
    dal vivo il dito arriva FRA due aggiornamenti. Questo mutante la
    sposta DOPO il corpo dell'aggiornamento — un fotogramma, 16,7 ms.
 
-   PERCHE' E' IL FALSO PEGGIORE. In REGISTRAZIONE non cambia un numero:
+   SEMBRAVA IL FALSO PEGGIORE. In REGISTRAZIONE non cambia un numero:
    `Duel.passo` viene incrementato una volta per aggiornamento comunque,
-   e il dito legge lo stesso valore. Un gioco cosi' sembra funzionare
-   perfettamente a chi gioca. E' solo in RILETTURA che il comando viene
-   rimesso in scena un aggiornamento troppo tardi, quando il cursore ha
-   gia' fatto un altro passo: 0,01917 di corsa, cioe' fra il 10% e il 20%
-   della banda. MISURATO nel dossier: cambia 6 esiti su 132 (5%), il
-   conto dei sorteggi in 5 partite su 40 e il PUNTEGGIO FINALE in 2 su 40.
+   e il dito legge lo stesso valore. E' solo in RILETTURA che i comandi
+   vengono rimessi in scena un aggiornamento piu' tardi, quando il
+   cursore ha gia' fatto un altro passo — 0,01917 di corsa, fra il 10% e
+   il 20% della banda. Il dossier #131 lo dava per letale, e questo
+   attrezzo e' nato per quello.
 
-   Il 5% sugli esiti non basterebbe a farlo cadere su quattro rigori: e'
-   per questo che `_t-duello-nastro.js` confronta il CURSORE a cinque
-   decimali e non solo il gol. Un aggiornamento di scarto sul cursore si
-   vede sempre, al primo duello.
+   RETTIFICA A EDIZIONI (21 settembre 2026, voce #131, compito 5).
+   MISURATO: NON e' letale. Su tre semi e otto duelli
+   (_t-duello-rigioca.js) la partita rigiocata sul mutante e' identica a
+   quella registrata sul mutante, esito per esito e cursore alla quinta
+   cifra.
+
+   E la ragione non e' che il banco non guarda: e' una proprieta' vera
+   del duello. pickZone AZZERA il cursore (`this.cursor=0`, :22344).
+   Quindi il cursore che stopPower legge non dipende da QUANDO cadono i
+   due comandi, ma solo da QUANTI aggiornamenti stanno FRA l'uno e
+   l'altro — e uno spostamento UNIFORME li sposta tutti e due,
+   conservando l'intervallo. Misurato: 15 aggiornamenti prima, 15 dopo,
+   cursore 0,2875 in tutti e due i casi.
+
+   Il falso che il dossier aveva davvero misurato — «spostare stopPower
+   di 1 aggiornamento cambia 6/132 esiti» — e' un'altra cosa: sposta UN
+   verbo solo, quindi l'intervallo cambia. Quello vive in
+   _crit-duello-scarto.js, ed e' il mutante che il banco deve bocciare.
+
+   A COSA SERVE ANCORA QUESTO FILE. A tenere onesta la misura qui sopra:
+   _t-duello-rigioca.js lo costruisce a ogni corsa e verifica che il suo
+   nastro DIFFERISCA da quello del gioco sano. Se un giorno l'attrezzo
+   smettesse di mordere, la frase «il gioco lo sopravvive» diventerebbe
+   vera per il motivo sbagliato e nessuno se ne accorgerebbe.
 
    uso:  node strumenti/_crit-duello-passo.js
          node strumenti/_crit-duello-passo.js --out fuori/crit-duello-passo.html
-   poi:  node strumenti/_t-duello-nastro.js --gioco fuori/crit-duello-passo.html
-         -> DEVE uscire 1. Se esce 0, il banco attesta invece di misurare.
 
    PRIMA DEL COMPITO 5 QUESTO ATTREZZO NON SI APPLICA, e lo dice: il
    gancio che deve spostare non esiste ancora.

@@ -184,14 +184,38 @@ function tipiDelNastro(testo) {
 const esiti = [];
 const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' : 'NO  ') + nome + (det ? '\n         ' + det : '')); };
 
+/* =====================================================================
+   IL CAMPO `passo` NON SI CONFRONTA, E VA SPIEGATO INVECE CHE NASCOSTO
+   (stessa ragione, stessa forma, in _t-duello-rigioca.js).
+
+   `passo` qui e' il fotogramma in cui QUESTO BANCO ha visto il duello
+   entrare in 'result'. Dal vivo il dito cade FRA due aggiornamenti: il
+   banco chiama stopPower dopo simulate(), la risoluzione avviene alla
+   fine del fotogramma k e il banco la vede al fotogramma k. In rilettura
+   lo stesso comando parte all'INIZIO dell'aggiornamento k+1 — l'unico
+   istante in cui il cursore vale ancora esattamente k passi, che e'
+   tutto il punto della cura — e il banco la vede al fotogramma k+1.
+
+   E' uno sfasamento dell'OSSERVATORE, non del gioco. La prova che lo e'
+   sta accanto: cursore, powerQ, terzi, mira ed esito devono coincidere
+   alla cifra. Se lo sfasamento fosse del gioco, il cursore sarebbe
+   diverso di 0,01917 — ed e' esattamente cio' che il mutante
+   _crit-duello-scarto.js fa vedere.
+   ===================================================================== */
+const CAMPI_SFASABILI = ['passo'];
+
 function primoScarto(a, b) {
   const n = Math.min(a.length, b.length);
   for (let i = 0; i < n; i++) {
     for (const k of Object.keys(a[i])) {
-      if (a[i][k] !== b[i][k]) return 'duello ' + (i + 1) + ', campo ' + k + ': ' + a[i][k] + ' -> ' + b[i][k];
+      if (a[i][k] !== b[i][k] && !CAMPI_SFASABILI.includes(k))
+        return 'duello ' + (i + 1) + ', campo ' + k + ': ' + a[i][k] + ' -> ' + b[i][k];
     }
   }
   if (a.length !== b.length) return 'la serie ha ' + a.length + ' duelli registrati e ' + b.length + ' rigiocati';
+  const sf = a.map((d, i) => b[i].passo - d.passo);
+  if (!sf.every(v => v === 0 || v === 1))
+    return 'lo sfasamento dell\'osservatore non e\' 0 o +1: ' + sf.join(',');
   return null;
 }
 
