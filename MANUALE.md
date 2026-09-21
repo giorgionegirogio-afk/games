@@ -150,6 +150,14 @@ Difesa/Equilibrio/Attacco a partita in corso), **ABBANDONA** (butta la
 partita e torna al menu: non viene contata, e in torneo/stagione il turno
 resta da giocare).
 
+**EDIZIONE DEL 21 SETTEMBRE 2026 (voce #132, compito 1), su MENTALITÀ.** In
+una SFIDA il cambio a partita in corso **entra nel nastro** (riga di tipo 8):
+chi rivedrà la partita vedrà la squadra cambiare postura nello stesso istante
+in cui l'hai cambiata tu. Prima non ci entrava, e la partita rigiocata finiva
+con un altro punteggio — misurato, una sfida su due. E **durante un replay la
+voce è spenta**: la squadra in campo è quella di chi ti ha attaccato, e la sua
+postura la decide il nastro, non il tuo pollice.
+
 Quando l'app va in secondo piano, la partita **si mette in pausa da sola** e
 il salvataggio si scrive. Col telefono in verticale compare **RUOTA IL
 TELEFONO** e il gioco aspetta.
@@ -260,6 +268,14 @@ nome).
   bottone **GUARDA** — rivedi la partita **mossa per mossa**, perché ogni
   sfida viaggia col nastro dei comandi: quello che guardi è quello che è
   successo. (I replay non pagano monete e non fanno crescere nessuno.)
+  **EDIZIONE DEL 21 SETTEMBRE 2026 (voce #132, compito 4).** GUARDA adesso
+  sa dire di no in due casi in più, e lo dice in chiaro invece di mostrarti
+  una partita inventata: quando il nastro è **vuoto** (non porta nemmeno un
+  comando) e quando la partita ha prodotto **più comandi di quanti il nastro
+  ne tenga** e il nastro si è fermato a metà. Prima passavano tutti e due, e
+  la riga di stato dava la colpa alla rosa cresciuta di chi ti aveva
+  attaccato — che non c'entrava niente. Il risultato, in tutti e due i casi,
+  resta quello scritto nell'elenco: si perde il film, non il punto.
 - **CLASSIFICA**: i primi 100 e la tua riga anche se sei più giù.
 - **CAMBIO TELEFONO**: il tuo codice di trasferimento (id + segreto). Va
   copiato e conservato: *se perdi il telefono, perdi la squadra* — il server
@@ -455,6 +471,153 @@ Qui il registro completo, a edizioni.
     che è.
 
 ## A registro — ciò che resta, e in che stato
+
+- **Nessun innocente accusato — #132 CANTIERE CHIUSO** (voce #132, 21
+  settembre 2026, sei compiti dal merge-base `3deb807` — spec
+  `docs/superpowers/specs/2026-09-21-nessun-innocente-design.md`, piano
+  `docs/superpowers/plans/2026-09-21-nessun-innocente.md`). Secondo
+  cantiere dell'**onda D**. Il #131 ha dato al giudice qualcosa da
+  misurare (il duello nel nastro); questo gli toglie di mezzo i **falsi
+  positivi**, cioè le strade per cui una partita ONESTA rigiocata finisce
+  diversa da come è finita. Un giudice che sbaglia in un verso lascia
+  passare un punto rubato; uno che sbaglia nell'altro **toglie punti a chi
+  non ha barato**, e quello non si vede e non si corregge. Cantiere di
+  MOTORE, tutto per ancore (`strumenti/_toppa-*.js`, cinque attrezzi, 25
+  ancoraggi).
+
+  **I CANALI ERANO QUATTRO NEL PIANO. SONO CINQUE, E IL QUINTO È STATO
+  TROVATO MISURANDO** — il cancello del compito 1 restava rosso su una
+  sfida su due anche a cura applicata, e la causa non era la mentalità.
+
+  **(a) LA MENTALITÀ CAMBIATA IN PAUSA** (`:40888-40924`). Girava
+  `G.ment[0]` senza nessuna guardia su `G.sfida` né su `Reg.modo`, e senza
+  scrivere niente nel registro. Due buchi opposti: chi ATTACCA cambia
+  postura a metà partita e il nastro non se ne accorge; chi GUARDA può
+  aprire la pausa e cambiare la mentalità della squadra di chi l'ha
+  attaccato — da lì in poi il replay è una partita inventata dal pollice
+  di chi la sta guardando. Il commento accanto lo diceva già: «IL FATTO
+  CHE NON EMETTO: qui nasce un evento buono per il REGISTRO DEI FATTI».
+  **RETTIFICA al piano**: la mentalità INIZIALE nel nastro c'era già
+  (`Reg.scrivi(7, [mentMia, mentSua] …)`), il buco era il CAMBIO a partita
+  in corso, che per natura non può stare in una riga di testa. **CURA**:
+  riga di **tipo 8** `[tick, 8, ms, chi, ment]`, e `posaMentalita()` —
+  una funzione sola per i due capi, come `Reg.eseguiDuello` per i tre
+  verbi del dischetto. **REGISTRATA E NON IMPEDITA**, dichiarato:
+  `sponde` e `miraGuidata` la sfida le forza perché sono il MOTORE e due
+  telefoni devono averle identiche; la mentalità è una MOSSA di chi gioca,
+  come un tocco, e una mossa si annota. **MISURATO**: 5 semi su 5 in CPU
+  contro CPU (primo scarto al passo 80); in sfida, punteggio rigiocato
+  **0 su 2 identico** (2-1 contro 3-2, 2-3 contro 0-1) → **2 su 2** dopo.
+
+  **(b) IL CARATTERE DELLA CPU DIPENDEVA DAL NOME** (`:11356`,
+  `G.car = [CAR_NEUTRO, caratterePer(G.oppName)]`). Il nome nel nastro non
+  viaggia — ed è giusto, è il dato di una persona — ma allora il carattere
+  non lo decideva niente che stesse dentro la partita: chi attacca lo
+  legge da `a.nome`, chi guarda da `dif.nome` col ripiego `SAVE.teamName`.
+  Basta che il difensore **cambi il nome della sua squadra** fra la
+  partita subita e il momento in cui la guarda. **CURA**: `CAR_NOMI`,
+  `indiceCarattere`, `carPerIndice`, e un **indice fra -1 e 9 in CODA
+  alla riga di tipo 7** — in coda perché la lettura è posizionale
+  (`spaccaRosa` torna già `fine`), quindi un nastro vecchio finisce prima
+  e `startMatch` ricade sul nome, cioè su quello che faceva ieri. E
+  `Sfida.gioca` passa a `startMatch` **lo stesso numero** che scrive nel
+  nastro: chi registra e chi rigioca attraversano la stessa porta.
+  **DA OGGI L'ORDINE DI `CARATTERE` È UN FORMATO**, ed è scritto accanto
+  alla tabella: chi lo riordina deve alzare `MOTORE_V`. **MISURATO**:
+  difensore GASOMETRO che si rinomina, CPU giocata `0.75/2/1/0.9/1/1.15`
+  contro CPU rigiocata `1/1/1/1/1/1`, punteggio **0 su 2 identico** (1-2
+  contro 1-6, 0-1 contro 2-3) → **2 su 2** dopo.
+
+  **(c) QUATTRO PORTE, QUATTRO RISPOSTE.** Un attributo di rosa entrava da
+  quattro porte e nessuna concordava: `loadSave` (`s.rosa=j.rosa`, nessun
+  controllo — l'unica chiave di quel blocco che non guardava i propri
+  valori), `setupPlayers` (copia grezza), `impaccaRosa`
+  (`max(1,min(99,v|0))`), `startMatch` (`round`, 1..99, ripiego 62).
+  Misurato su otto casi: **sei discordi su otto**, e per `"abc"` quattro
+  risposte diverse allo stesso ingresso. In una sfida `Sfida.gioca` non
+  passa `mia.rosa`, quindi `setupPlayers` legge `SAVE.rosa` GREZZA: la
+  partita si giocava con **250** e il nastro registrava **99**. **CURA**:
+  `attrRosa`, una regola sola, chiamata **alla SORGENTE** — la dottrina
+  già scritta per il pixel intero e applicata dal #131 al dischetto: si
+  quantizza dove nasce il dato, così campo e nastro sono lo stesso numero
+  per costruzione. Assente resta diverso da zero (null/undefined →
+  ripiego; uno zero scritto per davvero → 1). **MISURATO**: 2 porte
+  concordi su 8 → **8 su 8**, 3 risposte in scala su 8 → **8 su 8**,
+  punteggio rigiocato 0 su 2 → **2 su 2**.
+
+  **(d) IL REGISTRO TACEVA QUANDO TRONCAVA** (`:13419`, `if(this.righe.length
+  > 40000) return;`) **e un nastro VUOTO passava** (`let righe = testo ? 0
+  : -1`: un testo senza comandi dà `righe === 0`, che non è `< 0`).
+  **E IL TETTO NON È LONTANO**: il registro scrive **una riga per dito per
+  fotogramma** — misurato 1,00 / 3,01 / 6,01 / 10,02 con uno, tre, sei,
+  dieci dita — quindi arriva a 663 s con un dito ma a **111 s con sei** e
+  67 s con dieci, cioè DENTRO una sfida che va al golden goal. **CURA**:
+  riga di **tipo 9**, tre caratteri, scritta una volta sola, e due rifiuti
+  in più in `Sfida.guarda` con la causa VERA. Il tetto resta a 40.000: è
+  una guardia contro un ciclo, non una taratura (fuori perimetro,
+  dichiarato). **MISURATO**: il cancello raggiunge il tetto **con le
+  dita** su una sfida vera (40.001 comandi in 7.295 passi, dieci dita),
+  non abbassandolo. Prima: nessun marchio, troncato rigiocato **0-3 contro
+  1-3**; nastro vuoto accettato, rigiocato **0-4 contro 3-0**, e il gioco
+  spiegava «La squadra di chi ti ha attaccato è cambiata da allora» —
+  l'innocente accusato, testualmente.
+
+  **(e) IL CASO DELL'AUDIO ERA IL CASO DELLA PARTITA.** `Audio5.init` →
+  `startCrowd` → `noiseBuf` riempiva **un secondo di campionamento** con
+  `dado()`, cioè col generatore SEMINATO. **MISURATO**
+  (`strumenti/_sonda-132-rumore.js`): il primo `Audio5.unlock()` di una
+  pagina costa **48.000 sorteggi** a 48 kHz — e la frequenza la decide
+  l'APPARECCHIO (44.100 o 48.000), quindi due telefoni che sbloccano nello
+  stesso istante consumano quantità DIVERSE. **Canale LATENTE e non
+  misurato sul campo**, e va detto per non gonfiare il difetto: nel gioco
+  spedito lo sblocco arriva da un bottone di menu o dal tocco sulla
+  copertina, cioè prima che `SEME.accendi` riazzeri il flusso. Ma un
+  canale latente in una modalità che TOGLIE PUNTI non si lascia aperto per
+  un byte. **CURA**: `Math.random()` — correzione di categoria, il rumore
+  bianco è audio.
+
+  **I CINQUE FALSI, E LA PROVA CHE I BANCHI LI BOCCIANO** (la revisione
+  del #131 aveva bocciato una prova che passava sia col gioco giusto sia
+  col falso: qui ogni cura ha il suo mutante e ogni mutante esce 1).
+  `_crit-ment-muta.js` — il tipo 8 si scrive, si serializza, si
+  deserializza, e `Reg.esegui` non ha il ramo: **A verde, B e C rosse**.
+  `_crit-car-nome.js` — l'indice è nel nastro ed è LETTO in `carDif`, e non
+  si passa a `startMatch`: **A e D verdi, B e C rosse** (1-6 contro 1-2).
+  `_crit-rosa-meta.js` — la mezza cura che verrebbe in mente per prima (la
+  regola unica c'è, il nastro e `startMatch` la usano, la sorgente resta
+  spalancata): **4 prove su 4 rosse**. `_crit-tronco-muto.js` — il marchio
+  c'è e nessuno lo guarda: **A verde, B rossa**. Più il mutante del #131,
+  `_q-duello-impronta.js`, **44 su 44 a ogni compito**, mai mosso di un
+  numero.
+
+  **UN ROSSO DEL BANCO, PAGATO E SCRITTO**: il primo giro di
+  `_t-rosa-scala.js` iniettava il numero storto in memoria DOPO l'avvio,
+  cioè saltava proprio la porta in esame — il campo restava a 250 anche a
+  cura applicata, e il banco stava misurando la propria iniezione. Adesso
+  il salvataggio si sporca e la pagina si RICARICA, che è la strada vera
+  di un salvataggio manomesso.
+
+  **UN ROSSO DELLA BATTERIA, DIAGNOSTICATO INVECE CHE SUPPOSTO**: `audio`
+  è uscito 3 (prova nulla) a due compiti, 0 a uno e **1 (rosso)** al
+  compito 3, su versioni diverse del gioco. Misurato con `--ripetuto 3`
+  **da solo**: 28/28 su tutte e tre le corse sia sul gioco curato sia su
+  quello di `main`. È un cancello che misura audio in tempo reale e soffre
+  la macchina carica — dal compito 4 in poi gira in un gruppo tutto suo, e
+  la batteria chiude **42 su 42**.
+
+  **MOTORE_V RESTA 2, MISURATO** (`strumenti/_t-132-motorev.js`, due
+  versioni, il modo di casa): 30 nastri registrati sul gioco di prima (`main` `3deb807`) e rigiocati sul curato, taglia 5, 3600 passi, semi da 20260801, **30 su 30 identici** — impronta campione per campione, punteggio finale e conto dei sorteggi; zero nulli, uno dei trenta passato dal dischetto. La misura è scritta accanto al numero nel sorgente. Le cinque cure sono
+  additive — due tipi di riga nuovi (8 e 9) che un nastro vecchio non ha,
+  un campo in CODA al tipo 7 che un nastro vecchio non ha, una scala che
+  su un salvataggio sano è l'identità, e un rumore che nel gioco spedito
+  non toccava comunque il flusso seminato.
+
+  **FUORI PERIMETRO, dichiarato**: costruire il GIUDICE vero (è il
+  cantiere dopo, e questo gli toglie di mezzo i falsi positivi); alzare il
+  tetto delle 40.000 righe; validare il NOME di un uomo di rosa al
+  caricamento; la rosa che il server rilegge viva invece di conservarne
+  una copia; il tasto registrato e morto fuori dal duello (#131); il
+  determinismo pieno a 7/11 (#98/#129).
 
 - **Il duello entra nel nastro — #131 CANTIERE CHIUSO** (voce #131, 21
   settembre 2026, sette compiti dal merge-base `7fbe9bf` — dossier

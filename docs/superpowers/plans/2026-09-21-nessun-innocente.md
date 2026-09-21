@@ -48,6 +48,18 @@ per la misura a due versioni del C5.
 
 Commit `(voce #132, compito 0)`.
 
+## RETTIFICA A EDIZIONI (21 settembre 2026, voce #132, compito 1)
+
+**I canali erano quattro quando questo piano e' stato scritto. Sono
+cinque.** Il quinto — `Audio5.noiseBuf` che riempie un secondo di
+campionamento col generatore SEMINATO, 48.000 sorteggi al primo sblocco
+dell'audio — e' stato trovato MISURANDO: il cancello del compito 1
+restava rosso su una sfida su due anche a cura applicata, e la causa non
+era la mentalita'. E' curato dentro il compito 1
+(`strumenti/_toppa-rumore-sorteggi.js`, una riga) e provato dalla prova E
+di `_t-ment-nastro.js`; la spec lo descrive come canale (e). Il testo dei
+compiti qui sotto resta quello scritto prima, e non si cancella.
+
 ## Compito 1 — canale (a): la mentalita' e' una mossa
 
 **Test primo:** `strumenti/_t-ment-nastro.js`. Due pagine, server finto.
