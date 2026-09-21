@@ -13404,10 +13404,15 @@ const Reg = {
   iDuello: 0,       /* dove siamo arrivati a rigiocare il dischetto */
   motoreV: 0,       /* la versione del motore del nastro appena letto (voce #107): 0 se nessun nastro e' mai stato deserializzato, o se l'ultimo non portava il campo */
 
+  /* IL NASTRO SA DI ESSERE STATO TAGLIATO (voce #132, compito 4): vero
+     quando il tetto di scrivi() e' stato toccato — da questa partita se
+     si sta registrando, o dal nastro appena letto se si sta rileggendo. */
+  troncato: false,
+
   accendi(){
     this.modo = 1; this.righe = []; this.i = 0; this.tick = 0;
     this.t0 = performance.now(); this.ids = new Map(); this.idProx = 0; this.tasti = [];
-    this.duelli = []; this.iDuello = 0;
+    this.duelli = []; this.iDuello = 0; this.troncato = false;
     this.azzeraComandi();
   },
   /* spegnendo il registro gli inviti tornano a parlare: chi ha finito la
@@ -13537,7 +13542,32 @@ const Reg = {
 
   scrivi(tipo, arg){
     if(this.modo !== 1) return;
-    if(this.righe.length > 40000) return;   /* una partita non ha 40.000 comandi: se li ha, e' un ciclo */
+    /* =====================================================================
+       IL TETTO, E PERCHE' ADESSO PARLA (voce #132, compito 4).
+
+       Quarantamila righe restano una guardia contro un ciclo, e non si
+       alzano qui. Quel che cambia e' che il taglio LASCIA UN SEGNO: la
+       riga di tipo 9, tre caratteri, nessun argomento, scritta una volta
+       sola. Senza, un nastro tagliato a meta' e' identico a uno intero —
+       stessa forma, stessa versione di motore — e chi lo rigioca vede i
+       comandi finire a meta' partita, il punteggio non tornare, e la
+       colpa cadere sulla rosa cresciuta di chi ha attaccato.
+
+       E IL TETTO NON E' LONTANO: il registro scrive una riga per dito per
+       fotogramma, quindi con sei dita appoggiate arriva a 111 secondi,
+       cioe' dentro una sfida che va al golden goal (misurato,
+       strumenti/_sonda-132-canali.js).
+
+       La riga del marchio entra DOPO il tetto — e' la sola che puo' — e
+       la bandiera fa in modo che ne entri una e una sola.
+       ===================================================================== */
+    if(this.righe.length > 40000){
+      if(!this.troncato){
+        this.troncato = true;
+        this.righe.push([this.tick, 9, Math.round(performance.now() - this.t0)]);
+      }
+      return;
+    }
     this.righe.push([this.tick, tipo, Math.round(performance.now() - this.t0)].concat(arg));
   },
 
@@ -13722,6 +13752,11 @@ const Reg = {
         /* LA MENTALITA' (voce #132). Due numeri piccoli, una volta per
            cambio: in una partita intera se ne fanno zero o pochi. */
         pezzi.push(dT + ',8,' + dMs + ',' + (r[3]|0) + ',' + (r[4]|0));
+      } else if(tipo === 9){
+        /* IL MARCHIO DELLA TRONCATURA (voce #132). Nessun argomento, tre
+           caratteri, e in rilettura non muove niente: dice soltanto che
+           da qui in poi il nastro non ha piu' i comandi della partita. */
+        pezzi.push(dT + ',9,' + dMs);
       } else if(tipo === 7){
         /* LE DUE SQUADRE. Interi e virgole, lunghezza variabile, scritti
            una volta sola in testa alla partita; in rilettura non fanno
@@ -13769,6 +13804,7 @@ const Reg = {
       else if(tipo === 5)   this.righe.push([tick, 5, ms]);
       else if(tipo === 6)   this.righe.push([tick, 6, ms].concat(v.slice(3)));
       else if(tipo === 8)   this.righe.push([tick, 8, ms, v[3], v[4]]);
+      else if(tipo === 9)   this.righe.push([tick, 9, ms]);
       else if(tipo === 7)   this.righe.push([tick, 7, ms].concat(v.slice(3)));
     }
     this.i = 0; this.tick = 0; this.modo = 2;
@@ -13779,6 +13815,10 @@ const Reg = {
        numero, e l'elenco deve sopravvivere all'azzeramento. */
     this.duelli = this.righe.filter(r => r[1] === 6);
     this.iDuello = 0;
+    /* LA BANDIERA VIENE DAL NASTRO, non da questa partita (voce #132,
+       compito 4): chi rilegge deve sapere che il nastro in mano e'
+       tagliato, prima di credere al punteggio che ne esce. */
+    this.troncato = this.righe.some(r => r[1] === 9);
     return this.righe.length;
   },
 };
@@ -43576,6 +43616,42 @@ const Sfida = {
        vecchi verrebbero gia' respinti dal confronto di versione, qui
        sopra.
        ===================================================================== */
+    /* =====================================================================
+       DUE RIFIUTI IN PIU', TUTTI E DUE CON LA CAUSA VERA (voce #132,
+       compito 4).
+
+       IL NASTRO VUOTO. Il controllo qui sopra dice «righe < 0», e un
+       nastro con ZERO comandi da' righe === 0: passava. Rigiocare una
+       partita senza un solo comando da' quasi sempre un altro punteggio,
+       e allora parla chiudiSfida — che accusa la rosa cresciuta di chi
+       ha attaccato. Un nastro vuoto non e' una rosa cresciuta.
+
+       IL NASTRO TRONCATO. Stessa storia, piu' insidiosa perche' la prima
+       meta' della partita torna: i comandi ci sono fino a un certo punto
+       e poi finiscono, e il replay diverge da li' in avanti.
+
+       IN TUTTI E DUE I CASI NON SI PERDE NIENTE TRANNE IL FILM: il
+       risultato resta quello scritto nell'elenco, nessun punto si muove,
+       niente parte per la rete. E' la stessa scelta gia' presa due volte
+       in questa funzione (motore diverso, marchio di tipo 5).
+       ===================================================================== */
+    if(Reg.righe.length === 0){
+      Reg.spegni();
+      this.vistoQui[id|0] = 1;
+      this.stato('Il nastro di questa partita è vuoto: non porta nemmeno un comando, quindi rigiocarla ' +
+                 'darebbe una partita che non è mai successa. Il risultato resta quello qui sotto.', true);
+      this.dipingi();
+      return;
+    }
+    if(Reg.troncato){
+      Reg.spegni();
+      this.vistoQui[id|0] = 1;
+      this.stato('Questa partita ha prodotto più comandi di quanti il nastro ne tenga, e il nastro si è ' +
+                 'fermato a metà: da lì in poi la partita rigiocata non sarebbe quella che hai subito. ' +
+                 'Il risultato resta quello qui sotto.', true);
+      this.dipingi();
+      return;
+    }
     let incompleto = false, dati = null;
     for(const r of Reg.righe){
       if(r[1] === 5) incompleto = true;
