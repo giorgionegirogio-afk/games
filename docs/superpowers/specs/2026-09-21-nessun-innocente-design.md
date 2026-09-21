@@ -333,3 +333,12 @@ la misura si scrive accanto al numero. Anche UN solo scarto -> sale a 3.
   fuori dal duello): difetto del tipo 4, dichiarato dalla voce #131 e non
   allargato qui.
 - Estendere il determinismo pieno alle taglie 7/11 (voci #98/#129).
+
+## Nota di edizione (21 settembre 2026, correzione di revisione)
+
+`_t-ment-nastro.js`, `_t-carattere-nastro.js`, `_t-rosa-scala.js` e
+`_t-nastro-tronco.js` (nominati sopra coi nomi con cui sono nati) sono
+stati promossi a cancelli di qualita' e registrati in
+`strumenti/tutti.js`: vedi la nota gemella nel piano
+(`docs/superpowers/plans/2026-09-21-nessun-innocente.md`) e il verbale in
+`MANUALE.md` §A, voce #132.

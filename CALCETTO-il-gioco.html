@@ -43717,8 +43717,16 @@ const Sfida = {
       if(dati.length > p2.fine) carDif = dati[p2.fine];
     }
     if(!(Array.isArray(rosaAtt) && rosaAtt.length >= 4)){
+      /* CORREZIONE DI REVISIONE (voce #132, 21 settembre 2026): questo
+         ripiego rimetteva mentAtt/mentDif/rosaAtt/rosaDif ma non carDif,
+         che restava quello letto da una testa di tipo 7 malformata.
+         carPerIndice lo limita comunque (fuori range -> CAR_NEUTRO), ma
+         un nastro corrotto o OSTILE non deve lasciare in vita NESSUNO dei
+         cinque valori di una testa scartata: per simmetria con gli altri
+         quattro, ricade anche lui, e startMatch torna su
+         caratterePer(dif.nome), come faceva prima della voce #132. */
       mentAtt = mentDaIndole(att.indole); mentDif = mentDaIndole(dif && dif.indole);
-      rosaAtt = att.rosa; rosaDif = nomiDif;
+      rosaAtt = att.rosa; rosaDif = nomiDif; carDif = undefined;
     }
     SEME.accendi(semeDaTesto(s.seme));
     const colA = coloriBuoni(att.colori), colD = coloriBuoni(dif && dif.colori);

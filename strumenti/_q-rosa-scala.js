@@ -1,6 +1,14 @@
 /* =====================================================================
-   _t-rosa-scala.js — TRE RISPOSTE DIVERSE ALLO STESSO NUMERO
+   _q-rosa-scala.js — TRE RISPOSTE DIVERSE ALLO STESSO NUMERO
    (voce #132, compito 3). Nasce ROSSO.
+
+   PROMOSSO A CANCELLO DI QUALITA' (21 settembre 2026, voce #132,
+   correzione di revisione): si chiamava _t-rosa-scala.js, un attrezzo
+   di compito. Nessun cancello della batteria si sarebbe accorto di una
+   regressione sul canale (c) scala della rosa — lo stesso rilievo gia'
+   pagato dal #131 per il duello. Rinominato (git mv) e registrato in
+   strumenti/tutti.js con conta:true: ~22 secondi di corsa, misurati,
+   non lento.
 
    IL DIFETTO. Un attributo di rosa entra nella partita da quattro porte,
    e nessuna concorda con le altre:
@@ -28,8 +36,8 @@
         volta sola all'avvio e chiamarla a mano non sarebbe la stessa
         cosa.
 
-   uso:  node strumenti/_t-rosa-scala.js
-         node strumenti/_t-rosa-scala.js --gioco fuori/falso.html
+   uso:  node strumenti/_q-rosa-scala.js
+         node strumenti/_q-rosa-scala.js --gioco fuori/falso.html
    esce 0 se passa tutto, 1 se una prova fallisce, 2 se il banco esplode,
    3 se il gioco indicato non ha la schermata della sfida.
    ===================================================================== */

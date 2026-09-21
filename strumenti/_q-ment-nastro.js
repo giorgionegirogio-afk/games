@@ -1,6 +1,14 @@
 /* =====================================================================
-   _t-ment-nastro.js — LA MENTALITA' E' UNA MOSSA, E LE MOSSE SI
+   _q-ment-nastro.js — LA MENTALITA' E' UNA MOSSA, E LE MOSSE SI
    REGISTRANO (voce #132, compito 1). Nasce ROSSO.
+
+   PROMOSSO A CANCELLO DI QUALITA' (21 settembre 2026, voce #132,
+   correzione di revisione): si chiamava _t-ment-nastro.js, un attrezzo
+   di compito. Nessun cancello della batteria si sarebbe accorto di una
+   regressione sui canali (a) mentalita' o (e) audio — lo stesso rilievo
+   gia' pagato dal #131 per il duello. Rinominato (git mv) e registrato
+   in strumenti/tutti.js con conta:true: ~11 secondi di corsa, misurati,
+   non lento.
 
    IL DIFETTO. Il bottone della mentalita' in pausa
    (CALCETTO-il-gioco.html:40888-40924) fa girare G.ment[0] fra DIFESA,
@@ -32,8 +40,8 @@
    A, B e D sono deterministiche: oggi sono rosse sempre. C dipende dal
    seme e si misura su piu' sfide — si stampa il conto, non un aggettivo.
 
-   uso:  node strumenti/_t-ment-nastro.js
-         node strumenti/_t-ment-nastro.js --gioco fuori/falso.html --sfide 2
+   uso:  node strumenti/_q-ment-nastro.js
+         node strumenti/_q-ment-nastro.js --gioco fuori/falso.html --sfide 2
    esce 0 se passa tutto, 1 se una prova fallisce, 2 se il banco esplode,
    3 se il gioco indicato non ha la schermata della sfida.
    ===================================================================== */

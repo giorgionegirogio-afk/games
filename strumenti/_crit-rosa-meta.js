@@ -71,5 +71,5 @@ fs.writeFileSync(outFile, out);
 console.log('OK  falso costruito: la scala si stringe a valle, la sorgente resta aperta');
 console.log('    da   ' + inFile + '  (' + src.length + ' byte)');
 console.log('    a    ' + outFile + '  (' + out.length + ' byte)');
-console.log('    prova:  node strumenti/_t-rosa-scala.js --gioco ' + path.relative(RADICE, outFile).replace(/\\/g, '/'));
+console.log('    prova:  node strumenti/_q-rosa-scala.js --gioco ' + path.relative(RADICE, outFile).replace(/\\/g, '/'));
 console.log('    DEVE uscire 1. Un verde qui vorrebbe dire che il banco non discrimina.');

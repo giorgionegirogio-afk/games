@@ -23,7 +23,8 @@
        configurazione (audio aperto all'apertura della pagina, come fa un
        pollice sulla copertina), e il caso in cui l'audio si apre a
        partita in corso e' misurato a parte (prova E di
-       _t-ment-nastro.js).
+       _q-ment-nastro.js, promosso a cancello di qualita' il 21 settembre
+       2026: si chiamava _t-ment-nastro.js).
 
    MA E' UN'INFERENZA, e un'inferenza non basta per una costante che
    decide quali partite si rifiutano. Questo banco la MISURA: registra N
@@ -41,8 +42,15 @@
 
    uso:  node strumenti/_t-132-motorev.js
          node strumenti/_t-132-motorev.js --prima fuori/gioco-132-base.html --n 30
+         node strumenti/_t-132-motorev.js --passi 3600
    esce 0 se la misura dice «resta 2», 1 se dice «deve salire a 3»,
    2 se il banco esplode, 3 se non ha potuto misurare abbastanza semi.
+
+   CORREZIONE DI REVISIONE (voce #132, 21 settembre 2026): il comando nudo
+   rifaceva 2400 passi e 0 dal dischetto, ma MANUALE.md, PUNTO-DEL-LAVORO.md
+   e il commento accanto a MOTORE_V nel gioco dichiarano 3600 passi e uno dei
+   trenta dal dischetto. Il default e' salito a 3600 cosi' il comando nudo
+   rifa' davvero il numero scritto nel verbale (il verdetto non cambia).
    ===================================================================== */
 const http = require('http');
 const fs = require('fs');
@@ -60,7 +68,7 @@ const PRIMA = arg('prima', 'fuori/gioco-132-base.html');
 const N_VOLUTI = parseInt(arg('n', '30'), 10);
 const MAX_SEMI = parseInt(arg('max', '45'), 10);
 const SEME0 = parseInt(arg('seme', '20260801'), 10);
-const PASSI = parseInt(arg('passi', '2400'), 10);   /* 40 secondi a 60 Hz */
+const PASSI = parseInt(arg('passi', '3600'), 10);   /* 60 secondi a 60 Hz */
 const TAGLIA = 5;
 
 function servi() {
@@ -187,7 +195,8 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
         /* L'AUDIO SI APRE QUI, come fa un pollice sulla copertina: e' la
            configurazione del gioco spedito, cioe' PRIMA che il seme si
            accenda. Il caso opposto e' misurato dalla prova E di
-           _t-ment-nastro.js, non da qui. */
+           _q-ment-nastro.js (_t-ment-nastro.js prima della promozione a
+           cancello, 21 settembre 2026), non da qui. */
         try { Audio5.unlock(); } catch (e) {}
         window.__save0 = JSON.parse(JSON.stringify(t.save));
       });

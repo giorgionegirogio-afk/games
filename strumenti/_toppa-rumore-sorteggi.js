@@ -2,7 +2,8 @@
    _toppa-rumore-sorteggi.js — IL CASO DELL'AUDIO NON E' IL CASO DELLA
    PARTITA (voce #132, compito 1). Un'ancora.
 
-   TROVATO MISURANDO, non ragionando: _t-ment-nastro.js restava rosso su
+   TROVATO MISURANDO, non ragionando: _q-ment-nastro.js (_t-ment-nastro.js
+   prima della promozione a cancello, 21 settembre 2026) restava rosso su
    una sfida su due anche a cura applicata, e la causa non era la
    mentalita'. Audio5.init() -> startCrowd() -> noiseBuf() (:10221-10226)
    riempie un buffer lungo UN SECONDO DI CAMPIONAMENTO con dado(), cioe'

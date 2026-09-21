@@ -485,6 +485,75 @@ Qui il registro completo, a edizioni.
   MOTORE, tutto per ancore (`strumenti/_toppa-*.js`, cinque attrezzi, 25
   ancoraggi).
 
+  **CORREZIONI DI REVISIONE (21 settembre 2026, voce #132), applicate in
+  un commit a parte dopo il «Ready to merge: YES» con quattro rilievi
+  MINORE, nessun CRITICO. Cantiere di MOTORE: il gioco è stato toccato
+  per una riga di codice più otto di commento, via attrezzo a ancore
+  (`strumenti/_toppa-132-cardif.js`).**
+  (1) **MINORE — un numero del verbale non si riproduceva col comando di
+  casa.** `strumenti/_t-132-motorev.js` aveva `PASSI` di default a 2400,
+  ma il commento accanto a `MOTORE_V` nel gioco e questo stesso manuale
+  dichiarano **3.600 passi** e «uno dei trenta passa dal dischetto»: col
+  comando nudo uscivano 2.400 passi e zero dal dischetto, e solo
+  `--passi 3600` rifaceva i numeri scritti. **CURA**: il default è salito
+  a 3.600 e `--passi` è entrato nella riga `uso:`. **RIMISURATO col
+  comando nudo**: 30 semi provati, 0 nulli, **30 su 30 identici**, **1 dei
+  trenta dal dischetto** — lo stesso verdetto, adesso riproducibile senza
+  flag.
+  (2) **MINORE — una cifra sbagliata nel verbale.** Il punto (d) qui sotto
+  attribuiva al gioco CURATO «40.001 comandi in 7.295 passi»: **misurato
+  di nuovo**, il curato dà **40.002** (il tetto più la riga di marchio di
+  tipo 9) e **40.001** è invece il numero che esce sul gioco di PRIMA
+  (`main` `3deb807`, senza marchio). Corretto nel punto (d) e in
+  `PUNTO-DEL-LAVORO.md`, col numero vecchio lasciato accanto e non
+  cancellato. Il verdetto dei cinque controlli non cambia.
+  (3) **MINORE — `carDif` non ricadeva col resto.** Nel ripiego di
+  `Sfida.guarda` (quando il nastro non porta una rosa valida — tipicamente
+  una testa di tipo 7 malformata) si rimettevano `mentAtt`/`mentDif`/
+  `rosaAtt`/`rosaDif` ai valori di ieri, ma non `carDif`, che restava
+  quello letto dalla stessa testa malformata. `carPerIndice` lo limita
+  comunque (fuori range → `CAR_NEUTRO`), quindi il danno massimo era un
+  carattere sbagliato-ma-valido in un cammino già degradato, raggiungibile
+  solo con un nastro corrotto o OSTILE — e in un'onda dove i nastri
+  ostili contano, l'asimmetria si chiude. **CURA**: `carDif = undefined;`
+  in coda al ripiego, per simmetria con gli altri quattro valori — via
+  attrezzo a ancore (`strumenti/_toppa-132-cardif.js`, un'ancora,
+  `--out` verificato byte-per-byte prima di `--dentro`). **VERIFICATO**:
+  `git diff main -- CALCETTO-il-gioco.html` sale da 310/13 a **319/14**
+  righe — nove aggiunte (il commento più la riga di codice), una tolta (la
+  riga sostituita) — e `_q-duello-impronta.js` resta **44/44**, impronta
+  non mossa.
+  (4) **MINORE — i cancelli nuovi non erano in batteria**, lo stesso
+  rilievo già pagato dal #131 per il duello. I quattro attrezzi dei
+  cinque canali (`_t-ment-nastro.js`, `_t-carattere-nastro.js`,
+  `_t-rosa-scala.js`, `_t-nastro-tronco.js`) erano rimasti `_t-*`, e
+  `strumenti/tutti.js` non li nominava: nessun cancello della batteria si
+  sarebbe accorto di una regressione su nessuno dei cinque canali. **CURA:
+  promossi TUTTI E QUATTRO** (non solo `_t-ment-nastro.js`, il minimo
+  suggerito dal revisore): ciascuno misura un canale che gli altri tre
+  non toccano, nessuno costruisce mutanti a ogni corsa, nessuno dipende da
+  un cronometro di produzione, e il costo totale misurato (~11 s + ~11 s +
+  ~22 s + ~11 s, macchina di sviluppo) è sotto la soglia dei 30-40 s che
+  qui chiede `lento:true` (modello `audio.js`): tutti e quattro
+  `lento:false`. Rinominati (`git mv`) `_q-ment-nastro.js`/
+  `_q-carattere-nastro.js`/`_q-rosa-scala.js`/`_q-nastro-tronco.js` e
+  registrati in `tutti.js` con `conta:true`. Tutti i riferimenti al nome
+  vecchio aggiornati (`strumenti/`, questo manuale, `PUNTO-DEL-LAVORO.md`,
+  `docs/superpowers/`, con una nota di edizione dove il riferimento era in
+  un piano o una spec datati). **RIMISURATI**: `ment-nastro` 6/6,
+  `carattere-nastro` 4/4, `rosa-scala` 4/4, `nastro-tronco` 5/5.
+  **OSSERVAZIONE CHIARITA (non un rilievo)**: `.gitignore` porta
+  `_z-log/` dal compito 0 di questo cantiere — verificato, è la cartella
+  dove chi ha lavorato il cantiere ha scritto i log della batteria
+  rilanciata ad ogni compito (`bat-c0-*.txt` … `bat-c5-*.txt`,
+  `motorev.txt`), non tracciata e rigenerata ad ogni corsa: resta, e resta
+  ignorata.
+  **BATTERIA**: rilanciata a gruppi dopo tutte le cure, tutti i cancelli
+  che contano verdi, i quattro nuovi compresi.
+  `git diff main -- CALCETTO-il-gioco.html`: **319 inserite, 14 tolte**
+  (contro le 310/13 di prima di questa correzione — la sola differenza è
+  `carDif`, punto 3).
+
   **I CANALI ERANO QUATTRO NEL PIANO. SONO CINQUE, E IL QUINTO È STATO
   TROVATO MISURANDO** — il cancello del compito 1 restava rosso su una
   sfida su due anche a cura applicata, e la causa non era la mentalità.
@@ -556,11 +625,19 @@ Qui il registro completo, a edizioni.
   in più in `Sfida.guarda` con la causa VERA. Il tetto resta a 40.000: è
   una guardia contro un ciclo, non una taratura (fuori perimetro,
   dichiarato). **MISURATO**: il cancello raggiunge il tetto **con le
-  dita** su una sfida vera (40.001 comandi in 7.295 passi, dieci dita),
-  non abbassandolo. Prima: nessun marchio, troncato rigiocato **0-3 contro
-  1-3**; nastro vuoto accettato, rigiocato **0-4 contro 3-0**, e il gioco
-  spiegava «La squadra di chi ti ha attaccato è cambiata da allora» —
-  l'innocente accusato, testualmente.
+  dita** su una sfida vera, dieci dita, in 7.295 passi — **40.002 comandi
+  sul gioco CURATO** (il tetto più la riga di marchio di tipo 9), contro
+  **40.001 sul gioco di PRIMA** (`main`, senza marchio: la differenza è
+  esattamente la riga aggiunta dalla cura). Prima: nessun marchio, troncato
+  rigiocato **0-3 contro 1-3**; nastro vuoto accettato, rigiocato **0-4
+  contro 3-0**, e il gioco spiegava «La squadra di chi ti ha attaccato è
+  cambiata da allora» — l'innocente accusato, testualmente.
+  **CORREZIONE DI REVISIONE (21 settembre 2026)**: il verbale originale
+  attribuiva 40.001 al gioco CURATO; la cifra vera del curato, MISURATA di
+  nuovo con `strumenti/_q-nastro-tronco.js` (`_t-nastro-tronco.js` prima
+  della promozione a cancello di qualità, stessa data), è **40.002** — 40.001 è il
+  numero che esce sul gioco di PRIMA (`main`, `git show main:CALCETTO-il-gioco.html`),
+  non sul curato. Il verdetto dei cinque controlli non cambia.
 
   **(e) IL CASO DELL'AUDIO ERA IL CASO DELLA PARTITA.** `Audio5.init` →
   `startCrowd` → `noiseBuf` riempiva **un secondo di campionamento** con
@@ -591,7 +668,8 @@ Qui il registro completo, a edizioni.
   numero.
 
   **UN ROSSO DEL BANCO, PAGATO E SCRITTO**: il primo giro di
-  `_t-rosa-scala.js` iniettava il numero storto in memoria DOPO l'avvio,
+  `_q-rosa-scala.js` (`_t-rosa-scala.js` prima della promozione a cancello
+  di qualità, 21 settembre 2026) iniettava il numero storto in memoria DOPO l'avvio,
   cioè saltava proprio la porta in esame — il campo restava a 250 anche a
   cura applicata, e il banco stava misurando la propria iniezione. Adesso
   il salvataggio si sporca e la pagina si RICARICA, che è la strada vera

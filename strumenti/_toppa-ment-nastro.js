@@ -119,7 +119,9 @@ function posaMentalita(chi, m){
      nasce un evento buono per il REGISTRO DEI FATTI». Era vero, e per il
      registro dei COMANDI lo era il doppio: senza questa riga la partita
      rigiocata resta con la postura del fischio d'inizio e finisce con un
-     altro punteggio — misurato, 1 sfida su 2 (strumenti/_t-ment-nastro.js)
+     altro punteggio — misurato, 1 sfida su 2 (strumenti/_q-ment-nastro.js,
+     _t-ment-nastro.js prima della promozione a cancello di qualita', 21
+     settembre 2026)
      e 5 semi su 5 in CPU contro CPU (strumenti/_sonda-132-canali.js).
 
      Reg.scrivi filtra da se': se il registro non sta scrivendo non

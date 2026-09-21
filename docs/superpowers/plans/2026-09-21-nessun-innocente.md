@@ -191,3 +191,16 @@ la decisione su `MOTORE_V` con la MISURA, l'esito della batteria, e
 Se un canale non si lascia curare come previsto, o se l'impronta si
 muove, ci si ferma e si riferisce: una diagnosi onesta vale piu' di una
 cura forzata.
+
+## Nota di edizione (21 settembre 2026, correzione di revisione)
+
+I quattro attrezzi di compito nominati sopra come `_t-ment-nastro.js`,
+`_t-carattere-nastro.js`, `_t-rosa-scala.js` e `_t-nastro-tronco.js` sono
+stati promossi a cancelli di qualita' (`git mv` a `_q-ment-nastro.js`/
+`_q-carattere-nastro.js`/`_q-rosa-scala.js`/`_q-nastro-tronco.js`) e
+registrati in `strumenti/tutti.js`: senza, nessun cancello della
+batteria si sarebbe accorto di una regressione sui cinque canali di
+questa voce, lo stesso rilievo gia' pagato dalla voce #131 per il
+duello. Il testo sopra resta con i nomi con cui i compiti sono stati
+davvero eseguiti; il verbale in `MANUALE.md` §A, voce #132, riporta la
+promozione.

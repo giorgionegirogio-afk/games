@@ -865,6 +865,30 @@ const CANCELLI = [
      nessun cronometro di produzione: misurato **3,1s**, non lento. */
   { nome: 'duello-impronta', cmd: ['strumenti/_q-duello-impronta.js'],                 conta: true,  lento: false },
   /* =====================================================================
+     ment-nastro / carattere-nastro / rosa-scala / nastro-tronco: I CINQUE
+     CANALI DELLA VOCE #132, SORVEGLIATI (correzione di revisione, 21
+     settembre 2026). Lo stesso rilievo che duello-impronta ha gia' pagato
+     per la voce #131: il cantiere #132 ha chiuso cinque canali che
+     facevano divergere una rigiocata ONESTA di una sfida (mentalita',
+     carattere dal nome, scala della rosa, troncatura muta, l'audio che
+     mangiava i sorteggi), ma i quattro attrezzi che li misurano sono
+     rimasti `_t-*.js` — attrezzi di compito, non registrati qui. Prima di
+     questa correzione, NESSUN cancello della batteria si sarebbe accorto
+     di una regressione su nessuno dei cinque.
+
+     Tutti e quattro rinominati (`git mv`) e registrati: nessuno costruisce
+     mutanti a ogni corsa, nessuno dipende da un cronometro di produzione,
+     e ciascuno misura un canale che gli altri tre non toccano — la stessa
+     ragione per cui duello-impronta e' rimasto solo (i gemelli-`_t-*` che
+     costruivano mutanti via sottoprocesso NON sono stati promossi, voce
+     #131). Misurati una volta a testa, macchina di sviluppo: ~11s, ~11s,
+     ~22s, ~11s — sotto la soglia dei 30-40s che qui chiede lento (modello
+     `audio.js`), quindi tutti e quattro non lenti. */
+  { nome: 'ment-nastro',       cmd: ['strumenti/_q-ment-nastro.js'],                    conta: true,  lento: false },
+  { nome: 'carattere-nastro',  cmd: ['strumenti/_q-carattere-nastro.js'],               conta: true,  lento: false },
+  { nome: 'rosa-scala',        cmd: ['strumenti/_q-rosa-scala.js'],                     conta: true,  lento: false },
+  { nome: 'nastro-tronco',     cmd: ['strumenti/_q-nastro-tronco.js'],                  conta: true,  lento: false },
+  /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
      cancelli in lista ne ha visto uno.

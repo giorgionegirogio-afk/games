@@ -62,5 +62,5 @@ fs.writeFileSync(outFile, out);
 console.log('OK  falso costruito: il nastro porta il marchio, e chi guarda non lo legge');
 console.log('    da   ' + inFile + '  (' + src.length + ' byte)');
 console.log('    a    ' + outFile + '  (' + out.length + ' byte)');
-console.log('    prova:  node strumenti/_t-nastro-tronco.js --gioco ' + path.relative(RADICE, outFile).replace(/\\/g, '/'));
+console.log('    prova:  node strumenti/_q-nastro-tronco.js --gioco ' + path.relative(RADICE, outFile).replace(/\\/g, '/'));
 console.log('    DEVE uscire 1. Un verde qui vorrebbe dire che il banco non discrimina.');

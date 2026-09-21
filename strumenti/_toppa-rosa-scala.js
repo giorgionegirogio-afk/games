@@ -2,7 +2,9 @@
    _toppa-rosa-scala.js — LA SCALA SI POSA ALLA SORGENTE
    (voce #132, compito 3). Cinque ancore.
 
-   IL DIFETTO, misurato porta per porta (strumenti/_t-rosa-scala.js, otto
+   IL DIFETTO, misurato porta per porta (strumenti/_q-rosa-scala.js,
+   promosso a cancello di qualita' il 21 settembre 2026 —
+   strumenti/_t-rosa-scala.js prima della promozione — otto
    casi, sei discordi su otto):
 
      ingresso    salvataggio   nastro   campo    replay

@@ -3,7 +3,8 @@
    (voce #132, compito 1: la versione bugiarda del gioco che condanna il
    banco, non il gioco).
 
-   A COSA SERVE UN FALSO. `_t-ment-nastro.js` dira', a cura applicata,
+   A COSA SERVE UN FALSO. `_q-ment-nastro.js` (`_t-ment-nastro.js` prima
+   della promozione a cancello, 21 settembre 2026) dira', a cura applicata,
    «la mentalita' torna». Un banco che dice sempre di si' non prova
    niente: bisogna costruirgli davanti un gioco sbagliato IN UN MODO
    PLAUSIBILE e verificare che lo bocci.
@@ -74,5 +75,5 @@ fs.writeFileSync(outFile, out);
 console.log('OK  falso costruito: il tipo 8 si scrive e si legge, ma non si rimette in scena');
 console.log('    da   ' + inFile + '  (' + src.length + ' byte)');
 console.log('    a    ' + outFile + '  (' + out.length + ' byte)');
-console.log('    prova:  node strumenti/_t-ment-nastro.js --gioco ' + path.relative(RADICE, outFile).replace(/\\/g, '/'));
+console.log('    prova:  node strumenti/_q-ment-nastro.js --gioco ' + path.relative(RADICE, outFile).replace(/\\/g, '/'));
 console.log('    DEVE uscire 1. Un verde qui vorrebbe dire che il banco non discrimina.');

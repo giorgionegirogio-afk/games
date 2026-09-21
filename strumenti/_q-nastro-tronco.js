@@ -1,6 +1,14 @@
 /* =====================================================================
-   _t-nastro-tronco.js — IL REGISTRO TACE QUANDO TRONCA
+   _q-nastro-tronco.js — IL REGISTRO TACE QUANDO TRONCA
    (voce #132, compito 4). Nasce ROSSO.
+
+   PROMOSSO A CANCELLO DI QUALITA' (21 settembre 2026, voce #132,
+   correzione di revisione): si chiamava _t-nastro-tronco.js, un
+   attrezzo di compito. Nessun cancello della batteria si sarebbe
+   accorto di una regressione sul canale (d) marchio di troncatura — lo
+   stesso rilievo gia' pagato dal #131 per il duello. Rinominato
+   (git mv) e registrato in strumenti/tutti.js con conta:true: ~11
+   secondi di corsa, misurati, non lento.
 
    IL DIFETTO. `Reg.scrivi` (CALCETTO-il-gioco.html:13419) si ferma a
    40.000 righe IN SILENZIO. Un nastro troncato non e' distinguibile da
@@ -34,8 +42,8 @@
      D) non-regressione: un nastro normale non porta il marchio e si
         rivede come prima, col punteggio dichiarato.
 
-   uso:  node strumenti/_t-nastro-tronco.js
-         node strumenti/_t-nastro-tronco.js --gioco fuori/falso.html
+   uso:  node strumenti/_q-nastro-tronco.js
+         node strumenti/_q-nastro-tronco.js --gioco fuori/falso.html
    esce 0 se passa tutto, 1 se una prova fallisce, 2 se il banco esplode,
    3 se il gioco indicato non ha la schermata della sfida o se la sfida
    lunga non e' arrivata al tetto (prova non fatta).

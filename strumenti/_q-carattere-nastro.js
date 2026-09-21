@@ -1,6 +1,14 @@
 /* =====================================================================
-   _t-carattere-nastro.js — DUE NOMI, DUE CPU, DUE PARTITE
+   _q-carattere-nastro.js — DUE NOMI, DUE CPU, DUE PARTITE
    (voce #132, compito 2). Nasce ROSSO.
+
+   PROMOSSO A CANCELLO DI QUALITA' (21 settembre 2026, voce #132,
+   correzione di revisione): si chiamava _t-carattere-nastro.js, un
+   attrezzo di compito. Nessun cancello della batteria si sarebbe
+   accorto di una regressione sul canale (b) carattere dal nome — lo
+   stesso rilievo gia' pagato dal #131 per il duello. Rinominato
+   (git mv) e registrato in strumenti/tutti.js con conta:true: ~11
+   secondi di corsa, misurati, non lento.
 
    IL DIFETTO. `G.car = [CAR_NEUTRO, caratterePer(G.oppName)]`
    (CALCETTO-il-gioco.html:11356): il NOME della squadra avversaria
@@ -33,8 +41,8 @@
      D) non-regressione: fuori da una sfida il carattere resta quello del
         NOME, tabella per tabella.
 
-   uso:  node strumenti/_t-carattere-nastro.js
-         node strumenti/_t-carattere-nastro.js --gioco fuori/falso.html
+   uso:  node strumenti/_q-carattere-nastro.js
+         node strumenti/_q-carattere-nastro.js --gioco fuori/falso.html
    esce 0 se passa tutto, 1 se una prova fallisce, 2 se il banco esplode,
    3 se il gioco indicato non ha la schermata della sfida.
    ===================================================================== */
