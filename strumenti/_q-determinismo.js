@@ -39,17 +39,19 @@ const arg = (n, d) => {
   return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : d;
 };
 
-/* IL LIMITE DEL BANCO (voce #98, causa isolata alla voce #128, 20
-   settembre 2026): il default resta TAGLIA 5, dove il determinismo
-   cross-pagina e' pieno (10/10). A taglia 7 e 11 questo stesso banco da'
-   8/10 (prove A/B): rebuildCrowd/setTaglia consuma il PRNG di gioco in
-   proporzione al perimetro del campo sulla PRIMA partita giocata a
-   quella taglia (CALCETTO-il-gioco.html:29922-29949), uno stato
-   PRE-esistente su main, non una regressione. NON si aggiungono qui
-   casi a taglia 7/11 nella batteria di serie: renderebbero questo
-   cancello ROSSO per un difetto gia' a registro (voce #98, seguito
-   #129 per la cura), rompendo la corsa automatica invece di misurarla.
-   Chi vuole vedere l'8/10 lo chiede a mano: --taglia 7 o --taglia 11. */
+/* IL LIMITE DEL BANCO -- RETTIFICA A EDIZIONI (voce #130, 21 settembre
+   2026). Fino alla voce #129 il default restava TAGLIA 5 perche' a 7/11
+   questo stesso banco dava 8/10 (prove A/B): rebuildCrowd/setTaglia
+   consumava il PRNG di gioco in proporzione al perimetro del campo sulla
+   PRIMA partita giocata a quella taglia (voce #98), e aggiungere 7/11
+   alla batteria di serie avrebbe reso questo cancello rosso per un
+   difetto gia' a registro. LA VOCE #98 E' CHIUSA dalla voce #129 (PRNG
+   dedicato DECO per la cosmetica): MISURATO di nuovo, a taglia 7 E 11
+   questo banco da' oggi **10/10**, identico a taglia 5. Il default resta
+   TAGLIA 5 (nessun bisogno di cambiarlo: il banco funziona a qualunque
+   taglia), ma la BATTERIA ora registra anche una voce a --taglia 11
+   (`determinismo-11` in strumenti/tutti.js, voce #130) invece di restare
+   ferma alla sola taglia 5. */
 const TAGLIA = [5, 7, 11].includes(+arg('taglia', 5)) ? +arg('taglia', 5) : 5;
 const PARTITE = parseInt(arg('partite', '3'), 10);
 const SEME = parseInt(arg('seme', '20260803'), 10) >>> 0;

@@ -260,8 +260,10 @@
    sottocampionato: a taglia 5 sono solo 10 giocatori, il costo per tick e'
    O(giocatori) e non giustifica saltare fotogrammi (vedi Vincolo globale
    #3 del piano: le invarianti strutturali valgono a ogni taglia, qui si
-   misura a taglia 5 di serie — #98, il determinismo e' instabile a
-   7/11 — con --taglia per chi vuole forzare la deviazione, dichiarandola).
+   misura a taglia 5 di serie -- default storico, non piu' un limite di
+   determinismo: la voce #98 e' CHIUSA dalla voce #129, rettifica a
+   edizioni voce #130, 21 settembre 2026 -- con --taglia per chi vuole
+   misurare a 7/11, oggi altrettanto ripetibile).
    La prova 6 si campiona una volta per partita, SUBITO dopo startMatch
    (non e' un invariante-per-tick, e' un invariante-al-fischio). Le prove
    7/8/9 sono per-tick come 1-4, sullo stesso campionamento.
@@ -477,8 +479,11 @@ if (require.main === module && BUGIARDO && !BUGIARDI_NOTI.has(BUGIARDO)) {
 }
 
 const SEME_CANTIERE = 20260920;   // la data del piano d'esecuzione del cantiere (voce #125), default del flag --seme
-/* VINCOLO #98: il determinismo e' instabile a 7/11, la misura di serie e'
-   a taglia 5. Il flag resta per chi vuole forzare la deviazione, dichiarandola. */
+/* MISURA DI SERIE A TAGLIA 5 -- default storico. La voce #98
+   (determinismo instabile a 7/11) e' CHIUSA dalla voce #129 (rettifica a
+   edizioni voce #130, 21 settembre 2026): il flag --taglia resta per chi
+   vuole misurare a 7/11, oggi altrettanto ripetibile, non piu' "una
+   deviazione da dichiarare". */
 const TAGLIA_BANCO = +arg('taglia', 5);
 const SEME = +arg('seme', SEME_CANTIERE);
 const argSemiEsplicito = process.argv.includes('--semi');

@@ -456,6 +456,150 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Il metro prima del giudice — #130 CANTIERE CHIUSO** (voce #130, 21
+  settembre 2026, quattro compiti dal merge-base `d08a1e5` — spec
+  `docs/superpowers/specs/2026-09-21-il-metro-design.md`, piano
+  `docs/superpowers/plans/2026-09-21-il-metro.md`). Cantiere di
+  BANCO/documenti: `git diff main -- CALCETTO-il-gioco.html` **VUOTO**
+  per l'intero cantiere.
+
+  **IL PERCHÉ.** Prima dell'onda D (competizione — `_analisi/
+  MAPPA-MANDATO.md` riga 763, il verificatore differito delle sfide) serve
+  un GIUDICE che rigioca il nastro di una sfida e ne confermi il
+  punteggio. Due difetti del METRO con cui misurerà, trovati e curati
+  prima di costruirlo:
+
+  1. **Il tetto INV-15 era ancorato a taglia 5 ma applicato a ogni
+     taglia.** `TETTO_FOTOGRAMMI=18000` (voce #127) è la somma di due
+     componenti misurate SOLO a taglia 5: pre-rigori (12000) + oltranza
+     teorica (18×328=5904). A taglia 11 `durataPartita()`
+     (`CALCETTO-il-gioco.html:4105-4123`, `round(MATCH_SEC*FW/1150)`) vale
+     già **180s** (FW=2300) invece di 90s (FW=1150): un rigore a oltranza
+     legittimo arriva molto più vicino al tetto tarato per un'altra
+     taglia, e lo sfonda.
+  2. **`_q-determinismo.js` non era registrato in `strumenti/tutti.js`.**
+     È la prova di INV-01 (il gioco è deterministico dato il seme) — il
+     FONDAMENTO della verificabilità di una sfida — e la batteria non la
+     sorvegliava.
+
+  **LA RETTIFICA (compito 1, misurata con `fuori/_misura-seme-20260924.js`,
+  non committato — convenzione di casa per le sonde usa-e-getta, come
+  `fuori/_misura-oltranza.js`/`fuori/_misura-pre-rigori.js` del #127).**
+  Il verbale #129 dichiarava «seme 20260924 a taglia 11 bloccato in
+  `freekick`, pre-esistente, difetto di gioco». **FALSO, misurato di
+  nuovo**: stesso seme, stessa taglia, ordine giusto, NESSUN tetto (limite
+  locale 40.000 fotogrammi) — la partita raggiunge `'end'` al fotogramma
+  **19.502 (325,0s) con punteggio 2-1**, passando per una serie a rigori
+  (`G.rigori===true`). Non è bloccata. Il rosso era il tetto flat
+  applicato a una taglia dove la partita di regolamento dura già 180s, non
+  un difetto del gioco. La misura del #129 (fotogramma/stato letti allora)
+  era vera; l'inferenza («difetto di gioco», «pre-esistente») era
+  sbagliata sopra una misura vera. Rettificato a edizioni sia qui (dentro
+  la voce #129, sotto) sia in `PUNTO-DEL-LAVORO.md` (riga 11).
+
+  **LA CURA (compito 1): `tettoFotogrammi(taglia)`** in
+  `strumenti/_q-invarianti.js`, al posto della costante unica. Ogni
+  numero MISURATO, non stimato per proporzione (un tentativo di scalare
+  linearmente col rapporto delle durate di regolamento è stato scartato:
+  il rapporto durata-orologio/fotogrammi-reali misurato NON è costante fra
+  le taglie sui campioni raccolti — 1,538 a 5, 1,230 a 7, 1,298 a 11 —
+  probabile effetto di taglia-campione, non una legge fisica affidabile):
+    - **taglia 5**: **18000** (300s), INVARIATA — il numero storico del
+      #127 (campione 427 partite, margine ~10,6%). Nessun banco a taglia 5
+      cambia numero.
+    - **taglia 7**: **21000** (350s) — MISURATO (`fuori/
+      _misura-preRigori.js --taglia 7 --n 100 --semeBase 20260921 --tetto
+      25000`): massimo fotogramma di decisione (rigori innescati o `'end'`
+      diretto) **12252** su 100 partite (13 arrivate ai rigori, 0
+      incomplete). Margine +20% (più prudente del 10,6% storico: campione
+      100 contro 427) → 14702, + oltranza teorica 5904 = 20606,
+      arrotondato a 21000.
+    - **taglia 11**: **27000** (450s) — MISURATO (stesso attrezzo,
+      `--taglia 11 --n 150 --tetto 35000`): massimo **17136** su 150
+      partite (23 ai rigori, 0 incomplete). Margine +20% → 20563, +
+      oltranza teorica 5904 = 26467, arrotondato a 27000. Copre il seme
+      20260924 (19502) con margine comodo.
+  **L'oltranza è taglia-indipendente — VERIFICATO, non solo ragionato**:
+  il codice del `Duel` (fase power, `~22479-22497`) avanza il cursore con
+  `dt*1,15` e decide con `dado()`, nessuno dei due legge FW/taglia.
+  Confermato con `fuori/_misura-oltranza.js` (t.rigori() forzato
+  ripetuto): massimo per-un-solo-tiro **276/948 tiri** a taglia 5,
+  **277/2882 tiri** a taglia 11 — stesso ordine di grandezza del
+  **328/46.776** storico di taglia 5 (#127, campione molto più grande, che
+  resta la base del teorico 18×328=5904 per ogni taglia).
+
+  **IL TEST-CONDANNA** (`strumenti/_t-metro-taglia.js`, mandato §13.3):
+  gioca il seme 20260924 a taglia 11 e confronta la durata osservata sia
+  contro il tetto flat storico (sempre sforato, per costruzione) sia
+  contro `tettoFotogrammi(11)`. **PRIMA della cura**: rosso strutturale
+  (`tettoFotogrammi` non esiste ancora — `2 prove su 3`, eseguito e
+  verificato rosso PRIMA di scrivere la funzione). **DOPO**: verde
+  (`3 prove su 3`, `19502 <= 27000`). `_q-soak.js` e `_q-cpu-ordine.js`
+  aggiornati a usare `tettoFotogrammi(TAGLIA_BANCO)` (altrimenti
+  riprodurrebbero lo stesso falso positivo a `--taglia 11`): verificato,
+  `_q-soak.js --taglia 11 --partite 40` **10/10** (prima: falso positivo
+  sicuro, max osservato 20.526/27.000, 76,0% del tetto). **L'hang vero
+  resta colto**: `_q-soak.js --bugiardo durata` **ROSSO** sia a taglia 5
+  (max 18000/18000, 100%) sia a taglia 11 (max 27000/27000, 100%, 14/20
+  semi incastrati in `'freekick'`) — un tetto più largo non nasconde
+  l'artefatto #108, verificato e non solo attestato.
+
+  **IL METRO ENTRA IN BATTERIA (compito 2).** `determinismo` non era mai
+  stato registrato in `strumenti/tutti.js` nonostante provi INV-01.
+  MISURATO qui: dopo la cura #129 della #98 il banco è **10/10 anche a
+  taglia 7 e 11** (contro l'8/10 di prima della #129) — nessuna ragione
+  per restare a taglia 5 sola. **Due voci**, non una (registrarne una sola
+  a taglia 5 avrebbe ricreato dentro il cancello proprio il buco che
+  questo cantiere doveva chiudere): `determinismo` (default, taglia 5,
+  ~16-68s a seconda della contesa del banco) e `determinismo-11`
+  (`--taglia 11`, ~60-122s, `lento:true`, misurato molto più lento —
+  partite doppie e quattro corse per pagina). `_q-rete.js` (**22/22**) e
+  `_q-sfida.js` (**54/54**) entrano anch'essi: verificato leggendo il
+  codice che entrambi aprono un server finto IN MEMORIA sulla stessa
+  macchina (`http.createServer` locale, mai una richiesta a Internet) —
+  nessun conflitto con `senza-rete.js`, che verifica una domanda diversa
+  (il gioco non chiama nessuno in condizioni normali).
+
+  **LE RETTIFICHE #98 A EDIZIONI (compito 3).** Cercato con `grep -rn
+  "#98" strumenti/*.js`: sette file (`_q-soak.js`, `_q-determinismo.js`,
+  `_q-invarianti.js`, `_q-umore.js`, `strumenti/tutti.js`) portavano
+  ancora commenti che dichiaravano la #98 (determinismo instabile a 7/11)
+  come stato ATTUALE, mentre è CHIUSA dalla voce #129 dal 20 settembre.
+  Corretti a edizioni (annotato «CHIUSA dal #129», testo vecchio non
+  cancellato), senza cambiare il PERIMETRO di nessun banco (le taglie di
+  default restano quelle di sempre — un cambio di default sarebbe un
+  cantiere a parte). Verificato di persona che `_q-soak.js` è oggi
+  bit-ripetibile anche a taglia 11 (due corse `--taglia 11 --semeBase
+  20260920 --partite 10`, stessa impronta `d4e5dc74`): l'ancoraggio a
+  taglia 5 del cancello di batteria resta, ma per una ragione diversa
+  (le BANDE statistiche sono tarate sulla rosa/campo di taglia 5), non più
+  per il determinismo. `CLAUDE.md` porta anch'esso un riferimento alla
+  #98 come "seguito aperto" (righe 61-62): NON toccato per mandato
+  esplicito del committente su questo file, dichiarato qui a registro
+  invece di corretto in silenzio.
+
+  **BATTERIA INTERA RILANCIATA A GRUPPI** (lezione 22; una corsa sola
+  avrebbe ecceduto il tempo dell'agente, ~12 minuti a `--tutto`): tre
+  gruppi via `--solo`, **45 esecuzioni-cancello, TUTTI quelli che contano
+  VERDI**. Gruppo 1 (15 cancelli statici/veloci): **15/15 verde**, 267s di
+  orologio. Gruppo 2 (contenuti, MIND, regole, invarianti, fuzzer): **17/17
+  verde**, 109s. Gruppo 3 (soak, determinismo×2, rete, sfida, tocco, audio,
+  istantanea, volti, i quattro cronometrici): tutti i cancelli che contano
+  **verdi** (soak, determinismo, determinismo-11, rete, sfida, tocco,
+  volti, giocata, prestazione tutti OK); `audio` e `avvio-telefono` escono
+  **3 (prova nulla)** — nessun contesto audio reale e nessun telefono
+  collegato in questo banco, DICHIARATO dai cancelli stessi, non un rosso
+  del gioco (regola di casa: un 3 non accusa il gioco); `istantanea`
+  (informativo, `conta:false`) **45/56**, stesso schema di rumore già
+  dichiarato dalle voci #113/#114/#122/#125/#128/#129 contro un registro
+  del 20 agosto ormai lontano. **Nessun cancello che conta è rosso.**
+
+  **Definizione di fatto**: il tetto INV-15 è una funzione della taglia,
+  misurata e non stimata, con l'hang vero ancora colto; INV-01
+  (determinismo) e la modalità SFIDA sono ora sorvegliate in batteria; la
+  diagnosi falsa del #129 sul seme 20260924 è rettificata a edizioni; il
+  gioco non è stato toccato. Il metro è pronto per il giudice dell'onda D.
+
 - **La cosmetica fuori dal PRNG di gioco — #129 CANTIERE CHIUSO, E LA VOCE
   #98 SI CHIUDE** (#129, seguito tecnico dell'onda C, 20 settembre 2026, due
   compiti dal merge-base `81bb961` — spec
@@ -558,6 +702,30 @@ Qui il registro completo, a edizioni.
   stesso stato finale, stesso fotogramma — **PRE-ESISTENTE**, un difetto
   di gioco a taglia 11 scollegato dalla cosmetica, non indagato qui
   (fuori perimetro, a registro per chi riprenderà taglia 11 in volume).
+
+  **RETTIFICA A EDIZIONI (21 settembre 2026, voce #130 "il metro prima
+  del giudice", fonte `fuori/_misura-seme-20260924.js`).** L'affermazione
+  qui sopra era FALSA, e il compito 1 del #130 l'ha misurata di nuovo:
+  seme 20260924, taglia 11, stesso ordine giusto (`startMatch` poi
+  `setCpuVsCpu`), **NESSUN tetto** (limite locale 40.000 fotogrammi, solo
+  di sicurezza). La partita **NON resta bloccata**: raggiunge `'end'` al
+  fotogramma **19.502 (325,0 s) con punteggio 2-1**, dopo essere passata
+  per una serie a rigori (`G.rigori===true`). Il rosso incontrato dal
+  #129 non era un difetto del gioco: era `TETTO_FOTOGRAMMI=18000`, tarato
+  sul caso peggiore di **taglia 5** (partite di regolamento da 90s) e
+  applicato tale e quale a taglia 11, dove `durataPartita()`
+  (`CALCETTO-il-gioco.html:4105-4123`, `round(MATCH_SEC*FW/1150)`) vale
+  già **180s** (FW=2300 contro FW=1150 a taglia 5) — un rigore a oltranza
+  legittimo a quella taglia arriva molto più vicino al tetto tarato per
+  un'altra taglia, e lo sfonda. La MISURA del #129 (fotogramma/stato
+  letti allora, verosimilmente `'freekick'` di passaggio al taglio dei
+  18.000) era vera; l'INFERENZA ("difetto di gioco", "pre-esistente")
+  era sbagliata sopra una misura vera. Cura: `tettoFotogrammi(taglia)`
+  (voce #130, compito 1, `strumenti/_q-invarianti.js`) — il tetto diventa
+  funzione della taglia (18000/300s a 5, invariato; 21000/350s a 7;
+  27000/450s a 11, misurati con lo stesso metodo del #127) invece di una
+  costante unica applicata a ogni taglia. Il testo precedente resta sopra,
+  non cancellato.
 
   **LA REGRESSIONE COSMETICA, DICHIARATA E VOLUTA.** La texture del campo
   e il layout della folla CAMBIANO aspetto (partono da un seme diverso):

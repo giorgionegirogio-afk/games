@@ -7,10 +7,11 @@
    (compito 4) e le prove che condannano (compito 5). Questo file nasce
    al compito 1 con la SOLA prova REGISTRO e cresce compito per compito
    (STATI al 2, CANALE+TETTI al 3, TESTIMONE al 4), sul telaio di casa:
-   server locale, seme fisso da _posa.js, taglia 5 (#98: il determinismo
-   e' instabile a 7/11, si misura a 5), CPU-CPU, t.simulate(1/60) a passo
-   fisso, codici d'uscita di casa (0 verde, 1 rosso, 2 banco esploso, 3
-   uso).
+   server locale, seme fisso da _posa.js, taglia 5 (default storico; la
+   voce #98, il determinismo instabile a 7/11 che l'aveva motivato, e'
+   CHIUSA dalla voce #129 -- rettifica a edizioni voce #130, 21 settembre
+   2026), CPU-CPU, t.simulate(1/60) a passo fisso, codici d'uscita di casa
+   (0 verde, 1 rosso, 2 banco esploso, 3 uso).
 
    PROVA REGISTRO (compito 1). G.fatti e' un buffer PASSIVO che trascrive
    eventi gia' decisi dal gioco (vedi strumenti/_t-registro-fatti.js per
@@ -251,9 +252,10 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 }
 
 const SEME_CANTIERE = 20260919;   // la data del piano d'esecuzione del cantiere (voce #117), default del flag --seme
-/* VINCOLO #98: il determinismo e' instabile a 7/11, ogni misura del
-   modello si prende a taglia 5. Il flag resta per chi lo vuole forzare
-   di proposito (dichiarando la deviazione), ma il default e' sempre 5. */
+/* MISURA DEL MODELLO A TAGLIA 5 -- default storico (la voce #98 che lo
+   motivava e' CHIUSA dalla voce #129, rettifica a edizioni voce #130, 21
+   settembre 2026). Il flag resta per chi vuole misurare a 7/11, ma il
+   default e' sempre 5. */
 const TAGLIA_BANCO = +arg('taglia', 5);
 const SEME = +arg('seme', SEME_CANTIERE);
 

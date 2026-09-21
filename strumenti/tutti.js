@@ -569,8 +569,9 @@ const CANCELLI = [
      sul canale mesto) lo condannano ciascuna sulla propria prova,
      verificato e dichiarato nel file — la prova che il banco discrimina.
      Deterministico al seme del cantiere (20260919), zero dado() nuovi,
-     taglia 5 (#98: il determinismo e' instabile a 7/11, ogni misura del
-     modello si prende a 5): corre in compagnia. */
+     taglia 5 (default storico -- la voce #98 che lo motivava e' CHIUSA
+     dalla voce #129, rettifica a edizioni voce #130, 21 settembre 2026):
+     corre in compagnia. */
   { nome: 'umore',       cmd: ['strumenti/_q-umore.js'],                                conta: true,  lento: false },
   /* cpu-ordine: LA RETE CHE COGLIE IL PROSSIMO BANCO ROTTO (voce #121,
      compito 3, seguito #108, 19 settembre 2026). Due prove sullo stesso
@@ -657,8 +658,9 @@ const CANCELLI = [
      (clamp fiato/cond, movimento, palla) -- verde su tutte e nove dal
      primo giorno, ciascuna gia' dimostrata capace di condannare il
      proprio bugiardo.
-     Deterministico al seme del cantiere (20260920), taglia 5 (#98: il
-     determinismo e' instabile a 7/11), 8 semi/56984 fotogrammi campionati
+     Deterministico al seme del cantiere (20260920), taglia 5 (default
+     storico -- la voce #98 che lo motivava e' CHIUSA dalla voce #129,
+     rettifica a edizioni voce #130), 8 semi/56984 fotogrammi campionati
      per corsa: corre in compagnia (~5 s). */
   { nome: 'invarianti',  cmd: ['strumenti/_q-invarianti.js'],                          conta: true,  lento: false },
   /* =====================================================================
@@ -696,8 +698,9 @@ const CANCELLI = [
      disegno; il fuzzer rigenera la rosa (nuovaRosa()) a ogni seme, come
      dichiarato nel file.
      Deterministico ai due semi separati del cantiere (semeGioco
-     20260920, semeComandi 71260920), taglia 5 (#98: il determinismo e'
-     instabile a 7/11): **15/15**, 20 semi, 150.589 fotogrammi simulati,
+     20260920, semeComandi 71260920), taglia 5 (default storico -- la
+     voce #98 che lo motivava e' CHIUSA dalla voce #129, rettifica a
+     edizioni voce #130): **15/15**, 20 semi, 150.589 fotogrammi simulati,
      max 745 righe Reg (tetto 40000), corre in compagnia (~17 s, misurato
      due volte, stesso esito e stesso numero al bit entrambe le volte). */
   { nome: 'fuzzer',      cmd: ['strumenti/_q-fuzzer.js'],                              conta: true,  lento: false },
@@ -737,9 +740,12 @@ const CANCELLI = [
      --bugiardo bande` — entrambi curati (require condiviso, guardia
      `require.main===module`).
 
-     TAGLIA 5, IL CANCELLO ANCORATO (vincolo #98: rebuildCrowd/setTaglia
-     consuma PRNG in proporzione al perimetro a 7/11, causa isolata,
-     seguito #129). ROSA RIGENERATA (`nuovaRosa()`) a ogni partita, come
+     TAGLIA 5, IL CANCELLO ANCORATO -- RETTIFICA A EDIZIONI (voce #130, 21
+     settembre 2026): la voce #98 (rebuildCrowd/setTaglia consumava PRNG
+     in proporzione al perimetro a 7/11) e' CHIUSA dalla voce #129;
+     l'ancoraggio resta per le BANDE statistiche (tarate sulla rosa/campo
+     di taglia 5), non piu' per il determinismo -- vedi `_q-soak.js` per
+     la misura. ROSA RIGENERATA (`nuovaRosa()`) a ogni partita, come
      il fuzzer: SAVE.rosa cresce per carriera a ogni fine-partita vera,
      desincronizzando le partite in sequenza sulla stessa pagina se non
      rigenerata. Deterministico: due corse a `--semeBase`/`--partite`

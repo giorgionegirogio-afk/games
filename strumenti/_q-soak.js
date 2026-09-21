@@ -70,12 +70,19 @@
    fine a se stesso: e' la prova che INV-15-su-volume sa vedere rosso
    quando il rosso c'e' davvero, non solo attestare verde per costruzione.
 
-   TAGLIA 5, IL CANCELLO ANCORATO (vincolo globale del piano). A 7/11
-   rebuildCrowd/setTaglia consuma PRNG in proporzione al perimetro (voce
-   #98, causa isolata, seguito #129 aperto) e il determinismo cross-corsa
-   slitta: il soak-cancello gira a taglia 5 di serie. --taglia resta,
-   come negli altri banchi, per chi vuole forzare la deviazione
-   dichiarandola -- NON e' il cancello ripetibile.
+   TAGLIA 5, IL CANCELLO ANCORATO (vincolo globale del piano). RETTIFICA
+   A EDIZIONI (21 settembre 2026, voce #130): la voce #98 (rebuildCrowd/
+   setTaglia consumava PRNG in proporzione al perimetro, il determinismo
+   cross-corsa slittava a 7/11) e' CHIUSA dalla voce #129 (PRNG dedicato
+   DECO per la cosmetica) -- misurato di nuovo qui, due corse di
+   `_q-soak --taglia 11 --semeBase 20260920 --partite 10` danno la STESSA
+   impronta (`d4e5dc74`): il soak-cancello E' bit-ripetibile anche a 7/11
+   oggi. Il cancello di BATTERIA resta ANCORATO a taglia 5 per una
+   ragione DIVERSA, non piu' il determinismo: le BANDE statistiche piu'
+   sotto sono calibrate sulla rosa/campo di taglia 5 e non varrebbero a
+   giudicare una taglia diversa (vedi il commento accanto a `const BANDE`).
+   --taglia resta, come negli altri banchi, per chi vuole misurare a 7/11
+   (oggi ripetibile, solo senza bande da giudicare).
 
    INV-15 SU VOLUME. Ogni partita deve raggiungere t.state==='end' entro
    TETTO_FOTOGRAMMI (18000, 300 s di gioco a taglia 5 -- IMPORTATO da
@@ -163,8 +170,11 @@ if (BUGIARDO && BUGIARDO !== 'durata' && BUGIARDO !== 'bande') {
   process.exit(3);
 }
 
-/* VINCOLO #98: il determinismo e' instabile a 7/11, il cancello ancorato
-   e' a taglia 5 -- vedi la lettera di testa. */
+/* CANCELLO ANCORATO A TAGLIA 5 -- la voce #98 (determinismo instabile a
+   7/11) e' CHIUSA dalla voce #129 (rettifica a edizioni, voce #130, 21
+   settembre 2026): l'ancoraggio resta per le BANDE statistiche (tarate
+   sulla rosa/campo di taglia 5), non piu' per il determinismo -- vedi la
+   lettera di testa. */
 const TAGLIA_BANCO = [5, 7, 11].includes(+arg('taglia', 5)) ? +arg('taglia', 5) : 5;
 /* Stesso default di _q-invarianti.js/_q-fuzzer.js -- un unico numero
    magico per "il seme del cantiere", non uno diverso per ogni banco. */
@@ -534,13 +544,15 @@ const SONDA_SOAK = (cfg) => {
        campione IN ESAME (questa corsa) e la si confronta con la banda
        ANCORATA (una costante, misurata una volta, non ricalcolata qui:
        una banda che si aggiorna da sola sulla corsa che sta giudicando
-       non condannerebbe mai niente). L'ANCORA E' A TAGLIA 5 -- la
-       STESSA ragione del cancello INV-15/ripetibilita' (vincolo #98,
-       vedi la lettera di testa): a 7/11 le statistiche SI MISURANO
-       (stampate qui sotto) ma NON SI GIUDICANO contro una banda pensata
-       per un campo/una rosa diversi, e la misura stessa non e'
-       bit-ripetibile a quelle taglie -- dichiarato, non taciuto,
-       nessun `di()` (non contano ne' per ne' contro il cancello). */
+       non condannerebbe mai niente). L'ANCORA E' A TAGLIA 5 -- OGGI PER
+       UNA SOLA RAGIONE (RETTIFICA A EDIZIONI, voce #130, 21 settembre
+       2026: la voce #98, che rendeva anche la MISURA non bit-ripetibile
+       a 7/11, e' CHIUSA dalla voce #129 -- verificato di nuovo qui, due
+       corse danno la stessa impronta): a 7/11 le statistiche SI MISURANO
+       (stampate qui sotto, e OGGI SONO ripetibili) ma NON SI GIUDICANO
+       contro una banda pensata per un campo/una rosa diversi -- dichiarato,
+       non taciuto, nessun `di()` (non contano ne' per ne' contro il
+       cancello). */
     const vociBande = [
       ['gol nei 90 s (golRegol, somma due squadre)', 'golRegol', ''],
       ['tiri per partita (somma due squadre)', 'tiri', ''],
@@ -575,7 +587,7 @@ const SONDA_SOAK = (cfg) => {
         di(false, 'BANDA -- partite 0-0 nei 90 s', 'nessuna partita valida da misurare in questa corsa');
       }
     } else {
-      console.log('\n  BANDE -- SOLO INFORMATIVO a taglia ' + TAGLIA_BANCO + ' (non ancorato, non bit-ripetibile, vincolo #98/#129):');
+      console.log('\n  BANDE -- SOLO INFORMATIVO a taglia ' + TAGLIA_BANCO + ' (non ancorato: le bande sono tarate sulla rosa/campo di taglia 5 -- oggi bit-ripetibile anche qui, la voce #98 e\' chiusa dal #129):');
       const nValide = r.bande.length;
       for (const [nome, chiave, unita] of vociBande) {
         const vals = r.bande.map(x => x[chiave]);
