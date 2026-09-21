@@ -1,0 +1,850 @@
+{
+ "versione": 1,
+ "taglia": 5,
+ "semi": [
+  20260921,
+  20260922,
+  20260923
+ ],
+ "copione": {
+  "passoZone": 30,
+  "passoPower": 45,
+  "attesaKeeper": 15,
+  "mire": [
+   {
+    "z": 0,
+    "u": -0.73146,
+    "v": 0.34271
+   },
+   {
+    "z": 2,
+    "u": 0.81037,
+    "v": 0.62918
+   },
+   {
+    "z": 1,
+    "u": 0.11204,
+    "v": 0.48663
+   },
+   {
+    "z": 2,
+    "u": 1.04592,
+    "v": 0.25107
+   },
+   {
+    "z": 0,
+    "u": -1.11873,
+    "v": 0.71449
+   },
+   {
+    "z": 1,
+    "u": -0.29365,
+    "v": 0.55082
+   }
+  ],
+  "tuffi": [
+   1,
+   0,
+   2,
+   2,
+   1,
+   0
+  ]
+ },
+ "A": [
+  {
+   "seme": 20260921,
+   "duelli": [
+    {
+     "n": 1,
+     "passo": 100,
+     "esito": "gol",
+     "cursor": 0.4025,
+     "powerQ": 1,
+     "z": 2,
+     "kz": 2,
+     "mirato": false,
+     "aimU": 1,
+     "aimV": 0.5,
+     "band0": 0.33095,
+     "band1": 0.53095,
+     "sorteggi": 37
+    },
+    {
+     "n": 2,
+     "passo": 98,
+     "esito": "gol",
+     "cursor": 0.5175,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 1,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.44396,
+     "band1": 0.64396,
+     "sorteggi": 43
+    },
+    {
+     "n": 3,
+     "passo": 108,
+     "esito": "gol",
+     "cursor": 0.805,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 0,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.70521,
+     "band1": 0.90521,
+     "sorteggi": 50
+    },
+    {
+     "n": 4,
+     "passo": 89,
+     "esito": "gol",
+     "cursor": 0.6325,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 1,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.54999,
+     "band1": 0.74999,
+     "sorteggi": 55
+    },
+    {
+     "n": 5,
+     "passo": 107,
+     "esito": "gol",
+     "cursor": 0.76667,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 2,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.68331,
+     "band1": 0.88331,
+     "sorteggi": 60
+    },
+    {
+     "n": 6,
+     "passo": 100,
+     "esito": "gol",
+     "cursor": 0.44083,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 1,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.35883,
+     "band1": 0.55883,
+     "sorteggi": 65
+    },
+    {
+     "n": 7,
+     "passo": 93,
+     "esito": "gol",
+     "cursor": 0.55583,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 1,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.47466,
+     "band1": 0.67466,
+     "sorteggi": 70
+    },
+    {
+     "n": 8,
+     "passo": 81,
+     "esito": "gol",
+     "cursor": 0.32583,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 2,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.25003,
+     "band1": 0.45003,
+     "sorteggi": 75
+    },
+    {
+     "n": 9,
+     "passo": 102,
+     "esito": "gol",
+     "cursor": 0.67083,
+     "powerQ": 1,
+     "z": 2,
+     "kz": 0,
+     "mirato": false,
+     "aimU": 1,
+     "aimV": 0.5,
+     "band0": 0.58892,
+     "band1": 0.78892,
+     "sorteggi": 80
+    },
+    {
+     "n": 10,
+     "passo": 103,
+     "esito": "gol",
+     "cursor": 0.42167,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 2,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.34428,
+     "band1": 0.54428,
+     "sorteggi": 85
+    },
+    {
+     "n": 11,
+     "passo": 103,
+     "esito": "gol",
+     "cursor": 0.61333,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 0,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.50491,
+     "band1": 0.70491,
+     "sorteggi": 93
+    },
+    {
+     "n": 12,
+     "passo": 86,
+     "esito": "gol",
+     "cursor": 0.53667,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 2,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.45621,
+     "band1": 0.65621,
+     "sorteggi": 98
+    },
+    {
+     "n": 13,
+     "passo": 87,
+     "esito": "gol",
+     "cursor": 0.44083,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 1,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.35608,
+     "band1": 0.55608,
+     "sorteggi": 104
+    },
+    {
+     "n": 14,
+     "passo": 115,
+     "esito": "gol",
+     "cursor": 0.6325,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 1,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.54098,
+     "band1": 0.74098,
+     "sorteggi": 110
+    },
+    {
+     "n": 15,
+     "passo": 117,
+     "esito": "gol",
+     "cursor": 0.76667,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 1,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.67928,
+     "band1": 0.87928,
+     "sorteggi": 116
+    },
+    {
+     "n": 16,
+     "passo": 93,
+     "esito": "gol",
+     "cursor": 0.6325,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 0,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.53266,
+     "band1": 0.73266,
+     "sorteggi": 123
+    },
+    {
+     "n": 17,
+     "passo": 75,
+     "esito": "gol",
+     "cursor": 0.42167,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 2,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.3145,
+     "band1": 0.5145,
+     "sorteggi": 129
+    },
+    {
+     "n": 18,
+     "passo": 112,
+     "esito": "gol",
+     "cursor": 0.76667,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 0,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.6397,
+     "band1": 0.8397,
+     "sorteggi": 137
+    }
+   ],
+   "fotogrammi": 3929,
+   "stato": "end",
+   "punteggio": [
+    1,
+    0
+   ],
+   "serie": {
+    "seg": [
+     9,
+     9
+    ],
+    "tiri": [
+     9,
+     9
+    ]
+   },
+   "sorteggi": 137
+  },
+  {
+   "seme": 20260922,
+   "duelli": [
+    {
+     "n": 1,
+     "passo": 108,
+     "esito": "gol",
+     "cursor": 0.55583,
+     "powerQ": 1,
+     "z": 2,
+     "kz": 1,
+     "mirato": false,
+     "aimU": 1,
+     "aimV": 0.5,
+     "band0": 0.47968,
+     "band1": 0.67968,
+     "sorteggi": 36
+    },
+    {
+     "n": 2,
+     "passo": 105,
+     "esito": "gol",
+     "cursor": 0.805,
+     "powerQ": 1,
+     "z": 2,
+     "kz": 2,
+     "mirato": false,
+     "aimU": 1,
+     "aimV": 0.5,
+     "band0": 0.7175,
+     "band1": 0.9175,
+     "sorteggi": 42
+    },
+    {
+     "n": 3,
+     "passo": 99,
+     "esito": "gol",
+     "cursor": 0.575,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 1,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.4717,
+     "band1": 0.6717,
+     "sorteggi": 49
+    },
+    {
+     "n": 4,
+     "passo": 102,
+     "esito": "gol",
+     "cursor": 0.6325,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 1,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.55542,
+     "band1": 0.75542,
+     "sorteggi": 55
+    },
+    {
+     "n": 5,
+     "passo": 99,
+     "esito": "gol",
+     "cursor": 0.55583,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 0,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.45917,
+     "band1": 0.65917,
+     "sorteggi": 61
+    },
+    {
+     "n": 6,
+     "passo": 111,
+     "esito": "gol",
+     "cursor": 0.70917,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 2,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.63294,
+     "band1": 0.83294,
+     "sorteggi": 66
+    },
+    {
+     "n": 7,
+     "passo": 104,
+     "esito": "gol",
+     "cursor": 0.805,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 1,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.72023,
+     "band1": 0.92023,
+     "sorteggi": 72
+    },
+    {
+     "n": 8,
+     "passo": 111,
+     "esito": "gol",
+     "cursor": 0.82417,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 1,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.71689,
+     "band1": 0.91689,
+     "sorteggi": 79
+    },
+    {
+     "n": 9,
+     "passo": 104,
+     "esito": "gol",
+     "cursor": 0.53667,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 0,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.45541,
+     "band1": 0.65541,
+     "sorteggi": 84
+    },
+    {
+     "n": 10,
+     "passo": 118,
+     "esito": "parata",
+     "cursor": 0.69,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 1,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.56309,
+     "band1": 0.76309,
+     "sorteggi": 92
+    }
+   ],
+   "fotogrammi": 2261,
+   "stato": "end",
+   "punteggio": [
+    1,
+    0
+   ],
+   "serie": {
+    "seg": [
+     5,
+     4
+    ],
+    "tiri": [
+     5,
+     5
+    ]
+   },
+   "sorteggi": 92
+  },
+  {
+   "seme": 20260923,
+   "duelli": [
+    {
+     "n": 1,
+     "passo": 116,
+     "esito": "gol",
+     "cursor": 0.70917,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 2,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.62293,
+     "band1": 0.82293,
+     "sorteggi": 36
+    },
+    {
+     "n": 2,
+     "passo": 74,
+     "esito": "gol",
+     "cursor": 0.4025,
+     "powerQ": 1,
+     "z": 2,
+     "kz": 1,
+     "mirato": false,
+     "aimU": 1,
+     "aimV": 0.5,
+     "band0": 0.31339,
+     "band1": 0.51339,
+     "sorteggi": 41
+    },
+    {
+     "n": 3,
+     "passo": 80,
+     "esito": "gol",
+     "cursor": 0.44083,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 0,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.35738,
+     "band1": 0.55738,
+     "sorteggi": 47
+    },
+    {
+     "n": 4,
+     "passo": 88,
+     "esito": "gol",
+     "cursor": 0.42167,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 0,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.32621,
+     "band1": 0.52621,
+     "sorteggi": 54
+    },
+    {
+     "n": 5,
+     "passo": 87,
+     "esito": "gol",
+     "cursor": 0.44083,
+     "powerQ": 1,
+     "z": 2,
+     "kz": 2,
+     "mirato": false,
+     "aimU": 1,
+     "aimV": 0.5,
+     "band0": 0.36493,
+     "band1": 0.56493,
+     "sorteggi": 60
+    },
+    {
+     "n": 6,
+     "passo": 98,
+     "esito": "gol",
+     "cursor": 0.345,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 1,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.26468,
+     "band1": 0.46468,
+     "sorteggi": 66
+    },
+    {
+     "n": 7,
+     "passo": 90,
+     "esito": "gol",
+     "cursor": 0.44083,
+     "powerQ": 1,
+     "z": 2,
+     "kz": 1,
+     "mirato": false,
+     "aimU": 1,
+     "aimV": 0.5,
+     "band0": 0.336,
+     "band1": 0.536,
+     "sorteggi": 72
+    },
+    {
+     "n": 8,
+     "passo": 74,
+     "esito": "parata",
+     "cursor": 0.4025,
+     "powerQ": 1,
+     "z": 2,
+     "kz": 2,
+     "mirato": false,
+     "aimU": 1,
+     "aimV": 0.5,
+     "band0": 0.30139,
+     "band1": 0.50139,
+     "sorteggi": 79
+    }
+   ],
+   "fotogrammi": 1667,
+   "stato": "end",
+   "punteggio": [
+    1,
+    0
+   ],
+   "serie": {
+    "seg": [
+     4,
+     3
+    ],
+    "tiri": [
+     4,
+     4
+    ]
+   },
+   "sorteggi": 79
+  }
+ ],
+ "B": [
+  {
+   "seme": 20260921,
+   "duelli": [
+    {
+     "n": 1,
+     "passo": 64,
+     "esito": "gol",
+     "cursor": 0.2875,
+     "powerQ": 0.6,
+     "z": 0,
+     "kz": 2,
+     "mirato": true,
+     "aimU": -0.47676,
+     "aimV": 0.43459,
+     "band0": 0.37063,
+     "band1": 0.49127,
+     "sorteggi": 34
+    },
+    {
+     "n": 2,
+     "passo": 96,
+     "esito": "gol",
+     "cursor": 0.46,
+     "powerQ": 1,
+     "z": 2,
+     "kz": 0,
+     "mirato": false,
+     "aimU": 1,
+     "aimV": 0.5,
+     "band0": 0.37536,
+     "band1": 0.57536,
+     "sorteggi": 38
+    },
+    {
+     "n": 3,
+     "passo": 64,
+     "esito": "parata",
+     "cursor": 0.2875,
+     "powerQ": 0.00774,
+     "z": 1,
+     "kz": 1,
+     "mirato": true,
+     "aimU": 0.05367,
+     "aimV": 0.53305,
+     "band0": 0.58414,
+     "band1": 0.75413,
+     "sorteggi": 43
+    },
+    {
+     "n": 4,
+     "passo": 105,
+     "esito": "gol",
+     "cursor": 0.805,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 2,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.70521,
+     "band1": 0.90521,
+     "sorteggi": 48
+    }
+   ],
+   "fotogrammi": 811,
+   "stato": "end",
+   "punteggio": [
+    0,
+    1
+   ],
+   "serie": {
+    "seg": [
+     1,
+     2
+    ],
+    "tiri": [
+     2,
+     2
+    ]
+   },
+   "sorteggi": 51
+  },
+  {
+   "seme": 20260922,
+   "duelli": [
+    {
+     "n": 1,
+     "passo": 64,
+     "esito": "fuori",
+     "cursor": 0.2875,
+     "powerQ": 0.24032,
+     "z": 0,
+     "kz": 2,
+     "mirato": true,
+     "aimU": -0.24773,
+     "aimV": 0.5172,
+     "band0": 0.51936,
+     "band1": 0.64,
+     "sorteggi": 35
+    },
+    {
+     "n": 2,
+     "passo": 112,
+     "esito": "gol",
+     "cursor": 0.6325,
+     "powerQ": 1,
+     "z": 1,
+     "kz": 0,
+     "mirato": false,
+     "aimU": 0,
+     "aimV": 0.5,
+     "band0": 0.54104,
+     "band1": 0.74104,
+     "sorteggi": 40
+    }
+   ],
+   "fotogrammi": 417,
+   "stato": "end",
+   "punteggio": [
+    0,
+    1
+   ],
+   "serie": {
+    "seg": [
+     0,
+     1
+    ],
+    "tiri": [
+     1,
+     1
+    ]
+   },
+   "sorteggi": 43
+  },
+  {
+   "seme": 20260923,
+   "duelli": [
+    {
+     "n": 1,
+     "passo": 64,
+     "esito": "fuori",
+     "cursor": 0.2875,
+     "powerQ": 0,
+     "z": 0,
+     "kz": 0,
+     "mirato": true,
+     "aimU": -0.21944,
+     "aimV": 0.52741,
+     "band0": 0.66261,
+     "band1": 0.78325,
+     "sorteggi": 35
+    },
+    {
+     "n": 2,
+     "passo": 86,
+     "esito": "gol",
+     "cursor": 0.69,
+     "powerQ": 1,
+     "z": 0,
+     "kz": 0,
+     "mirato": false,
+     "aimU": -1,
+     "aimV": 0.5,
+     "band0": 0.59204,
+     "band1": 0.79204,
+     "sorteggi": 41
+    }
+   ],
+   "fotogrammi": 391,
+   "stato": "end",
+   "punteggio": [
+    0,
+    1
+   ],
+   "serie": {
+    "seg": [
+     0,
+     1
+    ],
+    "tiri": [
+     1,
+     1
+    ]
+   },
+   "sorteggi": 44
+  }
+ ]
+}
