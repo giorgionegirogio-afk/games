@@ -756,6 +756,68 @@ const CANCELLI = [
      cancello di ogni batteria. */
   { nome: 'soak',        cmd: ['strumenti/_q-soak.js'],                                conta: true,  lento: true  },
   /* =====================================================================
+     determinismo: IL FONDAMENTO DELLA VERIFICABILITA' DI UNA SFIDA (voce
+     #130, "il metro prima del giudice", 21 settembre 2026). L'onda D
+     costruira' un GIUDICE che rigioca il nastro di una sfida e ne
+     conferma il punteggio — un'operazione che ha senso SOLO se il gioco
+     e' deterministico dato il seme (INV-01 del mandato). `_q-determinismo.js`
+     lo prova da agosto (quattro prove A/B/C/D: stessa pagina, pagine
+     diverse, dita, seme dentro il gioco) ma non era MAI stato registrato
+     in questa batteria — trovato mancante durante il censimento di questo
+     cantiere (nessuna voce `determinismo` in tutta la lista).
+
+     PERCHE' DUE VOCI E NON UNA. Fino alla voce #129 il banco era 8/10 a
+     taglia 7/11 (voce #98: rebuildCrowd/setTaglia consumava il PRNG di
+     gioco in proporzione al perimetro del campo sulla prima partita a
+     una taglia nuova) — registrarlo a UNA sola taglia (5) avrebbe
+     ricreato dentro il cancello proprio il buco che questo cantiere
+     doveva chiudere: la batteria avrebbe sorvegliato solo la taglia dove
+     il difetto storico non si vedeva mai. Dopo la cura #129 (PRNG
+     dedicato `DECO` per la cosmetica, non piu' condiviso col PRNG di
+     gioco), MISURATO qui (21 settembre 2026): **10/10 anche a taglia 7 e
+     11** (contro l'8/10 di prima), stesso banco, nessuna modifica. Due
+     voci: `determinismo` di serie (taglia 5, ~16s) e `determinismo-11`
+     (--taglia 11, ~60s — MOLTO piu' lento: le partite a taglia 11 durano
+     il doppio e la prova D ne gioca quattro per pagina, due pagine).
+     La prova C (con le dita) resta dichiarata assente dal banco stesso
+     (`__test.dita` non esposto): non e' un buco di questo cantiere, e'
+     un limite gia' scritto nel file, i controlli contati restano dieci.
+     Deterministico ai semi del banco (20260803+), nessun cronometro:
+     `determinismo` corre in compagnia, `determinismo-11` da solo
+     (`lento:true`, sul modello di `soak`/`audio`). */
+  { nome: 'determinismo',    cmd: ['strumenti/_q-determinismo.js'],                              conta: true,  lento: false },
+  { nome: 'determinismo-11', cmd: ['strumenti/_q-determinismo.js', '--taglia', '11'],             conta: true,  lento: true  },
+  /* =====================================================================
+     rete / sfida: LA SFIDA ASINCRONA, PROVATA SENZA RETE VERA (voce
+     #130). Due banchi gia' scritti (data non censita in questo file, mai
+     registrati in `tutti.js` — trovato mancante durante il censimento di
+     questo cantiere) che provano il CLIENT della modalita' SFIDA (menu
+     11 di MANUALE.md): `_q-rete.js` il motore (coda, ritentativi, tetti
+     di tempo, trasferimento profilo — 22 controlli), `_q-sfida.js` la
+     schermata e il replay (il difensore rigioca il nastro e ottiene lo
+     stesso punteggio — 54 controlli).
+
+     PERCHE' NESSUN CONFLITTO CON `senza-rete` (riga sopra, che pretende
+     che il GIOCO non faccia richieste in condizioni normali): questi due
+     banchi aprono un SERVER FINTO **in memoria, sulla stessa macchina**
+     (`http.createServer` locale — verificato leggendo il codice di
+     entrambi, mai una richiesta a Internet, la STESSA tecnica di
+     `senza-rete.js` per servire il gioco). Provano un client che PARLA
+     con un server (quando la modalita' SFIDA e' configurata per farlo),
+     non "il gioco non chiama nessuno" — sono due domande diverse sullo
+     stesso file, e la seconda non era sorvegliata da nessun cancello.
+     Verificato eseguendoli a mano il 21 settembre 2026: **22/22** e
+     **54/54**, zero configurazione di rete, zero traffico esterno.
+
+     SE UN GIORNO RICHIEDESSERO RETE VERA (oggi non la richiedono): la
+     regola di casa vale anche qui — un banco senza rete deve uscire 3
+     (prova nulla), mai un verde bugiardo. Nessuno dei due lo fa oggi
+     (entrambi si servono da soli).
+     Deterministico (semi dichiarati nel file), niente cronometro di
+     produzione: corrono in compagnia. */
+  { nome: 'rete',        cmd: ['strumenti/_q-rete.js'],                                conta: true,  lento: false },
+  { nome: 'sfida',       cmd: ['strumenti/_q-sfida.js'],                                conta: true,  lento: true  },
+  /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
      cancelli in lista ne ha visto uno.
