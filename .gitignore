@@ -114,3 +114,6 @@ android/strumenti/bundletool.jar
 # la cache di Python: bundle.py fa "import costruisci", e da quel momento
 # android/__pycache__ esiste. Sono file rigenerati a ogni avvio.
 __pycache__/
+
+# i registri della batteria di un cantiere: si rigenerano, non viaggiano
+_z-log/
