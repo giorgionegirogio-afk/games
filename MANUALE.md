@@ -498,7 +498,20 @@ Qui il registro completo, a edizioni.
   `rebuildCrowd` lo RISEMINANO con una costante fissa al proprio ingresso
   (`0x9E3779B9` e `0x85EBCA6B`) e convertono OGNI `dado()`/`rnd()` interno
   a `dadoDeco()`/`rndDeco()` — inclusa `buildGrain` (chiamata da
-  `paintField` per la grana cotta una volta sola). La `dado()` buttata,
+  `paintField` per la grana cotta una volta sola). **`buildGrain` NON
+  riseminta, ed è memoizzata** (`if(grainTex) return`, `:29642-29650`):
+  la sua grana eredita lo stato di `DECO` lasciato dalla prima
+  `paintField` che gira, quindi dipende da quale tema/taglia è stato
+  dipinto per primo — innocuo per il PRNG di GIOCO (è `DECO`, non `SEME`
+  né `Math.random`), ma è la sola cosmetica che NON è funzione dei soli
+  parametri. Rilievo MINORE della revisione finale, dichiarato qui invece
+  che curato: aggiungere il reseed vorrebbe dire toccare il gioco a
+  batteria già verde. **Seconda nota della revisione**: col reseed fisso
+  ogni `paintField` (ogni tema, ogni anteprima, ogni taglia) parte dalla
+  STESSA sequenza, dove prima ognuna proseguiva lo stream condiviso — la
+  grana e le gradinate condividono ora lo stesso schema relativo. È
+  dentro il costo accettato dell'opzione 2, ma va detto per intero: non
+  solo «l'aspetto cambia», anche «lo schema è condiviso». La `dado()` buttata,
   storica di `rebuildCrowd` (voce ~#100, serviva a tenere ferma la
   sequenza quando la folla condivideva il PRNG di gioco), è ELIMINATA: non
   serve più consumare-e-buttare quando il generatore è già separato. Il
@@ -517,9 +530,15 @@ Qui il registro completo, a edizioni.
   sulla base `81bb961` e diventato verde con la cura, sulle STESSE prove
   A/B che il canale `Math.random`-globale rendeva insensibili a qualsiasi
   cura su `SEME`. **Valore pratico**: due corse di `_q-soak --taglia 11
-  --seme 20260920 --partite 12` danno la STESSA impronta (`fb5d47b1`) — la
-  prova che un banco a seme, a taglia piena, è ora bit-ripetibile, cosa
-  che la #98 impediva strutturalmente.
+  --seme 20260920 --partite 12` danno la STESSA impronta (`fb5d47b1`):
+  impronta stabile a taglia piena. **RETTIFICA (revisione finale del
+  #129)**: la prima stesura aggiungeva qui «cosa che la #98 impediva
+  strutturalmente» — AFFERMAZIONE FALSA, misurata dal revisore: anche la
+  base `81bb961` è bit-ripetibile corsa-su-corsa (due corse, impronta
+  `f5a869ab` entrambe). La misura era vera, l'inferenza no: la #98
+  rompeva l'uguaglianza FRA partite e FRA pagine, non la ripetibilità
+  dello stesso banco su due corse. **La prova della cura resta una sola**:
+  `_q-determinismo` 8/10 → 10/10 a taglia 7 e 11.
 
   **NON-REGRESSIONE DI GIOCO A TAGLIA 5, BIT PER BIT** (l'avvertimento a
   `:8590`). `_eventi.js`, 30 partite CPU-CPU, seme 20260803: il campo
@@ -580,10 +599,18 @@ Qui il registro completo, a edizioni.
     20260728 è un'ALTRA partita (posizioni/telecamera diverse dopo i 4 s
     di simulazione), e la striscia di tribuna misurata non è più quella
     giusta per coincidenza — non un difetto della folla, è cambiato il
-    campione. **Cura**: cercato un nuovo seme (banco reale, ~30
-    candidati) con margine comodo — **20260901, 13,6%** — verificato
-    stabile su corse ripetute; gli altri quattro controlli del file
-    restano verdi con qualunque seme. **`folla.js` 5/5**.
+    campione. **Cura**: cercato un nuovo seme (banco reale, ~20
+    candidati — il numero scritto nel banco, `folla.js:126`; una prima
+    stesura di questa voce diceva ~30) con margine comodo —
+    **20260901, 13,6%** — verificato stabile su corse ripetute; gli altri
+    quattro controlli del file restano verdi con qualunque seme.
+    **`folla.js` 5/5**. **Quanto è selettiva la misura** (verificato dalla
+    revisione finale, sweep di 10 semi): 3 passano, 7 no (5,5-7,6%) — la
+    misura è BIMODALE, o lo scoppio del gol cade nelle 8 fasi campionate
+    (~13,6%) o non ci cade (~6-7,6%), coerente con l'ancora storica del
+    file (14,3% viva contro -0,1% gelata). Ricampionare su un seme che
+    ESERCITA il fenomeno è metodo corretto; chi ritara domani sappia che
+    il rosso, qui, è la maggioranza dei semi.
   - **`_q-volo.js`** (D «tenendo TIRA esce una volee»: volee 0; B «la
     faccia non cambia senza cambiare il possesso»: 1 bugia). **Causa
     vera, e una PRECISAZIONE della diagnosi**: questo banco semina
@@ -612,6 +639,23 @@ Qui il registro completo, a edizioni.
     (zero bugie su DUE cambi di possesso VERI, non uno scenario degenere
     a zero cambi). `SEME_TENUTA` e i controlli E-K, indipendenti dalle
     transizioni, non toccati. **`_q-volo.js` 11/11**.
+    **QUANTO È SELETTIVO QUESTO CANCELLO** (rilievo IMPORTANTE della
+    revisione finale, misurato dal revisore e ora scritto anche nel banco,
+    `_q-volo.js:95-131`): il controllo B non passa con qualunque seme.
+    Sweep `SEME_INSEGUE` 88012-88019 a `SEME_VOLO` di produzione: **4 su 8
+    passano, 4 falliscono** (1-3 bugie), e dei 4 verdi uno è degenere
+    (88013: zero bugie su zero cambi) — verde genuino ≈ **37%**. NON è un
+    effetto della cura: sul gioco non curato lo stesso quadro (base+88003
+    → 3 bugie su 8 cambi; base+88012 → 1 bugia su 1). A FAVORE dell'autore
+    della ritaratura, e va detto: sulla base 5 semi su 9 passavano B in
+    modo DEGENERE (zero bugie su zero cambi); sceglierne uno sarebbe
+    passato inosservato, e invece è stato scelto un seme con cambi di
+    possesso veri e l'ha dichiarato — l'opposto del cherry-picking.
+    **SEGUITO APERTO** (a registro, non numerato): il fenomeno «la faccia
+    cambia senza un cambio di possesso» è PRE-ESISTENTE, e non è deciso se
+    sia un difetto vero dell'inseguimento o un ORACOLO TROPPO STRETTO —
+    `lato === precLato` non distingue il pallone vagante da quello
+    posseduto. Va deciso con una misura dedicata.
 
   **LA VOCE #98 SI CHIUDE QUI.** Isolata parzialmente al #128 (solo
   `rebuildCrowd`, solo il canale `SEME`), isolata per intero e curata al

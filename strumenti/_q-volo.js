@@ -113,7 +113,25 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
    curato: SEME_VOLO=88005 da' una volee vera (contro 0 del seme vecchio);
    SEME_INSEGUE=88012 da' zero bugie su DUE cambi di possesso VERI (non uno
    scenario degenere a zero cambi, che passerebbe per assenza di prova).
-   Verificato stabile su corse ripetute. */
+   Verificato stabile su corse ripetute.
+   ---------------------------------------------------------------------
+   QUANTO E' SELETTIVO QUESTO CANCELLO, detto in chiaro (rilievo della
+   revisione finale del #129, misurato dal revisore): il controllo B NON
+   passa con qualunque seme. Sweep di SEME_INSEGUE da 88012 a 88019, con
+   SEME_VOLO al suo valore di produzione: 4 su 8 passano, 4 falliscono
+   (1-3 bugie), e dei 4 verdi uno e' degenere (88013: zero bugie su zero
+   cambi) — verde GENUINO circa 37%. Non e' un effetto della cura: sul
+   gioco NON curato lo stesso quadro (base+88003 -> 3 bugie su 8 cambi,
+   base+88012 -> 1 bugia su 1). Chi ritara questo seme domani sappia che
+   sta pescando in una popolazione dove il rosso e' frequente, e che un
+   verde puo' arrivare per SCENARIO DEGENERE: si controlla sempre che i
+   cambi di possesso VERI siano piu' di zero.
+   SEGUITO APERTO (a registro, non numerato): il fenomeno "la faccia
+   cambia senza un cambio di possesso" e' PRE-ESISTENTE e non e' detto
+   sia un difetto del gioco — l'oracolo qui e' `lato === precLato`, che
+   NON distingue il pallone vagante da quello posseduto. O e' un difetto
+   vero dell'inseguimento, o e' l'oracolo troppo stretto: va deciso con
+   una misura dedicata, non da qui. */
 const SEME_VOLO = 88005, SEME_INSEGUE = 88012, SEME_TENUTA = 88003;
 
 (async () => {
