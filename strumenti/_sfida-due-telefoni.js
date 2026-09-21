@@ -192,7 +192,7 @@ function serviServer() {
    esegue js. E' cosi' che un cancello preme il bottone della pausa a
    meta' partita senza che il copione sappia di quale bottone si tratti.
    ===================================================================== */
-const COPIONE = `(function(passiMax, azioni){
+const COPIONE = `(function(passiMax, azioni, ditaExtra){
   const t = window.__test;
   const D = t.Duel;
   const dischi = t.pulsanti(0);
@@ -201,6 +201,14 @@ const COPIONE = `(function(passiMax, azioni){
   const LX = 180, LY = 300;
   const fatte = [];
   let idL = 1, idB = 2, giu = false, giuB = false, duello = false, f = 0;
+  /* LE DITA IN PIU' (voce #132, compito 4). Non fanno gioco: stanno
+     appoggiate e si muovono di un pixel, che e' quel che fa un palmo
+     sullo schermo di un telefono tenuto con due mani. Servono a UNA cosa:
+     il registro scrive una riga per dito per fotogramma, quindi sono la
+     leva con cui un cancello porta un nastro VERO contro il suo tetto
+     senza abbassare il tetto. */
+  const nExtra = ditaExtra | 0;
+  for(let d = 0; d < nExtra; d++) Touch5.start(5000 + d, 60 + d * 7, 40);
   const azioniDi = {};
   for(const a of (azioni || [])) (azioniDi[a.f] = azioniDi[a.f] || []).push(a.js);
   const faiAzioni = () => {
@@ -214,6 +222,7 @@ const COPIONE = `(function(passiMax, azioni){
   while(f < passiMax){
     if(t.state === 'end') break;
     faiAzioni();
+    for(let d = 0; d < nExtra; d++) Touch5.move(5000 + d, 60 + d * 7 + (f % 3), 40 + (f % 2));
     if(t.state === 'freekick'){
       duello = true;
       if(D.phase === 'zone' && D.shooterHuman) D.pickZone(2, 0.74, 0.44);
@@ -238,7 +247,8 @@ const COPIONE = `(function(passiMax, azioni){
   if(giuB) Touch5.chiudi(idB, false);
   return { score:[G.score[0],G.score[1]], scena:t.state, righe:t.registroRighe, duello:duello,
            rigori:!!G.rigori, golden:!!G.golden, passi:f, fatte:fatte,
-           ment: t.mentalita, tipi: (typeof Reg !== 'undefined' ? Reg.righe.map(r=>r[1]).join('') : '') };
+           ment: t.mentalita, tipi: (typeof Reg !== 'undefined' ? Reg.righe.map(r=>r[1]).join('') : ''),
+           troncato: (typeof Reg !== 'undefined' && !!Reg.troncato) };
 })`;
 
 /* il copione MUTO del replay: nessun dito, li mette il nastro. Le azioni
@@ -328,8 +338,8 @@ const pubblica = P => P.pag.evaluate(async () => await window.__test.rete.pubbli
 /* UNA SFIDA INTERA, dal CERCA AVVERSARIO al fischio finale. Torna anche
    l'id che il server ha dato: non e' il numero del tentativo, perche' una
    partita che non arriva al fischio non viene mandata. */
-async function giocaUna(A, ss, azioni, passiMax) {
-  const r = await A.pag.evaluate(async ([c, azioni, passiMax]) => {
+async function giocaUna(A, ss, azioni, passiMax, ditaExtra) {
+  const r = await A.pag.evaluate(async ([c, azioni, passiMax, ditaExtra]) => {
     const t = window.__test;
     await t.sfida.cerca();
     if (!t.sfidaStato.inPartita) return { partita: false };
@@ -340,9 +350,9 @@ async function giocaUna(A, ss, azioni, passiMax) {
                   miei: t.players.filter(p => p.team === 0).map(p => p.nome).join(','),
                   attrMiei: t.players.filter(p => p.team === 0)
                     .map(p => [p.vel, p.tiro, p.tecnica, p.tackle].join('/')).join(' ') };
-    const fine = (new Function('return ' + c))()(passiMax || 24000, azioni || []);
+    const fine = (new Function('return ' + c))()(passiMax || 24000, azioni || [], ditaExtra || 0);
     return { partita: true, via, fine };
-  }, [COPIONE, azioni || [], passiMax || 24000]);
+  }, [COPIONE, azioni || [], passiMax || 24000, ditaExtra || 0]);
   /* chiudiSfida spedisce senza che nessuno la aspetti: qui si aspetta */
   await A.pag.waitForTimeout(700);
   r.id = ss.db.sfide.length ? ss.db.sfide[ss.db.sfide.length - 1].id : 0;

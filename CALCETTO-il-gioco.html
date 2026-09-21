@@ -9398,6 +9398,39 @@ const CARATTERE = {
 };
 function caratterePer(nome){ return CARATTERE[String(nome||'')] || CAR_NEUTRO; }
 /* =====================================================================
+   E LO STESSO CARATTERE, DETTO CON UN NUMERO (voce #132, compito 2).
+
+   In una sfida il carattere della CPU lo decide il NOME della squadra
+   avversaria, e il nome nel nastro non c'e' — ed e' giusto che non ci
+   sia: e' il dato di una persona, e il tipo 7 dichiara da sempre che i
+   nomi non entrano (grep «COSA NON ENTRA: i nomi, le tinte»). Ma allora
+   il carattere non lo decideva niente che viaggiasse con la partita:
+   chi attaccava lo leggeva da a.nome, chi guardava da dif.nome col
+   ripiego SAVE.teamName, e bastava un cambio di nome fra la partita e il
+   replay perche' gli stessi comandi muovessero un'altra CPU. MISURATO
+   (strumenti/_sonda-132-canali.js): avversario anonimo contro avversario
+   chiamato GASOMETRO, 5 semi su 5 divergenti, punteggio diverso in 4.
+
+   Nel nastro va il RISULTATO della tabella, non il suo ingresso: un
+   indice fra -1 e 9. Zero dati personali, due byte.
+
+   E DA OGGI L'ORDINE DI CARATTERE E' UN FORMATO. Chi riordina la tabella
+   qui sopra — o ci infila una squadra in mezzo invece che in fondo —
+   cambia il significato di tutti i nastri gia' scritti, e deve alzare
+   MOTORE_V come farebbe per una cura della simulazione. Aggiungere in
+   CODA non rompe niente.
+
+   carPerIndice non fa un OR-zero sull'indice: su un nastro storto
+   «undefined|0» sarebbe 0, cioe' la PRIMA squadra della tabella, e un
+   numero storto diventerebbe un carattere vero invece che nessuno.
+   ===================================================================== */
+const CAR_NOMI = Object.keys(CARATTERE);
+function indiceCarattere(nome){ return CAR_NOMI.indexOf(String(nome||'')); }
+function carPerIndice(i){
+  const k = Math.round(+i);
+  return (Number.isFinite(k) && k >= 0 && k < CAR_NOMI.length) ? CARATTERE[CAR_NOMI[k]] : CAR_NEUTRO;
+}
+/* =====================================================================
    LE MANOPOLE DELLA PARTITA, UNA COPPIA PER COLORE.
 
    Si costruiscono UNA VOLTA al fischio d'inizio (startMatch) e si
@@ -11391,7 +11424,15 @@ function startMatch(mode, diff, opts){
      assomigliano nel registro. Non se ne costruisce uno qui: si lascia
      detto dove va agganciato.
      ===================================================================== */
-  G.car = [CAR_NEUTRO, caratterePer(G.oppName)];
+  /* L'INDICE VINCE SUL NOME, QUANDO C'E' (voce #132, compito 2). Lo
+     passano le due sole chiamate che hanno un nastro sotto — Sfida.gioca
+     e Sfida.guarda — e lo passano tutte e due, cosi' la partita
+     registrata e quella rigiocata attraversano la stessa porta. Quando
+     non c'e' (ogni altra partita del gioco, e ogni nastro scritto prima
+     di oggi) si ricade sul nome, che e' esattamente cio' che si faceva
+     prima: la cura e' additiva. */
+  G.car = [CAR_NEUTRO, (opts.opp && opts.opp.car !== undefined && opts.opp.car !== null)
+                       ? carPerIndice(opts.opp.car) : caratterePer(G.oppName)];
   G.knob = [manopole(0), manopole(1)];
   /* l'alto contrasto vince su qualunque kit avversario: e' un'impostazione
      di accessibilita', non un'estetica */
@@ -43311,6 +43352,11 @@ const Sfida = {
     const forza = Math.max(1, Math.min(10, Math.round((a.forza|0) / 10) || 5));
     const mentMia = mentDaIndole(Rete.miaIndole());
     const mentSua = mentDaIndole(a.indole);
+    /* L'INDICE DI CARATTERE DELL'AVVERSARIO (voce #132, compito 2). Si
+       calcola sulla STESSA stringa che finira' in G.oppName — nome
+       tagliato a 18 — se no il nastro direbbe un carattere e il campo ne
+       vedrebbe un altro. */
+    const iCarSua = indiceCarattere(String(a.nome || 'AVVERSARIO').slice(0,18));
     G.sfida = { seme:String(r.seme), taglia:taglia, chi:String(a.nome || 'AVVERSARIO'),
                 vero:!!r.vero, replay:false };
     SEME.accendi(semeDaTesto(r.seme));
@@ -43318,7 +43364,13 @@ const Sfida = {
     /* LE DUE SQUADRE, prima riga del nastro. Da qui in poi questa partita
        si puo' rifare anche fra un mese, anche se tutti e due nel
        frattempo saranno cresciuti: il nastro se le porta dietro. */
-    Reg.scrivi(7, [mentMia, mentSua].concat(impaccaRosa(SAVE.rosa), impaccaRosa(a.rosa)));
+    /* IN CODA, DOPO LE DUE ROSE (voce #132, compito 2). In coda e non in
+       testa perche' la lettura e' posizionale: chi rilegge sa gia' dove
+       finiscono le rose (spaccaRosa torna «fine»), quindi trova l'indice
+       se c'e' e non trova niente se il nastro e' di ieri. Spostarlo in
+       testa avrebbe fatto slittare di uno tutti gli indici di un nastro
+       vecchio. */
+    Reg.scrivi(7, [mentMia, mentSua].concat(impaccaRosa(SAVE.rosa), impaccaRosa(a.rosa), [iCarSua]));
     startMatch(1, SFIDA_DIFF, {
       size: taglia,
       /* LA GABBIA, SEMPRE, A 5/7 (rilievo C1 della revisione finale, voce
@@ -43359,6 +43411,11 @@ const Sfida = {
         pat: improntaTesto(a.nome) % 3,
         forza: forza,
         ment: mentSua,
+        /* LO STESSO NUMERO CHE E' APPENA ANDATO NEL NASTRO. Non
+           «caratterePer(a.nome)», che darebbe la stessa cosa oggi e
+           potrebbe non darla domani: chi registra e chi rigioca devono
+           passare dalla stessa porta. */
+        car: iCarSua,
         rosa: a.rosa,
       },
     });
@@ -43500,12 +43557,17 @@ const Sfida = {
        caso in cui non torni c'e' il controllo di fine partita dentro
        chiudiSfida.
        ===================================================================== */
-    let mentAtt, mentDif, rosaAtt, rosaDif;
+    let mentAtt, mentDif, rosaAtt, rosaDif, carDif;
     if(dati && dati.length > 6){
       mentAtt = mentValida(dati[3]); mentDif = mentValida(dati[4]);
       const p1 = spaccaRosa(dati, 5, att.rosa);
       const p2 = spaccaRosa(dati, p1.fine, nomiDif);
       rosaAtt = p1.rosa; rosaDif = p2.rosa;
+      /* L'INDICE DI CARATTERE, SE IL NASTRO LO PORTA (voce #132,
+         compito 2). Un nastro scritto prima di oggi finisce esattamente
+         a p2.fine e qui resta undefined: startMatch ricade sul nome, che
+         e' quello che ha sempre fatto. */
+      if(dati.length > p2.fine) carDif = dati[p2.fine];
     }
     if(!(Array.isArray(rosaAtt) && rosaAtt.length >= 4)){
       mentAtt = mentDaIndole(att.indole); mentDif = mentDaIndole(dif && dif.indole);
@@ -43545,9 +43607,14 @@ const Sfida = {
       mia: { n:String(att.nome || 'CHI TI HA ATTACCATO').slice(0,18),
              c1:colA.maglia, c2:colA.calzoncini, pat:improntaTesto(att.nome) % 3,
              ment:mentAtt, rosa:rosaAtt },
+      /* IL CARATTERE VIENE DAL NASTRO, NON DAL NOME DI OGGI (voce #132,
+         compito 2). E' la riga che rende innocuo il rinominarsi: il nome
+         qui sopra serve solo a stampare qualcosa sulla maglia, e puo'
+         perfino essere il ripiego SAVE.teamName senza che la partita se
+         ne accorga. */
       opp: { n:String((dif && dif.nome) || SAVE.teamName || 'LA TUA SQUADRA').slice(0,18),
              c1:colD.maglia, c2:colD.calzoncini, pat:improntaTesto(dif && dif.nome) % 3,
-             ment:mentDif, rosa:rosaDif },
+             ment:mentDif, car:carDif, rosa:rosaDif },
     });
   },
 

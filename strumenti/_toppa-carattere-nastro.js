@@ -70,9 +70,9 @@ const ANCORE = [
    MOTORE_V come farebbe per una cura della simulazione. Aggiungere in
    CODA non rompe niente.
 
-   carPerIndice non fa `i|0`: su un nastro storto `undefined|0` sarebbe 0,
-   cioe' la PRIMA squadra della tabella, e un numero storto diventerebbe
-   un carattere vero invece che nessun carattere.
+   carPerIndice non fa un OR-zero sull'indice: su un nastro storto
+   «undefined|0» sarebbe 0, cioe' la PRIMA squadra della tabella, e un
+   numero storto diventerebbe un carattere vero invece che nessuno.
    ===================================================================== */
 const CAR_NOMI = Object.keys(CARATTERE);
 function indiceCarattere(nome){ return CAR_NOMI.indexOf(String(nome||'')); }
