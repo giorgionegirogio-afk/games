@@ -108,11 +108,32 @@ const MIN_CRESCITA   = 8;     // % di sagoma in piu' con lo scoppio del gol
   const ctx = await br.newContext({ viewport: { width: 915, height: 412 },
     deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'it-IT' });
   const pag = await ctx.newPage();
+  /* IL SEME CAMBIA CON LA VOCE #129 (20 settembre 2026). Il vecchio
+     20260728 (dal 17 agosto) e' finito sotto MIN_CRESCITA (6,8% contro
+     8%) NON perche' il gioco festeggi meno: la cosmetica (folla, texture
+     del campo) e' passata a un PRNG dedicato (DECO) che non consuma piu'
+     il Math.random condiviso durante il boot. Prima, all'avvio della
+     pagina, `resize()`->`buildFieldTex()`->`paintField()`->`rebuildCrowd()`
+     consumavano un numero enorme di sorteggi da QUESTO stesso
+     Math.random (patchato qui sopra) prima ancora che `startMatch(1,1)`
+     girasse: il punto di partenza dei sorteggi VERI di partita (rosa,
+     IA, posizioni) era quindi spostato in avanti di quel tanto, sempre
+     con lo stesso seme fisso. Con la cosmetica fuori dallo stream
+     condiviso, la partita che nasce da 20260728 e' un'ALTRA partita
+     (posizioni/telecamera diverse dopo i 4 secondi di simulazione), e la
+     striscia di tribuna misurata da questo cancello non e' piu' quella
+     giusta per caso. Non e' un difetto della folla: e' cambiato il
+     campione, non la regola. Cercato un nuovo seme (ricerca su ~20
+     candidati, banco reale) che tenga una crescita comoda sopra soglia:
+     20260901 da' 13,6% (contro 6,8% del seme vecchio), stabile su corse
+     ripetute. Gli altri quattro controlli di questo file (frame-diff,
+     cartello, gol-accende-folla, console) restano verdi con qualunque
+     seme provato: non dipendono dalla stessa coincidenza. */
   await pag.addInitScript(seme => {
     let s = seme >>> 0 || 1;
     const p = () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s >>> 0; };
     Math.random = () => p() / 4294967296;
-  }, 20260728);
+  }, 20260901);
   await pag.addInitScript(bancoDiProva);
 
   const errori = [];

@@ -92,7 +92,29 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
    generatore del pennello che non tocca nulla di cio' che si misura —
    e questa e' piu' corta di una riga di preambolo. Chi arriva dopo
    sappia che sono due, e non una svista. */
-const SEME_VOLO = 88001, SEME_INSEGUE = 88002, SEME_TENUTA = 88003;
+/* SEME_VOLO E SEME_INSEGUE RITARATI CON LA VOCE #129 (20 settembre 2026).
+   I vecchi 88001/88002 sfruttavano SENZA SAPERLO un difetto: entrambi gli
+   scenari girano a `startMatch(...,{size:7})` poi `{size:5}` sulla STESSA
+   pagina, cioe' proprio le transizioni di TAGLIA che la #98 rendeva
+   "sporche" — prima della cura, ogni cambio di taglia (5->7 per il volo,
+   7->5 per l'inseguimento) faceva consumare a `rebuildCrowd`/`paintField`
+   un numero enorme di `dado()` dal seme APPENA seminato da `t.semina()`,
+   spostando in avanti il punto di partenza dei sorteggi VERI (IA,
+   traiettorie) sempre della STESSA quantita' per lo STESSO seme — le due
+   costanti erano state trovate (a tentativi) contro QUEL punto di
+   partenza spostato. Con la cosmetica sul PRNG dedicato (DECO, #129) le
+   transizioni di taglia non spostano piu' niente: stesso seme, ALTRA
+   partita (posizioni/traiettorie diverse), e i vecchi numeri magici non
+   riproducevano piu' lo scenario (D: nessuna volee; B: una bugia).
+   Nessun'altra costante di questo file dipende dalle transizioni: SEME_TENUTA
+   e i controlli E/F/G/H/I/J/K restano quelli di sempre e non sono stati
+   toccati. Ricercati (banco reale, ~15+~13 candidati) due semi vicini agli
+   originali che riproducano lo STESSO tipo di scenario sotto il motore
+   curato: SEME_VOLO=88005 da' una volee vera (contro 0 del seme vecchio);
+   SEME_INSEGUE=88012 da' zero bugie su DUE cambi di possesso VERI (non uno
+   scenario degenere a zero cambi, che passerebbe per assenza di prova).
+   Verificato stabile su corse ripetute. */
+const SEME_VOLO = 88005, SEME_INSEGUE = 88012, SEME_TENUTA = 88003;
 
 (async () => {
   const prova = arg('gioco', '');

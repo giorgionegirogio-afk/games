@@ -456,6 +456,175 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **La cosmetica fuori dal PRNG di gioco — #129 CANTIERE CHIUSO, E LA VOCE
+  #98 SI CHIUDE** (#129, seguito tecnico dell'onda C, 20 settembre 2026, due
+  compiti dal merge-base `81bb961` — spec
+  `docs/superpowers/specs/2026-09-20-rebuildcrowd-prng-design.md`, piano
+  `docs/superpowers/plans/2026-09-20-rebuildcrowd-prng.md`).
+
+  **RETTIFICA A EDIZIONI DELLA DIAGNOSI #128.** Il #128 aveva isolato la
+  causa della #98 (determinismo instabile a 7/11) in `rebuildCrowd`, che
+  consuma `dado()` in proporzione al perimetro del campo. Il compito 1 di
+  qui ha MISURATO che la diagnosi era imprecisa su due punti, e li
+  corregge in chiaro senza cancellare il testo vecchio (vedi la voce #128
+  qui sotto, lasciata intatta):
+  1. **La funzione isolata era MINORITARIA.** Misurato `SEME.n` a taglia
+     11, stessa pagina, due partite: la prima (la taglia cambia) **114.093**
+     sorteggi, la seconda (la guardia di `setTaglia` la salta) **67**.
+     `rebuildCrowd` da sola vale solo **~8.920** di quei 114.093 (**8%**).
+     Il consumatore DOMINANTE (**~92%**) è `resize()` → `buildFieldTex()`
+     → `paintField(vivo=true)` (`:27502`, il pennello del campo: grana del
+     piazzale, gradinate/pubblico, erba, insegne), chiamato da `setTaglia`
+     PRIMA di `rebuildCrowd`. Un salva/ripristina scoperto SOLO su
+     `rebuildCrowd` (la prima cura tentata in questo stesso cantiere, prima
+     stesura) lasciava fuori il 92% del problema — misurato: `_q-determinismo
+     --taglia 11` restava **8/10**, identico al non curato, bit per bit
+     sullo stesso seme e sullo stesso campione di scarto.
+  2. **C'erano DUE CANALI, non uno.** `_q-determinismo.js` (prove A/B/C)
+     semina `Math.random` GLOBALE (`window.__caso`, iniettato via
+     `addInitScript` PRIMA che la pagina esegua una riga), **non** `SEME`:
+     `dado()` a `SEME.on===false` fa `return Math.random()` e non tocca mai
+     `SEME.s`/`SEME.n`. Un salva/ripristina di `SEME` (qualunque sia il suo
+     perimetro) è quindi un no-op PROVATO per quel canale — solo la prova D
+     (che semina davvero via `t.semina`→`SEME.accendi`) ne sarebbe stata
+     curata, e passava già prima per una ragione strutturale (confronta
+     sempre due pagine fresche, quindi paga lo stesso costo su entrambi i
+     lati, simmetricamente).
+
+  **LA CURA DECISA DAL COMMITTENTE: OPZIONE 2, PRNG DEDICATO PER LA
+  COSMETICA.** Vicino a `SEME`/`dado`/`rnd` (`:8593-8608`) un generatore
+  SEPARATO, `DECO` (xorshift32 con stato tutto suo, `dadoDeco`/`rndDeco`),
+  che non legge né scrive né `SEME` né `Math.random`. `paintField` e
+  `rebuildCrowd` lo RISEMINANO con una costante fissa al proprio ingresso
+  (`0x9E3779B9` e `0x85EBCA6B`) e convertono OGNI `dado()`/`rnd()` interno
+  a `dadoDeco()`/`rndDeco()` — inclusa `buildGrain` (chiamata da
+  `paintField` per la grana cotta una volta sola). La `dado()` buttata,
+  storica di `rebuildCrowd` (voce ~#100, serviva a tenere ferma la
+  sequenza quando la folla condivideva il PRNG di gioco), è ELIMINATA: non
+  serve più consumare-e-buttare quando il generatore è già separato. Il
+  commento storico di `rebuildCrowd` resta in chiaro, con la rettifica
+  accanto. `buildVignette` e `buildCrowdAtlas` verificati (grep): zero
+  `dado()`/`rnd()`, nessuna conversione necessaria. `campoVivoDisegna` (lo
+  zoom del gol) aveva già un trucco proprio (swap temporaneo di
+  `Math.random`) per non consumare il caso della partita quando chiama
+  `paintField`: con `paintField` spostata su `DECO` quel trucco diventa
+  ridondante ma innocuo, lasciato — fuori perimetro, non è una `dado()` di
+  caricamento rimasta scoperta.
+
+  **MISURATO: ENTRAMBI I CANALI CURATI, 7/11 A 10/10.** `_q-determinismo`
+  passa da **8/10 a 10/10** sia a taglia 7 sia a taglia 11 (10/10
+  confermato anche a taglia 5, invariato) — il test-condanna nato rosso
+  sulla base `81bb961` e diventato verde con la cura, sulle STESSE prove
+  A/B che il canale `Math.random`-globale rendeva insensibili a qualsiasi
+  cura su `SEME`. **Valore pratico**: due corse di `_q-soak --taglia 11
+  --seme 20260920 --partite 12` danno la STESSA impronta (`fb5d47b1`) — la
+  prova che un banco a seme, a taglia piena, è ora bit-ripetibile, cosa
+  che la #98 impediva strutturalmente.
+
+  **NON-REGRESSIONE DI GIOCO A TAGLIA 5, BIT PER BIT** (l'avvertimento a
+  `:8590`). `_eventi.js`, 30 partite CPU-CPU, seme 20260803: il campo
+  `crudo` del JSON (le voci evento per evento di ogni partita) è
+  **byte-per-byte IDENTICO** prima e dopo la cura — non solo le mediane
+  (tutte a +0%), il dato grezzo per partita. A taglia 5 la guardia di
+  `setTaglia` salta sia `rebuildCrowd` sia `resize()`/`buildFieldTex`
+  fin dal boot del menu: la cosmetica non gira mai dentro `startMatch`,
+  quindi nessuna `dado()` di GIOCO è stata toccata — è la prova che il
+  perimetro della cura è quello dichiarato e non uno più largo.
+  `_q-invarianti` **12/12**, `_q-fuzzer` **14/14** (include la sua prova
+  di determinismo cross-partita a taglia 5, verde), `_q-soak` **17/17**
+  (impronta `21f65940`, invariata), `collaudo.js` **36/36**, `_q-battute.js`
+  **11/11**. Un fallimento incontrato in corsia (`_q-soak --taglia 11`,
+  INV-15, seme 20260924 partita #4 bloccata in `freekick` a 18.000
+  fotogrammi) è stato misurato anche sul gioco NON curato: stesso seme,
+  stesso stato finale, stesso fotogramma — **PRE-ESISTENTE**, un difetto
+  di gioco a taglia 11 scollegato dalla cosmetica, non indagato qui
+  (fuori perimetro, a registro per chi riprenderà taglia 11 in volume).
+
+  **LA REGRESSIONE COSMETICA, DICHIARATA E VOLUTA.** La texture del campo
+  e il layout della folla CAMBIANO aspetto (partono da un seme diverso):
+  `istantanea.js` (non contato in batteria, `conta:false` in `tutti.js`
+  proprio per questo genere di scarto) passa da **46/56 a 45/56** — un
+  solo campione, dentro il rumore che lo strumento stesso dichiara fra
+  corse diverse della STESSA pagina (differenze di rasterizzazione fra
+  processi Chromium). Non è un difetto: è il costo accettato dell'opzione
+  2, scritto qui perché chi rilancia `tutti.js --registra` sappia perché
+  il numero si è mosso.
+
+  **MOTORE_V RESTA 2.** A taglia 5 l'esito di gioco è bit-identico (sopra):
+  ogni nastro/sfida registrato a taglia 5 rigioca IDENTICO, verificato
+  senza bisogno di toccare l'ancora — `_q-replay.js` **10/10** e
+  `_q-regole.js` **16/16** (compresa la prova 13/NASTRO-VERSIONE, che
+  verifica proprio il rigetto dei nastri di motore vecchio) restano verdi
+  senza alcuna modifica. A taglia 7/11 non esiste alcun nastro affidabile
+  precedente da rompere: era esattamente la #98 a impedirne l'esistenza —
+  quindi non c'è alcun caso di «stessi comandi, esito diverso» da
+  proteggere con un incremento di versione.
+
+  **BATTERIA INTERA RILANCIATA** (lezione 22): `node strumenti/tutti.js
+  --tutto` — **41 cancelli**, tutti quelli che contano **VERDI** (`audio`
+  e `avvio-telefono` prova nulla per assenza di telefono/contesto audio
+  headless, dichiarati a registro e non letti; `avvio` e `istantanea`
+  informativi, non contano). Due cancelli sono usciti ROSSI alla prima
+  corsa e sono stati indagati e chiusi, non ignorati:
+  - **`folla.js`** («la sagoma della folla cresce con lo scoppio del gol»):
+    6,8% contro la soglia 8%. **Causa vera**: questo banco semina
+    `Math.random` GLOBALE una volta sola all'avvio pagina (seme fisso
+    20260728) e non lo riseminta più — è sensibile a QUANTO Math.random
+    viene consumato durante il boot prima del suo `startMatch(1,1)`.
+    Prima della cura, `resize()`→`buildFieldTex()`→`rebuildCrowd()`
+    consumavano un numero enorme di sorteggi da quello stesso
+    Math.random durante il boot (a QUALSIASI taglia, anche 5): il punto
+    di partenza dei sorteggi reali di partita era spostato in avanti
+    della stessa quantità, sempre, con lo stesso seme. Tolta la
+    cosmetica dallo stream condiviso, la partita che nasce dal seme
+    20260728 è un'ALTRA partita (posizioni/telecamera diverse dopo i 4 s
+    di simulazione), e la striscia di tribuna misurata non è più quella
+    giusta per coincidenza — non un difetto della folla, è cambiato il
+    campione. **Cura**: cercato un nuovo seme (banco reale, ~30
+    candidati) con margine comodo — **20260901, 13,6%** — verificato
+    stabile su corse ripetute; gli altri quattro controlli del file
+    restano verdi con qualunque seme. **`folla.js` 5/5**.
+  - **`_q-volo.js`** (D «tenendo TIRA esce una volee»: volee 0; B «la
+    faccia non cambia senza cambiare il possesso»: 1 bugia). **Causa
+    vera, e una PRECISAZIONE della diagnosi**: questo banco semina
+    `SEME` per davvero (`t.semina()`→`SEME.accendi()`) e i suoi due
+    scenari girano `startMatch(...,{size:7})` poi `{size:5}` sulla
+    STESSA pagina — cioè proprio le TRANSIZIONI di taglia. La cura non
+    rende neutra solo la PRIMA partita a una taglia mai vista da una
+    pagina fresca: rende neutra OGNI transizione di taglia, comprese
+    quelle che tornano a 5 da 7/11. Prima della cura, sia il cambio 5→7
+    sia il cambio 7→5 consumavano `dado()` dal seme APPENA seminato da
+    `t.semina()`, spostando il punto di partenza dei sorteggi veri (IA,
+    traiettorie) della stessa quantità per lo stesso seme: le costanti
+    `SEME_VOLO=88001`/`SEME_INSEGUE=88002` erano state trovate (a
+    tentativi, a suo tempo) contro QUEL punto di partenza spostato,
+    senza che l'autore lo sapesse. Con la cura, stesso seme → ALTRA
+    partita: i vecchi numeri magici non riproducono più lo scenario.
+    **Questo NON è un buco della non-regressione a taglia 5** dichiarata
+    sopra: `_eventi.js` misura partite a taglia 5 raggiunta da un
+    AVVIO FRESCO di pagina (mai un cambio di taglia, guardia già a
+    riposo), mentre qui la taglia 5 è raggiunta DOPO un cambio da 7 —
+    un caso che nessun nastro/sfida reale incontra mai (le sfide non
+    cambiano taglia a partita in corso) ma che questo banco sì. **Cura**:
+    ricercati (banco reale) nuovi semi vicini agli originali che
+    riproducano lo stesso TIPO di scenario sotto il motore curato:
+    `SEME_VOLO=88005` (una volee vera, non zero), `SEME_INSEGUE=88012`
+    (zero bugie su DUE cambi di possesso VERI, non uno scenario degenere
+    a zero cambi). `SEME_TENUTA` e i controlli E-K, indipendenti dalle
+    transizioni, non toccati. **`_q-volo.js` 11/11**.
+
+  **LA VOCE #98 SI CHIUDE QUI.** Isolata parzialmente al #128 (solo
+  `rebuildCrowd`, solo il canale `SEME`), isolata per intero e curata al
+  #129 (i due consumatori, i due canali, e ORA precisata: OGNI
+  transizione di taglia, non solo la prima partita a una taglia nuova):
+  il determinismo cross-partita a taglia 7/11 è ora **pieno, 10/10**,
+  allo stesso titolo di taglia 5. `git diff main -- CALCETTO-il-gioco.html`:
+  due zone, `DECO` (definizione vicino a `SEME`/`dado`) e le tre funzioni
+  cosmetiche convertite (`paintField`, `buildGrain`, `rebuildCrowd`) —
+  nessuna funzione di gioco toccata. Due semi ritarati in `strumenti/`
+  (`folla.js`, `_q-volo.js`), zero righe di gioco toccate da quella
+  ritaratura.
+
 - **Il soak con bande — #127 CANTIERE CHIUSO, e L'ONDA C CHIUSA** (#127,
   onda C — terzo e ultimo anello, 20 settembre 2026, tre compiti dal
   merge-base `ddf6604` — spec `docs/superpowers/specs/2026-09-20-soak-design.md`,
@@ -514,7 +683,9 @@ Qui il registro completo, a edizioni.
   ISOLATA (#129, `rebuildCrowd` consuma il PRNG in proporzione al campo); il
   tetto di durata ancorato al caso peggiore reale. **Seguiti aperti**:
   **#129** (togliere `rebuildCrowd`/`setTaglia` dallo stream del PRNG di
-  gioco, per il determinismo a 7/11); **INV-06/07** (validità del gol /
+  gioco, per il determinismo a 7/11 — RETTIFICA A EDIZIONI: **#129 CHIUSO**,
+  in cima a questo registro, con PRNG dedicato per la cosmetica; **#98
+  CHIUSA**, 7/11 deterministici 10/10); **INV-06/07** (validità del gol /
   ripresa da fermo, servono asserzioni dedicate — il fuzzer/soak danno
   l'esposizione, non l'assert); **#123** (banco fotosensibile per-regione);
   la nota che la fase `power` del duello non ha un tetto a livello di
@@ -842,6 +1013,11 @@ Qui il registro completo, a edizioni.
   ingegneristica — un seme proprio per la folla (sul modello di
   `usuraSeme` della grana pista), oppure sospendere `SEME` attorno a
   `rebuildCrowd`, oppure chiamare `setTaglia` PRIMA della semina.
+  **RETTIFICA A EDIZIONI (20 settembre 2026, voce #129, in cima a questo
+  registro): la causa qui sopra era SOLO PARZIALE (rebuildCrowd è l'8% del
+  consumo, non il tutto; il dominante è `paintField`) e il #129 l'ha
+  CURATA con un PRNG dedicato per la cosmetica — la voce #98 è CHIUSA,
+  7/11 sono ora deterministici 10/10 allo stesso titolo di taglia 5.**
   **Consegna a #126 (fuzzer) e #127 (soak)**: girare a TAGLIA 5 (dove il
   determinismo cross-partita è pieno, 10/10) finché la voce #98 non è
   curata, oppure dichiarare esplicitamente la #98 se si gira a 7/11. **Nota
