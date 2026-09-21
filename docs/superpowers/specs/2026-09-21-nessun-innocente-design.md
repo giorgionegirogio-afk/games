@@ -128,6 +128,37 @@ rigioca una partita senza un dito, e il punteggio non torna quasi mai.
 Di nuovo la causa vera («il nastro e' vuoto») sostituita da quella
 sbagliata.
 
+### (e) IL CASO DELL'AUDIO E IL CASO DELLA PARTITA SONO LO STESSO DADO
+
+RETTIFICA A EDIZIONI (21 settembre 2026, voce #132, compito 1). I canali
+erano quattro quando questa spec e' stata scritta. **Sono cinque**, e il
+quinto e' stato trovato MISURANDO e non ragionando: `_t-ment-nastro.js`
+restava rosso su una sfida su due anche a cura applicata, e la causa non
+era la mentalita'.
+
+`Audio5.init()` (`:10200-10213`) chiama `startCrowd()`, che chiama
+`noiseBuf()` (`:10221-10226`), che riempie un buffer lungo **un secondo
+di campionamento** con `dado()` — il generatore SEMINATO della partita.
+
+MISURATO (`strumenti/_sonda-132-rumore.js`): il primo `Audio5.unlock()`
+di una pagina costa **48.000 sorteggi** su un contesto a 48 kHz. E la
+frequenza di campionamento la decide l'APPARECCHIO: a 44,1 kHz ne costa
+44.100. Due telefoni che sbloccano l'audio nello stesso identico istante
+consumano quantita' DIVERSE di dadi.
+
+PERCHE' OGGI MORDE POCO, e va detto per non gonfiare il difetto: nel
+gioco spedito lo sblocco arriva da un bottone di menu o dal tocco sulla
+copertina (`:41239` e una ventina d'altri), cioe' PRIMA che `Sfida.gioca`
+accenda il seme — e `SEME.accendi` riazzera il flusso. E' un canale
+**LATENTE**, non uno misurato sul campo. Ma basta un contesto audio che
+nasca a partita in corso perche' quarantottomila pesche spariscano dal
+flusso nel mezzo di una sfida.
+
+CURA: una riga. `Math.random()` al posto di `dado()`. E' una correzione
+di categoria — il rumore bianco e' audio: non deve essere ripetibile, non
+deve essere uguale su due telefoni, e non ha nessun motivo di pescare dal
+dado della partita.
+
 ## Le cure
 
 Tutte e quattro **additive**: un tipo di riga nuovo, un campo in coda a

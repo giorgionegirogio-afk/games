@@ -4044,6 +4044,21 @@ function mentValida(v){ return (v===0||v===1||v===2) ? v : 1; }
    zero: un salvataggio vecchio o un avversario senza il campo 'ment' non
    deve ritrovarsi a difendere senza averlo chiesto. */
 function mentDi(t){ return MENT[mentValida(G.ment ? G.ment[t] : 1)]; }
+/* =====================================================================
+   POSARE UNA MENTALITA', IN UN POSTO SOLO (voce #132, compito 1).
+
+   Due capi la chiamano e devono fare LA STESSA COSA: il bottone della
+   pausa, che la fa girare di uno, e Reg.esegui, che in rilettura la
+   rimette dov'era. Un posto solo e' la garanzia che i due non possano
+   divergere di un ramo — e' la stessa ragione per cui i tre verbi del
+   dischetto passano tutti da Reg.eseguiDuello (voce #131).
+   ===================================================================== */
+function posaMentalita(chi, m){
+  if(!G.ment) G.ment=[1,1];
+  const t = (chi|0) === 1 ? 1 : 0;
+  G.ment[t] = mentValida(m);
+  return G.ment[t];
+}
 /* IL PERNO DEL MODULO — la fx media dei giocatori di movimento, attorno
    a cui le linee si allungano o si accorciano. Contato una volta per
    taglia e appeso alla taglia stessa: e' un dato del modulo, non uno
@@ -10217,12 +10232,35 @@ const Audio5 = {
     persistSave();
     if(this.master) this.master.gain.value = m?0:1;
   },
-  /* rumore bianco riusabile */
+  /* =====================================================================
+     RUMORE BIANCO RIUSABILE — E NON PESCA DAL DADO DELLA PARTITA
+     (voce #132, compito 1).
+
+     Qui c'era dado(), cioe' il generatore SEMINATO. Un secondo di
+     campionamento sono 44.100 o 48.000 pesche — MISURATO con
+     strumenti/_sonda-132-rumore.js: 48.000 su un contesto a 48 kHz — e
+     la frequenza la decide l'apparecchio, non il gioco. Percio' il
+     momento in cui nasce il contesto audio, e perfino il MODELLO del
+     telefono, spostavano il flusso dei sorteggi di una partita
+     seminata: due telefoni che rigiocano lo stesso nastro con storie
+     audio diverse rigiocano due partite diverse.
+
+     Nel gioco spedito lo sblocco arriva quasi sempre prima che il seme
+     si accenda (un bottone di menu, il tocco sulla copertina) e
+     SEME.accendi riazzera il flusso: era un canale LATENTE, non uno
+     misurato sul campo. Ma un canale latente in una modalita' che
+     TOGLIE PUNTI a chi non ha barato e' un canale che non si lascia
+     aperto per un byte.
+
+     Math.random() e' il caso giusto per un rumore: non deve essere
+     ripetibile, non deve essere uguale su due telefoni, e non deve
+     costare niente alla partita.
+     ===================================================================== */
   noiseBuf(){
     if(this._nb) return this._nb;
     const b = this.ctx.createBuffer(1, this.ctx.sampleRate, this.ctx.sampleRate);
     const d = b.getChannelData(0);
-    for(let i=0;i<d.length;i++) d[i] = dado()*2-1;
+    for(let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
     this._nb = b; return b;
   },
   /* folla di fondo: rumore filtrato con respiro lento */
@@ -13537,6 +13575,10 @@ const Reg = {
     else if(tipo === 2) Touch5.chiudi(r[3], !!r[4]);
     else if(tipo === 3) Touch5.azzera();
     else if(tipo === 4){ const c = this.tasti[r[4]]; if(c) Keys[c] = !!r[3]; }
+    /* LA MENTALITA' CAMBIATA IN PAUSA (voce #132, compito 1). Non muove
+       niente da sola: posa un numero che mentDi leggera' al passo dopo,
+       esattamente come fece dal vivo. */
+    else if(tipo === 8) posaMentalita(r[3], r[4]);
   },
 
   /* IL FORMATO, e la ragione di ogni scelta e' il peso. Una partita di
@@ -13593,6 +13635,10 @@ const Reg = {
            e' proprio per questo che esiste la coppia (nDuello, passo) —
            quindi in media questa riga costa pochissimo. */
         pezzi.push(dT + ',6,' + dMs + ',' + r.slice(3).map(x => x|0).join(','));
+      } else if(tipo === 8){
+        /* LA MENTALITA' (voce #132). Due numeri piccoli, una volta per
+           cambio: in una partita intera se ne fanno zero o pochi. */
+        pezzi.push(dT + ',8,' + dMs + ',' + (r[3]|0) + ',' + (r[4]|0));
       } else if(tipo === 7){
         /* LE DUE SQUADRE. Interi e virgole, lunghezza variabile, scritti
            una volta sola in testa alla partita; in rilettura non fanno
@@ -13639,6 +13685,7 @@ const Reg = {
       else if(tipo === 4)   this.righe.push([tick, 4, ms, v[3], v[4]]);
       else if(tipo === 5)   this.righe.push([tick, 5, ms]);
       else if(tipo === 6)   this.righe.push([tick, 6, ms].concat(v.slice(3)));
+      else if(tipo === 8)   this.righe.push([tick, 8, ms, v[3], v[4]]);
       else if(tipo === 7)   this.righe.push([tick, 7, ms].concat(v.slice(3)));
     }
     this.i = 0; this.tick = 0; this.modo = 2;
@@ -40884,11 +40931,47 @@ function refreshPauseMent(){
   const b=$('btnPauseMent'); if(!b) return;
   b.textContent='MENTALIT\u00c0: '+mentDi(0).n;
   b.classList.toggle('on', mentValida(G.ment?G.ment[0]:1)!==1);
+  /* IN RILETTURA IL BOTTONE NON E' TUO (voce #132, compito 1). Il
+     gestore qui sotto esce comunque da se' — quella e' la guardia che
+     conta — ma un bottone che si preme e non fa niente e' un bottone
+     rotto: spegnerlo e' dire perche'. La squadra in campo durante un
+     replay e' quella di chi ti ha attaccato, e la sua postura la decide
+     il nastro. */
+  try{ b.disabled = (Reg.modo === 2); }catch(e){}
 }
 $('btnPauseMent').addEventListener('click', ()=>{
+  /* =====================================================================
+     IN RILETTURA LE DITA VERE SONO IGNORATE (voce #132, compito 1).
+
+     E' la stessa guardia che le quattro porte di Touch5 hanno da sempre,
+     e qui mancava: chi guarda la partita che ha subito poteva aprire la
+     pausa e cambiare la mentalita' della squadra di chi l'ha attaccato.
+     Da quel momento il replay non e' piu' la partita subita, e il
+     confronto di fine replay (grep S.atteso) accusa la rosa cresciuta di
+     un altro per uno scarto che ha causato chi guardava.
+     ===================================================================== */
+  if(Reg.modo === 2) return;
   Audio5.unlock(); Audio5.beep(500);
   if(!G.ment) G.ment=[1,1];
-  G.ment[0]=(mentValida(G.ment[0])+1)%3;
+  const mNuova = (mentValida(G.ment[0])+1)%3;
+  posaMentalita(0, mNuova);
+  /* =====================================================================
+     E IL CAMBIO ENTRA NEL NASTRO — la riga di tipo 8.
+
+     Il commento che stava qui sopra diceva «IL FATTO CHE NON EMETTO: qui
+     nasce un evento buono per il REGISTRO DEI FATTI». Era vero, e per il
+     registro dei COMANDI lo era il doppio: senza questa riga la partita
+     rigiocata resta con la postura del fischio d'inizio e finisce con un
+     altro punteggio — misurato, 1 sfida su 2 (strumenti/_t-ment-nastro.js)
+     e 5 semi su 5 in CPU contro CPU (strumenti/_sonda-132-canali.js).
+
+     Reg.scrivi filtra da se': se il registro non sta scrivendo non
+     succede niente, e fuori da una sfida il registro e' spento. Percio'
+     qui non serve nessuna guardia su G.sfida, e non se ne mette una: una
+     guardia in piu' e' un posto in piu' in cui i due capi possono
+     divergere.
+     ===================================================================== */
+  Reg.scrivi(8, [0, mNuova]);
   SAVE.mentalita=G.ment[0];
   persistSave();
   /* DUE RIDIPINTURE, NON UNA. La voce di pausa e la riga di pastiglie
