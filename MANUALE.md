@@ -456,6 +456,164 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Il duello entra nel nastro — #131 CANTIERE CHIUSO** (voce #131, 21
+  settembre 2026, sette compiti dal merge-base `7fbe9bf` — dossier
+  `docs/superpowers/specs/2026-09-21-duello-nastro-dossier.md`, spec
+  `…-duello-nastro-design.md`, piano
+  `docs/superpowers/plans/2026-09-21-duello-nastro.md`). È il **P0
+  dell'onda D**: il #130 ha aggiustato il metro del giudice, questo gli dà
+  qualcosa da misurare.
+
+  **IL DIFETTO, in tre buchi.** I pointer del duello erano appesi a
+  `#duel` e a `#powerWrap` e non passavano dalle quattro porte avvolte del
+  registratore; la tastiera veniva registrata (tipo 4) ma `Reg.esegui` non
+  ridispacciava il gestore. Restavano due ripieghi onesti: il marchio di
+  tipo 5 («io sono incompleto») e `fermaReplayAlDischetto`. **Frequenza
+  misurata** (dossier): fra il **43%** (umano fermo) e il **100%** (dita
+  vere) delle sfide entra in almeno un duello, e in modalità un giocatore
+  **ogni duello ha un umano dentro, 169 su 169**. Il giudice differito non
+  avrebbe potuto verificare proprio le partite decise dal dischetto — e
+  chi voleva barare aveva una via deterministica e a costo zero.
+
+  **L'OROLOGIO È IL CONTATORE DI `Duel.update`, NON I MILLISECONDI**, e
+  adesso è un cancello e non solo un'affermazione: giocando due secondi
+  `Reg.tick` arriva a 120, poi attraversa **18 rigori e 3.919
+  aggiornamenti restando UN SOLO valore** (in `freekick` il giro chiama
+  `Duel.update` e non `step()`, e `Reg.passo()` gira solo dentro
+  `step()`). I millisecondi non servirebbero: nel corpo del duello non c'è
+  un solo `performance.now`, e `frame()` butta tempo quando il telefono
+  arranca. `Duel` guadagna tre contatori (`nDuello`, `passo`,
+  `dentroUpdate`) e `Reg` guadagna `passoDuello()`, il fratello minore di
+  `passo()`.
+
+  **IL FORMATO** è il tipo 6, `[tick, 6, ms, nDuello, passo, verbo, a, b,
+  c]`, a lunghezza variabile come il tipo 7; il `tick` è congelato e i
+  millisecondi sono **dichiarati non letti**. Ad ancorare è la coppia
+  `(nDuello, passo)`.
+
+  **IL CUORE È UNA DISUGUAGLIANZA STRETTA.** `Duel.passo` conta gli
+  aggiornamenti già compiuti; dal vivo il dito cade FRA due aggiornamenti,
+  quindi un tocco arrivato fra il k-esimo e il (k+1)-esimo legge un
+  cursore avanzato k volte. In rilettura quel comando va rimesso in scena
+  all'INIZIO del (k+1)-esimo: la guardia è `riga.passo < Duel.passo`, non
+  `<=`.
+
+  **LE DUE TRAPPOLE, entrambe misurate.** (a) `Duel.update` chiama da sé
+  tutte e tre le porte, e il ripiego del portiere a `cpuT=3,0` **gira
+  anche col portiere umano**: senza `dentroUpdate`, in rilettura
+  `keeperZone` si fisserebbe per primo, il `dado()` del ripiego non si
+  consumerebbe e tutti i sorteggi successivi slitterebbero di uno. Il
+  banco costruisce apposta il caso peggiore (portiere umano che non tocca
+  mai) e verifica che il motore abbia davvero tuffato per lui e che nel
+  nastro non ci sia un solo verbo 2. (b) `duelMira` dipende da VW/VH e
+  dalle altezze DOM: **lo stesso pixel dello schermo dà mire diverse su
+  915×412 e 782×299 in 117 dita su 117, con scarto fino a 0,7810 su `u`**
+  — nel nastro entra la mira, non il pixel. E la mira si posa su una tacca
+  intera (un millesimo, alla sorgente, in tutte e tre le modalità, come il
+  pixel intero del dito): prima della cura **234 mire su 234 non
+  sopravvivevano al giro nel nastro**.
+
+  **IL RIPIEGO NON È CANCELLATO, È RIARMATO.**
+  `fermaReplayAlDischetto` resta: cambia la condizione, da «c'è un duello
+  con un umano» (sempre vera) a «il nastro non ha righe per questo
+  `nDuello`». Misurato su un nastro troncato a mano: tolte le righe del
+  duello 3, `Reg.righeDuello(3)` risponde `false`, il gioco risolve 2
+  duelli su 3 e **non inventa il terzo**; e su un nastro intero risponde
+  `true` per 3 duelli su 3 con un umano dentro (senza questa metà, un
+  «no» non proverebbe niente). Il troncamento si fa su un duello col
+  **tiratore** umano, non uno qualunque: togliere le righe di un duello in
+  cui l'umano era solo il portiere non lo blocca affatto, perché il motore
+  ha il ripiego a tre secondi — correzione di una prova che sarebbe
+  passata per il motivo sbagliato.
+
+  **LA RETE DI SICUREZZA, congelata prima di toccare qualunque cosa.**
+  `strumenti/_t-duello-impronta.js` misura il duello nudo a seme fisso —
+  44 duelli su tre semi, in due regimi (CPU contro CPU e umano a copione
+  deterministico) — e ne congela esito, cursore a cinque decimali,
+  `powerQ`, terzi, passo e sorteggi
+  (`strumenti/duello-impronta.json`). Verificata ripetibile (due giri
+  identici) e **non vuota** (un mutante che ritarda il cursore di un
+  aggiornamento la fa arrossire). **Rimisurata a ogni compito: non si è
+  mossa di un numero, 44 su 44, sette volte.**
+
+  **LA RETTIFICA AL DOSSIER, misurata (21 settembre 2026).** Il dossier
+  dava per letale il mutante «gancio spostato di un fotogramma»
+  (`_crit-duello-passo.js`). **NON lo è**: su tre semi e otto duelli la
+  partita rigiocata sul mutante è identica a quella registrata sul
+  mutante, cursore alla quinta cifra. E non è un buco del banco, è una
+  proprietà vera del duello: **`pickZone` azzera il cursore**, quindi il
+  cursore che `stopPower` legge dipende solo dall'INTERVALLO fra i due
+  comandi, e uno spostamento uniforme lo conserva (15 aggiornamenti prima,
+  15 dopo, 0,2875 in entrambi i casi). Il falso che il dossier aveva
+  davvero misurato — «spostare `stopPower` di 1 aggiornamento cambia 6/132
+  esiti» — sposta UN verbo solo, e l'intervallo cambia: vive in
+  `strumenti/_crit-duello-scarto.js` ed è **bocciato su 3 semi su 3**
+  (cursore 0,2875 contro 0,30667, `powerQ` 0,00774 contro 0,05758). Il
+  mutante uniforme resta come guardia della misura: il banco verifica a
+  ogni corsa che il suo nastro differisca da quello sano, se no «il gioco
+  lo sopravvive» diventerebbe vero per il motivo sbagliato.
+
+  **IL CANCELLO ROSSO PAGATO, e il confine fra i compiti che ne è uscito.**
+  La prima stesura del compito 4 metteva insieme alla scrittura anche la
+  guardia «in rilettura le dita vere sono ignorate». `_q-fuzzer.js` è
+  diventato rosso sulla riproduzione: riapplica il suo `log-duelli` a
+  mano, a registro in rilettura, e la guardia gliela sbarrava. Misurato
+  sul commit precedente (`6e84885`): lì era verde 14/14 — quindi la mia
+  toppa, non un difetto pre-esistente. La cura non è allargare la guardia
+  ma **spostarla**: il compito 4 scrive soltanto, la guardia arriva col
+  compito 5 insieme alla rilettura vera. E al compito 5 **il fuzzer è
+  tornato verde da solo**, come previsto: la guardia che gli sbarrava il
+  log è arrivata insieme al nastro che quei comandi li porta — una
+  conferma indipendente della rilettura, da un banco che non sa niente di
+  questo cantiere.
+
+  **`MOTORE_V` RESTA 2, E NON PERCHÉ SEMBRAVA GIUSTO.** La catena
+  (ogni sfida è a un giocatore → ogni duello ha un umano, 169/169 → il
+  marchio di tipo 5 scattava sempre → `Sfida.guarda` li rifiuta → i nastri
+  vecchi accettati sono esattamente quelli SENZA duello) finisce in
+  un'inferenza, e un'inferenza non basta per una costante che decide quali
+  partite si rifiutano. **MISURATO** (`strumenti/_t-duello-motorev.js`,
+  due versioni): **30 nastri senza duello su 30** registrati sul gioco di
+  prima (`main` `7fbe9bf`) e rigiocati sul curato danno la stessa partita
+  — impronta campione per campione, punteggio e conto dei sorteggi. Zero
+  semi scartati, zero dichiarati nulli dal controllo (ogni nastro è stato
+  rigiocato anche sul gioco di PRIMA: se non fosse tornato lì, quel seme
+  non avrebbe potuto dire niente). La misura è scritta **accanto al
+  numero** nel sorgente. Il controllo `incompleto` di `Sfida.guarda` è
+  **conservato** — rettificato a edizioni: non riguarda più i nastri di
+  oggi, resta necessario per quelli di prima.
+
+  **I CANCELLI.** `_t-duello-nastro.js` rosso 1/4 al compito 1 → **verde
+  5/5** al compito 5, e condanna il mutante letale (uscita 1, cursore
+  0,2875 → 0,30667). `_t-duello-contatore.js` 9/9 (col confronto a due
+  versioni: stessi 159 sorteggi, stesso tick 120, stesso 1-0, stessi 18
+  esiti). `_t-duello-tacca.js` 3/4 → **4/4**. `_t-duello-porte.js` 5/8 →
+  **8/8**. `_t-duello-rigioca.js` 2/4 → **7/7** (8 duelli su tre semi
+  identici campo per campo). `_t-duello-motorev.js` 30/30.
+  **Batteria intera rilanciata a ogni compito**, a tre o quattro gruppi
+  (`--tutto` chiede ~12 minuti): tutti i cancelli che contano verdi;
+  `avvio-telefono` uscita 3 (nessun telefono collegato, non un rosso del
+  gioco) e `istantanea` informativo NO contro un riferimento che era una
+  prova nulla — lo stesso schema già dichiarato da
+  #113/#114/#122/#125/#128/#129/#130.
+
+  **`git diff main -- CALCETTO-il-gioco.html`**: `Duel` (tre campi),
+  `Reg` (due campi, `accendi`, `azzeraComandi`, `passoDuello`,
+  `eseguiDuello`, `righeDuello`, `serializza`, `deserializza`),
+  `duelMira`, `startFreeKick`, `fermaReplayAlDischetto` (messaggio e
+  verbale), il blocco avvolgente nuovo accanto alle quattro porte di
+  `Touch5`, e due commenti (`MOTORE_V`, il controllo `incompleto`).
+  Nessun corpo di `Duel.update`, `resolve`, `pickZone`, `stopPower` o
+  `pickKeeper` toccato: l'avvolgimento sta fuori.
+
+  **RESTA FUORI, dichiarato.** Il terzo buco, **la tastiera**: le tre
+  porte avvolte lo coprono per il duello (`Duel.key` chiama le tre
+  funzioni, che ora sono avvolte), ma il tasto in sé resta registrato e
+  morto per tutto il resto del gioco — è un difetto del tipo 4, non del
+  duello. E il **pointermove del mirino** non entra nel nastro: non decide
+  niente, entra il punto di rilascio; chi guarderà il replay vedrà il
+  mirino comparire dove il dito l'ha lasciato invece di seguirlo.
+
 - **Il metro prima del giudice — #130 CANTIERE CHIUSO** (voce #130, 21
   settembre 2026, quattro compiti dal merge-base `d08a1e5` — spec
   `docs/superpowers/specs/2026-09-21-il-metro-design.md`, piano
