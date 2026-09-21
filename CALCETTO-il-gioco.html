@@ -10071,6 +10071,33 @@ function defaultSave(){
     lastRes:null,                 // ultimo risultato giocato, per la lavagna della home
   };
 }
+/* =====================================================================
+   UN ATTRIBUTO DI ROSA, E UNA SOLA REGOLA PER TUTTI (voce #132, c.3).
+
+   Erano quattro porte con quattro regole: il salvataggio non guardava
+   niente, setupPlayers copiava grezzo, impaccaRosa faceva
+   max(1,min(99,v|0)), startMatch arrotondava e ripiegava su 62. Allo
+   stesso ingresso rispondevano cose diverse — misurato, sei casi su
+   otto discordi — e in una sfida questo vuol dire GIOCARE un numero e
+   REGISTRARNE un altro.
+
+   Qui la regola e' una: arrotonda, stringi in 1..99, e se non e' un
+   numero (o non c'e') ripiega. Chiamata alla SORGENTE — la porta del
+   salvataggio — rende superfluo controllare piu' a valle: SAVE.rosa non
+   puo' piu' contenere un numero fuori scala, quindi il campo e il nastro
+   vedono lo stesso, per costruzione e non per fortuna.
+
+   ASSENTE E' DIVERSO DA ZERO, e va detto: null e undefined tornano il
+   ripiego (62, un uomo qualunque), mentre uno ZERO scritto per davvero
+   diventa 1, il pavimento della scala. Zero e' una scelta di chi ha
+   scritto il salvataggio; assente e' una mancanza.
+   ===================================================================== */
+function attrRosa(v, d){
+  const rip = (d === undefined) ? 62 : d;
+  if(v === null || v === undefined) return rip;
+  const n = Math.round(+v);
+  return Number.isFinite(n) ? Math.max(1, Math.min(99, n)) : rip;
+}
 function loadSave(){
   let j=null;
   try{
@@ -10215,7 +10242,22 @@ function loadSave(){
     if(Array.isArray(j.albo)) s.albo=j.albo.filter(e=>e&&typeof e==='object').slice(0,200);
     if(j.tour&&typeof j.tour==='object'&&Array.isArray(j.tour.teams)&&j.tour.teams.length===8&&Array.isArray(j.tour.rounds)) s.tour=j.tour;
     if(j.season&&typeof j.season==='object'&&Array.isArray(j.season.squadre)&&j.season.squadre.length===8&&Array.isArray(j.season.cal)) s.season=j.season;
-    if(Array.isArray(j.rosa)&&(j.rosa.length===4||j.rosa.length===5)) s.rosa=j.rosa;
+    /* LA ROSA, CON I NUMERI GUARDATI (voce #132, compito 3). Era
+       l'unica chiave di questo blocco che entrava senza che nessuno
+       leggesse i suoi valori — in mezzo a venti righe che dichiarano
+       «un salvataggio manomesso non puo' chiedere...». Da qui in poi
+       SAVE.rosa sta in 1..99, e setupPlayers puo' continuare a copiarla
+       grezza senza che il campo e il nastro possano divergere.
+       Le voci che non sono oggetti restano com'erano: sono una rosa
+       rotta, e rotta era gia' prima di questa toppa. */
+    if(Array.isArray(j.rosa)&&(j.rosa.length===4||j.rosa.length===5))
+      s.rosa=j.rosa.map(g=>{
+        if(!g || typeof g!=='object') return g;
+        const o=Object.assign({}, g);
+        o.vel=attrRosa(o.vel); o.tiro=attrRosa(o.tiro);
+        o.tecnica=attrRosa(o.tecnica); o.tackle=attrRosa(o.tackle);
+        return o;
+      });
     if(Array.isArray(j.lastRes)&&j.lastRes.length===2&&isFinite(j.lastRes[0])&&isFinite(j.lastRes[1]))
       s.lastRes=[Math.max(0,j.lastRes[0]|0), Math.max(0,j.lastRes[1]|0)];
   }
@@ -11368,7 +11410,7 @@ function startMatch(mode, diff, opts){
      ===================================================================== */
   G.miaRosa = null;
   if(opts.mia && Array.isArray(opts.mia.rosa) && opts.mia.rosa.length >= 4){
-    const q = (v, d) => { const n = Math.round(+v); return Number.isFinite(n) ? Math.max(1, Math.min(99, n)) : d; };
+    const q = (v, d) => attrRosa(v, d);   /* la stessa regola della sorgente (voce #132, compito 3) */
     G.miaRosa = opts.mia.rosa.map(r => ({
       nome: (typeof r.nome === 'string' && r.nome.trim()) ? r.nome.trim().slice(0, 24) : 'GIOCATORE',
       vel: q(r && r.vel, 62), tiro: q(r && r.tiro, 62),
@@ -11378,7 +11420,7 @@ function startMatch(mode, diff, opts){
   }
   G.oppRosa = null;
   if(opts.opp && Array.isArray(opts.opp.rosa) && opts.opp.rosa.length >= 4){
-    const q = (v, d) => { const n = Math.round(+v); return Number.isFinite(n) ? Math.max(1, Math.min(99, n)) : d; };
+    const q = (v, d) => attrRosa(v, d);   /* la stessa regola della sorgente (voce #132, compito 3) */
     G.oppRosa = opts.opp.rosa.map(r => ({
       nome: (typeof r.nome === 'string' && r.nome.trim()) ? r.nome.trim().slice(0, 24) : 'GIOCATORE',
       vel: q(r && r.vel, 62), tiro: q(r && r.tiro, 62),
@@ -43055,7 +43097,12 @@ function mentDaIndole(o){
 function impaccaRosa(rosa){
   const r = Array.isArray(rosa) ? rosa : [];
   const n = Math.max(0, Math.min(24, r.length));
-  const q = v => Math.max(1, Math.min(99, v|0));
+  /* LA STESSA REGOLA DELLA SORGENTE (voce #132, compito 3): qui era
+     «v|0», che tronca invece di arrotondare e che su NaN da' 1 invece
+     del ripiego. Con SAVE.rosa gia' pulita questa chiamata e'
+     l'identita' — ed e' proprio il punto: due porte che non possono
+     rispondere diverso perche' sono la stessa porta. */
+  const q = v => attrRosa(v);
   const v = [n];
   for(let i=0;i<n;i++){
     const g = r[i] || {};

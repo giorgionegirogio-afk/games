@@ -121,11 +121,37 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
       await browser.close(); sg.chiudi(); ss.chiudi(); process.exit(3);
     }
     await B.collega(Bt, ss.porta, 'BORGATA');
-    /* IL SALVATAGGIO STORTO DI CHI ATTACCA: due uomini fuori scala, uno
-       alto e uno che non e' un numero. E' quel che resta di un
-       salvataggio manomesso o di una versione precedente. */
-    await B.collega(At, ss.porta, 'DOPOLAVORO',
-      'rosa[1].vel = 250; rosa[2].tiro = 250; rosa[3].tackle = 250;');
+    await B.collega(At, ss.porta, 'DOPOLAVORO');
+    /* =====================================================================
+       IL SALVATAGGIO STORTO DI CHI ATTACCA, DALLA PORTA VERA.
+
+       Tre uomini con un attributo a 250 — quel che resta di un
+       salvataggio manomesso o di una versione precedente. Si scrive nel
+       SALVATAGGIO e si RICARICA la pagina, perche' la porta da provare e'
+       loadSave: scrivere in memoria dopo l'avvio proverebbe uno scenario
+       che nel gioco non esiste (faiCrescereRosa incrementa di uno e si
+       ferma a 99, nuovaRosa nasce in 50..75) e salterebbe proprio la
+       guardia in esame. Primo giro di questo cancello: senza il ricarico
+       il campo restava a 250 anche a cura applicata, cioe' il banco
+       stava misurando la propria iniezione.
+       ===================================================================== */
+    await At.pag.evaluate(() => {
+      window.__test.save.rosa[1].vel = 250;
+      window.__test.save.rosa[2].tiro = 250;
+      window.__test.save.rosa[3].tackle = 250;
+      persistSave();
+    });
+    await At.pag.reload({ waitUntil: 'load' });
+    await At.pag.waitForFunction('window.__test !== undefined', null, { timeout: 30000 });
+    await At.pag.evaluate(() => { window.requestAnimationFrame = () => 0; });
+    await At.pag.waitForTimeout(120);
+    await At.pag.evaluate(p => {
+      const t = window.__test;
+      t.dismissSplash && t.dismissSplash();
+      t.save.tutorialDone = 1;
+      t.reteBase('http://127.0.0.1:' + p);
+      try { Audio5.unlock(); } catch (e) {}
+    }, ss.porta);
     await B.entra(Bt); await B.entra(At);
     await B.pubblica(Bt); await B.pubblica(At);
 
