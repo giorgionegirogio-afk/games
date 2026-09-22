@@ -668,6 +668,11 @@ async function gruppoD(browser, porta) {
   try {
     const vista = await P.pag.evaluate(async () => {
       const t = window.__test;
+      /* UN'IDENTITA' CI VUOLE, se no codiceTrasferimento() torna la
+         stringa vuota (grep «if(!this.haIdentita) return ''») e la
+         prova del codice-che-non-si-manda misurerebbe il vuoto */
+      const m = t.rete.mem();
+      m.id = '33333333-3333-4333-8333-333333333333'; m.segreto = 'SEGRETODIPROVA';
       const bottone = document.getElementById('btnSfidaCarta');
       if (!bottone) return { bottone: false };
       t.sfida.apri();
@@ -677,24 +682,43 @@ async function gruppoD(browser, porta) {
       const campo = document.getElementById('sfCartaIn');
       const mio = document.getElementById('sfCartaMio');
       const aperto = !!pannello && !pannello.classList.contains('hidden');
-      /* una causa vera, detta in italiano */
+      /* =====================================================================
+         QUATTRO CODICI STORTI, QUATTRO MODI DIVERSI DI ESSERLO, e la
+         riga sotto il campo deve dire QUALE — se no «codice sbagliato»
+         e' tutto quel che una persona sa, e ricopia per la terza volta
+         la stessa cosa. Il terzo e' il piu' importante: e' il codice
+         del cambio telefono, cioe' quello che NON si manda a nessuno.
+         ===================================================================== */
+      const o = t.carta.componi(20260922, 5); o.golA = 3; o.golD = 2;
+      const buono = t.carta.impacca(o);
+      const storti = [
+        '',
+        buono.slice(0, 20) + (buono[20] === 'Z' ? 'Y' : 'Z') + buono.slice(21),
+        t.rete.codiceTrasferimento(),
+        buono.slice(0, 30) + 'U' + buono.slice(31),
+      ];
       const cause = [];
-      for (const storto of ['', 'PIPPO', t.rete.codiceTrasferimento(), 'CARTA0000000000000000']) {
+      for (const storto of storti) {
         if (campo) campo.value = storto;
         t.sfida.usaCarta();
         cause.push((document.getElementById('sfCartaNota') || {}).textContent || '');
       }
       return { bottone: true, aperto, campo: !!campo, mio: !!mio, cause,
+               inPartita: t.sfidaStato.inPartita,
                testo: (pannello ? pannello.textContent : '') };
     });
     di(vista.bottone && vista.aperto && vista.campo && vista.mio,
        'D1) c\'e\' l\'ingresso e il pannello si apre, col codice da copiare e il campo da incollare',
        JSON.stringify({ bottone: vista.bottone, aperto: vista.aperto, campo: vista.campo, mio: vista.mio }));
     const cause = vista.cause || [];
+    /* e NESSUNO dei quattro deve aver fatto partire una partita: un
+       codice storto che scende in campo lo stesso e' peggio di un
+       codice storto rifiutato */
     di(cause.length === 4 && cause.every(c => c && c.length > 12) &&
-       new Set(cause).size >= 3,
-       'D2) un codice storto dice perche\', e le cause non sono tutte la stessa frase',
-       JSON.stringify(cause));
+       new Set(cause).size === 4 && !vista.inPartita &&
+       /cambio telefono/i.test(cause[2]),
+       'D2) quattro codici storti, quattro cause diverse, e il codice del cambio telefono ha la sua',
+       JSON.stringify(cause.map(c => c.slice(0, 58))) + ' · in partita: ' + vista.inPartita);
     /* IL LIMITE DICHIARATO: una sfida di carta non porta una prova, e il
        gioco lo deve dire invece di lasciarlo credere. */
     di(/fidar|prova|verific/i.test(String(vista.testo || '')),

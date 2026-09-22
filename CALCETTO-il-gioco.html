@@ -637,22 +637,34 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
 /* il pannello del codice: stessa carta del patto del NEGOZIO. Non riusa
    quel selettore perche' quello e' scritto in tre punti e allungarlo
    tre volte sarebbe tre ancoraggi per un vestito. */
-#sfidaCodice{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+/* DUE PANNELLI, UN VESTITO (voce #135). Il pannello della sfida di
+   carta e' la stessa carta di quello del cambio telefono, e i selettori
+   si allungano invece di raddoppiarsi: due fogli identici scritti in
+   due posti si scostano al primo ritocco. SONO due pannelli e non uno
+   perche' dicono due cose opposte — uno porta via la squadra, l'altro
+   porta una partita — e confonderli e' il difetto che la voce #135
+   esiste per non fare. */
+#sfidaCodice,#sfidaCarta{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
   background:rgba(3,10,6,.72);overflow-y:auto;overscroll-behavior:contain}
-#sfidaCodice.hidden{display:none}
-#sfidaCodice .patto{max-width:460px;margin:16px;padding:20px 22px;text-align:left;position:relative;
+#sfidaCodice.hidden,#sfidaCarta.hidden{display:none}
+#sfidaCodice .patto,#sfidaCarta .patto{max-width:460px;margin:16px;padding:20px 22px;text-align:left;position:relative;
   background:linear-gradient(180deg,#f2ecdb,#e3d9c0);color:#3a3020;
   font-family:var(--cond);font-weight:600;font-size:14.5px;line-height:1.5;
   box-shadow:0 8px 18px rgba(0,0,0,.6)}
-#sfidaCodice .patto b{font-weight:700}
-#sfidaCodice .sf-nota{font-size:12.5px;color:#5a4d33;margin-top:10px}
-#sfidaCodice input{display:block;width:100%;box-sizing:border-box;margin:8px 0 2px;padding:8px 9px;
+#sfidaCodice .patto b,#sfidaCarta .patto b{font-weight:700}
+#sfidaCodice .sf-nota,#sfidaCarta .sf-nota{font-size:12.5px;color:#5a4d33;margin-top:10px}
+#sfidaCodice input,#sfidaCarta input{display:block;width:100%;box-sizing:border-box;margin:8px 0 2px;padding:8px 9px;
   font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.04em;
   color:#20301a;background:#f8f3e6;border:1px solid #8d7c57;border-radius:2px}
-#sfidaCodice .fbtn{margin-top:12px;margin-right:8px;color:#57492e;border-color:#b3a380;
+#sfidaCodice .fbtn,#sfidaCarta .fbtn{margin-top:12px;margin-right:8px;color:#57492e;border-color:#b3a380;
   background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.08));
   box-shadow:0 2px 0 rgba(90,70,40,.4)}
-#sfidaCodice .fbtn.paga{background:linear-gradient(180deg,#ffc757,#e59200);border-color:#a86f00;color:#12210f}
+#sfidaCodice .fbtn.paga,#sfidaCarta .fbtn.paga{background:linear-gradient(180deg,#ffc757,#e59200);border-color:#a86f00;color:#12210f}
+/* IL CODICE SI DEVE POTER LEGGERE AD ALTA VOCE E RICOPIARE: settantanove
+   caratteri in una riga sola diventano sei punti di grigio su un
+   telefono stretto. Qui va a capo da solo, monospazio e spaziato. */
+#sfCartaMio{font-size:13px;letter-spacing:.09em;line-height:1.45;word-break:break-all;white-space:normal;
+  min-height:56px;resize:none}
 /* etichetta di sezione: stessa tacca fluo delle squadre sulla targa */
 .eti{font-family:var(--cond);font-weight:700;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--grigio);margin:18px 0 8px}
 .eti::before{content:"";display:inline-block;width:8px;height:8px;background:var(--gesso);margin-right:8px;vertical-align:.02em}
@@ -3098,6 +3110,16 @@ button:active{transform:scale(.96)}
     <button class="voce primaria" id="btnSfidaCerca">CERCA AVVERSARIO <small>una partita sola, col seme che d&agrave; il server</small></button>
     <div class="eti">LE SFIDE CHE HAI SUBITO</div>
     <div class="sf-lista" id="sfLista"></div>
+    <!-- L'INGRESSO DELLA SFIDA DI CARTA STA QUI, SOTTO LA LISTA, e il
+         posto e' misurato (voce #135, fuori/_sonda-135-bottone.js).
+         Sopra la lista spingerebbe la prima riga a 375 su una piega di
+         360 e romperebbe _q-sigillo B3 — il difetto gia' pagato del
+         TORNEO. Qui non muove di un pixel CERCA AVVERSARIO (220), la
+         prima riga (329) ne' il primo GUARDA (308).
+         E' l'unica cosa di questa schermata che funziona SENZA RETE:
+         chi apre SFIDA e non ha campo trova comunque una partita da
+         giocare contro qualcuno. -->
+    <button class="voce" id="btnSfidaCarta">SFIDA DI CARTA <small>un codice da incollare &middot; senza rete</small></button>
     <div class="azioni">
       <button class="btnA sec" id="btnSfidaClassifica">CLASSIFICA</button>
       <button class="btnA sec" id="btnSfidaCodice">CAMBIO TELEFONO</button>
@@ -3122,6 +3144,40 @@ button:active{transform:scale(.96)}
       <input id="sfCodIn" autocomplete="off" spellcheck="false" placeholder="incolla qui il codice" aria-label="codice da usare">
       <button class="fbtn paga" id="btnSfCodUsa">USA IL CODICE</button>
       <button class="fbtn" id="btnSfCodChiudi">CHIUDI</button>
+    </div>
+  </div>
+  <!-- ============ LA SFIDA DI CARTA (voce #135) ============
+       Un codice che contiene tutta la partita, e che NON e' il codice
+       qui sopra: quello porta via la squadra, questo porta una partita
+       e basta. Le due cose stanno in due pannelli diversi apposta, e
+       ognuno dei due dice dell'altro. -->
+  <div id="sfidaCarta" class="hidden">
+    <div class="patto">
+      <b>SFIDA DI CARTA</b><br>
+      Un codice che contiene <b>tutta la partita</b>: stesso campo, stessa
+      squadra, stesso avversario, stesso punteggio da battere. Non serve la
+      rete, non serve che l&rsquo;altro abbia un conto: si copia e si manda in un
+      messaggio.
+      <div class="sf-nota" id="sfCartaVia">Crea una sfida, giocala fino in fondo, e il codice compare qui sotto.</div>
+      <input id="sfCartaMio" readonly spellcheck="false" aria-label="il codice della tua sfida di carta">
+      <button class="fbtn paga" id="btnSfCartaNuova">CREA UNA SFIDA</button>
+      <div class="sf-nota">Hai ricevuto un codice? Incollalo qui e gioca la stessa identica partita.</div>
+      <input id="sfCartaIn" autocomplete="off" spellcheck="false" placeholder="incolla qui il codice" aria-label="codice di sfida ricevuto">
+      <div class="sf-nota" id="sfCartaNota"></div>
+      <button class="fbtn paga" id="btnSfCartaUsa">GIOCA LA SFIDA</button>
+      <button class="fbtn" id="btnSfCartaChiudi">CHIUDI</button>
+      <!-- LE DUE COSE DA DIRE, E VANNO DETTE QUI E NON ALTROVE.
+           La prima: il codice porta la PARTITA, non la prova. Chi lo
+           riceve puo' dichiarare il punteggio che vuole, e non c'e'
+           nessun giudice che possa smentirlo — un nastro non ci sta in
+           un messaggio. Chi vuole un risultato verificato ha la SFIDA
+           di rete, che il giudice ce l'ha (voci #130-#134).
+           La seconda: questo non e' il codice del CAMBIO TELEFONO. -->
+      <div class="sf-nota"><b>Non &egrave; un controllo.</b> Il codice porta la partita, non la prova:
+      chi lo riceve pu&ograve; dire il punteggio che vuole, e nessuno pu&ograve; smentirlo. &Egrave; un gioco
+      fra due persone che si fidano. Per un risultato verificato c&rsquo;&egrave; la SFIDA,
+      qui sopra. <b>E non &egrave; il codice del cambio telefono:</b> quello si tiene per s&eacute;,
+      perch&eacute; chi lo incolla diventa la tua squadra.</div>
     </div>
   </div>
 </div>
@@ -41481,7 +41537,12 @@ $('btnBackCrediti').addEventListener('click', ()=>{ Audio5.unlock(); goScreen($(
 $('btnBackMenu').addEventListener('click', ()=>{ goScreen(ui.menu); });
 $('btnRivincita').addEventListener('click', ()=>{
   Audio5.unlock();
-  if(G.sfidaFine){ setScene('menu'); Audio5.crowdLevel(0); Sfida.apri(); }
+  /* DOPO UNA SFIDA DI CARTA (G.sfidaFine===3) la cosa che serve non e'
+     la lista delle sfide di rete: e' il CODICE, appena nato col
+     punteggio dentro, o il confronto con quello che c'era da battere.
+     Il pannello si apre da se' (voce #135). */
+  if(G.sfidaFine===3){ const c=1; setScene('menu'); Audio5.crowdLevel(0); Sfida.apri(); Sfida.mostraCarta(); }
+  else if(G.sfidaFine){ setScene('menu'); Audio5.crowdLevel(0); Sfida.apri(); }
   else if(G.matchCtx==='season'){ setScene('menu'); Audio5.crowdLevel(0); openStagione(); }
   else if(G.matchCtx==='tour'){ setScene('menu'); Audio5.crowdLevel(0); openTorneo(); }
   else startMatch(G.mode,G.diff);
@@ -44312,6 +44373,50 @@ const Sfida = {
     box.innerHTML = h;
   },
 
+  /* --------------------------------------- la sfida di carta, a schermo */
+  /* SI CHIAMA mostraCarta e non apriCarta perche' apriCarta e' gia' la
+     funzione che APRE LA PARTITA: due nomi uguali per due cose diverse
+     a due righe di distanza sono un errore che aspetta. */
+  mostraCarta(){
+    const e = $('sfCartaMio');
+    if(e) e.value = this.cartaCodice || '';
+    const v = $('sfCartaVia');
+    if(v) v.textContent = this.cartaCodice
+      ? 'Questo è il codice della tua ultima sfida di carta. Copialo e mandalo: chi lo incolla gioca la stessa identica partita.'
+      : 'Crea una sfida, giocala fino in fondo, e il codice compare qui sotto.';
+    const n = $('sfCartaNota');
+    if(n) n.textContent = this.cartaRiga || '';
+    const i = $('sfCartaIn'); if(i) i.value = '';
+    show($('sfidaCarta'));
+  },
+  /* il dito su GIOCA LA SFIDA. Torna vero se la partita e' partita. */
+  usaCarta(){
+    const i = $('sfCartaIn'), n = $('sfCartaNota');
+    const testo = i ? String(i.value || '') : '';
+    const dire = t => { if(n) n.textContent = t; };
+    /* =====================================================================
+       CHI INCOLLA QUI IL CODICE DEL CAMBIO TELEFONO VA FERMATO CON LA
+       FRASE GIUSTA (voce #135). Non «codice sbagliato»: quello e' il
+       codice che regala la squadra a chi ce l'ha, e se e' finito in
+       questo campo vuol dire che qualcuno stava per mandarlo a un
+       amico. Si riconosce dalla forma — tre pezzi separati da punto,
+       che e' esattamente cio' che accettaTrasferimento pretende — e la
+       riga che esce parla di quello, non del formato.
+       ===================================================================== */
+    if(testo.indexOf('.') >= 0 && testo.trim().split('.').length === 3){
+      dire(this.perCarta('sembra-trasferimento'));
+      try{ toast('fischietto','QUELLO NON SI MANDA','È il codice del cambio telefono: chi lo incolla diventa la tua squadra.'); }catch(e){}
+      return false;
+    }
+    const r = this.cartaGioca(testo);
+    if(r && r.errore){
+      dire(this.perCarta(r.errore));
+      try{ toast('fischietto','CODICE SBAGLIATO','Guarda la riga sotto il campo: dice che cosa non va.'); }catch(e){}
+      return false;
+    }
+    return true;
+  },
+
   /* ---------------------------------------------- la sfida di carta */
   /* il codice dell'ultima sfida di carta finita su questo telefono, la
      sfida che si e' incollata e com'e' andata. Tre cose che vivono
@@ -44320,6 +44425,9 @@ const Sfida = {
   cartaCodice: '',
   cartaLetta: null,
   cartaEsito: '',
+  /* la frase che il pannello mostra dopo una sfida di carta finita: il
+     confronto per chi l'ha ricevuta, il punteggio per chi l'ha creata */
+  cartaRiga: '',
   /* SI CREA: seme a caso, avversario dal seme, e si scende in campo. Il
      codice non esiste ancora, e non puo' esistere — dentro ci va il
      punteggio, e il punteggio lo fa il pollice. Nasce a chiudiSfida. */
@@ -44353,6 +44461,7 @@ const Sfida = {
       case 'altro-motore':     return 'Questa sfida è stata costruita con un\'altra versione del gioco: la stessa partita, oggi, finirebbe in un altro modo. Chiedi un codice nuovo.';
       case 'altra-versione':   return 'Questo codice è di un formato che questa versione del gioco non sa leggere.';
       case 'taglia-non-prevista': return 'La sfida di carta si gioca cinque contro cinque, e questo codice chiede un\'altra taglia.';
+      case 'sembra-trasferimento': return 'Questo è il codice del CAMBIO TELEFONO, non una sfida: non si manda a nessuno, perché chi lo incolla diventa la tua squadra. Un codice di sfida comincia per CARTA e non ha punti dentro.';
       case 'rose-corte':       return 'Il codice non porta due squadre complete.';
       case 'taglia-strana':    return 'Il codice porta una taglia di campo che non esiste.';
       default:                 return 'Questo codice non si riesce a leggere.';
@@ -44490,11 +44599,14 @@ function chiudiSfida(){
       const come = (mio > suo || (mio === suo && ga > (b[0]|0))) ? 'meglio'
                  : ((mio < suo || (mio === suo && ga < (b[0]|0))) ? 'peggio' : 'pari');
       Sfida.cartaEsito = come;
+      Sfida.cartaRiga = 'Hai chiuso ' + ga + '-' + gd + ', chi ti ha sfidato ' + (b[0]|0) + '-' + (b[1]|0) + ': ' +
+        (come === 'meglio' ? 'hai fatto meglio.' : (come === 'pari' ? 'siete pari.' : 'non ci sei riuscito.'));
       const dice = come === 'meglio' ? ['scopa','HAI FATTO MEGLIO']
                  : (come === 'pari'  ? ['fischietto','SIETE PARI'] : ['fischietto','NON CI SEI RIUSCITO']);
       try{ toast(dice[0], dice[1], 'Tu ' + ga + '-' + gd + ', chi ti ha sfidato ' + (b[0]|0) + '-' + (b[1]|0) + '.'); }catch(e){}
     }else{
       Sfida.cartaEsito = '';
+      Sfida.cartaRiga = 'La tua sfida è finita ' + ga + '-' + gd + ': chi riceve il codice deve fare meglio di così.';
       try{ toast('scopa','IL CODICE È PRONTO','Sta nella schermata SFIDA, sotto SFIDA DI CARTA: copialo e mandalo.'); }catch(e){}
     }
     return;
@@ -45015,7 +45127,15 @@ $('btnSfCodUsa').addEventListener('click', ()=>{ Audio5.unlock(); Sfida.usaCodic
    Invio non deve andare a cercare il bottone (31 agosto 2026) */
 $('sfCodIn').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); Audio5.unlock(); Sfida.usaCodice(); } });
 $('btnSfCodChiudi').addEventListener('click', ()=>{ Audio5.unlock(); hide($('sfidaCodice')); });
-$('btnBackSfida').addEventListener('click', ()=>{ hide($('sfidaCodice')); goScreen(ui.menu); });
+/* ------------------------------------------------- la sfida di carta */
+$('btnSfidaCarta').addEventListener('click', ()=>{ Audio5.unlock(); Sfida.mostraCarta(); });
+$('btnSfCartaNuova').addEventListener('click', ()=>{ Audio5.unlock(); Audio5.beep(520); Sfida.cartaNuova(); });
+$('btnSfCartaUsa').addEventListener('click', ()=>{ Audio5.unlock(); Sfida.usaCarta(); });
+/* Invio nel campo vale GIOCA LA SFIDA, come nel pannello del cambio
+   telefono: chi incolla e preme Invio non deve cercare il bottone */
+$('sfCartaIn').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); Audio5.unlock(); Sfida.usaCarta(); } });
+$('btnSfCartaChiudi').addEventListener('click', ()=>{ Audio5.unlock(); hide($('sfidaCarta')); });
+$('btnBackSfida').addEventListener('click', ()=>{ hide($('sfidaCodice')); hide($('sfidaCarta')); goScreen(ui.menu); });
 $('btnBackClassifica').addEventListener('click', ()=>{ goScreen($('sfida')); });
 
 

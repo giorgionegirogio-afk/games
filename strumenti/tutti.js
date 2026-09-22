@@ -946,6 +946,50 @@ const CANCELLI = [
      30-40 s che qui chiede lento (modello `audio.js`) — non lento. */
   { nome: 'sigillo',           cmd: ['strumenti/_q-sigillo.js'],                        conta: true,  lento: false },
   /* =====================================================================
+     carta: LA SFIDA STA IN UN MESSAGGIO, E NON PORTA VIA L'IDENTITA' DI
+     NESSUNO (voce #135, compito 4).
+
+     COSA SORVEGLIA, e nessuno degli altri lo guarda. `rete`, `sfida`,
+     `giudice` e `sigillo` sorvegliano la sfida ONLINE: il motore, la
+     schermata, il verdetto, il tubo che lo porta all'occhio. Tutti e
+     quattro presuppongono un server. Questo cancello sorveglia la meta'
+     che il server non ce l'ha — un codice da incollare che contiene
+     tutta la partita — e lo fa in quattro gruppi:
+
+       A) il CODICE: impacca-e-spacca e' l'identita'; sta sotto i 100
+          caratteri (misurato 79: un SMS ne regge 160); il controllo si
+          misura in modo ESAUSTIVO sulle due classi che contano — una
+          cifra cambiata, due scambiate — e non a occhio; i rifiuti
+          dicono la causa vera e un codice sporcato da spazi, a capo,
+          minuscole e trattini passa lo stesso.
+       B) DENTRO NON C'E' NESSUNO, ed e' il gruppo che questo cantiere
+          esiste per avere. Rete.codiceTrasferimento() produce
+          id.segreto.controllo e chi lo incolla DIVENTA quella squadra:
+          il codice della sfida non deve contenere NIENTE che dipenda da
+          chi lo scrive. La prova che discrimina non e' la ricerca di
+          sottostringhe — un falso che cifrasse il segreto la
+          passerebbe, ed e' misurato che la passa — ma il confronto fra
+          DUE telefoni con identita' diverse e stessa partita: lo stesso
+          codice, carattere per carattere. E al contrario: leggere una
+          sfida non cambia l'identita' di chi la riceve.
+       C) DUE TELEFONI, LA STESSA PARTITA: sei codici, quattro viste e
+          quattro salvataggi diversi fino al fischio finale — punteggio,
+          sorteggi, durata, posizioni a ogni campione, titolari con nomi
+          e numeri. L'unico nome che puo' cambiare e' quello di un
+          rincalzo entrato dalla panchina, e la prova lo pretende.
+       D) LA SCHERMATA E LA RETE CHE NON C'E': i tre bersagli di
+          `sigillo` B3 inchiodati ai loro pixel (CERCA@220, prima
+          riga@329, GUARDA@308), l'ingresso nuovo sopra la piega, e ZERO
+          richieste di rete in tutto il giro — creare, giocare,
+          incollare, rigiocare — contate come DELTA dopo l'apertura
+          della schermata, che una richiesta la fa da sempre.
+
+     Misurato su macchina di sviluppo: ~73 s da solo, sopra la soglia dei
+     30-40 s che qui chiede lento (modello `audio.js`) — LENTO. Apre
+     diciotto contesti di browser, e quasi tutti giocano una partita
+     intera. */
+  { nome: 'carta',             cmd: ['strumenti/_q-carta.js'],                          conta: true,  lento: true  },
+  /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
      cancelli in lista ne ha visto uno.

@@ -276,6 +276,28 @@ nome).
   la riga di stato dava la colpa alla rosa cresciuta di chi ti aveva
   attaccato — che non c'entrava niente. Il risultato, in tutti e due i casi,
   resta quello scritto nell'elenco: si perde il film, non il punto.
+- **SFIDA DI CARTA** — *edizione del 22 settembre 2026, voce #135*. È
+  l'unica voce di questa schermata che **funziona senza rete**: un codice
+  di **79 caratteri** che contiene tutta la partita — seme, taglia, le due
+  rose, le due posture, l'avversario e il punteggio da battere. **CREA UNA
+  SFIDA** apre una partita a 5 contro 5 contro una squadra di quartiere
+  pescata dal seme; al fischio finale il codice nasce col tuo punteggio
+  dentro, si copia e si manda in un messaggio (ci sta in un SMS). Chi lo
+  riceve lo incolla e gioca **la stessa identica partita** — stesso campo,
+  stessa squadra, stesso avversario — e alla fine il gioco dice se ha
+  fatto meglio (prima la differenza reti, poi i gol fatti). Una sfida di
+  carta **non paga e non fa crescere nessuno**: in campo non c'è la tua
+  squadra, c'è quella del codice.
+  **DUE COSE DICHIARATE.** (1) *Non è un controllo*: il codice porta la
+  partita, non la prova — chi lo riceve può dire il punteggio che vuole e
+  nessuno può smentirlo, perché un nastro dei comandi non sta in un
+  messaggio. È un gioco fra due persone che si fidano; per un risultato
+  verificato c'è CERCA AVVERSARIO, che ha il giudice. (2) *Non è il codice
+  del CAMBIO TELEFONO*: quello si tiene per sé, perché chi lo incolla
+  diventa la tua squadra. I due codici non si possono confondere in nessuno
+  dei due versi — quello della sfida comincia per `CARTA` e non ha punti
+  dentro — e se incolli il codice del cambio telefono nel campo della
+  sfida, il gioco te lo dice con quelle parole.
 - **CLASSIFICA**: i primi 100 e la tua riga anche se sei più giù.
 - **CAMBIO TELEFONO**: il tuo codice di trasferimento (id + segreto). Va
   copiato e conservato: *se perdi il telefono, perdi la squadra* — il server
@@ -471,6 +493,201 @@ Qui il registro completo, a edizioni.
     che è.
 
 ## A registro — ciò che resta, e in che stato
+
+- **La sfida di carta — #135 CANTIERE CHIUSO** (voce #135, 22 settembre
+  2026, cinque compiti dal merge-base `602a13e` — spec
+  `docs/superpowers/specs/2026-09-22-sfida-di-carta-design.md`, piano
+  `docs/superpowers/plans/2026-09-22-sfida-di-carta.md`). **Quinto
+  cantiere dell'onda D, e il primo che non ha bisogno del server.** Le
+  quattro voci precedenti (#130-#134) hanno costruito la sfida di rete e
+  il suo giudizio, e tutte e quattro presuppongono un server: il mandato
+  (§5, punto 12b) chiede l'altra metà — due persone che si sfidano
+  incollandosi un codice. Cantiere di solo MOTORE e SCHERMATA: il gioco
+  toccato solo per ancore (`_toppa-carta-codice.js` otto ancore,
+  `_toppa-carta-rettifica.js` una di solo commento,
+  `_toppa-carta-schermata.js` dieci). `git diff main --
+  CALCETTO-il-gioco.html`: **604 righe in più, 13 tolte**. Nessun file di
+  `rete/` toccato, e non è una dimenticanza: è la funzione che esiste per
+  non averne bisogno.
+
+  **IL CODICE STA IN 79 CARATTERI**, una parola sola:
+  `CARTA` + 70 simboli + 4 di controllo, in base32 di Crockford (niente
+  `I`, `L`, `O`, `U` — le quattro lettere che chi ricopia a mano
+  sbaglia). Dentro: versione (4 bit), `MOTORE_V` (4), taglia (2), seme
+  (32), le due posture (2+2), l'indice di carattere (4), il punteggio da
+  battere (5+5), quanti uomini per parte (5+5) e i quaranta attributi
+  delle due rose (7 bit l'uno) — 350 bit tondi. Misurato identico su
+  1000 sfide a caso (79..79). **Ci sta in un SMS** (che ne regge 160),
+  in un messaggio di WhatsApp o Telegram, e in una riga di 80 colonne. È
+  una parola sola e non a gruppi separati da trattino perché su un
+  telefono il doppio tocco seleziona una parola: un codice spezzato si
+  copia a metà.
+
+  **IL DIVIETO CHE REGGE IL CANTIERE.**
+  `Rete.codiceTrasferimento()` produce `id.segreto.controllo` e
+  `Rete.accettaTrasferimento` scrive `m.id` e `m.segreto`: **chi lo
+  incolla diventa quella squadra**. Mandarlo a un amico per sfidarlo
+  vuol dire regalargli la squadra, i punti e la facoltà di giocare a tuo
+  nome. Di quel codice qui si riusa **solo la forma del controllo**
+  (`s = (s*31 + v) >>> 0`) e nient'altro: nel codice della sfida non
+  entra niente che dipenda da chi lo scrive — non l'id, non il segreto,
+  non il nome della squadra, non i nomi dei giocatori. Dell'avversario
+  viaggia l'**indice** di carattere (−1..9), come già fa il nastro dalla
+  #132. Due serrature, una per verso: la sfida non ha punti dentro
+  (`accettaTrasferimento` ne pretende tre pezzi separati da punto), il
+  trasferimento non comincia per `CARTA`. E chi incolla per sbaglio il
+  codice del cambio telefono nel campo della sfida riceve **la frase
+  giusta**, non «codice sbagliato»: «non si manda a nessuno, perché chi
+  lo incolla diventa la tua squadra».
+
+  **QUATTRO SIMBOLI DI CONTROLLO E NON UNO, misurati in modo
+  esaustivo.** Una cifra cambiata: **2294 su 2294** (ogni posizione per
+  ogni altro valore). Due cifre scambiate: **2624 su 2624** (ogni
+  coppia). Da 1 a 4 simboli a caso: **29.762 su 29.762**. Cento per
+  cento tutte e tre. Non è fortuna: una cifra cambiata sposta
+  l'accumulatore di `delta·31^k`, e `31^k` è dispari quindi invertibile
+  modulo `2^20`, e `|delta| ≤ 31` non può annullarlo; uno scambio lo
+  sposta di `(a−b)·31^m·(31^d − 1)`, e la potenza di due che divide
+  `31^d − 1` vale 1 per `d` dispari e `5+v₂(d)` per `d` pari, quindi per
+  arrivare a 20 servirebbe `d ≥ 2048`, cioè un codice trenta volte più
+  lungo. **Con un carattere solo** (il falso `_crit-carta-controllo`, 5
+  bit) il tasso misurato **crolla al 54,5% sugli scambi e al 97,97%
+  sulle mutazioni a caso**: un codice storto su quaranta passerebbe, e
+  chi lo gioca giocherebbe una partita diversa senza saperlo. Tre
+  caratteri su settantanove.
+
+  **LO SCHERMO NON ENTRA NEL CODICE, e non per ragionamento: per
+  misura.** La #133 ha scoperto che il nastro porta i tocchi in
+  coordinate di schermo e che `800x360` contro `915x412` dà 0-3 dove il
+  tabellone dice 3-4. Qui non si scambia un nastro, si scambia una
+  partita da rigiocare da zero: nessuno rigioca i tocchi di un altro.
+  **Misurato** (`_q-carta` C1): sei codici, quattro viste (`915x412`,
+  `800x360`, `380x640`, `1024x460`) e quattro salvataggi davvero diversi
+  — identità di rete, nome squadra, cinque nomi di rosa pescati dalle
+  tabelle vere, sponde, mira guidata, durata, mentalità, taglia,
+  difficoltà — con la partita portata **fino al fischio finale**:
+  punteggio, sorteggi, durata, posizioni di tutti a ogni campione,
+  titolari con nomi e numeri, numeri di tutti alla fine. **Ventiquattro
+  aperture, tutte identiche.** Quel che lo rende vero e che il codice
+  porta o forza: `G.sfida` valorizzato (così `durataPartita()` fissa il
+  cronometro al valore di serie invece che a `SAVE.durata`),
+  `sponde:'gabbia'` e `miraGuidata:'pieno'` (le due righe che le voci #87
+  e #113 hanno messo apposta), le due rose passate per intero, e i **due
+  nomi fissi** — `SFIDANTE` e la squadra di quartiere che l'indice
+  nomina — perché il nome della squadra decide i nomi dei rincalzi e
+  delle panchine, e `rosaAvversaria` legge `SAVE.rosa`.
+
+  **L'UNICA COSA CHE PUÒ CAMBIARE, dichiarata invece che nascosta**
+  (`_q-carta` C1b): fra due telefoni, **28 nomi su 240 confrontati** sono
+  diversi, e sono **tutti** rincalzi entrati dalla panchina a partita in
+  corso — «Ivano il Professore» contro «Ivano Fulmine», con gli stessi
+  identici `54/53/42/64`. `rosaAvversaria` scarta i cognomi già usati da
+  `SAVE.rosa`, che è locale. È cosmetica e il confine è duro: se a
+  cambiare fosse il nome di un **titolare**, la prova diventa rossa,
+  perché il codice non starebbe schierando la stessa squadra.
+
+  **CINQUE CONTRO CINQUE, e la ragione del compito 2 era sbagliata
+  (rettifica a edizioni, compito 3).** Il compito 2 aveva scritto, nel
+  gioco e nella spec, che a sette «due telefoni con rose diverse
+  schiererebbero due squadre diverse», perché `formaSquadre` sparge i
+  rincalzi di quartiere usando il loro nome. **Misurato: falso.** A
+  sette, due pagine con rose diverse schierano quattordici uomini con
+  gli **stessi numeri** (zero differenze su quattordici) e la partita
+  finisce uguale — `2-0` contro `2-0`, stessi sorteggi, stesse posizioni
+  a ogni campione. Cambia **un nome su quattordici**. La ragione vera,
+  quella che la misura lascia in piedi: a sette e a undici **il codice
+  non descrive tutta la squadra** — la rosa del gioco è da cinque
+  (`nuovaRosa`), quindi due uomini su sette e sei su undici li
+  ricostruisce il telefono, con un nome pescato da un dato locale. A
+  cinque il codice descrive ogni uomo che scende in campo. Il testo
+  vecchio resta citato, con data e fonte accanto, sia nel gioco
+  (`CARTA_TAGLIE`) sia nella spec. Il formato porta la taglia lo stesso,
+  e il codice resta di 79 caratteri a qualunque taglia: aprire 7 e 11
+  domani non costa un carattere, costa la descrizione degli uomini che
+  oggi mancano.
+
+  **IL GIRO, DALLA PARTE DI CHI GIOCA.** SFIDA → **SFIDA DI CARTA** →
+  CREA UNA SFIDA: il gioco pesca un seme, ne ricava un avversario (una
+  delle dieci squadre di quartiere, con una rosa costruita dal seme
+  attorno alla forza della tua) e apre la partita. Si gioca; al fischio
+  finale il codice nasce **col punteggio vero dentro** e il bottone di
+  fine partita dice `IL CODICE` (`G.sfidaFine === 3`) e apre il pannello
+  da solo. Chi lo riceve lo incolla e gioca la stessa identica partita;
+  alla fine il gioco dice se ha fatto meglio, uguale o peggio — prima la
+  differenza reti, poi i gol fatti. **Una sfida di carta non paga e non
+  insegna**: `G.matchRewarded = true` (niente monete, niente crescita
+  della rosa, niente trofei) e `Rete.imparaIndole` non gira — in campo
+  non c'è la tua squadra, c'è quella del codice.
+
+  **E NON PORTA UNA PROVA, scritto nel gioco e non solo qui.** Nel codice
+  non c'è un nastro (un nastro pesa migliaia di byte, misurato alla
+  #133), quindi non c'è niente da giudicare: chi riceve il codice può
+  dichiarare il punteggio che vuole e nessuno può smentirlo. È un gioco
+  fra due persone che si fidano. Chi vuole un risultato verificato ha la
+  SFIDA di rete, che il giudice ce l'ha. Sta scritto nel pannello, in
+  grassetto, accanto al codice.
+
+  **LA PIEGA, misurata prima di scegliere e non dopo.** Tre posti
+  possibili per l'ingresso, misurati sul gioco di allora iniettando il
+  nodo nel DOM (`fuori/_sonda-135-bottone.js`): un quarto bottone nella
+  barra `.azioni` manda la barra su due file e fa cadere il bottone nuovo
+  **sotto** la piega; una voce grande **sopra** la lista porta la prima
+  riga a **375** su una piega di 360, cioè **rompe `_q-sigillo` B3**; una
+  voce grande **sotto** la lista non muove niente — `CERCA AVVERSARIO`
+  resta a **220**, la prima riga a **329**, il primo GUARDA a **308**,
+  identici al pixel su tutte e tre le viste, e l'ingresso nuovo sta sopra
+  la piega a lista vuota su tutte e tre (**347 / 347 / 471** contro
+  pieghe di 412 / 360 / 640). **Il prezzo, detto**: la barra dei tre
+  bottoni scende di 46 px e a `915x412` con la lista vuota finisce 6 px
+  sotto la piega, dove ci si arriva con lo stesso scorrimento che quella
+  schermata chiede già oggi appena la lista ha una riga (barra a 692 con
+  cinque righe). Si paga lì perché lì c'è TORNA AL MENU, che chiunque sa
+  cercare.
+
+  **ZERO RETE, contata come delta.** Tutto il giro — creare, giocare,
+  incollare, rigiocare — non fa **una sola** richiesta
+  (`_q-carta` D5, con l'impianto di `senza-rete.js`: si intercetta tutto
+  e passa solo il documento del gioco). Si conta il **delta** dopo
+  l'apertura della schermata SFIDA, che una richiesta la fa da sempre e
+  per progetto: contarla come colpa della sfida di carta vorrebbe dire
+  misurare la funzione sbagliata. Tacca a 1 (`/api/entra`, abortita),
+  richieste nuove nel giro: **0**, e il giro arriva in fondo.
+
+  **IL BANCO PRIMA DELLA COSA, e nasce 0/19.**
+  `strumenti/_q-carta.js` (in batteria, `conta:true`, `lento:true`, ~75
+  s, diciotto contesti di browser) chiude a **22 su 22**. **SEI FALSI**,
+  ognuno costruito nel caso peggiore e ognuno rosso **solo** sulla sua
+  prova: `_crit-carta-segreto` (sessanta bit dell'identificatore in coda
+  al carico: passa **tutto** il gruppo A — 79→91 caratteri, controllo
+  intatto — e tutto C, e passa perfino la ricerca di sottostringhe; cade
+  su B1) · `_crit-carta-nomi` (sei lettere del nome della squadra, che
+  l'alfabeto scrive `D0P01A` e la ricerca di sottostringhe non trova →
+  B1) · `_crit-carta-controllo` (un simbolo invece di quattro → A3b,
+  A3c) · `_crit-carta-locale` (sponde e mira guidata dal salvataggio:
+  passa A e B **per intero** → C1, 3-4 su un telefono e 1-2 su un altro)
+  · `_crit-carta-lungo` (tre cifre decimali per attributo, 143 caratteri
+  → A2) · `_crit-carta-sopra` (l'ingresso in alto, «dove si vede
+  meglio», che porta l'ingresso perfino più su — 266 invece di 347 → D4,
+  la prima riga a 375). **Il più importante è `segreto`**: passa
+  diciotto controlli su venti e cade su uno solo, il confronto fra due
+  telefoni con identità diverse. È la prova che il gruppo B misura invece
+  di attestare — una ricerca di sottostringhe non l'avrebbe mai trovato.
+
+  **L'attrezzo si rifiuta di scrivere il file** se il blocco della sfida
+  di carta nomina `mem()`, `segreto`, `codiceTrasferimento` o
+  `teamName`: il divieto non sta solo nei commenti, sta nella catena che
+  produce il gioco. E la toppa della rettifica dimostra da sé di essere
+  solo un commento: fuori dai commenti il file prima e dopo è identico.
+
+  **`MOTORE_V` resta 2**: non si è toccato né il nastro né la
+  simulazione. Il codice della sfida **porta** il numero e rifiuta un
+  codice scritto su un altro motore (`altro-motore`), ma non lo cambia.
+  **Reti di sicurezza a ogni compito**: impronta del duello **44/44**,
+  giudice **21/21**, sigillo **14/14**, ment-nastro 6/6,
+  carattere-nastro 4/4, rosa-scala 4/4, nastro-tronco 5/5, rete 22/22,
+  sfida 54/54, senza-rete 6/6. Batteria intera a cinque gruppi a ogni
+  compito, verde; `istantanea` resta il solito NO informativo,
+  pre-esistente e misurato uguale sul merge-base.
 
 - **Il sigillo — #134 CANTIERE CHIUSO** (voce #134, 22 settembre 2026,
   quattro compiti dal merge-base `6dee72b` — spec
