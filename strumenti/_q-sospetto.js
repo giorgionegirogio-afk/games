@@ -235,12 +235,17 @@ function sfidaNuova(b, att, dif, gol_a, gol_d, delta_a, delta_d) {
 
     /* Una tavola che restituisce lo STESSO oggetto a ogni chiamata e' una
        tavola che il primo chiamante puo' riscrivere per tutti. */
+    /* si confronta col PRIMO valore, non con lo zero: questa prova
+       parla di purezza, e una versione bugiarda che mette un altro
+       numero nella tavola deve cadere su A4 e A5 — che parlano della
+       regola — non qui. (Ci cadeva: riparato il 22 settembre 2026.) */
     const uno = c('INCOMPLETO');
+    const primo = uno ? uno.sospetto : null;
     if (uno && typeof uno === 'object') uno.sospetto = 99;
     const due = c('INCOMPLETO');
-    di(!!due && due.sospetto === 0,
+    di(!!due && due.sospetto === primo,
        'A7) la tavola e\' pura: chi tocca la risposta non riscrive la regola per il prossimo',
-       due ? 'sospetto ' + due.sospetto : 'il modulo non c\'e\'');
+       due ? 'prima ' + primo + ', dopo averla toccata ' + due.sospetto : 'il modulo non c\'e\'');
   }
 
   /* ===================================================================
@@ -673,7 +678,18 @@ function sfidaNuova(b, att, dif, gol_a, gol_d, delta_a, delta_d) {
     const tupla = (schema.match(/create or replace function\s+trova_avversario[\s\S]*?language sql/i) || [''])[0];
     const tuplaSpia = /returns table \([^)]*sospetto/i.test(tupla.replace(/\s+/g, ' ')) ||
                       /select[\s\S]*?a\.sospetto[\s\S]*?from squadra/i.test(tupla);
-    const classSpia = /create or replace function\s+classifica[\s\S]*?sospetto/i.test(schema);
+    /* la funzione si ritaglia FINO AL SUO `$$;` prima di cercarci
+       dentro: senza il taglio, una ricerca non ancorata trova il
+       `sospetto` della funzione SCRITTA DOPO e accusa quella prima
+       (successo il 22 settembre 2026, appena `segna_verdetto` e'
+       comparsa nel file sotto `classifica`). */
+    const corpoDi = nome => {
+      const i = schema.search(new RegExp('create or replace function\\s+' + nome, 'i'));
+      if (i < 0) return '';
+      const j = schema.indexOf('$$;', i);
+      return schema.slice(i, j < 0 ? schema.length : j + 3);
+    };
+    const classSpia = /sospetto/i.test(corpoDi('classifica'));
     /* L'endpoint PUO' nominare la soglia (`SOSPETTO_SEPARA` la manda al
        database), e non e' una fuga: e' un numero nostro. Quel che non
        puo' fare e' LEGGERE il sospetto di qualcuno — chiederlo in una

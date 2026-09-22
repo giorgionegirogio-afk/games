@@ -109,6 +109,19 @@ create index if not exists punti_ordine on punti (stagione, punti desc);
 -- riguardare) e MAI su -1, e annotare la causa altrove. La capacita' che
 -- produce i cinque verdetti sta in CALCETTO-il-gioco.html
 -- (window.__test.giudica); il verbale e' in MANUALE.md §A, voce #133.
+--
+-- SEGUITO A EDIZIONI (22 settembre 2026, voce #137). «Il lavoratore che
+-- verra'» adesso ha dove posare il verdetto, e si chiama
+-- `segna_verdetto(s_id, verdetto)` (piu' in basso in questo file). La
+-- mappatura descritta qui sopra non e' piu' una raccomandazione scritta
+-- a matita: e' dentro la funzione, che accetta la PAROLA e non il
+-- numero, e qualunque parola diversa da 'TORNA' e 'NON TORNA' lascia la
+-- colonna a 0. La funzione disfa anche i punti (delta_a, delta_d) e alza
+-- `allenatore.sospetto`, e lo fa SOLO su NON TORNA.
+--
+-- Quel che ancora non esiste e' la STAFFETTA: il processo che pesca le
+-- righe a `verificata = 0`, apre il browser della misura giusta, chiama
+-- `giudica` e riporta la parola. Manca quello, e non manca altro.
 -- ---------------------------------------------------------------------
 create table if not exists sfida (
   id           bigserial primary key,
@@ -351,6 +364,112 @@ language sql stable as $$
 $$;
 
 -- ---------------------------------------------------------------------
+-- SEGNARE UN VERDETTO — l'altro capo del giudice (voce #137).
+--
+-- Il giudice esiste da ieri: `window.__test.giudica` (voce #133) rigioca
+-- una sfida sul motore vero e restituisce uno di CINQUE verdetti. Questa
+-- funzione e' quel che il server ne fa. Non e' un endpoint e non lo
+-- diventera': un endpoint che accetta «questa sfida non torna» sarebbe
+-- il modo piu' corto per far togliere i punti a un avversario scrivendo
+-- il suo identificativo. Si chiama con la chiave di servizio, e sotto
+-- c'e' il `revoke` come per tutte le altre.
+--
+-- LA TAVOLA DEI CINQUE, rifatta qui dentro. La stessa sta in
+-- rete/lib/verdetto.js, e non e' una ripetizione per sbaglio: sono DUE
+-- PORTE. Chi scrivera' il verificatore differito potrebbe sbagliare a
+-- chiamare `conseguenza()` e passare un -1 a mano; questa funzione non
+-- gli crederebbe comunque, perche' non accetta -1 — accetta la parola
+-- 'NON TORNA'. Qualunque altra stringa (un errore di battitura, un
+-- nullo, un verdetto inventato fra un anno, un minuscolo) vale «non lo
+-- so» e non muove NIENTE: il ripiego di questa funzione e' l'innocenza.
+--
+-- E i tre «non lo so» — INCOMPLETO, ALTRO MOTORE, NON FINISCE — lasciano
+-- `verificata` a ZERO, non a -1 e nemmeno a 1: zero vuol dire «da
+-- riguardare», e l'indice `sfida_daverificare` tiene quelle righe in
+-- lista perche' un `INCOMPLETO / schermo-diverso` si puo' rigiudicare
+-- domani con la finestra della misura giusta.
+--
+-- LA GUARDIA (`and verificata = 0`) e' la riga che conta. Senza, un
+-- verificatore che ripassa sulla stessa sfida — o due processi partiti
+-- insieme — toglierebbero i punti due volte e scriverebbero due sospetti
+-- per una partita sola. E' la stessa forma del DELETE che consuma
+-- l'impegno in /api/sfida: il controllo lo fa la struttura, non un `if`
+-- che qualcuno un giorno spostera'.
+--
+-- IL SOSPETTO, e che cosa comporta. Sale di uno, e solo qui: dentro il
+-- ramo del solo NON TORNA. Non toglie punti da se' (li toglie il
+-- disfacimento di QUELLA partita, che e' un'altra cosa), non bandisce
+-- (`bandito` resta una decisione umana), non compare in nessuna risposta
+-- di nessun endpoint, non compare nella classifica. Fa UNA cosa:
+-- `trova_avversario` cerca solo fra chi sta dalla stessa parte della
+-- soglia. E' il «pool separati per abusatori» del mandato §10.5.
+--
+-- L'INVARIANTE, che e' la ragione per cui un'accusa cosi' si puo'
+-- scrivere: `allenatore.sospetto` di X E' il numero di righe `sfida` con
+-- `attaccante = X` e `verificata = -1`. Non e' un punteggio tarato a
+-- mano: e' un CONTEGGIO DI RIGHE, e ogni riga porta seme, taglia, gol e
+-- il replay. Chi e' segnato lo e' per partite che chiunque abbia la
+-- chiave puo' rigiocare una per una e ottenere lo stesso NON TORNA. Per
+-- questo il sospetto non decade mai: un numero che cala col tempo
+-- smetterebbe di essere ricostruibile dalle righe, e diventerebbe
+-- un'opinione.
+--
+-- LA `serie` NON SI DISFA, e va detto: non e' ricostruibile da una riga
+-- sola (servirebbe l'ordine di tutte le partite venute dopo) e vale al
+-- massimo un moltiplicatore del 30% su una singola partita. E' l'unica
+-- cosa che una sfida disfatta lascia indietro.
+-- ---------------------------------------------------------------------
+create or replace function segna_verdetto(s_id bigint, verdetto text)
+returns table (mosso boolean, esito int, sospetto_nuovo int)
+language plpgsql as $$
+declare s sfida%rowtype; e int; nuovo int := 0;
+begin
+  e := case verdetto when 'TORNA' then 1 when 'NON TORNA' then -1 else 0 end;
+  if e = 0 then
+    return query select false, 0, 0;
+    return;
+  end if;
+
+  update sfida set verificata = e where id = s_id and verificata = 0
+    returning * into s;
+  if not found then
+    return query select false, e, 0;
+    return;
+  end if;
+
+  if e = -1 then
+    -- i punti tornano indietro per TUTTI E DUE: i delta furono registrati
+    -- apposta («punti mossi, per poterli disfare»), e i pavimenti sono
+    -- quelli di muovi_punti, cento punti e zero contatori
+    update punti p set
+      punti  = greatest(100, p.punti  - s.delta_a),
+      vinte  = greatest(0,   p.vinte  - (case when s.gol_a >  s.gol_d then 1 else 0 end)),
+      pari   = greatest(0,   p.pari   - (case when s.gol_a =  s.gol_d then 1 else 0 end)),
+      perse  = greatest(0,   p.perse  - (case when s.gol_a <  s.gol_d then 1 else 0 end)),
+      fatti  = greatest(0,   p.fatti  - s.gol_a),
+      subiti = greatest(0,   p.subiti - s.gol_d),
+      aggiornati = now()
+     where p.allenatore = s.attaccante;
+
+    update punti p set
+      punti  = greatest(100, p.punti  - s.delta_d),
+      vinte  = greatest(0,   p.vinte  - (case when s.gol_d >  s.gol_a then 1 else 0 end)),
+      pari   = greatest(0,   p.pari   - (case when s.gol_a =  s.gol_d then 1 else 0 end)),
+      perse  = greatest(0,   p.perse  - (case when s.gol_d <  s.gol_a then 1 else 0 end)),
+      fatti  = greatest(0,   p.fatti  - s.gol_d),
+      subiti = greatest(0,   p.subiti - s.gol_a),
+      aggiornati = now()
+     where p.allenatore = s.difensore;
+
+    update allenatore a set sospetto = a.sospetto + 1
+     where a.id = s.attaccante
+    returning a.sospetto into nuovo;
+  end if;
+
+  return query select true, e, coalesce(nuovo, 0);
+end $$;
+
+-- ---------------------------------------------------------------------
 -- RLS ACCESO SU TUTTO, E NESSUNA REGOLA.
 --
 -- Non e' una svista: e' il progetto. Il ruolo `service_role`, che usano
@@ -371,3 +490,4 @@ revoke all on function trova_avversario(uuid, int, int, int, int)      from anon
 revoke all on function frena(text, int, int)                          from anon, authenticated;
 revoke all on function muovi_punti(uuid, int, int, int, real, boolean) from anon, authenticated;
 revoke all on function classifica(uuid, int, int)                     from anon, authenticated;
+revoke all on function segna_verdetto(bigint, text)                   from anon, authenticated;

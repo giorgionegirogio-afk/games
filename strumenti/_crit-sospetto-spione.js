@@ -34,12 +34,12 @@ require('./_crit-sospetto.js').falso({
   cambi: [
     { cerca: "               modulo text, indole jsonb, forza int, punti int)",
       metti: "               modulo text, indole jsonb, forza int, punti int, sospetto int)" },
-    { cerca: "  select s.allenatore, s.nome, s.colori, s.rosa, s.modulo, s.indole, s.forza,\n" +
-             "         coalesce(p.punti, 1000)",
+    { cerca: "           coalesce(p.punti, 1000) as pt\n",
+      metti: "           coalesce(p.punti, 1000) as pt, a.sospetto as sosp\n" },
+    { cerca: "  select al, nm, co, ro, mo, ind, fo, pt\n    from buoni",
       metti: "  -- IL FALSO (_crit-sospetto-spione.js): la colonna esce, e da qui\n" +
              "  -- finisce dritta nel corpo della risposta al telefono di un altro.\n" +
-             "  select s.allenatore, s.nome, s.colori, s.rosa, s.modulo, s.indole, s.forza,\n" +
-             "         coalesce(p.punti, 1000), a.sospetto" },
+             "  select al, nm, co, ro, mo, ind, fo, pt, sosp\n    from buoni" },
   ],
   attesi: [
     ['create or replace function segna_verdetto', 1],

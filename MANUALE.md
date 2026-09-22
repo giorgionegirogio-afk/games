@@ -517,6 +517,138 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **L'abbinamento per punti e il sospetto — #137 CANTIERE CHIUSO** (voce
+  #137, 22 settembre 2026, quattro compiti dal merge-base `8a9b33d` —
+  spec `docs/superpowers/specs/2026-09-22-abbinamento-punti-design.md`,
+  piano `docs/superpowers/plans/2026-09-22-abbinamento-punti.md`).
+  **Ultimo cantiere dell'onda D**, e l'unico che sta quasi tutto nel
+  server: `git diff main -- CALCETTO-il-gioco.html` è **vuoto**, e non
+  per pigrizia — il sospetto non si vede per disegno, e un abbinamento
+  più giusto si sente giocando, non si legge in un pixel. `MOTORE_V`
+  resta **2** per costruzione.
+
+  Due colonne esistevano e non le usava nessuno: i **punti** nella tupla
+  di `trova_avversario` e il **sospetto** in `allenatore`. Il mandato le
+  chiede per nome (§5 punto 12c, e §10.5 «fair play score continuo»).
+
+  **(a) LA SECONDA COORDINATA.** La finestra che si allarga a gradini
+  *esisteva già* (`for (const banda of [8, 20, 99])`, da mesi): non si
+  riscrive, le si aggiunge una coordinata. Il gradino smette di essere un
+  numero e diventa una coppia, e la scala vive in `rete/lib/abbinamento.js`
+  invece che in una riga dell'endpoint. **Perché serviva**: forza e punti
+  misurano due cose diverse — la forza dice quanto hai *giocato*, i punti
+  quanto *vinci* — e dentro `forza 75 ±8` ci stanno 203 allenatori su 400
+  con punti da 402 a 1486 (forbice **1084**, misurato).
+
+  Misurato su 5000 ricerche, prima e dopo **nella stessa corsa**
+  (`strumenti/_q-sospetto.js`, gruppo C):
+
+  | base | scarto mediano | entro 150 punti | oltre 500 | senza avversario | chiamate/ricerca |
+  |---|---|---|---|---|---|
+  | 400 | 188 → **60** | 41% → **99%** | 7% → **0%** | 0 → **0** | 1,00 → 1,01 |
+  | 60 | 180 → **63** | 43% → **93%** | 5% → **0%** | 0 → **0** | 1,00 → 1,11 |
+  | 12 | 255 → **147** | 28% → **52%** | 19% → **7%** | 0 → **0** | 1,00 → 2,17 |
+
+  **Nessuna sfida si perde**, e per costruzione: l'ultimo gradino della
+  scala *è* l'ultimo gradino di prima (`forza ±99`, punti senza limite).
+  È anche ciò che rende sicuro il **ricontrollo** che l'endpoint fa con
+  `ammissibile` sul candidato tornato dal database: se un giorno SQL e
+  JavaScript divergessero, il peggio è finire sull'ultimo gradino, cioè
+  sull'abbinamento di oggi.
+
+  **IL PREZZO CHE IL PROGETTO NON AVEVA PREVISTO, e l'ha trovato il
+  banco.** In due tempi, ed è la parte da ricordare. *Primo*: il banco
+  misurava sé stesso — la prova sulla varietà tirava duecento generatori
+  con **semi consecutivi** e ne usava la prima uscita, e duecento semi
+  consecutivi di quello xorshift danno **sedici** valori distinti su
+  mille. Diceva «4 avversari» dove ce n'erano 99. *Secondo*: riparata la
+  misura (un generatore solo, tirato duecento volte, su **tutta** la
+  popolazione e non su uno), è uscito il difetto vero — una finestra più
+  stretta dà abbinamenti più giusti **e meno gente dentro**, e il peggio
+  servito restava con **UN** avversario possibile. Lo stesso, tutte le
+  sere: esattamente ciò che l'`order by random()` esiste per impedire,
+  arrivato però dalla *finestra* invece che dall'ordinamento. La scala ha
+  preso un terzo numero, il **pavimento del mazzo** (`minimo`, 6/4/2/1, e
+  l'ultimo gradino ne chiede uno così nessuna sfida si perde). Misurato,
+  «avversari distinti in 200 ricerche», il peggio servito: base 400 →
+  oggi 10, senza pavimento **1**, col pavimento **7**; base 12 → oggi 3,
+  senza pavimento 1, col pavimento **5**. *Sulla base vera da dodici
+  persone il pavimento fa meglio di oggi in tutte e due le grandezze.*
+
+  **(b) IL SOSPETTO, e da quale verdetto nasce.** Da **NON TORNA**, e da
+  nessun altro. INCOMPLETO, ALTRO MOTORE e NON FINISCE sono «non lo so»
+  — un nastro scritto prima di una cura, il gioco di ieri, un tetto
+  nostro troppo stretto — e un sospetto che nasce da un «non lo so» è un
+  innocente accusato. La tavola sta in un posto solo
+  (`rete/lib/verdetto.js`) e **il suo ripiego è l'innocenza**: ventidue
+  ingressi storti misurati — la stringa vuota, il nullo, il minuscolo
+  `non torna`, `NONTORNA`, un verdetto inventato — non muovono niente.
+
+  **L'invariante che rende scrivibile un'accusa**: `allenatore.sospetto`
+  di X **È** il numero di righe `sfida` con `attaccante = X` e
+  `verificata = -1`. Non un punteggio tarato a mano: un conteggio di
+  righe, e ogni riga porta seme, taglia, gol e replay. Chi è segnato lo è
+  per partite che chiunque abbia la chiave può **rigiocare una per una**
+  e ottenere lo stesso NON TORNA. Verificato dal banco su cento verdetti
+  mescolati, venti conti su venti. Per questo il sospetto **non decade**:
+  un numero che cala col tempo smetterebbe di essere ricostruibile dalle
+  righe.
+
+  **Che cosa comporta, per intero.** Non toglie punti (li toglie il
+  disfacimento di *quella* partita, che è un'altra cosa), non bandisce,
+  non compare in nessuna risposta di nessun endpoint, non compare nella
+  classifica, non è visibile a chi ce l'ha né a nessun altro. Fa **una**
+  cosa: da `SOSPETTO_SEPARA = 3` in su, `trova_avversario` cerca solo fra
+  chi sta dalla stessa parte della soglia. Misurato coi sospetti al 3%
+  della base: un onesto ne incontra uno il **3,93%** delle volte senza
+  separazione e lo **0,00%** con. I due prezzi, detti: un sospetto che
+  non trova altri sospetti riceve un avversario costruito («allenamento,
+  mezzi punti», etichetta che il gioco scrive già), e un onesto in una
+  base piccolissima dove l'unico altro è un sospetto riceve anche lui un
+  avversario costruito.
+
+  **La soglia è tre e non uno**, e il perché è scritto accanto: un solo
+  NON TORNA può essere un difetto del nostro giudice, che è di ieri; tre
+  sono un comportamento.
+
+  **Zero endpoint nuovi, zero tabelle nuove, zero freni nuovi.**
+  `segna_verdetto(s_id, verdetto)` è una funzione del database, non un
+  endpoint: un endpoint che accettasse «questa sfida non torna» sarebbe
+  il modo più corto per far togliere i punti a un avversario scrivendone
+  l'identificativo. Prende la **parola** e non il numero, così le porte
+  sono due (JavaScript e SQL) e nessuna delle due accetta un `-1` passato
+  a mano. Ha la guardia `and verificata = 0` — la stessa forma del DELETE
+  che consuma l'impegno — quindi un verdetto applicato due volte muove
+  tutto una volta sola. Disfa i punti di entrambi usando `delta_a` e
+  `delta_d`, che esistevano dal primo giorno con scritto accanto «per
+  poterli disfare». La `serie` **non** si disfa, e il perché sta scritto:
+  non è ricostruibile da una riga sola.
+
+  **La trappola di Postgres, pagata e scritta nello schema**: `create or
+  replace function` con una **firma diversa** non sostituisce, *affianca*
+  — e la nuova nascerebbe senza `revoke`, cioè aperta. Le firme vecchie
+  si buttano prima.
+
+  **Il banco**: `strumenti/_q-sospetto.js`, **39/39**, in batteria con
+  `conta:true`. È il primo cancello della batteria che **non apre il
+  gioco**: misura il server, costa 4 s e non accende Chrome. Otto falsi
+  (`_crit-sospetto-*`, `_crit-abbinamento-*`), ognuno bocciato dalla sua
+  prova e da nessun'altra. Due li merita la memoria: `-largo`, che *ha* la
+  colonna, il parametro, il predicato e i commenti e non cambia niente
+  (cade solo sulla misura); e `-unico`, che è **la cura come era scritta
+  nel progetto**, senza pavimento — ha numeri migliori della cura vera su
+  ogni grandezza che il progetto aveva previsto di misurare, e lascia
+  qualcuno con un avversario solo.
+
+  **Quel che ancora non c'è, detto in chiaro**: la **staffetta**. Il
+  processo che pesca le righe a `verificata = 0`, apre il browser della
+  misura giusta, chiama `giudica` e riporta la parola non esiste. La
+  #133 ha costruito la capacità, la #134 il tubo fino all'occhio di chi
+  gioca, la #137 l'altro capo — che cosa succede quando un verdetto
+  arriva. Manca il pezzo in mezzo, ed è lavoro di un'altra voce.
+  Costruire la conseguenza prima della staffetta è l'ordine giusto: è
+  qui che sta il difetto che fa male.
+
 - **La classifica degli amici — #136 CANTIERE CHIUSO** (voce #136, 22
   settembre 2026, quattro compiti dal merge-base `66b17fe` — spec
   `docs/superpowers/specs/2026-09-22-classifica-amici-design.md`, piano

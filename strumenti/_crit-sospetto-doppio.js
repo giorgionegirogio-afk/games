@@ -24,7 +24,7 @@ require('./_crit-sospetto.js').falso({
   titolo: 'un verdetto applicato due volte conta due volte',
   morde: 'B6 (il doppio conteggio), B7 (la riga chiusa che si riapre) e B10 (l\'invariante)',
   file: 'lib/verdetto.js',
-  cerca: "  if (s.verificata !== 0) return nulla('gia-giudicata');",
+  cerca: "  if (s.verificata !== 0) return niente('gia-giudicata');",
   metti: "  /* IL FALSO (_crit-sospetto-doppio.js): la guardia non c'e'. */",
   attesi: [
     ["  'NON TORNA':    { verificata: -1, sospetto: 1, disfa: true  },", 1],

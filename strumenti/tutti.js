@@ -1038,6 +1038,54 @@ const CANCELLI = [
      partite intere. */
   { nome: 'amici',             cmd: ['strumenti/_q-amici.js'],                          conta: true,  lento: false },
   /* =====================================================================
+     sospetto: L'ABBINAMENTO PER PUNTI E IL SOSPETTO (voce #137).
+
+     E' IL PRIMO CANCELLO DELLA BATTERIA CHE NON APRE IL GIOCO, e va
+     detto perche' altrimenti sembra un errore di lista: misura il
+     SERVER. Non c'e' niente da aprire — il sospetto non si vede per
+     disegno, e un abbinamento piu' giusto si sente giocando, non si
+     legge in un pixel. Costa meno di un secondo e non accende Chrome.
+     Di conseguenza `--gioco` lo ignora: qualunque file gli si punti
+     contro, misura sempre rete/. Il suo `--gioco` si chiama `--rete`, e
+     serve ai falsi.
+
+     CHE COSA NESSUN ALTRO CANCELLO VEDE. La logica del server e' provata
+     da rete/prove/tutte.js, che pero' e' aritmetica pura (la forza di una
+     rosa, l'Elo, la pulizia del testo) e non sta in batteria; _q-rete e
+     _q-sfida provano il CLIENT contro un server finto, e del server
+     vero non sanno niente. Nessuno dei tre guarda l'accoppiamento, la
+     chiusura del database, o che cosa succede quando arriva un verdetto.
+
+       A) LA TAVOLA DEI CINQUE VERDETTI, e l'asserzione centrale si
+          scrive CONTANDO: su cinque verdetti UNO SOLO alza il sospetto,
+          e si chiama NON TORNA. INCOMPLETO, ALTRO MOTORE e NON FINISCE
+          sono «non lo so», e un sospetto che nasce da un «non lo so» e'
+          un innocente accusato. Piu' ventidue ingressi storti — il
+          nullo, il minuscolo, il verdetto inventato — che devono cadere
+          tutti nell'innocenza: il ripiego della tavola non e' l'accusa.
+       B) IL SOSPETTO IN UN DATABASE IN MEMORIA: i punti che tornano
+          indietro per tutti e due, i contatori che scendono di quel che
+          erano saliti, la guardia contro il doppio conteggio, e
+          L'INVARIANTE — dopo cento verdetti mescolati, il sospetto di
+          ognuno DEVE essere il numero delle sue sfide a meno uno. E'
+          quel che rende un'accusa riproducibile: non «il sistema dice»,
+          ma «ecco le partite, rigiocatele».
+       C) L'ABBINAMENTO, MISURATO prima e dopo nella STESSA corsa: 5000
+          ricerche su tre popolazioni simulate. E la prova che conta non
+          e' una media, e' IL PEGGIO SERVITO — e' li' che il banco ha
+          trovato, al compito 2, che una finestra piu' stretta lasciava
+          qualcuno con UN avversario solo.
+       D) LE PORTE CHIUSE, e questo gruppo DICE di attestare invece di
+          misurare: qui non c'e' un Postgres da interrogare. Ogni tabella
+          con RLS e nel revoke, ogni funzione revocata con la firma
+          esatta, i freni, i cinque endpoint, e il sospetto che non esce
+          da nessuna parte.
+
+     SA FALLIRE: otto falsi (`_crit-sospetto-*`, `_crit-abbinamento-*`),
+     ognuno costruito nel caso peggiore, ognuno bocciato dalla sua prova
+     e da nessun'altra. */
+  { nome: 'sospetto',          cmd: ['strumenti/_q-sospetto.js'],                       conta: true,  lento: false },
+  /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
      cancelli in lista ne ha visto uno.

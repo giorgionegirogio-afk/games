@@ -29,6 +29,17 @@
    riga della lista nel gioco la scrive in una parola. Finché il
    lavoratore non gira, tutte le righe valgono 0 e la lista dice «DA
    VERIFICARE»: è la verità, non un ripiego.
+
+   SEGUITO A EDIZIONI (22 settembre 2026, voce #137). Il verdetto adesso
+   ha anche dove POSARSI: `segna_verdetto(s_id, verdetto)` in
+   rete/schema.sql scrive `verificata`, disfa i punti di quella partita
+   per tutti e due (delta_a, delta_d, che esistevano apposta) e alza
+   `allenatore.sospetto` — **solo su NON TORNA**, perché gli altri tre
+   «no» restano «non lo so» e lasciano la riga a 0, in lista, da
+   rigiudicare. La tavola dei cinque sta in rete/lib/verdetto.js e, in
+   SQL, dentro la funzione: due porte, e nessuna delle due accetta un
+   -1 passato a mano. Manca ancora soltanto la staffetta che pesca le
+   righe e chiama il giudice.
    ===================================================================== */
 import { db, rispondi, preflight, guaio, chiSei, frenato, corpo,
          intero, configurato } from '../lib/comuni.js';

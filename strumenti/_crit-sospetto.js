@@ -87,4 +87,32 @@ function falso(conf) {
   console.log('    Un verde qui vorrebbe dire che il banco non discrimina.');
 }
 
-module.exports = { falso, copia, RADICE };
+/* =====================================================================
+   IL TOCCO CHE I TRE FALSI DEL «NON LO SO» CONDIVIDONO.
+
+   La tavola che accusa, da sola, non fa danno: `applica` si ferma prima
+   sui tre «non lo so», quindi un falso che cambiasse solo la tavola
+   resterebbe visibile al gruppo A e invisibile al gruppo B. Sarebbe un
+   falso gentile, e un falso gentile non prova niente.
+
+   Questo secondo tocco e' la versione «prudente» che qualcuno
+   scriverebbe davvero — «non decido, ma me lo segno» — ed e' quella che
+   accusa un innocente SENZA lasciare traccia nella colonna, cioe'
+   rompendo l'invariante che rende un'accusa riproducibile. Sta qui, in
+   un posto solo, perche' i tre falsi sono lo stesso difetto su tre
+   verdetti diversi.
+   ===================================================================== */
+const GATE_CERCA = "  if (c.verificata === 0) return niente('non-lo-so');";
+const GATE_METTI = [
+  "  /* IL FALSO: «non chiudo la riga, ma me lo segno». E' la versione",
+  "     prudente che qualcuno scriverebbe davvero, ed e' quella che accusa",
+  "     un innocente senza lasciare traccia nella colonna. */",
+  "  if (c.verificata === 0) {",
+  "    const aperta = banco.sfida.find(x => x && x.id === idSfida);",
+  "    const a0 = aperta ? prendi(banco.allenatore, aperta.attaccante) : null;",
+  "    if (a0) a0.sospetto = (a0.sospetto | 0) + c.sospetto;",
+  "    return niente('non-lo-so');",
+  "  }",
+].join('\n');
+
+module.exports = { falso, copia, RADICE, GATE_CERCA, GATE_METTI };

@@ -459,26 +459,50 @@ Quattro gruppi:
 
 ### I falsi, costruiti nel caso peggiore
 
-Ognuno e' una copia di `rete/lib/` scritta in `fuori/`, e il banco la
-prende con `--lib`. Ognuno deve **passare tutte le prove tranne la sua**:
-un falso che cade su tre gruppi non dimostra che il banco discrimina,
-dimostra che era scritto male.
+Ognuno e' una copia dell'**intera cartella** `rete/` scritta in
+`fuori/`, e il banco ci si punta contro con `--rete` (non `--lib`: un
+falso che cambiasse solo un modulo non potrebbe mai mordere il gruppo D,
+che legge lo schema). Ognuno deve **passare tutte le prove tranne la
+sua**: un falso che cade su tre gruppi diversi non dimostra che il banco
+discrimina, dimostra che era scritto male.
 
-| falso | che cosa sbaglia | chi lo boccia |
-|---|---|---|
-| `_crit-sospetto-incompleto.js` | il sospetto sale anche su `INCOMPLETO` — l'innocente accusato, il difetto piu' grave possibile | **A**, e **B** sull'invariante |
-| `_crit-sospetto-altromotore.js` | sale su `ALTRO MOTORE`: «se ha un altro motore qualcosa nasconde» | **A** |
-| `_crit-sospetto-nonfinisce.js` | sale su `NON FINISCE`: «se non finisce e' perche' l'ha costruita apposta» | **A** |
-| `_crit-sospetto-doppio.js` | niente guardia sul `verificata = 0`: un verdetto applicato due volte toglie i punti due volte e fa due sospetti | **B** |
-| `_crit-abbinamento-largo.js` | la dimensione punti c'e', e' scritta, arriva all'SQL — ma le bande sono 2000/4000/8000, cioe' non filtrano niente. **Passa A, B e D**, e cade solo sulla MISURA | **C** |
-| `_crit-abbinamento-ordine.js` | invece di sorteggiare nella banda prende il piu' vicino di punti: gli abbinamenti diventano ancora piu' stretti (la prova di vicinanza la passa a mani basse) e due della stessa fascia si incontrano all'infinito | **C**, varieta' |
-| `_crit-sospetto-spione.js` | il sospetto esce nella tupla dell'avversario, «cosi' il gioco puo' avvisare» | **D** |
-| `_crit-abbinamento-unico.js` | *(nato al compito 2)* la scala giusta **senza il pavimento del mazzo**: ogni numero del progetto migliora, e il peggio servito resta con un avversario solo | **C7** |
+Tutti e otto **misurati al compito 3**, e la colonna «chi lo boccia»
+riporta l'esito vero, non la previsione:
 
-Il quinto e' quello che conta piu' di tutti: e' il falso che assomiglia a
-una cura. Ha la colonna, ha il parametro, ha il predicato, e non cambia
-niente. Un banco che non lo prende ha collaudato il codice invece del
-comportamento.
+| falso | che cosa sbaglia | passa | cade su |
+|---|---|---|---|
+| `_crit-sospetto-incompleto.js` | il sospetto sale anche su `INCOMPLETO` — l'innocente accusato, il difetto piu' grave possibile | 35/39 | **A4 A5 B5 B10** |
+| `_crit-sospetto-altromotore.js` | sale su `ALTRO MOTORE`: «se ha un altro motore qualcosa nasconde» | 35/39 | **A4 A5 B5 B10** |
+| `_crit-sospetto-nonfinisce.js` | sale su `NON FINISCE`: «se non finisce l'ha costruita apposta» | 35/39 | **A4 A5 B5 B10** |
+| `_crit-sospetto-doppio.js` | niente guardia su `verificata = 0`: un verdetto applicato due volte toglie i punti due volte e fa due sospetti | 36/39 | **B6 B7 B10** |
+| `_crit-sospetto-spione.js` | il sospetto esce nella tupla dell'avversario, «cosi' il gioco puo' avvisare» | 38/39 | **D6** |
+| `_crit-abbinamento-largo.js` | la dimensione punti c'e', e' scritta, arriva all'SQL — e le bande sono 2000/4000/6000, cioe' non escludono nessuno | 34/39 | **C2 C4 C4b C5** (+C7) |
+| `_crit-abbinamento-ordine.js` | invece di sorteggiare nella banda prende il piu' vicino: la vicinanza migliora, e due della stessa fascia si incontrano all'infinito | 38/39 | **C7** |
+| `_crit-abbinamento-unico.js` | *(nato al compito 2)* la scala giusta **senza il pavimento del mazzo**: ogni numero del progetto migliora, e il peggio servito resta con un avversario solo | 37/39 | **C7 C7b** |
+
+**I due che contano piu' di tutti**, e per due ragioni opposte:
+
+- `_crit-abbinamento-largo` e' il falso che **assomiglia a una cura**. Ha
+  la colonna, il parametro, il predicato, i commenti, e non cambia
+  niente. Un banco che non lo prende ha collaudato il codice invece del
+  comportamento.
+- `_crit-sospetto-incompleto` e' il falso che **accusa un innocente**, ed
+  e' costruito in due tocchi perche' uno solo non bastava. **Misurato al
+  compito 3:** cambiare solo la tavola (INCOMPLETO vale un sospetto) non
+  fa danno, perche' `applica` si ferma prima sui tre «non lo so» — il
+  falso restava visibile al gruppo A e invisibile al gruppo B. Il secondo
+  tocco e' la versione che qualcuno scriverebbe davvero — «non chiudo la
+  riga, ma me lo segno» — ed e' quella che accusa senza lasciare traccia
+  nella colonna, cioe' rompendo l'invariante. Con tutti e due, il falso
+  cade su A **e** su B, che e' quel che il progetto diceva.
+
+**Una trappola del banco trovata dai falsi (22 settembre 2026, compito
+3).** La prova A7 — «la tavola e' pura» — confrontava il valore
+restituito con **zero** invece che col valore restituito la prima volta.
+Risultato: qualunque falso che mettesse un altro numero nella tavola la
+faceva cadere, cioe' A7 parlava della regola invece che della purezza.
+Adesso confronta col primo valore, e `_crit-sospetto-incompleto` cade su
+quattro prove invece che su cinque — tutte e quattro sue.
 
 ## Che cosa NON si tocca
 
