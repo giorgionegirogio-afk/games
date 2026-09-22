@@ -13403,6 +13403,29 @@ function touchBtnLayout(t){
    voluta: li' i semi col duello si scartavano (erano rifiutati a monte
    dal marchio di tipo 5), qui no — dal #131 il duello e' nel nastro, e
    una partita che ne ha uno esercita piu' motore di una che non ne ha.
+
+   E LA VOCE #133 HA RIMISURATO, perche' ha toccato di nuovo il registro
+   (la riga di tipo 10, lo schermo di chi ha giocato) e ha aggiunto il
+   GIUDICE — giudica(), il verificatore differito reso chiamabile senza
+   schermo.
+
+   La catena che dice ancora di si': un tipo di riga NUOVO (il 10) che un
+   nastro vecchio non ha e per cui esegui non ha un ramo; una funzione
+   nuova che nessuna partita chiama mai da se'; e due rami «if» nel
+   motore che si accendono solo quando Giudizio.attivo e' vero, cioe' mai
+   in una partita vera. La sesta ancora — la causa vera al posto di
+   quella sbagliata nel cartello di fine replay — e' testo, non
+   simulazione.
+
+   MISURATO il 22 settembre 2026 con strumenti/_t-132-motorev.js,
+   puntato sul gioco di prima con --prima fuori/gioco-133-base.html
+   (main e7aa605): 30 nastri registrati sul gioco di prima e rigiocati
+   sul curato, taglia 5, 3600 passi, semi da 20260801, **30 su 30
+   identici** — impronta, punteggio e conto dei sorteggi. Zero nulli; uno
+   dei trenta passa dal dischetto. Non si e' scritto un
+   _t-133-motorev.js: sarebbe stata la copia di un attrezzo di trecento
+   righe per cambiare un valore di default, e in questa casa una copia e'
+   un posto in piu' dove la stessa ferita si riapre da sola.
    ===================================================================== */
 const MOTORE_V = 2;
 

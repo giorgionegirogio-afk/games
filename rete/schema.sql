@@ -96,6 +96,19 @@ create index if not exists punti_ordine on punti (stagione, punti desc);
 --   · chiunque puo' RIGIOCARLA e vedere se il punteggio e' quello vero.
 --
 -- `verificata`:  0 = da guardare, 1 = torna, -1 = non torna (punti tolti)
+--
+-- RETTIFICA A EDIZIONI (22 settembre 2026, voce #133). Questa colonna ha
+-- tre valori perche' i verdetti sembravano tre. Sono CINQUE, e la
+-- differenza non e' accademica: TORNA, NON TORNA, INCOMPLETO (il nastro
+-- non basta a decidere), ALTRO MOTORE (MOTORE_V diverso) e NON FINISCE
+-- (la rigiocata non arriva alla fine entro il tetto della taglia).
+-- **Solo NON TORNA puo' muovere punti**: gli altri tre «no» sono «non lo
+-- so», e chi li scrive come -1 toglie punti a un innocente.
+-- Finche' la colonna resta int a tre valori, il lavoratore che verra'
+-- deve mappare INCOMPLETO / ALTRO MOTORE / NON FINISCE su 0 (da
+-- riguardare) e MAI su -1, e annotare la causa altrove. La capacita' che
+-- produce i cinque verdetti sta in CALCETTO-il-gioco.html
+-- (window.__test.giudica); il verbale e' in MANUALE.md §A, voce #133.
 -- ---------------------------------------------------------------------
 create table if not exists sfida (
   id           bigserial primary key,

@@ -67,6 +67,32 @@ Se il replay non riproduce il punteggio dichiarato, i punti si tolgono. Il
 giocatore onesto non se ne accorge mai; il disonesto scopre che la classifica
 si ripulisce da sola.
 
+> **RETTIFICA A EDIZIONI (22 settembre 2026, voce #133).** Le tre righe
+> qui sopra sono state una promessa architetturale per mesi: il
+> lavoratore periodico non esisteva, zero righe di codice. Oggi esiste
+> **la capacità**, e non esiste ancora **il lavoratore**.
+>
+> La capacità è `window.__test.giudica(nastro, atteso, {seme, taglia})`
+> dentro `CALCETTO-il-gioco.html`: rigioca il nastro sul motore vero —
+> l'unico che c'è, perché un secondo motore scritto in Node divergerebbe
+> per costruzione e toglierebbe punti a innocenti — e torna uno di cinque
+> verdetti. **Uno solo può muovere punti**: `NON TORNA`. Gli altri
+> quattro (`TORNA`, `INCOMPLETO`, `ALTRO MOTORE`, `NON FINISCE`) sono
+> «non lo so», e chi li tratta come un'accusa fa il danno che questa
+> pagina prometteva di evitare.
+>
+> Misurato: **14 partite oneste su 14 tornano** (taglie 5, 7 e 11), zero
+> falsi `NON TORNA`. Il banco è `strumenti/_q-giudice.js`, in batteria.
+>
+> Quel che manca è il ciclo: pescare le righe con `verificata = 0`,
+> aprire un browser headless **della misura di schermo che il nastro
+> dichiara** (la riga di tipo 10 — senza, la rigiocata è un'altra
+> partita: misurato, `800x360` contro `915x412` dà 0-3 dove il tabellone
+> dice 3-4), chiamare `giudica`, e scrivere `verificata = -1` con
+> `muovi_punti(-delta)` **solo** sui `NON TORNA`.
+>
+> Verbale completo: `MANUALE.md` §A registro, voce #133.
+
 ### 3. Tempo reale in lockstep
 
 Due telefoni, stesso seme, si scambiano i comandi via WebSocket (Supabase

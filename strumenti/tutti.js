@@ -889,6 +889,30 @@ const CANCELLI = [
   { nome: 'rosa-scala',        cmd: ['strumenti/_q-rosa-scala.js'],                     conta: true,  lento: false },
   { nome: 'nastro-tronco',     cmd: ['strumenti/_q-nastro-tronco.js'],                  conta: true,  lento: false },
   /* =====================================================================
+     giudice: IL VERIFICATORE DIFFERITO, SORVEGLIATO DAL PRIMO GIORNO
+     (voce #133, compito 4). I due cantieri precedenti hanno pagato in
+     revisione il rilievo «il cancello nuovo non e' in batteria»: qui si
+     registra insieme alla cura, non dopo.
+
+     COSA SORVEGLIA. `giudica(nastro, atteso, opz)` rigioca il nastro di
+     una sfida e ne conferma il punteggio con uno di cinque verdetti, e
+     UNO SOLO (NON TORNA) puo' muovere punti. E' l'unico posto del gioco
+     che puo' TOGLIERE punti a qualcuno: una regressione qui non si
+     vedrebbe su nessuno schermo e si pagherebbe in classifica. Il
+     cancello gioca due sfide vere a due pagine, le giudica da una TERZA
+     che non si e' mai collegata e che ha apposta le impostazioni locali
+     sbagliate, e verifica che i cinque verdetti escano DISTINTI: un
+     banco che non li distingue attesta invece di misurare.
+
+     PERCHE' NON BASTAVA `sfida`: quello prova la schermata e il giro del
+     nastro fra due telefoni, non il verdetto. E nessuno degli altri
+     quarantacinque si accorgerebbe se il giudice cominciasse a dire
+     sempre TORNA (o, peggio, sempre NON TORNA).
+
+     Misurato su macchina di sviluppo: ~17 s da solo, sotto la soglia dei
+     30-40 s che qui chiede lento (modello `audio.js`) — non lento. */
+  { nome: 'giudice',           cmd: ['strumenti/_q-giudice.js'],                        conta: true,  lento: false },
+  /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
      cancelli in lista ne ha visto uno.

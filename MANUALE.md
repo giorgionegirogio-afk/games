@@ -472,6 +472,163 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Il giudice — #133 CANTIERE CHIUSO** (voce #133, 22 settembre 2026,
+  cinque compiti dal merge-base `e7aa605` — spec
+  `docs/superpowers/specs/2026-09-22-il-giudice-design.md`, piano
+  `docs/superpowers/plans/2026-09-22-il-giudice.md`). **Cuore dell'onda
+  D.** Il mandato §10.5 chiede il **verificatore differito** delle sfide:
+  «la classifica si ripulisce da sola» è scritto in `rete/LEGGIMI.md` da
+  mesi, la colonna `verificata` è nello schema, e il lavoratore che
+  rigioca davvero la partita non esisteva — zero righe di codice.
+  Cantiere di MOTORE, tutto per ancore (`strumenti/_toppa-giudice.js`
+  quattro ancore, `_toppa-giudice-schermo.js` sei, `_toppa-133-motorev.js`
+  una di solo commento). `git diff main -- CALCETTO-il-gioco.html`:
+  **375 righe in più, 6 tolte**.
+
+  **LA DECISIONE D'ARCHITETTURA: il giudice vive NEL FILE, non nel
+  server.** Un verificatore che rigioca con un SECONDO motore scritto in
+  Node è la peggiore idea possibile per questo problema: due
+  implementazioni della stessa fisica divergono per costruzione, e ogni
+  divergenza toglie punti a un innocente invece di trovare un baro. Il
+  motore vero è uno solo. `Sfida.guarda` faceva già il lavoro — prende un
+  nastro, lo rigioca, confronta il punteggio con quello dichiarato — ma
+  la capacità stava dentro a una schermata. `giudica(nastro, atteso,
+  {seme, taglia})` è quella stessa capacità chiamabile da un browser
+  senza finestra. Un verificatore è allora: pesca la riga, allargala
+  (`deflate-raw`, in Node), apri il file, chiama, leggi una stringa.
+
+  **I CINQUE VERDETTI, e uno solo può muovere punti.** `TORNA` ·
+  `NON TORNA` (l'unico su cui sia lecito agire) · `INCOMPLETO` (nove
+  cause distinte: `nastro-assente`, `nastro-illeggibile`, `nastro-vuoto`,
+  `nastro-troncato`, `duello-marchiato`, `rose-assenti`,
+  `carattere-assente`, `duello-senza-righe`, `schermo-diverso`, più
+  `seme-assente`/`taglia-assente`/`atteso-assente`) · `ALTRO MOTORE` ·
+  `NON FINISCE`. **Il contratto, quattro punti**: (1) forza
+  `sponde:'gabbia'` e `miraGuidata:'pieno'` come fanno `Sfida.gioca` e
+  `Sfida.guarda`, perché sono impostazioni del TELEFONO e un giudice che
+  le seguisse direbbe NON TORNA per colpa del motore; (2) legge le rose
+  DAL NASTRO e — qui è **più stretto di `Sfida.guarda`** — se la testa di
+  tipo 7 manca si rifiuta invece di ripiegare sul profilo vivo (un film
+  approssimato costa niente, un verdetto approssimato costa punti); (3)
+  non muove mai un punto su un verdetto diverso da NON TORNA; (4) è
+  deterministico e ripetibile. **Il tetto è `tettoFotogrammi(taglia)`**
+  (18.000/21.000/27.000, voce #130), non un numero fisso: tarato su
+  taglia 5 boccerebbe ogni sfida legittima a 11. Si può solo STRINGERE
+  dall'esterno, mai allargare.
+
+  **IL SALVATAGGIO SI FOTOGRAFA E SI RIMETTE COM'ERA.** Misurato
+  (`fuori/_sonda-133-fermo.js`): una partita che finisce muove
+  `SAVE.lastRes` e `SAVE.inviti` anche quando non paga niente
+  (`Inviti.usato` scrive SEMPRE, anche a inviti zittiti). Un verificatore
+  ne fa mille al giorno: senza la fotografia si ritroverebbe sulla
+  lavagna di casa il risultato di partite mai giocate. Si fotografa
+  TUTTO e non le due chiavi trovate, perché l'elenco dei posti in cui una
+  partita può scrivere non è una cosa che si dichiari chiusa guardandola
+  una volta. E `chiudiSfida` non chiama più `Rete.imparaIndole` durante
+  un giudizio: chi ne verificasse mille diventerebbe la media di mille
+  sconosciuti.
+
+  **IL BANCO PRIMA DELLA COSA, e nasce 0/16.** `_q-giudice.js` gira a
+  **TRE pagine e non due**: una sfida si registra solo attaccando e si
+  rivede solo difendendo, ma il giudice non è nessuno dei due — è un
+  browser che apre il file e basta. La terza pagina non si collega, non
+  entra, non gioca, ha la rosa vergine e **le impostazioni locali
+  sbagliate apposta** (sponde CAMPO VERO, mira ESSENZIALE), così la prova
+  B non prova solo che il giudice funziona: prova il primo punto del
+  contratto. **SETTE FALSI, e ognuno passa tutte le prove tranne la sua**
+  — `cieco` (dice sempre TORNA) cade su C/H/M, `vivo` (rose dal profilo
+  vivo) su B/B2/M, `sordo` (il ripiego di `Sfida.guarda` portato dentro
+  al giudice) sulla **sola** F, `fisso` (tetto 18.000 a ogni taglia)
+  sulla **sola** K, `locale` (sponde e mira dal salvataggio) su B/C/M,
+  `lento` (il tetto raggiunto diventa un'accusa) su I/M, `sbadato` (la
+  versione del motore si legge e non si guarda) su G/M. **Il falso
+  `locale` ha insegnato una cosa che il progetto non prevedeva**: con le
+  sponde sbagliate la rigiocata DIVAGA e finisce su un calcio piazzato
+  che il nastro non ha, quindi `INCOMPLETO/duello-senza-righe` e non NON
+  TORNA — il giudice sbagliato non accusa nessuno, semplicemente non
+  verifica più niente.
+
+  **IL TASSO DI FALSI «NON TORNA» SU PARTITE ONESTE: 0 su 14**
+  (`_t-giudice-onesto.js`: 10 sfide vere a taglia 5, 2 a 7, 2 a 11,
+  giocate con dita simulate e giudicate una per una — **14 TORNA su
+  14**). I nomi non spostano un verdetto (GIUDICE UNO contro GASOMETRO,
+  che nella tabella dei caratteri c'è, rose diverse) e nemmeno l'audio
+  (la cura del #132 tiene, rimisurata dalla parte del giudice).
+
+  **IL SESTO CANALE, TROVATO MISURANDO — ed è il più grosso.** Il terzo
+  canale sospetto era la finestra, in lista per la ragione SBAGLIATA (i
+  sorteggi della cosmetica, che la voce #129 ha spostato su `DECO` e che
+  non c'entrano). **Il canale passa dai PIXEL**: il nastro registra i
+  tocchi in coordinate di SCHERMO, e dove finisce un tocco lo decidono
+  `touchBtnLayout` e `SCALE/OX/OY`, che derivano tutti da
+  `innerWidth`/`innerHeight` (`function resize`). Lo stesso tocco a
+  (841, 342) preme il disco grande su 915x412 e non preme NIENTE su
+  800x360, dove quel punto è fuori dalla finestra. MISURATO
+  (`fuori/_sonda-133-finestra.js`, nove viste sullo stesso nastro,
+  partita dichiarata 3-4): `915x413`/`916x412`/`930x412`/`915x430`
+  tornano 3-4; `1024x460` **NON TORNA 1-3**; `1280x720`
+  **INCOMPLETO/duello-senza-righe 0-4**; `844x390` (iPhone 14) e
+  `800x360` **NON TORNA 0-3**. Non è una lama: quindici pixel non
+  spostano niente, settanta spostano tutto. **E NON È UN DIFETTO DEL
+  GIUDICE: C'ERA GIÀ, IN PRODUZIONE** — misurato col replay vero
+  (`fuori/_sonda-133-schermi.js`), schermi uguali 3-4 contro 3-4, e
+  915x412/844x390 → 0-3, 844x390/915x412 → 1-3, 915x412/800x360 → 0-3,
+  **con il gioco che scrive testualmente «La squadra di chi ti ha
+  attaccato è cambiata da allora»**. L'innocente accusato, la stessa
+  frase che il #132 ha tolto di mezzo cinque volte, detta quasi sempre —
+  perché in produzione due telefoni con lo stesso schermo sono
+  l'eccezione, non la regola. **CURA** (non la definitiva): il nastro
+  porta lo schermo su cui è stato registrato (**riga di tipo 10**, due
+  numeri, scritta da `Sfida.gioca` accanto alle due rose); il GIUDICE, su
+  uno schermo diverso, si RIFIUTA (`INCOMPLETO`, causa `schermo-diverso`)
+  **e dichiara quale schermo serve**, così chi lo chiama riapre il
+  browser di quella misura e giudica davvero; il REPLAY di produzione il
+  film lo mostra lo stesso — rifiutarlo vorrebbe dire spegnere la
+  funzione per quasi tutti — ma quando il punteggio non torna dà la CAUSA
+  VERA invece di dare la colpa alla rosa. La cura DEFINITIVA (tocchi
+  registrati in coordinate che non dipendono dallo schermo) è **fuori
+  perimetro, dichiarata seguito**.
+
+  **MOTORE_V RESTA 2, MISURATO** (`_t-132-motorev.js --prima
+  fuori/gioco-133-base.html`, cioè `main` `e7aa605`): 30 nastri
+  registrati sul gioco di prima e rigiocati sul curato, taglia 5, 3600
+  passi, semi da 20260801, **30 su 30 identici** (impronta, punteggio,
+  sorteggi); zero nulli, uno dei trenta passato dal dischetto. La misura
+  è scritta accanto al numero nel sorgente. **Non si è scritto un
+  `_t-133-motorev.js`**: sarebbe stata la copia di un attrezzo di
+  trecento righe per cambiare un valore di default, e in questa casa una
+  copia è un posto in più dove la stessa ferita si riapre da sola.
+
+  **CANCELLI**: `_q-giudice` 0/16 → 16/16 (C2) → **18/18** (C3, con le
+  prove O e P dello schermo), **registrato in `strumenti/tutti.js` con
+  `conta:true` insieme alla cura** — non un cantiere dopo, che è il
+  rilievo di revisione già pagato dal #131 e dal #132;
+  `_t-giudice-schermo` 2/5 → **5/5**; `_t-giudice-onesto` **14/14 TORNA**
+  e i quattro canali concordi; impronta del duello **44/44 a ogni
+  compito** (cinque volte); i quattro cancelli dei canali del #132
+  (`_q-ment-nastro` 6/6, `_q-carattere-nastro` 4/4, `_q-rosa-scala` 4/4,
+  `_q-nastro-tronco` 5/5) verdi a ogni compito. **Batteria intera a sei
+  gruppi a ogni compito**, tutti i cancelli che contano VERDI; `audio`
+  esce 3 in compagnia (rumore già dichiarato dal #132) e **28/28 da
+  solo**; `avvio-telefono` esce 3 perché non c'è nessun telefono
+  collegato; `istantanea` (informativo, non conta) 45/56, lo stesso
+  rumore dichiarato dai cantieri precedenti.
+
+  **UNA PROVA CHE PUÒ NON ESERCITARSI, e lo dichiara**: il caso
+  `INCOMPLETO/duello-senza-righe` si costruisce da un nastro che ABBIA
+  righe di tipo 6, e col copione fisso una sfida su trenta ci passa
+  (misurato dal #132). Quando nessuna delle due sfide del banco ne ha
+  una, la prova si stampa come NON ESERCITATA e **non si conta**: un
+  controllo che passa perché non ha trovato niente da guardare è un
+  timbro. Il caso resta comunque esercitato dal falso `locale`.
+
+  **FUORI PERIMETRO, dichiarato**: il lavoratore lato server (questo
+  cantiere costruisce la CAPACITÀ e la prova; il ciclo che pesca le righe
+  con `verificata=0` e scrive `verificata=-1` con `muovi_punti(-delta)` è
+  il cantiere dopo — un lavoratore si prova contro un database, questo si
+  prova contro il motore); il punteggio di sospetto continuo; alzare il
+  tetto delle 40.000 righe; i tocchi indipendenti dallo schermo.
+
 - **Nessun innocente accusato — #132 CANTIERE CHIUSO** (voce #132, 21
   settembre 2026, sei compiti dal merge-base `3deb807` — spec
   `docs/superpowers/specs/2026-09-21-nessun-innocente-design.md`, piano
