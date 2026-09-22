@@ -482,8 +482,10 @@ Qui il registro completo, a edizioni.
   rigioca davvero la partita non esisteva — zero righe di codice.
   Cantiere di MOTORE, tutto per ancore (`strumenti/_toppa-giudice.js`
   quattro ancore, `_toppa-giudice-schermo.js` sei, `_toppa-133-motorev.js`
-  una di solo commento). `git diff main -- CALCETTO-il-gioco.html`:
-  **375 righe in più, 6 tolte**.
+  una di solo commento, e la correzione di revisione del 22 settembre
+  2026 `_toppa-giudice-schermo-ignoto.js` una). `git diff main --
+  CALCETTO-il-gioco.html`: **384 righe in più, 6 tolte** (era 375/6
+  prima della correzione).
 
   **LA DECISIONE D'ARCHITETTURA: il giudice vive NEL FILE, non nel
   server.** Un verificatore che rigioca con un SECONDO motore scritto in
@@ -554,6 +556,16 @@ Qui il registro completo, a edizioni.
   14**). I nomi non spostano un verdetto (GIUDICE UNO contro GASOMETRO,
   che nella tabella dei caratteri c'è, rose diverse) e nemmeno l'audio
   (la cura del #132 tiene, rimisurata dalla parte del giudice).
+  **RETTIFICA A EDIZIONI (22 settembre 2026, correzione di revisione,
+  MINORE-1): «0 su 14» non è «il tasso è zero».** La regola dei tre dice
+  che 0 successi su 14 prove è compatibile con un tasso vero fino a
+  circa il **19%** al 95% di confidenza: si può dire «non abbiamo visto
+  falsi accuse», non «il tasso è zero». E il numero vale SOLO nella
+  condizione davvero misurata — **nastri del gioco nuovo, con lo schermo
+  uguale o dichiarato** — non fuori da essa: la voce IMPORTANTE-1 qui
+  sotto ha trovato una condizione (schermo IGNOTO, cioè nastro senza la
+  riga di tipo 10) in cui il giudice PRIMA della cura dava proprio
+  quell'accusa, su una sfida onesta.
 
   **IL SESTO CANALE, TROVATO MISURANDO — ed è il più grosso.** Il terzo
   canale sospetto era la finestra, in lista per la ragione SBAGLIATA (i
@@ -599,8 +611,10 @@ Qui il registro completo, a edizioni.
   trecento righe per cambiare un valore di default, e in questa casa una
   copia è un posto in più dove la stessa ferita si riapre da sola.
 
-  **CANCELLI**: `_q-giudice` 0/16 → 16/16 (C2) → **18/18** (C3, con le
-  prove O e P dello schermo), **registrato in `strumenti/tutti.js` con
+  **CANCELLI**: `_q-giudice` 0/16 → 16/16 (C2) → 18/18 (C3, con le prove
+  O e P dello schermo) → **21/21** (correzione di revisione del 22
+  settembre 2026: prova Q sullo schermo IGNOTO, prove R/S sul duello
+  deterministico — vedi sotto), **registrato in `strumenti/tutti.js` con
   `conta:true` insieme alla cura** — non un cantiere dopo, che è il
   rilievo di revisione già pagato dal #131 e dal #132;
   `_t-giudice-schermo` 2/5 → **5/5**; `_t-giudice-onesto` **14/14 TORNA**
@@ -614,20 +628,94 @@ Qui il registro completo, a edizioni.
   collegato; `istantanea` (informativo, non conta) 45/56, lo stesso
   rumore dichiarato dai cantieri precedenti.
 
-  **UNA PROVA CHE PUÒ NON ESERCITARSI, e lo dichiara**: il caso
+  **RETTIFICA A EDIZIONI (22 settembre 2026): questo paragrafo era «UNA
+  PROVA CHE PUÒ NON ESERCITARSI», e la correzione IMPORTANTE-2 qui sotto
+  lo ha chiuso davvero.** Il testo vecchio diceva: il caso
   `INCOMPLETO/duello-senza-righe` si costruisce da un nastro che ABBIA
   righe di tipo 6, e col copione fisso una sfida su trenta ci passa
-  (misurato dal #132). Quando nessuna delle due sfide del banco ne ha
-  una, la prova si stampa come NON ESERCITATA e **non si conta**: un
-  controllo che passa perché non ha trovato niente da guardare è un
-  timbro. Il caso resta comunque esercitato dal falso `locale`.
+  (misurato dal #132); quando nessuna delle due sfide del banco ne ha
+  una, la prova si stampa come NON ESERCITATA e non si conta; il caso
+  resta comunque esercitato dal falso `locale`. **QUEST'ULTIMA RIGA NON
+  REGGEVA** (rilievo di revisione): su `locale` le prove B e C cadono per
+  un'altra ragione (INCOMPLETO al posto di TORNA/NON TORNA) e
+  passerebbero lo stesso se il giudice avesse detto NON TORNA su
+  `divagata` — il falso ESERCITA il cammino, non lo CONDANNA. Due falsi
+  del revisore (uno su `divagata`, uno su `rigiocata-esplosa`) passavano
+  **18/18**. La cura è la sfida CONGELATA (sotto): il caso ora è
+  **deterministico**, non più «può non esercitarsi».
 
   **FUORI PERIMETRO, dichiarato**: il lavoratore lato server (questo
   cantiere costruisce la CAPACITÀ e la prova; il ciclo che pesca le righe
   con `verificata=0` e scrive `verificata=-1` con `muovi_punti(-delta)` è
   il cantiere dopo — un lavoratore si prova contro un database, questo si
   prova contro il motore); il punteggio di sospetto continuo; alzare il
-  tetto delle 40.000 righe; i tocchi indipendenti dallo schermo.
+  tetto delle 40.000 righe; i tocchi indipendenti dallo schermo;
+  `rigiocata-esplosa` (l'altro «non lo so» della rigiocata, un'eccezione
+  vera dentro il motore — non si è trovata una costruzione deterministica
+  in tempo ragionevole, e si dichiara invece di fingere una copertura che
+  non c'è, correzione di revisione del 22 settembre 2026).
+
+  **CORREZIONI DI REVISIONE (22 settembre 2026, voce #133), applicate in
+  un commit a parte dopo il «Ready to merge: YES previa correzione» con
+  due rilievi IMPORTANTE e due MINORE, nessun CRITICO. Cantiere di
+  MOTORE: il gioco è stato toccato per una riga di codice più commento,
+  via attrezzo a ancore (`strumenti/_toppa-giudice-schermo-ignoto.js`).**
+
+  (IMPORTANTE-1) **Il giudice rifiutava lo schermo DIVERSO ma non lo
+  schermo IGNOTO.** `schermoDelNastro()` torna `null` quando la riga di
+  tipo 10 manca, e il controllo di allora — `if(sc && (...))` — era
+  falso su `null`: il giudice PROCEDEVA. Asimmetrico col resto del
+  giudice, che si rifiuta perfino su un dato che sposta molto meno
+  (`carattere-assente`) ma non sul canale che questo stesso cantiere ha
+  misurato come il più grosso. **MISURATO DALLA REVISIONE** (sfida
+  onesta 3-4 giocata col gioco `e7aa605`, dove la riga 10 non esiste
+  ancora, rigiocata dal gioco nuovo): `915x412` **TORNA** 3-4;
+  `1024x460` **NON TORNA** 1-3; `844x390` e `800x360` **NON TORNA**
+  0-3 — un innocente accusato su tre schermi su quattro, e il ramo era
+  protetto **per accidente** (un nastro pre-#132 cade prima su
+  `carattere-assente`), non per progetto. **CURA**: `if(!sc) return
+  fermo('INCOMPLETO','schermo-ignoto');`, subito dopo il controllo del
+  carattere. **COSTO ZERO**: ogni nastro vero ha sempre la riga 10
+  (`Sfida.gioca` la scrive ad ogni partita), i nastri sintetici del
+  banco escono prima su `nastro-vuoto` o un'altra causa più specifica.
+  **VERIFICATO**: `1024x460` sul nastro senza riga 10 dà ora
+  `INCOMPLETO/schermo-ignoto`, non più `NON TORNA`; tutte le 18 prove
+  precedenti restano verdi; nuova prova Q nel banco.
+
+  (IMPORTANTE-2) **Il cancello non difendeva i «non lo so» prodotti
+  DURANTE la rigiocata.** I due cammini `duello-senza-righe` e
+  `rigiocata-esplosa` non erano condannati da nessuna asserzione — vedi
+  la rettifica sopra. **CURA**: `strumenti/_nastro-duello-congelato.js`,
+  una sfida vera con un duello NATURALE dal dischetto (nessuna
+  forzatura fuori banda: si è provato e scartato forzare `rigori()` a
+  metà partita, che rompe la ripetibilità del nastro — misurato,
+  giudicato intatto dava NON TORNA invece di TORNA). Rigiocata intatta
+  **TORNA** (prova R); senza i comandi di quel duello (`N.senzaDuelli`)
+  dà **INCOMPLETO/duello-senza-righe** (prova S), **deterministico**,
+  non più legato a quante delle sfide di una sessione passino dal
+  dischetto (era una su trenta). Costruito e **BOCCIATO** il falso
+  `_crit-giudice-accusa.js` (il «non lo so» diventa un verdetto vero e
+  proprio): il banco cade **solo** sulla prova S (20/21), tutte le
+  altre restano verdi. `rigiocata-esplosa` resta dichiarata NON
+  ESERCITATA (vedi FUORI PERIMETRO).
+
+  (MINORE-1) **Rettifica del tasso «0 su 14»**: vedi sopra, nel
+  paragrafo del tasso di falsi.
+
+  (MINORE-2) **Il devicePixelRatio, MISURATO**: `function resize` calcola
+  `SCALE`/`OX`/`OY` solo da `innerWidth`/`innerHeight` (pixel CSS), e il
+  DPR entra solo in `cv.width`/`cv.height` e nella chiave di cache — mai
+  nella geometria logica. **MISURATO** (`deviceScaleFactor` 1, 2 e 3,
+  stessa finestra 915x412, sfida congelata): **verdetto, gol e passi
+  identici** ai tre DPR (`TORNA` 1-2, 9367 passi). Il canale è
+  confermato innocuo, non solo «quasi certamente».
+
+  `_q-giudice` **21/21** (era 18/18); `_q-duello-impronta` **44/44**; i
+  quattro cancelli del #132 (`_q-ment-nastro` 6/6, `_q-carattere-nastro`
+  4/4, `_q-rosa-scala` 4/4, `_q-nastro-tronco` 5/5) verdi; batteria
+  intera a cinque gruppi, tutti i cancelli che contano VERDI
+  (`istantanea`, informativo, segnala un riferimento nullo — nessuna
+  quota da confrontare, non pertinente al giudice).
 
 - **Nessun innocente accusato — #132 CANTIERE CHIUSO** (voce #132, 21
   settembre 2026, sei compiti dal merge-base `3deb807` — spec

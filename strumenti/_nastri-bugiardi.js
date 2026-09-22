@@ -87,6 +87,12 @@ module.exports = {
      e' passata da nessun duello: allora la prova non si esercita. */
   senzaDuelli: n => spegniTipo(n, 6),
 
+  /* LA RIGA DELLO SCHERMO VIA (tipo 10, voce #133, correzione di
+     revisione IMPORTANTE-1). Simula un nastro di prima di quella cura:
+     schermoDi() e schermoDelNastro() (lato gioco) tornano null.
+     -> INCOMPLETO/schermo-ignoto */
+  senzaSchermo: n => spegniTipo(n, 10),
+
   /* IL NASTRO TAGLIATO A META' E MARCHIATO (tipo 9, voce #132).
      -> INCOMPLETO/nastro-troncato */
   mozzato(n) {

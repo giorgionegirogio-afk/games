@@ -50,15 +50,41 @@
      L) il giudice non muove niente: salvataggio, punti e coda uguali
         prima e dopo una raffica di giudizi;
      M) i cinque verdetti sono DISTINTI fra loro — un banco che non li
-        distingue attesta invece di misurare.
+        distingue attesta invece di misurare;
+     O) il nastro di una sfida vera porta lo schermo su cui e' stato
+        registrato (riga di tipo 10, voce #133, compito 3);
+     P) su uno schermo DIVERSO il giudice si rifiuta (INCOMPLETO/
+        schermo-diverso) e dichiara quale schermo serve — MAI NON TORNA;
+     Q) su un nastro onesto senza NESSUNA riga di schermo (di prima
+        della cura, o costruito apposta senza) il giudice si rifiuta
+        con INCOMPLETO/schermo-ignoto — MAI NON TORNA (correzione di
+        revisione del 22 settembre 2026, IMPORTANTE-1). Prima della
+        cura `sc` era null e il controllo `if(sc && ...)` non scattava
+        mai: il giudice PROCEDEVA alla cieca, e su una sfida onesta del
+        gioco e7aa605 (senza la riga 10, che non esisteva ancora)
+        rigiocata dal gioco nuovo dava NON TORNA su tre schermi su
+        quattro — un innocente accusato per colpa di una finestra;
+     R) la sfida CONGELATA (strumenti/_nastro-duello-congelato.js, un
+        duello vero, naturale, dal dischetto) TORNA rigiocata intatta —
+        prova di non-regressione sulla fixture stessa;
+     S) e SENZA i comandi di quel duello (N.senzaDuelli) da'
+        INCOMPLETO/duello-senza-righe — DETERMINISTICO, senza dipendere
+        da quante delle sfide giocate qui passino dal dischetto
+        (correzione di revisione del 22 settembre 2026, IMPORTANTE-2:
+        prima di questa fixture la prova viveva SOLO sulle sfide
+        giocate a runtime, una su trenta ci passava, e due mutanti sul
+        cammino «divagata» passavano 18/18 senza che nessuno se ne
+        accorgesse).
 
-   LA PROVA CHE PUO' NON ESERCITARSI. Il caso INCOMPLETO/duello-senza-
-   righe (la rigiocata arriva a un calcio piazzato di cui il nastro non
-   ha i comandi) si costruisce da un nastro che ABBIA righe di tipo 6, e
-   col copione fisso una sfida su trenta ci passa (misurato dalla voce
-   #132). Se nessuna delle sfide giocate qui ne ha una, la prova si
-   dichiara NON ESERCITATA e non si conta: un controllo che passa perche'
-   non ha trovato niente da guardare e' un timbro.
+   RIGIOCATA-ESPLOSA, DICHIARATA NON ESERCITATA. L'altro cammino che
+   puo' produrre un «non lo so» durante la rigiocata (un'eccezione
+   dentro il try di giudica(), causa `rigiocata-esplosa`) non ha, ad
+   oggi, una costruzione deterministica nota: il codice del motore e'
+   difensivo ovunque (clamp, `|0`, try/catch) e non si e' trovato, in
+   tempo ragionevole, un nastro che lo faccia scoppiare senza uno
+   scoppio "vero" del motore. Si dichiara qui invece di fingere una
+   copertura che non c'e' (mandato: un banco che attesta invece di
+   misurare e' peggio di nessun banco).
 
    uso:  node strumenti/_q-giudice.js
          node strumenti/_q-giudice.js --gioco fuori/falso.html
@@ -72,6 +98,11 @@ const { chromium } = require('playwright');
 const B = require('./_sfida-due-telefoni.js');
 const N = require('./_nastri-bugiardi.js');
 const { tettoFotogrammi } = require('./_q-invarianti.js');
+/* LA SFIDA CONGELATA (voce #133, correzione di revisione, IMPORTANTE-2):
+   una sfida vera con un duello naturale dal dischetto, cosi' le prove R
+   ed S non dipendono dalla fortuna di questa sessione. Vedi la lettera
+   di testa di _nastro-duello-congelato.js per come e' nata. */
+const FIX_DUELLO = require('./_nastro-duello-congelato.js');
 
 const RADICE = B.RADICE;
 const arg = (n, d) => {
@@ -79,9 +110,11 @@ const arg = (n, d) => {
   return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : d;
 };
 const provaRel = arg('gioco', process.env.GIOCO_PROVA || '');
-/* due sfide: una fa da metro, la seconda alza la probabilita' di
-   incontrare un duello (la prova che puo' non esercitarsi) */
-const N_SFIDE = parseInt(arg('sfide', '2'), 10);
+/* UNA sfida basta: era due perche' la seconda alzava la probabilita' di
+   incontrare un duello naturale, ma quella prova ora vive sulla fixture
+   congelata (FIX_DUELLO, correzione di revisione IMPORTANTE-2) e non
+   dipende piu' da quante sfide gira questa sessione. */
+const N_SFIDE = parseInt(arg('sfide', '1'), 10);
 
 const VERDETTI = ['TORNA', 'NON TORNA', 'INCOMPLETO', 'ALTRO MOTORE', 'NON FINISCE'];
 
@@ -187,15 +220,6 @@ const fotoStato = P => P.pag.evaluate(() => ({
     r.t7        = await giudizio(Gt, '1|2||', [0, 0], { seme: '1', taglia: 7 });
     r.t11       = await giudizio(Gt, '1|2||', [0, 0], { seme: '1', taglia: 11 });
 
-    /* la prova che puo' non esercitarsi: serve un nastro con righe di
-       tipo 6, cioe' una sfida passata da un calcio piazzato */
-    let conDuello = null;
-    for (const s of sfide) { const z = N.senzaDuelli(s.crudo || ''); if (z) { conDuello = { s, z }; break; } }
-    r.duello = conDuello
-      ? await giudizio(Gt, conDuello.z, [conDuello.s.riga.gol_a | 0, conDuello.s.riga.gol_d | 0],
-                       { seme: conDuello.s.riga.seme, taglia: conDuello.s.riga.taglia | 0 })
-      : { saltata: true };
-
     dopoG = await fotoStato(Gt);
     dopoB = await fotoStato(Bt);
 
@@ -209,7 +233,30 @@ const fotoStato = P => P.pag.evaluate(() => ({
     r.schermo = { dentroNastro: N.schermoDi(nastro) };
     const Gs = await B.apri(browser, sg.porta, { width: 800, height: 360 });
     r.altroSchermo = await giudizio(Gs, nastro, atteso, opz);
+    /* LO SCHERMO IGNOTO (correzione di revisione, IMPORTANTE-1): lo
+       stesso nastro, ma senza NESSUNA riga di tipo 10 — come un nastro
+       di prima della cura, o uno costruito apposta senza. Prima della
+       cura del 22 settembre 2026 `sc` era null e il giudice procedeva
+       alla cieca. */
+    r.schermoIgnoto = await giudizio(Gs, N.senzaSchermo(nastro), atteso, opz);
     await Gs.ctx.close();
+
+    /* =================================================================
+       IL DUELLO, DETERMINISTICO (correzione di revisione, IMPORTANTE-2).
+       La sfida CONGELATA in _nastro-duello-congelato.js ha gia' un
+       duello vero, naturale, dal dischetto: non serve trovarne uno fra
+       le sfide di questa sessione (che una su trenta ci passa, misurato
+       dalla voce #132 — la prova viveva NON ESERCITATA quasi sempre). */
+    const crudoDuello = N.allarga(FIX_DUELLO.replay);
+    const attesoDuello = [FIX_DUELLO.gol_a | 0, FIX_DUELLO.gol_d | 0];
+    const opzDuello = { seme: FIX_DUELLO.seme, taglia: FIX_DUELLO.taglia | 0 };
+    const Gd = await B.apri(browser, sg.porta, { width: FIX_DUELLO.schermo[0], height: FIX_DUELLO.schermo[1] });
+    r.duelloIntatto = await giudizio(Gd, crudoDuello, attesoDuello, opzDuello);
+    const senzaDuelli = N.senzaDuelli(crudoDuello);
+    r.duelloSenzaRighe = senzaDuelli
+      ? await giudizio(Gd, senzaDuelli, attesoDuello, opzDuello)
+      : { saltata: true };  /* la fixture stessa non avrebbe piu' un duello: la si rigenera */
+    await Gd.ctx.close();
 
     if (At.errori.length || Bt.errori.length || Gt.errori.length)
       throw new Error('eccezione di pagina: ' + (At.errori[0] || Bt.errori[0] || Gt.errori[0]));
@@ -326,14 +373,24 @@ const fotoStato = P => P.pag.evaluate(() => ({
      v(r.altroSchermo) + '/' + (r.altroSchermo && r.altroSchermo.causa) + ', serve ' +
      ((r.altroSchermo && r.altroSchermo.schermo) ? r.altroSchermo.schermo.join('x') : '—'));
 
-  /* ---- la prova che puo' non esercitarsi ------------------------------ */
-  if (r.duello.saltata)
-    info('INCOMPLETO/duello-senza-righe: NON ESERCITATA (nessuna delle ' + sfide.length +
-         ' sfide e\' passata da un calcio piazzato)');
+  /* ---- Q) lo schermo IGNOTO (correzione di revisione, IMPORTANTE-1) --- */
+  di(v(r.schermoIgnoto) === 'INCOMPLETO' && r.schermoIgnoto.causa === 'schermo-ignoto',
+     'Q) un nastro onesto SENZA nessuna riga di schermo si rifiuta con schermo-ignoto — MAI NON TORNA',
+     v(r.schermoIgnoto) + '/' + (r.schermoIgnoto && r.schermoIgnoto.causa));
+
+  /* ---- R/S) il duello, deterministico (correzione di revisione, ------- */
+  /* ---------------------------------------- IMPORTANTE-2) -------------- */
+  di(v(r.duelloIntatto) === 'TORNA',
+     'R) la sfida congelata (un duello vero dal dischetto) TORNA rigiocata intatta',
+     v(r.duelloIntatto) + ', rigiocata ' + g(r.duelloIntatto) + ' contro ' +
+     FIX_DUELLO.gol_a + '-' + FIX_DUELLO.gol_d);
+  if (r.duelloSenzaRighe.saltata)
+    info('S) INCOMPLETO/duello-senza-righe: la fixture non ha piu\' un duello — rigenerarla con ' +
+         'strumenti/_gen-nastro-duello-congelato.js');
   else
-    di(v(r.duello) === 'INCOMPLETO' && r.duello.causa === 'duello-senza-righe',
-       'N) un nastro senza i comandi di un duello che si apre e\' INCOMPLETO',
-       v(r.duello) + '/' + (r.duello && r.duello.causa));
+    di(v(r.duelloSenzaRighe) === 'INCOMPLETO' && r.duelloSenzaRighe.causa === 'duello-senza-righe',
+       'S) e SENZA i comandi di quel duello da\' duello-senza-righe — deterministico, non piu\' legato al caso',
+       v(r.duelloSenzaRighe) + '/' + (r.duelloSenzaRighe && r.duelloSenzaRighe.causa));
 
   const rossi = esiti.filter(x => !x).length;
   console.log('\n' + esiti.length + ' controlli, ' + (esiti.length - rossi) + ' passati, ' + rossi + ' falliti');

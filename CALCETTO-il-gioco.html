@@ -44283,7 +44283,16 @@ function giudica(nastro, atteso, opz){
      questa cura: non si puo' sapere, quindi non si controlla, e vale
      quello che valeva ieri. */
   const sc = schermoDelNastro();
-  if(sc && (sc[0] !== (innerWidth|0) || sc[1] !== (innerHeight|0)))
+  /* SE LO SCHERMO E' IGNOTO, NON SI PROCEDE (correzione di revisione,
+     voce #133, IMPORTANTE-1). Un nastro senza riga di tipo 10 e' di
+     prima di questa cura, o costruito apposta senza: in ogni caso non
+     si puo' sapere se le stesse coordinate premono lo stesso punto del
+     campo, e procedere «alla cieca» produce accuse false in una sola
+     direzione (misurato: NON TORNA su schermi diversi, mai su quello
+     giusto). Astenersi non costa niente ai nastri veri, che la riga 10
+     ce l'hanno sempre. */
+  if(!sc) return fermo('INCOMPLETO','schermo-ignoto');
+  if(sc[0] !== (innerWidth|0) || sc[1] !== (innerHeight|0))
     return fermo('INCOMPLETO','schermo-diverso', { schermo:sc });
 
   /* ------------------------------------------------ si rigioca */
