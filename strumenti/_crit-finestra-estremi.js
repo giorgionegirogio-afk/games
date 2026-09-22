@@ -14,15 +14,17 @@
    un innocente che ha giocato meta' partita con un altro campo sotto
    le dita. Senza il braccio TORNA, questo falso passerebbe.
 
-   Il banco deve restare VERDE su A1 A2 A3, su tutto il gruppo B tranne
-   B5, su C e su D, e ROSSO su A4, A5 e B5.
+   MISURATO: il banco resta VERDE su A1 A2 A3, su B1 B2 B3 B4, su tutto
+   il gruppo C e su tutto il gruppo D, e ROSSO su A4, A5 e B5. E' l'UNICO
+   dei cinque che morde B5 lasciando passare B2/B3/B4: senza il braccio
+   TORNA passerebbe con diciotto verdi su venti.
 
    uso:  node strumenti/_crit-finestra-estremi.js
    ===================================================================== */
 require('./_crit-finestra.js').falso({
   nome: 'crit-finestra-estremi',
   titolo: 'nel nastro restano solo la prima misura e l\'ultima',
-  morde: 'A4, A5 e B5 di _q-finestra.js',
+  morde: 'A4, A5 e B5 di _q-finestra.js (tre prove, e B5 solo lui)',
   cerca: `  schermo(w, h){
     if(this.modo !== 1) return;
     w = w|0; h = h|0;

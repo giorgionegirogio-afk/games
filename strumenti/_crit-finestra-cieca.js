@@ -13,15 +13,16 @@
    attaccato col marchio di troncatura (_crit-tronco-muto.js) e la voce
    #133 con la riga dello schermo (_crit-giudice-cieco-schermo.js).
 
-   Il banco deve restare VERDE su tutto il gruppo A — il gioco scrive
-   davvero — e ROSSO sul gruppo B, su C5 e su D4/D5.
+   MISURATO: il banco resta VERDE su tutto il gruppo A — il gioco scrive
+   davvero, e il conto delle righe nel nastro lo dice — e su C1-C4 e
+   D1 D2 D3; ROSSO su B2 B3 B4 B5, su C5 e su D4/D5.
 
    uso:  node strumenti/_crit-finestra-cieca.js
    ===================================================================== */
 require('./_crit-finestra.js').falso({
   nome: 'crit-finestra-cieca',
   titolo: 'le misure viaggiano, e il vaglio ne guarda una sola',
-  morde: 'B2 B3 B4 B5, C5, D4 e D5 di _q-finestra.js',
+  morde: 'B2 B3 B4 B5, C5, D4 e D5 di _q-finestra.js (sette prove)',
   cerca: `      if(!c) v.push([w, h]);
     }
   }catch(e){}

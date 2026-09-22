@@ -13,15 +13,16 @@
    nastro che non si puo' verificare non e' la prova di niente, e tutta
    l'onda D esiste per non confondere le due cose.
 
-   Il banco deve restare VERDE su A (il gioco scrive) e su C1-C4, e
-   ROSSO su B2 B3 B4 B5, C5 e D4.
+   MISURATO: il banco resta VERDE su tutto A (il gioco scrive), su C1-C4
+   e su D1 D2 D3 D5 — la frase e le misure sono quelle giuste, e' la
+   PAROLA che e' sbagliata — e ROSSO su B2 B3 B4 B5, C5 e D4.
 
    uso:  node strumenti/_crit-finestra-accusa.js
    ===================================================================== */
 require('./_crit-finestra.js').falso({
   nome: 'crit-finestra-accusa',
   titolo: 'il cambio di finestra diventa un\'accusa invece di un «non lo so»',
-  morde: 'B2 B3 B4 B5, C5 e D4 di _q-finestra.js',
+  morde: 'B2 B3 B4 B5, C5 e D4 di _q-finestra.js (sei prove)',
   cerca: "  if(sc.length > 1) return no('INCOMPLETO','schermo-cambiato');",
   metti: '  /* IL FALSO (_crit-finestra-accusa.js): la vede, e la chiama colpa. */\n' +
          "  if(sc.length > 1) return no('NON TORNA','schermo-cambiato');",

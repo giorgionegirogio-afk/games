@@ -17,15 +17,19 @@
    40.000 e al marchio di troncatura (#132), che a quel punto direbbe
    «INCOMPLETO / nastro-troncato» su una partita onesta.
 
-   Il banco deve restare VERDE su B, C e D — il giudizio non si muove —
-   e ROSSO sul conto delle righe.
+   MISURATO: il banco resta VERDE su diciannove prove su venti — il
+   giudizio non si muove di una parola, perche' si contano le misure
+   DISTINTE — e ROSSO sulla sola A5, che e' la ragione per cui il braccio
+   RAFFICA esiste. In una partita normale questo falso non si vede
+   nemmeno: `resize()` gira per intero solo sugli eventi veri, e
+   `RESIZE_FORZA` durante una sfida a taglia immutata non si accende.
 
    uso:  node strumenti/_crit-finestra-raffica.js
    ===================================================================== */
 require('./_crit-finestra.js').falso({
   nome: 'crit-finestra-raffica',
   titolo: 'una riga a ogni resize, anche quando la misura non e\' cambiata',
-  morde: 'A3, A4 e A5 di _q-finestra.js',
+  morde: 'A5 di _q-finestra.js — una prova sola, ed e\' la sua',
   cerca: '    if(this.ultimoSchermo && this.ultimoSchermo[0] === w && this.ultimoSchermo[1] === h) return;',
   metti: '    /* IL FALSO (_crit-finestra-raffica.js): la guardia non guarda. */\n' +
          '    if(false && this.ultimoSchermo && this.ultimoSchermo[0] === w && this.ultimoSchermo[1] === h) return;',

@@ -77,11 +77,13 @@
            invece di dare la colpa alla rosa cresciuta di un altro;
        D3) la PRIMA riga resta la misura di PARTENZA, cosi' il
            raggruppamento della staffetta (#138) continua a funzionare;
-       D4) l'astensione non dipende dal PUNTEGGIO: lo stesso nastro col
-           conto che torna resta schermo-cambiato. Condanna la cura
-           pigra — «mi astengo solo quando non torna» — che lascerebbe
-           passare per buono proprio il nastro che non si puo'
-           verificare;
+       D4) l'astensione non dipende dal PUNTEGGIO: lo stesso nastro con
+           tre attesi diversi — quello dichiarato, quello che la
+           rigiocata produce e uno assurdo — da' tre volte la stessa
+           risposta. Condanna la cura pigra — «mi astengo solo quando
+           non torna» — che lascerebbe passare per buono proprio il
+           nastro che non si puo' verificare (prima della cura, col
+           secondo dei tre, il giudice diceva TORNA);
        D5) e non si offre nessuna finestra da riaprire (il campo
            `schermo`, che e' quel che la staffetta usa per riaprire, non
            c'e'): al suo posto ci sono le misure, tutte. Cosi' la regola
@@ -343,13 +345,17 @@ const mis = l => (l && l.length ? l.map(s => s[0] + 'x' + s[1]).join(' -> ') : '
     r.cambiaAlta = await giudizio(G1, cambia.crudo, att(cambia), opz(cambia));
     r.cambiaBassa = await giudizio(G2, cambia.crudo, att(cambia), opz(cambia));
     r.tornaAlta = await giudizio(G1, torna.crudo, att(torna), opz(torna));
-    /* LO STESSO NASTRO COL PUNTEGGIO CHE LA RIGIOCATA PRODUCE. Serve a
-       condannare una cura pigra — «mi astengo solo quando il conto non
-       torna» — che lascerebbe passare per buono proprio il nastro che
-       non si puo' verificare. Si chiede dopo, perche' l'atteso e' il
-       risultato del giudizio qui sopra. */
-    r.cambiaGiusto = await giudizio(G1, cambia.crudo,
-      (r.cambiaAlta.gol && r.cambiaAlta.gol.length === 2) ? r.cambiaAlta.gol : att(cambia), opz(cambia));
+    /* LO STESSO NASTRO CON TRE PUNTEGGI DIVERSI, e nessuno dei tre deve
+       cambiare la risposta: l'astensione e' una proprieta' del NASTRO,
+       non del conto. Serve a condannare una cura pigra — «mi astengo
+       solo quando il conto non torna» — che lascerebbe passare per
+       buono proprio il nastro che non si puo' verificare. Il secondo
+       dei tre e' il punteggio del braccio FERMO, che e' quello che la
+       rigiocata di questo nastro produce (la rigiocata ignora il cambio
+       di finestra e rifa' la partita a finestra ferma): prima della
+       cura quel giudizio diceva TORNA su un nastro inverificabile. */
+    r.cambiaConFermo = await giudizio(G1, cambia.crudo, att(fermo), opz(cambia));
+    r.cambiaAssurdo = await giudizio(G1, cambia.crudo, [99, 0], opz(cambia));
 
     /* i nastri vecchi: la fixture congelata e i tre bisturi in Node */
     const crudoFix = N.allarga(FIX_DUELLO.replay);
@@ -458,9 +464,11 @@ const mis = l => (l && l.length ? l.map(s => s[0] + 'x' + s[1]).join(' -> ') : '
          'D3) la PRIMA riga resta la misura di PARTENZA: la staffetta raggruppa come prima',
          p ? p.join('x') : 'nessuna');
     }
-    di(v(r.cambiaGiusto) === 'INCOMPLETO' && r.cambiaGiusto.causa === 'schermo-cambiato',
-       'D4) l\'astensione non dipende dal punteggio: anche col conto che torna, e\' schermo-cambiato',
-       vc(r.cambiaGiusto) + ' con atteso ' + (r.cambiaAlta.gol ? r.cambiaAlta.gol.join('-') : '?'));
+    di([r.cambiaAlta, r.cambiaConFermo, r.cambiaAssurdo]
+         .every(g => v(g) === 'INCOMPLETO' && g.causa === 'schermo-cambiato'),
+       'D4) l\'astensione non dipende dal punteggio: tre attesi diversi, stessa risposta',
+       att(cambia).join('-') + ' ' + vc(r.cambiaAlta) + ' · ' +
+       att(fermo).join('-') + ' ' + vc(r.cambiaConFermo) + ' · 99-0 ' + vc(r.cambiaAssurdo));
     di(!r.cambiaAlta.schermo && !r.cambiaBassa.schermo &&
        Array.isArray(r.cambiaAlta.schermi) && r.cambiaAlta.schermi.length === 2,
        'D5) non si offre nessuna finestra da riaprire, e le due misure si dicono lo stesso',
