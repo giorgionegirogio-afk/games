@@ -472,6 +472,127 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Il sigillo — #134 CANTIERE CHIUSO** (voce #134, 22 settembre 2026,
+  quattro compiti dal merge-base `6dee72b` — spec
+  `docs/superpowers/specs/2026-09-22-il-sigillo-design.md`, piano
+  `docs/superpowers/plans/2026-09-22-il-sigillo.md`). **Quarto cantiere
+  dell'onda D, e quello che chiude il cerchio aperto dalla #130.** Le tre
+  voci precedenti hanno costruito il giudizio; questa lo fa arrivare
+  all'occhio di chi gioca. Cantiere di MOTORE **e di SERVER**: il gioco
+  per ancore (`_toppa-sigillo-vaglio.js` undici ancore,
+  `_toppa-sigillo-riga.js` quattro, `_toppa-sigillo-guarda.js` sei di cui
+  una a quattro teste), `rete/api/sfida.js` con Edit. `git diff main --
+  CALCETTO-il-gioco.html`: **248 righe in più, 80 tolte**.
+  `git diff main -- rete/`: **28 in più, 1 tolta**, tutte in
+  `api/sfida.js`.
+
+  **IL MURO ERA ALTO DUE MATTONI, misurati prima di scrivere una riga.**
+  (1) `grep -c verificata rete/api/*.js` = **1**, ed era dentro a un
+  commento: la colonna esiste in `schema.sql:125`, ha il suo indice
+  parziale `sfida_daverificare`, ha tre valori documentati, e non era
+  nella `select` del `GET /api/sfida`. Il dato c'era, il tubo no. (2)
+  `Sfida.dipingi` stampava quattro cose per riga e nessuna era la
+  verifica. Il giudice poteva anche lavorare: non se ne accorgeva
+  nessuno.
+
+  **UNA PORTA SOLA PER I NOVE CONTROLLI (`vagliaNastro`).** È la
+  decisione che conta. I nove controlli che decidono se un nastro basta a
+  rifare una partita stavano scritti **due volte** — in `giudica` (#133)
+  e in `Sfida.guarda` — e i due elenchi **non erano identici**: `guarda`
+  ripiega sul profilo di oggi dove `giudica` si rifiuta, e dello schermo
+  non sapeva niente. Finché ne usciva solo un film, la doppia scrittura
+  costava manutenzione; dal momento in cui ne esce un **verdetto scritto
+  in lista**, la riga direbbe «non torna» esattamente dove il
+  verificatore differito direbbe «incompleto». `vagliaNastro(righe)` è la
+  porta comune. Che cosa se ne fa resta diverso, ed è giusto che lo
+  resti: il giudice si ferma su tutti e nove i rifiuti, `Sfida.guarda` su
+  quattro (`motore-diverso`, `nastro-vuoto`, `nastro-troncato`,
+  `duello-marchiato`); sugli altri quattro (`rose-assenti`,
+  `carattere-assente`, `schermo-ignoto`, `schermo-diverso`) **il film si
+  vede lo stesso** — rifiutare ogni replay fra schermi diversi vorrebbe
+  dire spegnere la funzione per quasi tutti — ma il verdetto no.
+  Comportamento visibile invariato: `_q-giudice` 21/21 e `_q-sfida` 54/54
+  prima e dopo l'estrazione.
+
+  **LE CINQUE PAROLE, una famiglia sola.** `DA VERIFICARE` (server, 0) ·
+  `VERIFICATA` (server, 1) · `NON TORNA` (server, -1) · `TORNA` (questo
+  telefono, il replay appena guardato torna) · `NON VERIFICABILE` (questo
+  telefono, il replay non era giudicabile). **`DA VERIFICARE` e non «da
+  guardare»** (che è la parola dello schema): nella stessa riga ci sono
+  già il pallino ambra e il bottone GUARDA, e una terza cosa che dicesse
+  «da guardare» parlerebbe di un'altra faccenda con le stesse parole.
+  **`TORNA` e non `VERIFICATA` quando lo dice il telefono**: sono due
+  fatti diversi, e chi difende è parte in causa — il suo telefono può
+  dire che cosa ha visto, non timbrare la classifica.
+
+  **NESSUN INNOCENTE ACCUSATO, ANCHE NELLE PAROLE.** `NON TORNA` è
+  l'unico verdetto che può muovere punti e resta l'unica parola che
+  accusa; `INCOMPLETO`, `ALTRO MOTORE` e `NON FINISCE` diventano `NON
+  VERIFICABILE` con la causa vera nella riga di stato (`Sfida.causaSigillo`,
+  sei cause in italiano). Non è un caso di scuola: in produzione due
+  telefoni con lo **stesso** schermo sono l'eccezione, e senza questa
+  distinzione la lista darebbe del baro a quasi tutti — la #133 ha
+  misurato `800x360` contro `915x412` che dà 0-3 dove il tabellone dice
+  3-4.
+
+  **L'AUTORITÀ È DEL SERVER, e il verdetto locale NON parte per la
+  rete.** Il sigillo di questo telefono si vede solo dove il server dice
+  ancora `0`. E non esiste nessun endpoint che lo accetti: chi ha subìto
+  la sfida ha un interesse diretto a che quel risultato cada, e «il mio
+  telefono dice che il tuo replay non torna» sarebbe una leva per
+  togliere punti a un innocente. Il verdetto che muove punti lo darà il
+  lavoratore differito, che una squadra in classifica non ce l'ha.
+
+  **IL SERVER: una colonna e un freno.** `verificata` entra nella
+  `select` del `GET /api/sfida`. Nessuna tabella nuova, quindi nessuna
+  riga di RLS da scrivere — una tabella senza `enable row level security`
+  + `revoke` sarebbe l'unica porta aperta del database. **E il freno**:
+  quel GET ne era rimasto senza da quando è stato scritto (il POST ha
+  `sfida:` 30/60, il GET della classifica ha `cla:` 60/60, questo
+  niente). Non è una conseguenza della cura, è un buco trovato perché la
+  cura toccava la riga accanto: `sfl:<id>`, 60 al minuto, e il gioco ne
+  fa **una** chiamata per apertura della schermata.
+
+  **LA PIEGA, misurata e non sperata.** Il sigillo sta sotto il nome,
+  dentro la riga che già scorre. La fascia di riepilogo in cima («3 da
+  verificare, 1 non torna») è la tentazione del cantiere ed è il difetto
+  già pagato del TORNEO (grep «LE OTTO SQUADRE SOPRA LA PIEGA»). A
+  800x360 con cinque righe: CERCA AVVERSARIO chiude a **220**, la prima
+  riga a **329** (era 308), il primo GUARDA a **308**; la riga passa da
+  **46 a 67 px**. Trentun pixel di margine sulla piega. Il falso
+  `_crit-sigillo-fascia` porta la prima riga a **418** su una piega di
+  360.
+
+  **IL BANCO PRIMA DELLA COSA, e nasce 5/5 rosso poi 9/14 rosso.**
+  `strumenti/_q-sigillo.js` (in batteria, `conta:true`, ~13 s) percorre
+  il tubo intero, e il pezzo che lo rende una misura invece di un
+  attestato è il gruppo A: carica il modulo **vero** `rete/api/sfida.js`
+  con `import()` dinamico e gli mette al posto di `db` un finto che
+  **onora la `select`** come PostgREST. Un finto che restituisse la riga
+  intera direbbe verde anche con la colonna fuori dalla `select` — cioè
+  proprio nel caso che il cancello esiste per trovare. **CINQUE FALSI**,
+  ognuno costruito nel caso peggiore e ognuno rosso **solo** sulla sua
+  prova: `_crit-sigillo-server-sordo` (colonna fuori dalla `select`,
+  freno intatto → A1, A2) · `_crit-sigillo-muto` (il sigillo si calcola e
+  non si stampa → B1, B2, C5) · `_crit-sigillo-accusa` (ogni scarto è una
+  colpa → C3, C4b) · `_crit-sigillo-timbro` (a fine replay dice sempre
+  TORNA → C2, C5) · `_crit-sigillo-fascia` (il riepilogo sopra la lista →
+  B3). Il più importante è `accusa`: dice TORNA quando torna, NON TORNA
+  sul punteggio gonfiato, stampa i sigilli giusti — **passa dieci prove
+  su dodici** e cade su una cosa sola, uno schermo diverso da quello del
+  nastro.
+
+  **`MOTORE_V` resta 2**, e non è una speranza: non si è toccato né il
+  nastro né la simulazione, e la prova sono l'impronta del duello **44 su
+  44** e il giudice **21 su 21** a ogni compito. **Quel che NON fa questo
+  cantiere**: non scrive il lavoratore differito (resta fuori, come dopo
+  la #133), non manda verdetti al server, non tocca lo schema. **Reti di
+  sicurezza a ogni compito**: impronta 44/44, giudice 21/21, ment-nastro
+  6/6, carattere-nastro 4/4, rosa-scala 4/4, nastro-tronco 5/5, rete
+  22/22, sfida 54/54, senza-rete 6/6. Batteria intera a gruppi, verde;
+  `istantanea` 45/56 **sia sul gioco di oggi sia su quello di `main`**
+  (misurato a due versioni: pre-esistente, ed è informativo).
+
 - **Il giudice — #133 CANTIERE CHIUSO** (voce #133, 22 settembre 2026,
   cinque compiti dal merge-base `e7aa605` — spec
   `docs/superpowers/specs/2026-09-22-il-giudice-design.md`, piano

@@ -93,6 +93,32 @@ si ripulisce da sola.
 >
 > Verbale completo: `MANUALE.md` §A registro, voce #133.
 
+> **SEGUITO A EDIZIONI (22 settembre 2026, voce #134).** Il lavoratore
+> continua a non esistere, e le righe qui sopra restano vere. Quel che è
+> cambiato è che il suo verdetto adesso ha **un tubo fino all'occhio di
+> chi gioca**: `GET /api/sfida` restituisce la colonna `verificata`
+> (prima non usciva dal database — `grep verificata rete/api/` trovava
+> una sola occorrenza, dentro a un commento), e la riga della lista delle
+> sfide la scrive in una parola.
+>
+> **Cinque parole, e una sola accusa.** `DA VERIFICARE` (0) ·
+> `VERIFICATA` (1) · `NON TORNA` (-1) le dice il server; `TORNA` e `NON
+> VERIFICABILE` le dice il telefono di chi ha appena guardato il replay —
+> perché quel replay **è** una rigiocata del nastro sul motore vero.
+> `NON TORNA` resta l'unica parola che accusa: `INCOMPLETO`, `ALTRO
+> MOTORE` e `NON FINISCE` diventano `NON VERIFICABILE` con la causa vera.
+>
+> **Il verdetto del telefono non torna indietro, e non c'è nessun
+> endpoint che lo accetti.** Chi ha subìto la sfida ha un interesse
+> diretto a che quel risultato cada: «il mio telefono dice che il tuo
+> replay non torna» sarebbe una leva per togliere punti a un innocente.
+> Il sigillo locale si vede solo dove il server dice ancora `0`.
+>
+> Finché il lavoratore non gira, **tutte le righe valgono 0 e la lista
+> dice «DA VERIFICARE»**: è la verità, non un ripiego.
+>
+> Verbale completo: `MANUALE.md` §A registro, voce #134.
+
 ### 3. Tempo reale in lockstep
 
 Due telefoni, stesso seme, si scambiano i comandi via WebSocket (Supabase

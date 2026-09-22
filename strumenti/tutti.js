@@ -913,6 +913,39 @@ const CANCELLI = [
      30-40 s che qui chiede lento (modello `audio.js`) — non lento. */
   { nome: 'giudice',           cmd: ['strumenti/_q-giudice.js'],                        conta: true,  lento: false },
   /* =====================================================================
+     sigillo: IL VERDETTO ARRIVA FINO ALL'OCCHIO? (voce #134, compito 3).
+
+     COSA SORVEGLIA, e nessuno degli altri lo guarda. `giudice` prova il
+     GIUDIZIO — un nastro dentro, una stringa fuori, senza schermo e
+     senza server. `sfida` prova la SCHERMATA e il giro del nastro fra
+     due telefoni, ma della verifica non sa niente. In mezzo c'e' il
+     tubo, e questo cancello e' l'unico che lo percorre intero:
+
+       A) il modulo VERO `rete/api/sfida.js`, caricato con import()
+          dinamico e con al posto di `db` un finto che ONORA LA `select`
+          come fa PostgREST. E' il punto che rende la prova una misura
+          invece di un attestato: un finto che restituisse la riga intera
+          direbbe verde anche con la colonna fuori dalla `select` — cioe'
+          proprio nel caso che il cancello esiste per trovare. Il freno
+          dell'endpoint si misura qui (`sfl:`, 60 al minuto), e non
+          altrove.
+       B) la RIGA della lista: tre valori di `verificata` devono dare tre
+          parole diverse, e NON TORNA deve comparire una volta sola —
+          quella dell'accusa vera. Piu' la piega: a 800x360 con cinque
+          righe l'azione primaria e la prima riga restano intere sopra il
+          bordo (difetto gia' pagato, grep «LE OTTO SQUADRE SOPRA LA
+          PIEGA»).
+       C) GUARDA: il replay che gia' avviene lascia un verdetto, e il
+          verdetto e' quello di `__test.giudica` sullo stesso nastro. Su
+          uno schermo diverso dev'essere NON VERIFICABILE e MAI NON
+          TORNA: in produzione due telefoni con lo stesso schermo sono
+          l'eccezione, e senza quella distinzione la lista darebbe del
+          baro a quasi tutti.
+
+     Misurato su macchina di sviluppo: ~13 s da solo, sotto la soglia dei
+     30-40 s che qui chiede lento (modello `audio.js`) — non lento. */
+  { nome: 'sigillo',           cmd: ['strumenti/_q-sigillo.js'],                        conta: true,  lento: false },
+  /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
      cancelli in lista ne ha visto uno.
