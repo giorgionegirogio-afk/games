@@ -144,6 +144,44 @@ forzare:
   non ripetere cognomi gia' in casa (righe 9885-9891): un nome che viene
   dal telefono e' un canale che entra dalla finestra.
 
+## La taglia: cinque contro cinque (edizione del 22 settembre, compito 3)
+
+*Questa sezione non c'era nella prima stesura della spec: la scelta e'
+nata al compito 2 e la sua ragione e' stata corretta al compito 3, dopo
+la misura. Si scrive qui per intero, col testo sbagliato citato.*
+
+Il formato porta la taglia (2 bit, indice in `[5,7,11]`) ma il gioco
+apre una sfida di carta **solo a cinque contro cinque**
+(`CARTA_TAGLIE = [5]`); a sette e a undici rifiuta con
+`taglia-non-prevista`.
+
+**La ragione scritta al compito 2 era:** «a sette o a undici
+`setupPlayers` completa la squadra di casa coi rincalzi di quartiere,
+che sono uomini PIATTI e `formaSquadre` li sparge usando il loro NOME;
+quei nomi escono da `rosaAvversaria`, che legge `SAVE.rosa`: due
+telefoni con rose diverse schiererebbero due squadre diverse».
+
+**Misurato al compito 3 (`_q-carta`, prova C5): e' falso.** Due pagine
+con rose diverse, stessa apertura a sette, stesso seme: i quattordici
+uomini scendono in campo con gli **stessi numeri** (zero differenze su
+quattordici) e la partita finisce uguale — punteggio `2-0` contro `2-0`,
+stessi sorteggi, stesse posizioni a ogni campione. Cambia **un nome su
+quattordici**.
+
+**La ragione vera, quella che la misura lascia in piedi:** a sette e a
+undici il codice **non descrive tutta la squadra**. La rosa del gioco e'
+da cinque (`nuovaRosa`), quindi a sette due uomini su sette e a undici
+sei su undici li ricostruisce il telefono — attributi dalla media della
+rosa, nome pescato evitando i cognomi di casa, cioe' da un dato locale.
+A cinque il codice descrive ogni uomo che scende in campo, e infatti fra
+due telefoni non cambia nemmeno un nome di titolare (prova C1b: 28 nomi
+diversi su 240 confrontati, **tutti** rincalzi entrati dalla panchina a
+partita in corso, e tutti con gli stessi identici quattro numeri).
+
+Il codice resta di 79 caratteri a qualunque taglia — dentro ci va la
+ROSA da cinque, non la formazione — quindi aprire 7 e 11 domani non
+costa un carattere: costa la descrizione degli uomini che oggi mancano.
+
 ## Il codice, com'e' fatto fuori
 
 **Alfabeto**: Crockford base32 — `0123456789ABCDEFGHJKMNPQRSTVWXYZ`,

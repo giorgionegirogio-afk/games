@@ -362,11 +362,61 @@ async function gruppoB(browser, porta) {
    nella simulazione. Ordine sacro: startMatch (dentro cartaGioca)
    PRIMA, setCpuVsCpu DOPO.
    ===================================================================== */
+/* LA PARTITA SI PORTA FINO AL FISCHIO FINALE, non a un campione: i
+   cambi entrano dopo il primo terzo (CAMBIO_OGNI), e i nomi della
+   panchina escono da rosaAvversaria, che legge SAVE.rosa. Una prova
+   che si fermasse a meta' non vedrebbe mai il canale che va cercato. */
 const GIOCA_CODICE = `(function(codice){
   const t = window.__test;
   const r = t.carta.gioca(codice);
   if(r && r.errore) return { errore: r.errore };
   t.setCpuVsCpu(true);
+  /* L'IMPRONTA E' DI SOLE POSIZIONI, e i nomi si guardano a parte: e'
+     una separazione misurata, non una comodita'. Un rincalzo che entra
+     puo' chiamarsi in due modi diversi sui due telefoni — rosaAvversaria
+     scarta i cognomi gia' usati da SAVE.rosa, e quella e' locale — ma
+     entra allo stesso secondo e coi numeri identici. Mescolare le due
+     cose in un'impronta sola farebbe gridare al difetto per un cognome. */
+  const impronta = () => {
+    let h = 2166136261 >>> 0;
+    const v = t.players.map(p => Math.round(p.x*8) + ',' + Math.round(p.y*8)).join('|')
+            + '#' + Math.round(t.ball.x*8) + ',' + Math.round(t.ball.y*8);
+    for(let i=0;i<v.length;i++){ h = (h ^ v.charCodeAt(i)) >>> 0; h = Math.imul(h, 16777619) >>> 0; }
+    return h >>> 0;
+  };
+  const titolari = t.players.map(p => p.nome + ':' + p.vel + '/' + p.tiro + '/' + p.tecnica + '/' + p.tackle);
+  const nomiVia = t.players.map(p => p.nome);
+  const tappe = [];
+  for(let k=0;k<40 && t.state !== 'end';k++){ t.simulate(5); tappe.push(impronta()); }
+  return { punteggio: t.score.slice(), scena: t.state, sorteggi: t.sorteggi, tappe: tappe,
+           durata: Math.round(t.timeLeft),
+           titolari: titolari,
+           nomiVia: nomiVia,
+           nomiFine: t.players.map(p => p.nome),
+           attrFine: t.players.map(p => p.vel + '/' + p.tiro + '/' + p.tecnica + '/' + p.tackle),
+           panchina: JSON.stringify(t.panchina || null),
+           daBattere: t.carta.sfida ? [t.carta.sfida.golA, t.carta.sfida.golD] : null };
+})`;
+
+/* =====================================================================
+   LA STESSA APERTURA, MA A SETTE. Non passa da cartaGioca — che a sette
+   si rifiuta — ma ricostruisce a mano le stesse opzioni: e' la misura
+   che GIUSTIFICA il rifiuto invece di dichiararlo. Se a sette due
+   telefoni con rose diverse giocassero la stessa partita, la sfida di
+   carta potrebbe aprirsi anche li' e il limite sarebbe una pigrizia.
+   ===================================================================== */
+const SETTE = `(function(seme, rosaA, rosaD){
+  const t = window.__test;
+  G.sfida = { seme:String(seme), taglia:7, chi:'GASOMETRO', vero:false, replay:false };
+  t.semina(seme);
+  t.startMatch(1, 1, {
+    size:7, sponde:'gabbia', miraGuidata:'pieno',
+    mia:{ n:'SFIDANTE', c1:'#3355aa', c2:'#111820', pat:0, ment:1, rosa:rosaA },
+    opp:{ n:'GASOMETRO', c1:'#cf3e6b', c2:'#123a80', pat:1, ment:1, car:0, rosa:rosaD },
+  });
+  t.setCpuVsCpu(true);
+  const nomiVia = t.players.map(p => p.nome);
+  const numeriVia = t.players.map(p => p.vel + '/' + p.tiro + '/' + p.tecnica + '/' + p.tackle);
   const impronta = () => {
     let h = 2166136261 >>> 0;
     const v = t.players.map(p => Math.round(p.x*8) + ',' + Math.round(p.y*8)).join('|')
@@ -375,12 +425,12 @@ const GIOCA_CODICE = `(function(codice){
     return h >>> 0;
   };
   const tappe = [];
-  for(let k=0;k<14;k++){ t.simulate(10); tappe.push(impronta()); }
-  return { punteggio: t.score.slice(), scena: t.state, sorteggi: t.sorteggi, tappe: tappe,
-           durata: Math.round(t.timeLeft),
-           uomini: t.players.map(p => p.nome + ':' + p.vel + '/' + p.tiro + '/' + p.tecnica + '/' + p.tackle).join(' '),
-           panchina: JSON.stringify(t.panchina || null),
-           daBattere: t.carta.sfida ? [t.carta.sfida.golA, t.carta.sfida.golD] : null };
+  for(let k=0;k<40 && t.state !== 'end';k++){ t.simulate(5); tappe.push(impronta()); }
+  const out = { punteggio: t.score.slice(), sorteggi: t.sorteggi, tappe: tappe,
+                nomiVia: nomiVia, numeriVia: numeriVia,
+                numeriFine: t.players.map(p => p.vel + '/' + p.tiro + '/' + p.tecnica + '/' + p.tackle) };
+  G.sfida = null; t.desemina();
+  return out;
 })`;
 
 /* quattro telefoni davvero diversi: vista, nome, rosa (coi nomi VERI
@@ -395,10 +445,16 @@ const telefonoDiverso = (P, i) => P.pag.evaluate(i => {
   const m = t.rete.mem();
   m.id = 'aaaaaaaa-0000-4000-8000-00000000000' + i; m.segreto = 'segreto-' + i;
   t.save.teamName = ['DOPOLAVORO', 'BORGATA', 'CASE NUOVE', 'MOLO 4'][i];
-  /* i nomi veri: nuovaRosa() li pesca dalle tabelle del gioco, e li si
-     rimescola per indice cosi' due telefoni hanno cognomi diversi
-     occupati — che e' esattamente il canale di rosaAvversaria */
-  t.save.rosa = t.save.rosa.map((r, k) => Object.assign({}, r, {
+  /* I NOMI SONO VERI E SONO DIVERSI, ed e' la differenza che conta.
+     nuovaRosa() pesca dalle due tabelle del gioco ed e' deterministica:
+     lasciandola stare, tutti i telefoni avrebbero gli stessi cinque
+     nomi e il canale da cercare resterebbe chiuso. rosaAvversaria
+     inietta i nomi di SAVE.rosa fra quelli «gia' usati» per non
+     ripetere i cognomi (righe 9885-9891 del gioco), e da li' escono i
+     rincalzi e le due PANCHINE: se quel canale arrivasse fino alla
+     partita, due telefoni con rose diverse divergerebbero. */
+  t.save.rosa = t.save.rosa.map((r, k) => ({
+    nome: NOMI_ROSA[(i * 5 + k) % NOMI_ROSA.length] + ' ' + COGNOMI_ROSA[(i * 7 + k * 3) % COGNOMI_ROSA.length],
     vel: 50 + ((k * 7 + i * 3) % 40), tiro: 45 + ((k * 11 + i * 5) % 45),
     tecnica: 40 + ((k * 5 + i * 7) % 50), tackle: 55 + ((k * 13 + i * 2) % 40),
   }));
@@ -408,7 +464,7 @@ const telefonoDiverso = (P, i) => P.pag.evaluate(i => {
   t.save.mentalita = i % 3;
   t.save.taglia = [5, 7, 11][i % 3];
   t.save.diff = i % 3;
-  return t.save.teamName;
+  return { squadra: t.save.teamName, rosa: t.save.rosa.map(r => r.nome).join(', ') };
 }, i);
 
 async function gruppoC(browser, porta) {
@@ -423,7 +479,7 @@ async function gruppoC(browser, porta) {
       await P0.ctx.close(); return;
     }
     await telefonoDiverso(P0, 0);
-    codici = await P0.pag.evaluate(() => [20260922, 20260923, 777].map(s => {
+    codici = await P0.pag.evaluate(() => [20260922, 20260923, 777, 1, 4294967295, 31337].map(s => {
       const o = window.__test.carta.componi(s, 5);
       o.golA = 3; o.golD = 2;
       return window.__test.carta.impacca(o);
@@ -431,6 +487,7 @@ async function gruppoC(browser, porta) {
   } finally { await P0.ctx.close(); }
 
   let tuttiUguali = true, righe = [], daBattere = true;
+  let nomiDiversi = 0, nomiConfrontati = 0, nomiFuoriPanchina = 0, guasti = [];
   for (const codice of codici) {
     const esiti = [];
     for (let i = 0; i < VISTE.length; i++) {
@@ -442,21 +499,58 @@ async function gruppoC(browser, porta) {
     }
     const rif = esiti[0];
     if (rif.errore) { tuttiUguali = false; righe.push('codice rifiutato: ' + rif.errore); continue; }
-    const uguali = esiti.every(e => !e.errore &&
-      e.punteggio.join('-') === rif.punteggio.join('-') && e.sorteggi === rif.sorteggi &&
-      e.tappe.join(',') === rif.tappe.join(',') && e.uomini === rif.uomini &&
-      e.panchina === rif.panchina && e.durata === rif.durata);
-    if (!uguali) tuttiUguali = false;
+    for (const e of esiti) {
+      if (e.errore) { tuttiUguali = false; guasti.push('errore ' + e.errore); continue; }
+      const fuori = [];
+      if (e.punteggio.join('-') !== rif.punteggio.join('-')) fuori.push('punteggio');
+      if (e.sorteggi !== rif.sorteggi) fuori.push('sorteggi');
+      if (e.durata !== rif.durata) fuori.push('durata');
+      if (e.tappe.join(',') !== rif.tappe.join(',')) fuori.push('posizioni');
+      if (e.titolari.join('|') !== rif.titolari.join('|')) fuori.push('titolari');
+      if (e.attrFine.join('|') !== rif.attrFine.join('|')) fuori.push('numeri a fine partita');
+      if (fuori.length) { tuttiUguali = false; guasti.push(fuori.join('+')); }
+      /* i NOMI si contano, non si pretendono: vedi C1b */
+      for (let k = 0; k < e.nomiFine.length; k++) {
+        nomiConfrontati++;
+        if (e.nomiFine[k] === rif.nomiFine[k]) continue;
+        nomiDiversi++;
+        /* l'unico scarto ammesso e' su un uomo ENTRATO DALLA PANCHINA:
+           se cambia il nome di uno sceso in campo al fischio d'inizio,
+           il codice non ha schierato la stessa squadra */
+        if (e.nomiFine[k] === e.nomiVia[k] && rif.nomiFine[k] === rif.nomiVia[k]) nomiFuoriPanchina++;
+      }
+    }
     if (!esiti.every(e => e.daBattere && e.daBattere[0] === 3 && e.daBattere[1] === 2)) daBattere = false;
     righe.push(esiti.map((e, i) => VISTE[i].width + 'x' + VISTE[i].height + '->' +
       (e.errore ? 'ERRORE ' + e.errore : e.punteggio.join('-') + '/' + e.sorteggi)).join(' '));
   }
-  di(tuttiUguali && codici.length === 3,
+  di(tuttiUguali && codici.length === 6,
      'C1) lo stesso codice su quattro viste e quattro salvataggi diversi: la STESSA partita',
-     righe.join('  |  '));
+     righe.join('  |  ') + (guasti.length ? '   FUORI: ' + guasti.slice(0, 6).join(', ') : ''));
   di(daBattere,
      'C2) e il punteggio da battere torna dal codice, uguale su tutte',
      daBattere ? '3-2 su ' + (codici.length * VISTE.length) + ' aperture' : 'NO');
+
+  /* =====================================================================
+     C1b — L'UNICA COSA CHE PUO' CAMBIARE, E QUANTO CAMBIA.
+
+     MISURATO (fuori/_sonda-135-canale.js, e questa prova lo tiene fermo):
+     fra due telefoni con rose diverse, a parita' di codice, restano
+     identici punteggio, sorteggi, durata, posizioni a ogni campione,
+     titolari con nomi e numeri, e i numeri di tutti a fine partita.
+     L'unica differenza e' il NOME di un rincalzo entrato dalla panchina —
+     «Ivano il Professore» contro «Ivano Fulmine», con gli stessi
+     identici 54/53/42/64 — perche' rosaAvversaria scarta i cognomi gia'
+     usati da SAVE.rosa, che e' locale.
+
+     E' cosmetica e sta dichiarata invece che nascosta. Ma il confine e'
+     duro: se a cambiare fosse il nome di un TITOLARE, il codice non
+     starebbe schierando la stessa squadra, e questa prova diventa rossa.
+     ===================================================================== */
+  di(nomiFuoriPanchina === 0 && nomiConfrontati > 100,
+     'C1b) e l\'unico nome che puo\' cambiare e\' quello di un rincalzo entrato dalla panchina',
+     nomiDiversi + ' nomi diversi su ' + nomiConfrontati + ' confrontati, tutti entrati dalla panchina' +
+     (nomiFuoriPanchina ? ' TRANNE ' + nomiFuoriPanchina + ' TITOLARI' : ''));
 
   /* C3 — CHI CREA E CHI RICEVE. Il giro vero: una pagina crea la sfida
      con cartaNuova, la gioca fino in fondo, il gioco ne fa il codice; una
@@ -488,7 +582,79 @@ async function gruppoC(browser, porta) {
        'creata ' + (creata.punteggio ? creata.punteggio.join('-') : '—') + ' (' + creata.scena + ')' +
        ' · codice ' + (creata.codice || 'ASSENTE') +
        ' · da battere per chi riceve ' + (rigiocata && rigiocata.daBattere ? rigiocata.daBattere.join('-') : '—'));
+
+    /* C4 — E LO STESSO TELEFONO, DUE VOLTE. Una sfida che cambia fra
+       due aperture sulla stessa pagina non e' rigiocabile nemmeno da
+       chi l'ha creata: e' il caso in cui lo stato lasciato dalla
+       partita precedente entra in quella dopo (la famiglia dei
+       «cronometri fratelli», grep G.recT). */
+    if (creata.codice) {
+      const due = [];
+      for (let k = 0; k < 2; k++)
+        due.push(await B.pag.evaluate(([g, c]) => (new Function('return ' + g))()(c), [GIOCA_CODICE, creata.codice]));
+      di(!due[0].errore && due[0].punteggio.join('-') === due[1].punteggio.join('-') &&
+         due[0].sorteggi === due[1].sorteggi && due[0].tappe.join(',') === due[1].tappe.join(','),
+         'C4) lo stesso codice due volte di fila sulla stessa pagina: la stessa partita',
+         due.map(d => d.punteggio.join('-') + '/' + d.sorteggi).join(' e '));
+    } else di(false, 'C4) lo stesso codice due volte di fila sulla stessa pagina', 'nessun codice da rigiocare');
   } finally { await A.ctx.close(); await B.ctx.close(); }
+
+  /* =====================================================================
+     C5 — PERCHE' LA SFIDA DI CARTA SI FERMA A CINQUE, misurato invece
+     che dichiarato — e la misura NON e' quella che ci si aspettava.
+
+     LA PRIMA STESURA DI QUESTA PROVA sosteneva che a sette due telefoni
+     con rose diverse divergono, perche' setupPlayers completa la
+     squadra di casa coi «rincalzi di quartiere» (uomini PIATTI, che
+     formaSquadre sparge) e i loro nomi escono da rosaAvversaria, che
+     legge SAVE.rosa. MISURATO: FALSO. A sette, fra due telefoni con
+     rose diverse, i quattordici uomini scendono in campo con gli
+     STESSI numeri, e la partita finisce uguale — punteggio, sorteggi e
+     posizioni a ogni campione.
+
+     QUEL CHE CAMBIA DAVVERO sono i NOMI dei due rincalzi, che sono
+     uomini che IL CODICE NON DESCRIVE: la rosa del gioco e' da cinque
+     (nuovaRosa), quindi a sette due uomini su sette e a undici sei su
+     undici li ricostruisce il telefono, dalla media della rosa e con un
+     nome pescato evitando i cognomi di casa. A cinque, invece, il
+     codice descrive OGNI uomo che scende in campo, e infatti nessun
+     titolare cambia nome (prova C1b).
+
+     Il limite resta [5], e adesso ha la sua ragione vera: non «a sette
+     diverge», che non e' vero, ma «a sette il codice non dice chi
+     gioca». Questa prova tiene ferme tutte e due le cose: che a sette i
+     nomi dei titolari si separano, e che il gioco si rifiuta di aprirla.
+     ===================================================================== */
+  const S1 = await T.apri(browser, porta, VISTE[0]);
+  const S2 = await T.apri(browser, porta, VISTE[0]);
+  try {
+    await telefonoDiverso(S1, 0);
+    await telefonoDiverso(S2, 1);
+    const rosaA = [], rosaD = [];
+    for (let i = 0; i < 5; i++) {
+      rosaA.push({ nome: 'A' + i, vel: 71 - i, tiro: 64 + i, tecnica: 58 + i * 2, tackle: 52 + i });
+      rosaD.push({ nome: 'D' + i, vel: 59 + i, tiro: 72 - i, tecnica: 61 + i, tackle: 55 + i * 2 });
+    }
+    const a7 = await S1.pag.evaluate(([g, s, a, d]) => (new Function('return ' + g))()(s, a, d), [SETTE, 20260922, rosaA, rosaD]);
+    const b7 = await S2.pag.evaluate(([g, s, a, d]) => (new Function('return ' + g))()(s, a, d), [SETTE, 20260922, rosaA, rosaD]);
+    const nomiFuori = a7.nomiVia.filter((x, i) => x !== b7.nomiVia[i]).length;
+    const numeriFuori = a7.numeriVia.filter((x, i) => x !== b7.numeriVia[i]).length;
+    const partitaUguale = a7.punteggio.join('-') === b7.punteggio.join('-') &&
+                          a7.sorteggi === b7.sorteggi && a7.tappe.join(',') === b7.tappe.join(',');
+    const rifiuto = await S1.pag.evaluate(() => {
+      const t = window.__test;
+      const o = t.carta.componi(20260922, 7); o.golA = 1; o.golD = 0;
+      const r = t.carta.gioca(t.carta.impacca(o));
+      return { errore: r.errore || '', taglie: t.carta.taglie };
+    });
+    di(nomiFuori > 0 && numeriFuori === 0 && partitaUguale &&
+       rifiuto.errore === 'taglia-non-prevista' && rifiuto.taglie.join(',') === '5',
+       'C5) a sette il codice non dice chi gioca (nomi diversi, numeri uguali) e il gioco si rifiuta di aprirla',
+       'sette: ' + nomiFuori + ' nomi diversi su ' + a7.nomiVia.length + ' al fischio d\'inizio, ' +
+       numeriFuori + ' numeri diversi · partita ' + (partitaUguale ? 'UGUALE' : 'DIVERSA') +
+       ' (' + a7.punteggio.join('-') + ' contro ' + b7.punteggio.join('-') + ')' +
+       ' · rifiuto «' + rifiuto.errore + '» · taglie aperte [' + rifiuto.taglie.join(',') + ']');
+  } finally { await S1.ctx.close(); await S2.ctx.close(); }
 }
 
 /* =====================================================================
