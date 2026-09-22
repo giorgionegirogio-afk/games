@@ -635,6 +635,11 @@ async function gruppoD(browser, porta) {
       const t = window.__test;
       if (!t.amici) return { errore: 'niente-porta' };
       t.amici.azzera();
+      /* UN'IDENTITA' CI VUOLE, se no codiceTrasferimento() torna la
+         stringa vuota (grep «if(!this.haIdentita) return ''») e la prova
+         del codice-che-non-si-manda misurerebbe il vuoto */
+      const m = t.rete.mem();
+      m.id = '33333333-3333-4333-8333-333333333333'; m.segreto = 'SEGRETODIPROVA';
       t.sfida.apri();
       for (let i = 0; i < 60 && t.sfida.occupato; i++) await new Promise(r => setTimeout(r, 50));
       const b = document.getElementById('btnSfidaCarta');
@@ -665,7 +670,8 @@ async function gruppoD(browser, porta) {
     });
     const cs = (pann.cause || []).map(c => c[1]);
     di(!pann.errore && cs.length === 6 && cs.every(c => c && c.length > 12) &&
-       new Set(cs).size >= 5 && pann.righe === 1 && pann.primo && pann.primo.n === 'GIORGIO',
+       new Set(cs).size === 6 && /cambio telefono/i.test(cs[2] || '') &&
+       pann.righe === 1 && pann.primo && pann.primo.n === 'GIORGIO',
        'D2) il pannello segna, e cinque modi di sbagliare danno cinque cause diverse',
        (pann.errore ? 'ERRORE ' + pann.errore + ' · ' : '') +
        (pann.cause || []).map(c => c[0] + ': «' + c[1].slice(0, 42) + '»').join(' · ') +
@@ -740,13 +746,27 @@ async function gruppoD(browser, porta) {
   } finally { await C.ctx.close(); }
 
   /* =====================================================================
-     D5 — ZERO RETE. Si intercetta tutto e passa solo il documento del
-     gioco. Si conta il DELTA dopo l'apertura della schermata SFIDA, che
-     una richiesta la fa da sempre per progetto: contarla come colpa di
-     questa funzione vorrebbe dire misurare la cosa sbagliata. Il giro
-     dev'essere COMPLETO — crea, gioca, rimanda, segna, guarda la
-     classifica — perche' una funzione che non chiede niente in quanto
-     non fa niente non prova niente. */
+     D5 — ZERO RETE, IN TRE TACCHE.
+
+     Si intercetta tutto e passa solo il documento del gioco. Si conta il
+     DELTA dopo l'apertura della schermata SFIDA, che una richiesta la fa
+     da sempre per progetto (grep «La prima richiesta al server la fa
+     apri()»): contarla come colpa di questa funzione vorrebbe dire
+     misurare la cosa sbagliata.
+
+     E TRE TACCHE E NON UNA, perche' le domande sono tre e mescolarle
+     darebbe una risposta sola e sbagliata:
+
+       1) il giro — gioca una sfida ricevuta, fai nascere il codice di
+          risposta, segna la riga — deve fare ZERO richieste. Qui
+          l'indirizzo del server c'e' ancora: una versione che mandasse
+          la classifica a un endpoint cadrebbe proprio in questa tacca;
+       2) aprire CLASSIFICA con la rete accesa ne fa UNA, ed e' la
+          classifica DI RETE, che chiede da sempre. Non e' un rosso: e'
+          il confine fra le due cose che vivono in quella schermata;
+       3) aprire CLASSIFICA a rete spenta ne fa ZERO e mostra i testa a
+          testa lo stesso. E' il telefono senza campo, che e' il motivo
+          per cui questa funzione esiste. */
   const ctx = await browser.newContext({ viewport: { width: 915, height: 412 }, isMobile: true, hasTouch: true, locale: 'it-IT' });
   const pag = await ctx.newPage();
   const indirizzo = 'http://127.0.0.1:' + porta + '/CALCETTO-il-gioco.html';
@@ -791,19 +811,44 @@ async function gruppoD(browser, porta) {
       const seg = document.getElementById('btnSfCartaSegna');
       if (!seg) return { errore: 'niente-bottone-segna' };
       seg.click();
-      /* e si guarda la classifica */
-      await t.sfida.apriClassifica();
-      return { risposta: risposta, righe: t.amici.righe.length,
-               viste: document.querySelectorAll('#claAmici .clariga').length };
+      return { risposta: risposta, righe: t.amici.righe.length, base: !!t.reteStato().stato };
     });
     await pag.waitForTimeout(400);
-    const nuove = bloccate.slice(tacca);
-    di(!giro.errore && giro.righe === 1 && giro.viste === 1 && nuove.length === 0,
-       'D5) tutto il giro — gioca, rimanda, segna, guarda — senza una sola richiesta di rete',
+    const dopoGiro = bloccate.slice(tacca);
+
+    const tacca2 = bloccate.length;
+    const conRete = await pag.evaluate(async () => {
+      const t = window.__test;
+      if (!t.amici) return { errore: 'niente-porta' };
+      await t.sfida.apriClassifica();
+      return { viste: document.querySelectorAll('#claAmici .clariga').length };
+    });
+    await pag.waitForTimeout(400);
+    const dopoClassifica = bloccate.slice(tacca2);
+
+    const tacca3 = bloccate.length;
+    const senzaRete = await pag.evaluate(async () => {
+      const t = window.__test;
+      if (!t.amici) return { errore: 'niente-porta' };
+      t.reteBase('');                       /* il telefono senza campo */
+      await t.sfida.apriClassifica();
+      return { viste: document.querySelectorAll('#claAmici .clariga').length,
+               rete: ((document.getElementById('claLista') || {}).textContent || '').replace(/\s+/g, ' ').trim() };
+    });
+    await pag.waitForTimeout(400);
+    const dopoSpenta = bloccate.slice(tacca3);
+
+    di(!giro.errore && giro.righe === 1 && dopoGiro.length === 0 &&
+       conRete.viste === 1 && senzaRete.viste === 1 && dopoSpenta.length === 0 &&
+       senzaRete.rete.length > 20,
+       'D5) il giro e la classifica degli amici non chiedono niente a nessuno, nemmeno col server acceso',
        (giro.errore ? 'ERRORE ' + giro.errore + ' · ' : '') +
-       'risposta ' + (giro.risposta || '—') + ' · righe ' + giro.righe + ', dipinte ' + giro.viste +
-       ' · ' + nuove.length + ' richieste nuove' + (nuove.length ? ': ' + nuove.slice(0, 4).join(' ') : '') +
-       ' (prima del giro, ad aprire SFIDA: ' + tacca + ')');
+       'risposta ' + (giro.risposta || '—') + ' · gioca+segna: ' + dopoGiro.length + ' richieste' +
+       (dopoGiro.length ? ' (' + dopoGiro.slice(0, 3).join(' ') + ')' : '') +
+       ' · CLASSIFICA con la rete: ' + dopoClassifica.length + ' (la classifica DI RETE, da sempre)' +
+       ' · CLASSIFICA a rete spenta: ' + dopoSpenta.length + ', e i testa a testa si vedono lo stesso (' +
+       senzaRete.viste + ' riga) con la riga della rete che dice perche\'' +
+       ' · all\'apertura di SFIDA: ' + tacca);
   } finally { await ctx.close(); }
 }
 

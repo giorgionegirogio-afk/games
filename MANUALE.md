@@ -298,7 +298,30 @@ nome).
   dei due versi — quello della sfida comincia per `CARTA` e non ha punti
   dentro — e se incolli il codice del cambio telefono nel campo della
   sfida, il gioco te lo dice con quelle parole.
-- **CLASSIFICA**: i primi 100 e la tua riga anche se sei più giù.
+- **CLASSIFICA** — *edizione del 22 settembre 2026, voce #136*. Adesso le
+  classifiche in questa schermata sono **due**, e la prima non ha bisogno
+  di nessuno.
+  **I TUOI TESTA A TESTA** stanno in cima e funzionano **senza rete**: una
+  riga per amico, con le vinte, i pari, le perse, i gol, e i punti a destra
+  (tre per una vinta, uno per un pari). Si riempie **dai codici che tornano
+  indietro**. Quando giochi una SFIDA DI CARTA che hai *ricevuto*, al
+  fischio finale il gioco ti dà un codice corto — comincia per `ESITO` ed è
+  lungo **21 caratteri**, si detta anche al telefono — da rimandare a chi
+  te l'ha mandata: dentro ci sono il seme della partita e i due punteggi, e
+  **niente altro**. Chi lo riceve lo incolla nel campo della SFIDA DI
+  CARTA, scrive con che nome segnarti, e la riga compare anche da lui.
+  Dall'altra parte non serve aspettare niente: chi ha *ricevuto* la sfida i
+  due punteggi li ha già tutti e due, scrive il nome e segna subito. **Il
+  nome dell'amico resta sul tuo telefono** e non finisce in nessun codice:
+  è per questo che questa classifica non ha bisogno né di un conto né di un
+  server. Lo stesso codice incollato due volte **conta una volta sola**, e
+  se qualcuno prova a rimandarti un punteggio tuo diverso da quello che hai
+  fatto, vince quello che il tuo telefono si ricorda (e te lo dice). La
+  lista tiene **20 amici**: quando ne arriva uno nuovo esce il più vecchio,
+  e la riga sotto il campo lo dice per nome.
+  **LA CLASSIFICA DI RETE** sta sotto ed è quella di prima: i primi 100 e
+  la tua riga anche se sei più giù. Senza campo, al posto suo compare la
+  riga che spiega perché — ma i testa a testa si vedono lo stesso.
 - **CAMBIO TELEFONO**: il tuo codice di trasferimento (id + segreto). Va
   copiato e conservato: *se perdi il telefono, perdi la squadra* — il server
   non sa chi sei. Sull'altro telefono si incolla il codice in USA IL CODICE:
@@ -493,6 +516,168 @@ Qui il registro completo, a edizioni.
     che è.
 
 ## A registro — ciò che resta, e in che stato
+
+- **La classifica degli amici — #136 CANTIERE CHIUSO** (voce #136, 22
+  settembre 2026, quattro compiti dal merge-base `66b17fe` — spec
+  `docs/superpowers/specs/2026-09-22-classifica-amici-design.md`, piano
+  `docs/superpowers/plans/2026-09-22-classifica-amici.md`). **Sesto
+  cantiere dell'onda D, e chiude il giro che la #135 aveva aperto a
+  metà.** La sfida di carta va in un verso solo: mando 79 caratteri, tu
+  giochi la mia partita, il tuo gioco ti dice se hai fatto meglio — e il
+  mio telefono non lo saprà mai. Il mandato (§5, punto 12a) chiede la
+  **classifica amici**: qui si costruisce **dai codici che tornano
+  indietro**, senza aggiungere un server, un conto o un identificatore.
+  Cantiere di MOTORE, SALVATAGGIO e SCHERMATA: il gioco toccato solo per
+  ancore (`_toppa-amici-codice.js` nove ancore,
+  `_toppa-amici-schermata.js` sette). `git diff main --
+  CALCETTO-il-gioco.html`: **570 righe in più, 7 tolte**. Nessun file di
+  `rete/` toccato.
+
+  **IL CODICE DI RISPOSTA STA IN 21 CARATTERI**: `ESITO` + 12 simboli +
+  4 di controllo, nello stesso alfabeto base32 di Crockford della #135
+  (un alfabeto solo: due sarebbero due modi di sbagliare a ricopiare).
+  Dentro, **60 bit tondi**: versione (4), `MOTORE_V` (4), seme (32) e i
+  **quattro** numeri dei due punteggi (5 l'uno) — quello di chi ha
+  sfidato e quello di chi risponde. Misurato 21..21 su mille risposte a
+  caso, giro impacca-e-spacca identità **1000/1000**. Ci sta in un SMS,
+  in una riga da 80 colonne, e — la differenza vera con i 79 caratteri
+  della sfida — **si detta al telefono**: ventuno lettere si leggono in
+  dieci secondi. La parola `ESITO` ha una `I` e una `O`, cioè le due
+  lettere che l'alfabeto butta via: il prefisso si confronta dopo la
+  stessa normalizzazione del corpo, quindi chi ricopia a mano `ES1T0`
+  viene capito lo stesso (misurato).
+
+  **PORTA TUTTI E DUE I PUNTEGGI, E NON E' RIDONDANZA.** Il telefono che
+  aveva creato la sfida può essere stato spento una settimana, e il
+  codice della sua sfida vive quanto la sessione (#135): il codice deve
+  bastare da solo. Ma se quel telefono il seme se lo ricorda, **vince il
+  ricordo**: in `SAVE.amici.mie` finiscono le ultime venti sfide create,
+  seme e punteggio, e una risposta che dichiarasse un punteggio tuo
+  diverso viene corretta e lo dice in chiaro. È l'unica verifica
+  possibile senza un server, e costa venti numeri.
+
+  **LE SERRATURE SONO TRE**, perché i codici che si incollano nello
+  stesso campo adesso sono tre: il cambio telefono (`id.segreto.controllo`,
+  che **regala la squadra** a chi lo incolla), la sfida (`CARTA…`), il
+  risultato (`ESITO…`). Ognuno dei tre lettori riconosce gli altri due e
+  **li chiama per nome** invece di rispondere «codice sbagliato»: a un
+  risultato incollato nel campo della sfida il gioco dice che è un
+  risultato e dove si segna, e al codice del cambio telefono dice che
+  non si manda a nessuno.
+
+  **QUATTRO SIMBOLI DI CONTROLLO, misurati su CINQUANTA codici e non su
+  uno** — un corpo di dodici simboli è corto, e una misura su un codice
+  solo è un aneddoto. Una cifra cambiata: **24.800 su 24.800**
+  (esaustivo). Due cifre scambiate: **5.788 su 5.788** (esaustivo). Da 1
+  a 4 simboli a caso: **99.136 su 99.139 = 99,997%**, e **le sei fughe
+  del compito 0 stanno tutte sulla stessa coppia**, posizioni 11 e 15:
+  l'ultimo simbolo del carico pesa `31⁰ = 1` nell'accumulatore, quindi
+  una sua variazione di `d` e una variazione di `d` sull'ultimo simbolo
+  di controllo si annullano — e quel che esce è un **codice valido di
+  un'altra partita**, non un codice storto accettato. È la classe che
+  nessun controllo può prendere, perché il controllo è funzione del
+  carico. Si dice invece di nasconderla dietro una percentuale. **Con un
+  simbolo solo** (misurato al compito 0) le due cifre scambiate
+  scenderebbero al **66,06%**: su un corpo corto un controllo corto non
+  tiene.
+
+  **`SAVE.amici` È ADDITIVA E IL SALVATAGGIO RESTA v4**, e non è una
+  scommessa: misurato su un salvataggio vissuto di **37 chiavi**,
+  togliere la chiave nuova non ne perde **nemmeno una** delle altre 36,
+  e aggiungerne una sconosciuta non ne perde nessuna. Il precedente era
+  già dichiarato nel gioco accanto a `div` («chiave additiva, versione
+  ferma a v4»). Venti amici pesano **+5.695 byte**, lo **0,143%** del
+  tetto di `localStorage`. **Il prezzo, detto**: chi gioca con questa
+  versione e poi riapre una versione *vecchia* del gioco perde la
+  classifica degli amici — la vecchia rilegge a whitelist e riscrive
+  senza. Non è un guasto nuovo, è come questo salvataggio si comporta da
+  sempre per qualunque chiave; ma lì dentro c'è il lavoro di un mese di
+  sfide.
+
+  **I TETTI SONO TRE E NESSUNO È SILENZIOSO**: **20 amici** (entra il
+  nuovo, esce il più vecchio per data — a parità di data il primo
+  entrato — e la riga sotto il campo lo dice **per nome**; la coda delle
+  sfide fa lo stesso da sempre, ma senza dirlo), **12 semi ricordati per
+  amico** (così lo stesso codice incollato due volte non conta due
+  volte, che è lo sbaglio più probabile di tutti; il prezzo dichiarato è
+  che una risposta più vecchia di dodici partite *con quell'amico*,
+  reincollata, conterebbe due volte), **20 sfide create** ricordate. E in
+  rilettura i tre tetti si riapplicano, come fa già la coda: un
+  salvataggio manomesso non può iniettare duemila amici.
+
+  **LA CLASSIFICA STA DENTRO CLASSIFICA, SOPRA QUELLA DI RETE**, e la
+  ragione è un numero misurato (tre viste, quattro riempimenti): sotto,
+  con la classifica di rete piena, il primo amico finirebbe a **876 px**,
+  cioè fuori da qualunque telefono; sopra sta a **114** su tutte e due le
+  viste orizzontali (136 col riempimento vero del gioco). La cosa che
+  funziona **sempre** non può stare sotto la cosa che funziona solo con
+  la rete. **E la schermata SFIDA non si tocca di un pixel** — il
+  bottone CLASSIFICA c'era già — quindi i quattro bersagli delle voci
+  #134 e #135 restano identici: **CERCA@220, prima riga@329, GUARDA@308,
+  SFIDA DI CARTA@347** a 800x360. L'attrezzo a ancore confronta quella
+  fetta di pagina **byte per byte** prima di scrivere. Il prezzo, detto:
+  con cinque amici la prima riga della classifica di rete scende da
+  94/118 a 326, e TORNA ALLE SFIDE da 317/341 a 549.
+
+  **E UN DIFETTO DEL GIOCO SPEDITO, trovato misurando dove sarebbero
+  cadute le aggiunte.** Il pannello della sfida di carta è alto **542
+  px**; la piega di un telefono in orizzontale è 412 o 360; e
+  `align-items:center` su un contenitore che scorre manda la **cima** del
+  figlio sopra lo zero — misurato, `top` a **−65** e a **−91**, con
+  `scrollHeight` 493 contro 574 di contenuto: **ottantun pixel persi in
+  cima, e nessuno scorrimento li raggiunge**. Il titolo *SFIDA DI CARTA*
+  stava a −44: su un telefono in orizzontale **non si poteva leggere**.
+  Nessun banco lo vedeva perché nessuno misurava la cima. La cura è una
+  parola, `align-items:flex-start`, e si mette **solo su `#sfidaCarta`**:
+  il pannello del cambio telefono è alto 349 px e la cima ce l'ha sempre
+  avuta (32 / 6 / 135), e cambiargli il centraggio sarebbe un ritocco
+  gratuito a una schermata spedita. Dopo: cima a **16**, titolo a **37**,
+  tutto raggiungibile. Il prezzo, detto: GIOCA LA SFIDA passa da 326 a
+  407, cioè sotto la piega di 360 — in cambio di un pannello in cui
+  *tutto* si raggiunge.
+
+  **IL CANCELLO**: `strumenti/_q-amici.js`, **23 controlli**, in batteria
+  con `conta:true` (17-18 s, ripetibile: tre corse, stessi numeri). Il
+  gruppo C non si accontenta di far girare il giro: fa giocare la stessa
+  partita a due telefoni **in due modi diversi** — uno con la CPU, l'altro
+  col copione del pollice — perché due telefoni che giocano con la CPU
+  finiscono **pari per costruzione** (è la garanzia della #135) e uno
+  specchio di pari è uguale a sé stesso: passerebbe anche un gioco che si
+  confonde i due punteggi. Misurato: ANNA 0-1 contro BRUNO 1-3, e le due
+  righe dicono **«vinta» da una parte e «persa» dall'altra**, sulla
+  stessa partita, senza che nessun dato sia passato da un server.
+
+  **OTTO FALSI, e ognuno cade su una prova sola** (17 verdi su 18, o 4 su
+  5 nel gruppo D): `identita` (60 bit dell'identificatore in coda al
+  carico) e `nome` (il nome della squadra) cadono **solo su B1**;
+  `doppio` su C2; `senzatetto` su C3; `scordone` su C4; `credulone` su
+  C6; `centrato` su D4; `rete` (segnare manda una copia al server) su
+  D5. **Tre cose imparate dai falsi, e sono le più utili del cantiere:**
+  (1) la ricerca di **sottostringhe non protegge niente** — il falso che
+  fa viaggiare il nome della squadra la passa, perché nell'alfabeto di
+  Crockford la `O` è uno zero e «DOPOLAVORO» esce scritto `D0P01A`, in
+  chiaro e invisibile a una ricerca di testo; (2) **«la riga c'è dopo un
+  riavvio» non prova che sia stata scritta** — il gioco salva anche
+  mentre la pagina se ne va (`salvaPerSparizione`), e il falso che non
+  scrive sul disco passava la ricarica: C4 guarda il disco **subito**,
+  senza chiudere niente; (3) **la rete va contata col server acceso** —
+  il falso che manda la classifica a un endpoint non partirebbe nemmeno
+  con l'indirizzo vuoto, quindi D5 conta in **tre tacche**: zero per il
+  giro col server acceso, una per la classifica *di rete* che chiede da
+  sempre, zero per la classifica a rete spenta che mostra i testa a
+  testa lo stesso.
+
+  **Reti di sicurezza a ogni compito, tutte ferme**: `duello-impronta` 44
+  duelli firmati, `giudice` 21/21, `sigillo` 14/14, `carta` 22/22,
+  `sfida` 54/54, `rete` 22/22, `ment-nastro` 6/6, `carattere-nastro`
+  4/4, `rosa-scala` 4/4, `nastro-tronco` 5/5, `senza-rete` 6/6,
+  `salvataggio` 11/11. Batteria intera a gruppi a ogni compito: **51
+  cancelli che contano, tutti verdi**. Fuori dal conto `istantanea`
+  (informativo, stessi identici numeri prima e dopo: 45/56 1/8 8/8 8/8
+  7/8 8/8 7/8 6/8) e `avvio-telefono` (uscita 3, nessun telefono
+  collegato). **`MOTORE_V` resta 2**: il codice di risposta *porta* il
+  numero — un risultato fatto con un altro motore non è confrontabile —
+  ma non lo cambia, e né il nastro né la simulazione sono stati toccati.
 
 - **La sfida di carta — #135 CANTIERE CHIUSO** (voce #135, 22 settembre
   2026, cinque compiti dal merge-base `602a13e` — spec

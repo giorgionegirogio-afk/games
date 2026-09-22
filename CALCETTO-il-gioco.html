@@ -665,6 +665,38 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
    telefono stretto. Qui va a capo da solo, monospazio e spaziato. */
 #sfCartaMio{font-size:13px;letter-spacing:.09em;line-height:1.45;word-break:break-all;white-space:normal;
   min-height:56px;resize:none}
+/* =====================================================================
+   LA CIMA DEL PANNELLO SI DEVE POTER LEGGERE (voce #136), e fino a oggi
+   non si poteva.
+
+   Questa carta e' alta 542 px; la piega di un telefono in orizzontale e'
+   412 o 360. Con align-items:center, un figlio piu' alto del contenitore
+   viene centrato e la sua cima finisce SOPRA lo zero: misurato, top a
+   -65 su 915x412 e a -91 su 800x360, e scrollTop=0 non la riporta
+   indietro (scrollHeight 493 contro 574 di contenuto: ottantuno pixel
+   persi in cima, e nessuno scorrimento li raggiunge). Il titolo SFIDA DI
+   CARTA stava a -44, cioe' non si leggeva.
+
+   flex-start appoggia la carta in alto e lascia scorrere tutto: cima a
+   16, titolo a 37, e il fondo si raggiunge. Il prezzo, detto: GIOCA LA
+   SFIDA passa da 326 a 407, cioe' sotto la piega di 360 — in cambio di
+   un pannello in cui TUTTO si raggiunge.
+
+   SOLO SU #sfidaCarta: il pannello del cambio telefono e' alto 349 px e
+   la cima ce l'ha sempre avuta (32 / 6 / 135). Cambiargli il centraggio
+   sarebbe un ritocco gratuito a una schermata spedita.
+   ===================================================================== */
+#sfidaCarta{align-items:flex-start}
+/* il nome dell'amico non e' un codice: si scrive a mano, quindi non e'
+   monospazio come gli altri due campi di questo pannello */
+#sfCartaAmico{font-family:var(--cond);font-size:15px;letter-spacing:.06em}
+/* la riga di un testa a testa porta una seconda riga sotto il nome, come
+   la riga di una sfida (.sfchi small): il conto per esteso, perche' «7»
+   da solo non dice se sono vittorie o partite */
+.clariga .cn small{display:block;font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--grigio);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* e le etichette di sezione si allineano alla lista, come in SFIDA */
+#classifica .eti{max-width:560px;margin:14px auto 8px;text-align:left}
 /* etichetta di sezione: stessa tacca fluo delle squadre sulla targa */
 .eti{font-family:var(--cond);font-weight:700;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--grigio);margin:18px 0 8px}
 .eti::before{content:"";display:inline-block;width:8px;height:8px;background:var(--gesso);margin-right:8px;vertical-align:.02em}
@@ -3165,6 +3197,19 @@ button:active{transform:scale(.96)}
       <input id="sfCartaIn" autocomplete="off" spellcheck="false" placeholder="incolla qui il codice" aria-label="codice di sfida ricevuto">
       <div class="sf-nota" id="sfCartaNota"></div>
       <button class="fbtn paga" id="btnSfCartaUsa">GIOCA LA SFIDA</button>
+      <!-- ============ IL RISULTATO CHE TORNA INDIETRO (voce #136) ============
+           Sta QUI, dopo GIOCA LA SFIDA, e non prima: le due azioni della
+           voce #135 restano le prime della carta. Misurato a 915x412 e a
+           800x360 (fuori/_sonda-136-pannello.js): CREA@283, GIOCA@407,
+           SEGNA@524, e con align-items:flex-start si raggiunge tutto.
+           IL NOME RESTA QUI. Non viaggia in nessun codice: e' il modo in
+           cui questa funzione fa una classifica senza che nessuno abbia
+           un identificatore. -->
+      <div class="sf-nota">Ti è tornato indietro un codice <b>ESITO</b>? Incollalo qui sopra.
+      Poi scrivi con che nome segnare quell&rsquo;amico: <b>il nome resta su questo telefono</b>
+      e non finisce in nessun codice.</div>
+      <input id="sfCartaAmico" autocomplete="off" spellcheck="false" maxlength="12" placeholder="il nome dell&rsquo;amico" aria-label="il nome dell'amico, solo su questo telefono">
+      <button class="fbtn paga" id="btnSfCartaSegna">SEGNA IL RISULTATO</button>
       <button class="fbtn" id="btnSfCartaChiudi">CHIUDI</button>
       <!-- LE DUE COSE DA DIRE, E VANNO DETTE QUI E NON ALTROVE.
            La prima: il codice porta la PARTITA, non la prova. Chi lo
@@ -3186,6 +3231,17 @@ button:active{transform:scale(.96)}
 <div id="classifica" class="ov hidden">
   <div class="box">
     <h1 class="sotto-titolo">CLASSIFICA</h1>
+    <!-- ============ I TESTA A TESTA (voce #136) ============
+         STANNO SOPRA quella di rete, e la ragione e' un numero misurato
+         (fuori/_sonda-136-piega.js): sotto, con la classifica di rete
+         piena, il primo amico finirebbe a 876 px. Sopra sta a 114 su
+         tutte e due le viste orizzontali.
+         La cosa che funziona SEMPRE — anche senza campo, anche a server
+         spento — non puo' stare sotto la cosa che funziona solo con la
+         rete. -->
+    <div class="eti">I tuoi testa a testa</div>
+    <div class="sf-lista" id="claAmici"></div>
+    <div class="eti">La classifica di rete</div>
     <div class="sf-lista" id="claLista"></div>
     <div class="azioni"><button class="btnA sec" id="btnBackClassifica">TORNA ALLE SFIDE</button></div>
   </div>
@@ -44681,9 +44737,57 @@ const Sfida = {
     });
   },
 
+  /* --------------------------------------------- i testa a testa */
+  /* =====================================================================
+     LA CLASSIFICA CHE NON HA BISOGNO DI NESSUNO (voce #136).
+
+     Si dipinge PRIMA di parlare col server e non torna mai indietro a
+     mani vuote: questa schermata, a rete spenta, era una riga di scuse
+     e basta. Da qui in avanti chi non ha campo ci trova comunque i suoi
+     testa a testa, che e' l'unica classifica che nessuno gli puo'
+     spegnere.
+
+     L'ordine lo decide Amici.ordinata: punti, poi scarto, poi giocate,
+     poi nome. Il numero grosso a destra sono i PUNTI (tre per una
+     vinta, uno per un pari); il conto per esteso sta sotto il nome,
+     perche' un «7» da solo non dice se sono vittorie o partite.
+     ===================================================================== */
+  dipingiAmici(){
+    const box = $('claAmici');
+    if(!box) return;
+    const righe = Amici.ordinata();
+    if(!righe.length){
+      box.innerHTML = '<div class="sf-vuota">Ancora nessun testa a testa. Manda una SFIDA DI CARTA a un amico: ' +
+                      'quando ti rimanda il suo codice ESITO lo incolli lì, scrivi il suo nome, e la riga compare qui. ' +
+                      'Non serve la rete, e non serve che nessuno dei due abbia un conto.</div>';
+      return;
+    }
+    let h = '', i = 0;
+    for(const r of righe){
+      i++;
+      h += '<div class="clariga">' +
+             '<span class="cp">' + i + '</span>' +
+             '<span class="cn">' + esc(r.n) +
+               '<small>' + (r.v|0) + ' vinte · ' + (r.p|0) + ' pari · ' + (r.s|0) + ' perse · ' +
+               (r.mf|0) + '-' + (r.sf|0) + ' gol</small></span>' +
+             '<span class="cq">' + Amici.punti(r) + '</span>' +
+           '</div>';
+    }
+    /* IL TETTO SI DICHIARA QUANDO SI TOCCA, non prima: una riga che
+       avverte di un limite lontano e' una riga che nessuno legge. */
+    if(righe.length >= AMICI_TETTO)
+      h += '<div class="sf-vuota">La classifica tiene ' + AMICI_TETTO + ' amici: quando ne arriva uno nuovo ' +
+           'esce il più vecchio.</div>';
+    box.innerHTML = h;
+  },
+
   /* --------------------------------------------------- la classifica */
   async apriClassifica(){
     goScreen($('classifica'));
+    /* PRIMA i testa a testa, POI il server: se questa riga stesse sotto,
+       un telefono senza campo non vedrebbe mai la sua classifica (i tre
+       return qui sotto se ne vanno tutti prima) */
+    this.dipingiAmici();
     const box = $('claLista');
     if(box) box.innerHTML = '<div class="sf-vuota">Sto leggendo la classifica...</div>';
     if(!Rete.base){
@@ -44719,12 +44823,24 @@ const Sfida = {
      funzione che APRE LA PARTITA: due nomi uguali per due cose diverse
      a due righe di distanza sono un errore che aspetta. */
   mostraCarta(){
+    /* =====================================================================
+       UN CAMPO SOLO PER «IL CODICE DA COPIARE», E DICE QUALE E' (voce
+       #136). Dopo una sfida RICEVUTA la cosa da mandare non e' piu' il
+       codice della partita — quello ce l'ha gia' chi te l'ha mandata —
+       e' il RISULTATO, ventuno caratteri. Due campi readonly uno sopra
+       l'altro, di ventuno e settantanove caratteri, sarebbero una scelta
+       da fare mentre si copia; un campo solo, con la riga sopra che dice
+       che cos'e', e' un campo che non si sbaglia.
+       ===================================================================== */
     const e = $('sfCartaMio');
-    if(e) e.value = this.cartaCodice || '';
+    const risp = this.cartaRisposta || '';
+    if(e) e.value = risp || this.cartaCodice || '';
     const v = $('sfCartaVia');
-    if(v) v.textContent = this.cartaCodice
+    if(v) v.textContent = risp
+      ? 'Questo è il RISULTATO della sfida che hai appena giocato. Rimandalo a chi te l\'ha mandata: il suo telefono lo segna in classifica.'
+      : (this.cartaCodice
       ? 'Questo è il codice della tua ultima sfida di carta. Copialo e mandalo: chi lo incolla gioca la stessa identica partita.'
-      : 'Crea una sfida, giocala fino in fondo, e il codice compare qui sotto.';
+      : 'Crea una sfida, giocala fino in fondo, e il codice compare qui sotto.');
     const n = $('sfCartaNota');
     if(n) n.textContent = this.cartaRiga || '';
     const i = $('sfCartaIn'); if(i) i.value = '';
@@ -44857,6 +44973,7 @@ const Sfida = {
       case 'altra-versione':   return 'Questo codice è di un formato che questa versione del gioco non sa leggere.';
       case 'taglia-non-prevista': return 'La sfida di carta si gioca cinque contro cinque, e questo codice chiede un\'altra taglia.';
       case 'sembra-trasferimento': return 'Questo è il codice del CAMBIO TELEFONO, non una sfida: non si manda a nessuno, perché chi lo incolla diventa la tua squadra. Un codice di sfida comincia per CARTA e non ha punti dentro.';
+      case 'e-un-risultato':   return 'Questo è il RISULTATO di una sfida, tornato indietro: non è una partita da giocare. Scrivi qui sotto il nome dell\'amico e premi SEGNA IL RISULTATO.';
       case 'rose-corte':       return 'Il codice non porta due squadre complete.';
       case 'taglia-strana':    return 'Il codice porta una taglia di campo che non esiste.';
       default:                 return 'Questo codice non si riesce a leggere.';
@@ -45550,6 +45667,10 @@ $('btnSfCartaUsa').addEventListener('click', ()=>{ Audio5.unlock(); Sfida.usaCar
 /* Invio nel campo vale GIOCA LA SFIDA, come nel pannello del cambio
    telefono: chi incolla e preme Invio non deve cercare il bottone */
 $('sfCartaIn').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); Audio5.unlock(); Sfida.usaCarta(); } });
+$('btnSfCartaSegna').addEventListener('click', ()=>{ Audio5.unlock(); Sfida.segnaCarta(); });
+/* Invio nel campo del nome vale SEGNA IL RISULTATO: chi ha appena
+   scritto il nome non deve cercare il bottone piu' in basso */
+$('sfCartaAmico').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); Audio5.unlock(); Sfida.segnaCarta(); } });
 $('btnSfCartaChiudi').addEventListener('click', ()=>{ Audio5.unlock(); hide($('sfidaCarta')); });
 $('btnBackSfida').addEventListener('click', ()=>{ hide($('sfidaCodice')); hide($('sfidaCarta')); goScreen(ui.menu); });
 $('btnBackClassifica').addEventListener('click', ()=>{ goScreen($('sfida')); });

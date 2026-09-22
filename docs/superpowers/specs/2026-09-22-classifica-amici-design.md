@@ -392,12 +392,32 @@ tranne la sua.
 | falso | che cosa sbaglia | quale prova lo boccia |
 |---|---|---|
 | `_crit-amici-identita.js` | «cosi' sai da chi viene»: sessanta bit dell'identificatore di rete in coda al carico, col controllo rifatto sopra. Il giro funziona, la classifica si compila, il codice resta corto, e le cifre esadecimali cadono su simboli base32 che non somigliano a niente | **B1** (due identita', due codici diversi) |
-| `_crit-amici-nome.js` | ci mette il nome della squadra, un dato personale «innocuo», cosi' l'amico non deve scriverlo a mano | **B1** e **B2** |
+| `_crit-amici-nome.js` | ci mette il nome della squadra, un dato personale «innocuo», cosi' l'amico non deve scriverlo a mano | **B1** ~~e **B2**~~ |
 | `_crit-amici-doppio.js` | niente memoria dei semi: lo stesso codice incollato due volte conta due volte | **C** (il doppione) |
 | `_crit-amici-senzatetto.js` | la lista degli amici non e' tappata: cresce e basta | **C** (il tetto) |
 | `_crit-amici-scordone.js` | segna in memoria e non chiama `persistSave`: la classifica c'e' finche' non si chiude il gioco | **C** (il riavvio) |
 | `_crit-amici-credulone.js` | si fida sempre del punteggio dichiarato nel codice, anche quando il telefono quel seme se lo ricorda | **C** (il punteggio che non si riscrive) |
-| `_crit-amici-centrato.js` | rimette `align-items:center` sul pannello | **D** (la cima raggiungibile) |
+| `_crit-amici-centrato.js` | rimette `align-items:center` sul pannello | **D4** (la cima raggiungibile) |
+| `_crit-amici-rete.js` | *(aggiunto al compito 3)* segnare manda anche una copia al server, «cosi' se cambi telefono la classifica ti segue» | **D5**, prima tacca |
+
+**Rettifica a edizioni (22 settembre 2026, compito 2; fonte: la corsa di
+`_q-amici --solo A,B,C --gioco fuori/gioco-amici-nome.html`).** La riga
+di `_crit-amici-nome` diceva che a bocciarlo sarebbero state **B1 e
+B2**. Misurato: **solo B1**. B2 cerca il nome come sottostringa e non lo
+trova, perche' nell'alfabeto di Crockford la `O` non esiste e diventa
+uno zero: «DOPOLAVORO» finisce scritto **`D0P01A`** dentro al codice —
+in chiaro, leggibile a occhio, e invisibile a una ricerca di testo. Il
+testo sbagliato resta qui sopra barrato perche' e' la ragione per cui
+B1 esiste: **una prova di sottostringhe non protegge niente**.
+
+**Seconda rettifica (stessa corsa, falso `_crit-amici-scordone`).** Il
+piano dava per scontato che «la classifica sopravvive al riavvio»
+bastasse a condannare una versione che non scrive sul disco. Misurato:
+**non basta**. Il gioco riscrive il salvataggio anche mentre la pagina
+se ne va (`salvaPerSparizione`, tre eventi per tre morti diverse),
+quindi dopo una ricarica la riga c'era lo stesso — l'aveva scritta
+l'uscita, non la cura. C4 guarda il disco **subito**, senza chiudere
+niente, e solo li' il falso cade.
 
 ## Le reti di sicurezza
 

@@ -990,6 +990,54 @@ const CANCELLI = [
      intera. */
   { nome: 'carta',             cmd: ['strumenti/_q-carta.js'],                          conta: true,  lento: true  },
   /* =====================================================================
+     amici: IL RISULTATO TORNA INDIETRO, E LA CLASSIFICA SI COMPILA DA
+     SOLA (voce #136, compito 3).
+
+     COSA SORVEGLIA, e nessuno degli altri lo guarda. `carta` sorveglia
+     il codice della sfida e la partita che ne esce, e non sa niente di
+     un risultato che torna. `rete`, `sfida`, `giudice` e `sigillo`
+     guardano la sfida ONLINE, che un server ce l'ha. `salvataggio`
+     guarda che il salvataggio regga una ricarica, ma non sa che cosa sia
+     un amico. Quattro gruppi:
+
+       A) IL CODICE DI RISPOSTA: ventuno caratteri (tetto 40, e non 100
+          come per la sfida, perche' un codice di risposta si detta anche
+          al telefono); impacca-e-spacca e' l'identita'; il controllo si
+          misura ESAUSTIVAMENTE su CINQUANTA codici e non su uno — un
+          corpo di dodici simboli e' corto, e una misura su un codice
+          solo e' un aneddoto; e le TRE serrature, perche' i codici che
+          si incollano nello stesso campo adesso sono tre e il terzo, il
+          cambio telefono, regala la squadra a chi ce l'ha.
+       B) DENTRO NON C'E' NESSUNO. Il codice di risposta e' quello che si
+          manda a chi ti ha sfidato, cioe' un giorno a un gruppo di venti
+          persone. Due telefoni con identita' diverse e lo stesso
+          risultato devono dare lo STESSO codice, carattere per
+          carattere. La ricerca di sottostringhe da sola non basta, ed e'
+          MISURATO che non basta: il falso che fa viaggiare il nome della
+          squadra la passa, perche' nell'alfabeto di Crockford la O e'
+          uno zero e «DOPOLAVORO» esce scritto «D0P01A».
+       C) LA CLASSIFICA SI COMPILA E LE DUE SI SPECCHIANO: il giro intero
+          su due telefoni veri — uno gioca con la CPU, l'altro col
+          copione del pollice, se no finirebbero pari per costruzione e
+          uno specchio di pari non prova niente — piu' il doppione, i tre
+          tetti, il disco scritto SUBITO (una ricarica non basta: il
+          gioco salva anche mentre la pagina se ne va), l'additivita'
+          della chiave nuova misurata fra due riletture, e il punteggio
+          proprio che un codice non puo' riscrivere.
+       D) LA SCHERMATA E LA RETE CHE NON C'E': i quattro bersagli delle
+          voci #134 e #135 inchiodati ai loro pixel (CERCA@220, prima
+          riga@329, GUARDA@308, SFIDA DI CARTA@347), la cima del pannello
+          RAGGIUNGIBILE — non lo era, ed e' un difetto del gioco spedito
+          trovato da questo cantiere — e la rete contata in TRE tacche:
+          zero per il giro col server acceso, una per la classifica DI
+          rete che chiede da sempre, zero per la classifica a rete spenta
+          che mostra i testa a testa lo stesso.
+
+     Misurato su macchina di sviluppo: 17-18 s, sotto la soglia dei 30-40
+     s che qui chiede lento. Apre sei contesti di browser e gioca due
+     partite intere. */
+  { nome: 'amici',             cmd: ['strumenti/_q-amici.js'],                          conta: true,  lento: false },
+  /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
      cancelli in lista ne ha visto uno.
