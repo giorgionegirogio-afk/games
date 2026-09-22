@@ -72,9 +72,55 @@ function schermoDi(nastro) {
   return null;
 }
 
+/* TUTTE LE MISURE DISTINTE DEL NASTRO (voce #139), in ordine. Una sola se
+   la finestra non si e' mossa, nessuna se quel nastro e' di prima del
+   #133, due o piu' se si e' mossa. Si legge QUI, in Node, per la stessa
+   ragione di schermoDi: un banco che chiede al gioco se il gioco ha fatto
+   il suo lavoro non misura niente. */
+function schermiDi(nastro) {
+  const v = [];
+  for (const z of spacca(nastro).pezzi) {
+    const p = z.split(',');
+    if (p[1] !== '10') continue;
+    const w = +p[3], h = +p[4];
+    if (!v.some(x => x[0] === w && x[1] === h)) v.push([w, h]);
+  }
+  return v;
+}
+
+/* LE RIGHE DI TIPO 10 CON IL LORO TICK (voce #139), che e' quel che dice
+   se la misura e' stata scritta QUANDO la finestra si e' mossa o buttata
+   in coda a fine partita. Il tick di un pezzo e' la somma dei dT fino a
+   li'. */
+function righeSchermoDi(nastro) {
+  const v = [];
+  let tick = 0;
+  for (const z of spacca(nastro).pezzi) {
+    const p = z.split(',');
+    tick += +p[0] || 0;
+    if (p[1] === '10') v.push({ tick, w: +p[3], h: +p[4] });
+  }
+  return v;
+}
+
+/* UNA SECONDA MISURA INFILATA A META' NASTRO (voce #139). Il pezzo nuovo
+   porta dT = 0 e dMs = 0, quindi la catena dei tick e dei millisecondi
+   resta intatta e il nastro falso e' falso per UNA ragione sola — la
+   regola di questo file. `dove` e' la frazione di nastro a cui infilarlo.
+   Serve a due prove opposte: una misura DIVERSA deve far astenere il
+   giudice, una misura UGUALE non deve cambiare niente (si contano le
+   misure distinte, non le righe). */
+function infilaSchermo(nastro, misura, dove) {
+  const { p, pezzi } = spacca(nastro);
+  const i = Math.max(1, Math.min(pezzi.length, Math.round(pezzi.length * (dove === undefined ? 0.5 : dove))));
+  const m = misura || schermoDi(nastro) || [0, 0];
+  const fuori = pezzi.slice(0, i).concat(['0,10,0,' + (m[0] | 0) + ',' + (m[1] | 0)], pezzi.slice(i));
+  return rifai(p, fuori);
+}
+
 module.exports = {
   allarga,
-  spacca, rifai, schermoDi,
+  spacca, rifai, schermoDi, schermiDi, righeSchermoDi, infilaSchermo,
 
   /* LE DUE ROSE VIA (tipo 7). Il giudice deve rifiutare: senza le rose
      dovrebbe ripiegare sul profilo vivo, cioe' giudicare un'altra
