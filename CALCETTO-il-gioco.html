@@ -605,6 +605,22 @@ canvas#gioco{display:block;position:fixed;inset:0;touch-action:none}
 .sfris{font-family:var(--cond);font-weight:700;font-size:17px;color:var(--gesso);white-space:nowrap}
 .sfris i{font-style:normal;color:var(--grigio);margin:0 3px}
 .sfriga .fbtn{padding:5px 10px;font-size:11px;margin:0}
+/* IL SIGILLO DELLA VERIFICA (voce #134). Il verdetto del giudice arriva
+   fin qui dal database (colonna `verificata`, GET /api/sfida) e questa
+   riga e' l'unica cosa che lo fa vedere.
+   STA SOTTO IL NOME, dentro la colonna che gia' scorre: una fascia di
+   riepilogo in cima alla lista spingerebbe la prima riga sotto la piega
+   su un telefono in orizzontale (difetto gia' pagato, grep «LE OTTO
+   SQUADRE SOPRA LA PIEGA»). Misurato a 800x360: la prima riga chiudeva
+   a 308 su una piega di 360, e questa riga in piu' costa un'interlinea.
+   IL COLORE NON PORTA NIENTE DA SOLO — e' la regola di casa sull'alto
+   contrasto: il segno e' la PAROLA, la tinta e' un aiuto. */
+.sfsig{display:inline-block;margin-top:3px;max-width:100%;font-family:var(--cond);font-weight:700;
+  font-size:9px;letter-spacing:.14em;text-transform:uppercase;padding:1px 5px;
+  border:1px solid var(--linea);color:var(--grigio);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sfsig.si{color:var(--gesso);border-color:var(--gesso)}
+.sfsig.no{color:var(--ambra);border-color:var(--ambra)}
 /* MENTRE LA RETE GIRA SI VEDE: CERCA AVVERSARIO e GUARDA ignoravano il
    tocco in silenzio finche' il flag occupato di Sfida era alzato. Il
    bottone occupato adesso e' mezzo spento e non prende il dito; la
@@ -43337,6 +43353,17 @@ const Sfida = {
      difensore chiede il replay, ma il pallino si deve spegnere SUBITO
      sotto il dito, non al prossimo giro di rete. */
   vistoQui: {},
+  /* I VERDETTI DI QUESTA SESSIONE (voce #134). {id: {verdetto, causa}},
+     coi cinque nomi del giudice — TORNA, NON TORNA, INCOMPLETO, ALTRO
+     MOTORE, NON FINISCE.
+     NON PARTE PER LA RETE, ed e' una scelta e non una pigrizia: chi ha
+     subito la sfida ha un interesse diretto a che quel risultato cada, e
+     un endpoint che accettasse «il mio telefono dice che il tuo replay
+     non torna» sarebbe una leva per togliere punti a un innocente —
+     esattamente il danno che tutta l'onda D esiste per evitare. Il
+     verdetto che muove punti lo dara' il lavoratore differito, che una
+     squadra in classifica non ce l'ha. */
+  giudicato: {},
   /* la vetrina si pubblica una volta per sessione e dopo ogni sfida: la
      rosa non cambia mentre si guarda un elenco */
   pubblicata: false,
@@ -43369,6 +43396,26 @@ const Sfida = {
     if(errore === 'troppe')  return 'Troppe richieste di fila: aspetta un minuto.';
     if(errore === 'rosa-corta') return 'Serve una rosa di almeno quattro uomini per pubblicare la squadra.';
     return 'Il server ha detto di no (' + String(errore || 'ignoto') + ').';
+  },
+
+  /* LA CAUSA DEL GIUDICE, DETTA A CHI GUARDA (voce #134). Non sono
+     accuse: sono i modi in cui un nastro non basta a DECIDERE, e ognuno
+     dice di che cosa manca invece di dare la colpa a qualcuno. La parola
+     che sta nella riga della lista e' sempre la stessa — NON
+     VERIFICABILE — e questa e' la frase che la spiega. */
+  causaSigillo(g){
+    const c = g && g.causa;
+    if(c === 'schermo-diverso'){
+      const s = (g && g.schermo) || [0, 0];
+      return 'è stata giocata su uno schermo di ' + (s[0]|0) + 'x' + (s[1]|0) +
+             ' e il tuo è di ' + (innerWidth|0) + 'x' + (innerHeight|0) +
+             ', e i comandi del nastro sono in coordinate di schermo.';
+    }
+    if(c === 'schermo-ignoto')    return 'il nastro non dice su che schermo è stata giocata.';
+    if(c === 'rose-assenti')      return 'il nastro non porta le due squadre di quel giorno.';
+    if(c === 'carattere-assente') return 'il nastro non porta il carattere di chi difendeva.';
+    if(c === 'profilo-assente')   return 'il server non ha più la rosa di chi ti ha attaccato.';
+    return 'il nastro non basta a dirlo (' + String(c || 'ignoto') + ').';
   },
 
   /* ------------------------------------------------------ aggiornare */
@@ -43406,6 +43453,36 @@ const Sfida = {
     }
   },
 
+  /* =====================================================================
+     LE CINQUE PAROLE, E CHI HA L'ULTIMA (voce #134).
+
+     L'AUTORITA' E' DEL SERVER: il sigillo di questo telefono si vede
+     SOLO dove il server dice 0, cioe' «non lo so ancora». Sovrascrivere
+     un -1 del verificatore differito con un «non verificabile» di questo
+     telefono vorrebbe dire nascondere l'unico verdetto che conta.
+     E NON TORNA E' L'UNICA PAROLA CHE ACCUSA: gli altri tre «no» del
+     giudice (INCOMPLETO, ALTRO MOTORE, NON FINISCE) vogliono dire «non
+     lo so», e chi li scrive come un'accusa fa il danno che il cantiere
+     #132 ha passato cinque canali a togliere di mezzo.
+     ===================================================================== */
+  sigillo(s){
+    const v = (s && s.verificata) | 0;
+    if(v === 1)  return { parola:'VERIFICATA', tinta:'si' };
+    if(v === -1) return { parola:'NON TORNA',  tinta:'no' };
+    const g = this.giudicato[(s && s.id) | 0];
+    if(!g) return { parola:'DA VERIFICARE', tinta:'' };
+    if(g.verdetto === 'TORNA')     return { parola:'TORNA',     tinta:'si' };
+    if(g.verdetto === 'NON TORNA') return { parola:'NON TORNA', tinta:'no' };
+    return { parola:'NON VERIFICABILE', tinta:'' };
+  },
+  /* la chiamano Sfida.guarda (sui rifiuti, prima del film) e chiudiSfida
+     (a fine replay, quando il confronto col punteggio dichiarato e' gia'
+     stato fatto): i due posti da cui un verdetto puo' uscire */
+  sigilla(id, verdetto, causa){
+    this.giudicato[id | 0] = { verdetto:String(verdetto || ''), causa:String(causa || '') };
+    try{ this.dipingi(); }catch(e){}
+  },
+
   /* -------------------------------------------------------- dipingere */
   dipingi(){
     const m = Rete.mem();
@@ -43438,11 +43515,13 @@ const Sfida = {
       const miei = s.gol_d|0, suoi = s.gol_a|0;
       const verdetto = miei > suoi ? 'HAI RESISTITO' : (miei < suoi ? 'TI HANNO BATTUTO' : 'PARI');
       const chi = (s.sfidante && s.sfidante.nome) ? s.sfidante.nome : 'UNA SQUADRA';
+      const sig = this.sigillo(s);
       h += '<div class="sfriga' + (nuova ? ' nuova' : '') + '">' +
              '<span class="sfp" aria-hidden="true"></span>' +
              '<div class="sfchi"><b>' + esc(chi) + '</b><small>' +
                esc(verdetto + ' · ' + (s.taglia|0) + ' contro ' + (s.taglia|0) +
-                   (quandoFa(s.giocata) ? ' · ' + quandoFa(s.giocata) : '')) + '</small></div>' +
+                   (quandoFa(s.giocata) ? ' · ' + quandoFa(s.giocata) : '')) + '</small>' +
+               '<span class="sfsig ' + sig.tinta + '">' + esc(sig.parola) + '</span></div>' +
              '<div class="sfris">' + miei + '<i>–</i>' + suoi + '</div>' +
              '<button class="fbtn" data-guarda="' + id + '">GUARDA</button>' +
            '</div>';
@@ -43625,6 +43704,7 @@ const Sfida = {
        ===================================================================== */
     if(!att || !Array.isArray(att.rosa) || att.rosa.length < 4){
       this.vistoQui[id|0] = 1;
+      this.sigilla(id, 'INCOMPLETO', 'profilo-assente');
       this.stato('Questa partita non si può più rivedere: il server non ha la rosa di chi ti ha attaccato.', true);
       this.dipingi();
       return;
@@ -43642,9 +43722,15 @@ const Sfida = {
     }
     if(righe < 0){
       Reg.spegni();
+      this.sigilla(id, 'INCOMPLETO', 'nastro-illeggibile');
       this.stato('Il nastro di questa partita non si riesce ad aprire: è di una forma che questo gioco non sa leggere.', true);
       return;
     }
+    /* IL VAGLIO, LO STESSO DEL GIUDICE (voce #134, compito 2). I quattro
+       rifiuti qui sotto sono quelli di sempre, con le parole di sempre:
+       cambia soltanto che adesso la domanda la fa una funzione sola, e
+       che la causa ha un nome che il verificatore differito conosce. */
+    const vag = vagliaNastro(righe);
     /* =====================================================================
        IL MOTORE CAMBIA, E IL NASTRO LO SA (voce #107, compito 4, chiude
        la voce #96).
@@ -43670,9 +43756,10 @@ const Sfida = {
        al server (un replay non paga mai comunque, vedi chiudiSfida) --
        si perde solo il film, il risultato resta quello scritto nella
        lista. */
-    if(Reg.motoreV !== MOTORE_V){
+    if(vag.causa === 'motore-diverso'){
       Reg.spegni();
       this.vistoQui[id|0] = 1;
+      this.sigilla(id, vag.verdetto, vag.causa);
       this.stato('Questa partita è stata giocata con un\'altra versione del motore: rigiocarla oggi darebbe un\'altra partita, non quella che hai subito davvero. Il risultato resta quello scritto qui sotto.', true);
       this.dipingi();
       return;
@@ -43722,31 +43809,29 @@ const Sfida = {
        niente parte per la rete. E' la stessa scelta gia' presa due volte
        in questa funzione (motore diverso, marchio di tipo 5).
        ===================================================================== */
-    if(Reg.righe.length === 0){
+    if(vag.causa === 'nastro-vuoto'){
       Reg.spegni();
       this.vistoQui[id|0] = 1;
+      this.sigilla(id, vag.verdetto, vag.causa);
       this.stato('Il nastro di questa partita è vuoto: non porta nemmeno un comando, quindi rigiocarla ' +
                  'darebbe una partita che non è mai successa. Il risultato resta quello qui sotto.', true);
       this.dipingi();
       return;
     }
-    if(Reg.troncato){
+    if(vag.causa === 'nastro-troncato'){
       Reg.spegni();
       this.vistoQui[id|0] = 1;
+      this.sigilla(id, vag.verdetto, vag.causa);
       this.stato('Questa partita ha prodotto più comandi di quanti il nastro ne tenga, e il nastro si è ' +
                  'fermato a metà: da lì in poi la partita rigiocata non sarebbe quella che hai subito. ' +
                  'Il risultato resta quello qui sotto.', true);
       this.dipingi();
       return;
     }
-    let incompleto = false, dati = null;
-    for(const r of Reg.righe){
-      if(r[1] === 5) incompleto = true;
-      else if(r[1] === 7 && !dati) dati = r;
-    }
-    if(incompleto){
+    if(vag.causa === 'duello-marchiato'){
       Reg.spegni();
       this.vistoQui[id|0] = 1;
+      this.sigilla(id, vag.verdetto, vag.causa);
       this.stato('Questa partita è passata da un calcio piazzato, e i comandi del duello dal ' +
                  'dischetto il registro non li annota ancora: rivederla darebbe una partita diversa ' +
                  'da quella che hai subito, quindi non te la faccio vedere. Il risultato è quello qui sotto.', true);
@@ -43768,16 +43853,20 @@ const Sfida = {
        chiudiSfida.
        ===================================================================== */
     let mentAtt, mentDif, rosaAtt, rosaDif, carDif;
-    if(dati && dati.length > 6){
-      mentAtt = mentValida(dati[3]); mentDif = mentValida(dati[4]);
-      const p1 = spaccaRosa(dati, 5, att.rosa);
-      const p2 = spaccaRosa(dati, p1.fine, nomiDif);
+    if(vag.dati){
+      mentAtt = vag.mentAtt; mentDif = vag.mentDif;
+      /* LE DUE ROSE SI RIFANNO QUI COI NOMI. Il vaglio le legge senza —
+         un nome non muove una partita — ma questo e' un FILM, e un film
+         con le maglie senza nome e' un film mezzo spento. Gli attributi
+         sono gli stessi, vengono dallo stesso nastro. */
+      const p1 = spaccaRosa(vag.dati, 5, att.rosa);
+      const p2 = spaccaRosa(vag.dati, p1.fine, nomiDif);
       rosaAtt = p1.rosa; rosaDif = p2.rosa;
       /* L'INDICE DI CARATTERE, SE IL NASTRO LO PORTA (voce #132,
          compito 2). Un nastro scritto prima di oggi finisce esattamente
-         a p2.fine e qui resta undefined: startMatch ricade sul nome, che
-         e' quello che ha sempre fatto. */
-      if(dati.length > p2.fine) carDif = dati[p2.fine];
+         a p2.fine e il vaglio lo lascia undefined: startMatch ricade sul
+         nome, che e' quello che ha sempre fatto. */
+      carDif = vag.carDif;
     }
     if(!(Array.isArray(rosaAtt) && rosaAtt.length >= 4)){
       /* CORREZIONE DI REVISIONE (voce #132, 21 settembre 2026): questo
@@ -43801,7 +43890,15 @@ const Sfida = {
        di credere a un risultato che non e' successo. */
     G.sfida = { seme:String(s.seme), taglia:taglia, chi:String((dif && dif.nome) || 'LA TUA SQUADRA'),
                 vero:true, replay:true, nomePrima:G.teamName,
-                atteso:[s.gol_a|0, s.gol_d|0] };
+                atteso:[s.gol_a|0, s.gol_d|0],
+                /* IL SIGILLO VIAGGIA CON LA PARTITA (voce #134). Porta
+                   quel che il VAGLIO ha detto prima che il film
+                   cominciasse: se si era rifiutato, questa rigiocata non
+                   e' giudicabile e a fine partita non potra' accusare
+                   nessuno — per quanto il punteggio esca storto. */
+                sigillo:{ id:id|0, giudicabile:!vag.verdetto,
+                          verdetto:vag.verdetto || '', causa:vag.causa || '',
+                          schermo:vag.schermo || null } };
     startMatch(1, SFIDA_DIFF, {
       size: taglia,
       /* LA GABBIA, SEMPRE, A 5/7 (rilievo C1, vedi il commento gemello in
@@ -44011,6 +44108,39 @@ function chiudiSfida(){
              'attaccato è cambiata da allora, e il server ne tiene una copia sola, quella di oggi.'), true);
       }catch(e){}
     }
+    /* =====================================================================
+       IL SIGILLO SI CHIUDE QUI (voce #134, compito 2).
+
+       Il replay appena visto E' una rigiocata del nastro sul motore
+       vero, e il confronto col punteggio dichiarato l'ha gia' fatto il
+       blocco qui sopra: non si rigioca niente una seconda volta e non si
+       chiama giudica(). Quel che manca e' lasciarne un segno nella
+       lista.
+
+       E IL VERDETTO NON E' SEMPRE UN VERDETTO. Se il vaglio si era
+       rifiutato — schermo diverso, schermo ignoto, rose o carattere che
+       il nastro non porta — il film si e' visto lo stesso, ma quel che ne
+       esce non e' giudicabile. NON VERIFICABILE con la causa vera, MAI
+       NON TORNA: accusare qualcuno per colpa di una finestra e' il danno
+       che tutta l'onda D esiste per evitare.
+       ===================================================================== */
+    if(S.sigillo){
+      const g = S.sigillo;
+      const torna = !!S.atteso && S.atteso[0] === ga && S.atteso[1] === gd;
+      try{
+        if(!g.giudicabile){
+          Sfida.sigilla(g.id, g.verdetto || 'INCOMPLETO', g.causa);
+          /* SE IL PUNTEGGIO TORNAVA, QUI NON HA PARLATO NESSUNO: il
+             blocco di sopra scrive solo quando lo scarto c'e'. Una riga
+             che tace lascerebbe credere a un controllo che non c'e'
+             stato. */
+          if(torna) Sfida.stato('Il replay è finito come dice il tabellone, ma non posso chiamarlo un ' +
+                                'controllo: ' + Sfida.causaSigillo(g) + ' Il risultato resta quello qui sotto.');
+        } else {
+          Sfida.sigilla(g.id, torna ? 'TORNA' : 'NON TORNA', '');
+        }
+      }catch(e){}
+    }
     return;
   }
   /* SI STRINGE E SI SPEDISCE, e chi spedisce non lo aspetta nessuno.
@@ -44189,6 +44319,94 @@ function tettoGiudizio(taglia){
    chiudiSfida (che azzera G.sfida come ultima cosa della partita). */
 const Giudizio = { attivo:false, divagata:false };
 
+/* =====================================================================
+   IL VAGLIO — I NOVE CONTROLLI SUL NASTRO, IN UN POSTO SOLO
+   (voce #134, compito 2).
+
+   Si chiama col registro GIA' deserializzato (`righe` e' quel che
+   `Reg.deserializza` ha restituito) e non tocca niente: non spegne il
+   registro, non avvia partite, non scrive da nessuna parte. Legge e
+   riferisce.
+
+   CHI LA CHIAMA E' DUE, e sono due capi diversi dello stesso problema:
+   `giudica` la usa per decidere se puo' dare un verdetto, `Sfida.guarda`
+   per decidere se puo' mostrare un film. Le due risposte non coincidono
+   — un film approssimato costa niente, un verdetto approssimato costa
+   punti a qualcuno — ma LA DOMANDA DEVE ESSERE LA STESSA, se no la riga
+   della lista dice «non torna» dove il verificatore direbbe «non lo so».
+
+   L'ORDINE DEI RIFIUTI NON E' UN GUSTO: il piu' SPECIFICO vince, cosi'
+   la causa che esce e' quella vera. E l'oggetto che torna porta SEMPRE
+   quel che e' riuscito a leggere (le rose, le posture, il carattere),
+   anche quando si rifiuta: `Sfida.guarda` mostra il film con le rose del
+   nastro perfino sugli schermi diversi, ed e' l'unico modo di non
+   spegnere il replay per quasi tutti.
+   ===================================================================== */
+function vagliaNastro(righe){
+  const motoreV = Reg.motoreV|0;
+  const out = { verdetto:'', causa:'', motoreV:motoreV, righe:righe,
+                dati:null, mentAtt:undefined, mentDif:undefined,
+                rosaAtt:null, rosaDif:null, carDif:undefined, schermo:null };
+  const no = (verdetto, causa) => { out.verdetto = verdetto; out.causa = causa; return out; };
+  if(motoreV !== MOTORE_V) return no('ALTRO MOTORE','motore-diverso');
+  if(righe === 0) return no('INCOMPLETO','nastro-vuoto');
+  if(Reg.troncato) return no('INCOMPLETO','nastro-troncato');
+  let marchio = false, dati = null;
+  for(const r of Reg.righe){
+    if(r[1] === 5) marchio = true;
+    else if(r[1] === 7 && !dati) dati = r;
+  }
+  /* il marchio di tipo 5 e' il segno dei nastri scritti PRIMA della voce
+     #131: quelli il duello non ce l'hanno davvero */
+  if(marchio) return no('INCOMPLETO','duello-marchiato');
+  if(!(dati && dati.length > 6)) return no('INCOMPLETO','rose-assenti');
+  /* I NOMI NON SI PASSANO (il terzo argomento resta null): nel nastro non
+     ci sono, e spaccaRosa li sa fare da se'. Un nome non muove una
+     partita — lo dice il commento accanto a spaccaRosa. Chi vuole i nomi
+     sulle maglie (Sfida.guarda, che mostra un film) rifa' le due rose
+     col profilo di oggi: e' cosmetica, e la partita non la sposta. */
+  const p1 = spaccaRosa(dati, 5, null);
+  const p2 = spaccaRosa(dati, p1.fine, null);
+  out.dati = dati;
+  out.mentAtt = mentValida(dati[3]); out.mentDif = mentValida(dati[4]);
+  out.rosaAtt = p1.rosa; out.rosaDif = p2.rosa;
+  if(!(p1.rosa.length >= 4 && p2.rosa.length >= 4)) return no('INCOMPLETO','rose-assenti');
+  /* L'INDICE DI CARATTERE, IN CODA (voce #132, compito 2). Se non c'e',
+     il nastro e' di prima di quella cura e startMatch ricadrebbe sul
+     NOME dell'avversario — che nel nastro non c'e' e che chi difende puo'
+     cambiare quando vuole. Sfida.guarda accetta quel ripiego perche'
+     mostra un film; il giudice no, perche' toglie punti. */
+  if(dati.length <= p2.fine) return no('INCOMPLETO','carattere-assente');
+  out.carDif = dati[p2.fine];
+  /* =====================================================================
+     E LO SCHERMO DEVE ESSERE QUELLO (voce #133, compito 3).
+
+     E' il SESTO canale, e non passa dai sorteggi (quello lo ha chiuso la
+     voce #129 spostando la cosmetica su DECO): passa dai PIXEL. Il
+     nastro porta i tocchi in coordinate di schermo, e su uno schermo
+     diverso gli stessi numeri premono altro — o non premono niente.
+
+     IL GIUDICE SI RIFIUTA, e non e' una resa: e' l'unico modo di non
+     accusare un innocente per colpa di una finestra. E si rifiuta
+     DICENDO QUALE SCHERMO SERVE, cosi' chi lo chiama — il verificatore
+     differito, che apre il browser da se' — lo riapre di quella misura e
+     giudica davvero.
+
+     SE LO SCHERMO E' IGNOTO, NON SI PROCEDE (correzione di revisione,
+     voce #133, IMPORTANTE-1). Un nastro senza riga di tipo 10 e' di
+     prima di quella cura, o costruito apposta senza: in ogni caso non
+     si puo' sapere se le stesse coordinate premono lo stesso punto del
+     campo, e procedere «alla cieca» produce accuse false in una sola
+     direzione (misurato: NON TORNA su schermi diversi, mai su quello
+     giusto). Astenersi non costa niente ai nastri veri, che la riga 10
+     ce l'hanno sempre. */
+  const sc = schermoDelNastro();
+  if(!sc) return no('INCOMPLETO','schermo-ignoto');
+  out.schermo = sc;
+  if(sc[0] !== (innerWidth|0) || sc[1] !== (innerHeight|0)) return no('INCOMPLETO','schermo-diverso');
+  return out;
+}
+
 function giudica(nastro, atteso, opz){
   opz = opz || {};
   /* SI ACCETTA ANCHE LA RIGA DEL SERVER INTERA, che e' la forma in cui
@@ -44233,68 +44451,18 @@ function giudica(nastro, atteso, opz){
   let righe = -1;
   try{ righe = Reg.deserializza(nastro); }catch(e){ righe = -1; }
   if(righe < 0){ Reg.spegni(); return dico('INCOMPLETO','nastro-illeggibile'); }
-  const motoreV = Reg.motoreV|0;
-  const fermo = (verdetto, causa, extra) => {
+  /* IL VAGLIO, CHE E' QUELLO DI Sfida.guarda: una porta sola (voce
+     #134, compito 2). Il giudice si ferma su TUTTI e nove i rifiuti,
+     perche' un verdetto approssimato costa punti a qualcuno. */
+  const vag = vagliaNastro(righe);
+  const motoreV = vag.motoreV;
+  if(vag.verdetto){
     Reg.spegni();
-    return dico(verdetto, causa, Object.assign({ motoreV:motoreV, righe:righe }, extra || {}));
-  };
-  /* L'ORDINE E' QUELLO DI Sfida.guarda, e non per abitudine: il rifiuto
-     piu' SPECIFICO vince, cosi' la causa che esce e' quella vera. */
-  if(motoreV !== MOTORE_V) return fermo('ALTRO MOTORE','motore-diverso');
-  if(righe === 0) return fermo('INCOMPLETO','nastro-vuoto');
-  if(Reg.troncato) return fermo('INCOMPLETO','nastro-troncato');
-  let marchio = false, dati = null;
-  for(const r of Reg.righe){
-    if(r[1] === 5) marchio = true;
-    else if(r[1] === 7 && !dati) dati = r;
+    return dico(vag.verdetto, vag.causa, Object.assign({ motoreV:motoreV, righe:righe },
+                vag.causa === 'schermo-diverso' ? { schermo:vag.schermo } : {}));
   }
-  /* il marchio di tipo 5 e' il segno dei nastri scritti PRIMA della voce
-     #131: quelli il duello non ce l'hanno davvero */
-  if(marchio) return fermo('INCOMPLETO','duello-marchiato');
-  if(!(dati && dati.length > 6)) return fermo('INCOMPLETO','rose-assenti');
-  const mentAtt = mentValida(dati[3]), mentDif = mentValida(dati[4]);
-  /* I NOMI NON SI PASSANO (il terzo argomento resta null): nel nastro non
-     ci sono, e spaccaRosa li sa fare da se'. Un nome non muove una
-     partita — lo dice il commento accanto a spaccaRosa, e lo rimisura il
-     compito 3 di questa voce. */
-  const p1 = spaccaRosa(dati, 5, null);
-  const p2 = spaccaRosa(dati, p1.fine, null);
-  if(!(p1.rosa.length >= 4 && p2.rosa.length >= 4)) return fermo('INCOMPLETO','rose-assenti');
-  /* L'INDICE DI CARATTERE, IN CODA (voce #132, compito 2). Se non c'e',
-     il nastro e' di prima di quella cura e startMatch ricadrebbe sul
-     NOME dell'avversario — che nel nastro non c'e' e che chi difende puo'
-     cambiare quando vuole. Sfida.guarda accetta quel ripiego perche'
-     mostra un film; il giudice no, perche' toglie punti. */
-  if(dati.length <= p2.fine) return fermo('INCOMPLETO','carattere-assente');
-  const carDif = dati[p2.fine];
-  /* =====================================================================
-     E LO SCHERMO DEVE ESSERE QUELLO (voce #133, compito 3).
-
-     E' il SESTO canale, e non passa dai sorteggi (quello lo ha chiuso la
-     voce #129 spostando la cosmetica su DECO): passa dai PIXEL. Il
-     nastro porta i tocchi in coordinate di schermo, e su uno schermo
-     diverso gli stessi numeri premono altro — o non premono niente.
-
-     IL GIUDICE SI RIFIUTA, e non e' una resa: e' l'unico modo di non
-     accusare un innocente per colpa di una finestra. E si rifiuta
-     DICENDO QUALE SCHERMO SERVE, cosi' chi lo chiama — il verificatore
-     differito, che apre il browser da se' — lo riapre di quella misura e
-     giudica davvero. Un nastro senza la riga di tipo 10 e' di prima di
-     questa cura: non si puo' sapere, quindi non si controlla, e vale
-     quello che valeva ieri. */
-  const sc = schermoDelNastro();
-  /* SE LO SCHERMO E' IGNOTO, NON SI PROCEDE (correzione di revisione,
-     voce #133, IMPORTANTE-1). Un nastro senza riga di tipo 10 e' di
-     prima di questa cura, o costruito apposta senza: in ogni caso non
-     si puo' sapere se le stesse coordinate premono lo stesso punto del
-     campo, e procedere «alla cieca» produce accuse false in una sola
-     direzione (misurato: NON TORNA su schermi diversi, mai su quello
-     giusto). Astenersi non costa niente ai nastri veri, che la riga 10
-     ce l'hanno sempre. */
-  if(!sc) return fermo('INCOMPLETO','schermo-ignoto');
-  if(sc[0] !== (innerWidth|0) || sc[1] !== (innerHeight|0))
-    return fermo('INCOMPLETO','schermo-diverso', { schermo:sc });
-
+  const mentAtt = vag.mentAtt, mentDif = vag.mentDif, carDif = vag.carDif;
+  const rosaAtt = vag.rosaAtt, rosaDif = vag.rosaDif;
   /* ------------------------------------------------ si rigioca */
   const nomePrima = G.teamName;
   const colA = coloriBuoni(null), colD = { maglia:'#cf3e6b', calzoncini:'#123a80' };
@@ -44339,9 +44507,9 @@ function giudica(nastro, atteso, opz){
          partita, ma fissarli rende il giudizio identico su qualunque
          telefono invece che dipendente da chi lo sta dando. */
       mia: { n:'GIUDIZIO A', c1:colA.maglia, c2:colA.calzoncini, pat:0,
-             ment:mentAtt, rosa:p1.rosa },
+             ment:mentAtt, rosa:rosaAtt },
       opp: { n:'GIUDIZIO D', c1:colD.maglia, c2:colD.calzoncini, pat:1,
-             ment:mentDif, car:carDif, rosa:p2.rosa },
+             ment:mentDif, car:carDif, rosa:rosaDif },
     });
     /* IL CICLO E' QUELLO DI __test.simulate, senza i due cronometri
        dell'effetto scossa: qui non si disegna niente. */

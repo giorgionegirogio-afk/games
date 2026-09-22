@@ -200,12 +200,197 @@ async function gruppoB0(T, ss, B) {
      'B0) Sfida.sfide porta `verificata` riga per riga', JSON.stringify(letti));
 }
 
+/* =====================================================================
+   GRUPPO B — LA RIGA DELLA LISTA.
+
+   Si legge quel che c'e' SCRITTO sullo schermo, non quel che il gioco
+   sa: fra il campo e l'occhio c'e' `Sfida.dipingi`, ed e' quello il
+   pezzo che questo gruppo sorveglia.
+   ===================================================================== */
+const SIGILLI = ['DA VERIFICARE', 'VERIFICATA', 'NON TORNA', 'TORNA', 'NON VERIFICABILE'];
+
+/* il testo del sigillo di ogni riga, nell'ordine in cui sono dipinte */
+const sigilliDipinti = P => P.pag.evaluate(() =>
+  [...document.querySelectorAll('#sfLista .sfriga')].map(r => {
+    const s = r.querySelector('.sfsig');
+    return s ? s.textContent.trim() : '';
+  }));
+
+async function gruppoB(T, ss, B, idB) {
+  titolo('B) LA RIGA DELLA LISTA — tre valori, tre parole, una sola accusa');
+
+  const parole = await B.pag.evaluate(async () => {
+    await window.__test.sfida.aggiorna();
+    return [...document.querySelectorAll('#sfLista .sfriga')].map(r => {
+      const s = r.querySelector('.sfsig');
+      return s ? s.textContent.trim() : '';
+    });
+  });
+
+  /* le tre righe seminate da B0 sono, in ordine, verificata 1, -1, 0 */
+  di(parole.length === 3 && parole[0] === 'VERIFICATA' && parole[1] === 'NON TORNA' &&
+     parole[2] === 'DA VERIFICARE',
+     'B1) tre valori di `verificata` danno tre parole diverse sulla riga',
+     JSON.stringify(parole));
+
+  /* NESSUN INNOCENTE ACCUSATO, ANCHE NELLE PAROLE. `NON TORNA` e' il
+     solo verdetto che puo' muovere punti e dev'essere la sola parola che
+     accusa: una lista che la scrivesse anche sul «non lo so» darebbe del
+     baro a chi ha solo un nastro che il giudice non sa leggere. */
+  const accuse = parole.filter(p => /NON TORNA/.test(p)).length;
+  di(accuse === 1 && /NON TORNA/.test(parole[1]),
+     'B2) `NON TORNA` compare UNA volta sola, sulla riga del -1',
+     accuse + ' accuse su 3 righe');
+
+  /* B3 — LA PIEGA. Il difetto gia' pagato sta scritto nel commento del
+     TORNEO (CALCETTO-il-gioco.html, «LE OTTO SQUADRE SOPRA LA PIEGA»):
+     il tabellone finiva 17 px sotto il piede opaco dei bottoni e
+     l'ottava squadra spariva. La tentazione di questo cantiere e' la
+     fascia di riepilogo in cima — «3 da verificare, 1 non torna» — che
+     spinge tutto il resto sotto la piega su un telefono in orizzontale.
+     Misurato prima della cura (fuori/_sonda-134-piega.js): a 800x360
+     CERCA AVVERSARIO chiude a 220 e la prima riga a ~314, cioe' 46 px di
+     margine. */
+  const C = await T.apri(ss.browser, ss.portaGioco, { width: 800, height: 360 });
+  try {
+    await T.collega(C, ss.porta, 'DIFENSORI');
+    await C.pag.evaluate(c => window.__test.rete.accettaTrasferimento(c), ss.codiceB);
+    ss.db.sfide.length = 0;
+    for (let i = 0; i < 5; i++) ss.db.sfide.push({
+      id: i + 1, attaccante: ss.idA, difensore: idB, seme: '77' + i, taglia: 5,
+      gol_a: 3, gol_d: 2, replay: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+      giocata: new Date().toISOString(), vista: i > 1, verificata: i % 3 === 0 ? 0 : (i % 3 === 1 ? 1 : -1),
+    });
+    /* LA SCHERMATA SI APRE DAVVERO: un rettangolo preso su un pannello
+       nascosto e' tutto zero, e un banco che misurasse quello direbbe
+       sempre «sopra la piega». E' la trappola gemella di quella di
+       tocco.js — chiedere al DOM dove finiscono i bersagli solo quando i
+       bersagli esistono per davvero. */
+    const piega = await C.pag.evaluate(async () => {
+      const t = window.__test;
+      t.sfida.apri();
+      for (let i = 0; i < 100 && t.sfida.occupato; i++) await new Promise(r => setTimeout(r, 50));
+      t.sfida.dipingi();
+      const r = e => { const x = e && e.getBoundingClientRect(); return x ? Math.round(x.bottom) : -1; };
+      return {
+        h: innerHeight, righe: document.querySelectorAll('#sfLista .sfriga').length,
+        cerca: r(document.getElementById('btnSfidaCerca')),
+        primaRiga: r(document.querySelector('#sfLista .sfriga')),
+        primoGuarda: r(document.querySelector('#sfLista [data-guarda]')),
+        altezzaRiga: (() => { const x = document.querySelector('#sfLista .sfriga');
+                              return x ? Math.round(x.getBoundingClientRect().height) : 0; })(),
+      };
+    });
+    di(piega.righe === 5 && piega.cerca > 0 && piega.cerca <= piega.h &&
+       piega.primaRiga > 0 && piega.primaRiga <= piega.h &&
+       piega.primoGuarda > 0 && piega.primoGuarda <= piega.h,
+       'B3) a 800x360 con cinque righe, CERCA AVVERSARIO e la prima riga restano sopra la piega',
+       'piega ' + piega.h + ' · cerca chiude a ' + piega.cerca + ' · prima riga a ' + piega.primaRiga +
+       ' · GUARDA a ' + piega.primoGuarda + ' · riga alta ' + piega.altezzaRiga + ' px');
+  } finally { await C.ctx.close(); }
+}
+
+/* =====================================================================
+   GRUPPO C — GUARDA VERIFICA MENTRE MOSTRA.
+
+   Una sfida VERA, giocata a due telefoni: un banco che scrivesse il
+   nastro a mano proverebbe il banco, non il gioco.
+   ===================================================================== */
+const sigilloDi = (P, id) => P.pag.evaluate(i => {
+  const g = window.__test.sfida.giudicato || {};
+  return g[i] || null;
+}, id);
+
+const giudizioDi = (P, nastro, atteso, opz) => P.pag.evaluate(([n, a, o]) => {
+  const r = window.__test.giudica(n, a, o);
+  return { verdetto: r.verdetto, causa: r.causa, gol: r.gol };
+}, [nastro, atteso, opz]);
+
+async function gruppoC(T, N, ss, A, B, browser) {
+  titolo('C) GUARDA VERIFICA MENTRE MOSTRA — il verdetto e\' quello del giudice');
+
+  ss.db.sfide.length = 0;
+  const g1 = await T.giocaUna(A, ss);
+  if (!g1.partita || !g1.riga) { console.error('nessuna sfida arrivata al fischio finale'); process.exit(3); }
+  const id = g1.id, riga = g1.riga;
+  const crudo = N.allarga(riga.replay);
+  if (!crudo || crudo.indexOf('|') < 0) { console.error('il nastro non si e\' allargato'); process.exit(2); }
+  const opz = { seme: String(riga.seme), taglia: riga.taglia | 0 };
+
+  /* C1 — lo stesso schermo, il punteggio vero: TORNA */
+  await B.pag.evaluate(async () => { await window.__test.sfida.aggiorna(); });
+  await T.guardaUna(B, id);
+  const s1 = await sigilloDi(B, id);
+  di(!!s1 && s1.verdetto === 'TORNA',
+     'C1) il replay guardato dal difensore, sullo stesso schermo, sigilla TORNA',
+     s1 ? s1.verdetto + (s1.causa ? '/' + s1.causa : '') : 'nessun sigillo');
+
+  /* C4a — e il sigillo e' quello del GIUDICE sullo stesso nastro */
+  const gi1 = await giudizioDi(B, crudo, [riga.gol_a | 0, riga.gol_d | 0], opz);
+  di(!!s1 && s1.verdetto === gi1.verdetto && (s1.causa || '') === (gi1.causa || ''),
+     'C4a) lo stesso verdetto di __test.giudica sullo stesso nastro — una porta sola',
+     'schermata ' + (s1 ? s1.verdetto : '—') + ' · giudice ' + gi1.verdetto);
+
+  /* C2 — il punteggio dichiarato gonfiato di un gol: NON TORNA */
+  riga.gol_a = (riga.gol_a | 0) + 1;
+  await B.pag.evaluate(async () => { await window.__test.sfida.aggiorna(); });
+  await T.guardaUna(B, id);
+  const s2 = await sigilloDi(B, id);
+  di(!!s2 && s2.verdetto === 'NON TORNA',
+     'C2) col punteggio dichiarato gonfiato di un gol il sigillo dice NON TORNA',
+     s2 ? s2.verdetto + (s2.causa ? '/' + s2.causa : '') : 'nessun sigillo');
+  riga.gol_a = (riga.gol_a | 0) - 1;
+
+  /* C3 — UNO SCHERMO DIVERSO NON E' UN'ACCUSA.
+     Misurato dalla voce #133: 800x360 contro 915x412 da' 0-3 dove il
+     tabellone dice 3-4, e la rosa non c'entra niente. In produzione due
+     telefoni con lo stesso schermo sono l'ECCEZIONE: senza questa
+     distinzione la lista direbbe «non torna» a quasi tutti. */
+  const D = await T.apri(browser, ss.portaGioco, { width: 800, height: 360 });
+  let s3 = null, gi3 = null;
+  try {
+    await T.collega(D, ss.porta, 'DIFENSORI');
+    await D.pag.evaluate(c => window.__test.rete.accettaTrasferimento(c), ss.codiceB);
+    await D.pag.evaluate(async () => { await window.__test.sfida.aggiorna(); });
+    await T.guardaUna(D, id);
+    s3 = await sigilloDi(D, id);
+    gi3 = await giudizioDi(D, crudo, [riga.gol_a | 0, riga.gol_d | 0], opz);
+    const parole = await sigilliDipinti(D);
+    di(!!s3 && s3.verdetto !== 'NON TORNA' && /schermo/.test(String(s3.causa)) &&
+       !parole.some(p => /NON TORNA/.test(p)),
+       'C3) guardata da uno schermo diverso: MAI NON TORNA, e la causa vera',
+       (s3 ? s3.verdetto + '/' + s3.causa : 'nessun sigillo') + ' · in lista: ' + JSON.stringify(parole));
+    di(!!s3 && !!gi3 && s3.verdetto === gi3.verdetto && (s3.causa || '') === (gi3.causa || ''),
+       'C4b) e anche li\' il sigillo e\' quello di __test.giudica',
+       'schermata ' + (s3 ? s3.verdetto + '/' + s3.causa : '—') +
+       ' · giudice ' + (gi3 ? gi3.verdetto + '/' + gi3.causa : '—'));
+  } finally { await D.ctx.close(); }
+
+  /* C5 — L'AUTORITA' E' DEL SERVER. Chi difende e' parte in causa: il
+     suo telefono puo' dire che cosa ha visto, non puo' sovrascrivere il
+     verdetto del giudice differito, che una squadra in classifica non ce
+     l'ha. */
+  riga.verificata = 1;
+  const parole5 = await B.pag.evaluate(async () => {
+    await window.__test.sfida.aggiorna();
+    return [...document.querySelectorAll('#sfLista .sfriga')].map(r => {
+      const s = r.querySelector('.sfsig');
+      return s ? s.textContent.trim() : '';
+    });
+  });
+  const s5 = await sigilloDi(B, id);
+  di(parole5.length >= 1 && parole5[0] === 'VERIFICATA' && !!s5 && s5.verdetto === 'NON TORNA',
+     'C5) dove il server ha gia\' deciso, il sigillo locale non lo sovrascrive',
+     'in lista «' + parole5[0] + '», in memoria ' + (s5 ? s5.verdetto : '—'));
+}
+
 /* ------------------------------------------------------------------ */
 (async () => {
   try {
     await gruppoA();
 
     const T = require('./_sfida-due-telefoni.js');
+    const N = require('./_nastri-bugiardi.js');
     const { chromium } = require('playwright');
     const prova = provaRel ? path.resolve(RADICE, provaRel) : '';
     if (prova && !fs.existsSync(prova)) { console.error('non trovo ' + prova); process.exit(3); }
@@ -220,7 +405,14 @@ async function gruppoB0(T, ss, B) {
       await T.collega(B, ss.porta, 'DIFENSORI');
       await T.entra(A); await T.pubblica(A);
       await T.entra(B); await T.pubblica(B);
+      const idB = await B.pag.evaluate(() => window.__test.rete.mem().id);
+      /* le maniglie che i gruppi B e C si passano fra loro */
+      ss.browser = browser; ss.portaGioco = g.porta;
+      ss.idA = await A.pag.evaluate(() => window.__test.rete.mem().id);
+      ss.codiceB = await B.pag.evaluate(() => window.__test.rete.codiceTrasferimento());
       await gruppoB0(T, ss, B);
+      await gruppoB(T, ss, B, idB);
+      await gruppoC(T, N, ss, A, B, browser);
     } finally {
       await browser.close(); ss.chiudi(); g.chiudi();
     }
