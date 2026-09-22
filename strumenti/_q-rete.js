@@ -159,8 +159,13 @@ function serviServer() {
       const delta = ga > gd ? 20 : ga < gd ? -20 : 0;
       p.punti = Math.max(100, p.punti + delta);
       if (ga > gd) { p.vinte++; p.serie++; } else if (ga < gd) { p.perse++; p.serie = 0; } else { p.pari++; p.serie = 0; }
+      /* `verificata: 0` come il server vero (voce #134): il verdetto del
+         giudice differito nasce «da verificare» e viaggia col GET. Un
+         finto che non lo tenesse farebbe divergere in silenzio il
+         contratto di carta da quello vero. */
       if (imp.difensore) db.sfide.push({ id: db.sfide.length + 1, attaccante: io, difensore: imp.difensore,
-                                         seme: imp.seme, taglia: imp.taglia, gol_a: ga, gol_d: gd, replay: corpo.replay });
+                                         seme: imp.seme, taglia: imp.taglia, gol_a: ga, gol_d: gd,
+                                         replay: corpo.replay, verificata: 0 });
       return dì(200, { ok: true, esito: ga > gd ? 'vinta' : ga < gd ? 'persa' : 'pari',
                        delta, punti: p.punti, serie: p.serie, vero: !!imp.difensore });
     }

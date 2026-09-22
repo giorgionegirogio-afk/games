@@ -21,6 +21,14 @@
    onesto per colpa del disonesto. Lo fa un lavoratore periodico, a
    campione, su `verificata = 0`. Chi ha barato lo scopre dopo, quando i
    punti se ne vanno.
+
+   AGGIUNTA A EDIZIONI (22 settembre 2026, voce #134). Il lavoratore
+   periodico non esiste ancora — esiste la capacità che gli serve
+   (`window.__test.giudica`, voce #133) — ma il TUBO fino all'occhio di
+   chi gioca adesso sì: il GET qui sotto restituisce `verificata`, e la
+   riga della lista nel gioco la scrive in una parola. Finché il
+   lavoratore non gira, tutte le righe valgono 0 e la lista dice «DA
+   VERIFICARE»: è la verità, non un ripiego.
    ===================================================================== */
 import { db, rispondi, preflight, guaio, chiSei, frenato, corpo,
          intero, configurato } from '../lib/comuni.js';
@@ -59,9 +67,28 @@ export default async function handler(req, res) {
 
     /* ------------------------------------------------ le sfide subìte */
     if (req.method === 'GET') {
+      /* IL FRENO ANCHE QUI (voce #134). Ogni endpoint ha il suo, perché
+         le funzioni Vercel non condividono memoria: questo GET ne era
+         rimasto senza da quando è stato scritto, ed è un buco che questo
+         cantiere ha trovato perché toccava la riga accanto. Sessanta al
+         minuto sono gli stessi numeri del fratello che serve la
+         classifica, e due ordini di grandezza sopra l'uso vero: il gioco
+         ne fa UNA per apertura della schermata (`Sfida.aggiorna`). */
+      if (await frenato('sfl:' + io.id, 60, 60))
+        return rispondi(res, 429, { ok: false, errore: 'troppe' });
+      /* `verificata` VIAGGIA (voce #134). La colonna esisteva da mesi e
+         non usciva da qui: il giudice poteva anche lavorare, il suo
+         verdetto si fermava dentro al database. I tre valori sono quelli
+         dello schema — 0 da verificare, 1 torna, -1 non torna — e il
+         gioco li traduce in tre parole (grep `sfsig`). Chi leggerà
+         questa riga domani: gli altri tre «no» del giudice (INCOMPLETO,
+         ALTRO MOTORE, NON FINISCE) si mappano su 0 e MAI su -1, perché
+         sono «non lo so» e un «non lo so» scritto -1 toglie punti a un
+         innocente (rete/schema.sql, rettifica a edizioni della voce
+         #133). */
       const r = await db.leggi('sfida',
         'difensore=eq.' + io.id + '&order=giocata.desc&limit=20' +
-        '&select=id,seme,taglia,gol_a,gol_d,giocata,vista,attaccante');
+        '&select=id,seme,taglia,gol_a,gol_d,giocata,vista,verificata,attaccante');
       /* i nomi degli attaccanti in un colpo solo, non uno per riga */
       const ids = [...new Set((r || []).map(s => s.attaccante))];
       let nomi = {};

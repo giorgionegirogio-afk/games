@@ -131,7 +131,7 @@ function serviServer() {
       if (req.method === 'GET') {
         return di(200, { ok: true, sfide: db.sfide.filter(x => x.difensore === io).map(x => ({
           id: x.id, seme: x.seme, taglia: x.taglia, gol_a: x.gol_a, gol_d: x.gol_d,
-          giocata: x.giocata, vista: x.vista,
+          giocata: x.giocata, vista: x.vista, verificata: x.verificata | 0,
           sfidante: db.squadre.get(x.attaccante)
             ? { nome: db.squadre.get(x.attaccante).nome, colori: db.squadre.get(x.attaccante).colori } : null,
         })) });
@@ -150,7 +150,7 @@ function serviServer() {
       if (imp.difensore) db.sfide.push({
         id: db.sfide.length + 1, attaccante: io, difensore: imp.difensore,
         seme: imp.seme, taglia: imp.taglia, gol_a: ga, gol_d: gd, replay: corpo.replay,
-        giocata: new Date().toISOString(), vista: false,
+        giocata: new Date().toISOString(), vista: false, verificata: 0,
       });
       return di(200, { ok: true, esito: ga > gd ? 'vinta' : ga < gd ? 'persa' : 'pari',
                        delta, punti: p.punti, vero: !!imp.difensore });
