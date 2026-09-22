@@ -566,10 +566,23 @@ async function gruppoD(browser, porta) {
        ' · SFIDA DI CARTA@' + piega.cartaVuota + ' su piega ' + piega.h);
   } finally { await C.ctx.close(); }
 
-  /* D5 — ZERO RETE. Si intercetta tutto e passa solo il documento del
+  /* =====================================================================
+     D5 — ZERO RETE. Si intercetta tutto e passa solo il documento del
      gioco: il resto viene BLOCCATO e annotato. Cosi' la prova non e'
      «non ha chiesto niente perche' era in cache»: e' «non gli serve
-     niente». Lo stesso impianto di senza-rete.js. */
+     niente». Lo stesso impianto di senza-rete.js.
+
+     E SI CONTA IL DELTA, NON IL TOTALE, ed e' una correzione che il
+     banco ha imparato addosso: aprire la schermata SFIDA chiede
+     /api/entra al server, e lo chiede da sempre, per progetto (grep «La
+     prima richiesta al server la fa apri()»). Contare quella richiesta
+     come colpa della sfida di carta vorrebbe dire misurare la funzione
+     sbagliata. Si prende una tacca dopo aver aperto la schermata — e
+     con la rete gia' tutta bloccata, cioe' nella condizione di chi non
+     ha campo — e si pretende che da li' in avanti, per tutto il giro
+     della carta, il contatore NON SI MUOVA. Il giro deve anche
+     arrivare in fondo: una funzione che non chiede niente perche' non
+     fa niente non prova niente. */
   const ctx = await browser.newContext({ viewport: { width: 915, height: 412 }, isMobile: true, hasTouch: true, locale: 'it-IT' });
   const pag = await ctx.newPage();
   const indirizzo = 'http://127.0.0.1:' + porta + '/CALCETTO-il-gioco.html';
@@ -585,26 +598,46 @@ async function gruppoD(browser, porta) {
     await pag.waitForFunction('window.__test !== undefined', null, { timeout: 20000 });
     await pag.evaluate(() => { window.requestAnimationFrame = () => 0; });
     await pag.evaluate(() => { const t = window.__test; t.dismissSplash && t.dismissSplash(); });
+    /* la schermata SFIDA si apre per prima, con la rete gia' tutta
+       bloccata: e' il telefono senza campo, ed e' da li' che si arriva
+       alla sfida di carta */
+    await pag.evaluate(async () => {
+      const t = window.__test;
+      t.sfida.apri();
+      for (let i = 0; i < 40 && t.sfida.occupato; i++) await new Promise(r => setTimeout(r, 50));
+    });
+    await pag.waitForTimeout(400);
+    const tacca = bloccate.length;
     const giro = await pag.evaluate(() => {
       const t = window.__test;
       if (!t.carta) return { errore: 'niente-porta' };
+      const b = document.getElementById('btnSfidaCarta');
+      if (!b) return { errore: 'niente-bottone' };
+      b.click();                                   /* il pannello, offline */
       const r = t.carta.nuova({ seme: 20260925, taglia: 5 });
       if (r && r.errore) return { errore: r.errore };
       t.setCpuVsCpu(true);
       for (let k = 0; k < 40 && t.state !== 'end'; k++) t.simulate(6);
       const codice = t.carta.codice;
-      t.sfida.apri();
-      const r2 = t.carta.gioca(codice);
-      if (r2 && r2.errore) return { errore: r2.errore, codice: codice };
+      if (!codice) return { errore: 'niente-codice' };
+      /* si incolla nel campo vero e si preme il bottone vero */
+      const campo = document.getElementById('sfCartaIn');
+      if (!campo) return { errore: 'niente-campo', codice: codice };
+      campo.value = codice;
+      t.sfida.usaCarta();
+      if (!t.sfidaStato.inPartita) return { errore: 'non-e-partita', codice: codice };
       t.setCpuVsCpu(true);
       for (let k = 0; k < 40 && t.state !== 'end'; k++) t.simulate(6);
-      return { codice: codice, scena: t.state };
+      return { codice: codice, scena: t.state, esito: t.carta.esito };
     });
     await pag.waitForTimeout(400);
-    di(!giro.errore && bloccate.length === 0,
+    const nuove = bloccate.slice(tacca);
+    di(!giro.errore && giro.scena === 'end' && !!giro.esito && nuove.length === 0,
        'D5) tutto il giro — crea, gioca, incolla, rigioca — senza una sola richiesta di rete',
        (giro.errore ? 'ERRORE ' + giro.errore + ' · ' : '') +
-       bloccate.length + ' richieste bloccate' + (bloccate.length ? ': ' + bloccate.slice(0, 4).join(' ') : ''));
+       'esito «' + (giro.esito || '—') + '» · ' + nuove.length + ' richieste nuove' +
+       (nuove.length ? ': ' + nuove.slice(0, 4).join(' ') : '') +
+       ' (prima del giro, ad aprire SFIDA: ' + tacca + ')');
   } finally { await ctx.close(); }
 }
 
