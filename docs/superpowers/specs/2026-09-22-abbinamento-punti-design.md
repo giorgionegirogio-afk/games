@@ -108,6 +108,87 @@ Tre letture, e la terza e' il prezzo:
    `avv:` e' 60 al minuto e il gioco ne fa **una** per pressione del
    dito: 42% di 1 e' ancora lontanissimo da 60.
 
+### RETTIFICA A EDIZIONI (22 settembre 2026, compito 2): la scala ha un terzo numero
+
+Fonte: la corsa di `strumenti/_q-sospetto.js --solo C` al compito 2. Il
+testo qui sopra resta perche' e' ancora vero; quel che segue e' cio' che
+il progetto **non aveva previsto**, e che il banco ha trovato appena la
+cura e' esistita.
+
+**Il difetto.** Una finestra piu' stretta da' abbinamenti piu' giusti **e
+meno gente dentro**. Misurato sulla popolazione di 400, primo gradino
+(`forza ±8`, `punti ±120`): il mazzo mediano e' di 125 candidati — largo
+— ma **nove allenatori su 400 ne avevano meno di dieci, e il peggio
+servito ne aveva UNO**. Cioe' lo stesso avversario, tutte le sere. E'
+esattamente la cosa che l'`order by random()` di `trova_avversario`
+esiste per impedire, arrivata pero' dalla **finestra** invece che
+dall'ordinamento: da una porta che nessuno guardava.
+
+**La cura: il pavimento del mazzo.** Un gradino non si accontenta di
+trovare *qualcuno*: deve trovarne almeno `minimo`, se no si scende al
+gradino dopo. La scala diventa:
+
+```js
+SCALA = [ { forza:  8, punti:  120, minimo: 6 },
+          { forza: 20, punti:  300, minimo: 4 },
+          { forza: 40, punti:  700, minimo: 2 },
+          { forza: 99, punti: Infinity, minimo: 1 } ];
+```
+
+L'ultimo gradino chiede **uno**, quindi il pavimento non puo' far perdere
+una sfida — la garanzia del paragrafo precedente resta intera (misurato:
+`senza avversario` 0 → 0 su tutte e tre le popolazioni).
+
+Nell'SQL il pavimento e' un parametro e una riga:
+`where (select count(*) from buoni) >= minimo`, con i candidati raccolti
+in una CTE `buoni` perche' vanno contati e poi sorteggiati.
+
+**Le misure, tutte nella stessa corsa** (`avversari distinti in 200
+ricerche`, guardando **il peggio servito** e non la media — una media
+non avrebbe mai visto questo difetto):
+
+| base | oggi | scala senza pavimento | scala col pavimento |
+|---|---|---|---|
+| 400 | peggio **10**, mediana 149 | peggio **1**, mediana 99 | peggio **7**, mediana 99 |
+| 12 | peggio 3 | peggio 1 | peggio **5** |
+
+E il prezzo sulla vicinanza, detto:
+
+| base | mediana prima → dopo | entro 150 | oltre 500 | chiamate/ricerca |
+|---|---|---|---|---|
+| 400 | 188 → **60** | 41% → **99%** | 7% → **0%** | 1,00 → **1,01** |
+| 60 | 180 → **63** | 43% → **93%** | 5% → **0%** | 1,00 → **1,11** |
+| 12 | 255 → **147** | 28% → **52%** | 19% → **7%** | 1,00 → **2,17** |
+
+Il pavimento costa un punto di «entro 150» su 400 (100% → 99%) e tredici
+su 60; sulla base da **dodici** — quella vera di oggi — fa **meglio di
+oggi in tutte e due le grandezze**: scarto mediano da 255 a 147 e
+avversari possibili da 3 a 5.
+
+### RETTIFICA A EDIZIONI (22 settembre 2026, compito 2): il banco misurava sé stesso
+
+Stessa corsa, e va scritta perche' e' la ragione per cui il difetto di
+sopra e' rimasto invisibile per mezza giornata. La prima stesura della
+prova sulla varieta' tirava **duecento generatori con semi consecutivi**
+(`generatore(5000 + k)`) e ne usava la **prima uscita**. Misurato: 200
+semi consecutivi di questo xorshift danno **sedici** valori distinti su
+mille. Il banco stava misurando il generatore, non la ricerca: dichiarava
+«4 avversari distinti» dove ce n'erano 99.
+
+Adesso si tira **un generatore solo**, duecento volte (176 valori
+distinti su mille), e si guarda **tutta la popolazione** invece di un
+allenatore scelto a caso. Il difetto vero e' saltato fuori nello stesso
+minuto.
+
+### Il falso che il difetto ha generato
+
+`_crit-abbinamento-unico.js` e' **la cura come era scritta nel
+progetto**: la scala a due coordinate, esatta, senza pavimento. Ha numeri
+**migliori** della cura vera su ogni grandezza che il progetto aveva
+previsto di misurare (mediana 60, entro 150 il 100%, 1,00 chiamate), e
+lascia il peggio servito con **un** avversario. E' il falso che spiega
+perche' C7 guarda il peggio e non la media.
+
 ### Perche' si tiene anche la forza
 
 La sonda ha misurato anche la scala **senza** la forza (`forza: 99` a
@@ -392,6 +473,7 @@ dimostra che era scritto male.
 | `_crit-abbinamento-largo.js` | la dimensione punti c'e', e' scritta, arriva all'SQL — ma le bande sono 2000/4000/8000, cioe' non filtrano niente. **Passa A, B e D**, e cade solo sulla MISURA | **C** |
 | `_crit-abbinamento-ordine.js` | invece di sorteggiare nella banda prende il piu' vicino di punti: gli abbinamenti diventano ancora piu' stretti (la prova di vicinanza la passa a mani basse) e due della stessa fascia si incontrano all'infinito | **C**, varieta' |
 | `_crit-sospetto-spione.js` | il sospetto esce nella tupla dell'avversario, «cosi' il gioco puo' avvisare» | **D** |
+| `_crit-abbinamento-unico.js` | *(nato al compito 2)* la scala giusta **senza il pavimento del mazzo**: ogni numero del progetto migliora, e il peggio servito resta con un avversario solo | **C7** |
 
 Il quinto e' quello che conta piu' di tutti: e' il falso che assomiglia a
 una cura. Ha la colonna, ha il parametro, ha il predicato, e non cambia

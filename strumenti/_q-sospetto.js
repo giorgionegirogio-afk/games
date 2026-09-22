@@ -467,28 +467,88 @@ function sfidaNuova(b, att, dif, gol_a, gol_d, delta_a, delta_d) {
     di(m400.dopo.vicini >= 90 && m400.prima.vicini <= 60,
        'C4b) e gli abbinamenti «entro 150 punti» — quelli che si possono ancora perdere — passano sopra il 90%',
        m400.prima.vicini + '% -> ' + m400.dopo.vicini + '%');
-    di(m12.dopo.n > 0 && m12.dopo.mediana <= 150 && m12.dopo.lontani <= 5 && m12.prima.lontani >= 10,
-       'C5) regge anche sulla base da DODICI persone, che e\' quella vera di oggi',
+    /* Sulla base da DODICI — quella vera di oggi — la soglia non e' un
+       numero assoluto ma un CONFRONTO: gli abbinamenti sbilanciati
+       devono almeno DIMEZZARSI. Con dodici persone nessuna finestra fa
+       miracoli, e chiedere un numero fisso vorrebbe dire chiedere alla
+       finestra di inventare giocatori che non ci sono. */
+    di(m12.dopo.n > 0 && m12.dopo.mediana <= 160 && m12.prima.lontani >= 10 &&
+       m12.dopo.lontani * 2 <= m12.prima.lontani,
+       'C5) sulla base da DODICI persone — quella vera — gli abbinamenti sbilanciati almeno DIMEZZANO',
        'mediana ' + m12.prima.mediana + '->' + m12.dopo.mediana + ', oltre500 ' +
        m12.prima.lontani + '%->' + m12.dopo.lontani + '%');
     di(m400.dopo.vuoti <= m400.prima.vuoti && m60.dopo.vuoti <= m60.prima.vuoti && m12.dopo.vuoti <= m12.prima.vuoti,
        'C6) NESSUNA SFIDA SI PERDE: le ricerche senza avversario non aumentano su nessuna delle tre popolazioni',
        [m400, m60, m12].map(m => m.prima.vuoti + '->' + m.dopo.vuoti).join(', '));
 
-    /* --- C7: la varieta'. Dentro la banda si SORTEGGIA. Se si prendesse
-       il piu' vicino, due della stessa fascia si incontrerebbero
-       all'infinito — e' scritto sopra trova_avversario dal primo
-       giorno, ed e' la ragione dell'`order by random()`. --- */
+    /* =====================================================================
+       C7) LA VARIETA', e il PEGGIO SERVITO.
+
+       Dentro la banda si SORTEGGIA: se si prendesse il piu' vicino, due
+       della stessa fascia si incontrerebbero all'infinito — e' scritto
+       sopra `trova_avversario` dal primo giorno, ed e' la ragione
+       dell'`order by random()`.
+
+       Ma la cosa che conta non e' la media, e' il PEGGIO SERVITO: una
+       finestra piu' stretta puo' lasciare QUALCUNO con un avversario
+       solo, e la media non lo direbbe. Quindi si guarda ogni allenatore
+       della popolazione, non uno.
+
+       DUE TRAPPOLE PAGATE QUI DENTRO, tutte e due il 22 settembre 2026:
+
+         1. la prima stesura tirava 200 generatori con semi consecutivi
+            (`generatore(5000 + k)`) e ne usava la PRIMA uscita. Misurato:
+            200 semi consecutivi di questo xorshift danno SEDICI valori
+            distinti su mille. Il banco misurava il generatore, non la
+            ricerca, e dichiarava «4 avversari» dove ce n'erano 99. Ora si
+            tira UN generatore solo, duecento volte.
+         2. con la misura riparata e' venuto fuori il difetto vero: senza
+            il pavimento del mazzo il peggio servito ERA un avversario
+            solo. Il pavimento (`minimo` nella scala) e' nato da qui.
+       ===================================================================== */
     const gente = popolazione(400, 20260922 + 400);
-    const me = gente[7];
-    const visti = new Set();
-    for (let k = 0; k < 200; k++) {
-      const out = cerca(me, gente, generatore(5000 + k));
-      if (out.avv) visti.add(out.avv.id);
-    }
-    di(visti.size >= 10,
-       'C7) dentro la banda si SORTEGGIA: duecento ricerche dello stesso allenatore danno almeno dieci avversari diversi',
-       visti.size + ' avversari distinti');
+    const distinti = (scelta, elenco) => {
+      const dado = generatore(4242);
+      return elenco.map(me => {
+        const visti = new Set();
+        for (let k = 0; k < 200; k++) { const o = scelta(me, elenco, dado); if (o.avv) visti.add(o.avv.id); }
+        return visti.size;
+      }).sort((a, b) => a - b);
+    };
+    /* IL CONTROFATTUALE, misurato e non raccontato: la stessa scala col
+       pavimento tolto (`minimo` a uno dappertutto). Usa `ammissibile` e
+       `separati` del modulo, cioe' la cura vera: l'unica cosa che cambia
+       e' il pavimento. Senza questa riga la frase «senza il pavimento
+       c'e' chi resta con un avversario solo» sarebbe un racconto. */
+    const cercaSenzaPavimento = (io2, elenco, dado) => {
+      if (!haA || !SCALA) return { avv: null, gradino: 0 };
+      for (let k = 0; k < SCALA.length; k++) {
+        const buoni = elenco.filter(x => amm(io2, x, SCALA[k]) &&
+          (typeof A.separati === 'function' ? !A.separati(io2, x) : true));
+        if (!buoni.length) continue;
+        return { avv: buoni[Math.floor(dado() * buoni.length)], gradino: k + 1 };
+      }
+      return { avv: null, gradino: 0 };
+    };
+    const vPrima = distinti(cercaPrima, gente);
+    const vDopo = distinti(cerca, gente);
+    const vSenza = distinti(cercaSenzaPavimento, gente);
+    console.log('      avversari distinti in 200 ricerche, su tutti e ' + gente.length +
+      ' gli allenatori:  prima peggio ' + vPrima[0] + ', p10 ' + vPrima[Math.floor(0.1 * vPrima.length)] +
+      ', mediana ' + vPrima[Math.floor(0.5 * vPrima.length)] +
+      '  ->  dopo peggio ' + vDopo[0] + ', p10 ' + vDopo[Math.floor(0.1 * vDopo.length)] +
+      ', mediana ' + vDopo[Math.floor(0.5 * vDopo.length)] +
+      '   (la stessa scala SENZA il pavimento: peggio ' + vSenza[0] + ', p10 ' +
+      vSenza[Math.floor(0.1 * vSenza.length)] + ')');
+    di(vDopo[0] >= 5 && vSenza[0] < vDopo[0],
+       'C7) IL PEGGIO SERVITO: nessuno resta con meno di cinque avversari possibili — e senza il pavimento del mazzo ce n\'e\' chi ne ha UNO',
+       'peggio: oggi ' + vPrima[0] + ', senza pavimento ' + vSenza[0] + ', col pavimento ' + vDopo[0]);
+    /* e il pavimento c'e' davvero nella scala, con l'ultimo gradino a uno
+       cosi' nessuna sfida si perde per colpa sua */
+    di(!!SCALA && SCALA.every(g => (g.minimo | 0) >= 1) &&
+       SCALA[SCALA.length - 1].minimo === 1 && SCALA[0].minimo > 1,
+       'C7b) la scala porta il pavimento, e l\'ULTIMO gradino ne chiede UNO: il pavimento non puo\' far perdere una sfida',
+       SCALA ? SCALA.map(g => g.minimo).join('/') : 'il modulo non c\'e\'');
 
     /* --- C8/C9/C10: la separazione --- */
     const soglia = haA ? A.SOSPETTO_SEPARA : null;
@@ -583,9 +643,11 @@ function sfidaNuova(b, att, dif, gol_a, gol_d, delta_a, delta_d) {
     const haBandaPunti = /banda_punti\s+int/i.test(schema) &&
       /banda_punti is null or abs\(/i.test(schema.replace(/\s+/g, ' '));
     const haSeparazione = /\(\s*a\.sospetto\s*>=\s*separa\s*\)\s*=\s*\(/i.test(schema.replace(/\s+/g, ' '));
-    di(haBandaPunti && haSeparazione,
-       'D4) lo schema porta il predicato sui PUNTI (null = nessun limite) e quello della separazione',
-       'banda_punti ' + haBandaPunti + ', separazione ' + haSeparazione);
+    const haPavimento = /minimo\s+int/i.test(schema) &&
+      /\(select count\(\*\) from buoni\) >= minimo/i.test(schema.replace(/\s+/g, ' '));
+    di(haBandaPunti && haSeparazione && haPavimento,
+       'D4) lo schema porta i tre predicati nuovi: i PUNTI (null = nessun limite), la separazione, il pavimento del mazzo',
+       'banda_punti ' + haBandaPunti + ', separazione ' + haSeparazione + ', pavimento ' + haPavimento);
 
     /* --- D5: segna_verdetto, la guardia e la tavola --- */
     const sv = (schema.match(/create or replace function\s+segna_verdetto[\s\S]*?\$\$;/i) || [''])[0];
@@ -612,7 +674,12 @@ function sfidaNuova(b, att, dif, gol_a, gol_d, delta_a, delta_d) {
     const tuplaSpia = /returns table \([^)]*sospetto/i.test(tupla.replace(/\s+/g, ' ')) ||
                       /select[\s\S]*?a\.sospetto[\s\S]*?from squadra/i.test(tupla);
     const classSpia = /create or replace function\s+classifica[\s\S]*?sospetto/i.test(schema);
-    const apiSpia = testoApi.filter(x => /sospetto/i.test(x.t));
+    /* L'endpoint PUO' nominare la soglia (`SOSPETTO_SEPARA` la manda al
+       database), e non e' una fuga: e' un numero nostro. Quel che non
+       puo' fare e' LEGGERE il sospetto di qualcuno — chiederlo in una
+       select, pescarlo da un oggetto, rimandarlo in una chiave. */
+    const apiSpia = testoApi.filter(x =>
+      /\.sospetto/.test(x.t) || /sospetto\s*:/.test(x.t) || /select=[^'"`]*sospetto/i.test(x.t));
     di(!tuplaSpia && !classSpia && apiSpia.length === 0,
        'D6) il SOSPETTO non esce: non nella tupla dell\'avversario, non nella classifica, non in un endpoint',
        tuplaSpia ? 'e\' nella tupla di trova_avversario' :

@@ -32,7 +32,7 @@ require('./_crit-sospetto.js').falso({
          "    const scelto = buoni.slice().sort((x, y) =>\n" +
          "      Math.abs(puntiDi(x) - puntiDi(io)) - Math.abs(puntiDi(y) - puntiDi(io)))[0];",
   attesi: [
-    ["  { forza: 99, punti: Infinity },", 1],
+    ["  { forza: 99, punti: Infinity, minimo: 1 },", 1],
     ["export function ammissibile(io, c, gradino) {", 1],
   ],
 });

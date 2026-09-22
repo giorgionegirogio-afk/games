@@ -22,6 +22,7 @@
    fidarsi della classifica.
    ===================================================================== */
 import { db, rispondi, preflight, guaio, chiSei, frenato, configurato } from '../lib/comuni.js';
+import { SCALA, SOSPETTO_SEPARA, bandaSql, minimoSql, ammissibile } from '../lib/abbinamento.js';
 
 /* -------------------------------------------------- l'avversario finto */
 /* Nomi e cognomi comuni, e nessuno di essi è di una persona reale né di
@@ -111,17 +112,69 @@ export default async function handler(req, res) {
     const seme = Math.floor(Math.random() * 281474976710655) + 1;
     const taglia = [5, 7, 11].includes(+req.query?.taglia) ? +req.query.taglia : 5;
 
-    /* Tre tentativi con la banda che si allarga: prima i vicini di forza,
-       poi via via più larghi. Meglio una sfida un po' squilibrata che
-       nessuna sfida. */
-    let avv = null;
-    for (const banda of [8, 20, 99]) {
-      const r = await db.chiama('trova_avversario', { io: io.id, banda });
-      if (r && r.length) { avv = r[0]; break; }
-    }
-
+    /* I MIEI DUE NUMERI, PRIMA DELLA RICERCA (voce #137). La forza si
+       leggeva già, ma dopo il ciclo e solo per costruire l'avversario
+       finto; adesso serve prima, perché il candidato che torna dal
+       database si RICONTROLLA qui. I punti sono la lettura nuova: uno
+       `select` in più per ricerca, contro un freno da 60 al minuto e un
+       uso vero di UNA ricerca per pressione del dito. */
     const mia = await db.leggi('squadra', 'allenatore=eq.' + io.id + '&select=forza');
     const miaForza = (mia && mia[0] && mia[0].forza) || 50;
+    const mieiP = await db.leggi('punti', 'allenatore=eq.' + io.id + '&select=punti');
+    const mieiPunti = (mieiP && mieiP[0] && mieiP[0].punti) || 1000;
+    const me = { id: io.id, forza: miaForza, punti: mieiPunti };
+
+    /* =====================================================================
+       LA FINESTRA CHE SI ALLARGA — ADESSO A DUE COORDINATE (voce #137).
+
+       La finestra c'era: `for (const banda of [8, 20, 99])`, dal primo
+       giorno. Quel che cambia è che il gradino non è più un numero, è una
+       coppia — vicino di forza E vicino di punti — e che i gradini
+       stanno in un posto solo, `rete/lib/abbinamento.js`, invece che in
+       una riga di questo file.
+
+       PERCHÉ ANCHE I PUNTI: la forza dice quanto hai giocato, i punti
+       dicono quanto vinci, e dentro una stessa fascia di forza ci stanno
+       tutti e due gli estremi (misurato: 203 allenatori su 400 dentro
+       `forza 75 ±8`, con punti da 402 a 1486). Misurato l'effetto: scarto
+       mediano di punti fra gli abbinati da 188 a 60, abbinamenti «entro
+       150 punti» dal 41% al 100%.
+
+       E NESSUNA SFIDA SI PERDE, per costruzione: l'ULTIMO gradino della
+       scala è l'ultimo gradino di prima — forza ±99 e punti senza limite
+       — quindi chi oggi trova un avversario domani lo trova ancora, al
+       massimo un gradino più in là.
+
+       IL RICONTROLLO (`ammissibile`) non è diffidenza verso il database:
+       è che il predicato vive in due lingue, in due file, su due
+       macchine. Se un giorno divergessero — uno schema vecchio rimasto
+       in giro, una riga cambiata da una parte sola — il candidato fuori
+       finestra si scarta e si passa al gradino dopo. Non può affamare
+       nessuno: sull'ultimo gradino `ammissibile` è sempre vero.
+
+       Quel che il ricontrollo NON può guardare sono due cose, e sono
+       due cose che stanno dove sta il dato:
+         · il SOSPETTO — la ragione è scritta accanto a `ammissibile`: la
+           tupla che torna di qui finisce dritta nel corpo della
+           risposta, quindi il sospetto nella tupla non ci entra;
+         · il PAVIMENTO DEL MAZZO (`minimo`) — non è una proprietà del
+           candidato, è una proprietà di quanti ce n'erano, e chi conta
+           è il database. */
+    let avv = null;
+    for (const gradino of SCALA) {
+      const r = await db.chiama('trova_avversario', {
+        io: io.id,
+        banda: gradino.forza,
+        banda_punti: bandaSql(gradino),
+        separa: SOSPETTO_SEPARA,
+        minimo: minimoSql(gradino),
+      });
+      const c = r && r[0];
+      if (!c) continue;
+      if (!ammissibile(me, c, gradino)) continue;
+      avv = c;
+      break;
+    }
 
     const finta = avv ? null
       : squadraFinta(seme, Math.min(95, Math.max(20, miaForza + Math.round((Math.random() - 0.4) * 10))));

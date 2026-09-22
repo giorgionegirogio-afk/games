@@ -27,18 +27,19 @@ require('./_crit-sospetto.js').falso({
   titolo: 'la dimensione punti c\'e\', ma le bande non filtrano niente',
   morde: 'C2 (i due lontani che restano un abbinamento), C4, C4b e C5 (la misura)',
   file: 'lib/abbinamento.js',
-  cerca: "  { forza:  8, punti:  120 },\n" +
-         "  { forza: 20, punti:  300 },\n" +
-         "  { forza: 40, punti:  700 },",
+  cerca: "  { forza:  8, punti:  120, minimo: 6 },\n" +
+         "  { forza: 20, punti:  300, minimo: 4 },\n" +
+         "  { forza: 40, punti:  700, minimo: 2 },",
   metti: "  /* IL FALSO (_crit-abbinamento-largo.js): le bande ci sono, i\n" +
          "     commenti ci sono, il parametro arriva all'SQL — e non escludono\n" +
          "     nessuno, perche' 2000 punti di Elo sono piu' dell'intera forbice\n" +
-         "     che una base di giocatori riesce a produrre. */\n" +
-         "  { forza:  8, punti: 2000 },\n" +
-         "  { forza: 20, punti: 4000 },\n" +
-         "  { forza: 40, punti: 6000 },",
+         "     che una base di giocatori riesce a produrre. Il pavimento del\n" +
+         "     mazzo resta quello vero, cosi' la varieta' non se ne accorge. */\n" +
+         "  { forza:  8, punti: 2000, minimo: 6 },\n" +
+         "  { forza: 20, punti: 4000, minimo: 4 },\n" +
+         "  { forza: 40, punti: 6000, minimo: 2 },",
   attesi: [
-    ["  { forza: 99, punti: Infinity },", 1],
+    ["  { forza: 99, punti: Infinity, minimo: 1 },", 1],
     ["export const SOSPETTO_SEPARA = 3;", 1],
   ],
 });

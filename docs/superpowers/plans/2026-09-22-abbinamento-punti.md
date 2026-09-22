@@ -91,14 +91,16 @@ che non succede e l'invariante `sospetto == righe a −1`; **C)**
 l'abbinamento misurato su 5000 ricerche, prima e dopo, piu' la varieta';
 **D)** le porte chiuse (RLS, `revoke`, freni, il sospetto che non esce).
 
-Il banco accetta `--lib <cartella>` per caricare i due moduli da un'altra
-parte: e' cosi' che i falsi si provano, e `--gioco` lo ignora (non apre
-niente).
+Il banco accetta `--rete <cartella>` per misurare una COPIA intera del
+server: e' cosi' che i falsi si fanno giudicare (un falso che cambiasse
+solo un modulo non potrebbe mai mordere il gruppo D, che legge lo
+schema). `--gioco` lo ignora: non apre niente.
 
-I **sette falsi** si scrivono al compito 1 ma si possono provare solo al
-compito 3, quando la cura esiste: al compito 1 non c'e' niente da
-guastare. Il compito 1 lascia il banco **rosso su tutti e quattro i
-gruppi**.
+I **sette falsi** (l'ottavo nascera' al compito 2, dalla misura) si
+scrivono al compito 1 ma si possono provare solo quando la cura esiste:
+al compito 1 non c'e' niente da guastare, e tutti e sette lo dicono
+rifiutandosi di costruirsi. Il compito 1 lascia il banco **rosso su
+tutti e quattro i gruppi**.
 
 Reti di sicurezza + batteria intera (il gioco non e' stato toccato: e'
 la misura che dice che il banco nuovo non disturba nessuno).
@@ -119,8 +121,19 @@ Commit `(voce #137, compito 1)`.
   `ammissibile`** il candidato che torna (il ricontrollo non puo'
   affamare nessuno: l'ultimo gradino e' sempre ammissibile).
 
-I gruppi **C** e **D** di `_q-sospetto` diventano verdi; **A** e **B**
-restano rossi.
+Il gruppo **C** di `_q-sospetto` diventa verde; **A** e **B** restano
+rossi, e di **D** resta rossa solo D5, che chiede `segna_verdetto` —
+cioe' la cura del compito 3.
+
+**Rettifica a edizioni (compito 2).** Due cose che questo compito ha
+trovato e che il piano non prevedeva, tutte e due scritte per esteso
+nella spec: (1) il banco misurava sé stesso — duecento generatori con
+semi consecutivi danno sedici valori distinti su mille, e la prova sulla
+varieta' stava misurando lo xorshift invece della ricerca; (2) riparata
+la misura, e' venuto fuori il difetto vero — una finestra piu' stretta
+lascia **il peggio servito con UN avversario solo**, e la scala ha
+preso un terzo numero, il **pavimento del mazzo** (`minimo`, 6/4/2/1).
+Da li' e' nato l'ottavo falso, `_crit-abbinamento-unico`.
 
 Reti di sicurezza + batteria intera. Commit `(voce #137, compito 2)`.
 

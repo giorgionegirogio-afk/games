@@ -198,21 +198,93 @@ end $$;
 -- perche' se prendessimo sempre il piu' vicino, due giocatori della
 -- stessa fascia si incontrerebbero all'infinito.
 -- ---------------------------------------------------------------------
-create or replace function trova_avversario(io uuid, banda int default 8)
+-- AGGIUNTA A EDIZIONI (22 settembre 2026, voce #137). La finestra
+-- descritta qui sopra resta quella, con DUE coordinate in piu'. Il testo
+-- vecchio non si cancella perche' e' ancora vero: si aggiunge quel che
+-- manca.
+--
+-- 1. LA VICINANZA DI PUNTI (`banda_punti`). `forza` e `punti` misurano
+--    due cose diverse: la forza dice quanto hai GIOCATO (la rosa cresce
+--    a ogni partita e satura a 99), i punti dicono quanto VINCI (Elo).
+--    Dentro `forza 75 +/-8` ci stanno 203 allenatori su 400 con punti
+--    da 402 a 1486 (misurato, fuori/_sonda-137-abbinamento.js): mille
+--    punti di Elo sono una partita decisa prima del fischio, e la
+--    colonna dei punti stava gia' in questa tupla senza che nessuno la
+--    guardasse. `banda_punti is null` vuol dire NESSUN LIMITE, ed e' il
+--    quarto gradino della scala — quello che garantisce che nessuna
+--    sfida si perda. Misurato: scarto mediano da 188 a 60 punti,
+--    abbinamenti entro 150 punti dal 41% al 100%, e zero ricerche senza
+--    avversario in piu'.
+--
+-- 2. LA SEPARAZIONE DEI SOSPETTI (`separa`). Il candidato deve stare
+--    dalla STESSA PARTE della soglia di chi cerca. Il sospetto e' il
+--    numero di sfide di quell'attaccante chiuse a `verificata = -1`,
+--    cioe' col verdetto NON TORNA e con nessun altro dei cinque
+--    (rete/lib/verdetto.js). Non toglie punti, non bandisce, non si
+--    vede: cambia soltanto con chi ti abbini. Misurato: un onesto
+--    incontra un sospetto il 3,93% delle volte senza separazione, lo
+--    0,00% con.
+--
+-- 3. IL PAVIMENTO DEL MAZZO (`minimo`), che NON era nel progetto: l'ha
+--    trovato il banco. Una finestra piu' stretta da' abbinamenti piu'
+--    giusti E MENO GENTE DENTRO, e su 400 allenatori misurati c'era chi
+--    restava con UN SOLO avversario possibile: lo stesso, tutte le sere.
+--    E' esattamente quel che l'`order by random()` qui sopra esiste per
+--    impedire, tornato dalla FINESTRA invece che dall'ordinamento.
+--    Allora un gradino non si accontenta di trovare QUALCUNO: deve
+--    trovarne almeno `minimo`, se no si passa al gradino dopo. L'ultimo
+--    ha `minimo` 1, quindi nessuna sfida si perde lo stesso.
+--    Misurato (6/4/2/1): il peggio servito passa da 1 avversario
+--    possibile a 7 su una base di 400, e su una base di DODICI da 1 a 5,
+--    cioe' meglio dei 3 di oggi.
+--
+-- IL SOSPETTO NON ENTRA NELLA TUPLA, e non e' una dimenticanza: quel che
+-- esce di qui finisce dritto nel corpo della risposta di
+-- /api/avversario (`avversario: avv`), cioe' sul telefono di un'altra
+-- persona. Il confronto si fa QUI, dove il dato sta gia'.
+--
+-- LA TRAPPOLA DI POSTGRES, pagata da questa voce: `create or replace
+-- function` con una FIRMA DIVERSA non sostituisce niente — crea una
+-- SECONDA funzione. Le due convivono, PostgREST sceglie per nome degli
+-- argomenti, e il `revoke` scritto sulla firma vecchia resta sulla
+-- vecchia, cioe' la nuova nascerebbe APERTA. Quindi le vecchie si
+-- buttano PRIMA — tutte e due, perche' questo cantiere la firma l'ha
+-- cambiata due volte — e questo file resta idempotente come promette la
+-- sua intestazione.
+-- ---------------------------------------------------------------------
+drop function if exists trova_avversario(uuid, int);
+drop function if exists trova_avversario(uuid, int, int, int);
+
+create or replace function trova_avversario(
+  io uuid, banda int default 8, banda_punti int default null,
+  separa int default 3, minimo int default 1
+)
 returns table (allenatore uuid, nome text, colori jsonb, rosa jsonb,
                modulo text, indole jsonb, forza int, punti int)
 language sql stable as $$
-  with mia as (select coalesce((select s.forza from squadra s where s.allenatore = io), 50) as f)
-  select s.allenatore, s.nome, s.colori, s.rosa, s.modulo, s.indole, s.forza,
-         coalesce(p.punti, 1000)
-    from squadra s
-    join allenatore a on a.id = s.allenatore
-    left join punti p on p.allenatore = s.allenatore
-   cross join mia
-   where s.allenatore <> io
-     and not a.bandito
-     and a.visto > now() - interval '30 days'
-     and abs(s.forza - mia.f) <= banda
+  with mia as (
+    select coalesce((select s.forza    from squadra    s where s.allenatore = io),   50) as f,
+           coalesce((select p.punti    from punti      p where p.allenatore = io), 1000) as pt,
+           coalesce((select a.sospetto from allenatore a where a.id         = io),    0) as sp
+  ),
+  buoni as (
+    select s.allenatore as al, s.nome as nm, s.colori as co, s.rosa as ro,
+           s.modulo as mo, s.indole as ind, s.forza as fo,
+           coalesce(p.punti, 1000) as pt
+      from squadra s
+      join allenatore a on a.id = s.allenatore
+      left join punti p on p.allenatore = s.allenatore
+     cross join mia
+     where s.allenatore <> io
+       and not a.bandito
+       and a.visto > now() - interval '30 days'
+       and abs(s.forza - mia.f) <= banda
+       and (banda_punti is null or abs(coalesce(p.punti, 1000) - mia.pt) <= banda_punti)
+       and (a.sospetto >= separa) = (mia.sp >= separa)
+  )
+  select al, nm, co, ro, mo, ind, fo, pt
+    from buoni
+   where (select count(*) from buoni) >= minimo
    order by random()
    limit 1
 $$;
@@ -295,7 +367,7 @@ alter table impegno    enable row level security;
 alter table freno      enable row level security;
 
 revoke all on allenatore, squadra, punti, sfida, impegno, freno from anon, authenticated;
-revoke all on function trova_avversario(uuid, int)                    from anon, authenticated;
+revoke all on function trova_avversario(uuid, int, int, int, int)      from anon, authenticated;
 revoke all on function frena(text, int, int)                          from anon, authenticated;
 revoke all on function muovi_punti(uuid, int, int, int, real, boolean) from anon, authenticated;
 revoke all on function classifica(uuid, int, int)                     from anon, authenticated;
