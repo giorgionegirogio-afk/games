@@ -39,7 +39,7 @@ const B = require('./_crit-staffetta.js');
 B.falso({
   nome: 'accusa',
   titolo: 'i tre «non lo so» diventano NON TORNA',
-  morde: 'B2 (i conti delle colonne), B3 (il sospetto per persona), C3 e C5 (i due «non lo so» finiti a -1)',
+  morde: 'MISURATO il 22 settembre 2026: B2, B3, B7 (i conti e il sospetto), C3 e C5 (i due «non lo so» finiti a -1), D3 e D3b (con tutto chiuso non restano ingiudicabili da saltare)',
   cambi: [
     { cerca: B.A_PAROLA,
       metti: "        /* IL FALSO (_crit-staffetta-accusa.js): «TORNA vuol dire che\n" +

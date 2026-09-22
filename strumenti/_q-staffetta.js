@@ -57,6 +57,33 @@
      F) LE PORTE          cinque endpoint, la funzione ancora revocata,
                           la chiave che non si stampa e non e' nel repo
 
+   SA FALLIRE, e si dice QUALI prove lo sanno e quali no. Sette falsi
+   (`_crit-staffetta-*`), ognuno costruito nel caso peggiore, ognuno
+   bocciato dalla sua prova — misurato il 22 settembre 2026:
+
+     accusa     B2 B3 B7 C3 C5 D3 D3b     i «non lo so» diventano accuse
+     cieca      B1 B2 C1 C2               apre sempre la sua finestra
+     numero     B2 B3 B4 B5 B6 D1 D3b     manda -1 invece della parola
+     smemorata  D3b                       il taccuino dimentica i tre
+     sfrenata   E1 E1b                    il freno si chiede e si ignora
+     zitta      B2 B6 D4 E1 E1b E2        manda solo le accuse
+     sprecona   A4 C4                     un contesto per riga
+
+   E NESSUN FALSO CONDANNA: A1, A2, A3, A5, C3 nella sua meta' «resta
+   aperto», D2, D5, E3, E4 e tutto il gruppo F. I gruppi A ed F sono
+   guardie di FORMA e di PORTE — dicono che il modulo esiste e che
+   questo cantiere non ha aperto niente — e restano verdi anche senza la
+   staffetta (tre su tre nella corsa del compito 1): non provano il giro,
+   e non devono sembrare di provarlo. D2, D5, E3 ed E4 provano
+   comportamenti che nessuno dei sette guasta; un falso in piu' per
+   ognuno si puo' scrivere il giorno in cui uno di quei numeri si muove.
+
+   IL FALSO CHE HA RIPARATO IL BANCO, e va detto perche' e' la ragione
+   per cui i falsi si costruiscono: `cieca` PASSAVA C2. La prova leggeva
+   la chiave del gruppo — cioe' quel che il NASTRO dichiara — invece
+   della finestra aperta davvero. Era una riga che attestava invece di
+   misurare, e a trovarla non e' stato chi l'ha scritta.
+
    uso:  node strumenti/_q-staffetta.js
          node strumenti/_q-staffetta.js --staffetta fuori/staffetta-accusa.js
          node strumenti/_q-staffetta.js --solo A,B
@@ -461,9 +488,15 @@ const sosp = (db, id) => (db.allenatore.get(id) || {}).sospetto | 0;
          'C1) la sfida registrata a ' + MISURA_2.join('x') + ' TORNA: la staffetta ha aperto QUELLA finestra, non la sua',
          verdettoDi(refSei, scSei.ids.vera) + ' (a ' + MISURA_1.join('x') + ' sarebbe INCOMPLETO/schermo-diverso)');
 
-      const apr = (refSei.misure || []).map(m => m.chiave);
+      /* SI LEGGE LA FINESTRA APERTA, NON LA CHIAVE DEL GRUPPO, e la
+         differenza non e' accademica: la chiave viene dal nastro e la
+         finestra dal browser. Nella prima stesura questa riga guardava
+         `m.chiave`, cioe' quel che il nastro DICHIARA — e restava verde
+         anche sul falso `cieca`, che apre sempre 915x412 (misurato il 22
+         settembre 2026). Era una riga che attestava invece di misurare. */
+      const apr = (refSei.misure || []).map(m => (m.misura || []).join('x'));
       di(apr.includes('1024x460') && apr.includes('915x412'),
-         'C2) fra le finestre aperte ci sono tutte e due le misure dichiarate dai nastri',
+         'C2) fra le finestre APERTE DAVVERO ci sono tutte e due le misure dichiarate dai nastri',
          apr.join(' · ') || 'nessuna');
 
       di(verdettoDi(refSei, scSei.ids.ignoto) === 'INCOMPLETO/schermo-ignoto' &&
