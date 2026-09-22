@@ -329,11 +329,14 @@ async function gruppoB(browser, porta) {
        ' · nome ' + (prima.nome === dopo.nome ? 'fermo' : 'CAMBIATO') +
        ' · segnata: ' + String(esito).slice(0, 90));
 
-    /* B4 — e il codice non si muove: ricostruito dopo aver segnato, e
-       con una classifica diversa in pancia, dev'essere lo stesso */
+    /* B4 — e il codice non si muove SULLO STESSO TELEFONO: ricostruito
+       dopo aver segnato, con una classifica diversa in pancia, dev'essere
+       identico a prima. Si confronta B con B e non B con A apposta: il
+       confronto fra i due telefoni e' il mestiere di B1, e due prove che
+       cadono insieme non sono due prove. */
     const cB2 = await codice(B);
-    di(cB2 === cA, 'B4) lo stesso codice a ogni ricostruzione, anche dopo aver segnato una classifica',
-       cB2 === cA ? 'stabile' : cA + ' -> ' + cB2);
+    di(cB2 === cB, 'B4) lo stesso codice a ogni ricostruzione sullo stesso telefono, anche dopo aver segnato',
+       cB2 === cB ? 'stabile' : cB + ' -> ' + cB2);
   } finally { await A.ctx.close(); await B.ctx.close(); }
 }
 
@@ -357,12 +360,25 @@ const CREA = `(async function(seme){
            mie: t.amici.mie, risposta: t.amici.risposta || '' };
 })`;
 
-const GIOCA = `(async function(codice){
+/* =====================================================================
+   E CHI RICEVE LA SFIDA NON GIOCA COME CHI L'HA MANDATA, altrimenti la
+   prova dello specchio non prova niente.
+
+   Due telefoni che giocano la STESSA partita con la CPU al comando
+   finiscono con lo stesso punteggio — e' la garanzia della voce #135 —
+   quindi ogni testa a testa sarebbe un pari, e un pari specchiato e'
+   uguale a se stesso: passerebbe anche un gioco che si confonde i due
+   punteggi. Qui il secondo telefono gioca COL POLLICE, il copione fisso
+   di _sfida-due-telefoni (lo stesso di `sfida` e di `duello-impronta`):
+   deterministico dato il seme, e diverso da come gioca la CPU. Cioe'
+   quel che succede fra due persone diverse.
+   ===================================================================== */
+const GIOCA = `(async function(codice, copione){
   const t = window.__test;
   const r = t.carta.gioca(codice);
   if(r && r.errore) return { errore: r.errore };
-  t.setCpuVsCpu(true);
-  for(let k = 0; k < 60 && t.state !== 'end'; k++) t.simulate(6);
+  if(copione) (new Function('return ' + copione))()(24000, [], 0);
+  else { t.setCpuVsCpu(true); for(let k = 0; k < 60 && t.state !== 'end'; k++) t.simulate(6); }
   await new Promise(x => setTimeout(x, 50));
   return { scena: t.state, punteggio: t.score.slice(), risposta: t.amici.risposta || '',
            daSegnare: t.amici.daSegnare, mie: t.amici.mie };
@@ -383,7 +399,8 @@ async function gruppoC(browser, porta) {
     /* ---------------------------------------------------- C1, il giro */
     const anna = await A.pag.evaluate(([g, s]) => (new Function('return ' + g))()(s), [CREA, 20260922]);
     const bruno = anna.codice
-      ? await B.pag.evaluate(([g, c]) => (new Function('return ' + g))()(c), [GIOCA, anna.codice])
+      ? await B.pag.evaluate(([g, c, cop]) => (new Function('return ' + g))()(c, cop),
+                             [GIOCA, anna.codice, T.COPIONE])
       : { errore: 'niente-codice' };
 
     /* Bruno segna da se': i due punteggi li ha gia' tutti e due */
@@ -413,7 +430,8 @@ async function gruppoC(browser, porta) {
        vB.mf === bruno.punteggio[0] && vB.ms === bruno.punteggio[1] &&
        vA.sf === bruno.punteggio[0] && vB.sf === anna.punteggio[0],
        'C1) il giro intero su due telefoni, e le due classifiche si specchiano',
-       'ANNA ' + (anna.punteggio || []).join('-') + ' contro BRUNO ' + (bruno.punteggio || []).join('-') +
+       'ANNA ' + (anna.punteggio || []).join('-') + ' (' + anna.scena + ') contro BRUNO ' +
+       (bruno.punteggio || []).join('-') + ' (' + bruno.scena + ')' +
        ' · risposta ' + (bruno.risposta || '—') + ' (' + (bruno.risposta || '').length + ' caratteri)' +
        ' · da ANNA: ' + JSON.stringify(vA && { n: vA.n, v: vA.v, p: vA.p, s: vA.s }) +
        ' · da BRUNO: ' + JSON.stringify(vB && { n: vB.n, v: vB.v, p: vB.p, s: vB.s }) +
@@ -465,18 +483,33 @@ async function gruppoC(browser, porta) {
        tetti.rientro + ' (e' + 'ra il prezzo dichiarato)');
 
     /* ------------------------------------------------- C4, il riavvio */
-    await A.pag.evaluate(() => {
+    /* e il nome si guarda come tutto il resto del salvataggio: si
+       sfronda, si alza a maiuscolo, si accorcia a dodici come il nome
+       della squadra. Il nome QUI e' lungo venti e pieno di spazi apposta. */
+    /* DUE META', e la prima e' quella che discrimina davvero. Il gioco
+       riscrive il salvataggio anche mentre la pagina se ne va (grep
+       «salvaPerSparizione»), quindi una ricarica da sola NON dice se
+       segnare scrive sul disco: lo scriverebbe l'uscita. Qui si guarda
+       il disco SUBITO, senza chiudere niente, e poi si ricarica. */
+    const scritto = await A.pag.evaluate(() => {
       const A = window.__test.amici;
       A.azzera();
-      A.segna({ nome: 'SOPRAVVISSUTO', seme: 424242, miei: [4, 1], suoi: [2, 2] });
+      const r = A.segna({ nome: '  giovanni   battista  ', seme: 424242, miei: [4, 1], suoi: [2, 2] });
+      let disco = null;
+      try { disco = JSON.parse(localStorage.getItem('calcetto_save_v4')); } catch (e) {}
+      return { nome: r.nome, suDisco: (disco && disco.amici && disco.amici.righe || []).map(x => x.n) };
     });
     await A.pag.reload({ waitUntil: 'load' });
     await A.pag.waitForFunction('window.__test !== undefined', null, { timeout: 30000 });
     const dopoRiavvio = await A.pag.evaluate(() => window.__test.amici.righe);
-    di(dopoRiavvio.length === 1 && dopoRiavvio[0].n === 'SOPRAVVISSUTO' && dopoRiavvio[0].v === 1 &&
-       dopoRiavvio[0].mf === 4 && dopoRiavvio[0].ms === 1,
-       'C4) la classifica sopravvive alla chiusura del gioco',
-       JSON.stringify(dopoRiavvio.map(r => ({ n: r.n, g: r.g, v: r.v, mf: r.mf, ms: r.ms }))));
+    di(dopoRiavvio.length === 1 && dopoRiavvio[0].n === 'GIOVANNI BAT' && scritto.nome === 'GIOVANNI BAT' &&
+       scritto.suDisco.length === 1 && scritto.suDisco[0] === 'GIOVANNI BAT' &&
+       dopoRiavvio[0].v === 1 && dopoRiavvio[0].mf === 4 && dopoRiavvio[0].ms === 1 &&
+       dopoRiavvio[0].sf === 2 && dopoRiavvio[0].ss === 2 && dopoRiavvio[0].semi.length === 1,
+       'C4) segnare scrive sul disco SUBITO, la riga torna dopo il riavvio, e il nome e\' sfrondato a dodici',
+       '«  giovanni   battista  » -> «' + scritto.nome + '» · sul disco senza chiudere niente: ' +
+       JSON.stringify(scritto.suDisco) + ' · dopo il riavvio: ' +
+       JSON.stringify(dopoRiavvio.map(r => ({ n: r.n, g: r.g, v: r.v, mf: r.mf, ms: r.ms, semi: r.semi.length }))));
 
     /* ------------------------------- C5, il salvataggio e' ADDITIVO */
     /* =====================================================================
@@ -491,13 +524,25 @@ async function gruppoC(browser, porta) {
        salvataggio intero, una senza la chiave — e si pretende che le due
        fotografie siano uguali chiave per chiave.
        ===================================================================== */
-    const scrivi = async testo => {
-      await A.pag.evaluate(t => localStorage.setItem('calcetto_save_v4', t), testo);
+    /* E IL SALVATAGGIO NON SI DOTTORA DA FUORI, ed e' una trappola gia'
+       pagata da questo banco: il gioco riscrive il salvataggio mentre la
+       pagina se ne va (grep «mai un'eccezione mentre l'app se ne va»),
+       quindi un localStorage.setItem seguito da un reload viene
+       CANCELLATO dalla pagina che sta morendo. Si toglie la chiave dal
+       SAVE vivo e si lascia scrivere il gioco: quel che esce e' la forma
+       esatta di un salvataggio nato prima di questa voce. */
+    const rileggi = async togli => {
+      const testo = await A.pag.evaluate(k => {
+        if (k) delete window.__test.save[k];
+        persistSave();
+        return localStorage.getItem('calcetto_save_v4');
+      }, togli || '');
       await A.pag.reload({ waitUntil: 'load' });
       await A.pag.waitForFunction('window.__test !== undefined', null, { timeout: 30000 });
-      return A.pag.evaluate(() => JSON.parse(JSON.stringify(window.__test.save)));
+      const foto = await A.pag.evaluate(() => JSON.parse(JSON.stringify(window.__test.save)));
+      return { testo, foto };
     };
-    const pieno = await A.pag.evaluate(() => {
+    await A.pag.evaluate(() => {
       const t = window.__test, S = t.save;
       S.coins = 4321; S.teamName = 'DOPOLAVORO'; S.durata = 120; S.taglia = 7;
       S.tutorialDone = true; S.sponde = 'campo'; S.miraGuidata = 'essenziale';
@@ -505,13 +550,12 @@ async function gruppoC(browser, porta) {
       S.rete.punti = 1180; S.lastRes = [3, 1]; S.record.golPartita = { v: 8, data: '2026-09-01' };
       t.amici.azzera();
       t.amici.segna({ nome: 'PRIMA', seme: 777, miei: [2, 0], suoi: [1, 0] });
-      persistSave();
-      return localStorage.getItem('calcetto_save_v4');
     });
-    const conAmici = JSON.parse(pieno);
-    const senzaAmici = JSON.parse(pieno); delete senzaAmici.amici;
-    const fotoPiena = await scrivi(pieno);
-    const fotoVecchia = await scrivi(JSON.stringify(senzaAmici));
+    const intero = await rileggi('');            /* col salvataggio nuovo */
+    const vecchio = await rileggi('amici');      /* e senza la chiave, come prima */
+    const conAmici = JSON.parse(intero.testo);
+    const fotoPiena = intero.foto, fotoVecchia = vecchio.foto;
+    const senzaAmici = JSON.parse(vecchio.testo);
     const segnaSubito = await A.pag.evaluate(() => {
       const r = window.__test.amici.segna({ nome: 'DOPO', seme: 888, miei: [1, 0], suoi: [0, 0] });
       return !!(r && r.ok);
@@ -523,14 +567,15 @@ async function gruppoC(browser, porta) {
         perse.push(k + ': ' + JSON.stringify(fotoPiena[k]).slice(0, 30) +
                    ' -> ' + JSON.stringify(fotoVecchia[k]).slice(0, 30));
     }
-    di(conAmici.amici !== undefined && perse.length === 0 &&
+    di(conAmici.amici !== undefined && senzaAmici.amici === undefined && perse.length === 0 &&
        fotoPiena.v === 4 && fotoVecchia.v === 4 &&
-       fotoVecchia.amici !== undefined && segnaSubito &&
+       fotoVecchia.amici !== undefined && fotoVecchia.amici.righe.length === 0 && segnaSubito &&
        fotoPiena.amici && fotoPiena.amici.righe && fotoPiena.amici.righe.length === 1,
        'C5) la chiave `amici` e\' ADDITIVA: un salvataggio nato prima si rilegge senza perdere niente, e resta v4',
        (Object.keys(fotoPiena).length - 1) + ' chiavi confrontate, perse: ' +
        (perse.length ? perse.join(' | ') : 'NESSUNA') + ' · versione ' + fotoVecchia.v +
-       ' · la chiave torna al default vuoto: ' + JSON.stringify(fotoVecchia.amici).slice(0, 40) +
+       ' · senza la chiave (' + senzaAmici.amici + ') torna il default vuoto: ' +
+       JSON.stringify(fotoVecchia.amici) +
        ' · e su un salvataggio vecchio si segna subito: ' + segnaSubito);
 
     /* ------------------- C6, il punteggio proprio non lo riscrive nessuno */
