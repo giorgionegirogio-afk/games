@@ -517,6 +517,154 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **La finestra che cambia — #139 CANTIERE CHIUSO** (voce #139, 22
+  settembre 2026, quattro compiti dal merge-base `1d5b946` — spec
+  `docs/superpowers/specs/2026-09-22-finestra-che-cambia-design.md`,
+  piano `docs/superpowers/plans/2026-09-22-finestra-che-cambia.md`).
+  **Un CRITICO dell'onda D, trovato dalla revisione d'insieme**, e non
+  di un cantiere solo: sta nella *giuntura* fra il #133 (che ha scoperto
+  il canale dei pixel) e il #137/#138 (che hanno dato al verdetto la
+  forza di togliere punti).
+
+  **(a) IL DIFETTO.** Il #133 aveva visto che i tocchi del nastro sono
+  in **coordinate di schermo** — dove finisce un tocco lo decidono
+  `touchBtnLayout` e `SCALE`/`OX`/`OY`, che vengono tutti e tre da
+  `innerWidth`/`innerHeight` — e aveva messo la misura nel nastro (riga
+  di tipo 10). **Ma la scriveva una volta sola**, in `Sfida.gioca`,
+  subito prima di `startMatch`. Intanto `addEventListener('resize',
+  resize)` resta vivo per tutta la partita e ricuoce `SCALE`/`OX`/`OY`,
+  e `checkOrientation` ferma **solo il portrait**. La guardia del
+  giudice verificava che il nastro e il giudice *dicessero la stessa
+  cosa*, non che quella cosa *fosse stata vera dall'inizio alla fine*.
+
+  **(b) MISURATO, DUE BRACCI CHE CAMBIANO UNA COSA SOLA** (stesso seme
+  `20260801`, stesso copione di dita, stesse rose, dischi calcolati una
+  volta sola alla misura di partenza, e le stesse pause agli stessi
+  fotogrammi in tutti i bracci):
+
+  | braccio | finestra | tabellone | riga 10 | giudizio a 915x412 |
+  |---|---|---|---|---|
+  | FERMA | 915x412 sempre | 3-4 | 915x412 | **TORNA** (3-4 in 8819 passi) |
+  | CAMBIA | 915x412 → 352 al fotogramma 1200 | 1-2 | 915x412 *(la misura di partenza)* | **NON TORNA** (3-4 in 8631 passi) |
+
+  Il secondo è un giocatore **onesto**: gli è comparsa la barra dell'URL
+  a metà partita (`SCALE` 0,7067 → 0,6017, `OX` 51 → 112). `NON TORNA` è
+  **l'unico verdetto che muove punti**: `segna_verdetto` disfa `delta_a`
+  *e* `delta_d` — due persone — alza `allenatore.sospetto`, che non
+  decade mai per disegno e a `SOSPETTO_SEPARA = 3` segrega chi lo porta
+  nel mazzo degli abusatori, **e chiude la riga per sempre** (`and
+  verificata = 0`). Un `INCOMPLETO` si ripara domani; questo no. Nell'APK
+  è mitigato (fullscreen + `configChanges`) ma non chiuso — split-screen,
+  multi-finestra, pieghevoli; servito come **PWA in un browser di
+  telefono la barra dell'URL è il caso normale**, ed è proprio nella
+  banda dei 56-90 px.
+
+  **(c) LA CURA: un «non lo so» invece di un'accusa**, in due metà che
+  servono tutt'e due — una riga che nessuno guarda è un commento, e chi
+  guarda una riga che non c'è non vede niente. `Reg.schermo(w, h)` scrive
+  una riga di tipo 10 **a ogni cambio di misura**, e `resize()` la chiama
+  in fondo, quando `SCALE`/`OX`/`OY` e i pulsanti sono già quelli nuovi;
+  `vagliaNastro` si astiene — **`INCOMPLETO / schermo-cambiato`** — su
+  qualunque nastro porti **più di una misura distinta**. *Distinte* e non
+  «righe»: una finestra che va e torna lascia tre righe e due misure, ed
+  è il numero delle **misure** a dire se il nastro si può rigiocare.
+  **Prima di `schermo-diverso`**, e l'ordine non è un gusto: uno schermo
+  diverso si ripara aprendo la finestra giusta (è quel che fa la
+  staffetta), uno schermo **cambiato non si ripara in nessuna finestra**
+  — è una proprietà del nastro, non di chi lo legge. E il giudice **non
+  offre più una finestra da riaprire dove non ce n'è nessuna**: al posto
+  di `schermo` restituisce `schermi`, tutte, così la staffetta non va a
+  cercare per sempre un telefono che non esiste e la regola della
+  «finestra negata» del #138 non scatta.
+
+  **(d) IL RESIZE A RAFFICA NON RIEMPIE IL NASTRO.** Due guardie in fila:
+  quella che `resize()` ha già («se la misura non è cambiata non si
+  ricuoce niente», e il suo commento nomina la barra del browser da sé) e
+  quella di `Reg.schermo`, che serve perché `resize()` gira per intero
+  anche a finestra immutata quando `RESIZE_FORZA` è acceso — lo accende
+  `setTaglia`. **Misurato: 24 eventi di resize su 6 misure → 6 righe.**
+  Costo: una riga di cinque numeri per misura distinta, contro un tetto
+  di 40.000 righe (#132).
+
+  **(e) QUEL CHE LA CURA COSTA, dichiarato invece che nascosto.** Con
+  **12 px** di cambio (412 → 400) la partita non si muove di un passo —
+  stesso 3-4, stessi 8819 passi, nastro identico — e il verdetto oggi è
+  `TORNA`: domani sarà `INCOMPLETO / schermo-cambiato`. Si paga
+  volentieri: un onesto non confermato resta in lista a `verificata = 0`
+  e non perde niente, un onesto accusato perde i punti, il sospetto e la
+  riga per sempre. **E una soglia in pixel sarebbe un'opinione**: il #133
+  ha misurato «dodici no, settanta sì» su *un* nastro, e dove passi il
+  confine di un motore caotico non lo sa nessuno. La strada che renderebbe
+  quel nastro **giudicabile** invece che inservibile — rigiocare il
+  cambio, ricalcolando `SCALE`/`OX`/`OY` al tick della seconda riga —
+  chiede di spezzare l'invariante `VW === innerWidth`, cioè di
+  ridimensionare la tela lontano dalla finestra vera davanti a un umano
+  che sta guardando un film: è il seguito grosso già aperto dal #133,
+  **«i tocchi indipendenti dallo schermo»**, e non è una toppa.
+
+  **(f) IL GIOCO DI CHI GIOCA NON CAMBIA DI UN PASSO.** I tre bracci
+  finiscono con gli stessi passi e lo stesso tabellone di prima della
+  cura (8819 / 7643 / 8693): quel che cambia è che il nastro dice la
+  verità. L'alternativa più brutale — trattare il resize in partita come
+  il portrait (`G.rotateHold`) — è stata **scartata qui**: punirebbe chi
+  gioca per una cosa che fa il suo telefono.
+
+  **(g) `MOTORE_V` RESTA 2, E NON PER OPINIONE.** Quattro sfide vere
+  registrate sul gioco di `main` più la fixture congelata, ognuna
+  giudicata due volte — da una pagina del gioco vecchio e da una del
+  nuovo: **5 su 5 identici** in verdetto, causa, gol e passi (3-4/8819,
+  1-3/7295, 1-0/5966, 1-2/8419, 1-2/9367). `Reg.esegui` non ha un ramo
+  per il tipo 10, quindi in rilettura la riga non muove niente — né la
+  prima né la seconda. **I nastri vecchi non si rompono**: ne portano
+  *una* di righe di tipo 10, cioè una misura, e si giudicano esattamente
+  come oggi; la prima riga resta nel punto esatto di prima, quindi un
+  nastro a finestra ferma è identico a quello di ieri.
+
+  **(h) IL BANCO**: `strumenti/_q-finestra.js`, **20 su 20**, nato a
+  **8 su 20** — a bracci, e ogni rosso era il difetto vero.
+
+      FERMA    915x412 sempre        TORNA
+      CAMBIA   915x412 -> 352        INCOMPLETO/schermo-cambiato a 412 E a 352
+      TORNA    412 -> 352 -> 412     INCOMPLETO/schermo-cambiato (3 righe, 2 misure)
+      RAFFICA  24 eventi, 6 misure   6 righe di tipo 10, non 24
+
+  **Il terzo braccio esiste per un falso solo.** Un gioco che scrivesse
+  solo la *prima* e l'*ultima* misura sarebbe verde su FERMA e su CAMBIA
+  e accuserebbe un innocente su TORNA, dove la finestra se ne va e
+  ritorna: senza quel braccio `_crit-finestra-estremi` passava con
+  **diciotto verdi su venti**. **E D4 è la prova che nessuno pensa a
+  scrivere**: lo *stesso* nastro con **tre attesi diversi** — quello
+  dichiarato, quello che la rigiocata produce e uno assurdo (99-0) — deve
+  dare tre volte la stessa risposta, perché l'astensione è una proprietà
+  del **nastro** e non del conto. Prima della cura, col secondo dei tre,
+  il giudice diceva `TORNA` su un nastro inverificabile: una cura pigra
+  («mi astengo solo quando il conto non torna») sarebbe passata di lì.
+
+  **CINQUE FALSI**, ognuno con la lista **misurata** di ciò che morde:
+  `sorda` (resize non lo dice al registro) 10 prove, `cieca` (le misure
+  viaggiano e il vaglio ne guarda una sola) 7, `accusa` (il cambio
+  diventa `NON TORNA` invece di un'astensione) 6, `estremi` 3 — e **solo
+  lui morde B5** — e `raffica` (una riga a ogni resize, anche a misura
+  immutata) **1 sola su 20**, che è la ragione per cui il braccio RAFFICA
+  esiste.
+
+  **QUEL CHE IL BANCO NON MISURA**, dichiarato invece che taciuto: i
+  nastri di `window.__test.registra()` (non portano la prima riga di tipo
+  10, la scrive `Sfida.gioca`: se lì la finestra si muove, la prima riga
+  che compare è quella del cambio — non è un cammino di produzione,
+  quei nastri non si giudicano come sfide); la finestra che cambia
+  **durante un replay** (in rilettura il registro non scrive, modo 2, e
+  non c'è niente da dire); e il verticale, che resta affare di
+  `checkOrientation`.
+
+  **Reti di sicurezza, tutte identiche al numero**: `sfida` 54/54,
+  `giudice` 21/21, `sigillo` 14/14, `carta` 22/22, `amici` 23/23,
+  `sospetto` 39/39, `staffetta` 42/42, `rete` 22/22, `salvataggio`
+  11/11, `senza-rete` 6/6, i quattro del #132 (6/6, 4/4, 4/4, 5/5),
+  `determinismo` 10/10 a 5 **e** a 11. Batteria intera a gruppi, tutti i
+  cancelli che contano verdi. `_q-finestra` è in batteria con
+  `conta:true` (`lento:true`: gioca tre sfide intere).
+
 - **La staffetta — #138 CANTIERE CHIUSO** (voce #138, 22 settembre 2026,
   quattro compiti dal merge-base `8127f6c` — spec
   `docs/superpowers/specs/2026-09-22-la-staffetta-design.md`, piano
@@ -737,6 +885,18 @@ Qui il registro completo, a edizioni.
   deliberata, perché i banchi del repo assegnano credenziali *finte e
   corte* apposta e un cancello che le chiamasse chiavi urlerebbe al lupo
   finché nessuno lo guarda più.
+
+  **RETTIFICA A EDIZIONI (22 settembre 2026, voce #139).** Il **1 898**
+  qui sopra è il conto di quando fu preso, prima che i file del compito 3
+  entrassero nell'indice: al commit `1d5b946` il cancello ne stampa
+  **1 911**, e il comando di casa che lo riproduce è `git ls-files | wc
+  -l`. **Il verdetto non cambia — zero è zero** — ma un numero che non si
+  riproduce col comando di casa invecchia da solo e fa dubitare della
+  misura che accompagna: quel conto **cresce a ogni cantiere**, e va
+  letto come «i file tracciati di quel giorno», non come una costante.
+  La prova è questa stessa rettifica — il #139 ne aggiunge nove (una
+  spec, un piano, un banco, un impianto, cinque falsi e un attrezzo) e
+  chiude a **1 921**. Il controllo, quello, non si muove: **zero**.
 
   `_q-staffetta` è in batteria con `conta:true` (70 s, `lento:true`).
 

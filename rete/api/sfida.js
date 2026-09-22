@@ -30,6 +30,14 @@
    lavoratore non gira, tutte le righe valgono 0 e la lista dice «DA
    VERIFICARE»: è la verità, non un ripiego.
 
+   SEGUITO A EDIZIONI (22 settembre 2026, voce #139). «Non esiste
+   ancora» **è superato**: il lavoratore periodico gira dal 22 settembre
+   e si chiama `strumenti/staffetta.js` (voce #138) — un processo che
+   qualcuno lancia, non un endpoint, perché una funzione serverless non
+   ha un browser e il giudice *è* il gioco. Il #138 aveva rettificato
+   `rete/LEGGIMI.md` e `rete/schema.sql` e aveva dimenticato questo
+   terzo file, che quella promessa la scriveva in chiaro.
+
    SEGUITO A EDIZIONI (22 settembre 2026, voce #137). Il verdetto adesso
    ha anche dove POSARSI: `segna_verdetto(s_id, verdetto)` in
    rete/schema.sql scrive `verificata`, disfa i punti di quella partita
@@ -40,6 +48,23 @@
    SQL, dentro la funzione: due porte, e nessuna delle due accetta un
    -1 passato a mano. Manca ancora soltanto la staffetta che pesca le
    righe e chiama il giudice.
+
+   TERZA EDIZIONE (22 settembre 2026, voce #139). «Manca ancora soltanto
+   la staffetta» **non è più vero dal 22 settembre**: la staffetta c'è
+   (`strumenti/staffetta.js`, voce #138), pesca `verificata = 0` a
+   pagine, raggruppa per la misura che il nastro dichiara, apre un
+   contesto per misura, chiama `giudica` e manda **la parola** a
+   `segna_verdetto` — tutti e cinque i verdetti, senza tradurne nessuno
+   in un numero.
+
+   E UNA COSA CHE QUESTO FILE DEVE SAPERE (voce #139). Il verdetto che
+   arriva qui può essere `INCOMPLETO / schermo-cambiato`: il nastro
+   porta più di una misura di finestra, perché a chi giocava è comparsa
+   la barra dell'URL a metà partita. È un «non lo so», non un'accusa —
+   lascia la riga a 0, non muove punti e non alza sospetti — ed è la
+   cura di un CRITICO: prima esisteva una sola riga di misura, scritta
+   prima del fischio d'inizio, e su quel nastro il giudice diceva
+   `NON TORNA` a un innocente.
    ===================================================================== */
 import { db, rispondi, preflight, guaio, chiSei, frenato, corpo,
          intero, configurato } from '../lib/comuni.js';

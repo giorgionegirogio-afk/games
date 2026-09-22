@@ -1171,6 +1171,53 @@ const CANCELLI = [
      Non sbagliava niente: dimenticava. */
   { nome: 'staffetta',         cmd: ['strumenti/_q-staffetta.js'],                      conta: true,  lento: true  },
   /* =====================================================================
+     finestra: LA FINESTRA CHE CAMBIA A META' PARTITA (voce #139).
+
+     IL CRITICO che la revisione d'insieme dell'onda D ha trovato nella
+     giuntura fra due cantieri. Il #133 aveva visto che i tocchi del
+     nastro sono in coordinate di SCHERMO e aveva messo la misura nel
+     nastro — ma UNA VOLTA SOLA, prima del fischio d'inizio, mentre il
+     gestore di 'resize' resta vivo per tutta la partita e ricuoce
+     SCALE/OX/OY. Il #137 e il #138 hanno dato al verdetto la forza di
+     togliere punti. Risultato misurato: una sfida ONESTA giocata mentre
+     compariva la barra dell'URL (915x412 -> 915x352 al fotogramma 1200)
+     dichiarava 1-2, il giudice la rigiocava 3-4 e diceva NON TORNA —
+     l'unico verdetto che muove punti, che ne toglie a DUE persone, alza
+     un sospetto che non decade mai e chiude la riga per sempre.
+
+     E' UN BANCO A BRACCI, e cambia UNA cosa sola: la finestra. Stesso
+     seme, stesso copione di dita, stesse rose, dischi calcolati una
+     volta sola alla misura di partenza, e le stesse due pause agli
+     stessi fotogrammi in tutti e tre i bracci — se una pausa bastasse a
+     far divergere una rigiocata lo direbbe il braccio FERMO, che
+     dev'essere TORNA. Il TERZO braccio (la finestra che va e TORNA)
+     esiste per un falso solo, `estremi`: senza di lui quel falso
+     passava con diciotto verdi su venti.
+
+     conta:TRUE. Venti prove in quattro gruppi: il gioco SCRIVE (una riga
+     per misura distinta, col tick del cambio, e il resize a raffica non
+     ne aggiunge), il giudice SI ASTIENE (schermo-cambiato su tutt'e due
+     le finestre, mai NON TORNA), i nastri VECCHI non si rompono (la
+     sfida congelata torna 1-2 in 9367 passi, e schermo-diverso e
+     schermo-ignoto dicono le parole di sempre), e la FORMA (cinque
+     verdetti, e la frase che l'occhio legge nomina le due misure invece
+     di dare la colpa alla rosa cresciuta di un altro).
+
+     SA DIRE «NON HO MISURATO»: esce 3 se il gioco indicato non ha la
+     schermata della sfida o `window.__test.giudica`, o se una delle tre
+     sfide non arriva al fischio finale; 2 se il browser non parte.
+     DICE QUEL CHE NON MISURA: i nastri di `__test.registra()` (che non
+     portano la prima riga di tipo 10, la scrive Sfida.gioca), la
+     finestra che cambia durante un REPLAY (in rilettura il registro non
+     scrive), e il verticale, che resta affare di checkOrientation.
+     SA FALLIRE: CINQUE falsi (`_crit-finestra-*`), ognuno con la lista
+     MISURATA di quel che morde — 10, 7, 6, 3 e 1 prova su venti.
+     Deterministico (passo fisso, seme dal server finto azzerato fra un
+     braccio e l'altro), ma gioca TRE sfide intere piu' il braccio della
+     raffica: misurato **58 s** in compagnia, cioe' sopra la soglia dei
+     30-40 s che qui chiede lento (modello `audio.js`) — `lento:true`. */
+  { nome: 'finestra',          cmd: ['strumenti/_q-finestra.js'],                       conta: true,  lento: true  },
+  /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
      cancelli in lista ne ha visto uno.
