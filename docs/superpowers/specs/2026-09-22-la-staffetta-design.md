@@ -52,8 +52,9 @@ pacchetto da aggiornare per sempre dentro a cinque funzioni serverless.
 
 ## Il giro completo, in sei passi
 
-    1. PESCA      le righe a verificata = 0, le più vecchie prima
-                  (indice sfida_daverificare, già nello schema dal #137)
+    1. PESCA      le righe a verificata = 0, le più vecchie prima, a
+                  pagine con un cursore (indice sfida_daverificare, già
+                  nello schema dal primo giorno)
     2. ALLARGA    il replay (deflate-raw + base64url -> testo crudo)
     3. RAGGRUPPA  per la misura dichiarata nella riga di tipo 10
     4. APRE       UN contesto per misura, non uno per riga
@@ -62,9 +63,19 @@ pacchetto da aggiornare per sempre dentro a cinque funzioni serverless.
 
 ### 1. La pesca
 
-`select id,seme,taglia,gol_a,gol_d,replay from sfida where verificata = 0
-order by giocata asc limit N`. L'indice esiste già ed è parziale
-(`where verificata = 0`): non c'è niente da aggiungere allo schema.
+`sfida?verificata=eq.0&id=gt.<cursore>&order=id.asc&limit=N&select=…`.
+L'indice esiste già ed è parziale (`where verificata = 0`): non c'è niente da
+aggiungere allo schema.
+
+**L'ordine è per `id` e non per `giocata`**, e non è indifferente: serve un
+cursore che non salti né ripeta righe fra una pagina e l'altra, e `giocata`
+due righe possono averla uguale. `id` è un `bigserial`, quindi l'ordine di
+`id` **è** l'ordine di registrazione.
+
+**E si pesca a pagine**, non una volta sola: i tre «non lo so» restano a 0 per
+disegno e tornano in ogni finestra. Senza le pagine, un giorno le righe
+ingiudicabili riempirebbero il `limit` e la staffetta non arriverebbe mai alle
+nuove — girerebbe a vuoto raccontando di lavorare.
 
 ### 2–3. La misura, letta in Node
 
@@ -167,7 +178,18 @@ nessuno venga accusato due volte.** Cancellarlo costa una rigiocata; non
 costa un punto a nessuno. Se un giorno i due strati dicessero cose diverse,
 quello che comanda è la struttura.
 
-**Una eccezione, e si misura**: un `INCOMPLETO / schermo-diverso` **su una
+**Due eccezioni, e si misurano tutte e due.** *(La seconda è una rettifica del
+compito 3: nella prima stesura era una sola, e la staffetta aveva davvero il
+difetto che la seconda descrive.)*
+
+**(i) IL GIRO A VUOTO NON SCRIVE NEL TACCUINO.** `--asciutto` giudica e non
+manda niente, quindi quelle righe restano a `verificata = 0`. Se finissero nel
+taccuino, il giro **vero** del giorno dopo le salterebbe — perse per sempre,
+senza che niente diventi rosso da nessuna parte. Una prova a vuoto che fa
+perdere righe è peggio di nessuna prova a vuoto. *(Misurata da E3b, condannata
+dal falso `avvelenata`.)*
+
+**(ii) LA FINESTRA NEGATA.** Un `INCOMPLETO / schermo-diverso` **su una
 riga per cui la staffetta aveva chiesto proprio quella misura** non si scrive
 nel taccuino. Non è un «non lo so» del nastro: è **la finestra negata** dalla
 macchina che ospita (uno schermo più grande del display, una barra del
@@ -267,6 +289,13 @@ sua. La riga 6, senza riga di tipo 10, deve dare
 `INCOMPLETO / schermo-ignoto` e **mai** `NON TORNA`. E i contesti aperti
 devono essere **quanti le misure distinte**, non quante le righe.
 
+E **la finestra negata** *(C6/C6b, aggiunte al compito 3)*: lo stesso nastro
+aperto di forza alla misura sbagliata si rifiuta con `schermo-diverso`, e
+quella riga **non entra nel taccuino** — il referto la grida, e il giro dopo,
+alla misura giusta, la stessa riga `TORNA`. Era una regola che questa spec
+affermava in tre punti e che **nessuna prova misurava**: il falso
+`rassegnata` è nato per condannarla.
+
 **D) LA RIPARTENZA.** Un `segna` che esplode a metà: la staffetta si ferma, il
 giro dopo riprende, e si conta quante volte ogni riga è stata **giudicata**.
 Nessuna persa, nessuna giudicata due volte tranne quella interrotta. Poi lo
@@ -276,11 +305,25 @@ sospetto resta quello, perché a proteggere è la struttura.
 **E) IL RITMO E I FRENI.** Un freno che dice no alla terza riga: la staffetta
 si ferma lì, le righe rimaste restano a 0, e il giro dopo le riprende. Il
 `--tetto` si rispetta. Il ritmo si stampa (righe/minuto, ms per giudizio, ms
-per contesto).
+per contesto). E **la prova a vuoto** (`--asciutto`) giudica, non manda
+niente, e **non avvelena il taccuino** *(E3b, aggiunta al compito 3: quelle
+righe restano a `verificata = 0`, e se finissero nel taccuino il giro vero del
+giorno dopo le salterebbe — perse per sempre, senza che niente diventi rosso
+da nessuna parte)*.
 
 **F) LE PORTE E LA CHIAVE.** Gli endpoint sono cinque; `segna_verdetto` è
 ancora revocata; la staffetta non stampa mai la chiave; il repo non contiene
 una chiave di servizio.
+
+**G) IL FILO** *(aggiunto al compito 3, e la ragione sta nella rettifica del
+punto 2 dei limiti)*. `bancoVero` contro un server che parla la forma di
+PostgREST: la pesca chiede `verificata=eq.0` in ordine di `id` con un tetto e
+col `replay` fra le colonne; `segna_verdetto` si chiama con **`s_id`** e con
+**la parola**; il freno si chiede una volta per riga con la chiave della
+staffetta; ogni richiesta porta la chiave in `apikey` **e** in `Bearer`; le
+righe già viste non mangiano la finestra (il cursore `id=gt.`); e **il
+programma vero** — `node strumenti/staffetta.js` con le due variabili
+d'ambiente — chiude le righe, scrive il taccuino e non stampa la chiave.
 
 ## I falsi — `strumenti/_crit-staffetta-*.js`
 
@@ -296,6 +339,10 @@ non dice quale prova morde; un falso gentile non prova niente.
 | `smemorata` | scrive nel taccuino **solo** le righe che il database chiude comunque, e rimacina in eterno gli ingiudicabili | **D** (righe giudicate due volte al secondo giro) |
 | `sfrenata` | ignora il no del freno e tira dritto | **E** |
 | `zitta` | manda solo le accuse: i `TORNA` non li spedisce, «tanto non cambiano niente» | **B** (zero verificate) |
+| `sprecona` *(compito 2)* | ogni riga è un gruppo per sé: il browser si riapre da capo | **A4**, **C4** — era l'unica asserzione che nessuno degli altri condannava |
+| `filo` *(compito 3)* | l'argomento di `segna_verdetto` si chiama `id` invece di `s_id`: nessuna riga si chiude mai, e non si vede da nessun'altra parte | **G** |
+| `rassegnata` *(compito 3)* | anche la finestra negata finisce nel taccuino, e quella riga non torna mai più | **C6**, **C6b** |
+| `avvelenata` *(compito 3)* | la prova a vuoto scrive nel taccuino: non sbaglia niente, **dimentica** — ed era il comportamento vero della staffetta fino al compito 3 | **E3b** |
 
 ## Che cosa questo cantiere NON misura — dichiarato
 
@@ -306,14 +353,33 @@ Come il #137, che ha dichiarato lo stesso limite invece di fingere copertura:
    stessa regola, quella che `_q-sospetto` misura davvero — come lato
    database. La corrispondenza fra quella e `segna_verdetto` è guardata **per
    testo** da `_q-sospetto` D5, che dichiara di attestare invece di misurare.
-2. **PostgREST non si interroga.** La parte di `staffetta.js` che parla al
-   database vero (`bancoVero`) non ha un banco: si misura la sua **forma**
-   (che chiami `segna_verdetto` con la parola, che filtri `verificata=eq.0`,
-   che non stampi la chiave), non il suo viaggio.
+2. **PostgREST si interroga, ma è finto.** *(Rettifica a edizioni, compito 3:
+   la riga originale diceva «PostgREST non si interroga: di `bancoVero` si
+   misura la forma, non il viaggio». Era un buco, e il falso `filo` — che
+   chiama l'argomento `id` invece di `s_id` — ci passava dentro senza far
+   cadere una sola prova.)* Il gruppo **G** misura il filo contro un `http`
+   che parla la **forma** di PostgREST (`eq.`/`gt.`, `order`, `limit`,
+   `select`, le funzioni sotto `/rpc/` che tornano un array), con sotto lo
+   stesso database in memoria. Quel che resta fuori è il **Postgres vero**:
+   se un giorno `segna_verdetto` cambiasse firma nello schema, qui non si
+   vedrebbe.
 3. **Nessuna misura su un telefono vero.** Il giro gira su Chromium headless,
    come tutto il resto del repo.
 4. **Il ritmo è misurato su questa macchina**, non su un CI: i numeri del
    referto sono un ordine di grandezza, non un contratto.
+5. **Quattro comportamenti della staffetta non hanno una prova**, ed è meglio
+   elencarli che lasciarli scoprire: il ripiego del **freno rotto** (se
+   `/rpc/frena` non risponde il giro va avanti, come in `comuni.js`), la
+   bandiera `--riprova`, `--gioco` che punta a un'altra copia del gioco, e il
+   rifiuto di `serviGioco` quando il file non c'è. Tutti e quattro hanno la
+   stessa forma: al peggio fanno lavoro in più o non partono, e **nessuno dei
+   quattro può muovere un punto**.
+6. **Si gira a taglia 5.** È dove il determinismo è pieno (voce #98:
+   `rebuildCrowd` consuma PRNG in proporzione al campo). Che il *giudice*
+   torni anche a 7 e a 11 è misurato altrove — `giudice`, 14 partite oneste
+   su 14 nelle tre taglie, zero falsi `NON TORNA` (#133). Questo banco misura
+   il *giro*, e il giro non cambia con la taglia: cambia il tetto della
+   rigiocata, che è del giudice.
 
 ## Quello che fa fermare il cantiere
 

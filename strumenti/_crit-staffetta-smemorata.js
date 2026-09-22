@@ -31,7 +31,7 @@ const B = require('./_crit-staffetta.js');
 B.falso({
   nome: 'smemorata',
   titolo: 'il taccuino ricorda solo i verdetti che chiudono la riga',
-  morde: 'MISURATO: D3b, e SOLO D3b — trentuno prove su trentadue passano',
+  morde: 'MISURATO (sweep del 22 settembre 2026, banco a 42 controlli): D3b — 1 su 42 — e SOLO D3b: quarantuno prove su quarantadue passano',
   cambi: [
     { cerca: B.A_RICORDA,
       metti: '        /* IL FALSO (_crit-staffetta-smemorata.js): «il taccuino e\' una\n' +

@@ -33,68 +33,116 @@
        corrispondenza fra `applica()` e `segna_verdetto` e' guardata PER
        TESTO da _q-sospetto D5, che dichiara di attestare invece di
        misurare.
-     · POSTGREST NON SI INTERROGA. Di `bancoVero` si misura la FORMA
-       (che filtri verificata=0, che chiami segna_verdetto con la
-       PAROLA, che rifiuti di nascere senza credenziali, che non stampi
-       mai la chiave), non il viaggio.
+     · POSTGREST SI INTERROGA, MA E' FINTO (gruppo G). Il filo — la via,
+       i filtri, le intestazioni, i nomi degli argomenti — si misura
+       contro un http che parla la FORMA di PostgREST, con sotto lo
+       stesso database in memoria. Quel che NON si misura e' il Postgres
+       vero: se un giorno la funzione cambiasse firma nello schema, qui
+       non si vedrebbe.
      · IL RITMO e' misurato su QUESTA macchina, non su un CI: i numeri
        sono un ordine di grandezza, non un contratto.
+     · QUATTRO COMPORTAMENTI DELLA STAFFETTA NON HANNO UNA PROVA, e si
+       elencano invece di lasciarli scoprire: il ripiego del FRENO ROTTO
+       (se `/rpc/frena` non risponde il giro va avanti, come in
+       comuni.js: «un freno rotto che chiude il gioco sarebbe peggio del
+       traffico che doveva evitare»); la bandiera `--riprova`, che
+       ignora il taccuino; `--gioco`, che punta la staffetta a un'altra
+       copia del gioco; e il rifiuto di `serviGioco` quando il file non
+       c'e'. Tutti e quattro hanno la stessa forma: al peggio fanno
+       lavoro in piu' o non partono, e nessuno dei quattro puo' muovere
+       un punto.
+     · SI GIRA A TAGLIA 5, e non e' una svista: il determinismo pieno
+       vale li' (voce #98, `rebuildCrowd` consuma PRNG in proporzione al
+       campo). Che il GIUDICE torni anche a 7 e a 11 e' misurato
+       altrove, da `giudice` — 14 partite oneste su 14 nelle tre taglie,
+       zero falsi NON TORNA (voce #133). Questo banco misura il GIRO, e
+       il giro non cambia con la taglia: cambia il tetto della rigiocata,
+       che e' del giudice.
 
-   I SEI GRUPPI
+   I SETTE GRUPPI
      A) LA FORMA          il modulo, la misura letta dal nastro, il
                           raggruppamento, il rifiuto senza credenziali
      B) IL GIRO COMPLETO  sei sfide finte, quattro verdetti diversi, e
                           il quinto (NON FINISCE) in un giro a parte
      C) LA MISURA GIUSTA  una sfida VERA giocata a 1024x460 dentro
                           questa corsa: deve TORNARE, e torna solo se la
-                          staffetta ha aperto QUELLA finestra
+                          staffetta ha aperto QUELLA finestra. Piu' la
+                          FINESTRA NEGATA: se la misura chiesta non si
+                          ottiene, la colpa e' della macchina e non del
+                          nastro, e quella riga non deve finire nel
+                          taccuino — il giro dopo la riprende
      D) LA RIPARTENZA     muore a meta' in due modi diversi, riparte:
                           nessuna riga persa, nessuna giudicata due
                           volte, e la guardia della struttura regge
                           anche con due staffette che pescarono insieme
      E) IL RITMO          il freno che dice no, il tetto per giro, la
-                          prova a vuoto, e i millisecondi dichiarati
+                          prova a vuoto — che giudica, non manda niente
+                          e NON avvelena il taccuino — e i millisecondi
      F) LE PORTE          cinque endpoint, la funzione ancora revocata,
                           la chiave che non si stampa e non e' nel repo
+     G) IL FILO           `bancoVero` contro un server che parla la
+                          forma di PostgREST: la via, i filtri, le
+                          intestazioni, i nomi degli argomenti — e il
+                          programma VERO lanciato come si lancia
 
-   SA FALLIRE, e si dice QUALI prove lo sanno e quali no. Sette falsi
+   SA FALLIRE, e si dice QUALI prove lo sanno e quali no. DIECI falsi
    (`_crit-staffetta-*`), ognuno costruito nel caso peggiore, ognuno
-   bocciato dalla sua prova — misurato il 22 settembre 2026:
+   bocciato dalla sua prova — misurato il 22 settembre 2026. La lista
+   per esteso di cio' che ciascuno morde sta in testa al suo file.
 
-     accusa     B2 B3 B7 C3 C5 D3 D3b     i «non lo so» diventano accuse
-     cieca      B1 B2 C1 C2               apre sempre la sua finestra
-     numero     B2 B3 B4 B5 B6 D1 D3b     manda -1 invece della parola
-     smemorata  D3b                       il taccuino dimentica i tre
-     sfrenata   E1 E1b                    il freno si chiede e si ignora
-     zitta      B2 B6 D4 E1 E1b E2        manda solo le accuse
-     sprecona   A4 C4                     un contesto per riga
+   E DUE DI LORO HANNO RIPARATO IL BANCO PRIMA DI ESSERNE BOCCIATI, che
+   e' la ragione per cui i falsi si costruiscono invece di raccontarli:
+     · `cieca` PASSAVA C2. La prova leggeva la chiave del gruppo — cioe'
+       quel che il NASTRO dichiara — invece della finestra aperta
+       davvero.
+     · `filo` PASSAVA G7. La prova lanciava `strumenti/staffetta.js` per
+       percorso fisso, quindi provava sempre quella onesta qualunque
+       cosa le si puntasse contro con `--staffetta`.
+   Due righe che attestavano invece di misurare, in un banco scritto per
+   non farlo. A trovarle non e' stato chi le ha scritte.
 
-   E NESSUN FALSO CONDANNA: A1, A2, A3, A5, C3 nella sua meta' «resta
-   aperto», D2, D5, E3, E4 e tutto il gruppo F. I gruppi A ed F sono
-   guardie di FORMA e di PORTE — dicono che il modulo esiste e che
-   questo cantiere non ha aperto niente — e restano verdi anche senza la
+   E NESSUN FALSO CONDANNA, e sono QUATTORDICI su quarantadue,
+   misurate e non stimate: A1 A2 A3 A5 · D2 D5 · E3 E4 · F1 F2 F3 F4 ·
+   G2 G5. I gruppi A ed F sono guardie
+   di FORMA e di PORTE — dicono che il modulo esiste e che questo
+   cantiere non ha aperto niente — e restano verdi anche senza la
    staffetta (tre su tre nella corsa del compito 1): non provano il giro,
-   e non devono sembrare di provarlo. D2, D5, E3 ed E4 provano
-   comportamenti che nessuno dei sette guasta; un falso in piu' per
-   ognuno si puo' scrivere il giorno in cui uno di quei numeri si muove.
+   e non devono sembrare di provarlo. Le altre provano comportamenti che
+   nessuno dei nove guasta; un falso in piu' per ognuna si puo' scrivere
+   il giorno in cui uno di quei numeri si muove.
 
-   IL FALSO CHE HA RIPARATO IL BANCO, e va detto perche' e' la ragione
-   per cui i falsi si costruiscono: `cieca` PASSAVA C2. La prova leggeva
-   la chiave del gruppo — cioe' quel che il NASTRO dichiara — invece
-   della finestra aperta davvero. Era una riga che attestava invece di
-   misurare, e a trovarla non e' stato chi l'ha scritta.
+   E QUATTRO FALSI SONO NATI DALLA DOMANDA OPPOSTA — *quale asserzione,
+   qui dentro, non ha un giudice?* — che e' la stessa disciplina vista
+   dall'altro capo: `sprecona` per C4 (l'unica asserzione che nessun
+   altro condannava), `filo` per tutto il gruppo G, `rassegnata` per
+   C6/C6b (la finestra negata: una regola scritta in tre documenti e
+   misurata in nessuno), `avvelenata` per E3b. Un'asserzione senza falso
+   e' un attestato.
+
+   E L'ULTIMA DI QUELLE QUATTRO HA TROVATO UN DIFETTO VERO, non un buco
+   del banco: la staffetta scriveva nel taccuino anche durante il giro a
+   VUOTO (`--asciutto`). Il giro a vuoto giudica e non manda niente,
+   quindi quelle righe restano a `verificata = 0`: messe nel taccuino,
+   il giro vero del giorno dopo le avrebbe SALTATE, e non le avrebbe
+   guardate mai piu' nessuno. Non sbagliava niente: dimenticava. Curato
+   al compito 3, e adesso ha la sua prova (E3b) e il suo falso.
 
    uso:  node strumenti/_q-staffetta.js
          node strumenti/_q-staffetta.js --staffetta fuori/staffetta-accusa.js
          node strumenti/_q-staffetta.js --solo A,B
+   `--solo` serve a guardare, non a giudicare: C ed E4 leggono il giro
+   del gruppo B, e chiesti da soli non hanno niente da leggere. Il verde
+   che conta e' quello della corsa intera.
    esce 0 se passa tutto, 1 se una prova fallisce, 2 se il banco esplode,
    3 se la sfida vera non arriva al fischio finale (prova non fatta).
    ===================================================================== */
 const fs = require('fs');
 const os = require('os');
+const http = require('http');
 const path = require('path');
 const zlib = require('zlib');
 const urlmod = require('url');
+const { spawn } = require('child_process');
 const { chromium } = require('playwright');
 const B = require('./_sfida-due-telefoni.js');
 const N = require('./_nastri-bugiardi.js');
@@ -106,7 +154,7 @@ const arg = (n, d) => {
   return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : d;
 };
 const VIA_STAFFETTA = arg('staffetta', 'strumenti/staffetta.js');
-const gruppiChiesti = String(arg('solo', 'A,B,C,D,E,F')).toUpperCase().split(',').map(s => s.trim());
+const gruppiChiesti = String(arg('solo', 'A,B,C,D,E,F,G')).toUpperCase().split(',').map(s => s.trim());
 const vuole = g => gruppiChiesti.includes(g);
 
 /* LA SECONDA MISURA, e non e' quella di serie: e' tutto il punto del
@@ -211,6 +259,89 @@ function bancoFinto(db, V, opz) {
       return true;
     },
   };
+}
+
+/* =====================================================================
+   IL SERVER FINTO CHE PARLA POSTGREST — il filo, senza Internet.
+
+   PERCHE' ESISTE. `bancoVero` e' l'unico pezzo della staffetta che parla
+   col mondo, ed e' anche l'unico che, senza questo, nessuno proverebbe:
+   una `l` di troppo in `verificata=eq.0`, o un `id` scritto dove il
+   database vuole `s_id`, e la staffetta gira per sempre senza chiudere
+   una riga — senza un rosso da nessuna parte, perche' tutto il resto
+   funziona.
+
+   NON E' UN POSTGRES, E VA DETTO: e' un http che parla la FORMA di
+   PostgREST — i filtri `eq.`/`gt.`, l'`order`, il `limit`, il `select`,
+   e le funzioni sotto `/rpc/` che tornano un ARRAY perche' in SQL
+   `segna_verdetto` e' un `returns table`. Sotto ci sta il database in
+   memoria di questo banco e `applica()` di rete/lib/verdetto.js, come
+   per il banco finto. Quel che si misura e' IL FILO: la via, i filtri,
+   le intestazioni, i nomi degli argomenti. Quel che non si misura resta
+   l'SQL vero, e resta dichiarato.
+
+   E RIFIUTA COME RIFIUTEREBBE POSTGREST: un argomento con il nome
+   sbagliato non e' un silenzio, e' un 400 «Could not find the function
+   ... in the schema cache». E' il modo in cui il difetto si vedrebbe
+   davvero, e il falso `filo` e' costruito apposta per infilarcisi.
+   ===================================================================== */
+function serviPostgrest(db, V, opz) {
+  opz = opz || {};
+  const log = { richieste: [] };
+  let frenaConta = 0;
+  const s = http.createServer(async (req, res) => {
+    const pezzi = req.url.split('?');
+    const via = pezzi[0], query = pezzi[1] || '';
+    let corpo = '';
+    if (req.method !== 'GET') { for await (const p of req) corpo += p; }
+    log.richieste.push({ metodo: req.method, via, query,
+                         auth: req.headers.authorization || '', apikey: req.headers.apikey || '', corpo });
+    const di = (c, o) => { res.writeHead(c, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(o)); };
+
+    if (via === '/rest/v1/sfida' && req.method === 'GET') {
+      const p = new URLSearchParams(query);
+      let righe = db.sfida.slice();
+      const ver = p.get('verificata');
+      if (ver) { const m = /^eq\.(-?\d+)$/.exec(ver); if (m) righe = righe.filter(x => (x.verificata | 0) === +m[1]); }
+      const idf = p.get('id');
+      if (idf) { const m = /^gt\.(\d+)$/.exec(idf); if (m) righe = righe.filter(x => x.id > +m[1]); }
+      if (p.get('order') === 'id.asc') righe.sort((a, b) => a.id - b.id);
+      const lim = parseInt(p.get('limit') || '0', 10);
+      if (lim > 0) righe = righe.slice(0, lim);
+      const sel = String(p.get('select') || '*');
+      if (sel === '*') return di(200, righe.map(r => Object.assign({}, r)));
+      const cols = sel.split(',').map(c => c.trim()).filter(Boolean);
+      return di(200, righe.map(r => {
+        const o = {}; for (const c of cols) o[c] = r[c]; return o;
+      }));
+    }
+
+    if (via === '/rest/v1/rpc/segna_verdetto' && req.method === 'POST') {
+      let b = {}; try { b = JSON.parse(corpo || '{}'); } catch (e) { b = {}; }
+      if (!Object.prototype.hasOwnProperty.call(b, 's_id') ||
+          !Object.prototype.hasOwnProperty.call(b, 'verdetto'))
+        return di(400, { message: 'Could not find the function public.segna_verdetto(' +
+                          Object.keys(b).sort().join(', ') + ') in the schema cache' });
+      const r = V.applica(db, b.s_id, b.verdetto);
+      /* `returns table` in PostgREST e' un ARRAY di righe */
+      return di(200, [{ mosso: !!r.mosso, esito: r.esito | 0, sospetto_nuovo: r.sospetto | 0 }]);
+    }
+
+    if (via === '/rest/v1/rpc/frena' && req.method === 'POST') {
+      let b = {}; try { b = JSON.parse(corpo || '{}'); } catch (e) { b = {}; }
+      if (typeof b.k !== 'string' || typeof b.tetto !== 'number' || typeof b.secondi !== 'number')
+        return di(400, { message: 'Could not find the function public.frena(' +
+                          Object.keys(b).sort().join(', ') + ') in the schema cache' });
+      frenaConta++;
+      return di(200, (opz.frenoFino !== undefined && frenaConta > opz.frenoFino) ? false : true);
+    }
+
+    di(404, { message: 'no route to ' + via });
+  });
+  return new Promise(ok => s.listen(0, '127.0.0.1', () => ok({
+    porta: s.address().port, url: 'http://127.0.0.1:' + s.address().port,
+    log, chiudi: () => s.close(),
+  })));
 }
 
 /* quanti sospetti, e l'invariante del #137: il sospetto di ognuno E' il
@@ -519,11 +650,40 @@ const sosp = (db, id) => (db.allenatore.get(id) || {}).sospetto | 0;
                                     taglia: vera.taglia, gol_a: vera.gol_a, gol_d: vera.gol_d,
                                     delta_a: 20, delta_d: -10 });
       const bancoU = bancoFinto(scU, V, {});
-      const refU = await giro(bancoU, { taccuino: tacNuovo(), misuraFissa: MISURA_1 });
+      const tacU = tacNuovo();
+      const refU = await giro(bancoU, { taccuino: tacU, misuraFissa: MISURA_1 });
       const vU = verdettoDi(refU, idU);
       di(vU === 'INCOMPLETO/schermo-diverso' && scU.sfida[idU - 1].verificata === 0,
          'C5) LO STESSO nastro, aperto di forza a ' + MISURA_1.join('x') + ', si rifiuta con schermo-diverso — non accusa',
          vU + ', verificata ' + scU.sfida[idU - 1].verificata);
+
+      /* =================================================================
+         C6) LA FINESTRA NEGATA, e non e' un «non lo so» del nastro.
+         Se la staffetta aveva chiesto PROPRIO quella misura e non l'ha
+         ottenuta, il colpevole e' la macchina che ospita (uno schermo
+         piu' grande del display, una barra del browser, un server X che
+         ridimensiona) — non il nastro. Quella riga NON deve entrare nel
+         taccuino, se no la si perde per sempre: il taccuino la
+         salterebbe a ogni giro futuro e nessuno la guarderebbe piu'.
+         E deve essere GRIDATA nel referto, perche' e' un guasto
+         operativo e non un esito.
+         ================================================================= */
+      const negate = (refU.finestreNegate || []);
+      di(negate.length === 1 && negate[0].id === idU &&
+         !!tacU && !tacU.ha(idU) && tacU.quanti() === 0,
+         'C6) e quella riga NON entra nel taccuino: il giro dopo la riprende, e il referto GRIDA la finestra negata',
+         negate.length + ' finestre negate' +
+         (negate.length ? ' (#' + negate[0].id + ' chiesta ' + negate[0].chiesta.join('x') +
+          ', serve ' + (negate[0].serve ? negate[0].serve.join('x') : '?') + ')' : '') +
+         ', taccuino ' + (tacU ? tacU.quanti() : '?') + ' righe');
+
+      /* e il giro DOPO, con lo stesso taccuino e la finestra giusta,
+         la giudica davvero: e' la prova che non si e' persa */
+      const bancoU2 = bancoFinto(scU, V, {});
+      const refU2 = await giro(bancoU2, { taccuino: tacU });
+      di(verdettoDi(refU2, idU) === 'TORNA' && scU.sfida[idU - 1].verificata === 1,
+         'C6b) e col giro dopo, alla misura giusta, la stessa riga TORNA: la finestra negata non perde niente',
+         verdettoDi(refU2, idU) + ', verificata ' + scU.sfida[idU - 1].verificata);
     }
 
     /* =================================================================
@@ -675,11 +835,38 @@ const sosp = (db, id) => (db.allenatore.get(id) || {}).sospetto | 0;
          guardare prima di far togliere punti a qualcuno. */
       const e3 = scenaTre();
       const bE3 = bancoFinto(e3.db, V, {});
-      const rE3 = await giro(bE3, { taccuino: tacNuovo(), asciutto: true });
+      const tE3 = tacNuovo();
+      const rE3 = await giro(bE3, { taccuino: tE3, asciutto: true });
       di((rE3.esiti || []).length === 3 && bE3.log.segna.length === 0 &&
          conta(e3.db, 0) === 3 && sosp(e3.db, 'B') === 0,
          'E3) --asciutto: giudica tutto e NON manda niente — tre verdetti, zero chiamate, database fermo',
          (rE3.esiti || []).length + ' verdetti, ' + bE3.log.segna.length + ' chiamate, righe aperte ' + conta(e3.db, 0));
+
+      /* =================================================================
+         E3b) E LA PROVA A VUOTO NON AVVELENA IL TACCUINO.
+
+         E' il difetto che questa prova e' nata per prendere, trovato
+         rileggendo il codice il 22 settembre 2026 e non da un rosso:
+         `--asciutto` giudica e non manda niente, quindi quelle righe
+         restano a `verificata = 0`. Se finissero nel taccuino, il giro
+         VERO del giorno dopo le salterebbe — e sarebbero perse per
+         sempre, senza che niente diventi rosso da nessuna parte. Una
+         prova a vuoto che fa perdere righe e' peggio di nessuna prova a
+         vuoto.
+
+         Si misura in due tempi: il taccuino resta VUOTO dopo il giro a
+         vuoto, e il giro vero che viene dopo — con lo STESSO taccuino —
+         le rimanda tutte e tre.
+         ================================================================= */
+      const taccDopoVuoto = tE3 ? tE3.quanti() : -1;
+      const bE3b = bancoFinto(e3.db, V, {});
+      const rE3b = await giro(bE3b, { taccuino: tE3 });
+      di(taccDopoVuoto === 0 && bE3b.log.segna.length === 3 && (rE3b.saltate | 0) === 0 &&
+         conta(e3.db, 1) === 1 && conta(e3.db, -1) === 1,
+         'E3b) e la prova a vuoto NON avvelena il taccuino: il giro vero dopo le rimanda tutte e tre',
+         'taccuino dopo il giro a vuoto ' + taccDopoVuoto + ' righe, poi ' + (rE3b.saltate | 0) +
+         ' saltate e ' + bE3b.log.segna.length + ' rimandate, ' +
+         'verificata 1:' + conta(e3.db, 1) + ' -1:' + conta(e3.db, -1));
 
       /* E4 — IL RITMO, DICHIARATO. La staffetta si impone da se' un tetto
          di FRENO_TETTO righe al minuto (il freno del database, che vale
@@ -762,6 +949,127 @@ const sosp = (db, id) => (db.allenatore.get(id) || {}).sospetto | 0;
       di(tracciati.length > 0 && sospetti.length === 0,
          'F4) nessuna chiave di servizio dentro i ' + tracciati.length + ' file tracciati del repo',
          sospetti.length ? sospetti.slice(0, 3).join(', ') : 'zero su ' + tracciati.length);
+    }
+
+    /* =================================================================
+       G) IL FILO — bancoVero contro un server che parla PostgREST
+       ================================================================= */
+    if (vuole('G')) {
+      titolo('G) IL FILO — la via, i filtri, le intestazioni e i nomi degli argomenti, contro un server finto');
+
+      const gdb = scenaTre();
+      const srv = await serviPostgrest(gdb.db, V, {});
+      const CHIAVE = 'chiave-di-servizio-finta-138';
+      let rG = { esiti: [], guasto: 'il modulo non c\'e\'' };
+      try {
+        if (haS) {
+          const bv = S.bancoVero({ url: srv.url, chiave: CHIAVE, nome: 'prova' });
+          rG = await giro(bv, { taccuino: tacNuovo() });
+        }
+      } catch (e) { rG = { esiti: [], guasto: 'ESPLOSA: ' + e.message }; }
+      if (rG.guasto) info('guasto del giro:', rG.guasto);
+
+      di(!rG.guasto && conta(gdb.db, 1) === 1 && conta(gdb.db, -1) === 1 && conta(gdb.db, 0) === 1 &&
+         sosp(gdb.db, 'B') === 1 && invariante(gdb.db).length === 0,
+         'G1) il giro INTERO passa dal filo e chiude le righe: una a 1, una a -1, una ancora aperta',
+         'verificata 1:' + conta(gdb.db, 1) + ' -1:' + conta(gdb.db, -1) + ' 0:' + conta(gdb.db, 0) +
+         ', sospetto B ' + sosp(gdb.db, 'B'));
+
+      const pesche = srv.log.richieste.filter(r => r.via === '/rest/v1/sfida');
+      const q0 = pesche.length ? pesche[0].query : '';
+      di(pesche.length > 0 && /(^|&)verificata=eq\.0(&|$)/.test(q0) && /(^|&)order=id\.asc(&|$)/.test(q0) &&
+         /(^|&)limit=\d+(&|$)/.test(q0) && /select=[^&]*replay/.test(q0),
+         'G2) la pesca chiede verificata=eq.0, in ordine di id, con un tetto e col replay fra le colonne',
+         q0 ? decodeURIComponent(q0).slice(0, 110) : 'nessuna pesca');
+
+      const rpc = srv.log.richieste.filter(r => r.via === '/rest/v1/rpc/segna_verdetto');
+      const corpi = rpc.map(r => { try { return JSON.parse(r.corpo || '{}'); } catch (e) { return {}; } });
+      const parole = corpi.map(c => c.verdetto);
+      di(rpc.length === 3 && corpi.every(c => typeof c.s_id === 'number' && typeof c.verdetto === 'string') &&
+         parole.every(p => VERDETTI.includes(p)),
+         'G3) segna_verdetto si chiama con s_id e con LA PAROLA, tre volte su tre — il nome dell\'argomento e\' quello dell\'SQL',
+         rpc.length + ' chiamate: ' + corpi.map(c => '#' + c.s_id + ' ' + c.verdetto).join(' · '));
+
+      const freni = srv.log.richieste.filter(r => r.via === '/rest/v1/rpc/frena');
+      const cf = freni.length ? (() => { try { return JSON.parse(freni[0].corpo || '{}'); } catch (e) { return {}; } })() : {};
+      di(freni.length === 3 && cf.k === 'staffetta:prova' && cf.tetto > 0 && cf.secondi > 0,
+         'G4) il freno si chiede al database una volta per riga, con la chiave della staffetta',
+         freni.length + ' chiamate, ' + JSON.stringify(cf));
+
+      const tutte = srv.log.richieste;
+      di(tutte.length > 0 && tutte.every(r => r.apikey === CHIAVE && r.auth === 'Bearer ' + CHIAVE),
+         'G5) ogni richiesta porta la chiave di servizio in tutte e due le intestazioni, come rete/lib/comuni.js',
+         tutte.length + ' richieste, apikey e Bearer su tutte');
+
+      /* G6 — IL CURSORE. Con una riga gia' nel taccuino e un tetto di
+         due, la prima pagina ne rende due e una si salta: la staffetta
+         deve chiedere LA PAGINA DOPO, se no le righe gia' viste
+         mangerebbero la finestra e le nuove non arriverebbero mai. */
+      const g2db = scenaTre();
+      const srv2 = await serviPostgrest(g2db.db, V, {});
+      const tacG = tacNuovo();
+      if (tacG) tacG.segna(g2db.ids.torna, { verdetto: 'ALTRO MOTORE', causa: 'finta', misura: '915x412', quando: '' });
+      let rG2 = { saltate: 0 };
+      try {
+        if (haS) rG2 = await giro(S.bancoVero({ url: srv2.url, chiave: CHIAVE, nome: 'prova' }),
+                                  { taccuino: tacG, tetto: 2 });
+      } catch (e) { rG2 = { saltate: 0, guasto: e.message }; }
+      const pesche2 = srv2.log.richieste.filter(r => r.via === '/rest/v1/sfida');
+      const conCursore = pesche2.filter(r => /(^|&)id=gt\.\d+(&|$)/.test(r.query));
+      di(pesche2.length >= 2 && conCursore.length >= 1 && (rG2.saltate | 0) === 1 &&
+         (rG2.esiti || []).length === 2,
+         'G6) le righe gia' + '\' viste non mangiano la finestra: si chiede la pagina dopo col cursore id=gt.',
+         pesche2.length + ' pagine, ' + conCursore.length + ' col cursore, ' +
+         (rG2.saltate | 0) + ' saltate, ' + (rG2.esiti || []).length + ' giudicate');
+
+      srv.chiudi(); srv2.chiudi();
+
+      /* G7 — IL PROGRAMMA VERO, lanciato come si lancia in esercizio:
+         `node strumenti/staffetta.js` con le due variabili d'ambiente.
+         Apre il suo server del gioco, il suo browser, e chiude le righe.
+         E' l'unica prova che tocca main(), serviGioco() e la riga di
+         comando — cioe' tutto quel che un banco che chiama `giro` da
+         dentro non vedrebbe mai. */
+      const g3db = scenaTre();
+      const srv3 = await serviPostgrest(g3db.db, V, {});
+      const viaTaccCli = path.join(tmp, 'taccuino-cli.json');
+      /* SPAWN E NON SPAWNSYNC, e la trappola e' costata un ETIMEDOUT:
+         `spawnSync` blocca il ciclo degli eventi del processo padre, e
+         il server finto che il figlio deve interrogare vive PROPRIO in
+         questo processo. Bloccato il padre, nessuno risponde, e il
+         figlio aspetta finche' il tetto lo ammazza — un rosso che
+         accusava la staffetta per colpa del banco. */
+      const esec = haS ? await new Promise(ok => {
+        /* SI LANCIA IL MODULO SOTTO MISURA, non `strumenti/staffetta.js`
+           a mano: con il percorso fisso questa prova restava verde su
+           OGNI falso, perche' lanciava sempre quello onesto. Trovata dal
+           falso `filo` il 22 settembre 2026 — era la seconda riga di
+           questo banco che attestava invece di misurare. */
+        const p = spawn(process.execPath,
+          [viaS, '--tetto', '3', '--pausa', '0',
+           '--taccuino', viaTaccCli, '--nome', 'cli'],
+          { cwd: RADICE,
+            env: Object.assign({}, process.env, { SUPABASE_URL: srv3.url, SUPABASE_SERVICE_KEY: CHIAVE }) });
+        let out = '', err = '';
+        p.stdout.on('data', d => { out += d; });
+        p.stderr.on('data', d => { err += d; });
+        const morte = setTimeout(() => { try { p.kill(); } catch (e) {} }, 180000);
+        p.on('close', c => { clearTimeout(morte); ok({ status: c, stdout: out, stderr: err }); });
+        p.on('error', e => { clearTimeout(morte); ok({ status: null, stdout: out, stderr: String(e && e.message) }); });
+      }) : { status: 1, stdout: '', stderr: 'il modulo non c\'e\'' };
+      const usc = esec.status;
+      const detto = String(esec.stdout || '');
+      di(usc === 0 && conta(g3db.db, 1) === 1 && conta(g3db.db, -1) === 1 && conta(g3db.db, 0) === 1 &&
+         sosp(g3db.db, 'B') === 1 && fs.existsSync(viaTaccCli) &&
+         detto.indexOf(CHIAVE) < 0,
+         'G7) `node strumenti/staffetta.js` lanciato davvero chiude le righe, scrive il taccuino e non stampa la chiave',
+         'uscita ' + usc + ', verificata 1:' + conta(g3db.db, 1) + ' -1:' + conta(g3db.db, -1) +
+         ' 0:' + conta(g3db.db, 0) + ', taccuino ' + (fs.existsSync(viaTaccCli) ? 'scritto' : 'ASSENTE') +
+         (usc !== 0 ? ' — ' + String((esec.error && esec.error.message) || esec.stderr ||
+                                     detto || 'nessun messaggio').slice(0, 200).replace(/\n/g, ' | ') : ''));
+      for (const r of detto.split('\n').filter(l => /pescate|verdetti|righe chiuse|tempi/.test(l)))
+        info('dal programma:', r.trim());
+      srv3.chiudi();
     }
   } catch (e) {
     console.error('FALLITO (banco): ' + (e && e.stack || e));

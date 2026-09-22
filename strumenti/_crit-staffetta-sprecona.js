@@ -36,7 +36,7 @@ const B = require('./_crit-staffetta.js');
 B.falso({
   nome: 'sprecona',
   titolo: 'ogni riga e\' un gruppo per conto suo, e il browser si riapre da capo',
-  morde: 'MISURATO: A4 (sei gruppi invece di tre) e C4 (sei contesti per sei righe)',
+  morde: 'MISURATO (sweep del 22 settembre 2026, banco a 42 controlli): A4 C4 — 2 su 42 — sei gruppi invece di tre, e sei contesti per sei righe',
   cambi: [
     { cerca: "    const chiave = m ? (m[0] + 'x' + m[1]) : 'ignota';",
       metti: '    /* IL FALSO (_crit-staffetta-sprecona.js): «tanto la misura la\n' +

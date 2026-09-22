@@ -908,6 +908,12 @@ const CANCELLI = [
      nastro fra due telefoni, non il verdetto. E nessuno degli altri
      quarantacinque si accorgerebbe se il giudice cominciasse a dire
      sempre TORNA (o, peggio, sempre NON TORNA).
+     RETTIFICA A EDIZIONI (22 settembre 2026, voce #138): da oggi uno c'e',
+     e si chiama `staffetta` — il suo gruppo B chiede QUATTRO verdetti
+     diversi in una corsa sola, quindi un giudice che ne dicesse sempre
+     uno lo farebbe cadere. Resta vero che `giudice` e' l'unico a provare
+     il CONTRATTO (le rose dal nastro, le sponde forzate, il salvataggio
+     che non si muove): `staffetta` prova il giro, non il giudice.
 
      Misurato su macchina di sviluppo: ~17 s da solo, sotto la soglia dei
      30-40 s che qui chiede lento (modello `audio.js`) — non lento. */
@@ -1085,6 +1091,85 @@ const CANCELLI = [
      ognuno costruito nel caso peggiore, ognuno bocciato dalla sua prova
      e da nessun'altra. */
   { nome: 'sospetto',          cmd: ['strumenti/_q-sospetto.js'],                       conta: true,  lento: false },
+  /* =====================================================================
+     staffetta: IL VERIFICATORE DIFFERITO GIRA DAVVERO? (voce #138).
+
+     E' L'ULTIMO PEZZO DELL'ONDA D, e il primo cancello che misura il
+     GIRO INTERO invece di un capo solo: dal database alla finestra
+     giusta, dal giudice alla parola che torna indietro. Fino al 22
+     settembre 2026 il verificatore differito era tre capi e nessun
+     mezzo — `giudice` provava la capacita' (voce #133), `sigillo` il
+     tubo fino all'occhio (#134), `sospetto` l'altro capo nel database
+     (#137) — e in mezzo non c'era niente. Tre file del repo lo dicevano
+     in chiaro: «manca quello, e non manca altro».
+
+     CHE COSA NESSUN ALTRO CANCELLO VEDE. `giudice` chiama `giudica` a
+     mano, su una pagina che il banco ha aperto lui e della misura che
+     vuole lui; `sospetto` applica verdetti che il banco si e' scritto da
+     se'. Nessuno dei due guarda chi SCEGLIE le righe, chi DECIDE quale
+     finestra aprire, chi manda la parola e che cosa succede se muore a
+     meta'.
+
+       A) LA FORMA, e la misura letta dal nastro PRIMA di aprire il
+          browser — che e' l'ordine obbligato, perche' e' la misura a
+          decidere quale browser aprire. Leggerla in Node non puo'
+          accusare nessuno: se sbagliasse, `giudica` la ricontrolla e
+          risponde INCOMPLETO/schermo-diverso, cioe' un «non lo so».
+       B) IL GIRO COMPLETO su sei sfide finte, con QUATTRO verdetti
+          diversi in una corsa sola (il quinto, NON FINISCE, in un giro
+          a parte con la rigiocata stretta a 300 fotogrammi). Due righe
+          si chiudono a 1, due a -1, e DUE RESTANO APERTE: il sospetto
+          sale solo su chi ha i NON TORNA, e l'invariante del #137 regge
+          dopo il giro.
+       C) LA MISURA GIUSTA, e non si prova con la fixture congelata: il
+          banco GIOCA una sfida vera a 1024x460 dentro la corsa. Quattro
+          righe su sei sono a 915x412, e senza quella riga «apre la
+          misura giusta» sarebbe un racconto verde anche su una
+          staffetta cieca. E la FINESTRA NEGATA: quando la misura
+          chiesta non si ottiene la colpa e' della macchina, non del
+          nastro, e quella riga NON deve finire nel taccuino — se no la
+          si perde per sempre.
+       D) LA RIPARTENZA in quattro modi: la risposta persa, la chiamata
+          mai partita, il taccuino cancellato e due staffette che
+          pescarono insieme. Nessuna riga persa, nessuna giudicata due
+          volte tranne quella interrotta, e lo stato finale sempre
+          quello del giro pulito.
+       E) IL RITMO E I FRENI. Nessun freno del server tocca questo
+          processo — i sei `frenato(...)` stanno negli endpoint, e la
+          staffetta non passa da nessun endpoint — quindi si frena da
+          se', e il cancello guarda se SI FERMA davvero. E la prova a
+          vuoto: giudica, non manda niente, e NON avvelena il taccuino
+          (se no il giro vero del giorno dopo salterebbe righe che
+          nessuno ha mai mandato a nessuno).
+       F) LE PORTE E LA CHIAVE: cinque endpoint, `segna_verdetto` ancora
+          revocata, la chiave che non compare nei messaggi di guasto e
+          nessuna chiave di servizio nei file tracciati del repo.
+       G) IL FILO, contro un server che parla la FORMA di PostgREST: la
+          via, i filtri, le intestazioni, i nomi degli argomenti — e il
+          PROGRAMMA VERO lanciato come si lancia in esercizio, con le
+          due variabili d'ambiente. E' l'unico gruppo che tocca `main()`
+          e la riga di comando.
+
+     E DICE I SUOI LIMITI invece di fingerli, come il #137: l'SQL non si
+     esegue (non c'e' un Postgres nel repo, e il lato-database del banco
+     e' `applica()` di rete/lib/verdetto.js); PostgREST si interroga ma
+     e' FINTO (se la funzione cambiasse firma nello schema vero, qui non
+     si vedrebbe); il ritmo e' misurato su questa macchina e non su un CI.
+
+     SA FALLIRE: DIECI falsi (`_crit-staffetta-*`), ognuno costruito nel
+     caso peggiore. DUE di loro hanno riparato il banco prima di esserne
+     bocciati, ed e' la ragione per cui i falsi si costruiscono: `cieca`
+     passava C2 (la prova leggeva la chiave del gruppo invece della
+     finestra aperta davvero) e `filo` passava G7 (la prova lanciava
+     `strumenti/staffetta.js` per percorso fisso, quindi provava sempre
+     quella onesta). Due righe che attestavano invece di misurare, in un
+     banco scritto per non farlo. E QUATTRO sono nati dalla domanda
+     opposta — quale asserzione non ha un giudice? — di cui uno,
+     `avvelenata`, ha trovato un difetto VERO: la staffetta scriveva nel
+     taccuino anche durante il giro a vuoto, e il giro vero del giorno
+     dopo avrebbe saltato righe che nessuno aveva mai mandato a nessuno.
+     Non sbagliava niente: dimenticava. */
+  { nome: 'staffetta',         cmd: ['strumenti/_q-staffetta.js'],                      conta: true,  lento: true  },
   /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici

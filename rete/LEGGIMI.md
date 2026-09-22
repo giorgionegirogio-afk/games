@@ -119,6 +119,49 @@ si ripulisce da sola.
 >
 > Verbale completo: `MANUALE.md` §A registro, voce #134.
 
+> **COMPIMENTO A EDIZIONI (22 settembre 2026, voce #138).** Il lavoratore
+> **esiste**, e si chiama `strumenti/staffetta.js`. Le tre righe in cima a
+> questa sezione — «se il replay non riproduce il punteggio dichiarato, i
+> punti si tolgono» — smettono oggi di essere una promessa
+> architetturale: c'è il processo che le esegue.
+>
+> **Il giro, in sei passi:** pesca le righe a `verificata = 0` (l'indice
+> parziale c'era dal primo giorno), allarga il replay, legge la misura
+> dalla riga di tipo 10, apre **un contesto di browser per misura**,
+> chiama `window.__test.giudica`, e passa **la parola** — mai un numero —
+> a `segna_verdetto`.
+>
+> **Non è un endpoint, e non lo diventerà.** Una funzione Vercel non ha un
+> browser, e il giudice *è* il gioco. Si lancia a mano o da un CI, con
+> `SUPABASE_URL` e `SUPABASE_SERVICE_KEY` **nell'ambiente**: la stessa
+> porta delle cinque funzioni, non una sesta. Gli endpoint restano cinque,
+> RLS resta acceso su tutte e sei le tabelle con zero policy.
+>
+> **La staffetta non traduce.** Manda la parola per tutti e cinque i
+> verdetti, compresi i tre «non lo so», che costano una chiamata che non
+> muove niente e comprano un cammino solo. La tavola resta del database,
+> dove la voce #137 l'ha messa.
+>
+> Misurato (`strumenti/_q-staffetta.js`, **42 controlli su 42** in sette
+> gruppi): sei sfide, quattro verdetti diversi, **due righe chiuse a 1,
+> due a −1, due ancora aperte a 0**; il sospetto sale **solo**
+> sull'attaccante dei due `NON TORNA` e di uno per riga; i suoi punti
+> tornano indietro per intero (1038 → 1000). Una sfida vera giocata a
+> **1024x460** dentro la corsa **TORNA**, e lo stesso nastro aperto di
+> forza a 915x412 dice `INCOMPLETO / schermo-diverso`: **mai** `NON
+> TORNA`. Ritmo: **34 righe al minuto**, due chiamate al database per
+> riga più una per giro.
+>
+> **E c'è un taccuino locale**, che non è nel database e non ci deve
+> stare: i tre «non lo so» lasciano la riga a `verificata = 0` per
+> disegno, quindi tornerebbero nella pesca a ogni giro. Il taccuino
+> ricorda quali sono già state guardate — e **può sparire senza che
+> nessuno venga accusato due volte**: a proteggere dalle accuse doppie è
+> la guardia `and verificata = 0` dentro `segna_verdetto`, non il
+> quaderno.
+>
+> Verbale completo: `MANUALE.md` §A registro, voce #138.
+
 ### 3. Tempo reale in lockstep
 
 Due telefoni, stesso seme, si scambiano i comandi via WebSocket (Supabase

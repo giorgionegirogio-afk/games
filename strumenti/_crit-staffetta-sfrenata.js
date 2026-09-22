@@ -30,8 +30,7 @@ const B = require('./_crit-staffetta.js');
 B.falso({
   nome: 'sfrenata',
   titolo: 'chiede il permesso al freno e poi tira dritto',
-  morde: 'MISURATO: E1 (il freno dice no e la staffetta va avanti) ed E1b, che e\' la sua ' +
-         'conseguenza — non resta piu\' niente da riprendere',
+  morde: 'MISURATO (sweep del 22 settembre 2026, banco a 42 controlli): E1 E1b — 2 su 42 — il freno dice no e la staffetta va avanti; E1b e la conseguenza',
   cambi: [
     { cerca: B.A_FRENO,
       metti: '        /* IL FALSO (_crit-staffetta-sfrenata.js): la chiamata c\'e\', il\n' +

@@ -62,10 +62,28 @@
      SUPABASE_URL=... SUPABASE_SERVICE_KEY=... node strumenti/staffetta.js
      node strumenti/staffetta.js --tetto 20 --pausa 500
      node strumenti/staffetta.js --asciutto        (giudica e non scrive)
+     node strumenti/staffetta.js --riprova         (ignora il taccuino)
+     node strumenti/staffetta.js --nome notturna   (il suo freno nel db)
      node strumenti/staffetta.js --gioco fuori/x.html
-   Le due credenziali stanno NELL'AMBIENTE e mai nel repo: sono le
+     node strumenti/staffetta.js --fotogrammi 6000 (rigiocata piu' corta)
+     node strumenti/staffetta.js --taccuino altro/percorso.json
+
+   LE DUE CREDENZIALI STANNO NELL'AMBIENTE E MAI NEL REPO: sono le
    stesse due di rete/lib/comuni.js, cioe' la stessa porta delle cinque
-   funzioni Vercel, non una sesta.
+   funzioni Vercel, non una sesta. Senza, la staffetta non parte e lo
+   dice (uscita 2). E non le stampa mai, nemmeno dentro a un messaggio
+   di guasto: un errore di rete che se le porta dietro finisce in un
+   registro, e un registro si legge.
+
+   IL GIOCO CHE SI APRE DEVE ESSERE QUELLO CHE HA REGISTRATO I NASTRI,
+   o almeno uno dello stesso MOTORE_V: una copia piu' vecchia direbbe
+   ALTRO MOTORE su tutto. Non e' un danno — ALTRO MOTORE e' un «non lo
+   so» e non muove un punto — ma e' un giro buttato via, e il referto lo
+   fa vedere (i verdetti si contano uno per uno).
+
+   uscite:  0 giro fatto · 1 guasto durante il giro (il referto dice
+            quale, e le righe non giudicate restano a 0) · 2 non e'
+            partita (credenziali assenti, o il gioco non c'e').
    ===================================================================== */
 const fs = require('fs');
 const http = require('http');
@@ -437,8 +455,16 @@ async function giro(opz) {
            tre «non lo so», che restano a 0 per disegno e altrimenti si
            rimacinerebbero per sempre. */
         const daRicordare = !!tac && !finestraNegata && !!parola;
-        if (daRicordare) tac.segna(r.id, { verdetto: parola, causa: vv.causa || '',
-                                           misura: g.chiave, quando: new Date().toISOString() });
+        /* E LA PROVA A VUOTO NON SCRIVE NEL TACCUINO. Sembra un
+           dettaglio ed e' l'opposto: `--asciutto` giudica e non manda
+           niente, quindi quelle righe restano a `verificata = 0`. Se
+           finissero nel taccuino, il giro VERO del giorno dopo le
+           salterebbe — e nessuno le guarderebbe mai piu'. Una prova a
+           vuoto che fa perdere righe e' peggio di nessuna prova a
+           vuoto. */
+        if (daRicordare && !asciutto)
+          tac.segna(r.id, { verdetto: parola, causa: vv.causa || '',
+                            misura: g.chiave, quando: new Date().toISOString() });
         if (pausa) await P.pag.waitForTimeout(pausa);
       }
     } catch (e) {

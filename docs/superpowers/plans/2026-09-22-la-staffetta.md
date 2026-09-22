@@ -115,6 +115,24 @@ Commit `(voce #138, compito 1)`.
 I gruppi **A**, **B**, **C**, **E** e **F** diventano verdi; **D** resta rosso
 finché il taccuino non ha la regola della ripartenza (compito 3).
 
+**Rettifica a edizioni (compito 2).** Le due righe qui sopra sono superate: al
+compito 2 il banco è verde su **tutti e sei** i gruppi, **32 su 32**. La regola
+della ripartenza non si è potuta separare dal taccuino perché *è* il taccuino
+— che cosa ci entra e che cosa no — e scrivere il taccuino senza quella regola
+avrebbe voluto dire scrivere un taccuino sbagliato apposta per un compito.
+Quel che il compito 3 fa davvero: i dieci falsi provati uno per uno, la
+registrazione in `tutti.js`, la batteria, il verbale e le rettifiche.
+
+**Due cose trovate al compito 2 e non previste**, tutte e due scritte per
+esteso nel verbale: (1) il banco misurava sé stesso — le scene ricominciano
+gli id da 1 e il taccuino è indicizzato per id, quindi con **un file solo** la
+riga 1 di una scena faceva saltare la riga 1 della scena dopo, e cinque prove
+su trentadue avevano un metro di paragone tarato sul niente («giro pulito:
+zero verificate»); (2) il falso `cieca` **passava** C2, perché la prova
+leggeva la chiave del gruppo invece della finestra aperta davvero. Da lì è
+nato anche il settimo falso, `sprecona`, per l'unica asserzione che nessuno
+dei sei condannava.
+
 Reti di sicurezza + batteria intera. Commit `(voce #138, compito 2)`.
 
 ## Compito 3 — ripartenza, freni, batteria, verbale
@@ -134,6 +152,34 @@ Reti di sicurezza + batteria intera. Commit `(voce #138, compito 2)`.
   `rete/schema.sql` (il commento della colonna `verificata`) e — se serve —
   il §A del #134. Si corregge accanto, con data e fonte, senza cancellare il
   testo vecchio.
+
+**Rettifica a edizioni (compito 3).** Il compito 3 ha fatto **tre cose che il
+piano non prevedeva**, e tutte e tre sono nate dalla stessa domanda: *quale
+asserzione, qui dentro, non ha un giudice?*
+
+1. **Il gruppo G, «il filo».** La spec dichiarava come limite «PostgREST non
+   si interroga: di `bancoVero` si misura la forma, non il viaggio». Era un
+   buco, non un limite: ci passava un difetto — l'argomento di
+   `segna_verdetto` chiamato `id` invece di `s_id` — che avrebbe lasciato la
+   staffetta girare per sempre senza chiudere **una** riga, con tutto il
+   resto del banco verde. Sette prove nuove, contro un `http` che parla la
+   forma di PostgREST, e l'ultima lancia **il programma vero**. Da lì il
+   falso `filo`.
+2. **C6/C6b, «la finestra negata».** La regola era scritta in tre documenti
+   (spec, `rete/schema.sql`, verbale) e **misurata in nessuno**. Due prove
+   nuove e il falso `rassegnata` per condannarle.
+3. **E3b, «la prova a vuoto non avvelena il taccuino» — e qui la domanda ha
+   trovato un difetto VERO, non un buco del banco.** La staffetta scriveva
+   nel taccuino anche durante `--asciutto`: quel giro giudica e non manda
+   niente, quindi quelle righe restano a `verificata = 0`, e messe nel
+   taccuino il giro vero del giorno dopo le avrebbe **saltate** — perse per
+   sempre, senza che niente diventasse rosso da nessuna parte. Non sbagliava
+   niente: **dimenticava**. Curato, con la prova e il falso `avvelenata`.
+
+Il banco passa così da 32 a **42 controlli** e i falsi da sei a **dieci**. E il
+falso `filo` ha trovato la seconda riga che attestava invece di misurare
+(G7 lanciava `strumenti/staffetta.js` per percorso fisso, quindi provava
+sempre quella onesta), dopo la C2 trovata da `cieca` al compito 2.
 
 Commit `(voce #138, compito 3)`.
 

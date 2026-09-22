@@ -39,7 +39,7 @@ const B = require('./_crit-staffetta.js');
 B.falso({
   nome: 'zitta',
   titolo: 'manda solo le accuse, i TORNA li tiene per se\'',
-  morde: 'MISURATO: B2 e B6, e di rimbalzo D4, E1, E1b ed E2 — sei prove che contano le chiamate al database, e questo falso ne fa meno per costruzione. Passa invece tutto A, tutto C, tutto F, B1/B3/B4/B5/B7 e D1/D2/D3/D3b/D5',
+  morde: 'MISURATO (sweep del 22 settembre 2026, banco a 42 controlli): B2 B6 C6b D4 E1 E1b E2 E3b G1 G3 G7 — 11 su 42 — zero righe chiuse a 1, e sei prove che contano le chiamate al database',
   cambi: [
     { cerca: B.A_MANDA,
       metti: "        /* IL FALSO (_crit-staffetta-zitta.js): «i TORNA non cambiano\n" +

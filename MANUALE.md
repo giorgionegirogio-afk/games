@@ -517,6 +517,229 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **La staffetta — #138 CANTIERE CHIUSO** (voce #138, 22 settembre 2026,
+  quattro compiti dal merge-base `8127f6c` — spec
+  `docs/superpowers/specs/2026-09-22-la-staffetta-design.md`, piano
+  `docs/superpowers/plans/2026-09-22-la-staffetta.md`). **Il pezzo
+  mancante che chiude l'onda D** — e rettifica a edizioni della voce #137
+  qui sotto, che si era dichiarata «ultimo cantiere dell'onda D»: lo era
+  dei cantieri *progettati*, non dei pezzi *mancanti*, e lo diceva lei
+  stessa in fondo («quel che ancora non c'è: la staffetta»).
+  `git diff main -- CALCETTO-il-gioco.html`
+  è **vuoto** e `MOTORE_V` resta **2**: la capacità c'era già. Di `rete/`
+  cambiano **solo commenti** — due rettifiche a edizioni, perché due file
+  dicevano in chiaro che questa cosa non esisteva.
+
+  **Il fatto da cui parte tutto.** L'onda D aveva costruito tre capi su
+  quattro, e li aveva dichiarati uno per uno: la **capacità**
+  (`giudica()`, cinque verdetti, e solo `NON TORNA` muove punti — #133),
+  il **tubo** che porta la colonna `verificata` fino alla riga della
+  lista (#134), l'**altro capo** nel database (`segna_verdetto`, il
+  sospetto che nasce solo da un `NON TORNA` — #137). Mancava **il
+  mezzo**, e tre file del repo lo scrivevano con queste parole: «il
+  processo che pesca le righe a `verificata = 0`, apre il browser della
+  misura giusta, chiama `giudica` e riporta la parola. **Manca quello, e
+  non manca altro**» (`rete/schema.sql`, seguito del #137). Finché non
+  esisteva, «la classifica si ripulisce da sola» era una **promessa
+  architetturale** — cioè esattamente ciò che il mandato §10.5 chiede di
+  ribaltare.
+
+  **(a) DOVE VIVE, E PERCHÉ NON È UN ENDPOINT.** `strumenti/staffetta.js`,
+  un processo che si lancia. Due ragioni, e nessuna è una preferenza:
+  una funzione Vercel **non ha un browser**, e il giudice *è* il gioco
+  (un secondo motore scritto in Node divergerebbe per costruzione e
+  toglierebbe punti a innocenti — è l'argomento con cui il #133 ha messo
+  `giudica` dentro all'HTML); e «un endpoint che accetta *questa sfida
+  non torna* sarebbe il modo più corto per far togliere i punti a un
+  avversario scrivendo il suo identificativo», che stava già scritto
+  sopra `segna_verdetto`. Gli endpoint restano **cinque**, RLS resta
+  acceso su tutte e sei le tabelle con zero policy, nessuna tabella,
+  nessuna colonna, nessun `grant`.
+
+  **(b) IL GIRO, IN SEI PASSI.** Pesca le righe a `verificata = 0` (a
+  pagine, con un cursore: l'indice parziale `sfida_daverificare` c'era
+  dal primo giorno) → allarga il replay (deflate-raw + base64url) →
+  **raggruppa per la misura scritta nella riga di tipo 10** → apre **un
+  contesto per misura, non uno per riga** → chiama
+  `window.__test.giudica` → manda **la parola** a `segna_verdetto`.
+
+  **(c) LA MISURA SI LEGGE IN NODE, E NON PUÒ ACCUSARE NESSUNO.** Va
+  letta *prima* di aprire il browser, perché è lei a decidere quale
+  browser aprire. Se il lettore in Node sbagliasse, `giudica` — che la
+  ricontrolla da sé dentro `vagliaNastro` — risponderebbe
+  `INCOMPLETO / schermo-diverso`, cioè **un «non lo so», mai un `NON
+  TORNA`**. Il lettore in Node può far perdere tempo; non può far
+  togliere punti. È la riga che rende sicura tutta questa parte.
+
+  **(d) LA STAFFETTA NON TRADUCE**, ed è la cosa più importante del
+  cantiere. Manda la parola così com'è, **tutti e cinque i verdetti,
+  sempre**, compresi i tre «non lo so»: costano una chiamata che non
+  muove niente e comprano **un cammino solo**. Una staffetta che
+  decidesse da sé quali verdetti spedire avrebbe dentro di sé un `if`
+  sulla tavola dei cinque, cioè una **terza porta** scritta peggio delle
+  due che ci sono. La tavola resta del database.
+
+  **(e) DUE STRATI DI IDEMPOTENZA, E NON SONO LA STESSA COSA.**
+  Confonderli è il modo di credere di essere protetti quando non lo si è.
+  La **struttura** (`where id = s_id and verificata = 0`) protegge dalle
+  **accuse doppie**; il **taccuino** — un file locale, `id → {verdetto,
+  causa, misura, quando}` — protegge solo dal **lavoro sprecato**, perché
+  i tre «non lo so» restano a 0 per disegno e tornerebbero nella pesca a
+  ogni giro. La riga che li tiene insieme: **il taccuino può sparire
+  senza che nessuno venga accusato due volte.** Una eccezione misurata:
+  un `INCOMPLETO / schermo-diverso` su una riga per cui la staffetta
+  aveva chiesto *proprio quella misura* non è un «non lo so» del nastro,
+  è **la finestra negata** dalla macchina che ospita — si grida nel
+  referto e la riga torna al giro dopo. *(Era una regola affermata in tre
+  punti e misurata in nessuno: C6/C6b sono nate al compito 3, e il falso
+  `rassegnata` — che scrive anche quella riga nel taccuino — per
+  condannarle. Misurato: la riga non entra nel taccuino, il referto grida
+  «chiesta 915x412, serve 1024x460», e il giro dopo la stessa riga
+  `TORNA`.)*
+
+  **(f) I FRENI, e il fatto che andava detto: nessun freno del server
+  tocca questo processo.** I sei `frenato(...)` stanno negli **endpoint**,
+  e la staffetta non passa da nessun endpoint — parla a PostgREST con la
+  chiave di servizio, come le funzioni Vercel. Proprio per questo **si
+  frena da sé**, con lo stesso meccanismo e nello stesso posto
+  (`frena('staffetta:<nome>', 60, 60)`), perché due staffette lanciate
+  insieme non condividono memoria. Più due freni locali: `--tetto` righe
+  per giro (50) e `--pausa` fra una riga e l'altra (1000 ms).
+
+  **(g) IL FILO, aggiunto al compito 3 perché era un buco.** La spec
+  dichiarava «PostgREST non si interroga: di `bancoVero` si misura la
+  forma, non il viaggio» — e da quel buco ci passava un difetto che non
+  si sarebbe visto da nessun'altra parte: l'argomento di
+  `segna_verdetto` chiamato `id` invece di `s_id`. La staffetta
+  pescherebbe bene, aprirebbe la finestra giusta, giudicherebbe bene,
+  riferirebbe sei verdetti corretti — e **nessuna riga si chiuderebbe
+  mai**, perché PostgREST risponde 400. Adesso il gruppo **G** misura il
+  filo contro un `http` che parla la **forma** di PostgREST (`eq.`/`gt.`,
+  `order`, `limit`, `select`, le funzioni sotto `/rpc/` che tornano un
+  array), e chiude con **il programma vero**: `node
+  strumenti/staffetta.js` con le due variabili d'ambiente, che apre il
+  suo server del gioco e il suo browser, chiude le righe, scrive il
+  taccuino e non stampa la chiave. È l'unico gruppo che tocca `main()` e
+  la riga di comando.
+
+  **LE MISURE**, tutte del 22 settembre 2026 su questa macchina
+  (`strumenti/_q-staffetta.js`, **42 controlli su 42** in sette gruppi;
+  nasceva a **29 rossi su 32**, e i tre verdi erano guardie di repo che
+  non parlano della staffetta):
+
+  | che cosa | numero |
+  |---|---|
+  | aprire un contesto e caricare il gioco | **1 077 ms** |
+  | un giudizio (≈8 800 passi rigiocati) | **773 ms** medi su sei righe |
+  | un secondo giudizio sulla **stessa** pagina | **938 ms** (sonda) |
+  | giro di sei righe, tre finestre | **7,9 s** |
+  | ritmo con la pausa di serie | **34 righe/minuto** contro un tetto di 60 |
+  | chiamate al database | **2 per riga** + 1 per giro |
+
+  **Il giro completo, misurato.** Sei sfide finte con quattro verdetti
+  diversi in una corsa sola (il quinto, `NON FINISCE`, in un giro a parte
+  con la rigiocata stretta a 300 fotogrammi): `TORNA` · `NON TORNA` ·
+  `NON TORNA` · `ALTRO MOTORE` · `TORNA` · `INCOMPLETO/schermo-ignoto`.
+  **Due righe si chiudono a 1, due a −1, e due restano aperte a 0.** Il
+  sospetto sale **solo** sull'attaccante dei due `NON TORNA` e **di uno
+  per riga** (B=2, A=0, C=0); i suoi punti tornano indietro **per
+  intero** (1038 → 1000); e l'invariante del #137 regge dopo il giro — il
+  sospetto di ognuno **è** il numero delle sue righe a −1.
+
+  **La misura giusta, e non si prova con la fixture congelata.** Il banco
+  **gioca una sfida vera a 1024x460** dentro la corsa, e quella riga deve
+  tornare `TORNA`: quattro righe su sei sono a 915x412, e senza quella
+  riga «apre la misura giusta» sarebbe un racconto verde anche su una
+  staffetta cieca. Lo **stesso** nastro aperto di forza a 915x412 dice
+  `INCOMPLETO / schermo-diverso` e dichiara quale schermo serve: **mai**
+  `NON TORNA`. Tre contesti per sei righe.
+
+  **La ripartenza, in quattro modi.** La risposta persa (la chiamata è
+  arrivata, l'esito no): il giro si ferma, quello dopo finisce il lavoro,
+  **nessuna riga giudicata due volte** e lo stato finale è quello del
+  giro pulito. La chiamata mai partita: **quella riga — e solo quella —**
+  si rigiudica. Il taccuino cancellato: cambia il *lavoro*, non
+  l'*esito*. E due staffette che pescarono insieme (la pesca stantia):
+  la seconda rimanda tutti e tre i verdetti e **la guardia della
+  struttura non fa disfare niente due volte** — è l'unico caso in cui
+  quella guardia viene davvero esercitata, ed è la ragione per cui
+  esiste.
+
+  **SA FALLIRE: dieci falsi** (`_crit-staffetta-*`), ognuno costruito nel
+  caso peggiore, ognuno con la lista **misurata** di ciò che morde —
+  `accusa` (i tre «non lo so» diventano `NON TORNA`) · `cieca` (apre
+  sempre la sua finestra) · `numero` (manda −1 invece della parola: il
+  chiamante che le due porte del #137 esistono per non credere) ·
+  `smemorata` (il taccuino ricorda solo ciò che il database ricorda già)
+  · `sfrenata` (chiede il permesso al freno e tira dritto) · `zitta`
+  (manda solo le accuse) · `sprecona` (un contesto per riga) · `filo`
+  (l'argomento si chiama `id` invece di `s_id`) · `rassegnata` (anche la
+  finestra negata finisce nel taccuino) · `avvelenata` (la prova a vuoto
+  scrive nel taccuino). Le liste per esteso stanno in testa a ciascun
+  falso.
+
+  **E DUE HANNO RIPARATO IL BANCO PRIMA DI ESSERNE BOCCIATI**, che è la
+  ragione per cui i falsi si costruiscono invece di raccontarli.
+  `cieca` **passava** C2: la prova leggeva la **chiave del gruppo** —
+  cioè quel che il *nastro dichiara* — invece della finestra **aperta
+  davvero**. `filo` **passava** G7: la prova lanciava
+  `strumenti/staffetta.js` per percorso fisso, quindi provava sempre
+  quella onesta qualunque cosa le si puntasse contro con `--staffetta`.
+  Due righe che attestavano invece di misurare, in un banco scritto per
+  non farlo, e a trovarle non è stato chi le ha scritte.
+
+  **E QUATTRO FALSI SONO NATI DALLA DOMANDA OPPOSTA** — *quale
+  asserzione, qui dentro, non ha un giudice?* — che è la stessa
+  disciplina vista dall'altro capo: `sprecona` per C4 (l'unica
+  asserzione che nessuno degli altri condannava), `filo` per tutto il
+  gruppo G, `rassegnata` per la **finestra negata** (una regola scritta
+  in tre documenti e misurata in nessuno), `avvelenata` per E3b.
+  Un'asserzione senza falso è un attestato.
+
+  **E L'ULTIMA DI QUELLE QUATTRO HA TROVATO UN DIFETTO VERO**, non un
+  buco del banco: la staffetta **scriveva nel taccuino anche durante il
+  giro a vuoto** (`--asciutto`). Quel giro giudica e non manda niente,
+  quindi le righe restano a `verificata = 0`: messe nel taccuino, il
+  giro vero del giorno dopo le avrebbe **saltate**, e non le avrebbe
+  guardate mai più nessuno — una riga onesta «DA VERIFICARE» per sempre,
+  e una disonesta pure. Il referto era pieno di verdetti giusti, il
+  database intatto, nessuno accusato. **Non sbagliava niente:
+  dimenticava.** Curato al compito 3, con la sua prova (E3b) e il suo
+  falso.
+
+  **E I LIMITI, dichiarati invece che taciuti** (la stessa dichiarazione
+  del #137): **l'SQL non si esegue** — non c'è un Postgres nel repo, il
+  lato-database del banco è `applica()` di `rete/lib/verdetto.js`, e la
+  corrispondenza con `segna_verdetto` è guardata *per testo* da
+  `_q-sospetto` D5, che dichiara di attestare; **PostgREST si interroga
+  ma è finto** — il gruppo G misura il filo, non il Postgres vero, e se
+  un giorno la funzione cambiasse firma nello schema qui non si
+  vedrebbe; **il ritmo è di questa macchina**, non di un CI; **si gira a
+  taglia 5**, dove il determinismo è pieno (voce #98) — che il *giudice*
+  torni anche a 7 e a 11 lo misura `giudice`, 14 partite oneste su 14,
+  zero falsi `NON TORNA` (#133), e il *giro* non cambia con la taglia; e
+  **quattro comportamenti della staffetta non hanno una prova** — il
+  ripiego del *freno rotto* (se `/rpc/frena` non risponde il giro va
+  avanti, come in `comuni.js`), `--riprova`, `--gioco` puntato a
+  un'altra copia, e il rifiuto di `serviGioco` quando il file non c'è:
+  tutti e quattro, al peggio, fanno lavoro in più o non partono, e
+  **nessuno dei quattro può muovere un punto**. E
+  **quattordici asserzioni su quarantadue non hanno un falso che le
+  condanni**, contate e non stimate (A1 A2 A3 A5 · D2 D5 · E3 E4 · F1 F2
+  F3 F4 · G2 G5): A ed F sono guardie di *forma* e di *porte* — restano
+  verdi anche senza la staffetta, e non devono sembrare di provare il
+  giro.
+
+  **La chiave non è nel repo**, e non è un'assicurazione: è un controllo
+  del cancello, che cerca nei **1 898 file tracciati** le due forme di
+  una chiave di servizio (un JWT `eyJ…`, o la variabile assegnata a un
+  valore lungo). Zero su 1 898 — e la soglia dei trenta caratteri è
+  deliberata, perché i banchi del repo assegnano credenziali *finte e
+  corte* apposta e un cancello che le chiamasse chiavi urlerebbe al lupo
+  finché nessuno lo guarda più.
+
+  `_q-staffetta` è in batteria con `conta:true` (70 s, `lento:true`).
+
 - **L'abbinamento per punti e il sospetto — #137 CANTIERE CHIUSO** (voce
   #137, 22 settembre 2026, quattro compiti dal merge-base `8a9b33d` —
   spec `docs/superpowers/specs/2026-09-22-abbinamento-punti-design.md`,

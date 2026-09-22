@@ -122,6 +122,25 @@ create index if not exists punti_ordine on punti (stagione, punti desc);
 -- Quel che ancora non esiste e' la STAFFETTA: il processo che pesca le
 -- righe a `verificata = 0`, apre il browser della misura giusta, chiama
 -- `giudica` e riporta la parola. Manca quello, e non manca altro.
+--
+-- COMPIMENTO A EDIZIONI (22 settembre 2026, voce #138). Le tre righe qui
+-- sopra sono superate: la staffetta ESISTE, e si chiama
+-- `strumenti/staffetta.js`. Non e' un endpoint (una funzione Vercel non
+-- ha un browser, e il giudice E' il gioco): si lancia a mano o da un CI
+-- con la chiave di servizio nell'ambiente, cioe' dalla stessa porta
+-- delle cinque funzioni. Pesca con questo indice, apre UN contesto per
+-- misura di schermo, e chiama `segna_verdetto` con LA PAROLA — mai con
+-- il numero, che e' esattamente il chiamante che la nota sopra la
+-- funzione diceva di non voler credere.
+--
+-- E LA COLONNA RESTA COM'E'. Questo cantiere non ha aggiunto una
+-- colonna, una tabella, un endpoint o un grant: i tre «non lo so»
+-- continuano a lasciare `verificata` a zero, e la memoria di quali righe
+-- sono gia' state guardate sta in un file locale della staffetta (il
+-- «taccuino»), non qui. Il taccuino puo' sparire senza che nessuno venga
+-- accusato due volte: a proteggere e' la guardia `and verificata = 0`
+-- che sta qui sotto, non il quaderno.
+-- Misurato: strumenti/_q-staffetta.js, 42 controlli su 42.
 -- ---------------------------------------------------------------------
 create table if not exists sfida (
   id           bigserial primary key,

@@ -38,8 +38,7 @@ const B = require('./_crit-staffetta.js');
 B.falso({
   nome: 'cieca',
   titolo: 'apre sempre la finestra di serie invece di quella dichiarata dal nastro',
-  morde: 'MISURATO: C1 (la sfida a 1024x460 non torna piu\'), C2 (tre finestre aperte, ' +
-         'tutte 915x412), B1 e B2 (una verificata in meno)',
+  morde: 'MISURATO (sweep del 22 settembre 2026, banco a 42 controlli): B1 B2 C1 C2 C6b — 5 su 42 — la sfida a 1024x460 non torna piu, e le tre finestre aperte sono tutte 915x412',
   cambi: [
     { cerca: B.A_MISURA,
       metti: '    /* IL FALSO (_crit-staffetta-cieca.js): «tanto e\' headless, che\n' +

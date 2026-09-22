@@ -35,8 +35,7 @@ const B = require('./_crit-staffetta.js');
 B.falso({
   nome: 'numero',
   titolo: 'manda 1 / -1 / 0 invece della parola',
-  morde: 'MISURATO: B2, B3, B4, B5 (niente si chiude e i punti non tornano), ' +
-         'B6 (non e\' una parola), D1 e D3b (le righe che non si chiudono tornano per sempre)',
+  morde: 'MISURATO (sweep del 22 settembre 2026, banco a 42 controlli): B2 B3 B4 B5 B6 C6b D1 D3b E3b G1 G3 G7 — 12 su 42 — niente si chiude, i punti non tornano, e la parola non e una parola',
   cambi: [
     { cerca: B.A_PAROLA,
       metti: "        /* IL FALSO (_crit-staffetta-numero.js): «tanto nel database e'\n" +
