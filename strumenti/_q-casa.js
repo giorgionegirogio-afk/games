@@ -112,29 +112,60 @@ async function apri(browser, porta) {
   return { ctx, pag, errori };
 }
 
-/* IL RACCOLTO — gli argomenti veri. Si prende uno ogni `passo` chiamate
+/* IL RACCOLTO — gli argomenti veri. Si prende uno ogni sette chiamate
    fino a riempire il campione, ma gli ESTREMI si aggiornano SEMPRE: un
    campionamento a passo fisso puo' non vedere mai il valore piu' grande,
-   e il valore piu' grande e' proprio quello che il tetto deve reggere. */
+   e il valore piu' grande e' proprio quello che il tetto deve reggere.
+
+   SI AVVOLGE QUEL CHE IL GIOCO CHIAMA DAVVERO, ED E' COSTATO UNA
+   CECITA' (23 settembre 2026, compito 4, trovata dal falso «storta»).
+   La prima stesura avvolgeva `Math.sin`, `Math.cos` e le altre cinque.
+   Andava bene finche' il gioco le chiamava; dopo l'innesto del compito
+   3 il gioco chiama `Msin`, `Mcos`, ... e questo banco raccoglieva
+   ZERO argomenti per tutte e sette, stampando «MAI CHIAMATA in questa
+   partita» e saltando in silenzio le prove C e U — cioe' la SOGLIA del
+   cantiere e l'unica prova che becca una funzione storta. Restavano
+   verdi `pow` e `sqrt`, e il referto sembrava sano.
+
+   Un banco che smette di misurare proprio la cosa che e' stato scritto
+   per misurare, e non lo dice, e' peggio di nessun banco. Adesso
+   avvolge la funzione VIVA — quella di casa se c'e', la nativa se non
+   c'e' — dichiara quale delle due ha avvolto, e piu' sotto c'e' una
+   riga che diventa rossa se il gioco ha la libreria ma il banco ha
+   avvolto le native lo stesso. */
 const RACCOLTA = `(seme, secondi, nomi, ncamp) => {
-  const veri = {}, camp = {}, est = {}, cont = {};
+  const CASA = { sin:'Msin', cos:'Mcos', tan:'Mtan', exp:'Mexp', log:'Mlog', atan2:'Matan2', hypot:'Mhypot' };
+  const veri = {}, camp = {}, est = {}, cont = {}, dove = {};
+  function M_ass(x){ return x < 0 ? -x : x; }
   for(const [n, ar] of nomi){
-    veri[n] = Math[n]; camp[n] = []; cont[n] = 0;
+    const mn = CASA[n];
+    dove[n] = (mn && typeof window[mn] === 'function') ? 'casa' : 'nativa';
+    veri[n] = dove[n] === 'casa' ? window[mn] : Math[n];
+    camp[n] = []; cont[n] = 0;
     est[n] = { max: 0, min: Infinity, nonFinito: 0 };
   }
   for(const [n, ar] of nomi){
-    const v = veri[n], E = est[n];
-    Math[n] = function(a, b){
+    const v = veri[n], E = est[n], casa = dove[n] === 'casa';
+    const avvolta = function(){
       cont[n]++;
-      const A = M_ass(a), B = ar > 1 ? M_ass(b) : 0;
-      const g = A > B ? A : B, p = (ar > 1 && B > 0 && B < A) ? B : A;
-      if(!isFinite(a) || (ar > 1 && !isFinite(b))) E.nonFinito++;
-      else { if(g > E.max) E.max = g; if(p > 0 && p < E.min) E.min = p; }
-      if(camp[n].length < ncamp && (cont[n] % 7) === 1) camp[n].push(ar > 1 ? [a, b] : [a]);
-      return ar > 1 ? v.call(Math, a, b) : v.call(Math, a);
+      let g = 0, p = Infinity, guasto = false;
+      for(let i = 0; i < arguments.length && i < 3; i++){
+        const a = arguments[i];
+        if(typeof a !== 'number'){ continue; }
+        if(!isFinite(a)){ guasto = true; continue; }
+        const A = M_ass(a);
+        if(A > g) g = A;
+        if(A > 0 && A < p) p = A;
+      }
+      if(guasto) E.nonFinito++;
+      else { if(g > E.max) E.max = g; if(p < E.min) E.min = p; }
+      if(camp[n].length < ncamp && (cont[n] % 7) === 1){
+        camp[n].push(ar > 1 ? [arguments[0], arguments[1]] : [arguments[0]]);
+      }
+      return v.apply(casa ? window : Math, arguments);
     };
+    if(casa) window[CASA[n]] = avvolta; else Math[n] = avvolta;
   }
-  function M_ass(x){ return x < 0 ? -x : x; }
   const t = window.__test;
   t.semina(seme);
   t.startMatch(1, 1, undefined);
@@ -142,9 +173,9 @@ const RACCOLTA = `(seme, secondi, nomi, ncamp) => {
   let s = 0;
   while(t.state !== 'end' && s < secondi){ t.simulate(1); s += 1; }
   for(let i = 0; i < 60; i++){ t.disegna(); t.simulate(1/60); }
-  for(const [n] of nomi) Math[n] = veri[n];
+  for(const [n] of nomi){ if(dove[n] === 'casa') window[CASA[n]] = veri[n]; else Math[n] = veri[n]; }
   const out = {};
-  for(const [n] of nomi) out[n] = { camp: camp[n], est: est[n], chiamate: cont[n] };
+  for(const [n] of nomi) out[n] = { camp: camp[n], est: est[n], chiamate: cont[n], dove: dove[n] };
   return out;
 }`;
 
@@ -227,11 +258,23 @@ function ulpFraBit(a, b) {
     for (const [n, ar] of FUN) {
       const d = dati[n];
       if (!d.chiamate) { console.log('   Math.' + n.padEnd(6) + ' MAI CHIAMATA in questa partita — nessun dominio da difendere'); continue; }
-      console.log('   Math.' + n.padEnd(6) + ' ' + String(d.chiamate).padStart(8) + ' chiamate · |arg| da ' +
+      console.log('   ' + (d.dove === 'casa' ? 'M' + n : 'Math.' + n).padEnd(11) + String(d.chiamate).padStart(8) + ' chiamate · |arg| da ' +
                   (d.est.min === Infinity ? '0' : d.est.min.toExponential(2)) + ' a ' + d.est.max.toExponential(2) +
                   ' · campione ' + d.camp.length +
                   (d.est.nonFinito ? ' · NON FINITI ' + d.est.nonFinito : ''));
     }
+    /* LA RIGA CHE IMPEDISCE AL BANCO DI DIVENTARE CIECO. Se il gioco
+       porta la libreria, allora le sette DEVONO essere state raccolte
+       dalle funzioni di casa: raccoglierle dalle native vorrebbe dire
+       che nessuno le chiama piu' e che le prove C e U qui sotto girano
+       a vuoto. E' successo, ed e' stato il falso «storta» a trovarlo. */
+    const cieche = cMarchio ? FUN.filter(([n, ar, mn]) => mn && dati[n].dove !== 'casa').map(([n]) => n) : [];
+    di(cieche.length === 0, 'il banco ha avvolto le funzioni che il gioco chiama davvero',
+       cMarchio ? (cieche.length ? 'CIECO su: ' + cieche.join(', ') + ' (il gioco ha la libreria ma il banco guarda le native)'
+                                 : 'tutte e sette raccolte da casa')
+                : 'il gioco non ha la libreria: si misurano le native, ed e\' giusto cosi\'');
+    const vuote = FUN.filter(([n, ar, mn]) => mn && dati[n].chiamate === 0).map(([n]) => n);
+    if (vuote.length) console.log('   NON MISURATE in questa partita (zero chiamate): ' + vuote.join(', '));
     const tetto = 2147483648;
     const sopra = FUN.filter(([n]) => dati[n].chiamate && dati[n].est.max > tetto).map(([n]) => n);
     di(sopra.length === 0, 'nessun argomento arriva al tetto della riduzione (2^31)',

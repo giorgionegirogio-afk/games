@@ -174,7 +174,45 @@ ${sorgente}
   return { testo: t, conto, siti: siti.length };
 }
 
-module.exports = { innesta, DIROTTATE, PROTETTO, ANCORA, SEGNAPOSTO };
+/* =====================================================================
+   SGUAINA — l'innesto al contrario.
+
+   PERCHE' ESISTE. I mutanti del compito 4 devono nascere dal gioco
+   SENZA la cura, e il gioco senza la cura non e' un file che sta da
+   qualche parte: sta in un commit, e un banco che dipendesse da un
+   commit smetterebbe di funzionare al primo rebase. Qui il gioco di
+   prima si RICOSTRUISCE da quello di adesso, togliendo la libreria e
+   rimettendo i nomi nativi.
+
+   E DICE ANCHE UNA COSA CHE NESSUN ALTRO DICE: se sguaina(innesta(x))
+   e' x parola per parola, allora la cura e' ESATTAMENTE una libreria
+   piu' un cambio di nome, e non ha toccato niente altro nel file. E'
+   un controllo che vale piu' di una rilettura, e _q-casa-falsi lo fa
+   a ogni corsa.
+
+   La sostituzione qui e' testuale e va bene che lo sia: MISURATO sul
+   gioco curato, ognuno dei sette nomi compare SOLO come chiamata
+   (160 Msin, 104 Mcos, 2 Mtan, 44 Mexp, 1 Mlog, 26 Matan2, 33 Mhypot,
+   zero occorrenze senza parentesi). La funzione conta quel che
+   sostituisce e si lamenta se il totale non e' quello.
+   ===================================================================== */
+function sguaina(t, sorgente){
+  sorgente = sorgente || SORGENTE;
+  if (t.split(sorgente).length - 1 !== 1) throw new Error("la libreria non c'e' (o c'e' piu' di una volta) in questo file");
+  t = t.replace(sorgente + String.fromCharCode(10), '');
+  let tot = 0;
+  for (const n in DIROTTATE) {
+    const m = DIROTTATE[n];
+    const q = t.split(m + '(').length - 1;
+    const s = t.split(m).length - 1;
+    if (q !== s) throw new Error(m + ' compare ' + s + " volte ma solo " + q + " come chiamata: la sostituzione testuale non e' sicura");
+    tot += q;
+    t = t.split(m + '(').join('Math.' + n + '(');
+  }
+  return { testo: t, tolte: tot };
+}
+
+module.exports = { innesta, sguaina, DIROTTATE, PROTETTO, ANCORA, SEGNAPOSTO };
 
 /* ------------------------------------------------------------------
    L'ATTREZZO DA RIGA DI COMANDO

@@ -96,6 +96,20 @@ const GIOCO = path.join(RADICE, arg('gioco', process.env.GIOCO_PROVA || 'CALCETT
    e nello stesso ordine. Nessun arrotondamento cambia.
    ------------------------------------------------------------------ */
 function strumenta(testo) {
+  /* IL CENSIMENTO SI FA SUL GIOCO SENZA LA CURA, e non e' un ripiego.
+     La domanda della prova P e' «quali chiamate DEL GIOCO decidono la
+     partita»: e' una proprieta' del gioco, non della cura, e dopo
+     l'innesto del compito 3 quelle chiamate si chiamano Msin invece che
+     Math.sin. Si toglie la cura (`sguaina`, l'innesto al contrario) e si
+     contano i siti dove sono sempre stati. La ricostruzione e' fedele
+     parola per parola — innesta(sguaina(x)) === x, verificato a ogni
+     corsa da `_q-casa-falsi.js` prova 0 — quindi i siti sono gli stessi
+     siti, con gli stessi indici. La prova S qui sotto, invece, gira sul
+     gioco COM'E', perche' li' la domanda e' sul comportamento. */
+  if (testo.indexOf('LA MATEMATICA IN CASA (voce #143)') >= 0) {
+    const { sguaina } = require('./_toppa-143-matematica.js');
+    testo = sguaina(testo).testo;
+  }
   const siti = trovaSiti(testo);
   let out = '', ultimo = 0;
   siti.forEach((s, id) => {
@@ -236,13 +250,29 @@ const primoScarto = (a, b) => {
     console.log('    contro il falso negativo. Le chiamate contate sono il testimone: senza, «non');
     console.log('    e\' cambiato niente» e «non l\'ha chiamata nessuno» sarebbero lo stesso referto.)');
     const gs = await apri(browser, srv.porta, 'CALCETTO-il-gioco.html');
+    /* LA SOSTITUZIONE SPORCA SI FA SU QUEL CHE IL GIOCO CHIAMA DAVVERO.
+       Dopo l'innesto del compito 3 il gioco non chiama piu' Math.sin ma
+       Msin: sporcare Math.sin non sporcherebbe niente, il banco
+       conterebbe zero chiamate e direbbe «MAI CHIAMATA» per tutte e
+       sette, cioe' assolverebbe l'intero perimetro senza averlo
+       guardato. E' la stessa cecita' che il falso «storta» ha trovato in
+       _q-casa.js lo stesso giorno: quando si ripara uno strumento si
+       cerca subito la stessa ferita in quelli che l'hanno copiato. */
     const GIOCA = `(seme, taglia, secondi, IMPR, quale, forza) => {
       const t = window.__test;
+      const CASA = { sin:'Msin', cos:'Mcos', tan:'Mtan', exp:'Mexp', log:'Mlog', atan2:'Matan2', hypot:'Mhypot' };
+      const inCasa = k => !!(CASA[k] && typeof window[CASA[k]] === 'function');
       if (!window.__veri) {
-        window.__veri = {};
-        for (const k of ['sin','cos','tan','exp','log','atan2','hypot','pow','sqrt']) window.__veri[k] = Math[k];
+        window.__veri = {}; window.__dove = {};
+        for (const k of ['sin','cos','tan','exp','log','atan2','hypot','pow','sqrt']) {
+          window.__dove[k] = inCasa(k) ? 'casa' : 'nativa';
+          window.__veri[k] = window.__dove[k] === 'casa' ? window[CASA[k]] : Math[k];
+        }
       }
-      for (const k in window.__veri) Math[k] = window.__veri[k];
+      for (const k in window.__veri) {
+        if (window.__dove[k] === 'casa') window[CASA[k]] = window.__veri[k];
+        else Math[k] = window.__veri[k];
+      }
       window.__n = 0;
       if (quale) {
         const vero = window.__veri[quale];
@@ -273,7 +303,9 @@ const primoScarto = (a, b) => {
         };
         const grosso = v => (isFinite(v) ? v + v * 1e-9 + (v === 0 ? 1e-12 : 0) : v);
         const f = forza === 'ulp' ? ulp : grosso;
-        Math[quale] = function(){ window.__n++; return f(vero.apply(Math, arguments)); };
+        const casa = window.__dove[quale] === 'casa';
+        const sporca = function(){ window.__n++; return f(vero.apply(casa ? window : Math, arguments)); };
+        if (casa) window[CASA[quale]] = sporca; else Math[quale] = sporca;
       }
       t.semina(seme);
       t.startMatch(1, 1, taglia !== 5 ? { size: taglia } : undefined);
@@ -282,7 +314,8 @@ const primoScarto = (a, b) => {
       const impronte = [];
       let sim = 0;
       while (t.state !== 'end' && sim < secondi) { t.simulate(1); sim += 1; impronte.push(leggi()); }
-      return { impronte, gol: [G.score[0], G.score[1]], sorteggi: t.sorteggi, chiamate: window.__n };
+      return { impronte, gol: [G.score[0], G.score[1]], sorteggi: t.sorteggi, chiamate: window.__n,
+               dove: quale ? window.__dove[quale] : '' };
     }`;
     const corri = (quale, forza, seme) =>
       gs.pag.evaluate(([g, a]) => new Function('return ' + g)()(...a),
@@ -298,6 +331,7 @@ const primoScarto = (a, b) => {
     di(ripet, 'due corse pulite di fila danno la stessa partita', ripet ? pulite[0].impronte.length + ' campioni' : 'divergono');
     if (!ripet) throw Object.assign(new Error('il banco non e\' ripetibile'), { banco: true, gia: true });
 
+    const dovePer = {};
     for (const nome of NOMI) {
       const r = { ulp: [], grosso: [], chiamate: 0 };
       for (const forza of ['ulp', 'grosso']) {
@@ -305,6 +339,7 @@ const primoScarto = (a, b) => {
           const seme = (SEME0 + s) >>> 0;
           const d = await corri(nome, forza, seme);
           r.chiamate = Math.max(r.chiamate, d.chiamate);
+          dovePer[nome] = d.dove;
           const k = primoScarto(pulite[s].impronte, d.impronte);
           r[forza].push(k);
         }
@@ -314,13 +349,36 @@ const primoScarto = (a, b) => {
       const nGro = r.grosso.filter(k => k >= 0).length;
       const stato = r.chiamate === 0 ? 'MAI CHIAMATA' : (nGro ? 'DENTRO' : 'FUORI');
       const primo = r.ulp.filter(k => k >= 0).sort((a, b) => a - b)[0];
-      console.log('   Math.' + nome.padEnd(6) + ' ' + stato.padEnd(13) +
+      console.log('   ' + (dovePer[nome] === 'casa' ? 'M' + nome : 'Math.' + nome).padEnd(11) + stato.padEnd(13) +
                   ' 1 ulp: ' + nUlp + '/' + NSEMI + ' semi cambiano' +
                   (primo !== undefined ? ' (il primo al secondo ' + primo + ')' : '') +
                   '  ·  1e-9: ' + nGro + '/' + NSEMI +
                   '  ·  ' + r.chiamate + ' chiamate');
-      di(r.chiamate > 0, 'Math.' + nome + ' e\' stata chiamata almeno una volta (testimone)', r.chiamate + ' chiamate');
     }
+    /* IL CONTO SI SCRIVE, E NON E' UN DI PIU'. Il numero di chiamate per
+       passo di ogni funzione e' gia' misurato qui sopra (e' il testimone
+       che separa «non e' cambiato niente» da «non l'ha chiamata
+       nessuno»), e serve a un altro strumento: `_t-143-costo.js` lo
+       moltiplica per il costo misurato della singola chiamata e PREVEDE
+       il costo del passo. Due strade indipendenti per lo stesso numero
+       valgono piu' di una sola, e l'unico modo perche' siano davvero due
+       e' che nessuna delle due ricopi a mano il conto dell'altra. */
+    try {
+      const passi = Math.round(SECONDI * 60);
+      const fuori = {};
+      for (const nome of NOMI) fuori[nome] = +(riga[nome].chiamate / passi).toFixed(4);
+      fuori.__quando = new Date().toISOString().slice(0, 10);
+      fuori.__gioco = path.relative(RADICE, GIOCO).replace(/\\/g, '/');
+      fuori.__passi = passi;
+      fs.mkdirSync(path.join(RADICE, 'fuori'), { recursive: true });
+      fs.writeFileSync(path.join(RADICE, 'fuori', '143-chiamate.json'), JSON.stringify(fuori, null, 1));
+      console.log('   (conto per passo scritto in fuori/143-chiamate.json, per _t-143-costo.js)');
+    } catch (e) { console.log('   (conto per passo non scritto: ' + e.message + ')'); }
+    console.log('');
+    console.log('   «MAI CHIAMATA» NON VUOL DIRE «FUORI»: vuol dire che in questa partita nessuno');
+    console.log('   l\'ha chiamata, quindi non e\' stata misurata. Senza il conto delle chiamate,');
+    console.log('   «l\'impronta non e\' cambiata» e «non l\'ha chiamata nessuno» sarebbero lo stesso');
+    console.log('   referto — e il secondo assolverebbe una funzione senza averla mai guardata.');
     console.log('');
 
     const dentroF = NOMI.filter(n => riga[n].chiamate > 0 && riga[n].grosso.some(k => k >= 0));
@@ -340,9 +398,40 @@ const primoScarto = (a, b) => {
     console.log('    Siti dentro la simulazione: ' + dentro.size + ' su ' + siti.length +
                 ' (' + Math.round(dentro.size * 100 / siti.length) + '%); solo disegno: ' + soloDisegno.length +
                 '; mai accesi: ' + mai.length + '.');
+
+    /* =====================================================================
+       IL CANCELLO VERO DI QUESTO STRUMENTO, e non e' il perimetro: il
+       perimetro e' una misura, e una misura non si promuove ne' si
+       boccia. Quel che si puo' bocciare e' l'INCOERENZA fra la misura e
+       la cura: una funzione che cambia la partita e che il gioco chiama
+       ancora nativa e' un buco nel lockstep. Le sole due ammesse sono
+       `pow` e `sqrt`, e non per fiducia — `_q-casa.js` prova N misura a
+       ogni corsa che i tre motori le calcolino identiche, e diventa
+       rossa il giorno in cui smettessero.
+
+       COSI' QUESTO STRUMENTO RESTA UTILE ANCHE DOPO IL #143: il giorno
+       in cui qualcuno aggiungesse al gioco una `Math.asin` dentro la
+       fisica, questa riga la troverebbe — la misura e' sul
+       COMPORTAMENTO, non su un elenco scritto a mano.
+       ===================================================================== */
+    /* E IL BANCO DICHIARA COSA HA SPORCATO: se il gioco porta la
+       libreria e qui sotto comparisse «nativa» per una delle sette,
+       vorrebbe dire che si e' sporcata una funzione che nessuno chiama
+       piu'. */
+    const { DIROTTATE } = require('./_toppa-143-matematica.js');
+    const conLib = fs.readFileSync(GIOCO, 'utf8').indexOf('LA MATEMATICA IN CASA (voce #143)') >= 0;
+    const cieche = conLib ? NOMI.filter(n => DIROTTATE[n] && dovePer[n] !== 'casa') : [];
+    di(cieche.length === 0, 'la sostituzione sporca ha toccato le funzioni che il gioco chiama davvero',
+       conLib ? (cieche.length ? 'CIECA su: ' + cieche.join(', ') : 'le sette sporcate in casa')
+              : 'il gioco non ha la libreria: si sporcano le native');
+    const AMMESSE = ['pow', 'sqrt'];
+    const scoperte = dentroF.filter(n => !DIROTTATE[n] && !AMMESSE.includes(n));
+    di(scoperte.length === 0, 'ogni trascendente DENTRO il perimetro passa da casa (o e\' misurata concorde)',
+       scoperte.length ? 'SCOPERTE: ' + scoperte.join(', ') : 'in casa: ' + dentroF.filter(n => DIROTTATE[n]).join(', ') +
+       (dentroF.some(n => AMMESSE.includes(n)) ? '; native concordi: ' + dentroF.filter(n => AMMESSE.includes(n)).join(', ') : ''));
     const rossi = esiti.filter(x => !x).length;
     console.log('\n' + esiti.length + ' controlli, ' + (esiti.length - rossi) + ' passati, ' + rossi + ' falliti');
-    process.exit(0);
+    process.exit(rossi ? 1 : 0);
   } catch (e) {
     try { if (browser) await browser.close(); } catch (x) {}
     try { if (srv) srv.chiudi(); } catch (x) {}

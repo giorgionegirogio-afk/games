@@ -13958,8 +13958,28 @@ function touchBtnLayout(t){
    _t-133-motorev.js: sarebbe stata la copia di un attrezzo di trecento
    righe per cambiare un valore di default, e in questa casa una copia e'
    un posto in piu' dove la stessa ferita si riapre da sola.
+
+   RETTIFICA A EDIZIONI (23 settembre 2026, voce #143). Il numero qui
+   sotto **non e' piu' 2, e' 3**, e il motivo e' la prima cura di questo
+   programma che cambia la simulazione DA CIMA A FONDO: le funzioni
+   trascendenti — sin, cos, tan, exp, log, atan2, hypot — non sono piu'
+   quelle del motore JavaScript del telefono, sono scritte in casa con
+   sole operazioni che IEEE-754 obbliga a essere correttamente
+   arrotondate. Serviva perche' V8, JavaScriptCore e SpiderMonkey
+   davano l'ultimo bit diverso e quindi partite diverse (voce #141, 0
+   semi concordi su 8); adesso ne danno 20 su 20.
+
+   Ma un ultimo bit diverso e' comunque un numero diverso, e i nastri
+   scritti prima lo portano dentro. MISURATO con
+   strumenti/_t-143-motorev.js: sei nastri registrati sul gioco di
+   prima (a2607d0) e rigiocati sul curato, taglia 5, 2400 passi, semi
+   da 20260923, **sei su sei finiscono in una partita diversa**, e tutti
+   e sei entro il quarto campione — uno al terzo, cinque al quarto,
+   cioe' entro il primo secondo e mezzo di partita. Le righe precedenti restano
+   com'erano scritte: dicevano il vero quando furono scritte, e il
+   metodo che descrivono e' quello che ha deciso anche questa volta.
    ===================================================================== */
-const MOTORE_V = 2;
+const MOTORE_V = 3;
 
 /* =====================================================================
    L'IMPRONTA DEL MOTORE JAVASCRIPT (voce #142, compito 2).
@@ -45130,6 +45150,18 @@ const Sfida = {
        MOTORE_V salisse, questo blocco si potrebbe togliere: i nastri
        vecchi verrebbero gia' respinti dal confronto di versione, qui
        sopra.
+
+       RETTIFICA A EDIZIONI (23 settembre 2026, voce #143). Quel giorno
+       e' arrivato: MOTORE_V vale 3 (sei nastri su sei rigiocati diversi,
+       strumenti/_t-143-motorev.js), quindi i nastri col marchio di tipo
+       5 sono gia' tutti respinti dal confronto di versione qui sopra e
+       questo blocco non vede piu' nessuno. NON SI TOGLIE LO STESSO, ed
+       e' una scelta: e' l'unica guardia che separa «il duello non c'era
+       nel nastro» da «il motore e' cambiato», e il giorno in cui
+       qualcuno rimettesse in circolo un nastro di allora — una prova,
+       una migrazione, un archivio — tornerebbe a essere l'unica cosa fra
+       chi guarda e una partita inventata. Costa un confronto di interi
+       per nastro.
        ===================================================================== */
     /* =====================================================================
        DUE RIFIUTI IN PIU', TUTTI E DUE CON LA CAUSA VERA (voce #132,
