@@ -15,6 +15,7 @@
    ===================================================================== */
 import { forzaDi } from '../api/squadra.js';
 import { nomePulito, intero, coloreValido, digest } from '../lib/comuni.js';
+import { aggiorna, inattivo, atteso, dopoLaSfida, giorni, RD0 } from '../lib/glicko.js';
 
 let ok = 0, no = 0;
 const di = (buono, nome, det) => {
@@ -136,6 +137,70 @@ di(n >= 15 && n <= 60, 'da 1000 a 1500 servono fra 15 e 60 vittorie contro pari 
 let q = 1000, m = 0;
 while (q < 1500 && m < 500) { q += elo(q, 1000, 1, 0); m++; }
 di(m > n * 2, 'battere sempre i deboli costa piu\' del doppio', m + ' vittorie contro ' + n);
+
+/* ------------------------------------------------- il rating nascosto */
+/* DUE PORTE, come per la tavola dei cinque verdetti (voce #137). Il
+   cancello `strumenti/_q-glicko.js` verifica la stessa matematica in
+   modo molto più fine; queste righe stanno QUI perché questo banco è
+   quello che gira con `npm run prova` dentro rete/, e perché la
+   differenza fra i punti e il rating si capisce meglio leggendole una
+   sotto l'altra.
+
+   L'ESEMPIO DI GLICKMAN, che è il riferimento che il mandato chiede per
+   nome (milestone M9): 1500 con RD 200 e volatilità 0,06, τ = 0,5, tre
+   partite — vinta contro 1400/30, perse contro 1550/100 e 1700/300. Il
+   paper stampa r' = 1464,06 e RD' = 151,52. */
+titolo('IL RATING NASCOSTO (Glicko-2)');
+
+const glk = aggiorna(
+  { nascosto: 1500, incertezza: 200, volatilita: 0.06 },
+  [{ nascosto: 1400, incertezza:  30, esito: 1 },
+   { nascosto: 1550, incertezza: 100, esito: 0 },
+   { nascosto: 1700, incertezza: 300, esito: 0 }],
+);
+di(Math.abs(glk.nascosto - 1464.06) <= 0.02 && Math.abs(glk.incertezza - 151.52) <= 0.02,
+   'l\'esempio lavorato di Glickman torna: r\' 1464,06 e RD\' 151,52',
+   glk.nascosto.toFixed(2) + ' / ' + glk.incertezza.toFixed(2));
+
+/* La domanda vera, quella che separa il rating dai punti: contro DUE
+   avversari con lo stesso rating ma certezza diversa, vincere non vale
+   lo stesso. L'Elo non lo sa fare, perché non ha un secondo numero. */
+const io = { nascosto: 1500, incertezza: 100, volatilita: 0.06 };
+const suCerto = aggiorna(io, [{ nascosto: 1700, incertezza: 30, esito: 1 }]).nascosto;
+const suIgnoto = aggiorna(io, [{ nascosto: 1700, incertezza: 340, esito: 1 }]).nascosto;
+di(suCerto > suIgnoto + 3,
+   'battere un forte CERTO vale più che battere un forte IGNOTO (è g(φ): l\'Elo non ce l\'ha)',
+   suCerto.toFixed(1) + ' contro ' + suIgnoto.toFixed(1));
+
+/* Chi non gioca diventa un'incognita, e NON è una punizione: il rating
+   resta identico, a crescere è solo l'incertezza. Chi lo confondesse con
+   un azzeramento di stagione riscriverebbe la classifica ogni notte. */
+const fermo = { nascosto: 1820, incertezza: 70, volatilita: 0.06 };
+const unGiorno = inattivo(fermo, 1), unAnno = inattivo(fermo, 365);
+di(unGiorno > 70 && unAnno > unGiorno && unAnno <= RD0,
+   'chi non gioca diventa incerto, con un tetto — e il rating non si muove di un millesimo',
+   '70 → ' + unGiorno.toFixed(1) + ' (un giorno) → ' + unAnno.toFixed(1) + ' (un anno)');
+
+/* Il rating nascosto NON si muove contro un avversario costruito:
+   `forza_avv * 20` è una convenzione nostra, non una misura. I punti
+   visibili invece si muovono, a metà — sono due decisioni diverse e
+   devono restare diverse. */
+di(dopoLaSfida(fermo, null, 1, '2026-09-23') === null &&
+   dopoLaSfida(fermo, { nascosto: 1900, incertezza: 60 }, 1, '2026-09-23') !== null,
+   'contro un fantasma il rating non si muove; contro una persona sì');
+
+/* L'atteso porta dentro l'incertezza di TUTTI E DUE: è la grandezza che
+   l'abbinamento usa, ed è la ragione per cui un giocatore nuovo trova
+   comunque qualcuno — di lui non si sa niente, quindi nessuna partita è
+   decisa prima del fischio. */
+const lontaniCerti  = atteso({ nascosto: 1900, incertezza: 40 },  { nascosto: 1300, incertezza: 40 });
+const lontaniIgnoti = atteso({ nascosto: 1900, incertezza: 350 }, { nascosto: 1300, incertezza: 350 });
+di(lontaniCerti > 0.95 && lontaniIgnoti < 0.90 && lontaniCerti - lontaniIgnoti > 0.08,
+   'seicento punti di distanza: fra due CERTI è una partita decisa, fra due IGNOTI il sistema dubita',
+   lontaniCerti.toFixed(3) + ' contro ' + lontaniIgnoti.toFixed(3));
+
+di(giorni('2026-09-20', '2026-09-23') === 3 && giorni('2026-09-24', '2026-09-23') === 0,
+   'i giorni del periodo si contano per data, e indietro non si va (un orologio storto non gonfia nulla)');
 
 /* --------------------------------------------------------- il testo */
 titolo('QUEL CHE ARRIVA DA UNO SCONOSCIUTO');

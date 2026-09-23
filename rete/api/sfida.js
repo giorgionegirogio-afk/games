@@ -68,6 +68,7 @@
    ===================================================================== */
 import { db, rispondi, preflight, guaio, chiSei, frenato, corpo,
          intero, configurato } from '../lib/comuni.js';
+import { dopoLaSfida, oggi as oggiUtc } from '../lib/glicko.js';
 
 /* Mezz'ora: una partita dura fra 90 e 180 secondi, e mezz'ora copre
    chi si è distratto, ha risposto al telefono, è entrato in galleria.
@@ -90,6 +91,53 @@ function elo(mio, suo, esito, serie) {
   const K = mio < 1200 ? 40 : mio < 1600 ? 28 : mio < 2000 ? 20 : 14;
   const bonus = esito === 1 ? Math.min(1.3, 1 + Math.min(serie, 6) * 0.05) : 1;
   return Math.round(K * (esito - atteso) * bonus);
+}
+
+/* --------------------------------------------------- il rating nascosto */
+/* IL SECONDO NUMERO, E NON SOSTITUISCE IL PRIMO (voce #140).
+
+   L'Elo qui sopra resta esattamente quello che era, e deve restarlo: e'
+   la scala che la gente VEDE, ed e' fatta apposta per non conservarsi —
+   il difensore perde meta', la serie moltiplica, c'e' un pavimento a
+   100. Quelle quattro decisioni creano valore dal nulla, ed e' giusto,
+   perche' i punti sono la valuta che premia il giocare. Un RATING
+   invece si conserva, e serve a una cosa sola: abbinare.
+
+   Cosi' il mandato le tiene separate («hidden rating» e «visible trophy
+   ladder», _analisi/MANDATO-STADIUM-ROAR.md righe 163-164) e cosi'
+   stanno qui: due colonne, due formule, una sola sfida.
+
+   LA CORSA SI CHIUDE NEL DATABASE, non qui. Glicko-2 ha bisogno di
+   leggere prima di scrivere, e fra la lettura e la scrittura c'e' una
+   finestra: `posa_nascosto` scrive solo se `giri` e' ancora quello letto
+   (vedi la nota sopra la funzione, in rete/schema.sql). Tre tentativi, e
+   poi ci si arrende SENZA rompere la sfida: i punti visibili si sono
+   gia' mossi, il replay e' gia' registrato, e un aggiornamento perso di
+   un numero che nessuno vede e' un'informazione in meno, non un danno.
+   La prossima partita lo rimette a posto. */
+const TENTATIVI_NASCOSTO = 3;
+
+async function muoviNascosto(chi, suo, esito, giaLetta) {
+  const giorno = oggiUtc();
+  for (let t = 0; t < TENTATIVI_NASCOSTO; t++) {
+    let riga = t === 0 ? giaLetta : null;
+    if (!riga) {
+      const r = await db.leggi('punti',
+        'allenatore=eq.' + chi + '&select=nascosto,incertezza,volatilita,periodo,giri');
+      riga = (r && r[0]) || null;
+    }
+    /* nessuna riga: la crea `posa_nascosto` stessa, partendo da zero giri */
+    const da = riga || { giri: 0 };
+    const q = dopoLaSfida(da, suo, esito, giorno);
+    if (!q) return false;                       /* avversario costruito */
+    const vinto = await db.chiama('posa_nascosto', {
+      chi, r: q.nascosto, rd: q.incertezza, vol: q.volatilita,
+      quando: q.periodo, da_giri: (da.giri | 0),
+    });
+    if (vinto === true || (Array.isArray(vinto) && vinto[0] === true)) return true;
+    giaLetta = null;
+  }
+  return false;
 }
 
 export default async function handler(req, res) {
@@ -182,13 +230,21 @@ export default async function handler(req, res) {
     /* ---------------------------------------------------- i punti */
     const esito = gol_a > gol_d ? 1 : gol_a < gol_d ? 0 : 0.5;
 
-    const mieiR = await db.leggi('punti', 'allenatore=eq.' + io.id + '&select=punti,serie');
+    /* La `select` si allarga ai tre numeri nascosti e alla guardia (voce
+       #140): e' la STESSA lettura di prima, con tre colonne in piu'.
+       Nessun giro in piu' al database — le due righe di `punti` si
+       leggevano gia' tutte e due. */
+    const mieiR = await db.leggi('punti',
+      'allenatore=eq.' + io.id + '&select=punti,serie,nascosto,incertezza,volatilita,periodo,giri');
     const miei = (mieiR && mieiR[0]) || { punti: 1000, serie: 0 };
 
     let suoiPunti = i.forza_avv * 20;   /* un avversario costruito vale la sua forza */
+    let suaRiga = null;
     if (i.difensore) {
-      const r = await db.leggi('punti', 'allenatore=eq.' + i.difensore + '&select=punti');
-      suoiPunti = (r && r[0] && r[0].punti) || 1000;
+      const r = await db.leggi('punti',
+        'allenatore=eq.' + i.difensore + '&select=punti,nascosto,incertezza,volatilita,periodo,giri');
+      suaRiga = (r && r[0]) || null;
+      suoiPunti = (suaRiga && suaRiga.punti) || 1000;
     }
 
     let delta = elo(miei.punti, suoiPunti, esito, miei.serie);
@@ -223,6 +279,42 @@ export default async function handler(req, res) {
         chi: i.difensore, d: deltaD, gf: gol_d, gs: gol_a,
         esito: 1 - esito, tocca_serie: false,
       });
+    }
+
+    /* ------------------------------------------ il rating nascosto */
+    /* CONTRO UN FANTASMA NON SI MUOVE, e non è la stessa scelta dei
+       punti. Lì `forza_avv * 20` vale mezzi punti perché «una classifica
+       che non si muove è una classifica morta»; qui quella conversione
+       non basta, perché non è una misura: nessuno ha stabilito che una
+       squadra costruita da 75 di forza valga 1500. Darla in pasto al
+       rating vorrebbe dire insegnargli una favola, e il rating esiste
+       per sapere davvero quanto vale chi gioca.
+
+       I DUE AGGIORNAMENTI PARTONO DALLO STESSO ISTANTE: tutti e due
+       leggono i numeri dell'altro COME ERANO PRIMA della partita. È il
+       modo in cui Glicko-2 tratta un periodo di rating, e farlo in fila
+       — prima io, poi lui coi miei numeri già mossi — conterebbe la
+       stessa partita due volte, una volta e mezza.
+
+       E SE FALLISCE, LA SFIDA NON CADE. Il `catch` è largo apposta: i
+       punti si sono già mossi, il replay è già registrato, e al
+       giocatore è dovuta la sua risposta. Un rating nascosto non
+       aggiornato è un'informazione in meno, che la prossima partita
+       rimette a posto. */
+    if (i.difensore) {
+      try {
+        /* `|| {}` e non `|| null`: un difensore VERO che non ha ancora
+           una riga in classifica è un giocatore da 1500 con incertezza
+           350 (i ripieghi stanno in glicko.js, gli stessi dell'SQL), non
+           un fantasma. Scriverlo `null` lo farebbe scambiare per un
+           avversario costruito e il rating di chi lo ha appena battuto
+           non si muoverebbe. */
+        const sua = suaRiga || {};
+        await muoviNascosto(io.id, sua, esito, miei);
+        await muoviNascosto(i.difensore, miei, 1 - esito, suaRiga);
+      } catch (e) {
+        console.error('[calcetto] rating nascosto non aggiornato:', e && e.message ? e.message : e);
+      }
     }
 
     /* La sfida si registra solo se c'è un difensore vero: contro un

@@ -86,6 +86,69 @@ create table if not exists punti (
 create index if not exists punti_ordine on punti (stagione, punti desc);
 
 -- ---------------------------------------------------------------------
+-- IL RATING NASCOSTO — cinque colonne sulla tabella che c'e' gia'
+-- (voce #140, Glicko-2).
+--
+-- PERCHE' QUI E NON IN UNA TABELLA NUOVA. RLS e' acceso su tutte e sei
+-- le tabelle con ZERO policy, e ogni tabella sta nel `revoke` in fondo a
+-- questo file: una tabella nuova sarebbe l'unica porta aperta del
+-- database, e lo sarebbe IN SILENZIO, perche' nessuno si accorge di una
+-- riga che manca. `punti` e' gia' la tabella dei numeri che cambiano a
+-- ogni partita.
+--
+-- PERCHE' NON SOSTITUISCONO `punti`. I punti visibili NON sono un
+-- rating: il difensore perde meta' di quel che l'attaccante guadagna, la
+-- serie moltiplica fino a 1,3, c'e' un pavimento a 100 e contro un
+-- avversario costruito si prende meta' senza toglierlo a nessuno.
+-- Ognuna di quelle quattro CREA valore dal nulla, ed e' giusto che lo
+-- faccia: i punti sono la valuta che premia il giocare. Misurato su 400
+-- allenatori e 18.546 sfide simulate, il totale deriva del +1,6% in
+-- sessanta giorni. Un rating invece si conserva. Sono due grandezze, e
+-- stanno in due colonne — e' la lettura letterale del mandato
+-- (_analisi/MANDATO-STADIUM-ROAR.md righe 163-164: «hidden rating»
+-- accanto a «visible trophy ladder»).
+--
+-- I TRE NUMERI DI GLICKO-2:
+--   `nascosto`    il rating vero e proprio. Parte da 1500 e NON SI VEDE:
+--                 non esce da `trova_avversario`, non esce da
+--                 `classifica`, non esce da nessun endpoint. Stessa
+--                 ragione del `sospetto` (voce #137): la tupla
+--                 dell'avversario finisce dritta nel corpo della
+--                 risposta, cioe' sul telefono di un altro.
+--   `incertezza`  la *deviation*. 350 vuol dire «non ne sappiamo
+--                 niente»; cala giocando e ricresce stando fermi. E' la
+--                 cosa che l'Elo a K variabile non sa fare.
+--   `volatilita`  quanto e' ERRATICO quel giocatore. Si muove piano per
+--                 disegno (tau = 0,5): misura una tendenza, non l'ultima
+--                 serata.
+--
+-- `periodo` E' IL PERIODO DI RATING DI GLICKO-2 (un giorno, come chiede
+-- il mandato alla riga 444) E NON E' UNA STAGIONE. Sta apposta nella
+-- stessa tabella di `stagione`, tre righe piu' su, perche' e' qui che
+-- qualcuno potrebbe confonderle. Il passaggio da un giorno all'altro
+-- **non azzera niente**: il rating resta quello di ieri e a crescere e'
+-- soltanto l'incertezza. Il mandato parla anche di `season reset every 4
+-- weeks` (riga 163): quello in casa e' ESCLUSO
+-- (_analisi/MAPPA-MANDATO.md riga 707, «Niente stagione/azzeramento,
+-- mai»), e non e' questa colonna.
+--
+-- `giri` E' LA GUARDIA. Glicko-2 non si puo' scrivere come un incremento
+-- relativo — la formula ha bisogno del valore di partenza — quindi il
+-- problema che `muovi_punti` risolve con l'atomicita' qui si risolve con
+-- un contatore: si scrive solo se nessun altro e' passato nel frattempo.
+-- Vedi `posa_nascosto`, piu' in basso.
+--
+-- `add column if not exists`: questo file resta idempotente come
+-- promette la sua intestazione, e un database gia' in piedi si aggiorna
+-- rilanciandolo senza perdere una riga.
+-- ---------------------------------------------------------------------
+alter table punti add column if not exists nascosto   real not null default 1500;
+alter table punti add column if not exists incertezza real not null default 350;
+alter table punti add column if not exists volatilita real not null default 0.06;
+alter table punti add column if not exists periodo    date not null default current_date;
+alter table punti add column if not exists giri       int  not null default 0;
+
+-- ---------------------------------------------------------------------
 -- LA SFIDA — una partita giocata contro il profilo di qualcun altro.
 --
 -- `replay` e' il pezzo che rende tutto questo diverso da un punteggio
@@ -357,6 +420,58 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
+-- POSARE IL RATING NASCOSTO — e perche' non e' un `update` e basta
+-- (voce #140).
+--
+-- `muovi_punti` qui sopra risolve la corsa con l'atomicita': `punti =
+-- punti + d` succede tutto intero, e due sfide che arrivano nello stesso
+-- istante si sommano in un ordine qualsiasi con lo stesso totale.
+--
+-- Glicko-2 NON SI PUO' SCRIVERE COSI'. Non e' un incremento: e' una
+-- funzione del valore di partenza, dell'avversario e di quanti giorni
+-- sono passati, e ha bisogno di leggere prima di scrivere. Fra la
+-- lettura e la scrittura c'e' una finestra, e in quella finestra un'altra
+-- sfida contro lo stesso difensore leggerebbe lo stesso valore vecchio:
+-- una delle due sparirebbe, e sparirebbe in silenzio — esattamente il
+-- guaio che la nota sopra `muovi_punti` descrive.
+--
+-- Allora si scrive solo se NESSUNO E' PASSATO NEL FRATTEMPO. `giri` e'
+-- un contatore che sale di uno a ogni scrittura andata a buon fine; chi
+-- chiama passa il valore che ha LETTO, e se non e' piu' quello la
+-- scrittura non avviene e la funzione torna `false`. Il chiamante
+-- rilegge e rifa' il conto (rete/api/sfida.js, tre tentativi).
+--
+-- E SE PERDE TUTTE E TRE LE VOLTE? Non succede niente di grave, ed e' il
+-- motivo per cui la guardia puo' permettersi di essere severa: i punti
+-- VISIBILI si sono gia' mossi con `muovi_punti`, il replay e' gia'
+-- registrato, la sfida e' andata. Quel che si perde e' un aggiornamento
+-- di un numero che nessuno vede, e la prossima partita lo rimette a
+-- posto. Un'informazione in meno, non un danno.
+--
+-- La riga si crea se non c'e', come fa `muovi_punti`: un giocatore puo'
+-- arrivare qui prima di avere una riga in classifica.
+--
+-- Non e' un endpoint e non lo diventera': si chiama con la chiave di
+-- servizio, e sotto c'e' il `revoke` come per tutte le altre.
+-- ---------------------------------------------------------------------
+create or replace function posa_nascosto(
+  chi uuid, r real, rd real, vol real, quando date, da_giri int
+) returns boolean language plpgsql as $$
+declare mosse int;
+begin
+  insert into punti (allenatore) values (chi) on conflict (allenatore) do nothing;
+  update punti set
+    nascosto   = r,
+    incertezza = rd,
+    volatilita = vol,
+    periodo    = quando,
+    giri       = da_giri + 1
+  where allenatore = chi and giri = da_giri;
+  get diagnostics mosse = row_count;
+  return mosse > 0;
+end $$;
+
+-- ---------------------------------------------------------------------
 -- LA CLASSIFICA — i primi N piu' la TUA posizione, in una interrogazione
 -- sola. Il rango si calcola qui perche' calcolarlo fuori vorrebbe dire
 -- scaricare tutta la tabella per contare quante righe stanno sopra.
@@ -508,5 +623,6 @@ revoke all on allenatore, squadra, punti, sfida, impegno, freno from anon, authe
 revoke all on function trova_avversario(uuid, int, int, int, int)      from anon, authenticated;
 revoke all on function frena(text, int, int)                          from anon, authenticated;
 revoke all on function muovi_punti(uuid, int, int, int, real, boolean) from anon, authenticated;
+revoke all on function posa_nascosto(uuid, real, real, real, date, int) from anon, authenticated;
 revoke all on function classifica(uuid, int, int)                     from anon, authenticated;
 revoke all on function segna_verdetto(bigint, text)                   from anon, authenticated;

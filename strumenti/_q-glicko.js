@@ -365,14 +365,37 @@ function spearman(a, b) {
        'B4) e ha un TETTO: chi non gioca da sempre torna a 350, non a mille',
        Number.isFinite(tetto) ? tetto.toFixed(2) : manca);
 
-    let limato = nuovo();
-    for (let i = 0; i < 600 && haG; i++) {
+    /* B5: L'INCERTEZZA SI ASSESTA, e il numero dove si ferma non e' una
+       nostra scelta: aggiornando UNA partita per volta, quel che si
+       impara da una partita e quel che si perde di certezza passando al
+       periodo dopo si pareggiano intorno a 60. Ci si ferma e ci si resta
+       — trecento partite e novecento danno lo stesso numero. Se
+       scendesse verso zero il rating si congelerebbe; se salisse, il
+       sistema disimparerebbe giocando. */
+    let limato = nuovo(), a300 = null;
+    for (let i = 1; i <= 900 && haG; i++) {
       const q = prova(() => G.aggiorna(limato, [{ ...pari, esito: i % 2 }]), null);
       if (q) limato = q;
+      if (i === 300) a300 = limato.incertezza;
     }
-    di(haG && limato.incertezza >= (G.RD_MIN || 30) - 1e-6 && limato.incertezza <= (G.RD_MIN || 30) + 30,
-       'B5) e un PAVIMENTO: seicento partite non portano l\'incertezza a zero (se no il rating si congela)',
-       haG ? limato.incertezza.toFixed(2) + ' (pavimento ' + G.RD_MIN + ')' : manca);
+    di(haG && a300 !== null && Math.abs(limato.incertezza - a300) < 0.01 &&
+       limato.incertezza > (G.RD_MIN || 30) && limato.incertezza < 90,
+       'B5) l\'incertezza SI ASSESTA e ci resta: 300 partite e 900 danno lo stesso numero, e non e\' zero',
+       haG && a300 !== null ? 'a 300 ' + a300.toFixed(3) + ', a 900 ' + limato.incertezza.toFixed(3) : manca);
+
+    /* B5b: IL PAVIMENTO, provato dove puo' MORDERE DAVVERO. A una
+       partita per volta non morde mai — l'assestamento sta sopra di lui
+       — quindi provarlo li' sarebbe una prova che non prova niente. Con
+       duecento partite in un periodo solo la deviation grezza andrebbe a
+       19,5, e RD_MIN la ferma a 30. */
+    const lotto = [];
+    for (let i = 0; i < 200; i++) lotto.push({ ...pari, esito: i % 2 });
+    const spianato = haG ? prova(() => G.aggiorna(nuovo(), lotto), null) : null;
+    di(!!spianato && spianato.conti && spianato.conti.grezza < (G.RD_MIN || 30) &&
+       Math.abs(spianato.incertezza - (G.RD_MIN || 30)) < 1e-9,
+       'B5b) e c\'e\' un PAVIMENTO, provato dove morde: 200 partite in un periodo porterebbero la deviation sotto 20',
+       spianato && spianato.conti ? 'grezza ' + spianato.conti.grezza.toFixed(2) +
+         ' -> fermata a ' + spianato.incertezza.toFixed(2) : manca);
 
     /* B6: LA COSA CHE L'ELO NON SA FARE. Due avversari con lo STESSO
        rating ma incertezza diversa non valgono lo stesso: battere uno
@@ -408,9 +431,22 @@ function spearman(a, b) {
       const q = prova(() => G.aggiorna(regolare, [{ nascosto: 1500, incertezza: 40, esito: i % 2 }]), null);
       if (q) regolare = q;
     }
-    di(haG && sorpreso.volatilita > 0.06 && sorpreso.volatilita > regolare.volatilita * 1.2,
-       'B8) la VOLATILITA\' si muove: sale su chi da\' risultati assurdi, non su chi e\' regolare',
-       haG ? 'assurdo ' + sorpreso.volatilita.toFixed(5) + ' · regolare ' + regolare.volatilita.toFixed(5) : manca);
+    di(haG && sorpreso.volatilita > 0.06 && regolare.volatilita < 0.06 &&
+       sorpreso.volatilita > regolare.volatilita,
+       'B8) la VOLATILITA\' si muove, e nei DUE versi: sale su chi da\' risultati assurdi, scende su chi e\' regolare',
+       haG ? 'assurdo ' + sorpreso.volatilita.toFixed(6) + ' · regolare ' + regolare.volatilita.toFixed(6) +
+             ' (partono tutti e due da 0,06)' : manca);
+
+    /* B8b: ED E' LENTA PER DISEGNO, e va scritto perche' un lettore che
+       vede 0,060224 pensa «non si muove». Tau = 0,5 e' esattamente il
+       freno: la volatilita' misura una TENDENZA di quel giocatore, non
+       la sua ultima serata. Un'implementazione che la facesse saltare
+       del 40% in venti partite avrebbe sbagliato il segno del termine
+       (x - a)/tau^2, e questa riga lo direbbe. */
+    di(haG && sorpreso.volatilita < 0.08 && sorpreso.volatilita > 0.0601,
+       'B8b) ...ed e\' LENTA per disegno: venti sorprese la muovono di meno dell\'1%, non del 40%',
+       haG ? '0,06 -> ' + sorpreso.volatilita.toFixed(6) + ' in venti partite assurde (+' +
+             (100 * (sorpreso.volatilita / 0.06 - 1)).toFixed(2) + '%)' : manca);
 
     const fermo = haG ? prova(() => G.aggiorna(nuovo(), []), null) : null;
     di(!!fermo && fermo.nascosto === 1500 && fermo.incertezza === 350,
