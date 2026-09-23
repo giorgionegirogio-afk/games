@@ -37,6 +37,14 @@ che li passa tutti e cinque (i quattro falsi piu' il gioco vero) attraverso il
 banco e verifica **quale prova morde quale falso**, non solo che qualcosa sia
 rosso.
 
+> **RETTIFICA A EDIZIONI (23 settembre 2026, durante il cantiere).** I quattro
+> mutanti sono **passati al compito C3**, non perche' fosse piu' comodo ma
+> perche' non esistevano: un mutante e' una versione bugiarda **della cura**, e
+> al compito C1 la cura non c'era ancora (le loro ancore — `improntaMotore`, i
+> due rifiuti del vaglio — non sono nel file finche' non le scrivono C2 e C3).
+> Al C1 restano la dimostrazione end-to-end e il suo controllo di esercizio.
+> Il testo sopra resta dov'e'.
+
 Al compito C1 il banco e' ROSSO sulla prova A, e deve esserlo: e' il difetto.
 
 ## C2 — l'impronta del motore nel nastro

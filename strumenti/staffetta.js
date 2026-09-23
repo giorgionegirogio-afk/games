@@ -128,23 +128,106 @@ function misuraDelNastro(nastro) {
   return (s && s[0] > 0 && s[1] > 0) ? [s[0] | 0, s[1] | 0] : null;
 }
 
+/* =====================================================================
+   L'IMPRONTA DEL MOTORE JAVASCRIPT DICHIARATA DAL NASTRO (riga di tipo
+   11, voce #142), o 0 se quel nastro e' di prima di quella cura.
+
+   PERCHE' SERVE ALLA STAFFETTA, e non solo al giudice. Il #141 ha
+   misurato che due motori conformi a ECMA-262 non producono la stessa
+   partita: le trascendenti sono «implementation-approximated», e
+   Math.hypot da' l'ultimo bit diverso su 100 valori su 200 fra V8 e
+   JavaScriptCore. Questo file apriva `chromium.launch()` a riga fissa,
+   quindi ogni sfida giocata da un iPhone veniva rigiocata su un motore
+   che non era il suo: MISURATO (strumenti/_q-motore-nastro.js, sei
+   sfide vere registrate su WebKit) CINQUE NON TORNA su sei, cioe'
+   cinque onesti accusati, i punti tolti a dieci persone e cinque
+   sospetti che non decadono mai.
+
+   Dal #142 il giudice si astiene (INCOMPLETO/motore-js-diverso) invece
+   di accusare, e nessuno perde piu' niente. Ma l'astensione da sola
+   sarebbe una perdita di copertura: e' questa riga, con il
+   raggruppamento qui sotto, a trasformarla in una COMPLICAZIONE
+   OPERATIVA — la staffetta apre il motore che il nastro chiede, e la
+   sfida si verifica davvero. E' esattamente il giudizio che la revisione
+   del #133 ha dato per lo schermo.
+
+   SI LEGGE IN NODE, come la misura, e per la stessa ragione: bisogna
+   saperla PRIMA di aprire il browser, perche' e' lei a decidere quale.
+   E se il lettore in Node sbagliasse, `giudica` la ricontrolla da se'
+   dentro `vagliaNastro` e risponde INCOMPLETO, cioe' un «non lo so»,
+   MAI un NON TORNA. Puo' far perdere tempo; non puo' far togliere punti.
+   ===================================================================== */
+function improntaDelNastro(nastro) {
+  const i = N.improntaDi(allargaNastro(nastro));
+  return (i | 0) >>> 0;
+}
+
 /* ------------------------------------------------------ il raggruppamento */
 /* UN CONTESTO PER MISURA, NON UNO PER RIGA. Misurato il 22 settembre
    2026 (fuori/_sonda-138-misura.js): aprire un contesto e caricare il
    gioco costa 1165 ms, un giudizio 1039 ms, un secondo giudizio sulla
    stessa pagina 938 ms. Riaprire per ogni riga costerebbe piu' del
    doppio. L'ordine e' quello di PRIMA APPARIZIONE, cosi' le righe piu'
-   vecchie si giudicano per prime anche dopo il raggruppamento. */
+   vecchie si giudicano per prime anche dopo il raggruppamento.
+
+   DALLA VOCE #142 LA CHIAVE E' UNA COPPIA: la misura dello schermo E
+   l'impronta del motore JavaScript. Due nastri della stessa misura e di
+   due motori diversi NON possono stare nella stessa finestra — non per
+   eleganza: su un motore che non e' il loro il giudice si astiene, e se
+   la staffetta non aprisse quello giusto l'astensione diventerebbe una
+   copertura persa invece di una complicazione operativa. La chiave si
+   legge `915x412@3274447767`, e `@ignoto` e' il posto dei nastri di
+   prima del #142, che si giudicano lo stesso (il giudice dira'
+   motore-js-ignoto, e quella parola va mandata al database come le
+   altre quattro). */
 function raggruppa(righe) {
   const ordine = [], mappa = new Map();
   for (const r of righe || []) {
     const crudo = allargaNastro(r && r.replay !== undefined ? r.replay : (r && r.nastro));
     const m = misuraDelNastro(crudo);
-    const chiave = m ? (m[0] + 'x' + m[1]) : 'ignota';
-    if (!mappa.has(chiave)) { mappa.set(chiave, { chiave: chiave, misura: m, righe: [] }); ordine.push(chiave); }
+    const imp = improntaDelNastro(crudo);
+    const chiave = (m ? (m[0] + 'x' + m[1]) : 'ignota') + '@' + (imp || 'ignoto');
+    if (!mappa.has(chiave)) {
+      mappa.set(chiave, { chiave: chiave, misura: m, impronta: imp, righe: [] });
+      ordine.push(chiave);
+    }
     mappa.get(chiave).righe.push(Object.assign({}, r, { crudo: crudo }));
   }
   return ordine.map(k => mappa.get(k));
+}
+
+/* =====================================================================
+   QUALE MOTORE APRIRE, dato quel che il nastro chiede (voce #142).
+
+   `motori` e' la lista costruita all'avvio: per ogni browser che questa
+   macchina ha davvero, il suo nome e la sua impronta CHIESTA AL GIOCO —
+   non indovinata dal nome, perche' l'impronta cambia con la versione e
+   il nome no.
+
+   TRE CASI, e ognuno ha la sua ragione:
+     · il nastro non dichiara nessuna impronta (nastro di prima del
+       #142) -> si apre il PRIMO motore disponibile. Non e' un ripiego
+       che accusa: il giudice dira' INCOMPLETO/motore-js-ignoto su
+       qualunque motore, e quella parola va spedita come le altre;
+     · il nastro dichiara un'impronta che una delle pagine ha -> si apre
+       QUELLA, ed e' il giro che verifica davvero;
+     · il nastro dichiara un'impronta che NESSUNO ha -> si torna null, e
+       chi chiama LASCIA QUELLE RIGHE A verificata = 0. Non si ripiega su
+       un motore qualunque: ripiegare sarebbe tornare al difetto che il
+       #142 cura, cioe' rigiocare la partita di un altro sul proprio
+       motore. Le righe tornano al giro dopo, su una macchina che quel
+       motore ce l'ha.
+
+   E CON UN SOLO BROWSER (come lo chiamano i banchi che misurano il GIRO
+   e non i motori) si comporta come prima del #142: quel browser per
+   tutto. Cambiare la forma della chiamata avrebbe rifatto dieci prove
+   per una riga.
+   ===================================================================== */
+function scegliMotore(motori, browserSolo, impronta) {
+  if (!motori || !motori.length) return browserSolo ? { nome: '(solo)', browser: browserSolo } : null;
+  if (!impronta) return motori[0];
+  for (const m of motori) if (((m.impronta | 0) >>> 0) === ((impronta | 0) >>> 0)) return m;
+  return null;
 }
 
 /* --------------------------------------------------------- il taccuino */
@@ -336,6 +419,11 @@ async function giro(opz) {
     pescate: 0, saltate: 0, giudicate: 0, contesti: 0, misure: [], esiti: [],
     verdetti: {}, finestreNegate: [], frenata: false, tettoPieno: false,
     guasto: '', ms: 0, msGiudizio: 0, msContesto: 0,
+    /* LE RIGHE CHE CHIEDONO UN MOTORE CHE QUESTA MACCHINA NON HA (voce
+       #142). Non e' un guasto e non e' un verdetto: e' lavoro rimandato.
+       Restano a verificata = 0, non entrano nel taccuino, e il referto
+       le grida — come gia' fa per la finestra negata. */
+    motoriAssenti: [],
   };
   if (!banco || typeof banco.pesca !== 'function') { ref.guasto = 'nessun banco'; return ref; }
 
@@ -373,13 +461,23 @@ async function giro(opz) {
        banco): in esercizio non si passa, e il peggio che potrebbe fare
        e' una raffica di «non lo so» — mai un'accusa. */
     const misura = opz.misuraFissa || g.misura || MISURA_SERIE;
+    /* --- E IL MOTORE (voce #142). Se il nastro ne chiede uno che questa
+       macchina non ha, le righe NON si giudicano su un altro: si
+       lasciano a verificata = 0 e si riprendono dove quel motore c'e'.
+       Ripiegare sarebbe rigiocare la partita di un altro sul proprio
+       motore, che e' esattamente il difetto curato dal #142. */
+    const mot = scegliMotore(opz.motori, browser, g.impronta);
+    if (!mot) {
+      ref.motoriAssenti.push({ chiave: g.chiave, impronta: g.impronta, righe: g.righe.length });
+      continue;
+    }
     let P = null;
     const tc = Date.now();
-    try { P = await apriPagina(browser, indirizzo, misura); }
+    try { P = await apriPagina(mot.browser, indirizzo, misura); }
     catch (e) { ref.guasto = 'contesto ' + g.chiave + ': ' + (e && e.message || e); break; }
     msCtx += Date.now() - tc;
     ref.contesti++;
-    const mis = { chiave: g.chiave, misura: misura, righe: 0, ms: 0 };
+    const mis = { chiave: g.chiave, misura: misura, motore: mot.nome, righe: 0, ms: 0 };
     const tg = Date.now();
 
     try {
@@ -489,8 +587,49 @@ function argomento(n, d) {
 }
 const bandiera = n => process.argv.indexOf('--' + n) > 0;
 
+/* =====================================================================
+   I MOTORI DI QUESTA MACCHINA, CON LA LORO IMPRONTA (voce #142).
+
+   Si aprono tutti quelli che Playwright ha davvero e a ognuno si CHIEDE
+   la sua impronta — `window.__test.improntaMotore()`, cioe' lo stesso
+   conto che il gioco scrive nel nastro. Non si indovina dal nome:
+   l'impronta e' una proprieta' della VERSIONE del motore, non della sua
+   marca, e un giorno un aggiornamento di Chrome potrebbe cambiarla senza
+   che «chromium» cambi di una lettera. Chiederla e' l'unico modo di non
+   scrivere una tabella che invecchia in silenzio.
+
+   UN MOTORE CHE NON SI APRE NON FERMA IL GIRO: si annota e si va avanti
+   con quelli che ci sono. Le righe che chiedevano quello resteranno a
+   verificata = 0 e torneranno domani, su una macchina che ce l'ha.
+   ===================================================================== */
+async function apriMotori(playwright, indirizzo, quali) {
+  const fuori = [], guai = [];
+  for (const nome of quali) {
+    if (!playwright[nome]) { guai.push(nome + ': Playwright non lo conosce'); continue; }
+    let browser = null;
+    try {
+      browser = await playwright[nome].launch();
+      const P = await apriPagina(browser, indirizzo, MISURA_SERIE);
+      const imp = await P.pag.evaluate(() =>
+        (window.__test && typeof window.__test.improntaMotore === 'function')
+          ? window.__test.improntaMotore() >>> 0 : 0);
+      await P.ctx.close();
+      if (!imp) {
+        guai.push(nome + ': questo gioco non sa dare l\'impronta del motore (e\' di prima della voce #142)');
+        fuori.push({ nome, browser, impronta: 0 });
+      } else {
+        fuori.push({ nome, browser, impronta: imp >>> 0 });
+      }
+    } catch (e) {
+      if (browser) { try { await browser.close(); } catch (x) {} }
+      guai.push(nome + ': ' + (e && e.message || e));
+    }
+  }
+  return { motori: fuori, guai };
+}
+
 async function main() {
-  const { chromium } = require('playwright');
+  const playwright = require('playwright');
   const tettoRighe = parseInt(argomento('tetto', String(TETTO_RIGHE)), 10);
   const pausa = parseInt(argomento('pausa', String(PAUSA)), 10);
   const fotogrammi = parseInt(argomento('fotogrammi', '0'), 10) | 0;
@@ -513,18 +652,31 @@ async function main() {
               (fotogrammi ? ', rigiocata stretta a ' + fotogrammi + ' fotogrammi' : '') +
               (asciutto ? ', A VUOTO (non scrive niente)' : ''));
 
-  const browser = await chromium.launch();
+  const quali = String(argomento('motori', 'chromium,webkit,firefox')).split(',').map(s => s.trim()).filter(Boolean);
+  const { motori, guai } = await apriMotori(playwright, sg.indirizzo, quali);
+  console.log('    motori    ' + (motori.length
+    ? motori.map(m => m.nome + ' ' + (m.impronta || '(impronta ignota)')).join(' · ')
+    : 'NESSUNO'));
+  for (const g of guai) console.log('      non disponibile: ' + g);
+  if (!motori.length) {
+    console.error('LA STAFFETTA NON PARTE: nessun motore si e\' aperto.');
+    sg.chiudi(); process.exit(2);
+  }
   let ref;
   try {
-    ref = await giro({ banco, browser, indirizzo: sg.indirizzo, tetto: tettoRighe, pausa,
-                       taccuino: tac, asciutto, fotogrammi });
-  } finally { await browser.close(); sg.chiudi(); }
+    ref = await giro({ banco, motori, browser: motori[0].browser, indirizzo: sg.indirizzo,
+                       tetto: tettoRighe, pausa, taccuino: tac, asciutto, fotogrammi });
+  } finally {
+    for (const m of motori) { try { await m.browser.close(); } catch (e) {} }
+    sg.chiudi();
+  }
 
   console.log('');
   console.log('    pescate ' + ref.pescate + ', saltate (gia\' nel taccuino) ' + ref.saltate +
               ', giudicate ' + ref.giudicate + ' in ' + ref.contesti + ' finestre');
   for (const m of ref.misure)
-    console.log('      ' + m.chiave.padEnd(10) + m.righe + ' righe in ' + m.ms + ' ms');
+    console.log('      ' + m.chiave.padEnd(24) + (m.motore || '?').padEnd(10) +
+                m.righe + ' righe in ' + m.ms + ' ms');
   const t = Object.keys(ref.verdetti).sort();
   console.log('    verdetti: ' + (t.length ? t.map(k => k + ' ' + ref.verdetti[k]).join(' · ') : 'nessuno'));
   const mosse = ref.esiti.filter(e => e.mosso);
@@ -536,6 +688,18 @@ async function main() {
                 ref.finestreNegate.slice(0, 3).map(f => '#' + f.id + ' chiesta ' + f.chiesta.join('x') +
                 ', serve ' + (f.serve ? f.serve.join('x') : '?')).join(' · ') +
                 '  — questa macchina non da\' la finestra che il nastro chiede.');
+  /* IL MOTORE CHE MANCA (voce #142). Non e' un guasto: e' lavoro
+     rimandato, e va detto perche' se no un referto senza NON TORNA
+     sembrerebbe un giro andato bene mentre meta' delle righe non sono
+     state nemmeno aperte. */
+  if (ref.motoriAssenti.length) {
+    const righe = ref.motoriAssenti.reduce((s, m) => s + m.righe, 0);
+    console.log('    MOTORE ASSENTE su ' + righe + ' righe in ' + ref.motoriAssenti.length +
+                ' gruppi: ' + ref.motoriAssenti.map(m => m.chiave + ' (' + m.righe + ')').join(' · '));
+    console.log('      Restano a verificata = 0 e tornano al giro dopo: questa macchina non ha il');
+    console.log('      motore JavaScript con cui quei nastri sono stati calcolati, e rigiocarli su');
+    console.log('      un altro accuserebbe degli innocenti (voce #142). NON e\' un guasto.');
+  }
   console.log('    tempi: ' + ref.ms + ' ms in tutto, ' + ref.msContesto + ' ms per finestra, ' +
               ref.msGiudizio + ' ms per giudizio');
   if (ref.frenata) console.log('    FRENATA dal database: il resto al giro dopo.');
@@ -543,7 +707,8 @@ async function main() {
   process.exit(0);
 }
 
-module.exports = { allargaNastro, misuraDelNastro, raggruppa, taccuino, bancoVero,
+module.exports = { allargaNastro, misuraDelNastro, improntaDelNastro, raggruppa,
+                   scegliMotore, apriMotori, taccuino, bancoVero,
                    serviGioco, apriPagina, giro,
                    TETTO_RIGHE, PAUSA, MISURA_SERIE, FRENO_TETTO, FRENO_SECONDI };
 

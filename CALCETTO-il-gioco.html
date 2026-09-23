@@ -44402,6 +44402,14 @@ const Sfida = {
              ', e i comandi del nastro sono in coordinate di schermo.';
     }
     if(c === 'schermo-ignoto')    return 'il nastro non dice su che schermo è stata giocata.';
+    /* IL MOTORE JAVASCRIPT (voce #142). La parola «motore» qui dentro e'
+       gia' presa da MOTORE_V — la versione del GIOCO — quindi la frase
+       deve dire di che motore si parla, o chi legge andra' a cercare un
+       aggiornamento che non esiste. */
+    if(c === 'motore-js-diverso') return 'è stata giocata su un telefono con un altro motore JavaScript ' +
+                                         '(un\'altra marca, o un altro browser), e due motori non fanno gli ' +
+                                         'stessi conti fino all\'ultima cifra.';
+    if(c === 'motore-js-ignoto')  return 'il nastro non dice con che motore JavaScript è stata calcolata.';
     if(c === 'rose-assenti')      return 'il nastro non porta le due squadre di quel giorno.';
     if(c === 'carattere-assente') return 'il nastro non porta il carattere di chi difendeva.';
     if(c === 'profilo-assente')   return 'il server non ha più la rosa di chi ti ha attaccato.';
@@ -45709,7 +45717,7 @@ function vagliaNastro(righe){
   const out = { verdetto:'', causa:'', motoreV:motoreV, righe:righe,
                 dati:null, mentAtt:undefined, mentDif:undefined,
                 rosaAtt:null, rosaDif:null, carDif:undefined, schermo:null,
-                schermi:null };
+                schermi:null, impronta:0 };
   const no = (verdetto, causa) => { out.verdetto = verdetto; out.causa = causa; return out; };
   if(motoreV !== MOTORE_V) return no('ALTRO MOTORE','motore-diverso');
   if(righe === 0) return no('INCOMPLETO','nastro-vuoto');
@@ -45797,6 +45805,46 @@ function vagliaNastro(righe){
      e dove passi il confine non lo sa nessuno. */
   if(sc.length > 1) return no('INCOMPLETO','schermo-cambiato');
   if(sc[0][0] !== (innerWidth|0) || sc[0][1] !== (innerHeight|0)) return no('INCOMPLETO','schermo-diverso');
+  /* =====================================================================
+     E DEVE ESSERE LO STESSO MOTORE JAVASCRIPT (voce #142).
+
+     E' il SETTIMO canale, e non passa ne' dai sorteggi (chiusi dal #129)
+     ne' dai pixel (chiusi dal #133): passa dall'ULTIMO BIT. ECMA-262
+     lascia le funzioni trascendenti «implementation-approximated», cioe'
+     due motori conformi possono dare risultati diversi sulla stessa
+     Math.sin. MISURATO dalla voce #141: fra V8 e JavaScriptCore
+     Math.hypot differisce su 100 valori su 200, e il gioco la chiama 33
+     volte — una e' la distanza. In un motore caotico a sessanta passi al
+     secondo un ultimo bit diventa un gol.
+
+     E NON E' UN CASO RARO COME LA BARRA DEL BROWSER DEL #139: fra un
+     iPhone e un Android il motore e' SEMPRE diverso. MISURATO
+     (strumenti/_q-motore-nastro.js, sei sfide vere registrate su WebKit
+     e rigiudicate altrove): su WebKit TORNA 6 su 6, su Chromium NON
+     TORNA 5 su 6, su Firefox 2 su 6. NON TORNA e' l'unico verdetto che
+     muove punti: li toglie a DUE persone, alza un sospetto che non
+     decade mai e chiude la riga per sempre.
+
+     SI STA IN CODA ALLO SCHERMO, e non e' un dettaglio: lo schermo ha
+     tre cause che dicono cose diverse (una non riparabile in nessuna
+     finestra), il motore e' binario. Metterlo prima cancellerebbe quella
+     distinzione senza guadagnare niente, perche' chi rigioca raggruppa i
+     nastri per la COPPIA (misura, impronta).
+
+     SE L'IMPRONTA MANCA, NON SI PROCEDE — ed e' la correzione di
+     revisione che il #133 ha gia' pagato una volta (IMPORTANTE-1). Un
+     nastro senza riga 11 e' di prima di questa cura: non si puo' sapere
+     con che motore e' stato calcolato, e procedere alla cieca produce
+     accuse false in una sola direzione. Il prezzo e' che i nastri gia'
+     registrati diventano ingiudicabili, e si paga: l'alternativa non e'
+     «verificarli», e' accusarli. La riga resta a verificata = 0, quindi
+     torna giudicabile da se' il giorno in cui chi rigioca apre il motore
+     giusto.
+     ===================================================================== */
+  const impNastro = improntaDelNastro();
+  if(!impNastro) return no('INCOMPLETO','motore-js-ignoto');
+  out.impronta = impNastro;
+  if(impNastro !== improntaMotore()) return no('INCOMPLETO','motore-js-diverso');
   return out;
 }
 
@@ -45857,9 +45905,16 @@ function giudica(nastro, atteso, opz){
        lo stesso campo manderebbe la staffetta ad aprire per sempre
        finestre che non possono aiutarla. Al suo posto vanno le misure,
        tutte: il referto dice la verita' senza promettere una cura. */
+    /* L'IMPRONTA SI RESTITUISCE SOLO SU motore-js-diverso (voce #142),
+       mai su motore-js-ignoto: e' la stessa regola del #139 per lo
+       schermo. Su «diverso» c'e' un motore da aprire e chi chiama lo
+       apre — e' cosi' che la staffetta smette di essere cieca; su
+       «ignoto» non c'e' niente da aprire, e dare un numero prometterebbe
+       una cura che non esiste. */
     return dico(vag.verdetto, vag.causa, Object.assign({ motoreV:motoreV, righe:righe },
                 vag.causa === 'schermo-diverso' ? { schermo:vag.schermo } : {},
-                vag.causa === 'schermo-cambiato' ? { schermi:vag.schermi } : {}));
+                vag.causa === 'schermo-cambiato' ? { schermi:vag.schermi } : {},
+                vag.causa === 'motore-js-diverso' ? { impronta:vag.impronta } : {}));
   }
   const mentAtt = vag.mentAtt, mentDif = vag.mentDif, carDif = vag.carDif;
   const rosaAtt = vag.rosaAtt, rosaDif = vag.rosaDif;

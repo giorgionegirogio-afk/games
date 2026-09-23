@@ -247,10 +247,31 @@ const fotoStato = P => P.pag.evaluate(() => ({
        duello vero, naturale, dal dischetto: non serve trovarne uno fra
        le sfide di questa sessione (che una su trenta ci passa, misurato
        dalla voce #132 — la prova viveva NON ESERCITATA quasi sempre). */
-    const crudoDuello = N.allarga(FIX_DUELLO.replay);
     const attesoDuello = [FIX_DUELLO.gol_a | 0, FIX_DUELLO.gol_d | 0];
     const opzDuello = { seme: FIX_DUELLO.seme, taglia: FIX_DUELLO.taglia | 0 };
     const Gd = await B.apri(browser, sg.porta, { width: FIX_DUELLO.schermo[0], height: FIX_DUELLO.schermo[1] });
+    /* =================================================================
+       LA FIXTURE E' DI PRIMA DELLA VOCE #142 e non porta l'impronta del
+       motore JavaScript (riga di tipo 11): dal #142 il giudice si
+       astiene su un nastro cosi' (INCOMPLETO/motore-js-ignoto), e le due
+       prove qui sotto smetterebbero di misurare quel che dicono di
+       misurare — il DUELLO dal dischetto, non il motore.
+
+       Si completa a runtime con l'impronta di CHI GIUDICA, che e' vera:
+       quel nastro fu registrato su un Chromium di questa macchina, ed e'
+       un Chromium di questa macchina a rigiocarlo. Non si rigenera la
+       fixture con un numero fisso apposta — quel numero cambia con la
+       versione del browser, e una fixture legata alla versione di
+       Chromium installata si spegnerebbe da sola su un'altra macchina.
+
+       CHE UN NASTRO SENZA RIGA 11 FACCIA ASTENERE IL GIUDICE e' misurato
+       dove deve esserlo, non qui: prova E di _q-motore-nastro.js. Questa
+       riga non lo nasconde, lo sposta nel banco che lo dichiara.
+       ================================================================= */
+    const impQui = await Gd.pag.evaluate(() =>
+      (window.__test && typeof window.__test.improntaMotore === 'function') ? window.__test.improntaMotore() : 0);
+    const crudoDuello = impQui ? N.conMotore(N.allarga(FIX_DUELLO.replay), impQui)
+                               : N.allarga(FIX_DUELLO.replay);
     r.duelloIntatto = await giudizio(Gd, crudoDuello, attesoDuello, opzDuello);
     const senzaDuelli = N.senzaDuelli(crudoDuello);
     r.duelloSenzaRighe = senzaDuelli

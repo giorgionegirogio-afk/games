@@ -147,9 +147,24 @@ function improntaDi(nastro) {
    c'era niente da curare su quel nastro e la prova della condanna non
    sta misurando niente.
 
-   Su un nastro di PRIMA della cura (senza riga 11) torna il nastro
-   com'era: li' il giudice non si astiene comunque, e il giudizio diretto
-   e' gia' l'esercizio. */
+   SU UN NASTRO SENZA LA RIGA 11 LA INFILA, invece di lasciare il nastro
+   com'era. Serve a due capi diversi e per la stessa ragione:
+     · l'esercizio del banco, qui sopra;
+     · le FIXTURE del repo. Il nastro congelato di
+       `_nastro-duello-congelato.js` e' di prima di questa cura e non
+       porta la riga 11: dal #142 il giudice si astiene su un nastro cosi'
+       (`motore-js-ignoto`), quindi le prove che lo usano per misurare
+       ALTRO — il duello dal dischetto in `_q-giudice.js`, i cinque
+       verdetti in `_q-staffetta.js` — smetterebbero di misurare quel che
+       dicono di misurare. Si completa a runtime con l'impronta di CHI
+       GIUDICA, e non si rigenera la fixture con un numero fisso: quel
+       numero cambia con la versione del browser, e una fixture che
+       dipende dalla versione di Chromium installata e' una fixture che
+       si spegne da sola su un'altra macchina.
+   Che un nastro SENZA riga 11 faccia astenere il giudice e' misurato
+   dove deve esserlo: prova E di `_q-motore-nastro.js`.
+   Il pezzo nuovo porta dT = 0 e dMs = 0, come `infilaSchermo`, cosi' la
+   catena dei tick e dei millisecondi resta intatta. */
 function conMotore(nastro, impronta) {
   const { p, pezzi } = spacca(nastro);
   let n = 0;
@@ -159,7 +174,8 @@ function conMotore(nastro, impronta) {
     n++;
     return v[0] + ',11,' + v[2] + ',' + ((impronta | 0) >>> 0);
   });
-  return n ? rifai(p, fuori) : nastro;
+  if (n) return rifai(p, fuori);
+  return rifai(p, pezzi.concat(['0,11,0,' + ((impronta | 0) >>> 0)]));
 }
 
 module.exports = {

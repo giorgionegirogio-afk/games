@@ -395,7 +395,7 @@ const sosp = (db, id) => (db.allenatore.get(id) || {}).sospetto | 0;
      LA SCENA: un gioco servito, un browser, e UNA sfida VERA giocata a
      1024x460 — la misura che non e' quella di serie.
      =================================================================== */
-  let sg = null, ss = null, browser = null, vera = null;
+  let sg = null, ss = null, browser = null, vera = null, impQui = 0;
   try {
     sg = await B.serviGioco('');
     ss = await B.serviServer();
@@ -413,6 +413,11 @@ const sosp = (db, id) => (db.allenatore.get(id) || {}).sospetto | 0;
     await B.entra(Bt); await B.entra(At);
     await B.pubblica(Bt); await B.pubblica(At);
     const s = await B.giocaUna(At, ss, [], 24000, 0);
+    /* L'IMPRONTA DEL MOTORE DI QUESTA MACCHINA (voce #142), letta prima
+       di chiudere le due pagine: serve a completare la fixture congelata
+       qui sotto, che e' di prima di quella cura. */
+    impQui = await At.pag.evaluate(() =>
+      (window.__test && typeof window.__test.improntaMotore === 'function') ? window.__test.improntaMotore() : 0);
     await At.ctx.close(); await Bt.ctx.close();
     if (!(s.partita && s.riga)) {
       console.error('PROVA NULLA: la sfida a ' + MISURA_2.join('x') + ' non e\' arrivata al fischio finale.');
@@ -432,7 +437,21 @@ const sosp = (db, id) => (db.allenatore.get(id) || {}).sospetto | 0;
     process.exit(2);
   }
 
-  const CRUDO = N.allarga(FIX.replay);
+/* =====================================================================
+   LA FIXTURE E' DI PRIMA DELLA VOCE #142 e non porta la riga di tipo 11,
+   l'impronta del motore JavaScript. Dal #142 il giudice si astiene su un
+   nastro cosi' (INCOMPLETO/motore-js-ignoto), e tutte le prove qui sotto
+   — che misurano il GIRO della staffetta, i cinque verdetti, il
+   taccuino, il freno — smetterebbero di misurare quel che dicono.
+
+   Si completa con l'impronta di CHI GIUDICA, letta a runtime, e non si
+   rigenera la fixture con un numero fisso: quel numero cambia con la
+   versione del browser, e una fixture legata al Chromium installato si
+   spegnerebbe da sola su un'altra macchina. Che un nastro senza riga 11
+   faccia astenere il giudice e' misurato dove deve esserlo, nella prova
+   E di _q-motore-nastro.js.
+   ===================================================================== */
+  const CRUDO = impQui ? N.conMotore(N.allarga(FIX.replay), impQui) : N.allarga(FIX.replay);
   const indirizzo = 'http://127.0.0.1:' + sg.porta + '/CALCETTO-il-gioco.html';
   /* i due nastri costruiti devono esistere DAVVERO: senzaSchermo torna
      null se quel nastro non aveva una riga di tipo 10, e un banco che
@@ -529,10 +548,55 @@ const sosp = (db, id) => (db.allenatore.get(id) || {}).sospetto | 0;
       const { db } = scenaSei();
       const gr = haS ? S.raggruppa(db.sfida.map(s => ({ ...s }))) : [];
       const chiavi = gr.map(g => g.chiave);
-      di(gr.length === 3 && chiavi[0] === '915x412' && chiavi[1] === '1024x460' && chiavi[2] === 'ignota' &&
+      /* LA CHIAVE E' UNA COPPIA DALLA VOCE #142 — «915x412@3274447767» —
+         perche' due nastri della stessa misura e di due motori diversi
+         non possono stare nella stessa finestra. Qui si controlla il
+         PREFISSO, cioe' il contratto che questa prova ha sempre
+         misurato: sei righe, tre gruppi, in ordine di prima apparizione.
+         Che la parte dopo la chiocciola separi davvero i motori lo
+         misura A6, qui sotto. Legare questa riga al formato esatto della
+         chiave vorrebbe dire rifarla a ogni cambio di stampa. */
+      di(gr.length === 3 && chiavi[0].indexOf('915x412@') === 0 && chiavi[1].indexOf('1024x460@') === 0 &&
+         chiavi[2].indexOf('ignota@') === 0 &&
          gr[0].righe.length === 4 && gr[1].righe.length === 1 && gr[2].righe.length === 1,
          'A4) sei righe diventano TRE gruppi, in ordine di prima apparizione, e i nastri senza schermo stanno a parte',
          chiavi.map((c, i) => c + ':' + gr[i].righe.length).join(' · ') || 'nessun gruppo');
+
+      /* =================================================================
+         A6 — IL MOTORE SEPARA I GRUPPI QUANTO LO SCHERMO (voce #142).
+
+         Due righe con LA STESSA MISURA e due impronte diverse devono
+         diventare DUE gruppi, o la staffetta aprirebbe una finestra sola
+         e giudicherebbe meta' dei nastri sul motore sbagliato — che e'
+         il difetto che il #142 cura. E due righe con la stessa misura e
+         la STESSA impronta devono restare un gruppo solo, o si
+         perderebbe il risparmio che il #138 ha misurato (1165 ms per
+         contesto contro 938 per un giudizio in piu' sulla stessa
+         pagina).
+         ================================================================= */
+      const IMP_A = 111111111, IMP_B = 222222222;
+      const dueMotori = haS ? S.raggruppa([
+        { id: 1, replay: N.conMotore(CRUDO, IMP_A) },
+        { id: 2, replay: N.conMotore(CRUDO, IMP_B) },
+        { id: 3, replay: N.conMotore(CRUDO, IMP_A) },
+      ]) : [];
+      di(dueMotori.length === 2 &&
+         dueMotori[0].righe.length === 2 && dueMotori[1].righe.length === 1 &&
+         dueMotori[0].impronta === IMP_A && dueMotori[1].impronta === IMP_B,
+         'A6) stessa misura e due MOTORI diversi fanno DUE gruppi; stesso motore resta un gruppo solo',
+         dueMotori.map(g => g.chiave + ':' + g.righe.length).join(' · ') || 'nessun gruppo');
+
+      /* e la scelta del motore: chi chiede un'impronta che nessuno ha
+         non si ripiega su un motore qualunque — torna null, e quelle
+         righe restano a verificata = 0 */
+      const finti = [{ nome: 'uno', browser: {}, impronta: IMP_A }, { nome: 'due', browser: {}, impronta: IMP_B }];
+      const sA = haS && S.scegliMotore ? S.scegliMotore(finti, null, IMP_B) : null;
+      const sIgn = haS && S.scegliMotore ? S.scegliMotore(finti, null, 0) : null;
+      const sNo = haS && S.scegliMotore ? S.scegliMotore(finti, null, 999999999) : 'x';
+      di(!!sA && sA.nome === 'due' && !!sIgn && sIgn.nome === 'uno' && sNo === null,
+         'A7) si apre il motore che il nastro chiede; se nessuno ce l\'ha si torna null invece di ripiegare',
+         (sA ? sA.nome : 'null') + ' / ' + (sIgn ? sIgn.nome : 'null') + ' / ' +
+         (sNo === null ? 'null' : String(sNo && sNo.nome)));
 
       /* IL RIFIUTO SENZA CREDENZIALI. Non e' una cortesia: una staffetta
          che parte senza chiave e non lo dice pesca zero righe e riferisce

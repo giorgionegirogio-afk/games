@@ -862,6 +862,28 @@ const CANCELLI = [
                                    '--k', '0,12'],                     conta: true,  lento: true, solo: true },
   { nome: 'motori',          cmd: ['strumenti/_q-motori.js', '--semi', '2', '--secondi', '60'],   conta: false, lento: true  },
   /* =====================================================================
+     motore-nastro / motore-falsi: UN ONESTO CON UN TELEFONO DI UN'ALTRA
+     MARCA (voce #142).
+
+     `motori` qui sopra ha misurato il difetto e sta a conta:false apposta
+     — e' rosso per un guasto vero e aperto (le trascendenti divergono, e
+     la cura e' il cantiere della matematica scritta in casa), e metterlo
+     a true tingerebbe di rosso l'intera batteria per una cosa gia' a
+     registro. Questi due invece misurano LA CURA DELL'ACCUSA INGIUSTA,
+     che e' chiusa e deve restare chiusa: `motore-nastro` che un nastro
+     onesto giudicato su un motore diverso non produca mai NON TORNA (e
+     che sullo STESSO motore si confermi ancora — senza quella meta',
+     «astenersi sempre» passerebbe a pieni voti), `motore-falsi` che il
+     primo se ne accorgerebbe.
+
+     SONO LENTI E CI STANNO: il primo apre tre motori veri e gioca sei
+     sfide intere, il secondo lo rilancia cinque volte (i quattro falsi
+     piu' il controllo positivo). Non sono a cronometro — contano
+     verdetti — quindi possono correre in compagnia senza misurare il
+     carico della macchina. */
+  { nome: 'motore-nastro',   cmd: ['strumenti/_q-motore-nastro.js', '--sfide', '6'],              conta: true,  lento: true  },
+  { nome: 'motore-falsi',    cmd: ['strumenti/_q-motore-falsi.js', '--sfide', '4'],               conta: true,  lento: true  },
+  /* =====================================================================
      rete / sfida: LA SFIDA ASINCRONA, PROVATA SENZA RETE VERA (voce
      #130). Due banchi gia' scritti (data non censita in questo file, mai
      registrati in `tutti.js` — trovato mancante durante il censimento di
