@@ -876,6 +876,28 @@ function spearman(a, b) {
        controNessuno === null && controQualcuno ? 'fantasma: niente · persona: 1500 -> ' + controQualcuno.nascosto.toFixed(1)
          : 'fantasma: ' + JSON.stringify(controNessuno));
 
+    /* E4b: IL RATING DI IERI SOPRAVVIVE ALLA NOTTE — ed e' la riga che
+       mancava. L'ha chiesta un falso, `_crit-glicko-stagione`, che
+       trattava il cambio di periodo come un azzeramento e passava TUTTE
+       E CINQUANTASETTE le prove: E1 e E2 guardano `inattivo` da sola,
+       che li' era intatta, ed E4 ed E5 chiamavano `dopoLaSfida` nel
+       giorno stesso, dove il periodo non cambia. Nessuno chiedeva la
+       cosa che conta.
+
+       Il modo di chiederla che non si puo' aggirare: un giocatore a
+       1900 fermo da dieci giorni gioca UNA partita. Qualunque cosa
+       succeda in quella partita, il numero che esce dev'essere vicino a
+       1900 — non a 1500. E l'incertezza dev'essere cresciuta, non
+       tornata al valore di partenza: sono due cose diverse, e il falso
+       le confondeva tutte e due insieme. */
+    const veterano = { nascosto: 1900, incertezza: 60, volatilita: 0.06, periodo: '2026-09-13' };
+    const tornato = haG && typeof G.dopoLaSfida === 'function'
+      ? prova(() => G.dopoLaSfida(veterano, { nascosto: 1500, incertezza: 60 }, 1, '2026-09-23'), null) : null;
+    di(!!tornato && tornato.nascosto > 1800 && tornato.incertezza > 60 && tornato.incertezza < 350,
+       'E4b) il rating di IERI sopravvive alla notte: chi torna dopo dieci giorni riparte da dov\'era, non da 1500',
+       tornato ? '1900/60 fermo dieci giorni, poi una vittoria -> ' +
+                 tornato.nascosto.toFixed(1) + '/' + tornato.incertezza.toFixed(1) : manca);
+
     /* E5: DUE SFIDE INSIEME CONTRO LO STESSO DIFENSORE. E' la ragione per
        cui muovi_punti esiste, riportata su un numero che non si puo'
        incrementare. Il banco in memoria ha la FORMA del database: una

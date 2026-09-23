@@ -1218,6 +1218,86 @@ const CANCELLI = [
      30-40 s che qui chiede lento (modello `audio.js`) — `lento:true`. */
   { nome: 'finestra',          cmd: ['strumenti/_q-finestra.js'],                       conta: true,  lento: true  },
   /* =====================================================================
+     glicko: IL RATING NASCOSTO (voce #140) — il punto 13 del programma,
+     l'ultimo dell'onda D.
+
+     E' IL SECONDO CANCELLO DELLA BATTERIA CHE NON APRE IL GIOCO, dopo
+     `sospetto`, e per una ragione ancora piu' netta: il rating e'
+     NASCOSTO per disegno. Se si vedesse in un pixel sarebbe un difetto,
+     non una prova. Costa quattro secondi e non accende Chrome. `--gioco`
+     lo ignora — qualunque file gli si punti contro misura sempre rete/ —
+     e il suo `--gioco` si chiama `--rete`, per i falsi.
+
+     LA DECISIONE CHE MISURA. Il mandato si legge in due modi: il rating
+     nascosto ACCANTO ai punti visibili, oppure AL POSTO dell'Elo. Si e'
+     fatta la prima, e non per lettura: i punti di CALCETTO non sono un
+     rating e non possono diventarlo — il difensore perde meta', la serie
+     moltiplica fino a 1,3, c'e' un pavimento a 100 — e misurato su 400
+     allenatori e 18.546 sfide derivano del +1,6% in sessanta giorni.
+     Sono una VALUTA che premia il giocare; il rating e' una MISURA.
+     D9 tiene ferma quella decisione: se qualcuno cancellasse `elo()`
+     per «semplificare», la classifica di tutti cambierebbe forma in una
+     notte e quella riga diventerebbe rossa.
+
+     CHE COSA NESSUN ALTRO CANCELLO VEDE. `sospetto` misura la finestra a
+     DUE coordinate e la tavola dei verdetti, e non sa che cosa sia un
+     rating. `rete/prove/tutte.js` prova l'Elo, che e' l'altra scala, e
+     non sta in batteria. `rete` e `sfida` provano il CLIENT contro un
+     server finto. Nessuno guarda i tre numeri nascosti, nessuno guarda
+     se la terza coordinata abbina meglio, e nessuno aveva mai
+     confrontato la nostra matematica con un'implementazione di
+     riferimento.
+
+       A) L'ESEMPIO LAVORATO DI GLICKMAN, numero per numero — il
+          cancello che il mandato chiede per nome (milestone M9:
+          «Glicko-2 verified against a reference implementation»). Dieci
+          valori, dai g(phi) a r' e RD'. E dove i nostri non coincidono
+          col paper — v e Delta — la prova NON allarga la tolleranza:
+          rifa' il conto con i g e gli E STAMPATI e ritrova 1,7785 e
+          -0,4834, cioe' dimostra che lo scarto e' l'arrotondamento del
+          paper. Un'implementazione sbagliata non cadrebbe su tutti e due.
+       B) LE PROPRIETA' che l'esempio non esercita: la certezza che cala
+          giocando e ricresce stando fermi, il tetto e il pavimento
+          (provato dove MORDE, con duecento partite in un periodo solo —
+          a una partita per volta non morde mai), la volatilita' che si
+          muove nei due versi, e la cosa che l'Elo non sa fare: battere
+          un forte CERTO vale piu' che battere un forte INCERTO.
+       C) L'ABBINAMENTO, e la grandezza non e' lo scarto di punti —
+          sarebbe giudicare un metro con se' stesso — ma lo scarto di
+          ABILITA' LATENTE, che ne' i punti ne' il rating conoscono.
+          Prima e dopo nella stessa corsa, tre popolazioni, e IL PEGGIO
+          SERVITO, che e' dove il #137 aveva trovato il suo difetto e
+          dove questo cantiere ha trovato i suoi due.
+       D) LE PORTE DEL SERVER, e questo gruppo DICE di attestare invece
+          di misurare: qui non c'e' un Postgres. Colonne, RLS, revoke
+          con la firma esatta, il drop della firma vecchia, il predicato
+          SQL accanto al JavaScript, e il rating che non esce da nessuna
+          tupla ne' endpoint.
+       E) IL PERIODO E LA CONCORRENZA: il giorno nuovo che NON azzera,
+          due sfide nello stesso istante contro lo stesso difensore
+          senza che nessuna si perda, la resa dopo tre tentativi che non
+          rompe la sfida, il fantasma che non muove il rating, e la
+          divergenza fra aggiornare a partita e a giornate — MISURATA,
+          perche' il mandato chiede un periodo di un giorno e noi
+          aggiorniamo a ogni sfida.
+
+     PRENDE `--seme`, e non e' un vezzo: con 7/5/3 il pavimento dava
+     quattro avversari possibili sulla base da dodici e sembrava a
+     posto; su altri due semi ne dava TRE. Un numero misurato su una
+     popolazione sola e' un aneddoto.
+
+     SA FALLIRE: SEI falsi (`_crit-glicko-*`), ognuno costruito nel caso
+     peggiore, con la bite list misurata su 58 prove — `ferma` 3,
+     `cresce` 11 (e passa A9: il rating resta esatto, sbaglia solo la
+     certezza), `sorda` 2 e PASSA IL GRUPPO A (nell'esempio del paper la
+     differenza fra ricalcolare la volatilita' e lasciarla ferma e' di
+     quattro milionesimi), `visibile` 4 e cade SOLO sulla misura perche'
+     cambia JavaScript e SQL insieme, `stagione` 1, `fantasma` 1. E
+     `stagione` ha trovato un buco: passava tutte e 57 le prove, perche'
+     nessuna chiedeva che il rating di ieri sopravvivesse alla notte.
+     E4b e' nata da li'. */
+  { nome: 'glicko',            cmd: ['strumenti/_q-glicko.js'],                         conta: true,  lento: false },
+  /* =====================================================================
      tocco: IL DITO ARRIVA DOVE VEDE? — il punto cieco che il 28 agosto
      2026 e' costato DUE difetti in un giorno solo, e nessuno dei quindici
      cancelli in lista ne ha visto uno.

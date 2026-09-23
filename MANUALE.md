@@ -517,6 +517,240 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Il rating nascosto, Glicko-2 — #140 CANTIERE CHIUSO** (voce #140, 23
+  settembre 2026, cinque compiti dal merge-base `562e62e` — spec
+  `docs/superpowers/specs/2026-09-23-glicko-design.md`, piano
+  `docs/superpowers/plans/2026-09-23-glicko.md`). **Il punto 13 del
+  programma, l'ultimo dell'onda D** (`_analisi/MAPPA-MANDATO.md:767`).
+  Cantiere di SERVER: `git diff main -- CALCETTO-il-gioco.html` è
+  **vuoto**, `MOTORE_V` resta **2**.
+
+  **(a) LA DECISIONE, presa con una misura e non con una lettura.** Il
+  mandato si può leggere in due modi, e i due modi stanno scritti in due
+  righe diverse dei nostri stessi documenti: il rating nascosto
+  **accanto** ai punti visibili (`MANDATO-STADIUM-ROAR.md:163-164`,
+  «hidden rating» e «visible trophy ladder» come due cose) oppure **al
+  posto** dell'Elo (`MAPPA-MANDATO.md:479`, «sostituire `elo()`»).
+
+  Si è fatta la prima, e la ragione non è di lettura: **i punti di
+  CALCETTO non sono un rating e non possono diventarlo**. Quattro
+  decisioni prese apposta e scritte in chiaro in `rete/api/sfida.js` —
+  il difensore perde metà di quel che l'attaccante guadagna, la serie di
+  vittorie moltiplica fino a ×1,3, c'è un pavimento a 100, contro un
+  avversario costruito si prende metà senza toglierlo a nessuno — e
+  ognuna delle quattro **crea valore dal nulla**. È giusto che lo
+  faccia: i punti sono una *valuta* che premia il giocare. Un rating
+  invece si conserva. Misurato su una popolazione simulata di 400
+  allenatori e 18.546 sfide: il totale dei punti deriva del **+1,6 % in
+  sessanta giorni**. E la (b) riscriverebbe la classifica di tutti in
+  una notte senza avere il posto dove farlo, perché il committente ha
+  **escluso ogni azzeramento stagionale** (`MAPPA-MANDATO.md:707`).
+
+  L'altra metà della decisione: il rating nascosto stima l'abilità vera
+  **meglio** dei punti — rho di Spearman 0,974 contro 0,956 su 400
+  allenatori, 0,985 contro 0,967 fra i veterani. Poco in valore
+  assoluto, e tutto nella coda: è nella coda che si decide chi incontri.
+
+  **(b) LA VERIFICA CONTRO L'IMPLEMENTAZIONE DI RIFERIMENTO**, che è il
+  cancello che il mandato chiede per nome (milestone M9: «Glicko-2 and
+  trophies verified against a reference implementation»). L'esempio
+  lavorato di Glickman — 1500 con RD 200 e volatilità 0,06, τ = 0,5, tre
+  partite contro 1400/30 vinta, 1550/100 persa, 1700/300 persa —
+  riprodotto **numero per numero**:
+
+  | | paper | nostro |
+  |---|---|---|
+  | g(φ_j) | 0,9955 · 0,9531 · 0,7242 | uguali |
+  | E | 0,639 · 0,432 · 0,303 | uguali |
+  | v | 1,7785 | 1,77898 |
+  | Δ | −0,4834 | −0,48393 |
+  | σ' | 0,05999 | 0,059996 |
+  | φ* | 1,1529 | 1,15290 |
+  | φ' | 0,8722 | 0,87220 |
+  | μ' | −0,2069 | −0,20694 |
+  | **r'** | **1464,06** | **1464,05** |
+  | **RD'** | **151,52** | **151,52** |
+
+  I due valori che non coincidono — v e Δ — **non sono stati fatti
+  passare allargando la tolleranza**. Il banco rifà il conto **con i g e
+  gli E stampati dal paper** (0,9955/0,9531/0,7242 e 0,639/0,432/0,303) e
+  ritrova esattamente 1,7785 e −0,4834: lo scarto è l'arrotondamento del
+  paper, non un nostro errore. Un'implementazione sbagliata non cadrebbe
+  su **tutti e due** i valori.
+
+  **(c) I TRE NUMERI, E DOVE VIVONO.** `nascosto` (1500), `incertezza`
+  (350, la *deviation*), `volatilita` (0,06), più `periodo` e `giri`:
+  **cinque colonne su `punti`**, non una tabella nuova. RLS è acceso con
+  zero policy su tutte e sei le tabelle e ognuna sta nel `revoke`: una
+  tabella nuova sarebbe l'unica porta aperta del database, **e lo sarebbe
+  in silenzio**.
+
+  `periodo` sta apposta accanto a `stagione`, perché è lì che le due si
+  confonderebbero: **il giorno nuovo non azzera niente**. Il rating resta
+  quello di ieri, e a crescere è soltanto l'incertezza (φ' = √(φ²+σ²) per
+  ogni giorno saltato, applicato *in differita* al prossimo aggiornamento
+  invece che da un lavoratore notturno). Il mandato parla anche di
+  `season reset every 4 weeks`: non è questa colonna, ed è una riga già
+  esclusa in casa.
+
+  `giri` è la **guardia**. `muovi_punti` risolve la corsa con
+  l'atomicità di un incremento; Glicko-2 non è un incremento — ha bisogno
+  di leggere prima di scrivere — quindi `posa_nascosto` scrive solo se
+  nessun altro è passato nel frattempo. Tre tentativi, poi ci si arrende
+  **senza rompere la sfida**: i punti visibili si sono già mossi, il
+  replay è già registrato, e un rating nascosto perso è un'informazione
+  in meno, non un danno.
+
+  **Contro un avversario costruito il rating NON si muove**, e non è la
+  stessa scelta dei punti: `forza_avv * 20` vale mezzi punti perché una
+  classifica ferma è morta, ma non è una *misura*, e darla in pasto al
+  rating vorrebbe dire insegnargli una favola. Conseguenza detta: chi fa
+  solo allenamenti resta a incertezza 350 — «non lo so» — ed è anche
+  quel che gli fa trovare un avversario.
+
+  **(d) L'ABBINAMENTO USA IL RATING NASCOSTO**, estendendo la finestra
+  del #137 e non riscrivendola: il gradino era un numero, poi una
+  coppia, adesso è una **terna**.
+
+  E la terza coordinata **non è una distanza**. Confrontare i rating a
+  distanza è stato provato e misurato quasi inutile — su 400 allenatori
+  lo scarto di abilità vera passa da 136 a 122, perché l'incertezza di
+  due assestati vale 124 e si mangia la banda. La grandezza giusta
+  Glicko-2 ce l'ha già in casa: l'**atteso**, dove l'incertezza di tutti
+  e due entra per costruzione perché g(φ) appiattisce verso 0,5 quando il
+  sistema non sa. Un gradino non dice «vicini di rating», dice **«la
+  partita non dev'essere decisa prima del fischio»**: |E − 0,5| ≤
+  `equilibrio`. Ed è la stessa grandezza che il mandato nomina nella
+  formula dei trofei.
+
+  Misurato, 5000 ricerche, stessa popolazione e stesso seme per il prima
+  e il dopo. **La grandezza non è lo scarto di punti** — sarebbe
+  giudicare un metro con sé stesso — ma lo scarto di **abilità latente**,
+  che né i punti né il rating conoscono:
+
+  | popolazione | | mediano | p90 | «entro 100» | peggio servito | a vuoto |
+  |---|---|---|---|---|---|---|
+  | **400** | oggi (#137) | 133 | 355 | 40 % | 8 | 0 |
+  | | **col nascosto** | **72** | **183** | **65 %** | 7 | 0 |
+  | **60** | oggi | 151 | 340 | 34 % | 6 | 0 |
+  | | **col nascosto** | **94** | **249** | **52 %** | 5 | 0 |
+  | **12** | oggi | 291 | 554 | 21 % | 4 | 0 |
+  | | **col nascosto** | **185** | **391** | **30 %** | 4 | 0 |
+
+  **Zero ricerche in più senza avversario**, su tutte e tre le
+  popolazioni e su quattro semi.
+
+  **IL RATING NON ESCE DAL DATABASE**, come il `sospetto` del #137 e per
+  la stessa ragione: la tupla di `trova_avversario` finisce dritta nel
+  corpo della risposta di `/api/avversario`, cioè sul telefono di
+  un'altra persona. Conseguenza, detta perché toglie una rete:
+  `ammissibile` **non può ricontrollare** la terza coordinata, e se un
+  giorno `equilibrato` e `atteso_glicko` divergessero l'endpoint non se
+  ne accorgerebbe. Il cambio è buono: l'alternativa è mandare il rating
+  di un'altra persona sul telefono di chi la sfida. E i *miei* due numeri
+  non li legge nemmeno l'endpoint: se li prende la CTE `mia`, dove il
+  dato già sta.
+
+  **(e) IL BANCO HA CORRETTO IL PROGETTO TRE VOLTE**, ed è la parte di
+  questo cantiere che vale più del codice.
+
+  1. **I gradini sono CINQUE, non quattro.** Con quattro, su una base di
+     dodici, stringere i primi tre faceva cadere la ricerca sull'ultimo
+     molto più spesso (gradino medio da 2,00 a 3,24) — e l'ultimo, per
+     costruzione, non ha limiti. Misurato: lo scarto mediano migliorava
+     (291 → 226) e **la coda peggiorava**, p90 da 554 a **666**. Partite
+     più giuste per quasi tutti, e qualche partita più assurda di prima
+     per chi finiva in fondo alla scala. Il gradino in più è un
+     **atterraggio**: forza e punti già senza limite, ma l'equilibrio
+     ancora a 0,40. Col quinto gradino il p90 su dodici va a **391**.
+  2. **Il pavimento è 7/5/4/2/1, non 8/6/4/1.** 8/6/4 protegge il mazzo
+     meglio di chiunque e costa altrove: su dodici persone un gradino che
+     ne chiede otto non si soddisfa quasi mai, la ricerca cade più in
+     basso, e **una misura del #137 si disfaceva** — lo scarto mediano di
+     *punti* sulla base da dodici da 147 a 213 (`_q-sospetto` C5, che con
+     7/5/4 resta a 147). Il pavimento giusto è il più alto che non
+     disfaccia una misura già pagata.
+  3. **E 7/5/3 è stato scartato da un SECONDO SEME, non da un'idea.** Su
+     20260923 dava quattro avversari possibili sulla base da dodici e
+     sembrava a posto; su 987654 e 555 ne dava **tre**. Da lì il banco
+     prende `--seme`, e i suoi 58 controlli sono verdi su quattro
+     popolazioni: un numero misurato su una popolazione sola è un
+     aneddoto, e qui l'aneddoto avrebbe fatto passare una finestra che
+     affama qualcuno una volta su due.
+
+  **(f) IL BANCO E I SEI FALSI.** `strumenti/_q-glicko.js`, **58/58**,
+  quattro secondi, `conta:true`, e **non apre il gioco** — il secondo
+  cancello della batteria che misura il server, dopo `sospetto`. Cinque
+  gruppi: **A** il riferimento di Glickman, **B** le proprietà che
+  l'esempio non esercita, **C** l'abbinamento misurato sull'abilità
+  latente, **D** le porte del server (e questo gruppo **dichiara di
+  attestare**: qui non c'è un Postgres), **E** il periodo e la
+  concorrenza.
+
+  Sei falsi, ognuno costruito nel caso peggiore, con la **bite list
+  misurata** su 58 prove:
+
+  | falso | morde | quante |
+  |---|---|---|
+  | `ferma` (l'incertezza non decade per chi non gioca) | B3, B4, E1 | 3 |
+  | `cresce` (la certezza va dalla parte sbagliata) | A8, B1, B2, B3, B5, B5b, C6400, C812, C9, C10, E7 | 11 |
+  | `sorda` (la volatilità non si ricalcola mai) | B8, B8b | 2 |
+  | `visibile` (abbina sui punti invece che sul rating) | C4, C5, C6400, C9 | 4 |
+  | `stagione` (il periodo trattato come una stagione) | E4b | 1 |
+  | `fantasma` (il rating impara dagli avversari costruiti) | E4 | 1 |
+
+  Due meritano una riga. **`sorda` passa il gruppo A per intero**: nell'
+  esempio del paper la differenza fra ricalcolare la volatilità e
+  lasciarla ferma a 0,06 è di **quattro milionesimi**, sotto la
+  precisione con cui il riferimento è pubblicato — una verifica contro
+  il paper, da sola, non lo vede. È la ragione per cui il gruppo B
+  esiste. E **`cresce` passa A9**: il rating resta esatto, sbaglia solo
+  la certezza, che è una firma che lo identifica invece di un'esplosione.
+
+  **E `stagione` ha trovato un buco nel banco**, che è la ragione per cui
+  i falsi si costruiscono: alla prima costruzione **passava tutte e 57 le
+  prove**. E1 ed E2 guardavano `inattivo` da sola, che lì era intatta, ed
+  E4 ed E5 chiamavano `dopoLaSfida` nel giorno stesso, dove il periodo
+  non cambia. Nessuna riga chiedeva la cosa che conta — **il rating di
+  ieri sopravvive alla notte** — e senza quella riga il banco avrebbe
+  dichiarato verde una classifica che si riscrive ogni notte. **E4b è
+  nata da lì.**
+
+  **(g) I LIMITI, DICHIARATI.** (1) **L'SQL non si esegue**: non c'è un
+  Postgres nel repo, la regola vive in JavaScript e l'SQL ne è la
+  traduzione; il gruppo D confronta le due **per testo** e lo dice. Per
+  questo la formula dell'atteso in SQL sta in una funzione sua
+  (`atteso_glicko`) e non sepolta in un `where` di sei righe: l'unica
+  difesa contro una divergenza è che le due lingue si possano leggere una
+  accanto all'altra. (2) **Un rating solo, non uno per modo** come chiede
+  il mandato — e si misura perché: spezzare in tre la stessa evidenza
+  porta l'incertezza mediana **da 63 a 88** (400 allenatori) e **da 65 a
+  93** (12), e un rating più incerto abbina peggio. Si riapre quando la
+  base lo regge. (3) **Il periodo di rating è di una partita, non di un
+  giorno**: le formule sono le stesse (Glicko-2 è definito per m partite,
+  e uno è un m valido) e la divergenza è **misurata invece che promessa**
+  — stessa storia giocata due volte, scarto mediano **25** punti di
+  rating, massimo 50. (4) Nessun trofeo, nessuna lega, nessuna stagione,
+  **nessun piazzamento contro bot calibrati** (i nostri bot non sono
+  calibrati: calibrarli è un cantiere a parte). (5) **La popolazione è
+  simulata**, col modello dichiarato dentro il banco.
+
+  **(h) LA RETTIFICA DELL'ONDA D.** «ONDA D CHIUSA», scritto dal #137 in
+  poi e ripetuto dal #138 e dal #139, **era vero sui punti 11 e 12 del
+  programma, non su tutta l'onda**: l'onda D ne ha **tre**
+  (`_analisi/MAPPA-MANDATO.md:763-768`) e il 13 — il Glicko-2 — non era
+  fatto. Nessuno dei tre verbali diceva il falso su quel che *aveva*
+  fatto; tutti e tre chiamavano «chiusa» un'onda a cui mancava un punto
+  su tre. Rettificato a edizioni in `PUNTO-DEL-LAVORO.md`, senza
+  cancellare il testo vecchio. **Con questo cantiere l'onda D è chiusa
+  davvero, 3 punti su 3.**
+
+  *Prova:* `rete/lib/glicko.js`, `rete/lib/abbinamento.js`,
+  `rete/api/sfida.js`, `rete/api/avversario.js`, `rete/schema.sql`,
+  `rete/prove/tutte.js` (46/46, con l'esempio di Glickman ripetuto anche
+  lì — due porte, come la tavola dei cinque verdetti del #137);
+  `strumenti/_q-glicko.js` 58/58 su quattro semi, `strumenti/_crit-glicko-*.js`.
+
 - **La finestra che cambia — #139 CANTIERE CHIUSO** (voce #139, 22
   settembre 2026, quattro compiti dal merge-base `1d5b946` — spec
   `docs/superpowers/specs/2026-09-22-finestra-che-cambia-design.md`,
