@@ -172,6 +172,63 @@ tecnica dei giochi di combattimento, e regge fin dove regge la connessione.
 Quando la connessione salta, si degrada in modo pulito: il gioco continua
 contro la CPU e il risultato si registra come sfida asincrona.
 
+> **RETTIFICA A EDIZIONI (23 settembre 2026, voce #145).** Le quattro righe
+> qui sopra contengono **tre affermazioni non misurate presentate come
+> fatti**, e oggi sono state misurate tutte e tre. Il testo vecchio resta in
+> piedi perché è il disegno da cui si è partiti; questa è la misura.
+>
+> **UNO: «Supabase Realtime» non esiste.** Non c'è nessun progetto Supabase.
+> Nessun riferimento `<ref>.supabase.co` nel repo, nessuna variabile
+> `SUPABASE_*` nell'ambiente, **zero variabili configurate** sul progetto
+> Vercel `calcetto-rete` (verificato via API Vercel), e il deployment di
+> produzione risponde **503 `DEPLOYMENT_PAUSED`** dall'edge `fra1`. Il
+> trasporto di questa sezione descrive qualcosa che non è collegato a niente.
+> Quel che regge, **LETTO dalla documentazione ufficiale e non misurato**: il
+> protocollo Phoenix **si parla con un `WebSocket` nudo**, senza libreria —
+> quindi «zero dipendenze» sopravvive. Non sopravvive «nessuna chiave
+> nell'HTML»: l'`apikey` è obbligatoria nell'URL, e o finisce nel file — e
+> rompe una regola scritta più sotto in questa stessa pagina — o serve un
+> endpoint nuovo che conii un gettone a vita breve.
+>
+> **DUE: i «6 fotogrammi (100 ms)» erano un numero di progetto, mai
+> misurato.** Oggi il numero c'è, e si chiama `D_rete` = andata al p95 + il
+> buffer di dejitter + un tick. Misurato su relay WebSocket veri (3.000 e 800
+> pacchetti, da una connessione **fissa** italiana): **23,3 e 30,6 tick**,
+> cioè **387 e 510 ms**. Non 100. E la soglia dichiarata *prima* di misurare
+> era 18 tick.
+> **Ma il numero che decide non è nemmeno quello.** Un invio ogni 100 ms sono
+> 600 pacchetti al minuto: per stare sotto uno stallo al minuto il ritardo
+> deve coprire il **p99,83**, non il p95. Misurato: **30,4 e 38,4 tick**.
+> E la coda **arriva a raffica** — il 78% e il 67% dei pacchetti lenti ne ha
+> un altro lento subito prima, contro il 5% che l'indipendenza prevederebbe:
+> è il blocco in testa alla fila di TCP, e toglie di mezzo la ridondanza, che
+> era l'unica mitigazione a buon mercato.
+> **Verdetto: il lockstep continuo a 60 Hz NON è ammesso.** Non perché la rete
+> sia lenta — le mediane stanno benissimo, 67 ms a due gambe, e AGCOM dà 28 ms
+> di RTT medio sul mobile italiano — ma perché **decide la coda**, e la coda
+> non sta ferma nemmeno fra due corse della stessa sera (p99 da 335 a 493 ms
+> in mezz'ora, stesso relay, stessa connessione).
+>
+> **TRE: «il gioco continua contro la CPU» non è realizzabile in lockstep.**
+> Nell'istante in cui un lato sostituisce una CPU, le due simulazioni smettono
+> di essere la stessa partita e non esiste più una verità condivisa. Il
+> degrado onesto è un altro, e vale lo stesso: **la partita si ferma, i due
+> nastri si troncano allo stesso tick, e chi è rimasto sottomette il suo
+> nastro come sfida asincrona col punteggio a quel tick** — che è un nastro
+> normale, e il giudice dentro il gioco lo verifica senza una riga nuova.
+>
+> **QUEL CHE RESTA IN PIEDI, ed è tanto.** Il P2P con solo STUN **passa da una
+> rete fissa italiana** (mappatura NAT indipendente dall'endpoint, misurata
+> con tre STUN interrogati dallo stesso socket); sul CGNAT mobile resta
+> l'ignoto. E la misura indica **la terza via**: il danno dello stallo scala
+> con la *frequenza* del canale, e un 1v1 fatto di **duelli** — pochi scambi,
+> verbi già semantici nel nastro, orologio proprio — sta dentro i freni delle
+> funzioni di oggi (30-60 richieste al minuto) senza un servizio nuovo, senza
+> una chiave nuova e senza bolletta.
+>
+> Referto completo: `_analisi/MISURA-RETE-145.md` · dati grezzi
+> `_analisi/misura-rete-145.json` · verbale `MANUALE.md` §A registro, voce #145.
+
 ## Le regole di costruzione, e sono vincoli del mandato
 
 **Offline è il modo predefinito.** Senza rete il gioco non cambia di una
