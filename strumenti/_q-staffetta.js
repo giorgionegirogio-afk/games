@@ -991,8 +991,24 @@ const sosp = (db, id) => (db.allenatore.get(id) || {}).sospetto | 0;
 
       const apiDir = path.join(RADICE, 'rete', 'api');
       const api = fs.existsSync(apiDir) ? fs.readdirSync(apiDir).filter(f => f.endsWith('.js')) : [];
-      di(api.length === 5,
-         'F1) gli endpoint sono ancora CINQUE: la staffetta non e\' un endpoint e non ne apre uno',
+      /* RETTIFICA A EDIZIONI (24 settembre 2026, voce #146). Qui c'era
+         `api.length === 5`. Oggi sono SEI: la voce #146 ha aperto
+         `/api/dischetto`, la cassetta della sfida dal dischetto, e l'ha
+         aperto APPOSTA. Il vecchio numero non era sbagliato quando fu
+         scritto: diceva «LA STAFFETTA non apre endpoint», ed e' ancora
+         vero — la staffetta resta un processo che apre un browser, e la
+         ragione per cui non e' un endpoint sta in testa a
+         strumenti/staffetta.js e non e' cambiata di una virgola (una
+         funzione Vercel non ha un browser, e il giudice E' il gioco).
+
+         E' la TERZA guardia della stessa famiglia trovata in questo
+         cantiere — le altre due sono `_q-sospetto` D8 e `_q-glicko`
+         D2/D8 — e questa e' saltata fuori SOLO dalla batteria dei
+         cancelli lenti, che il piano del compito non nominava. Lezione
+         22, alla seconda occasione nella stessa giornata.
+         Fonte: rete/api/dischetto.js. */
+      di(api.length === 6,
+         'F1) gli endpoint sono SEI e la staffetta non e\' uno di loro (edizione del 24/9/2026: erano cinque)',
          api.join(', '));
 
       const schema = fs.existsSync(path.join(RADICE, 'rete', 'schema.sql'))

@@ -100,10 +100,33 @@ const verde = (testo, prova) => new RegExp('^\\s*OK\\s+' + prova + '\\)', 'm').t
     process.exit(3);
   }
   const provTutte = FALSI.flatMap(f => f.morde);
+
+  /* «ROSSA» E «ASSENTE» NON SONO LA STESSA COSA, e confonderle e' il modo
+     piu' rapido per far accusare il gioco da uno strumento che non ha
+     misurato niente. Una prova che non compare nel referto NON e' una
+     prova fallita: vuol dire che il banco non e' arrivato fin li' —
+     browser che non parte sotto carico, contesa sulle porte, uscita 2.
+     La prima versione le trattava uguale e stampava «G5 e' rossa GIA'
+     sul gioco onesto», che e' un'accusa al gioco fatta con il silenzio
+     del banco. Adesso si guardano TRE cose: il codice d'uscita, le
+     prove rosse e le prove ASSENTI, e ognuna ha la sua parola. */
+  const rosse = provTutte.filter(p => rossa(onesto.testo, p));
+  const assenti = provTutte.filter(p => !rossa(onesto.testo, p) && !verde(onesto.testo, p));
   const oneste = provTutte.filter(p => verde(onesto.testo, p));
   console.log('\n  CONTROLLO POSITIVO — il gioco onesto: ' + oneste.length + ' su ' + provTutte.length + ' prove verdi');
-  for (const p of provTutte) if (!verde(onesto.testo, p)) console.log('    NO  ' + p + ' e\' rossa GIA\' sul gioco onesto: il banco non puo\' discriminare con lei');
-  if (oneste.length !== provTutte.length) {
+  for (const p of rosse) console.log('    NO  ' + p + ' e\' ROSSA gia\' sul gioco onesto: il banco non puo\' discriminare con lei');
+  for (const p of assenti) console.log('    ??  ' + p + ' non compare nel referto: il banco non ci e\' arrivato');
+
+  if (onesto.uscita === 2 || assenti.length) {
+    console.error('\n  PROVA NULLA: il controllo positivo non e\' utilizzabile' +
+                  (onesto.uscita === 2 ? ' (il banco e\' esploso, uscita 2)' : '') +
+                  (assenti.length ? ' (prove assenti: ' + assenti.join(', ') + ')' : '') + '.');
+    console.error('  Non si conclude niente sui falsi: un banco che non ha misurato non assolve e non condanna.');
+    const ult = onesto.testo.trim().split('\n').slice(-6).join('\n');
+    console.error('  ultime righe del referto onesto:\n' + ult);
+    process.exit(3);
+  }
+  if (rosse.length) {
     console.error('\n  IL CONTROLLO POSITIVO E\' FALLITO. Senza, ogni falso sarebbe "morso" da un banco rotto.');
     process.exit(1);
   }

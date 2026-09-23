@@ -565,12 +565,29 @@ const mossaPari = (ruoloA, t) => (ruoloA === 't' ? mossaPara(t) : mossaTiro(t));
       /* G4 — L'ALTRO SPARISCE. Il caso che decide il disegno: chi resta
          NON deve vincere, o spegnere il telefono dell'altro diventa una
          strategia. */
-      const r4 = await d_crea(A); await d_entra(B, r4.stanza);
-      for (let g = 0; g < 40; g++) {
-        const s = await d_stato(A);
-        if (s.tiro >= 2) break;
-        await passoDiSerie(A, B);
+      /* LA PREPARAZIONE DEVE GARANTIRE CHE LA SERIE SIA ANCORA VIVA
+         quando l'altro sparisce, e la prima versione non lo garantiva:
+         aspettava che `tiro` arrivasse a 2 e poi chiudeva B — ma una
+         serie puo' essere gia' DECISA al secondo tiro (uno per parte,
+         2-0), e in quel caso B spariva da una partita gia' finita. Il
+         banco allora leggeva `causa: finita` e dava la colpa al gioco.
+         Adesso si cerca il momento giusto — almeno un tiro risolto E la
+         serie ancora aperta — e se in cinque appuntamenti non lo si
+         trova, LA PROVA SI DICHIARA NULLA invece di inventare un rosso. */
+      let pronto = false;
+      for (let tent = 0; tent < 5 && !pronto; tent++) {
+        const r4 = await d_crea(A); await d_entra(B, r4.stanza);
+        for (let g = 0; g < 60; g++) {
+          const s = await d_stato(A);
+          if (s.fase === 'fine') break;
+          if (s.tiro >= 1 && s.fase !== 'fine') { pronto = true; break; }
+          await passoDiSerie(A, B);
+        }
       }
+      if (!pronto) {
+        di(false, 'G4) PROVA NULLA: in cinque appuntamenti la serie non e\' mai rimasta aperta dopo un tiro');
+        di(false, 'G5) PROVA NULLA: senza G4 non c\'e\' niente da misurare');
+      } else {
       await B.pag.evaluate(() => window.__test.dischetto.chiudi());
       for (let g = 0; g < 200; g++) {
         const s = await d_stato(A);
@@ -585,6 +602,7 @@ const mossaPari = (ruoloA, t) => (ruoloA === 't' ? mossaPara(t) : mossaTiro(t));
       di(s4.fine === null || s4.fine === 'incompiuta' || s4.fine === '',
          'G5) e non assegna punti a chi resta (chi spegne il telefono dell\'altro non vince)',
          'fine=' + JSON.stringify(s4.fine));
+      }
 
       /* G6 — il server spento del tutto */
       const r6 = await d_crea(A); await d_entra(B, r6.stanza);

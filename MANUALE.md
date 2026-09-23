@@ -517,6 +517,246 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **LA SFIDA DAL DISCHETTO — #146 CANTIERE CHIUSO** (voce #146, 24 settembre
+  2026, cinque compiti dal merge-base `5038eee` — spec
+  `docs/superpowers/specs/2026-09-24-sfida-dal-dischetto-design.md`, piano
+  `docs/superpowers/plans/2026-09-24-sfida-dal-dischetto.md`). **È il cuore
+  dell'ONDA E nella forma che la misura le ha assegnato**, non in quella che il
+  progetto d'onda teneva come primo ramo. **`MOTORE_V` resta 4, e lo dice una
+  misura** (vedi (f)).
+
+  ### (a) PERCHÉ QUESTA FORMA, e non il lockstep
+
+  Il committente aveva posto la regola: «lockstep prima; il server autoritativo
+  SOLO SE la misura dice che il lockstep non basta». La misura ha parlato
+  quattro volte, e questo cantiere è la conseguenza:
+
+  | voce | misura | conseguenza |
+  |---|---|---|
+  | #141 | il danno è un **gradino**: da 50 a 300 ms si paga lo stesso, 18 tick e nessun verbo muore | la soglia è `D_rete ≤ 18 tick` |
+  | #143 | i tre motori JS vedono la stessa partita | il determinismo regge fra macchine |
+  | #144 | l'atto risolto al posto del pixel | due telefoni diversi, stessa partita |
+  | #145 | **NO al lockstep continuo**: non per la mediana (67 ms) ma per la coda, che vale 3,7-5,5× e **arriva a raffica nel 78,4% dei casi** — quindi la ridondanza non aiuta. 9-17 stalli al minuto contro una soglia di meno di uno | fattore nove, non margine stretto |
+
+  E la derivazione che sceglie *questo* cantiere invece del VPS: **il danno da
+  stallo scala con la FREQUENZA del canale** (`600 invii/min × P(coda)`). Dieci
+  scambi per duello danno **0,017 stalli per duello**. Il server autoritativo
+  **non risolve il problema misurato**: non toglie la coda, la tollera
+  estrapolando o riavvolgendo, e il gioco non ha né l'una né l'altro.
+
+  ### (b) LA FORMA DEL GIOCO, come è stata costruita
+
+  Una **serie di rigori fra due telefoni**. Cinque tiri per parte, poi a
+  oltranza; a ogni tiro uno tira e l'altro para, e al tiro dopo i ruoli si
+  scambiano. Non è un modo nuovo: è **lo shoot-out che il gioco già sapeva
+  fare** (`avviaRigori` `:19910`, `programmaRigore` `:19916`, `esitoRigore`
+  `:19932`), portato fra due telefoni. I verbi sono le **tre porte vere** del
+  duello — `pickZone(z,u,v)`, `stopPower()`, `pickKeeper(z)` — e non una
+  simulazione riscritta accanto: **per questo le righe di nastro di tipo 6
+  escono da sé e il nastro resta rigiocabile** senza che il blocco di rete ne
+  sappia niente. La taglia è fissata a **5**, perché il determinismo pieno vale
+  lì (voce #98, seguito #129).
+
+  **Le due rose stanno negli stessi posti sui due telefoni**: il lato `a` è la
+  squadra 0 anche sul telefono di `b`. Se ognuno si mettesse in casa, i due
+  `resolve()` leggerebbero attributi diversi e la stessa mossa darebbe esiti
+  diversi — la partita divergerebbe per costruzione, e la colpa sembrerebbe del
+  protocollo.
+
+  ### (c) IL TRASPORTO SCELTO, e che cosa resta NON misurato
+
+  **La cassetta**: un buca-lettere indicizzato (`/api/dischetto`, tabella
+  `cassetta`) letto a polling. **Quattro ragioni, nessuna è un gusto:**
+
+  1. il beneficio di WebRTC è latenza che la misura dice che **non serve**;
+  2. il rischio di WebRTC **non è misurabile da qui** — la riuscita su CGNAT
+     mobile è **S5, dichiarata mancante** dal #145;
+  3. **WebRTC non toglie la cassetta, la somma**: il segnale (SDP, 1-2 kB) deve
+     passare da un punto d'incontro, e quel punto è la cassetta stessa. Quindi
+     (a) è sempre **(b) più altro codice**, mai (b) in meno;
+  4. la frequenza ci sta nei freni di oggi — **misurato**, vedi (e).
+
+  **Il degrado non è una caduta da provare: è lo stato di riposo.** La via
+  scelta *è* già la più degradata delle tre. Quello che è stato progettato e
+  misurato è il comportamento della cassetta **quando la rete fa male** (g).
+
+  **NON MISURATO, dichiarato:**
+  - **S5** — WebRTC su CGNAT mobile italiano. Non c'è una riga di codice che ci
+    si appoggi.
+  - **Il backend vero non esiste oggi**: il deployment di `calcetto-rete`
+    risponde **503 `DEPLOYMENT_PAUSED`** e non c'è un progetto Supabase (#145,
+    cinque verifiche). **Tutte le misure di questo cantiere sono contro un
+    server finto in memoria** — come già `_q-sfida.js`, `_sfida-due-telefoni.js`
+    e `rete/prove/tutte.js` per tutta la sfida asincrona che vive qui da mesi.
+    Il codice dell'endpoint e il suo freno sono scritti e provati; **che il vero
+    server si comporti come il finto non è misurato, perché non c'è un vero
+    server.**
+  - La latenza vera fra due telefoni italiani su operatori diversi (misura
+    S-prima del #145 §5.2).
+
+  ### (d) LA FIDUCIA — una riga la tiene in piedi, e un falso lo dimostra
+
+  L'**impegno in due tempi**: l'hash della mossa più un nonce da 128 bit
+  viaggia prima, la mossa dopo, e **nessuno rivela finché non ha l'impegno
+  dell'altro**. Quella clausola è una riga sola, e il falso `gentile` prova che
+  è tutta la fiducia: togli la condizione di mezzo e **la serie finisce lo
+  stesso, i punteggi coincidono lo stesso, il nastro è completo lo stesso, il
+  giudice dice TORNA lo stesso** — solo che chi parla per secondo vince sempre.
+
+  **Il seme non lo sceglie nessuno, e viene gratis**: è l'hash dei due nonce
+  d'appuntamento, e quando scegli il tuo non conosci quello dell'altro. Lo
+  stesso numero decide chi tira per primo.
+
+  **LA SHA-256 È SCRITTA A MANO** (sessanta righe: il gioco è un file solo, e
+  `crypto.subtle` è asincrona e su `file://` non è garantita). Confrontata con
+  quella di Node su **409 casi** prima di entrare nel gioco — compresi i tre
+  bordi di riempimento (55, 56, 64 byte) e il testo con accenti, che è dove le
+  implementazioni scritte a mano sbagliano: **identiche tutte e 409**.
+
+  **Che cosa succede se uno bara — misurato, non ragionato:**
+
+  | tentativo | esito misurato |
+  |---|---|
+  | **pari veggente** (aspetta la rivelazione dell'altro prima di impegnarsi) | **0 sbirciate su 6 tiri**, col testimone accanto: a veggenza spenta la stessa rivelazione **arriva eccome**, dopo l'impegno |
+  | **pari bugiardo** (impegna una mossa, ne rivela un'altra) | **smascherato**, `impegno-non-torna` — è **l'unica strada di tutto il cantiere che porta a un'accusa** |
+  | **pari che dichiara un esito suo** | la serie si ferma con `esiti-diversi`, cioè **un'astensione**: due esiti diversi possono nascere da due motori JS diversi, ed è il caso che l'impronta del #142 esiste per riconoscere |
+  | **cambiare idea dopo aver parlato** | rifiutato all'imbuco: la cassetta è a **scrittura sola una volta** per `(stanza, tiro, lato, tipo)`, e lo fa il **vincolo di unicità del database**, non un `if` che due richieste simultanee scavalcherebbero tutte e due |
+
+  **E CHI SPARISCE NON VIENE ACCUSATO: VIENE ANNULLATO.** La serie si chiude
+  **incompiuta**, zero punti a tutti e due, nastro sigillato lo stesso. Dare la
+  vittoria a chi resta sarebbe il modo più corto per **vincere facendo cadere la
+  rete dell'altro** — lo stesso argomento con cui il #137 rifiutò un endpoint
+  capace di dire «questa sfida non torna». **Davanti a un dubbio ci si astiene,
+  non si accusa.**
+
+  ### (e) I FRENI, misurati e non promessi
+
+  Il freno della cassetta prende **gli stessi numeri del fratello più largo**
+  (`dis:<id>`, 60 al minuto, come `sfl:` e `avv:`): **nessun privilegio**. La
+  spec stimava 36 richieste al minuto; **misurato: 5,8 richieste per tiro, cioè
+  34,5 al minuto contro un tetto di 60**. E accanto il testimone: una raffica
+  di 80 richieste ne prende **20 rifiutate con 429**, quindi il freno morde
+  davvero — senza quella prova, «sta sotto il tetto» potrebbe essere vero
+  perché il freno non esiste.
+
+  ### (f) `MOTORE_V` RESTA 4, E LO DICE UNA MISURA
+
+  Il nastro guadagna una riga nuova — **il tipo 14, la testimonianza**, che
+  porta impegno e nonce dei due lati. Il criterio di casa parla di *comandi*,
+  non di testimonianze; ma «non dovrebbe cambiare niente» **non è un numero**, e
+  il #144 ha dimostrato quanto costa crederci. **Misurato nei due versi**
+  (`strumenti/_t-146-motorev.js`, più `_t-144-motorev.js` per il verso 1):
+
+  - **verso 1** — quattro nastri del merge-base rigiocati sul curato: **quattro
+    su quattro identici**, ottanta campioni ciascuno, 2749 righe;
+  - **verso 2** — un nastro di una serie di rigori **vera** fra due telefoni (30
+    righe: 18 di tipo 6, 10 di tipo 14) letto dal gioco di ieri: **nessuna
+    eccezione, le stesse 20 righe lette, 100 campioni identici, stesso
+    punteggio**. Il #144, nello stesso punto, ne leggeva **170 su 2749**;
+  - **col testimone**: un nastro sporcato in **un comando** diverge al campione
+    69, quindi il confronto sa distinguere.
+
+  **Il prezzo, dichiarato:** un giudice di ieri **non controlla** le
+  testimonianze. Non accusa un innocente — è quel che `MOTORE_V` protegge — ma
+  **assolve un colpevole**. Per quello c'è **`DISCHETTO_V`**, che se ne accorge
+  **prima**: con versioni diverse la sfida non comincia nemmeno.
+
+  ### (g) IL GUASTO — che cosa vede chi resta
+
+  | guasto | che cosa vede chi resta |
+  |---|---|
+  | tre **ritiri** persi | **niente**: l'indice è del server, il ritiro dopo riporta tutto. Serie finita |
+  | tre **imbuchi** persi | il ritentativo li recupera, perché l'imbuco è idempotente. Serie finita |
+  | otto **429** di fila | la serie **rallenta e non si ferma** |
+  | **l'altro sparisce** | `incompiuta`, esito `null`: **zero punti a tutti e due** |
+  | **server spento** | `rete = giù`, e il gioco non si schianta |
+
+  ### (h) I SETTE FALSI, con la bite list misurata — e l'OTTAVO dichiarato
+
+  **Controllo positivo prima di tutto**: il gioco onesto passa 7 prove su 7
+  *prima* che un falso venga costruito. Senza, un banco rotto in modo da essere
+  rosso sempre «condannerebbe» tutti e sette senza discriminare niente.
+
+  `gentile`→B1 · `credulone`→B3 · `semesuo`→A3 · `fidato`→C6 · `vincitore`→G5 ·
+  `sfrenato`→E1 · `cieco`→F1. **Sette morsi su sette.**
+
+  **L'OTTAVO, scritto perché un banco che morde sette su sette senza averlo
+  cercato sta attestando:** *il pari che sparisce al momento giusto.* Chi ha già
+  impegnato e ha letto la rivelazione dell'altro può non rivelare la propria e
+  far annullare il tiro. Il banco lo **vede** (G4 misura l'incompiuta) e non lo
+  **condanna**, e non può: un abbandono può essere una galleria. Si toglie
+  l'incentivo invece di sorvegliarlo — l'abbandono non è una vittoria di
+  nessuno. **Non è una svista: è il prezzo.**
+
+  ### (i) I DUE ROSSI CHE LA BATTERIA INTERA HA TROVATO, e nessuno dei due era nel piano
+
+  1. **`_q-sospetto` D8, `_q-glicko` D2/D8 e `_q-staffetta` F1** — guardie dei
+     cantieri #137, #140 e #138 che congelano la superficie di rete (cinque
+     endpoint, sei tabelle). **La terza è saltata fuori solo dalla batteria dei
+     cancelli LENTI**, che nessun piano di compito nominava: è la lezione 22
+     alla seconda occasione nella stessa giornata.
+     Facevano **esattamente il loro mestiere**: servivano a impedire che una
+     superficie nascesse *in silenzio*, non a impedire che nascesse.
+     **Rettificate a edizioni**, con data e fonte accanto, e **le tre proprietà
+     vere non si sono toccate**: `senzaRls`, `fuoriRevoke` e `senzaFreno`
+     restano zero e ora coprono anche la tabella e l'endpoint nuovi. È la
+     lezione 22 che si ripaga alla prima occasione.
+  2. **La cucitura del banco confrontava due partite diverse.** Il gruppo D
+     metteva a confronto una serie sul filo ordinato e una sul filo sballato —
+     ma ogni serie nasce da un appuntamento nuovo, quindi da un **seme nuovo**.
+     Passava **due volte su tre per fortuna**, e la terza stampava «ordinato
+     gggf · sballato ggfg» come se il filo avesse cambiato il gioco: **il banco
+     stava misurando il proprio sorteggio.** La proprietà vera si misura
+     **dentro una serie sola** — sul filo che ritarda e consegna alla rovescia,
+     i due telefoni devono vedere lo stesso esito tiro per tiro — ed è anche la
+     proprietà **giusta**, perché è quella che servirebbe a un DataChannel a
+     `maxRetransmits:0`.
+
+  3. **Il controllo positivo dei falsi confondeva «rossa» e «assente».** Sotto
+     il carico della batteria il referto del gioco onesto è arrivato senza la
+     riga G5, e il banco ha stampato «G5 è rossa GIÀ sul gioco onesto» —
+     **un'accusa al gioco fatta col silenzio del banco**. Non riprodotta né a
+     macchina scarica (4 corse) né a macchina carica (2 corse con tre cancelli
+     in parallelo): **la causa resta non isolata**, e si scrive così invece di
+     inventarne una. La cura non è indovinare la causa ma **togliere al banco
+     la possibilità di concludere quando non ha misurato**: ora guarda tre cose
+     — codice d'uscita, prove rosse e prove **assenti** — e un'assenza vale
+     **prova nulla, uscita 3**, con le ultime righe del referto stampate
+     accanto. *Un banco che non ha misurato non assolve e non condanna.*
+     Nello stesso giro è stata tolta una fragilità vera che **poteva** produrre
+     quel referto: G4 aspettava che `tiro` arrivasse a 2 prima di far sparire
+     l'altro, ma una serie può essere **già decisa** al secondo tiro (2-0) — e
+     allora l'altro spariva da una partita già finita. Ora si cerca il momento
+     giusto (almeno un tiro risolto **e** la serie ancora aperta) e, se in
+     cinque appuntamenti non si trova, **la prova si dichiara nulla**.
+
+  E un quarto, minore ma della stessa famiglia: A6 pretendeva che i due telefoni
+  vedessero rose diverse e le rose erano **identiche**, perché l'impianto le
+  variava su `nome.length` e ALFA e BETA hanno quattro lettere tutte e due. Il
+  banco stava misurando la propria tavola dei nomi.
+
+  ### (j) CHE COSA RESTA DA FARE, in chiaro
+
+  - **Il pannello sullo schermo.** La sfida dal dischetto oggi si guida da
+    `window.__test.dischetto` e dal motore; **i due bottoni CREA/ENTRA accanto a
+    SFIDA DI CARTA non sono stati disegnati.** Il cancello F misura già che
+    aprirlo non costi una richiesta, ma chi gioca non lo vede ancora.
+    **Non è stato rimandato per fretta, ed è giusto che chi lo farà lo sappia:**
+    la schermata SFIDA è misurata a **due formati** (`_q-sigillo` B3 e `_q-carta`
+    D4 controllano dove cade la piega a 915×412 e a 800×360), e il commento
+    accanto a `btnSfidaCarta` (`:3148`) racconta che quel bottone fu inserito
+    apposta dove **non muove di un pixel** CERCA AVVERSARIO (220), la prima riga
+    (329) né il primo GUARDA (308). **Una `voce` in più sposta il taglio**, cioè
+    è un cantiere di disposizione con i suoi due cancelli, non una riga di HTML
+    da aggiungere in coda a questo.
+  - **Il giudice non pretende ancora le testimonianze.** `vagliaNastro` non ha
+    un ramo per il tipo 14: un nastro a cui le righe 14 fossero state *tolte*
+    verrebbe giudicato come una partita normale. Il punteggio rigiocherebbe
+    comunque giusto (i comandi sono le righe di tipo 6), quindi **nessun
+    innocente viene accusato**; ma la prova di lealtà non verrebbe rifatta.
+  - **S5**, e la misura a due telefoni veri del #145 §5.2.
+
+
 - **La misura della rete e del trasporto — #145 CANTIERE CHIUSO, e IL VERDETTO
   È NO** (voce #145, 23 settembre 2026 — **tutte le misure di rete sono del 23,
   come dice il deposito; il cantiere si è chiuso nella notte sul 24** —, cinque compiti dal merge-base

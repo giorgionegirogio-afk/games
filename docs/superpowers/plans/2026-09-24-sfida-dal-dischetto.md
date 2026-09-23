@@ -42,8 +42,13 @@ Nasce **rosso**, perché nel gioco non c'è ancora niente.
      `spegni` — perché C4 misuri e non racconti;
    - **il contatore delle richieste** per identità e per minuto, che è la
      misura del §2.4 della spec;
-   - `FiloDiretto` finto (in-processo, ritardo zero) per la prova della
-     cucitura.
+   - `FiloSballato` per la prova della cucitura: lo stesso trasporto, coi
+     messaggi ritardati di un giro e consegnati alla rovescia.
+     **RETTIFICA (24 settembre, in corso di cantiere):** qui c'era
+     «`FiloDiretto` finto (in-processo, ritardo zero)». Non poteva esistere —
+     due contesti di browser sono due processi, e un oggetto in memoria non
+     li unisce — e il confronto che ne seguiva metteva a paragone **due semi
+     diversi**. Vedi la rettifica in spec §2.3.
 2. `strumenti/_q-dischetto.js` — il cancello. Gruppi:
    - **A) l'appuntamento**: due telefoni, un codice corto, stesso seme, stessa
      rosa vista dai due lati, chi tira per primo non lo sceglie nessuno;
@@ -51,8 +56,10 @@ Nasce **rosso**, perché nel gioco non c'è ancora niente.
      centrale, e senza di lei il cantiere non esiste;
    - **C) la serie**: cinque tiri per parte, punteggio uguale sui due telefoni,
      tiro per tiro;
-   - **D) la cucitura**: stesso copione su `FiloCassetta` e `FiloDiretto` →
-     stesso esito;
+   - **D) la cucitura**: su `FiloSballato` (ritardo + ordine rovesciato) i due
+     telefoni vedono ancora lo stesso esito **tiro per tiro**, dentro **una
+     serie sola** — due serie di seguito hanno due semi diversi e non sono
+     confrontabili;
    - **E) i freni**: richieste al minuto misurate contro il tetto di 60;
    - **F) zero rete**: tacca dopo l'apertura della schermata, delta zero fino
      al tocco (l'idioma di `_q-carta.js` D5).
@@ -105,8 +112,17 @@ gioco di oggi, con la causa scritta: «il gioco non ha la sfida dal dischetto».
    - verso 2: nastri del curato (con le righe 14) rigiocati sul gioco di ieri.
    **È questa misura a decidere se `MOTORE_V` resta 4 o sale a 5**, non il
    piano. Se sale, la toppa del numero e la rettifica a edizioni entrano qui.
-3. Il giudice: `vagliaNastro` pretende che le righe 14 ricompongano; un
-   impegno che non torna è **NON TORNA**, tutto il resto è astensione.
+3. ~~Il giudice: `vagliaNastro` pretende che le righe 14 ricompongano; un
+   impegno che non torna è **NON TORNA**, tutto il resto è astensione.~~
+   **NON FATTO, e dichiarato invece che taciuto (24 settembre).** La verifica
+   dell'impegno vive **in diretta**, dentro `Dischetto.avanza()`: un impegno
+   che non ricompone ferma la serie con `impegno-non-torna` (misurato, B3).
+   Ma `vagliaNastro` **non ha un ramo per il tipo 14**, quindi un nastro a cui
+   le righe 14 fossero state *tolte* verrebbe giudicato come una partita
+   normale. Il punteggio rigiocherebbe comunque giusto — i comandi sono le
+   righe di tipo 6 — quindi **nessun innocente viene accusato**; ma la prova
+   di lealtà non verrebbe rifatta in differita. È un seguito, non un
+   dettaglio, ed è scritto nel verbale (`MANUALE.md` §A (j)).
 
 **Verde atteso:** gruppi B, C, D. Tutti i falsi morsi, tranne l'ottavo
 dichiarato.
@@ -115,14 +131,17 @@ dichiarato.
 
 ## C4 — il guasto, la batteria, il verbale
 
-1. `strumenti/_toppa-146-guasto.js`: le quattro risposte di §5 della spec —
-   l'attesa dichiarata, l'incompiuta a zero punti, il ritentativo
-   idempotente, l'attesa che si allarga su 429/503 senza fermare un
-   fotogramma.
+1. ~~`strumenti/_toppa-146-guasto.js`~~ — **toppa non servita**: le quattro
+   risposte di §5 della spec sono nate dentro `_toppa-146-impegno.js`, perché
+   l'incompiuta, il ritentativo idempotente e il 429 che rallenta sono lo
+   stesso `giro()` che fa avanzare la serie, e separarli in due toppe avrebbe
+   voluto dire scrivere due volte la stessa funzione. Le quattro risposte
+   sono misurate lo stesso: gruppo G, sei prove.
 2. Gruppo **G) il guasto** in `_q-dischetto.js`: i quattro guasti iniettati, e
    per ognuno **che cosa vede chi resta**.
-3. `strumenti/tutti.js`: la riga
-   `{ nome: 'dischetto', cmd: ['strumenti/_q-dischetto.js'], conta: true, lento: true },`
+3. `strumenti/tutti.js`: **due** righe, non una — anche
+   `dischetto-falsi`, perché una bite list che nessuno rilancia è una bite
+   list di ieri.
 4. **La batteria intera**, a gruppi, più `--ripetuto 3` sui banchi a tocchi
    reali (non sono ripetibili: un solo rosso non è una prova).
 5. `MANUALE.md` §A — il verbale della voce #146, in cima.

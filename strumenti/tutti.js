@@ -1038,6 +1038,15 @@ const CANCELLI = [
      Deterministico (tre semi dichiarati nel file: 20260921/22/23),
      nessun cronometro di produzione: misurato **3,1s**, non lento. */
   { nome: 'duello-impronta', cmd: ['strumenti/_q-duello-impronta.js'],                 conta: true,  lento: false },
+
+  /* LA SFIDA DAL DISCHETTO (voce #146). Due telefoni veri, una cassetta
+     finta con quattro manopole di guasto, e un avversario bugiardo
+     scritto in Node. E' `lento` perche' apre due contesti di browser e
+     gioca serie intere: sta in --tutto, come `sfida` e `carta`.
+     I falsi girano il banco su SETTE versioni bugiarde del gioco, quindi
+     costano sette volte tanto e stanno anche loro fra i lenti. */
+  { nome: 'dischetto',       cmd: ['strumenti/_q-dischetto.js'],                        conta: true,  lento: true  },
+  { nome: 'dischetto-falsi', cmd: ['strumenti/_q-dischetto-falsi.js'],                  conta: true,  lento: true  },
   /* =====================================================================
      ment-nastro / carattere-nastro / rosa-scala / nastro-tronco: I CINQUE
      CANALI DELLA VOCE #132, SORVEGLIATI (correzione di revisione, 21

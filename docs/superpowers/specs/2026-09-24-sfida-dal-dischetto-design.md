@@ -126,12 +126,36 @@ cassetta quando la rete fa male**, ed è il compito C4.
 ### 2.3 La cucitura, perché il posto esista davvero
 
 Il gioco non parla alla cassetta: parla a **`Filo`**, quattro verbi —
-`apri(stanza)`, `manda(msg)`, `ritira(da)`, `chiudi()`. Oggi c'è **una sola**
-implementazione, `FiloCassetta`. Il banco prova che il duello **non sa** quale
-filo ha sotto: lo stesso copione gira su `FiloCassetta` e su un `FiloDiretto`
-finto (in-processo, ritardo zero) e deve dare **lo stesso esito, tiro per
-tiro**. È la prova che il posto per WebRTC esiste, **senza costruire WebRTC** e
-senza dichiarare niente che non sia stato misurato.
+`apri(stanza)`, `manda(msg)`, `ritira(da)`, `chiudi()`.
+
+> **RETTIFICA A EDIZIONI (24 settembre 2026, in corso di cantiere, fonte: il
+> gruppo D di `strumenti/_q-dischetto.js`).** Questo paragrafo diceva: «il
+> banco prova che il duello non sa quale filo ha sotto — lo stesso copione su
+> `FiloCassetta` e su un `FiloDiretto` finto (in-processo, ritardo zero) deve
+> dare lo stesso esito». **Era sbagliato in due modi, e tutti e due contano.**
+> Primo, un filo «diretto in-processo» **non può esistere fra due telefoni**:
+> due contesti di browser sono due processi, e un oggetto in memoria non li
+> unisce. Secondo — ed è il difetto più insidioso — due serie giocate di
+> seguito **non sono confrontabili**: ogni serie nasce da un appuntamento
+> nuovo, cioè da un **seme nuovo**, quindi sono due partite diverse. Scritto
+> così, il banco passava **due volte su tre per fortuna** e alla terza
+> accusava il filo di aver cambiato il gioco: **stava misurando il proprio
+> sorteggio.**
+
+Le implementazioni sono **due**, e la seconda non è un lusso:
+
+- **`FiloCassetta`** — il trasporto vero: ordinato, indicizzato dal server;
+- **`FiloSballato`** — lo stesso, ma i messaggi arrivano **ritardati di un
+  giro e consegnati alla rovescia**.
+
+E la proprietà si misura **dentro una serie sola**: sul filo sballato i **due
+telefoni** devono continuare a vedere lo stesso esito **tiro per tiro**, e la
+serie deve arrivare in fondo. È anche la proprietà **giusta**, non solo quella
+misurabile: un DataChannel in questa casa sarebbe `maxRetransmits:0`, cioè
+**senza ordine garantito**. Se il protocollo reggesse solo su un filo
+ordinato, il posto per WebRTC sarebbe una parola e non un posto — e questo si
+misura oggi, **senza costruire WebRTC** e senza dichiarare niente di non
+misurato.
 
 ### 2.4 Il conto delle richieste, contro i freni veri
 

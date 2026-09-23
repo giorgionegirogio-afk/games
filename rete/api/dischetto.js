@@ -126,10 +126,18 @@ export default async function handler(req, res) {
        Scrivere prima e leggere dopo, invece di leggere-e-poi-scrivere,
        toglie di mezzo la corsa fra due richieste che arrivano insieme:
        il vincolo lo decide il database, non un `if`. */
+    /* SI INGHIOTTE SOLO IL CONFLITTO, non qualunque errore. Un `catch`
+       largo trasformerebbe un database spento in un `gia-detto` o in un
+       `imbuco`, cioè in una diagnosi sbagliata mandata a chi gioca —
+       ed è lo stesso difetto per cui questa casa rifiuta gli strumenti
+       che attestano invece di misurare. PostgREST risponde 409 alla
+       violazione di unicità; tutto il resto risale a `guaio`, che è il
+       posto giusto perché un guasto vero si veda. */
     let righe = null;
     try {
       righe = await db.inserisci('cassetta', { stanza, k, r, t, d });
     } catch (e) {
+      if (e && e.stato !== 409) throw e;
       righe = null;
     }
     if (righe && righe.length) return rispondi(res, 200, { ok: true, i: righe[0].i });

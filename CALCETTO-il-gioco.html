@@ -47885,13 +47885,6 @@ const Dischetto = {
     this.avvia();
   },
 
-  /* chi tira al tiro T: si alterna, e chi comincia l'ha deciso il seme */
-  ruoloDi(t){
-    const S = this.s;
-    const tira = (t % 2 === 0) ? S.primo : (S.primo === 'a' ? 'b' : 'a');
-    return tira === S.lato ? 't' : 'p';
-  },
-
 
   spia(){
     /* che cosa e' visibile ADESSO nella cassetta, dal mio lato. Serve al
