@@ -179,15 +179,6 @@ function referto(campione) {
   fuori.tettoMs = c.tettoMs || SOGLIE.TETTO_MS;
   fuori.note = c.note || '';
 
-  /* --- porta 1: la sorgente. Un giro su loopback ha una forma di
-     distribuzione perfetta e numeri plausibili: solo la sorgente lo
-     tradisce, e per questo la sorgente e' un campo obbligatorio. */
-  const s = String(fuori.sorgente).toLowerCase();
-  if (/locale|loopback|127\.0\.0\.1|localhost|::1|stessa-macchina/.test(s)) {
-    fuori.causa = 'sorgente-locale';
-    fuori.nota = 'un giro dentro la macchina non e\' una misura di rete';
-    return fuori;
-  }
   if (fuori.inviati === 0) { fuori.causa = 'campione-vuoto'; return fuori; }
 
   const ord = misure.slice().sort((a, b) => a - b);
@@ -218,6 +209,48 @@ function referto(campione) {
      non e' misurato, e' finito dentro i persi o fuori del campione */
   fuori.nMinimoStallo = Math.ceil(1 / (1 - P_STALLO));
   fuori.stalloMisurabile = fuori.inviati >= fuori.nMinimoStallo;
+  /* e quanti campioni stanno DAVVERO oltre quel percentile: avere il
+     minimo per farlo esistere non e' lo stesso che averne abbastanza
+     per misurarlo. Con 600 campioni in quella coda ce n'e' UNO, e un
+     percentile fatto da un campione solo e' il campione solo. */
+  fuori.nOltreStallo = ord.filter(x => x >= fuori.pStallo).length + persi;
+
+  /* --- LA CODA ARRIVA A RAFFICA? E' la sola cosa che dice se la
+     ridondanza di §2.4 del progetto d'onda (ogni pacchetto porta gli
+     ultimi R comandi) serve a qualcosa. Quel conto — 600 * P^R —
+     assume ritardi INDIPENDENTI. Se invece i pacchetti lenti arrivano
+     attaccati, R copie consecutive sono lente insieme e la ridondanza
+     non compra niente.
+     Si misura, non si assume: fra i campioni sopra il p95, quanti
+     hanno SUBITO PRIMA un altro campione sopra il p95? Se fossero
+     indipendenti sarebbe il 5%. Molto di piu' = raffica.
+     (`misure` arriva nell'ordine di arrivo, che su un canale ordinato
+     e' l'ordine di invio: e' quello che serve.) */
+  if (misure.length >= 40 && isFinite(fuori.p95)) {
+    let sopra = 0, attaccati = 0;
+    for (let i = 0; i < misure.length; i++) {
+      if (misure[i] <= fuori.p95) continue;
+      sopra++;
+      if (i > 0 && misure[i - 1] > fuori.p95) attaccati++;
+    }
+    fuori.raffica = { sopra, attaccati, quotaPct: sopra ? 100 * attaccati / sopra : null, attesaIndipendentePct: 5 };
+  }
+
+  /* --- porta 1: la sorgente. Un giro su loopback ha una forma di
+     distribuzione perfetta e numeri plausibili: solo la sorgente lo
+     tradisce, e per questo la sorgente e' un campo obbligatorio.
+     La porta sta DOPO i percentili e non prima, apposta: il rifiuto
+     vale per D_rete, ma i numeri grezzi di un giro locale restano un
+     fatto utile — sono il controllo che dice se la coda lunga di una
+     misura di rete e' della rete o del banco che la misura. Un metro
+     che rifiuta e cancella toglie a chi legge la prova che gli serve
+     per credergli. */
+  const s = String(fuori.sorgente).toLowerCase();
+  if (/locale|loopback|127\.0\.0\.1|localhost|::1|stessa-macchina/.test(s)) {
+    fuori.causa = 'sorgente-locale';
+    fuori.nota = 'un giro dentro la macchina non e\' una misura di rete';
+    return fuori;
+  }
 
   /* --- porta 2: il percorso. Qui la regola 1, e qui il falso
      `mezzo-giro` muore. */

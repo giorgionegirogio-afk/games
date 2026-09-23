@@ -1,0 +1,39 @@
+{
+ "che_cos_e": "I NUMERI CHE NON SONO MIEI. Stanno in un file separato apposta: la campagna li unisce al deposito senza mai mescolarli coi campioni misurati, e il cancello _q-rete-latenza pretende che ogni voce porti la sua fonte (prova 1d) e che nessun campione MISURATO si spacci per mobile italiano (prova 1c).",
+ "voci": [
+  {
+   "letteratura": true,
+   "sonda": "L1",
+   "data": "2026-09-23",
+   "sorgente": "AGCOM, Misura Internet Mobile 2025 (rilevazione Fondazione Ugo Bordoni, 45 centri urbani italiani, settembre-dicembre 2025)",
+   "fonte": "https://www.corrierecomunicazioni.it/telco/agcom-misura-internet-mobile-2025-download-medio-a-331-mbps-nelle-citta-italiane/",
+   "tipo": "http",
+   "valori": {
+    "RTT_medio_statico_ms": 27.97,
+    "RTT_dinamico_urbano_ms": 36.34,
+    "RTT_extraurbano_ms": 44.02,
+    "perdita_pacchetti_statico_pct": 0.71
+   },
+   "note": "E' LA MISURA UFFICIALE DELLA RETE MOBILE ITALIANA, e va letta con tre limiti che il rapporto stesso dichiara. UNO: e' un RTT verso un SERVER di prova, cioe' la forma 'http' del metro, non un percorso fra pari: non si converte in D_rete. DUE: e' una MEDIA, e questo cantiere decide sulla CODA — il p95, e soprattutto il p99,83 da cui dipende lo stallo, NON sono pubblicati. Una media di 28 ms e' compatibile sia con una coda a 60 ms sia con una coda a 600 ms, e sono due verdetti opposti. TRE: il rapporto usa il criterio della 'migliore tecnologia disponibile', cioe' misura la rete nelle condizioni migliori e non quelle di un utente qualunque. Quindi e' un LIMITE INFERIORE ottimistico della latenza mobile italiana, non una stima centrale."
+  },
+  {
+   "letteratura": true,
+   "sonda": "L2",
+   "data": "2026-09-23",
+   "sorgente": "Ipotesi di lavoro dichiarata dal progetto d'architettura dell'onda E, mai falsificata",
+   "fonte": "docs/superpowers/specs/2026-09-23-onda-e-architettura.md, paragrafo 1.4",
+   "tipo": "ipotesi",
+   "valori": { "descrizione": "4G verso un edge vicino: decine di ms con code occasionali di centinaia" },
+   "note": "Il progetto d'onda la marca IPOTESI DA FALSIFICARE e vieta di citarla come fatto. Questo cantiere non l'ha falsificata: la misura AGCOM (L1) e' coerente con la prima meta' (decine di ms di media) e NON DICE NIENTE sulla seconda (le code occasionali), che e' la meta' che decide."
+  },
+  {
+   "letteratura": false,
+   "non_reperito": true,
+   "sonda": "L3",
+   "data": "2026-09-23",
+   "sorgente": "percentili della latenza mobile italiana (p95, p99)",
+   "fonte": "cercati il 23 settembre 2026 su Opensignal Italy Mobile Network Experience (HTTP 403 da questa macchina), nPerf Barometer Italy 2025 (PDF con i dati dentro immagini, testo non estraibile), Speedtest Global Index Italy (non raggiungibile da questa macchina)",
+   "note": "NON REPERITI, e si scrive invece di inventarli. Nessuna delle tre fonti pubbliche consultate espone i percentili della latenza mobile italiana in una forma leggibile da qui. E' precisamente il numero che deciderebbe questo cantiere, ed e' il numero che manca. Questa voce e' depositata come ASSENZA dichiarata, non come dato: il campo 'letteratura' e' false apposta, cosi' il cancello non la conta fra le fonti."
+  }
+ ]
+}

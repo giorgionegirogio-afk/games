@@ -232,31 +232,52 @@ if (fs.existsSync(DEPOSITO)) {
   try { dep = JSON.parse(fs.readFileSync(DEPOSITO, 'utf8')); }
   catch (e) { esploso = 'deposito illeggibile: ' + e.message; }
 
-  prova('1b', 'ogni campione dichiara sorgente, tipo e data', () => {
-    const c = (dep && dep.campioni) || [];
-    if (!c.length) return [false, 'nessun campione'];
+  /* il deposito ha TRE classi, e tenerle separate e' il punto:
+     · MISURATI   — numeri miei, con la loro sorgente
+     · LETTERATURA — numeri di altri, marcati e con la fonte
+     · ASSENZE     — cio' che si e' cercato e NON si e' trovato, scritto
+                     invece di essere inventato */
+  const tutti = () => (dep && dep.campioni) || [];
+  const misurati = () => tutti().filter(x => !x.letteratura && !x.non_reperito);
+  const letteratura = () => tutti().filter(x => x.letteratura);
+  const assenze = () => tutti().filter(x => x.non_reperito);
+
+  prova('1b', 'ogni campione MISURATO dichiara sorgente, tipo e data', () => {
+    const c = misurati();
+    if (!c.length) return [false, 'nessun campione misurato'];
     const mancanti = c.filter(x => !x.sorgente || !x.tipo || !x.data);
     return [mancanti.length === 0, c.length + ' campioni, ' + mancanti.length + ' senza sorgente/tipo/data'];
   });
 
   prova('1c', 'nessun campione misurato e\' locale, e nessuno si spaccia per mobile italiano', () => {
-    const c = ((dep && dep.campioni) || []).filter(x => !x.letteratura);
+    const c = misurati();
     const locali = c.filter(x => /locale|loopback|127\.0\.0\.1|localhost/i.test(String(x.sorgente)));
     /* la ferita che questo cantiere doveva evitare: un numero di
-       letteratura trascritto come se fosse mio */
+       letteratura trascritto come se fosse mio. Un campione locale
+       MISURATO e' ammesso solo se il metro lo rifiuta da se' — e lo
+       rifiuta, prova 0b — ma non deve MAI presentarsi come rete. */
     const spacciati = c.filter(x => /mobile italian|4G italian|5G italian/i.test(String(x.sorgente)));
-    return [locali.length === 0 && spacciati.length === 0,
-            c.length + ' campioni misurati · ' + locali.length + ' locali · ' + spacciati.length + ' spacciati per mobile italiano'];
+    /* un campione LOCALE nel deposito e' lecito — anzi, serve: e' il
+       controllo che dice se la coda lunga e' della rete o del banco —
+       ma solo se DICHIARA di esserlo. Un campione locale muto, in mezzo
+       agli altri, un giorno viene letto come rete. */
+    const localiMuti = locali.filter(x => !/rifiut|controllo|prova 0b/i.test(String(x.note || '')));
+    return [spacciati.length === 0 && localiMuti.length === 0,
+            c.length + ' campioni misurati · ' + locali.length + ' locali (' + localiMuti.length +
+            ' non dichiarati come controllo) · ' + spacciati.length + ' spacciati per mobile italiano'];
   });
 
-  prova('1d', 'la letteratura e\' marcata e porta la sua fonte', () => {
-    const l = ((dep && dep.campioni) || []).filter(x => x.letteratura);
+  prova('1d', 'la letteratura e\' marcata, porta la sua fonte, e le assenze sono dichiarate', () => {
+    const l = letteratura(), a = assenze();
     const senzaFonte = l.filter(x => !x.fonte);
-    return [senzaFonte.length === 0, l.length + ' voci di letteratura · ' + senzaFonte.length + ' senza fonte'];
+    const assenzeMute = a.filter(x => !x.fonte || !x.note);
+    return [senzaFonte.length === 0 && assenzeMute.length === 0,
+            l.length + ' voci di letteratura (' + senzaFonte.length + ' senza fonte) · ' +
+            a.length + ' assenze dichiarate (' + assenzeMute.length + ' senza fonte o nota)'];
   });
 
   prova('1e', 'il metro sa giudicare il deposito, e stampa un esito per ogni campione', () => {
-    const c = ((dep && dep.campioni) || []).filter(x => !x.letteratura && x.misure);
+    const c = misurati().filter(x => x.misure);
     if (!c.length) return [false, 'nessun campione con misure'];
     const righe = c.map(x => {
       const r = M.referto(x); const g = M.giudica(r);
