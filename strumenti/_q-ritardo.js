@@ -85,6 +85,27 @@ const TAGLIA = [5, 7, 11].includes(+arg('taglia', 5)) ? +arg('taglia', 5) : 5;
 const KS = String(arg('k', '0,3,6,9,12,15,18')).split(',').map(s => parseInt(s, 10)).filter(n => n >= 0);
 const provaRel = arg('gioco', process.env.GIOCO_PROVA || '');
 const bugiaFile = arg('bugia', '');
+/* =====================================================================
+   DUE MESTIERI, UNA MACCHINA — e tenerli separati e' quel che permette a
+   questo banco di stare in batteria senza mentire.
+
+   --solo-banco (il modo della BATTERIA): guarda che la MACCHINA regga —
+   la traslazione trasla, il metro varia, il controllo negativo morde, a
+   K=0 il nastro si riproduce esatto, e a K massimo il ritardo si VEDE.
+   Sono cinque cancelli veri, girano in pochi minuti, e diventano rossi
+   il giorno in cui qualcuno rompe il registratore o le quattro porte.
+   NON applica la SOGLIA-DANNO, e non finge di poterla applicare.
+
+   senza --solo-banco (il modo del VERDETTO): applica anche la
+   SOGLIA-DANNO, e per farlo servono centoventi nastri da novanta
+   secondi — un quarto d'ora. Con meno dichiara PROVA NULLA, che e'
+   giusto e che in batteria vorrebbe dire stampare «non misurato» a ogni
+   corsa finche' qualcuno smette di guardare.
+
+   Un cancello che ogni giorno dice «non ho potuto misurare» insegna a
+   ignorarlo, ed e' il modo lento in cui una batteria muore.
+   ===================================================================== */
+const SOLO_BANCO = process.argv.includes('--solo-banco');
 
 /* LA SOGLIA E' DICHIARATA NELLA SPEC, NON QUI — questo file la CITA.
    docs/superpowers/specs/2026-09-23-metro-ritardo-design.md §1, scritta
@@ -640,6 +661,21 @@ const primoScarto = (a, b) => { const n = Math.min(a.length, b.length);
     const totSp = base.specchio.reduce((s, x) => s + x, 0);
     const totGol = base.gol.reduce((s, x) => s + x, 0);
     console.log('\n   base a K=0: ' + totGol + ' gol e ' + totSp + ' tiri nello specchio in tutto');
+
+    if (SOLO_BANCO) {
+      const err0 = errori.slice();
+      await browser.close(); browser = null;
+      srv.chiudi();
+      if (err0.length) { console.error('\nECCEZIONI DI PAGINA: ' + err0.slice(0, 3).join(' | ')); process.exit(2); }
+      console.log('\n>>> LA MACCHINA REGGE: la traslazione trasla, il metro varia, il controllo');
+      console.log('    negativo morde, a K=0 il nastro si riproduce esatto e a ' +
+                  Math.round(Kmax * 1000 / 60) + ' ms il ritardo si VEDE.');
+      console.log('    La SOGLIA-DANNO NON e\' stata applicata (--solo-banco): il verdetto vuole');
+      console.log('    centoventi nastri da novanta secondi, e sta nel verbale del #141.');
+      console.log('    `node strumenti/_q-ritardo.js --nastri 120 --tetto 5400 --pagine 8`');
+      process.exit(0);
+    }
+
     if (totSp < 20 || totGol < 8) {
       console.log('\nPROVA NULLA: il campione non ha abbastanza eventi perche\' una soglia sul 25%');
       console.log('voglia dire qualcosa (servono >= 20 tiri nello specchio e >= 8 gol a K=0, ce ne');
@@ -716,6 +752,59 @@ const primoScarto = (a, b) => { const n = Math.min(a.length, b.length);
                 (Dgioco < 0 ? 'nessuno' : Dgioco + ' tick = ' + Math.round(Dgioco * 1000 / 60) + ' ms'));
     console.log('   D richiesta dalla SOGLIA-D: ' + D_DICHIARATA + ' tick = ' +
                 Math.round(D_DICHIARATA * 1000 / 60) + ' ms');
+
+    /* =====================================================================
+       LA FORMA DELLA CURVA, e qui c'e' la cosa piu' utile che questo
+       banco sappia dire — piu' utile del si/no sulla soglia.
+
+       La soglia chiede «il danno a D e' sotto il 25%?». Ma un danno che
+       CRESCE con K e uno che non cresce portano due architetture diverse,
+       e la differenza e' visibile con molti meno nastri di quanti ne
+       servano a decidere il 25%: si confrontano due medie, non una media
+       con una soglia.
+
+       Se il danno al primo K>0 e' gia' indistinguibile da quello
+       all'ultimo, allora il costo del ritardo si paga TUTTO al primo
+       passo — il nastro smette di sapere dove sta la palla, e non
+       importa piu' di quanto — e scegliere D fra il primo e l'ultimo e'
+       QUASI GRATIS. Per un lockstep e' la notizia piu' importante che
+       esista: il margine contro il jitter si compra senza pagarlo in
+       gioco.
+       ===================================================================== */
+    const K1 = KS.find(k => k > 0);
+    if (K1 !== undefined && Kmax > K1) {
+      console.log('\n7) LA FORMA DELLA CURVA — il danno CRESCE con K, o si paga tutto al primo passo?\n');
+      const forma = (nome, a0, aA, aB) => {
+        const cA = conIntervallo(a0, aA), cB = conIntervallo(a0, aB);
+        const mA = media(aA), mB = media(aB);
+        const seD = Math.sqrt(es(aA) * es(aA) + es(aB) * es(aB));
+        const diff = mA - mB;
+        const cresce = Math.abs(diff) > 1.96 * seD;
+        console.log('   ' + nome.padEnd(12) + 'danno a K=' + K1 + ': ' + pc(cA.d) +
+          '   danno a K=' + Kmax + ': ' + pc(cB.d) +
+          '   scarto fra i due ' + r2(Math.abs(diff)) + ' +- ' + r2(1.96 * seD) +
+          '  -> ' + (cresce ? 'CRESCE' : 'NON distinguibili'));
+        return cresce;
+      };
+      const cresceG = forma('gol', base.gol, perK[K1].gol, perK[Kmax].gol);
+      const cresceS = forma('specchio', base.specchio, perK[K1].specchio, perK[Kmax].specchio);
+      if (!cresceG && !cresceS) {
+        console.log('\n   IL DANNO NON CRESCE CON K. Si paga tutto al primo passo: a ' +
+                    Math.round(K1 * 1000 / 60) + ' ms il nastro');
+        console.log('   ha gia\' smesso di sapere dove sta la palla, e ritardarlo ancora non peggiora');
+        console.log('   niente di misurabile. Per il lockstep e\' la notizia buona: scegliere D fra ' +
+                    K1 + ' e ' + Kmax);
+        console.log('   tick costa QUASI NIENTE in gioco, quindi il margine contro il jitter si puo\'');
+        console.log('   comprare senza pagarlo. E porta con se\' la notizia cattiva: non esiste un D');
+        console.log('   piccolo che eviti il danno — o si accetta il gradino, o non c\'e\' nessun K>0.');
+        console.log('   (La fedelta\' invece CALA con K, ' + r3(media(perK[K1].fed)) + ' -> ' +
+                    r3(media(perK[Kmax].fed)) + ': il comandato smette davvero di');
+        console.log('   fare quel che gli si chiede. Il gioco lo assorbe; la persona forse no — gamba C.)');
+      } else {
+        console.log('\n   IL DANNO CRESCE CON K: allora esiste un D che vale piu\' di un altro, e');
+        console.log('   sceglierlo e\' una decisione vera e non una formalita\'.');
+      }
+    }
 
     const errori2 = errori.slice();
     await browser.close(); browser = null;

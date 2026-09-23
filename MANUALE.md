@@ -517,6 +517,368 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Il metro del ritardo — #141 CANTIERE CHIUSO, e IL VERDETTO È NO** (voce
+  #141, 23 settembre 2026, sei compiti dal merge-base `2e728d6` — spec
+  `docs/superpowers/specs/2026-09-23-metro-ritardo-design.md`, piano
+  `docs/superpowers/plans/2026-09-23-metro-ritardo.md`, progetto d'onda
+  `docs/superpowers/specs/2026-09-23-onda-e-architettura.md`). **Primo
+  cantiere dell'ONDA E**, e non costruisce niente: **è la misura che decide
+  l'architettura**. Regola del committente sopra tutte
+  (`_analisi/MAPPA-MANDATO.md:792-795`): «lockstep prima; il server
+  autoritativo solo se **la misura dice** che il lockstep non basta».
+  Cantiere di MOTORE solo per due agganci additivi, tutti per ancore
+  (`_toppa-141-ritardo.js`, 2 ancore); **`MOTORE_V` resta 2, misurato**.
+
+  **LE SEI SOGLIE SONO STATE SCRITTE E COMMITTATE PRIMA CHE UN BANCO
+  GIRASSE** (`df4da67`, compito 0). Una soglia decisa dopo è un'opinione, e
+  questo cantiere esiste per produrre un verdetto onesto — cioè un banco che
+  **possa dire no**.
+
+  ---
+
+  ### (a) LA GAMBA D — DUE MOTORI, NON DUE SCHEDE. **È QUI CHE ESCE IL NO.**
+
+  Fatta **per prima**, come il progetto d'onda chiede: costa un pomeriggio e
+  può annullare l'intera onda. Il repo non aveva uno strumento che la
+  vedesse. `_q-determinismo.js` dice «due telefoni vedono la stessa partita»
+  facendo **un solo** `chromium.launch()` e aprendo due contesti della stessa
+  istanza: la parola *telefono* lì dentro era un'**inferenza**, non una
+  misura. Due telefoni veri sono un V8 su Android e un JavaScriptCore su
+  iPhone.
+
+  **`strumenti/_q-motori.js`** apre Chromium (V8), WebKit (JavaScriptCore) e
+  Firefox (SpiderMonkey) e confronta la stessa impronta di `_q-determinismo`
+  — parola per parola la stessa, o tre rossi diversi non sarebbero
+  confrontabili.
+
+  **MISURATO, e la SOGLIA-MOTORE NON TIENE.** Stesso seme **del gioco**
+  (`__test.semina`, non `Math.random` seminato da fuori: quello nasconderebbe
+  proprio ciò che si cerca), stesso copione, stesso banco, partite intere da
+  90 s: **8 semi su 8 divergono al secondo 1**, e non di poco — punteggi
+  finali `1-1` contro `2-0`, `0-0` contro `0-2`, `2-0` contro `1-3`; conto
+  dei sorteggi 5.123 contro 4.284, 6.708 contro 3.761.
+
+  **LA CAUSA È ISOLATA E SI CHIAMA `Math.hypot`.** ECMA-262 la lascia
+  *implementation-approximated*, e V8 ne sbaglia l'ultimo bit rispetto a
+  JavaScriptCore e SpiderMonkey su **100 e 103 valori su 200**. Il gioco la
+  chiama **33 volte**, e una di queste è `const len=(x,y)=>Math.hypot(x,y)`
+  (`CALCETTO-il-gioco.html:8710`), cioè la distanza, cioè il pezzo più caldo
+  della fisica. La tavola completa, 200 valori, bit per bit:
+
+  | funzione (usi nel gioco) | chromium vs webkit | chromium vs firefox |
+  |---|---|---|
+  | `hypot` (33) | **100/200** | **103/200** |
+  | `sin` (160) | 7/200 | 7/200 |
+  | `cos` (104) | 3/200 | 3/200 |
+  | `tan` (2) | 9/200 | 9/200 |
+  | `exp` (44) | 2/200 | 21/200 |
+  | `atan2` (26) | 0/200 | **24/200** |
+  | `log` (1) | 0/200 | 6/200 |
+  | `pow` (30), `sqrt` (45) | 0/200 | 0/200 |
+
+  **E QUI LA MISURA SI È CORRETTA DA SOLA, che è la ragione per cui otto semi
+  invece di tre.** Rimettendo `Math.hypot` a `Math.sqrt(x*x+y*y)` in tutti e
+  tre i motori — lecito **per norma**, perché IEEE-754 obbliga `sqrt` a
+  essere correttamente arrotondata mentre `hypot` no — **a tre semi i motori
+  tornavano identici** e il verbale avrebbe scritto «il guasto è una riga».
+  **A otto semi sette convergono e uno no**: al seme `20260929` WebKit si
+  stacca al secondo 44. **Una riga non basta.** Restano `sin`, `cos`, `tan`,
+  `exp`, che il gioco chiama 160, 104, 2 e 44 volte.
+
+  **DUE PROVE ESISTONO PER NON ACCUSARE LA COSA SBAGLIATA**, e una delle due
+  ha già pagato per sé. **S) lo stesso banco** — schermo, DPR, campo, uomini
+  e sorteggi al fischio d'inizio devono coincidere. Nasce da un **falso
+  allarme pagato oggi**: la prima versione passava `isMobile: true` **solo a
+  Chromium** (Playwright non lo accetta su Firefox), il DPR di 3 faceva
+  cuocere tele diverse, e lo strumento stampava un **NO all'intera onda E**
+  mentre misurava il proprio `deviceScaleFactor` — 1.323 sorteggi contro 880.
+  **A) dentro ogni motore la partita si ripete**: se non si ripete, il rosso
+  è del banco e si esce 2 senza accusare nessun motore. Tutti e tre: verdi.
+
+  **CONSEGUENZA PER L'ONDA E, in chiaro.** Il lockstep puro come lo descrive
+  il progetto d'onda §2 — due telefoni che simulano la stessa partita dai
+  soli comandi — **oggi non esiste fra motori diversi**, e la rete non
+  c'entra: divergono da soli. Prima del #145 serve un **prerequisito nuovo,
+  non previsto dal progetto d'onda**: *la matematica scritta in casa*, cioè i
+  trascendenti caldi implementati in JavaScript a partire dalle sole
+  operazioni che IEEE-754 obbliga a essere esatte (`+ − × ÷ sqrt`). È
+  esattamente la ragione per cui i netcode deterministici seri usano il
+  fixed-point, e il mandato lo fa (`SimCore Q20.12`,
+  `_analisi/MANDATO-STADIUM-ROAR.md:414`). **`_q-motori` è in batteria con
+  `conta:false`**: oggi è rosso per un difetto vero e aperto, e metterlo a
+  `true` renderebbe rossa l'intera batteria per un guasto già a registro —
+  il modo più sicuro di far smettere di guardare la batteria.
+
+  ---
+
+  ### (b) LA GAMBA A — IL NASTRO TRASLATO, e la forma della curva vale più del sì/no
+
+  `strumenti/_q-ritardo.js`: **120 nastri onesti** a taglia 5, partite intere
+  (5.400 tick), registrati col copione fisso di `_q-sfida.js` — quello che
+  tocca tutti i verbi e non sorteggia niente — e rigiocati traslando **ogni
+  comando di +K tick**, K ∈ {0,3,6,9,12,15,18}. In testa al banco sta la
+  dichiarazione che lo rende onesto: **misura il CASO PEGGIORE**, il
+  giocatore che non si adatta. È un **limite superiore al danno**, non
+  l'esperienza umana.
+
+  | K | ms | gol comandato | tiri nello specchio | tiri | fedeltà |
+  |---|---|---|---|---|---|
+  | 0 | 0 | **1,01 ± 0,07** | **1,27 ± 0,09** | 5,70 ± 0,18 | 0,786 |
+  | 3 | 50 | 0,71 ± 0,07 | 0,95 ± 0,10 | 5,71 ± 0,17 | 0,769 |
+  | 6 | 100 | 0,68 ± 0,07 | 0,91 ± 0,08 | 6,00 ± 0,17 | 0,765 |
+  | 9 | 150 | 0,77 ± 0,08 | 0,98 ± 0,09 | 5,27 ± 0,16 | 0,742 |
+  | 12 | 200 | **0,78 ± 0,08** | **1,03 ± 0,10** | 5,16 ± 0,19 | 0,542 |
+  | 15 | 250 | 0,65 ± 0,07 | 0,87 ± 0,08 | 5,33 ± 0,19 | 0,317 |
+  | 18 | 300 | 0,72 ± 0,09 | 1,02 ± 0,10 | 5,51 ± 0,20 | 0,174 |
+
+  **LA FORMA DELLA CURVA È UN GRADINO, NON UNA RAMPA, ed è la cosa più utile
+  che esca da questo cantiere.** Danno sui gol a K=3: **29,8%**; a K=18:
+  **28,9%**; scarto fra i due **0,01 ± 0,22 → non distinguibili**. Sullo
+  specchio: 25,0% contro 19,7%, scarto 0,07 ± 0,27 → non distinguibili. **Il
+  costo del ritardo si paga TUTTO nei primi 50 millisecondi**: a 50 ms il
+  nastro ha già smesso di sapere dove sta la palla, e ritardarlo ancora non
+  peggiora niente di misurabile.
+  Per un lockstep sono **due notizie insieme**. La buona: **scegliere D fra 3
+  e 18 tick costa quasi niente in gioco**, quindi il margine contro il jitter
+  — che è la cosa che rende un lockstep vivibile — **si può comprare senza
+  pagarlo**. La cattiva: **non esiste un D piccolo che eviti il danno**; o si
+  accetta il gradino, o non c'è nessun K>0.
+  E **la fedeltà invece cala davvero** (0,786 → 0,174): il comandato smette
+  di fare quel che gli si chiede. Il gioco lo assorbe; **la persona forse no,
+  ed è la gamba C**.
+
+  **SOGLIA-DANNO alla D dichiarata (12 tick = 200 ms): gol 23,1% ± 20,7%
+  (estremo alto 43,8%), specchio 18,4% ± 20,9% (estremo alto 39,4%).** Le due
+  stime puntuali stanno **sotto** il 25%; l'intervallo **non esclude** il 44%.
+  Il banco confronta con la soglia l'**estremo alto** — la domanda del
+  committente è «può essere peggio?» — quindi **D_gioco misurato = 0 tick**,
+  contro i 12 che la SOGLIA-D richiede.
+
+  **IL BANCO SI È CONDANNATO DA SOLO TRE VOLTE, e ogni volta ha imparato un
+  cancello.**
+  1. Su 3 nastri da 15 s la squadra comandata aveva fatto **zero gol e zero
+     tiri nello specchio**, a K=0 come a K=18. Il peggioramento risultava
+     «0,0%», sotto il 25%, e il banco stampava **SOGLIA-DANNO TENUTA** — un
+     sì all'intera onda E — **misurando il nulla**. Il venticinque per cento
+     di zero è zero. Adesso sotto 20 tiri nello specchio e 8 gol si esce 3.
+  2. A 24 nastri da 90 s gli eventi ci sono, ma la media dei gol vale 1,00
+     con scarto tipo 0,88: **errore della media 18% contro una soglia del
+     25%**. La stessa misura con altri ventiquattro semi darebbe «8%» o
+     «40%» senza che il gioco cambi di un bit. Adesso il danno si stampa col
+     suo intervallo, e quando l'intervallo scavalca la soglia il banco
+     dichiara **PROVA NULLA e dice quanti nastri servono**: ne ha chiesti
+     **119**, e sono stati fatti 120.
+  3. **Tre prove che guardano il BANCO invece del gioco**, prima della
+     misura, perché un metro storto non va riconosciuto dai suoi numeri.
+     **0a** chiede a ogni riga di essersi mossa **nel campo giusto** — i
+     comandi sul tick, il dischetto sul **passo** (`Duel.passo`: il suo tick
+     è un campo morto, perché durante un duello `Reg.tick` sta fermo), i
+     metadati fermi. **0b** chiede che il metro **vari** fra 120 partite
+     diverse. **0c** è il **controllo negativo**: rigiocato lo stesso nastro
+     con **ogni** comando tolto, la squadra comandata deve andare molto
+     peggio (misurato: 14 gol → 0, 20 tiri nello specchio → 0).
+
+  **E UN DIFETTO DEL BANCO TROVATO DAL BANCO.** A 120 nastri il cancello di
+  K=0 ha morso **1 volta su 120** (seme `20260950`, registrato 1-3 con 4
+  tiri, rigiocato 1-3 con 3 tiri). Non divergeva niente: **tre rigiocate di
+  fila identiche fra loro e identiche in tutto il resto** — stesso punteggio,
+  stesso specchio, **stessi 6.251 sorteggi**. Mancava l'ultimo rilascio del
+  dito, che è un tiro: il copione chiudeva le dita **dopo** il ciclo, cioè al
+  tick `passiMax`, e la rigiocata gira esattamente `passiMax` passi e
+  attraversa i tick da 0 a `passiMax-1`. **La stessa ferita sta nel copione
+  di `_q-sfida.js:274-275`**, dove non fa danno perché quel banco non
+  confronta una registrazione con una rigiocata a tetto fisso: è scritto nel
+  codice perché chi lo copierà lo sappia.
+
+  ---
+
+  ### (c) LA GAMBA B — I CINQUE VERBI SOTTO RITARDO
+
+  **Non si è copiato `giocata.js`: gli si è aggiunto `--ritardo K` e basta.**
+  Una copia è un posto in più dove la stessa ferita si riapre da sola.
+  `_q-verbi-ritardo.js` orchestra le ripetute, perché **il banco a tocchi
+  veri non è ripetibile** (regola di casa) e un solo rosso non è una prova.
+
+  Sei ripetute per K ∈ {0, 6, 12, 18}, **semi appaiati** (stessa scena a ogni
+  K):
+
+  | verbo | K=0 | K=6 | K=12 | K=18 |
+  |---|---|---|---|---|
+  | carica (TIRA) | 6/6 | 6/6 | **6/6** | 6/6 |
+  | filtrante | 6/6 | 5/6 | **6/6** | 6/6 |
+  | cross | 6/6 | 6/6 | **6/6** | 5/6 |
+  | cambio | 6/6 | 6/6 | **6/6** | 6/6 |
+  | contrasto | 6/6 | 6/6 | **6/6** | 5/6 |
+
+  **Nessun verbo muore a 200 ms.** I tre 5/6 sparsi sono il rumore del banco
+  a tempo reale, misurato: su gioco sano **a ritardo zero** il cross è caduto
+  in una corsa e la filtrante in quella dopo.
+
+  **E LA CARICA — il punto che il progetto d'onda dava per il più fragile —
+  NON LO È, e la ragione è istruttiva.** Carica maturata: a K=12 **6/6 dentro
+  la finestra dolce 0,50-0,80 s**, valori 0,63 0,63 0,63 0,65 0,65 0,65.
+  **Un ritardo d'ingresso UNIFORME non cambia la durata di un gesto tenuto**:
+  ritarda di K sia la pressione sia il rilascio, e la carica è la differenza
+  fra i due. La finestra dolce è al sicuro dal ritardo **fisso**; sarebbe in
+  pericolo dal ritardo **variabile**, dove pressione e rilascio slittano di
+  quantità diverse — ed è precisamente ciò che il #143 e il #146 devono
+  misurare.
+
+  **QUANTO PUÒ DIRE QUESTO CAMPIONE, detto dal banco stesso.** Per decidere
+  «≥ 95%» servono **60 tentativi per verbo e per K** (regola del tre): con 6
+  l'estremo basso è 61%. **La SOGLIA-VERBI al 95% NON è decisa**, e lo
+  strumento non finge di averla decisa. Ciò che il campione decide comunque è
+  **se un verbo muore**, ed è la porta del NO che questa gamba tiene.
+
+  ---
+
+  ### (d) LA GAMBA C — **NON ESEGUITA, IN ATTESA DEL COMMITTENTE**
+
+  È l'unica delle quattro capace di pronunciare la parola **«ingiocabile»**,
+  e l'unica che un banco non può fare al posto di una persona. **Fingerla
+  sarebbe il peggiore dei verdetti falsi**, perché sarebbe l'unico a parlare
+  a nome di chi gioca. Non è stata sostituita con un'opinione né dedotta
+  dalla gamba A.
+
+  **È PRONTA:** l'aggancio `__test.ritardo(K)` nel gioco,
+  `strumenti/_prova-umana-ritardo.js` (sei partite da 90 s, K pescato in
+  cieco dal mazzo {0,3,6,9,12,18}, **sigillo dell'ordine scritto nel verbale
+  prima della prima partita**, riscaldamento non votato, due voti per
+  partita) e il protocollo in
+  `docs/superpowers/plans/2026-09-23-protocollo-prova-umana.md`.
+
+  **IL LIMITE CHE LO STRUMENTO SI GUARDA DA SÉ: serve un dito, non una
+  tastiera.** `__test.ritardo` accoda **le quattro porte di `Touch5`** e
+  basta; la tastiera entra dritta in `Keys[e.code]`
+  (`CALCETTO-il-gioco.html:12698`, `:12734`) e **non subisce nessun ritardo**.
+  Una partita ai tasti direbbe «bellissimo» di una cosa non provata. Lo
+  strumento registra il nastro di ogni partita, conta le righe, e **scarta il
+  voto** se trova righe di tastiera o meno di 50 righe di tocco.
+
+  **CHE COSA CAMBIEREBBE SE L'UOMO DICESSE NO** sta scritto nel protocollo
+  §6: cadrebbe la SOGLIA-D e con essa il margine, e resterebbero tre strade
+  in quest'ordine — D più piccola (solo se il #143 misura una rete che la
+  regge), **il 1v1 a turni** del progetto d'onda §5.3 (che sta dentro
+  l'architettura di oggi), e il server autoritativo col prezzo scritto in
+  chiaro. **Nessuna delle tre butterebbe il lavoro già fatto.**
+
+  ---
+
+  ### (e) I TRE FALSI, ognuno nel caso peggiore, e il controllo positivo
+
+  `_q-ritardo-falsi.js`, **7/7**. Ogni falso porta scritto nel proprio file
+  quale prova deve farlo cadere, e cade su quella:
+
+  | falso | che cosa fa | morso da | altre prove |
+  |---|---|---|---|
+  | `_crit-traslazione-sorda` | muove **i metadati e il tick del dischetto**, cioè i soli campi che nessuno legge: la partita resta identica al bit | **0a** | uscita 2 prima delle altre |
+  | `_crit-traslazione-cieca` | ritarda **solo i `touchmove`**: la levetta sbanda, la curva del danno esce plausibile, ma i **verbi partono in orario** perché l'atto si risolve al `touchstart` | **0a** | uscita 2 prima delle altre |
+  | `_crit-ritardo-attestatore` | traslazione **onesta**, ma legge `G.stats[1]` — i numeri della CPU — come se fossero della squadra comandata: numeri veri, che variano, che riempiono le soglie di eventi, e che non mostrano danno perché la CPU non è ritardata | **0c** | **0a: OK, 0b: OK** |
+
+  Nessuno dei tre è la versione ingenua: «non toccare niente» morirebbe
+  contando le righe; «torna sempre zero» morirebbe sul cancello della prova
+  nulla; «torna sempre lo stesso numero» morirebbe sulla 0b. **E c'è il
+  controllo positivo**, che è la metà che manca a quasi tutti i banchi di
+  falsi: prima si verifica che il banco **onesto** passi le tre prove
+  strutturali. Senza, un banco rotto in modo da essere rosso *sempre*
+  «condannerebbe» tutti e tre i falsi senza discriminare niente — ed è il
+  modo in cui un banco di falsi diventa a sua volta un attestatore.
+
+  ---
+
+  ### (f) I DUE AGGANCI NEL GIOCO, e `MOTORE_V` misurato
+
+  `_toppa-141-ritardo.js`, 2 ancore.
+
+  **`__test.ritardo(K)`** accoda i comandi di K tick **senza rete di mezzo**.
+  L'avvolgimento sta **più fuori** di quello del registratore, e l'ordine è
+  tutto: *dito → coda → registratore → `Touch5` vero*. Così il comando si
+  **registra al tick in cui esegue**, non a quello in cui il dito lo ha dato:
+  il nastro deve raccontare quel che è successo, se no il replay di una
+  partita ritardata non sarebbe quella partita. **L'orologio è suo**, perché
+  `Reg.tick` avanza solo a registro acceso (`passo()` esce subito se
+  `modo === 0`) e la prova umana si gioca a registro spento: una coda appesa
+  a un orologio fermo non scade mai. **In rilettura la coda non c'è**, se no
+  la traslazione del nastro e il ritardo del dito si sommerebbero. E **la
+  coda si svuota con `Reg.azzeraComandi`**: un comando accodato che
+  sopravvive a una partita è la stessa malattia dell'origine della levetta,
+  in forma peggiore — arriverebbe dentro la partita **dopo**.
+
+  **`__test.dita(dx,dy,premi)`** inietta un comando **passando dalle quattro
+  porte vere**, non scrivendo dentro `Touch5.stick`.
+
+  **MISURATO che i due agganci sono additivi**: a ritardo spento il gioco
+  nuovo e quello vecchio giocano la stessa identica partita, impronta per
+  impronta, con le stesse **627 righe di nastro**. **`MOTORE_V` resta 2**, e
+  lo dice una misura invece di un'affermazione.
+
+  ---
+
+  ### (g) LE DUE RETTIFICHE A EDIZIONI
+
+  1. **`strumenti/_q-determinismo.js`, prova C — era INERTE, adesso misura.**
+     Quel banco diceva da mesi «con le dita: la stessa sequenza rigiocata dà
+     la stessa partita» e la dichiarava **«la prova che riguarda il
+     multigiocatore»**, ma chiamava `t.dita(...)` dentro un `if (t.dita)` e
+     quella chiave **non esisteva**. Stampava una riga di scuse in mezzo a
+     dieci righe verdi, e chi leggeva «determinismo 10/10» credeva coperta la
+     gamba dell'**ingresso** — proprio quella che decide se sulla rete
+     bastano i comandi. Dal 23 settembre la chiave c'è e il banco fa
+     **11/11**. Rettifica in chiaro accanto al testo vecchio in
+     `strumenti/tutti.js`.
+  2. **`strumenti/_q-invarianti.js:425-431`, INV-13 e INV-14 «N/A perché
+     CALCETTO è locale».** **INV-14 è superata**: «una volta sola» è
+     garantito dal DELETE che consuma l'impegno (`rete/api/sfida.js:163-164`),
+     e il ruolo dell'«hash di replay» lo fa **il nastro**, che il giudice
+     dentro il gioco rigioca e confronta (guardato da `_q-giudice` 21/21 e
+     `_q-sospetto` 39/39); resta scoperta **solo** la firma, e la postura
+     «nessuna chiave nell'HTML» è la ragione per cui non c'è. **INV-13** è
+     N/A **per assenza di server simulante**, non per assenza di rete: la
+     rete esiste dal #133, e il server non simula per scelta scritta
+     (`rete/LEGGIMI.md:76-79`).
+
+  ---
+
+  ### (h) IL VERDETTO, applicando le soglie dichiarate il 23 settembre
+
+  | soglia | esito |
+  |---|---|
+  | **SOGLIA-MOTORE** (impronte identiche fra motori) | **NON TENUTA — 8 semi su 8 divergono. È il NO, ed è il più pesante** |
+  | **SOGLIA-DANNO** (≤ 25% a D=12) | stima puntuale **sotto** (23,1% e 18,4%), intervallo **non la esclude** (44%). D_gioco misurato **0 tick** contro i 12 richiesti |
+  | **SOGLIA-VERBI** (≥ 95%, carica ≥ 90%) | **nessun verbo muore**, carica 6/6 in finestra a 200 ms; il 95% **non è deciso** da 6 tentativi, e il banco lo dichiara |
+  | **SOGLIA-UMANA** | **NON ESEGUITA — richiede il committente** |
+  | **SOGLIA-D** (`D_gioco ≥ 12 tick`) | **non raggiunta** |
+  | **SOGLIA-STALLO** | fuori da questo cantiere, si verifica al #143 |
+
+  **IL LOCKSTEP PURO NON È AMMESSO OGGI, e il blocco non è quello che si
+  temeva.** Non è il ritardo: è **il motore JavaScript**. Il gioco, al caso
+  peggiore, perde il 23-30% di gol a *qualunque* K>0 — ma quel numero è
+  **piatto**, quindi la scelta di D è quasi libera e il margine contro il
+  jitter è comprabile. Il vero ostacolo è che **due telefoni divergono da
+  soli, senza che la rete c'entri**, e la causa è un ultimo bit di
+  `Math.hypot`.
+
+  **COSA CAMBIA NEL PIANO DEI CANTIERI.** Prima del #145 (il filo) entra un
+  prerequisito che il progetto d'onda non aveva: **la matematica scritta in
+  casa** — i trascendenti caldi implementati in JavaScript dalle sole
+  operazioni IEEE-esatte. Il #142 (il comando senza schermo) **non cambia**:
+  paga il debito del #133 in tutti i rami. Il #143 (la misura della rete)
+  **non cambia** ed è più urgente di prima, perché ora sappiamo che D può
+  essere generosa e la domanda diventa «quanta ne serve». Il #144 (la stanza)
+  sopravvive a qualunque verdetto.
+
+  **CANCELLI.** `_q-ritardo` **in batteria con `conta:true` in modo
+  `--solo-banco`**: guarda che la macchina regga (la traslazione trasla, il
+  metro varia, il controllo negativo morde, a K=0 il nastro si riproduce
+  esatto, a 300 ms il ritardo si vede) e **non applica la SOGLIA-DANNO**,
+  perché per quella servono 120 nastri e un quarto d'ora — in batteria
+  direbbe PROVA NULLA a ogni corsa, e un cancello che ogni giorno dice «non
+  ho potuto misurare» insegna a ignorarsi. `_q-ritardo-falsi` in batteria,
+  `conta:true`, 7/7. `_q-motori` in batteria **`conta:false`**, oggi rosso
+  per un difetto vero e aperto. `_q-determinismo` **11/11** (era 10/10 con
+  una prova inerte). `giocata.js` prende `--ritardo K` e a `--ritardo 0` è
+  identico a ieri.
+
 - **Il rating nascosto, Glicko-2 — #140 CANTIERE CHIUSO** (voce #140, 23
   settembre 2026, cinque compiti dal merge-base `562e62e` — spec
   `docs/superpowers/specs/2026-09-23-glicko-design.md`, piano

@@ -795,11 +795,60 @@ const CANCELLI = [
      La prova C (con le dita) resta dichiarata assente dal banco stesso
      (`__test.dita` non esposto): non e' un buco di questo cantiere, e'
      un limite gia' scritto nel file, i controlli contati restano dieci.
+     RETTIFICA A EDIZIONI (23 settembre 2026, voce #141). Le tre righe
+     qui sopra restano com'erano scritte e vanno lette con questa
+     accanto: dal 23 settembre `__test.dita` ESISTE (toppa
+     `_toppa-141-ritardo.js`) e la prova C MISURA. I controlli contati
+     sono ELEVEN, non dieci. E va detta anche la cosa scomoda: per mesi
+     quel banco ha PROMESSO una misura che non faceva — stampava «il
+     gioco non espone __test.dita» in mezzo a dieci righe verdi, e chi
+     leggeva «determinismo 10/10» credeva coperta la gamba dell'INGRESSO,
+     che e' proprio quella che decide se sulla rete bastano i comandi.
+     Non era un buco del cantiere che scrisse queste righe; era un buco
+     che nessuno aveva chiuso, ed e' costato tre cantieri di fiducia
+     sbagliata.
      Deterministico ai semi del banco (20260803+), nessun cronometro:
      `determinismo` corre in compagnia, `determinismo-11` da solo
      (`lento:true`, sul modello di `soak`/`audio`). */
   { nome: 'determinismo',    cmd: ['strumenti/_q-determinismo.js'],                              conta: true,  lento: false },
   { nome: 'determinismo-11', cmd: ['strumenti/_q-determinismo.js', '--taglia', '11'],             conta: true,  lento: true  },
+  /* =====================================================================
+     IL METRO DEL RITARDO (voce #141) — e i due qui sotto NON sono lo
+     stesso genere di cosa, per questo hanno `conta` diverso.
+
+     `ritardo` E' UN CANCELLO e conta, ma gira in `--solo-banco`, che e'
+     una distinzione che vale la pena leggere. In quel modo guarda che la
+     MACCHINA regga: la traslazione trasla davvero (comandi sul tick,
+     dischetto sul passo, metadati fermi), il metro varia fra partite
+     diverse, il controllo negativo morde (senza NESSUN comando la
+     squadra comandata va peggio), a K=0 il nastro si riproduce esatto, e
+     a 300 ms il ritardo si VEDE. Cinque cancelli veri, pochi minuti, e
+     diventano rossi il giorno in cui qualcuno rompe il registratore o le
+     quattro porte.
+     NON applica la SOGLIA-DANNO, e non finge di poterla applicare: per
+     quella servono centoventi nastri da novanta secondi (la dispersione
+     dei gol in una partita di calcio e' quasi uguale alla media), cioe'
+     un quarto d'ora. In batteria darebbe PROVA NULLA a ogni corsa, e un
+     cancello che ogni giorno dice «non ho potuto misurare» insegna a
+     ignorarsi. Il verdetto vero si fa a mano —
+     `--nastri 120 --tetto 5400 --pagine 8` — ed e' nel verbale del #141.
+
+     `motori` NON CONTA, e non e' pigrizia: OGGI E' ROSSO, e lo e' per un
+     difetto vero e aperto del gioco — Chromium, WebKit e Firefox non
+     vedono la stessa partita, perche' Math.hypot e' approssimata
+     dall'implementazione e V8 ne sbaglia l'ultimo bit su meta' dei
+     valori. Metterlo a `conta:true` renderebbe rossa l'intera batteria
+     per un guasto gia' a registro, che e' il modo piu' sicuro di far
+     smettere di guardare la batteria. Resta qui, informativo e
+     stampato, finche' il guasto non ha un cantiere. `lento:true`
+     perche' apre tre browser diversi e gioca tre partite intere per
+     ciascuno.
+     ===================================================================== */
+  { nome: 'ritardo',         cmd: ['strumenti/_q-ritardo.js', '--solo-banco', '--nastri', '8',
+                                   '--tetto', '2700', '--k', '0,18', '--pagine', '4'],           conta: true,  lento: true  },
+  { nome: 'ritardo-falsi',   cmd: ['strumenti/_q-ritardo-falsi.js', '--nastri', '6',
+                                   '--tetto', '2700', '--pagine', '3'],                          conta: true,  lento: true  },
+  { nome: 'motori',          cmd: ['strumenti/_q-motori.js', '--semi', '2', '--secondi', '60'],   conta: false, lento: true  },
   /* =====================================================================
      rete / sfida: LA SFIDA ASINCRONA, PROVATA SENZA RETE VERA (voce
      #130). Due banchi gia' scritti (data non censita in questo file, mai

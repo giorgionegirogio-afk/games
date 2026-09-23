@@ -426,9 +426,42 @@
           finestra scartato e contato; decode(encode(s)) entro
           quantizzazione
        -> N/A: CALCETTO e' locale, nessuna rete/multiplayer nel gioco.
+          RETTIFICA A EDIZIONI (23 settembre 2026, voce #141). La riga
+          sopra resta com'era scritta e va letta con questa accanto.
+          «Nessuna rete» non e' piu' vero alla lettera: dal #133 esiste
+          la sfida asincrona con un server (rete/api/*), e dal #141 il
+          progetto dell'onda E studia il live 1v1. Quel che resta vero e'
+          che **non esiste un tick server autorevole**: la simulazione
+          gira sul telefono e il server non simula niente — per scelta
+          scritta (rete/LEGGIMI.md:76-79, «un secondo motore scritto in
+          Node divergerebbe per costruzione»). Quindi INV-13 e' N/A per
+          ASSENZA DI SERVER SIMULANTE, non per assenza di rete, e il
+          giorno in cui il #145 portasse il lockstep diventerebbe
+          «l'orologio autorevole e' il TICK CONCORDATO», non il server.
+          La terza clausola — decode(encode(s)) entro quantizzazione —
+          e' gia' coperta altrove col nome del nastro: Reg.serializza /
+          Reg.deserializza, guardate da _q-giudice (21/21), _q-sigillo
+          (14/14) e _q-nastro-tronco.
      INV-14 il risultato si sottomette una volta sola, con firma valida e
           hash di replay corrispondente
        -> N/A: nessun sistema di submission/replay-hash in CALCETTO.
+          RETTIFICA A EDIZIONI (23 settembre 2026, voce #141). La riga
+          sopra e' SUPERATA e va letta con questa accanto: INV-14 e' oggi
+          **parzialmente vera, e verificata altrove**.
+            · «una volta sola»: garantito dal DELETE che consuma
+              l'impegno in rete/api/sfida.js:163-164 — chi sottomette due
+              volte non trova piu' l'impegno da consumare;
+            · «hash di replay corrispondente»: il ruolo dell'hash lo fa
+              il NASTRO, che il giudice dentro il gioco rigioca e
+              confronta col punteggio dichiarato (giudica,
+              CALCETTO-il-gioco.html:45651, cinque verdetti e nove cause
+              di vaglio). Guardato da _q-giudice (21/21) e _q-sospetto
+              (39/39).
+            · «firma valida»: questo NO, e resta scoperto — non c'e'
+              firma, e la postura «nessuna chiave nell'HTML»
+              (rete/LEGGIMI.md:181-183) e' la ragione per cui non c'e'.
+          Chi citasse «INV-14 N/A» come «non ci riguarda» sbaglierebbe
+          due terzi della riga.
      INV-15 durata reale <= attesa + 25% (rileva stati bloccati)
        -> QUI: prova 5 (durata<=tettoFotogrammi(taglia) fotogrammi, 300 s
           a taglia 5 -- RICALIBRATO voce #127 compito 2 -- 350 s a taglia
