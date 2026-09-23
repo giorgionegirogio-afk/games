@@ -874,10 +874,29 @@ Qui il registro completo, a edizioni.
   perché per quella servono 120 nastri e un quarto d'ora — in batteria
   direbbe PROVA NULLA a ogni corsa, e un cancello che ogni giorno dice «non
   ho potuto misurare» insegna a ignorarsi. `_q-ritardo-falsi` in batteria,
-  `conta:true`, 7/7. `_q-motori` in batteria **`conta:false`**, oggi rosso
-  per un difetto vero e aperto. `_q-determinismo` **11/11** (era 10/10 con
-  una prova inerte). `giocata.js` prende `--ritardo K` e a `--ritardo 0` è
-  identico a ieri.
+  `conta:true`, 7/7. `_q-verbi-ritardo` in batteria, `conta:true`,
+  `solo:true` (banco a tempo reale: in compagnia misurerebbe il carico della
+  macchina), con la porta stretta apposta — «un verbo **muore**», non «un
+  verbo riesce nel 95%». `_q-motori` in batteria **`conta:false`**, oggi
+  rosso per un difetto vero e aperto (12/23). `_q-determinismo` **11/11**
+  (era 10/10 con una prova inerte). `giocata.js` prende `--ritardo K` e a
+  `--ritardo 0` è identico a ieri.
+
+  **RETI DI SICUREZZA, a cantiere chiuso:** `_q-duello-impronta` **44/44**,
+  `_q-giudice` **21/21**, `_q-sigillo` **14/14**, `_q-carta` **22/22**,
+  `_q-amici` **23/23**, `_q-sospetto` **39/39**, `_q-staffetta` **42/42**,
+  `_q-finestra` **20/20**, `_q-glicko` **58/58**, `_q-invarianti` **12/12**,
+  i quattro del #132, `_q-rete`, `_q-sfida` **54/54**, `senza-rete`,
+  `salvataggio`, `rete/prove/tutte.js` **46/46**. **Batteria intera a cinque
+  gruppi, tutti i cancelli che contano verdi.**
+
+  **E UN ROSSO CHE NON ERA UNA REGRESSIONE.** Al primo giro `sfida` è uscito
+  rosso su una prova su sei («ogni sfida senza duello si lascia rivedere»,
+  5/6). Misurato **tre volte** prima di scrivere la parola regressione: da
+  solo sul gioco di oggi **54/54**, da solo sul gioco di `main` **54/54**, e
+  col gruppo intero a `--ripetuto 2` **54/54 e 54/54**, con il banco che
+  dichiara «nessun cancello diverge su 2 corse: oggi la batteria è stabile».
+  Era rumore di un banco a tempo reale.
 
 - **Il rating nascosto, Glicko-2 — #140 CANTIERE CHIUSO** (voce #140, 23
   settembre 2026, cinque compiti dal merge-base `562e62e` — spec

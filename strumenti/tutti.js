@@ -848,6 +848,18 @@ const CANCELLI = [
                                    '--tetto', '2700', '--k', '0,18', '--pagine', '4'],           conta: true,  lento: true  },
   { nome: 'ritardo-falsi',   cmd: ['strumenti/_q-ritardo-falsi.js', '--nastri', '6',
                                    '--tetto', '2700', '--pagine', '3'],                          conta: true,  lento: true  },
+  /* `verbi-ritardo` e' l'altra meta' del metro: i cinque verbi provati a
+     TOCCHI VERI con duecento millisecondi addosso. Conta, ma la sua
+     porta e' stretta apposta — «un verbo MUORE» e non «un verbo riesce
+     nel 95% dei casi». Il 95% vorrebbe sessanta tentativi per verbo e
+     per K (regola del tre) cioe' due ore di corse da mezzo minuto, e il
+     banco lo dichiara invece di fingere. Zero riuscite su tre, quando a
+     ritardo zero ne riusciva tre su tre, non ha bisogno di statistica.
+     Banco a TEMPO REALE, quindi NON ripetibile: `solo:true`, perche' un
+     cancello a cronometro che gira in compagnia misura il carico della
+     macchina (la stessa ragione di `giocata` e `prestazione`). */
+  { nome: 'verbi-ritardo',   cmd: ['strumenti/_q-verbi-ritardo.js', '--ripetute', '3',
+                                   '--k', '0,12'],                     conta: true,  lento: true, solo: true },
   { nome: 'motori',          cmd: ['strumenti/_q-motori.js', '--semi', '2', '--secondi', '60'],   conta: false, lento: true  },
   /* =====================================================================
      rete / sfida: LA SFIDA ASINCRONA, PROVATA SENZA RETE VERA (voce
