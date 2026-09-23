@@ -1349,6 +1349,31 @@ const CANCELLI = [
      30-40 s che qui chiede lento (modello `audio.js`) — `lento:true`. */
   { nome: 'finestra',          cmd: ['strumenti/_q-finestra.js'],                       conta: true,  lento: true  },
   /* =====================================================================
+     schermi: LO STESSO NASTRO, SEI SCHERMI (voce #144) — il cancello che
+     chiude il canale dei PIXEL, cioe' il seguito piu' grosso del
+     progetto (#133) e il prezzo dichiarato del #139 in una volta sola.
+
+     MISURA quel che nessun altro cancello misura: lo stesso nastro
+     giudicato a 800x360, 844x390, 915x412 e 1280x720, piu' un braccio
+     col POLLICE al massimo (scala 150%, spazio 140%, mancino) e uno con
+     la TACCA di un telefono (env(safe-area-inset) 44/59/21/59). Due
+     misure per braccio: il verdetto, e il PUNTEGGIO rigiocato con
+     l'astensione aggirata — senza il secondo misurerebbe solo la propria
+     guardia (lezione del #141 e del #142).
+     PRIMA DELLA CURA: 2-3 dichiarato, 0-5 a 800x360, 0-1 a 1280x720,
+     0-0 col pollice, 0-2 con la tacca — e su quest'ultimo lo schermo e'
+     IDENTICO, quindi il giudice non si asteneva: diceva NON TORNA.
+     DICE QUEL CHE NON MISURA: il duello (il tipo 6 e' gia' semantico),
+     il ritardo del #141, e la riadozione dopo una pausa (residuo
+     dichiarato nella spec §7).
+     SA FALLIRE: CINQUE falsi (`_crit-schermi-*`), ognuno con la lista
+     MISURATA di quel che morde.
+     Deterministico (passo fisso, seme dal server finto azzerato), ma
+     gioca una sfida intera e la rigioca SEI volte piu' una prova in
+     modalita' 2: misurato **49 s in compagnia** e ~180 s da solo, cioe'
+     sopra la soglia dei 30-40 s che qui chiede lento — `lento:true`. */
+  { nome: 'schermi',           cmd: ['strumenti/_q-schermi.js'],                        conta: true,  lento: true  },
+  /* =====================================================================
      glicko: IL RATING NASCOSTO (voce #140) — il punto 13 del programma,
      l'ultimo dell'onda D.
 

@@ -423,7 +423,7 @@ const sosp = (db, id) => (db.allenatore.get(id) || {}).sospetto | 0;
       console.error('PROVA NULLA: la sfida a ' + MISURA_2.join('x') + ' non e\' arrivata al fischio finale.');
       await browser.close(); sg.chiudi(); ss.chiudi(); process.exit(3);
     }
-    vera = { crudo: N.allarga(s.riga.replay), seme: s.riga.seme, taglia: s.riga.taglia | 0,
+    vera = { crudo: N.conPixel(N.allarga(s.riga.replay)), seme: s.riga.seme, taglia: s.riga.taglia | 0,
              gol_a: s.riga.gol_a | 0, gol_d: s.riga.gol_d | 0 };
     console.log('    sfida vera a ' + MISURA_2.join('x') + ': ' + vera.gol_a + '-' + vera.gol_d +
                 ', seme ' + vera.seme + ', nastro ' + vera.crudo.length + ' byte crudi, schermo nel nastro ' +
@@ -451,7 +451,20 @@ const sosp = (db, id) => (db.allenatore.get(id) || {}).sospetto | 0;
    faccia astenere il giudice e' misurato dove deve esserlo, nella prova
    E di _q-motore-nastro.js.
    ===================================================================== */
-  const CRUDO = impQui ? N.conMotore(N.allarga(FIX.replay), impQui) : N.allarga(FIX.replay);
+  /* =====================================================================
+     E DAL #144 LA FIXTURE E' UN NASTRO DI ATTI, cioe' non chiede nessuna
+     finestra: `misuraDelNastro` torna null e la chiave del gruppo
+     diventa «qualunque@…». Giusto per il gioco, ma tutto il gruppo A di
+     questo banco misura il RAGGRUPPAMENTO PER MISURA, che serve ai
+     nastri che una misura la chiedono — quelli con un pixel dentro, che
+     sono quelli sul server adesso. Percio' la fixture si usa in due
+     forme: `CRUDO_ATTI` com'e', per misurare che un nastro di atti
+     finisce in «qualunque» (prova A4b), e `CRUDO` con un pixel inerte in
+     testa (`N.conPixel`), per tutto il resto. Senza questa distinzione
+     il banco misurerebbe l'assenza del raggruppamento invece del
+     raggruppamento, cioe' attesterebbe. */
+  const CRUDO_ATTI = impQui ? N.conMotore(N.allarga(FIX.replay), impQui) : N.allarga(FIX.replay);
+  const CRUDO = N.conPixel(CRUDO_ATTI);
   const indirizzo = 'http://127.0.0.1:' + sg.porta + '/CALCETTO-il-gioco.html';
   /* i due nastri costruiti devono esistere DAVVERO: senzaSchermo torna
      null se quel nastro non aveva una riga di tipo 10, e un banco che
@@ -561,6 +574,24 @@ const sosp = (db, id) => (db.allenatore.get(id) || {}).sospetto | 0;
          gr[0].righe.length === 4 && gr[1].righe.length === 1 && gr[2].righe.length === 1,
          'A4) sei righe diventano TRE gruppi, in ordine di prima apparizione, e i nastri senza schermo stanno a parte',
          chiavi.map((c, i) => c + ':' + gr[i].righe.length).join(' · ') || 'nessun gruppo');
+
+      /* =================================================================
+         A4b — IL NASTRO DI ATTI NON CHIEDE NESSUNA FINESTRA (voce #144).
+
+         Dal #144 un comando non e' piu' un punto ma un atto risolto, e un
+         nastro fatto di atti si giudica DOVE CAPITA: la sua chiave e'
+         «qualunque@impronta», e la finestra che si apre e' quella di
+         serie. TRE etichette e non due — «qualunque» (non chiede),
+         «ignota» (chiederebbe e non sa dire quale, cioe' i nastri di
+         prima del #133) e la misura vera — perche' confonderle farebbe
+         leggere un referto come se meta' delle righe fossero casi persi,
+         e non lo sono piu'.
+         ================================================================= */
+      const grA = haS ? S.raggruppa([{ replay: CRUDO_ATTI }, { replay: CRUDO }]) : [];
+      di(grA.length === 2 && grA.some(g => g.chiave.indexOf('qualunque@') === 0) &&
+         grA.some(g => g.chiave.indexOf('915x412@') === 0),
+         'A4b) un nastro di ATTI finisce in «qualunque», uno con un pixel nella sua misura',
+         grA.map(g => g.chiave).join(' · ') || 'nessun gruppo');
 
       /* =================================================================
          A6 — IL MOTORE SEPARA I GRUPPI QUANTO LO SCHERMO (voce #142).

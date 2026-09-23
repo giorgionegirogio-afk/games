@@ -258,15 +258,26 @@ const fotoStato = P => P.pag.evaluate(() => ({
        innerHeight. Su uno schermo diverso lo stesso nastro e' un'altra
        partita — misurato, 800x360 contro 915x412: 0-3 dove il tabellone
        dice 3-4. Il giudice deve RIFIUTARSI, non accusare. */
+    /* RETTIFICA A EDIZIONI (23 settembre 2026, voce #144). Il testo qui
+       sopra resta vero per i NASTRI CHE PORTANO UN PIXEL, e quelli sono
+       ancora sul server. Ma dal #144 il comando non e' piu' un punto: e'
+       un atto risolto, e un nastro di soli atti non si accorge dello
+       schermo — quindi il giudice non si astiene piu' su di lui, e fa
+       bene (misurato: stesso nastro, stesso punteggio su quattro
+       finestre, col pollice al massimo e con la tacca,
+       `strumenti/_q-schermi.js`). Queste due prove misurano la GUARDIA,
+       non la cura, e per farlo il nastro deve avere un pixel dentro:
+       glielo mette `N.conPixel`, una riga di tipo 1 inerte in testa. La
+       cura sta nel suo banco, che e' `_q-schermi`. */
     r.schermo = { dentroNastro: N.schermoDi(nastro) };
     const Gs = await B.apri(browser, sg.porta, { width: 800, height: 360 });
-    r.altroSchermo = await giudizio(Gs, nastro, atteso, opz);
+    r.altroSchermo = await giudizio(Gs, N.conPixel(nastro), atteso, opz);
     /* LO SCHERMO IGNOTO (correzione di revisione, IMPORTANTE-1): lo
        stesso nastro, ma senza NESSUNA riga di tipo 10 — come un nastro
        di prima della cura, o uno costruito apposta senza. Prima della
        cura del 22 settembre 2026 `sc` era null e il giudice procedeva
        alla cieca. */
-    r.schermoIgnoto = await giudizio(Gs, N.senzaSchermo(nastro), atteso, opz);
+    r.schermoIgnoto = await giudizio(Gs, N.conPixel(N.senzaSchermo(nastro)), atteso, opz);
     await Gs.ctx.close();
 
     /* =================================================================

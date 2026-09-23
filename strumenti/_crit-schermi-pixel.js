@@ -12,13 +12,25 @@
    di prima con un vestito nuovo — ed e' il piu' probabile di tutti,
    perche' «tanto il punto ce l'ho gia'» e' la frase che lo produce.
 
+   E QUESTO FALSO HA CONDANNATO IL BANCO PRIMA DI ESSERE CONDANNATO DA
+   LUI. Alla prima corsa passava con 21 prove su 24, **identiche a quelle
+   della cura onesta**: una volta che l'atto porta l'esito e il disco, il
+   punto ricostruito non decide piu' il punteggio, e un banco che
+   guardasse solo verdetti e punteggi lo avrebbe promosso. La prova G —
+   «dove cade il dito, dopo» — e' nata da questa misura.
+
+   MISURATO dopo la prova G: morde G1, G2, G4, G5 e G6 (259 pose di
+   disco su 259 cadono FUORI dal disco che l'atto nomina, la peggiore a
+   790 px col pollice al massimo), e lascia verde il controllo G3, dove
+   il pixel del registratore e' anche il pixel di chi rilegge.
+
    uso:  node strumenti/_crit-schermi-pixel.js
    ===================================================================== */
 const C = require('./_crit-schermi.js');
 C.falso({
   nome: 'crit-schermi-pixel',
   titolo: 'il nastro porta anche il pixel, e la rilettura usa quello',
-  morde: 'tutti i bracci di geometria (B, C e D di _q-schermi.js)',
+  morde: 'G1 G2 G4 G5 G6 — cinque prove su trenta, e NON il controllo (MISURATO)',
   cambi: [
     { nome: 'la porta scrive anche il pixel', cerca: C.ANCORA_SCRIVE,
       metti:

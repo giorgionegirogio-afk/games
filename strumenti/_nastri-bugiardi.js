@@ -239,6 +239,38 @@ function tipiDi(nastro) {
    nastro di soli ATTI (tipi 12 e 13) non chiede niente e si giudica
    dove capita; uno con dentro anche un solo tipo 0 o tipo 1 porta il
    pixel di un altro telefono. */
+/* =====================================================================
+   UN PIXEL INERTE IN TESTA AL NASTRO (voce #144) — e senza di lui tre
+   banchi smettono di misurare la guardia che dicono di misurare.
+
+   Dal #144 il giudice si astiene sullo schermo SE E SOLO SE il nastro
+   porta un pixel (una riga di tipo 0 o 1). I nastri nuovi sono fatti di
+   atti e non si astengono piu': e' la cura. Ma le tre astensioni
+   ESISTONO ANCORA, e servono ai nastri di prima — quelli che stanno sul
+   server adesso — quindi vanno ancora misurate, e con un nastro che un
+   pixel ce l'abbia.
+
+   Rigenerare una fixture vecchia non basterebbe: sarebbe un nastro di
+   una versione che non si puo' piu' produrre. Qui invece si prende un
+   nastro VERO di oggi e gli si mette in testa **una riga di tipo 1
+   inerte** — un movimento per un identificativo che non esiste, a
+   (1,1), al tick 0. Touch5.move su un dito sconosciuto non trova ne'
+   btnTouch, ne' pend, ne' una levetta con quell'id: non muove niente. Ma
+   `nastroHaPixel()` risponde VERO, e la guardia dello schermo torna a
+   parlare esattamente come parlava per i nastri di prima.
+
+   AL TICK 0 APPOSTA: la sola strada per cui quel movimento potrebbe
+   fare qualcosa e' la riadozione della levetta, che si arma solo DOPO un
+   azzeramento che ha spento una levetta viva. Al primo passo non c'e'
+   niente di armato.
+
+   dT = 0 e dMs = 0, come infilaSchermo e conMotore: la catena dei tick e
+   dei millisecondi resta intatta. */
+function conPixel(nastro) {
+  const { p, pezzi } = spacca(nastro);
+  return rifai(p, ['0,1,0,9999,1,1'].concat(pezzi));
+}
+
 function haPixel(nastro) {
   const c = tipiDi(nastro);
   return !!((c['0'] | 0) + (c['1'] | 0));
@@ -258,7 +290,7 @@ module.exports = {
   allarga,
   spacca, rifai, schermoDi, schermiDi, righeSchermoDi, infilaSchermo,
   improntaDi, conMotore,
-  conSchermo, tipiDi, attiDi, haPixel,
+  conSchermo, tipiDi, attiDi, haPixel, conPixel,
 
   /* L'IMPRONTA DEL MOTORE VIA (tipo 11, voce #142). Simula un nastro di
      prima di quella cura: improntaDi() e improntaDelNastro() (lato

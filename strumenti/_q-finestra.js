@@ -339,12 +339,38 @@ const mis = l => (l && l.length ? l.map(s => s[0] + 'x' + s[1]).join(' -> ') : '
 
     const opz = b => ({ seme: b.riga.seme, taglia: b.riga.taglia | 0 });
     const att = b => [b.riga.gol_a | 0, b.riga.gol_d | 0];
+    /* =================================================================
+       RETTIFICA A EDIZIONI (23 settembre 2026, voce #144).
+
+       Tutto il gruppo B qui sotto misura UNA GUARDIA: il giudice che si
+       astiene quando la finestra del nastro non e' la sua, o e' cambiata
+       a meta' partita. Dal #144 quella guardia vale **solo per i nastri
+       che portano un PIXEL**, perche' il comando non e' piu' un punto: e'
+       un atto risolto, e un nastro di soli atti non si accorge ne' della
+       finestra che si stringe, ne' del pollice, ne' della tacca
+       (MISURATO in `strumenti/_q-schermi.js`: stesso nastro, stesso
+       punteggio su quattro finestre, col pollice al massimo e con la
+       tacca).
+
+       I nastri che questo banco registra oggi sono di atti, quindi senza
+       questa riga il gruppo B misurerebbe l'assenza della guardia invece
+       della guardia — cioe' attesterebbe. `N.conPixel` mette in testa al
+       nastro **una riga di tipo 1 inerte**, che e' quel che un nastro di
+       prima ha dentro a migliaia: da li' in poi il vaglio si comporta
+       esattamente come si comportava, e ogni numero di questo banco
+       torna a dire quel che dice.
+
+       LA CURA NON SI MISURA QUI, si misura in `_q-schermi`. Qui si
+       misura che la guardia **regge ancora per chi ne ha bisogno**, cioe'
+       per i nastri che stanno sul server adesso.
+       ================================================================= */
+    const px = c => N.conPixel(c);
     const r = {};
-    r.fermoAlta = await giudizio(G1, fermo.crudo, att(fermo), opz(fermo));
-    r.fermoBassa = await giudizio(G2, fermo.crudo, att(fermo), opz(fermo));
-    r.cambiaAlta = await giudizio(G1, cambia.crudo, att(cambia), opz(cambia));
-    r.cambiaBassa = await giudizio(G2, cambia.crudo, att(cambia), opz(cambia));
-    r.tornaAlta = await giudizio(G1, torna.crudo, att(torna), opz(torna));
+    r.fermoAlta = await giudizio(G1, px(fermo.crudo), att(fermo), opz(fermo));
+    r.fermoBassa = await giudizio(G2, px(fermo.crudo), att(fermo), opz(fermo));
+    r.cambiaAlta = await giudizio(G1, px(cambia.crudo), att(cambia), opz(cambia));
+    r.cambiaBassa = await giudizio(G2, px(cambia.crudo), att(cambia), opz(cambia));
+    r.tornaAlta = await giudizio(G1, px(torna.crudo), att(torna), opz(torna));
     /* LO STESSO NASTRO CON TRE PUNTEGGI DIVERSI, e nessuno dei tre deve
        cambiare la risposta: l'astensione e' una proprieta' del NASTRO,
        non del conto. Serve a condannare una cura pigra — «mi astengo
@@ -354,8 +380,8 @@ const mis = l => (l && l.length ? l.map(s => s[0] + 'x' + s[1]).join(' -> ') : '
        rigiocata di questo nastro produce (la rigiocata ignora il cambio
        di finestra e rifa' la partita a finestra ferma): prima della
        cura quel giudizio diceva TORNA su un nastro inverificabile. */
-    r.cambiaConFermo = await giudizio(G1, cambia.crudo, att(fermo), opz(cambia));
-    r.cambiaAssurdo = await giudizio(G1, cambia.crudo, [99, 0], opz(cambia));
+    r.cambiaConFermo = await giudizio(G1, px(cambia.crudo), att(fermo), opz(cambia));
+    r.cambiaAssurdo = await giudizio(G1, px(cambia.crudo), [99, 0], opz(cambia));
 
     /* i nastri vecchi: la fixture congelata e i tre bisturi in Node */
     /* LA FIXTURE E' DI PRIMA DELLA VOCE #142 e non porta l'impronta del
@@ -373,9 +399,9 @@ const mis = l => (l && l.length ? l.map(s => s[0] + 'x' + s[1]).join(' -> ') : '
                             : N.allarga(FIX_DUELLO.replay);
     r.fix = await giudizio(G1, crudoFix, [FIX_DUELLO.gol_a | 0, FIX_DUELLO.gol_d | 0],
                            { seme: FIX_DUELLO.seme, taglia: FIX_DUELLO.taglia | 0 });
-    r.senzaSchermo = await giudizio(G1, N.senzaSchermo(fermo.crudo), att(fermo), opz(fermo));
-    r.doppioUguale = await giudizio(G1, N.infilaSchermo(fermo.crudo, ALTA, 0.5), att(fermo), opz(fermo));
-    r.doppioDiverso = await giudizio(G1, N.infilaSchermo(fermo.crudo, BASSA, 0.5), att(fermo), opz(fermo));
+    r.senzaSchermo = await giudizio(G1, px(N.senzaSchermo(fermo.crudo)), att(fermo), opz(fermo));
+    r.doppioUguale = await giudizio(G1, px(N.infilaSchermo(fermo.crudo, ALTA, 0.5)), att(fermo), opz(fermo));
+    r.doppioDiverso = await giudizio(G1, px(N.infilaSchermo(fermo.crudo, BASSA, 0.5)), att(fermo), opz(fermo));
 
     /* la frase che l'occhio legge, chiesta al gioco con un sigillo finto */
     const frasi = await G1.pag.evaluate(([a, b]) => ({

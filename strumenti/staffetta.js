@@ -112,9 +112,15 @@ const TETTO_RIGHE = 50;
 const PAUSA = 1000;
 const PAGINE = 10;
 const FRENO_TETTO = 60, FRENO_SECONDI = 60;
-/* la misura con cui si apre un contesto quando il nastro non ne
-   dichiara nessuna: e' quella dei banchi del repo, e serve solo a
-   sentirsi dire «schermo-ignoto» dal giudice invece di deciderlo qui */
+/* la misura con cui si apre un contesto quando il nastro non ne chiede
+   nessuna: e' quella dei banchi del repo.
+   RETTIFICA A EDIZIONI (23 settembre 2026, voce #144). Il commento
+   vecchio diceva «serve solo a sentirsi dire schermo-ignoto dal giudice
+   invece di deciderlo qui», e dal #144 non e' piu' vero: i nastri di
+   soli ATTI non chiedono nessuna finestra e si giudicano DAVVERO qui,
+   fino in fondo. Questa misura e' diventata la casa della maggior parte
+   delle righe, non l'angolo dei casi persi. Per i nastri che portano
+   ancora un pixel il testo vecchio vale parola per parola. */
 const MISURA_SERIE = [915, 412];
 
 /* ------------------------------------------------------------ il nastro */
@@ -124,7 +130,15 @@ const allargaNastro = stretto => N.allarga(stretto);
    se quel nastro e' di prima di quella cura o e' stato costruito senza.
    Accetta il nastro stretto o crudo: nel database sta stretto. */
 function misuraDelNastro(nastro) {
-  const s = N.schermoDi(allargaNastro(nastro));
+  const crudo = allargaNastro(nastro);
+  /* VOCE #144: un nastro di soli ATTI non chiede nessuna finestra. I
+     suoi comandi dicono QUALE DISCO, non QUALE PUNTO, e chi rilegge il
+     punto se lo rifa' con la propria geometria — MISURATO
+     (strumenti/_q-schermi.js): stesso punteggio su quattro finestre, col
+     pollice al massimo e con la tacca. La riga 10 c'e' ancora e si
+     legge; semplicemente non chiede piu' di aprire niente. */
+  if (!N.haPixel(crudo)) return null;
+  const s = N.schermoDi(crudo);
   return (s && s[0] > 0 && s[1] > 0) ? [s[0] | 0, s[1] | 0] : null;
 }
 
@@ -186,7 +200,16 @@ function raggruppa(righe) {
     const crudo = allargaNastro(r && r.replay !== undefined ? r.replay : (r && r.nastro));
     const m = misuraDelNastro(crudo);
     const imp = improntaDelNastro(crudo);
-    const chiave = (m ? (m[0] + 'x' + m[1]) : 'ignota') + '@' + (imp || 'ignoto');
+    /* TRE ETICHETTE, NON PIU' DUE (voce #144). «qualunque» e' il posto
+       dei nastri di soli ATTI, che una finestra non la chiedono;
+       «ignota» resta il posto dei nastri di prima del #133, che una
+       finestra la chiederebbero e non sanno dire quale (il giudice dira'
+       schermo-ignoto). Confonderle in una sola etichetta farebbe leggere
+       un referto come se meta' delle righe fossero casi persi, e non lo
+       sono piu'. */
+    const chiedeFinestra = N.haPixel(crudo);
+    const etichetta = chiedeFinestra ? (m ? (m[0] + 'x' + m[1]) : 'ignota') : 'qualunque';
+    const chiave = etichetta + '@' + (imp || 'ignoto');
     if (!mappa.has(chiave)) {
       mappa.set(chiave, { chiave: chiave, misura: m, impronta: imp, righe: [] });
       ordine.push(chiave);

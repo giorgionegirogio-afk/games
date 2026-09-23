@@ -517,6 +517,260 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Il comando senza schermo — #144 CANTIERE CHIUSO** (voce #144, 23 settembre
+  2026, cinque compiti dal merge-base `c71a83e` — spec
+  `docs/superpowers/specs/2026-09-23-comando-senza-schermo-design.md`, piano
+  `docs/superpowers/plans/2026-09-23-comando-senza-schermo.md`, progetto d'onda
+  `docs/superpowers/specs/2026-09-23-onda-e-architettura.md` §3.1). Paga **due
+  debiti in una volta** — il seguito più grosso del progetto (#133, i tocchi in
+  coordinate di schermo) e il prezzo dichiarato del #139 («un nastro con la
+  finestra mossa resta aperto per sempre») — e consegna i due prerequisiti che
+  il censimento dell'onda E aveva messo per primi (§3.2, punti 1 e 2).
+
+  **IL DIFETTO, MISURATO, ED È PEGGIO DI COM'ERA SCRITTO.** Un comando era un
+  PIXEL. Dove finisce un pixel lo decidono tre cose che nel nastro non ci sono:
+  la FINESTRA (`touchBtnLayout` parte da `bx = right ? VW : 0`), il POLLICE
+  (`pollice()`: scala 85-150%, spazio 100-140%, mancino) e la TACCA
+  (`insertiSicuri()`: `env(safe-area-inset-*)`). Una sfida vera registrata a
+  915x412 e dichiarata **2-3** si rigioca **0-5** a 800x360, **0-5** a 844x390,
+  **0-1** a 1280x720, **0-0** col pollice al massimo e **0-2** con la tacca di
+  un telefono. Dei primi tre il gioco sapeva qualcosa e si asteneva
+  (`schermo-diverso`); **sugli ultimi due no, e lì non si asteneva affatto**:
+  lo schermo è IDENTICO — 915x412 da tutte e due le parti — quindi il giudice
+  procedeva, rigiocava un'altra partita e diceva **NON TORNA** a un onesto che
+  aveva soltanto il pollice grosso o un telefono con la tacca. NON TORNA è
+  l'unico verdetto che muove punti: li toglie a DUE persone, alza un sospetto
+  che non decade mai e chiude la riga per sempre. **I due canali gemelli non
+  stavano in nessun verbale**: il censimento dell'onda E li aveva trovati
+  leggendo il codice, e qui si misurano per la prima volta.
+
+  **LA CURA, E PERCHÉ È PICCOLA.** Non è «normalizzare la risoluzione»: è
+  **trasportare e registrare l'ATTO RISOLTO invece del PUNTO**. `Touch5.start`
+  faceva due mestieri in un corpo solo — RISOLVERE (che squadra? che disco? o
+  erba? o morto?) e APPLICARE — e i due si separano **senza duplicare una
+  riga**: `risolvi` è pura, `applica` è il corpo di prima riga per riga,
+  `avvia` è la porta che i due capi (il dito vero e il riproduttore del nastro)
+  attraversano insieme. Fra loro passa un atto di cinque numeri:
+
+  | campo | cosa dice |
+  |---|---|
+  | `t` | **la squadra**, 0 o 1 — il prerequisito §3.2 punto 2 dell'onda E |
+  | `esito` | 0 disco preso · 1 erba · 2 cella spenta · 3 anello d'esclusione |
+  | `slot` | quale disco, per INDICE (0 il grande, 1 il piccolo) |
+  | `ux, uy` | il punto di posa **in unità della geometria dei comandi**, al millesimo |
+
+  **LA NORMALIZZAZIONE NON È INVENTATA: è quella che il gioco usa già per
+  decidere.** Le due passate di `Touch5.start` scelgono il disco col minimo di
+  `d/(r+10)` e uccidono il tocco col minimo di `d/(r+18)`; il punto di posa si
+  scrive in QUELLE unità, e la distanza normalizzata diventa invariante **per
+  costruzione** — il denominatore è la geometria LOCALE di chi rilegge. **Il
+  verbo non viaggia**: si rilegge da `touchBtnLayout(t)[slot].act`, perché
+  dipende dal POSSESSO, e il possesso è simulazione, cioè già identico ai due
+  capi. Quel che si può ricavare non si spedisce.
+
+  **I TRASCINAMENTI VIAGGIANO COME SCOSTAMENTI** dal punto di posa, in pixel
+  assoluti, ed è l'unica forma corretta: **tutte** le soglie che li leggono sono
+  in pixel assoluti e non scalate (`SOGLIA_LEVETTA` 6, `STICK_DEAD` 12,
+  `STICK_FULL` 46, `MAXR` 70, `R_ARMA`, `R_ANNULLA` 96). Quaranta pixel di
+  trascinamento vogliono dire la stessa cosa dappertutto; quel che cambia è il
+  punto da cui partono, ed è esattamente ciò che l'atto risolve.
+
+  **DUE TIPI DI RIGA NUOVI** — 12 (l'atto) e 13 (lo scostamento) — e **i tipi 0
+  e 1 restano LEGGIBILI**: un nastro di prima si rigioca come si rigiocava. Il
+  gioco non li scrive più, tranne in un ripiego dichiarato: un movimento che
+  arriva per un dito di cui non si è visto l'atto si scrive come pixel invece
+  che buttarlo, e quel nastro porta un pixel — ed è proprio la presenza del
+  pixel che fa scattare l'astensione.
+
+  **E LA SQUADRA SMETTE DI ESSERE UNA DEDUZIONE.** `Touch5.teamOf` è avvolto
+  dall'esterno con la stessa dottrina delle quattro porte: in rilettura torna la
+  squadra **scritta nel nastro**, non quella dedotta da `innerWidth/2`.
+  MISURATO (prova F, l'unica che gira in modalità 2): un tocco a `x = 500`
+  registrato su una finestra da 1280 è della squadra 0; prima della cura lo
+  stesso nastro riletto su una da 800 muoveva la levetta della squadra **1**.
+
+  **LA VERIFICA STATICA CHE IL CENSIMENTO NON AVEVA FATTO.** Il progetto d'onda
+  marcava «LETTO, non riverificato» la riga che rende piccolo tutto il
+  cantiere: fra `function step(){` e la mira del duello — cioè per tutta la
+  simulazione, `updatePlayer`, `updateBall` e `aiDecide` compresi — le
+  occorrenze di `VW`, `VH`, `SCALE`, `OX`, `OY`, `innerWidth`, `innerHeight` e
+  `devicePixelRatio` **nel codice sono ZERO**, e l'unica che si trova sta dentro
+  un commento. **La simulazione non legge lo schermo**: confermato. E il DUELLO
+  era già a posto — il tipo 6 porta `u,v` in millesimi, `duelMira` li arrotonda
+  PRIMA di scriverli e `Reg.eseguiDuello` rigioca senza toccare un pixel —
+  quindi questo cantiere non lo tocca.
+
+  **IL BANCO — `strumenti/_q-schermi.js`, 8/30 → 30/30.** Un nastro onesto
+  solo, registrato a 915x412 da due telefoni e da un server finto, giudicato
+  su **sei bracci**: 800x360, 844x390, 915x412 (il controllo), 1280x720, un
+  braccio col POLLICE al massimo (scala 150%, spazio 140%, mancino) e uno con
+  la TACCA di un telefono in orizzontale (`env(safe-area-inset)` 44/59/21/59).
+  **Due misure per braccio**, e la seconda è quella che conta: il VERDETTO, e
+  il PUNTEGGIO rigiocato con l'astensione **aggirata** (la riga 10 riscritta
+  alla misura locale, `_nastri-bugiardi.conSchermo`, il gemello esatto di
+  `conMotore` del #142 e nato dalla stessa lezione) — senza il secondo il banco
+  misurerebbe solo la propria guardia. Dopo la cura: **sei verdetti TORNA e sei
+  punteggi 2-3**, cioè quello dichiarato, compresi il braccio del pollice e
+  quello della tacca.
+  **IL BANCO SI È CORRETTO DUE VOLTE, E TUTTE E DUE LE VOLTE PERCHÉ ATTESTAVA.**
+  (1) La tacca a 34 px su tutti i lati spostava i dischi di **dieci** pixel, e
+  quel braccio era verde **anche prima della cura**: adesso porta gli inserti
+  veri di un telefono in orizzontale (35 px di spostamento, più di mezza presa)
+  e un dito sul **bordo** della presa — a 45 px dal centro, `u = 0,9` — che è
+  il caso peggiore e l'unico che valga costruire. Da lì la tacca smette di
+  essere una curiosità e diventa un **NON TORNA**. (2) La prova **G** non
+  esisteva, e senza di lei il banco **promuoveva due falsi su cinque**: una
+  volta che l'atto porta l'esito e il disco, il punto ricostruito non decide
+  più il PUNTEGGIO — tutto quel che viene dopo si misura in scostamenti dal
+  punto di posa, che si cancellano — quindi un gioco che registrasse l'atto e
+  poi rigiocasse dal PIXEL dava 21 prove su 24, **identiche alla cura onesta**.
+  G guarda dove il riproduttore ha davvero posato le dita (`Reg.origine` dopo
+  un giudizio, contro la geometria locale) e pretende che ogni posa di disco
+  cada nella PRESA del disco che l'atto nomina.
+  **E UNA MISURA CHE HA CORRETTO LA PROVA STESSA**: un atto d'erba **non** dice
+  «il dito era fuori dagli anelli», dice «la risoluzione dei dischi non si è
+  applicata» (squadra della macchina, o scena che non è di gioco) — e allora il
+  dito può benissimo essere posato sopra un disco. Misurato: **112 atti d'erba
+  su 197 cadono dentro un anello, e cadono dentro su tutti e sei i bracci nello
+  stesso numero**. Non è un difetto di schermo: è quel che l'atto significa.
+  Perciò G confronta il numero con quello del controllo, che è la domanda
+  giusta.
+
+  **CINQUE FALSI, tutti bocciati, bite list MISURATA su 30 prove** —
+  `_crit-schermi-*`, impianto condiviso in `_crit-schermi.js`, due
+  sostituzioni ciascuno (la porta che SCRIVE e il riproduttore che LEGGE: un
+  falso che ne toccasse una sola sarebbe rotto, non bugiardo):
+
+  | falso | la bugia | morde | prove |
+  |---|---|---|---|
+  | `pixel` | registra l'atto e rigioca dal PIXEL del registratore | G1 G2 G4 G5 G6 | 25/30 |
+  | **`mezza`** | **la mezza cura**: normalizza il punto sull'ANGOLO della finestra e lascia aperti pollice e tacca | **G5 G6** | 28/30 |
+  | `ricalcola` | la squadra sta nel comando e in rilettura si deduce di nuovo dalla x | F1 F2 | 28/30 |
+  | `mossa` | le pose diventano atti, i trascinamenti restano pixel | B1 B4 B5 B6 · C1 C4 C5 C6 · D1 D2 · G1 G4 G5 G6 | 16/30 |
+  | `grana` | lo scostamento quantizzato a sedici pixel | A2 | 29/30 |
+
+  **LA MEZZA CURA È BOCCIATA, ed è il falso che conta.** Normalizza il punto
+  contando dall'angolo in basso a destra (`VW - x`, `VH - y`), che è **esatto**
+  come cura della finestra — i dischi sono ancorati proprio a quell'angolo,
+  quindi i quattro bracci di sola finestra restano tutti verdi — e lascia
+  aperti gli altri due canali. La bite list è la più stretta dei cinque:
+  **due prove su trenta, G5 e G6**, cioè esattamente i due bracci gemelli. È la
+  cura che chiunque scriverebbe leggendo solo il #133, e senza i bracci del
+  pollice e della tacca sarebbe passata. `grana` morde **solo A2**, il
+  controllo di esercizio, e lo dichiara in testa: un vettore corrotto è
+  corrotto su ogni geometria, e la cosa che dice — diversa da quella degli
+  altri quattro — è che il banco vede anche un comando CORROTTO, non solo un
+  comando SPOSTATO.
+
+  **`MOTORE_V` 3 → 4, DECISO COL NUMERO E NEI DUE VERSI**
+  (`strumenti/_t-144-motorev.js`). *Verso 1*: quattro nastri registrati sul
+  merge-base e rigiocati sul curato sono **identici 4 su 4**, ottanta campioni
+  d'impronta ciascuno, nessuno scarto — la cura, di suo, **non cambia nessuna
+  partita**, e il primo criterio del numero non scatta. *Verso 2*: quattro
+  nastri registrati sul curato e rigiocati sul gioco di ieri finiscono in una
+  partita **diversa 4 su 4**, tutti allo stesso campione (il primo, cioè entro
+  il primo mezzo secondo), con **170 righe lette su 2749** — il gioco vecchio
+  non ha un ramo per i tipi 12 e 13, li butta in silenzio e rigioca una partita
+  in cui nessuno ha toccato lo schermo. Quel telefono non è un'ipotesi: è una
+  copia in cache, e il service worker di casa **ignora la query string**,
+  quindi restare indietro è facile. Senza il numero direbbe NON TORNA a un
+  onesto; con il numero dice `ALTRO MOTORE / motore-diverso`, che è
+  un'astensione con la causa vera. **IL PREZZO, DICHIARATO**: i nastri v3
+  diventano ingiudicabili — si astengono, non vengono accusati — e costa poco
+  perché il #143 ha alzato `MOTORE_V` a 3 **ieri**.
+
+  **LE TRE ASTENSIONI DELLO SCHERMO NON SI TOLGONO: SI CONDIZIONANO.**
+  Toglierle renderebbe giudicabili i nastri vecchi, che giudicabili non sono, e
+  si tornerebbe ad accusare proprio la gente che il #133 aveva smesso di
+  accusare; tenerle com'erano renderebbe inutile la cura. La regola nuova sta in
+  una riga e **non è una data né una versione**: il nastro si astiene sullo
+  schermo **se e solo se porta un PIXEL**, cioè se ha almeno una riga di tipo 0
+  o di tipo 1 (`nastroHaPixel()`, letta dal giudice e dalla staffetta — una
+  funzione sola, perché i due capi devono guardare la stessa cosa). Un nastro
+  costruito a mano con un pixel dentro si astiene; un nastro di soli atti no. E
+  **la riga 10 resta scritta**: non decide più niente, ma un referto deve poter
+  dire su che telefono si è giocato.
+
+  **LA STAFFETTA SI SEMPLIFICA, E CONTINUA A FUNZIONARE.** Raggruppava per
+  `misura@impronta` per aprire una finestra della misura giusta. Un nastro di
+  soli atti **non chiede nessuna finestra**: `misuraDelNastro` torna `null` e la
+  chiave diventa `qualunque@impronta`. **Tre etichette e non due**: `qualunque`
+  (i nastri di atti, che si giudicano dove capita), `ignota` (i nastri di prima
+  del #133, che una finestra la chiederebbero e non sanno quale) e la misura
+  vera (i nastri con un pixel dentro). Confonderle farebbe leggere un referto
+  come se metà delle righe fossero casi persi, e non lo sono più. **Rettifica a
+  edizioni** sul commento di `MISURA_SERIE`, che diceva «serve solo a sentirsi
+  dire schermo-ignoto dal giudice»: dal #144 quella misura è la casa della
+  maggior parte delle righe, non l'angolo dei casi persi.
+
+  **LE RETI, E QUATTRO ROSSI CHE NON ERANO REGRESSIONI — sono il PREZZO,
+  e si e' pagato dove andava pagato.** Alla prima corsa della batteria
+  `giudice`, `sigillo`, `staffetta` e `finestra` sono usciti rossi, e le cause
+  erano due, tutte e due previste dalla cura:
+
+  1. **La fixture congelata** (`_nastro-duello-congelato.js`) era di un
+     `MOTORE_V` piu' vecchio e veniva respinta con `ALTRO MOTORE` da quattro
+     banchi in una volta — **esattamente quel che era successo al #143 ieri**,
+     e la regola scritta allora vale oggi: «il rifiuto e' GIUSTO, e la cura e'
+     **rigenerare**, non allentare». Rigenerata con
+     `_gen-nastro-duello-congelato.js` (seme 20260803, 3-2, un duello vero dal
+     dischetto).
+  2. **Le prove che misuravano l'astensione dello schermo** non la trovavano
+     piu': i nastri che quei banchi registrano oggi sono di ATTI, e un nastro
+     di atti non si astiene — **e' la cura**. Ma le tre astensioni servono
+     ancora ai nastri che stanno sul server adesso, quindi vanno ancora
+     misurate, e con un nastro che un pixel ce l'abbia. Il coltellino nuovo e'
+     `_nastri-bugiardi.conPixel`: **una riga di tipo 1 inerte in testa al
+     nastro** — un movimento per un identificativo che non esiste, a (1,1), al
+     tick 0 — che non muove niente e fa rispondere VERO a `nastroHaPixel()`.
+     Usato in `_q-giudice` (P, Q), `_q-finestra` (tutto il gruppo B e i
+     bisturi del gruppo C) e `_q-staffetta` (la fixture e la sfida vera).
+     **Con una rettifica a edizioni in ogni file**, perche' quei banchi adesso
+     misurano LA GUARDIA e non piu' IL DANNO: il danno non c'e' piu', e a
+     misurare che non c'e' e' `_q-schermi`.
+     **E `_q-sigillo` C3 si rettifica invece di essere puntellata**:
+     pretendeva che la causa nominasse lo schermo, cioe' che il verdetto fosse
+     un'astensione. Adesso e' **TORNA** — la sfida si verifica davvero su uno
+     schermo diverso — e l'invariante che quel banco difende resta quella di
+     sempre, soddisfatta piu' forte di prima: **MAI NON TORNA**.
+     **E una prova NUOVA in `_q-staffetta`** (A4b): un nastro di atti finisce
+     nel gruppo `qualunque@…`, uno con un pixel nella sua misura — se no il
+     banco misurerebbe l'assenza del raggruppamento invece del
+     raggruppamento.
+
+  Dopo le due cure, **tutti e quattro verdi**: `giudice` 37 s, `sigillo` 37 s,
+  `staffetta` 113 s, `finestra` 49 s. Batteria intera a gruppi, tutti i
+  cancelli che contano VERDI: `duello-impronta`, `carta`, `amici`, `sospetto`,
+  `collaudo`, `misura`, `senza-rete`, `eventi`, `salvataggio`, `replay`,
+  `cpu-ordine`, `mira`, `invarianti`, `determinismo`, `determinismo-11`,
+  `rete`, `sfida`, `ment-nastro`, `carattere-nastro`, `rosa-scala`,
+  `nastro-tronco`, `glicko`, `fuzzer` 37 s, `soak` 53 s, `ritardo` 48 s,
+  `ritardo-falsi` 92 s, `verbi-ritardo` 108 s, `motori`, `casa`, `perimetro`,
+  `casa-falsi` 92 s, `motore-nastro` 66 s, `motore-falsi` 236 s, `schermi`
+  49 s, `tocco` 150 s, e i ventidue della grafica e dell'interfaccia
+  (`equita-sonda`, `equita`, `silhouette`, `folla`, `seme`, `gabbia`,
+  `diritti`, `testo-fuori`, `carattere`, `disposizione`, `meta`, `divisioni`,
+  `record`, `abbandono`, `volo`, `proporzioni`, `battute`, `regole`,
+  `accessibile`, `fotosensibile`, `nomi`, `umore`). **Cinquantasette
+  esecuzioni-cancello in tutto, tutte verdi.** Fuori batteria, i
+  cancelli dello strato d'ingresso che questo cantiere tocca da vicino:
+  `_q-precedenza` **9/9**, `_q-pollice` **8/8** (`_q-dischi` da PROVA NULLA
+  — «da touchBtnLayout ho letto 7 dischi, ne servono almeno 8» — **anche sul
+  merge-base**: pre-esistente, verificato). E `rete/prove/tutte.js`
+  **46/46**.
+
+  **QUEL CHE NON FA, DICHIARATO**: non tocca la simulazione (INV-12 regge: zero
+  sorteggi nuovi, zero rami nuovi nella fisica); non tocca il duello (già
+  semantico); non tocca la coda del ritardo del #141 (sta più fuori del
+  registro, e l'ordine dito → coda → registro → `Touch5` non cambia); e resta
+  **un residuo dichiarato**: la riadozione della levetta dopo una pausa
+  (`Touch5.move`) chiede «questo dito è su un pulsante?» sulla posizione
+  CORRENTE, cioè dopo il trascinamento. Il punto di POSA è invariante per
+  costruzione, il punto dopo un trascinamento no, e la differenza fra i due capi
+  è limitata dalla differenza dei raggi. Il banco lo esercita e oggi non morde;
+  se un giorno mordesse, la cura è un bit in più sul tipo 13, non un disegno
+  diverso.
+
 - **La matematica in casa — #143 CANTIERE CHIUSO** (voce #143, 23 settembre
   2026, sei compiti dal merge-base `a2607d0` — spec
   `docs/superpowers/specs/2026-09-23-matematica-in-casa-design.md`, piano

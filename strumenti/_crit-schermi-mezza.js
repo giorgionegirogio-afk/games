@@ -19,13 +19,21 @@
    chiuso su tre e lo dichiarerebbe chiuso — e nel live 1v1 gli altri due
    sono esattamente quelli che due telefoni diversi hanno per forza.
 
+   MISURATO, ed e' la bite list piu' stretta dei cinque: **due prove su
+   trenta, G5 e G6**, cioe' esattamente i due bracci gemelli. Le quattro
+   finestre restano tutte verdi — la cura della finestra e' davvero
+   esatta — e cosi' il falso dice a voce alta quale meta' del problema
+   avrebbe lasciato aperta. Col pollice al massimo le 259 pose di disco
+   cadono TUTTE fuori (la peggiore a 790 px); con la tacca ne cadono
+   fuori 64 su 259, la peggiore a 80 px.
+
    uso:  node strumenti/_crit-schermi-mezza.js
    ===================================================================== */
 const C = require('./_crit-schermi.js');
 C.falso({
   nome: 'crit-schermi-mezza',
   titolo: 'normalizza solo la finestra, e lascia aperti pollice e tacca',
-  morde: 'i due bracci gemelli (B5 B6 C5 C6 e D), NON quelli di sola finestra',
+  morde: 'G5 (POLLICE) e G6 (TACCA), DUE prove su trenta — e nessuna di sola finestra (MISURATO)',
   cambi: [
     { nome: 'la porta scrive il punto dall angolo', cerca: C.ANCORA_SCRIVE,
       metti:

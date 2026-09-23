@@ -80,8 +80,19 @@
         «questo dito e' su un pulsante?» proprio sulla posizione — e un
         dito a cento pixel dal disco che l'atto nomina va visto subito.
        G1..G6) dopo il giudizio, ogni posa di disco cade nella PRESA del
-           disco che l'atto nomina, e ogni posa d'erba cade FUORI da
-           tutti gli anelli d'esclusione.
+           disco che l'atto nomina, e le pose d'erba cadono rispetto ai
+           dischi esattamente come sul braccio di controllo.
+        SULL'ERBA NON SI PUO' CHIEDERE DI PIU', e il perche' e' una
+        misura: un atto d'erba non dice «il dito era fuori dagli anelli»,
+        dice «la risoluzione dei dischi non si e' applicata» — perche' la
+        squadra e' della macchina, o perche' la scena non e' di gioco. In
+        quel caso il dito puo' benissimo essere posato sopra un disco.
+        MISURATO su questo nastro: 112 atti d'erba su 197 cadono dentro
+        un anello, e cadono dentro **su tutti e sei i bracci, nello
+        stesso numero**. Non e' un difetto di schermo: e' quel che l'atto
+        significa. Percio' la prova confronta il NUMERO con quello del
+        controllo, che e' la domanda giusta — su una geometria diversa
+        quel numero cambierebbe.
      F) LA SQUADRA NON SI DEDUCE DALLA x — e questa e' l'unica prova che
         gira in MODALITA' 2, dove `teamOf` fa davvero qualcosa.
         Un tocco a x = 500 su una finestra da 1280 e' della squadra 0
@@ -516,13 +527,15 @@ async function provaSquadra(browser, sg) {
        G) DOVE CADONO LE DITA, NEL FRAME DI CHI RILEGGE
        ================================================================= */
     titolo("G) IL PUNTO DI POSA CADE DOVE L'ATTO DICE");
+    const dC = ctrl.dove || {};
     br.forEach((x, i) => {
       const d = x.dove || {};
-      const ok = !d.errore && (d.dentro | 0) > 0 && (d.fuori | 0) === 0 && (d.erbaNo | 0) === 0;
-      di(ok, 'G' + (i + 1) + ' ' + x.conf.nome.padEnd(9) + " ogni posa e' sul suo disco, ogni erba e' fuori dagli anelli",
+      const disco = !d.errore && (d.dentro | 0) > 0 && (d.fuori | 0) === 0;
+      const erba = (d.erbaOk | 0) === (dC.erbaOk | 0) && (d.erbaNo | 0) === (dC.erbaNo | 0);
+      di(disco && erba, 'G' + (i + 1) + ' ' + x.conf.nome.padEnd(9) + " ogni posa di disco e' sul suo disco, e l'erba cade come sul controllo",
          d.errore ? d.errore : (d.dentro | 0) + ' sul disco, ' + (d.fuori | 0) + ' fuori' +
          ((d.fuori | 0) ? ' (il peggiore a ' + d.peggio + ' px)' : '') +
-         ', erba ' + (d.erbaOk | 0) + ' buone / ' + (d.erbaNo | 0) + ' sopra un pulsante');
+         ', erba ' + (d.erbaOk | 0) + '/' + (d.erbaNo | 0) + ' contro ' + (dC.erbaOk | 0) + '/' + (dC.erbaNo | 0) + ' del controllo');
     });
 
     /* =================================================================

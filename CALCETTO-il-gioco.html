@@ -46286,6 +46286,37 @@ function improntaDelNastro(){
   }catch(e){}
   return 0;
 }
+
+/* =====================================================================
+   QUESTO NASTRO PORTA ANCORA UN PIXEL? (voce #144)
+
+   E' la domanda che decide se le tre astensioni dello schermo hanno
+   qualcosa da dire. Un nastro di soli ATTI (tipi 12 e 13) non si
+   accorge ne' della finestra, ne' del pollice, ne' della tacca: i suoi
+   comandi dicono QUALE DISCO e non QUALE PUNTO, e il punto se lo rifa'
+   chi rilegge con la propria geometria. Un nastro con dentro anche un
+   solo tipo 0 o tipo 1 invece porta un pixel di un altro telefono, e su
+   una finestra diversa quel pixel preme un'altra cosa.
+
+   SI GUARDA IL NASTRO, NON LA SUA ETA'. Una guardia per versione — «i
+   nastri dopo il tal giorno non si astengono» — direbbe la cosa giusta
+   quasi sempre e quella sbagliata nei casi che contano: un nastro
+   costruito a mano, un nastro cominciato a meta', un nastro in cui il
+   ripiego delle quattro porte ha dovuto scrivere un pixel perche' il
+   touchstart di un dito era andato perso. Tutti e tre portano un pixel,
+   e tutti e tre devono astenersi.
+
+   La legge in due: il giudice, per sapere se astenersi, e la staffetta,
+   per sapere se quel nastro chiede una finestra sua. Una funzione sola,
+   perche' i due capi devono guardare la stessa cosa (e' la stessa
+   ragione di schermiDelNastro e di improntaDelNastro).
+   ===================================================================== */
+function nastroHaPixel(){
+  try{
+    for(const r of Reg.righe) if(r[1] === 0 || r[1] === 1) return true;
+  }catch(e){}
+  return false;
+}
 const TETTI_GIUDIZIO = { 5: 18000, 7: 21000, 11: 27000 };
 function tettoGiudizio(taglia){
   return TETTI_GIUDIZIO[(taglia===7 || taglia===11) ? taglia : 5];
@@ -46377,9 +46408,36 @@ function vagliaNastro(righe){
      giusto). Astenersi non costa niente ai nastri veri, che la riga 10
      ce l'hanno sempre. */
   const sc = schermiDelNastro();
-  if(!sc.length) return no('INCOMPLETO','schermo-ignoto');
-  out.schermo = sc[0];
+  out.schermo = sc.length ? sc[0] : null;
   out.schermi = sc;
+  /* =====================================================================
+     E LE TRE ASTENSIONI DELLO SCHERMO VALGONO SOLO PER I NASTRI CHE
+     PORTANO UN PIXEL (voce #144).
+
+     Il canale dei pixel era il SESTO, e non passava dai sorteggi: un
+     comando era un punto sullo schermo, e su un altro schermo lo stesso
+     punto premeva altro. Adesso un comando e' un ATTO — squadra, esito,
+     disco, e il punto di posa in unita' della geometria dei comandi — e
+     chi rilegge il punto se lo rifa' con la PROPRIA geometria. Un nastro
+     cosi' non si accorge ne' della finestra, ne' del pollice, ne' della
+     tacca: MISURATO (strumenti/_q-schermi.js) lo stesso nastro rigioca
+     lo stesso punteggio su 800x360, 844x390, 915x412, 1280x720, col
+     pollice al massimo e con la tacca di un telefono.
+
+     LE TRE CAUSE RESTANO, e non e' pigrizia: i nastri di PRIMA i pixel
+     ce li hanno ancora dentro, e per loro tutto quel che il #133 e il
+     #139 hanno scritto qui sotto vale parola per parola. Togliere le
+     astensioni li renderebbe giudicabili senza renderli verificabili, e
+     si tornerebbe ad accusare gente onesta — che e' esattamente la cosa
+     che quelle due voci sono costate.
+
+     E IL PREZZO DEL #139 DECADE PER I NASTRI NUOVI: «un nastro con la
+     finestra mossa resta aperto per sempre» era vero finche' il comando
+     era un punto. Un nastro di atti non si accorge che e' comparsa la
+     barra dell'URL.
+     ===================================================================== */
+  const pixel = nastroHaPixel();
+  if(pixel && !sc.length) return no('INCOMPLETO','schermo-ignoto');
   /* =====================================================================
      E DEVE ESSERE STATO QUELLO PER TUTTA LA PARTITA (voce #139).
 
@@ -46408,8 +46466,8 @@ function vagliaNastro(righe){
      riga per sempre. E una soglia in pixel sarebbe un'opinione su un
      motore caotico: dodici non spostano niente, settanta spostano tutto,
      e dove passi il confine non lo sa nessuno. */
-  if(sc.length > 1) return no('INCOMPLETO','schermo-cambiato');
-  if(sc[0][0] !== (innerWidth|0) || sc[0][1] !== (innerHeight|0)) return no('INCOMPLETO','schermo-diverso');
+  if(pixel && sc.length > 1) return no('INCOMPLETO','schermo-cambiato');
+  if(pixel && (sc[0][0] !== (innerWidth|0) || sc[0][1] !== (innerHeight|0))) return no('INCOMPLETO','schermo-diverso');
   /* =====================================================================
      E DEVE ESSERE LO STESSO MOTORE JAVASCRIPT (voce #142).
 
@@ -47475,6 +47533,10 @@ window.__test = {
   improntaMotore(){ return improntaMotore(); },
   /* e quella scritta nel nastro appena deserializzato, 0 se non c'e' */
   get nastroImpronta(){ return improntaDelNastro(); },
+  /* VERO se il nastro appena deserializzato porta ancora un PIXEL (voce
+     #144): e' la domanda che decide se le tre astensioni dello schermo
+     hanno qualcosa da dire, e la chiedono il banco e la staffetta. */
+  get nastroHaPixel(){ return nastroHaPixel(); },
   nastro(){ return Reg.serializza(); },
   rigioca(testo){ return Reg.deserializza(testo); },
   /* IL GIUDICE (voce #133). La porta del verificatore differito: gli si

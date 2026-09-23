@@ -18,13 +18,22 @@
    perche' dice una cosa che gli altri quattro non dicono — il banco vede
    anche un comando CORROTTO, non solo un comando SPOSTATO.
 
+   MISURATO: morde **A2**, e solo A2 — il controllo di esercizio, cioe'
+   la prova che dice «il braccio di registrazione rigioca la sua
+   partita». Con sedici pixel di grana quel braccio smette di dire
+   TORNA (dice INCOMPLETO/duello-senza-righe: la rigiocata prende una
+   strada che il nastro non ha) e da li' in poi tutto il resto del banco
+   confronta i bracci con un controllo gia' sbagliato. E' esattamente il
+   servizio che A2 deve rendere, ed e' la ragione per cui il gruppo A
+   esiste prima di tutti gli altri.
+
    uso:  node strumenti/_crit-schermi-grana.js
    ===================================================================== */
 const C = require('./_crit-schermi.js');
 C.falso({
   nome: 'crit-schermi-grana',
   titolo: 'lo scostamento del trascinamento si quantizza a sedici pixel',
-  morde: 'tutti i bracci, CONTROLLO COMPRESO (e lo dichiara in testa)',
+  morde: 'A2, il controllo di esercizio — UNA prova su trenta, e lo dichiara in testa (MISURATO)',
   cambi: [
     { nome: 'la porta quantizza lo scostamento', cerca:
 `          if(o) Reg.scrivi(13, [idM, b - o[0], c - o[1]]);`,

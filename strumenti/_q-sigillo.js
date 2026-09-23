@@ -356,9 +356,20 @@ async function gruppoC(T, N, ss, A, B, browser) {
     s3 = await sigilloDi(D, id);
     gi3 = await giudizioDi(D, crudo, [riga.gol_a | 0, riga.gol_d | 0], opz);
     const parole = await sigilliDipinti(D);
-    di(!!s3 && s3.verdetto !== 'NON TORNA' && /schermo/.test(String(s3.causa)) &&
+    /* RETTIFICA A EDIZIONI (23 settembre 2026, voce #144). La prova
+       pretendeva anche che la CAUSA nominasse lo schermo, cioe' che il
+       verdetto fosse un'astensione. Dal #144 non lo e' piu', e non
+       perche' la guardia sia caduta: perche' il comando non e' piu' un
+       punto. Un nastro di atti si verifica DAVVERO su uno schermo
+       diverso, e il verdetto giusto e' TORNA — misurato in
+       `strumenti/_q-schermi.js`, sei geometrie e un punteggio solo.
+       L'invariante che questo banco deve difendere resta quella di
+       prima, e adesso e' soddisfatta piu' forte di allora: **MAI NON
+       TORNA**. Che la guardia regga ancora per i nastri che portano un
+       pixel lo misurano `_q-giudice` (P e Q) e `_q-finestra`. */
+    di(!!s3 && s3.verdetto !== 'NON TORNA' &&
        !parole.some(p => /NON TORNA/.test(p)),
-       'C3) guardata da uno schermo diverso: MAI NON TORNA, e la causa vera',
+       'C3) guardata da uno schermo diverso: MAI NON TORNA',
        (s3 ? s3.verdetto + '/' + s3.causa : 'nessun sigillo') + ' · in lista: ' + JSON.stringify(parole));
     di(!!s3 && !!gi3 && s3.verdetto === gi3.verdetto && (s3.causa || '') === (gi3.causa || ''),
        'C4b) e anche li\' il sigillo e\' quello di __test.giudica',

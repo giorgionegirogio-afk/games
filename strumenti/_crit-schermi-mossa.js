@@ -10,9 +10,16 @@
    un vettore di levetta che non e' mai esistito.
 
    Passa il braccio di CONTROLLO, dove il punto ricostruito e quello
-   registrato coincidono, e cade su tutti gli altri. Serve anche a una
-   seconda cosa: se cadesse anche il controllo, il falso sarebbe rotto
-   invece che bugiardo, e non direbbe quale prova morde.
+   registrato coincidono, e cade su quasi tutti gli altri. Serve anche a
+   una seconda cosa: se cadesse anche il controllo, il falso sarebbe
+   rotto invece che bugiardo, e non direbbe quale prova morde.
+
+   MISURATO: quattordici prove su trenta. E' il piu' grosso dei cinque, e
+   si vede anche nel verdetto — a 1280x720 e con la tacca il giudice dice
+   NON TORNA, cioe' torna ad accusare. Il braccio 844x390 resta verde
+   insieme al controllo, e non e' un difetto del falso: e' la finestra
+   piu' vicina a quella di registrazione, dove il pixel del registratore
+   e quello di chi rilegge quasi coincidono.
 
    uso:  node strumenti/_crit-schermi-mossa.js
    ===================================================================== */
@@ -20,7 +27,7 @@ const C = require('./_crit-schermi.js');
 C.falso({
   nome: 'crit-schermi-mossa',
   titolo: 'le pose sono atti, i trascinamenti restano pixel',
-  morde: 'tutti i bracci tranne il controllo (B, C e D di _q-schermi.js)',
+  morde: 'B1 B4 B5 B6, C1 C4 C5 C6, D1 D2, G1 G4 G5 G6 — quattordici prove su trenta (MISURATO)',
   cambi: [
     { nome: 'la porta scrive il pixel del movimento', cerca:
 `          const idM = Reg.idDi(a), o = Reg.origine[idM];

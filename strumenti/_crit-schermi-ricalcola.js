@@ -22,7 +22,7 @@ const C = require('./_crit-schermi.js');
 C.falso({
   nome: 'crit-schermi-ricalcola',
   titolo: 'la squadra sta nel comando, ma in rilettura si deduce di nuovo dalla x',
-  morde: 'la prova F di _q-schermi.js (F1 e F2), e nessun altro braccio',
+  morde: 'F1 e F2, DUE prove su trenta, e nessun altro braccio (MISURATO)',
   cambi: [
     { nome: 'applica deduce la squadra', cerca:
 `  applica(id, atto, x, y){
