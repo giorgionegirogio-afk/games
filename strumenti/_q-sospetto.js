@@ -713,8 +713,23 @@ function sfidaNuova(b, att, dif, gol_a, gol_d, delta_a, delta_d) {
        'D7) ogni endpoint ha il suo freno nel database (le funzioni Vercel non condividono memoria)',
        [...freni.entries()].map(([f, k]) => f + ':' + k.join('+')).join(' · ') +
        (senzaFreno.length ? ' — SENZA FRENO: ' + senzaFreno.map(x => x.f).join(', ') : ''));
-    di(api.length === 5,
-       'D8) gli endpoint sono ancora CINQUE: questo cantiere non ne apre nessuno',
+    /* RETTIFICA A EDIZIONI (24 settembre 2026, voce #146). Qui c'era
+       `api.length === 5` e la riga diceva «gli endpoint sono ancora
+       CINQUE». Oggi sono SEI: la voce #146 ha aperto `/api/dischetto`,
+       la cassetta della sfida dal dischetto, e l'ha aperto APPOSTA —
+       non di straforo. Il vecchio numero non era sbagliato quando fu
+       scritto: diceva «QUESTO cantiere non apre endpoint», ed era vero.
+
+       CHE COSA NON SI E' RETTIFICATO, ed e' la parte che conta: il
+       controllo `senzaFreno` qui sopra non si tocca, e adesso copre
+       anche l'endpoint nuovo. La guardia serviva a impedire che una
+       superficie di rete nascesse IN SILENZIO, non a impedire che
+       nascesse: chi ne aggiunge un'altra deve passare di qui, scrivere
+       perche', e portarsi dietro il proprio freno.
+       Fonte: rete/api/dischetto.js (freno `dis:<id>`, 60 al minuto —
+       gli stessi numeri del fratello piu' largo, nessun privilegio). */
+    di(api.length === 6,
+       'D8) gli endpoint sono SEI, e nessuno nuovo e\' nato in silenzio (edizione del 24/9/2026: erano cinque)',
        api.join(', '));
   }
 

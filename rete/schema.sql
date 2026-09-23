@@ -283,6 +283,55 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
+-- LA CASSETTA — il trasporto della sfida dal dischetto (voce #146).
+--
+-- Un buca-lettere indicizzato, e nient'altro. Il server NON legge il
+-- contenuto: non sa che cosa sia un impegno, non sa che cosa sia una
+-- mossa, non giudica niente. Sposta buste. Il giudizio e' del gioco
+-- (`giudica`, cinque verdetti) e della staffetta, e resta li'.
+--
+-- TRE COSE VANNO GUARDATE QUI, perche' sono il trasporto E meta' della
+-- fiducia del cantiere.
+--
+-- 1. `i` E' DEL SERVER. E' un bigserial, cresce da se', e il ritiro
+--    chiede «tutto dopo N». E' questa riga a rendere un ritiro perso un
+--    NON-EVENTO: non si e' mosso niente, e il ritiro dopo riporta anche
+--    quel che il precedente non ha visto. Se l'indice fosse del client,
+--    un client che sbaglia a contare perderebbe messaggi per sempre.
+--
+-- 2. LA CHIAVE UNICA (stanza, k, r, t) E' LA GUARDIA DEL «GIA' DETTO»,
+--    e la fa il DATABASE. Il secondo imbuco identico e' un si' (il
+--    ritentativo dopo un imbuco perso deve funzionare), il secondo
+--    imbuco DIVERSO e' un no. E' la riga che impedisce di cambiare idea
+--    dopo aver parlato: senza di lei l'impegno crittografico del gioco
+--    varrebbe meta', perche' basterebbe reimbucare un impegno nuovo.
+--    Un `if` in JavaScript non basterebbe: due richieste che arrivano
+--    insieme lo scavalcano tutte e due.
+--
+-- 3. LA STANZA NON E' UNA PERSONA. Non c'e' una colonna `allenatore`,
+--    e non e' una dimenticanza: chi legge il codice sa dove sta la
+--    posta, non chi la scrive. L'identita' serve SOLO al freno
+--    (`dis:<id>`, 60 al minuto — gli stessi numeri del fratello piu'
+--    largo, nessun privilegio), e non entra qui dentro.
+--
+-- La pulizia: una stanza vecchia di un'ora non serve piu' a nessuno.
+-- Si toglie a mano o con un cron; finche' non c'e', l'indice parziale
+-- tiene il costo basso.
+-- ---------------------------------------------------------------------
+create table if not exists cassetta (
+  i            bigserial primary key,
+  stanza       text not null check (stanza ~ '^[0-9A-Z]{6}$'),
+  k            text not null check (k in ('S','I','R','F')),
+  r            text not null check (r in ('a','b')),
+  t            int  not null check (t >= 0 and t <= 40),
+  d            jsonb,
+  posata       timestamptz not null default now(),
+  unique (stanza, k, r, t)
+);
+create index if not exists cassetta_giro on cassetta (stanza, i);
+create index if not exists cassetta_vecchia on cassetta (posata);
+
+-- ---------------------------------------------------------------------
 -- L'AVVERSARIO — la ricerca dell'accoppiamento, fatta nel database
 -- perche' e' una scansione con un ordinamento e in JavaScript sarebbe
 -- scaricare mezza tabella per buttarla via.
@@ -673,8 +722,9 @@ alter table punti      enable row level security;
 alter table sfida      enable row level security;
 alter table impegno    enable row level security;
 alter table freno      enable row level security;
+alter table cassetta   enable row level security;
 
-revoke all on allenatore, squadra, punti, sfida, impegno, freno from anon, authenticated;
+revoke all on allenatore, squadra, punti, sfida, impegno, freno, cassetta from anon, authenticated;
 revoke all on function trova_avversario(uuid, int, int, int, int, real) from anon, authenticated;
 revoke all on function atteso_glicko(real, real, real, real)          from anon, authenticated;
 revoke all on function frena(text, int, int)                          from anon, authenticated;

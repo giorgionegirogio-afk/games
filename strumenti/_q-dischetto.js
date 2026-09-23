@@ -58,6 +58,7 @@
    ===================================================================== */
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { chromium } = require('playwright');
 const T = require('./_dischetto-due-telefoni.js');
 
@@ -127,6 +128,41 @@ async function giocaSerie(A, B, giriMax) {
   return { giri: giriMax || 400, sa, sb, scaduto: true };
 }
 
+
+/* =====================================================================
+   UN GIRO CONTRO UN PARI FINTO.
+
+   Tre cose che la prima versione sbagliava, e ognuna faceva dire al
+   banco una bugia diversa:
+
+   1. IL TELEFONO VERO DEVE SCEGLIERE. Senza la riga che chiama
+      scegli(), A resta fermo ad aspettare la propria mossa e non rivela
+      mai niente: il testimone B2 diceva «MAI VISTA» e la colpa sembrava
+      del gioco.
+
+   2. IL PARI DEVE GIOCARE IL RUOLO CHE GLI TOCCA. Il pari mandava
+      sempre una parata; quando toccava a lui tirare, il gioco rispondeva
+      «mossa-storta» — giustamente — e la prova sull'esito non arrivava
+      mai al punto che voleva misurare.
+
+   3. IL FRENO NON VA ACCESO DOVE NON SI MISURA IL FRENO. Il banco pedala
+      molto piu' in fretta di due persone: col tetto acceso arrivava un
+      429 a meta' del gruppo B e il gioco diceva «causa: rete». Il freno
+      si misura nel gruppo E, che e' fatto apposta, e li' e' acceso.
+   ===================================================================== */
+async function pariGiro(A, pari) {
+  const s = await d_stato(A);
+  if (s && s.fase === 'scegli') {
+    await d_scegli(A, s.ruolo === 't' ? mossaTiro(s.tiro) : mossaPara(s.tiro));
+  }
+  await d_giro(A);
+  await pari.ritira();
+  return s;
+}
+
+/* la mossa del pari e' quella del ruolo OPPOSTO a quello del telefono */
+const mossaPari = (ruoloA, t) => (ruoloA === 't' ? mossaPara(t) : mossaTiro(t));
+
 /* ===================================================================== */
 (async () => {
   console.log('\nLA SFIDA DAL DISCHETTO — banco a due telefoni' + (PROVA ? ('  [' + path.basename(PROVA) + ']') : ''));
@@ -159,7 +195,7 @@ async function giocaSerie(A, B, giriMax) {
     /* ================================================== A) L'APPUNTAMENTO */
     if (vuole('A')) {
       console.log('\nA) L\'APPUNTAMENTO — un codice corto, zero conti');
-      const ca = await T.serviCassetta();
+      const ca = await T.serviCassetta({ frenoAcceso: false });
       const A = await T.apri(browser, sg.porta); aperti.push(A);
       const B = await T.apri(browser, sg.porta); aperti.push(B);
       await T.collega(A, ca.porta, 'ALFA'); await T.collega(B, ca.porta, 'BETA');
@@ -209,54 +245,50 @@ async function giocaSerie(A, B, giriMax) {
     /* ================================================ B) LA SIMULTANEITA' */
     if (vuole('B')) {
       console.log('\nB) LA SIMULTANEITA\' — chi parla per secondo non vince');
-      const cb = await T.serviCassetta();
+      const cb = await T.serviCassetta({ frenoAcceso: false });
       const A = await T.apri(browser, sg.porta); aperti.push(A);
       await T.collega(A, cb.porta, 'ALFA'); await T.entra(A);
       const base = 'http://127.0.0.1:' + cb.porta;
 
-      const r = await d_crea(A);
+      const nuovoPari = async (bugia, sale) => {
+        const r = await d_crea(A);
+        const cred = await T.credenziali(base);
+        const P = new T.PariFinto(base, cred, r.stanza, 'b', bugia || {});
+        const s0 = await d_stato(A);
+        await P.saluta({ v: T.DISCHETTO_V, mv: s0.motoreV, imp: s0.impronta,
+                         rosa: T.rosaFinta(sale), n: T.esa(crypto.randomBytes(8)) });
+        for (let g = 0; g < 8; g++) await pariGiro(A, P);
+        return P;
+      };
 
-      /* IL PARI VEGGENTE: prima di impegnarsi aspetta di leggere la
-         rivelazione dell'altro. E' il baro nel caso peggiore — non
-         "prova" a barare, bara sapendo tutto quel che la cassetta
-         mostra. */
-      const cred = await T.credenziali(base);
-      const veg = new T.PariFinto(base, cred, r.stanza, 'b', { veggente: true });
-      const sa0 = await d_stato(A);
-      await veg.saluta({ v: T.DISCHETTO_V, mv: sa0.motoreV, imp: sa0.impronta, rosa: [1, 2, 3], n: T.esa(Buffer.from([1, 2, 3, 4])) });
-
+      /* B1 — IL PARI VEGGENTE. Prima di impegnarsi aspetta di leggere la
+         RIVELAZIONE dell'altro: e' il baro nel caso peggiore, perche' non
+         "prova" a barare, bara sapendo tutto quel che la cassetta mostra. */
+      const veg = await nuovoPari({ veggente: true }, 1);
       let sbirciate = 0, tentativi = 0;
       for (let t = 0; t < TIRI; t++) {
-        /* il pari prova a sbirciare: ritira piu' volte PRIMA di
-           impegnarsi, e guarda se la rivelazione dell'altro c'e' gia' */
-        tentativi++;
-        for (let g = 0; g < 6; g++) { await veg.ritira(); await d_giro(A); }
-        if (veg.trova('R', 'a', t)) sbirciate++;
-        /* poi si impegna e rivela, per far avanzare la serie */
-        await veg.impegna(t, () => mossaPara(t));
-        for (let g = 0; g < 4; g++) { await d_giro(A); await veg.ritira(); }
-        await veg.rivela(t, 'parata');
-        for (let g = 0; g < 4; g++) { await d_giro(A); await veg.ritira(); }
         const s = await d_stato(A);
         if (s.fase === 'fine') break;
+        tentativi++;
+        for (let g = 0; g < 6; g++) await pariGiro(A, veg);
+        if (veg.trova('R', 'a', t)) sbirciate++;
+        await veg.impegna(t, () => mossaPari(s.ruolo, t));
+        for (let g = 0; g < 6; g++) await pariGiro(A, veg);
+        await veg.rivela(t, null);
+        for (let g = 0; g < 6; g++) await pariGiro(A, veg);
       }
       di(sbirciate === 0, 'B1) il veggente non vede MAI la mossa dell\'altro prima di impegnarsi',
          sbirciate + ' sbirciate su ' + tentativi + ' tiri');
 
-      /* IL TESTIMONE (lezione 18): lo stesso pari, veggenza SPENTA,
+      /* B2 — IL TESTIMONE (lezione 18). Lo stesso pari, veggenza SPENTA,
          DEVE vedere la rivelazione dell'altro — dopo essersi impegnato.
-         Senza questo, «zero sbirciate» e «cassetta vuota» sono lo stesso
-         referto. */
-      const r2 = await d_crea(A);
-      const cred2 = await T.credenziali(base);
-      const onesto = new T.PariFinto(base, cred2, r2.stanza, 'b', {});
-      const sa1 = await d_stato(A);
-      await onesto.saluta({ v: T.DISCHETTO_V, mv: sa1.motoreV, imp: sa1.impronta, rosa: [4, 5, 6], n: T.esa(Buffer.from([9, 8, 7, 6])) });
-      for (let g = 0; g < 8; g++) { await d_giro(A); await onesto.ritira(); }
-      await onesto.impegna(0, () => mossaPara(0));
+         Senza, «zero sbirciate» e «cassetta vuota» sono lo stesso referto. */
+      const onesto = await nuovoPari({}, 2);
+      const sOn = await d_stato(A);
+      await onesto.impegna(0, () => mossaPari(sOn.ruolo, 0));
       let vista = false;
-      for (let g = 0; g < 20; g++) {
-        await d_giro(A); await onesto.ritira();
+      for (let g = 0; g < 30; g++) {
+        await pariGiro(A, onesto);
         if (onesto.trova('R', 'a', 0)) { vista = true; break; }
       }
       di(vista, 'B2) TESTIMONE — a veggenza spenta la rivelazione dell\'altro ARRIVA, dopo l\'impegno',
@@ -267,27 +299,20 @@ async function giocaSerie(A, B, giriMax) {
          strada di questo cantiere che porta a un'accusa invece che a
          un'astensione. Se il gioco non se ne accorgesse, l'impegno
          sarebbe una decorazione. */
-      const r3 = await d_crea(A);
-      const cred3 = await T.credenziali(base);
-      const bug = new T.PariFinto(base, cred3, r3.stanza, 'b',
-        { bugiardo: m => ({ ruolo: 'p', z: (m.z + 1) % 3 }) });
-      const sa3 = await d_stato(A);
-      await bug.saluta({ v: T.DISCHETTO_V, mv: sa3.motoreV, imp: sa3.impronta, rosa: [7, 7, 7], n: T.esa(Buffer.from([5, 5, 5, 5])) });
-      for (let g = 0; g < 8; g++) { await d_giro(A); await bug.ritira(); }
-      await bug.impegna(0, () => mossaPara(0));
-      for (let g = 0; g < 8; g++) { await d_giro(A); await bug.ritira(); }
-      await bug.rivela(0, 'parata');
-      let sBug = null;
+      const bug = await nuovoPari({ bugiardo: m => Object.assign({}, m, { z: (m.z + 1) % 3 }) }, 3);
+      const sBu = await d_stato(A);
+      await bug.impegna(0, () => mossaPari(sBu.ruolo, 0));
+      for (let g = 0; g < 12; g++) await pariGiro(A, bug);
+      await bug.rivela(0, null);
+      let sFin = null;
       for (let g = 0; g < 30; g++) {
-        const s = await d_stato(A);
-        if (s.fase === 'scegli') await d_scegli(A, s.ruolo === 't' ? mossaTiro(s.tiro) : mossaPara(s.tiro));
-        await d_giro(A); await bug.ritira();
-        sBug = await d_stato(A);
-        if (sBug.fase === 'fine') break;
+        await pariGiro(A, bug);
+        sFin = await d_stato(A);
+        if (sFin.fase === 'fine') break;
       }
-      di(sBug && sBug.fase === 'fine' && sBug.causa === 'impegno-non-torna',
+      di(sFin && sFin.fase === 'fine' && sFin.causa === 'impegno-non-torna',
          'B3) il pari bugiardo (impegna una mossa, ne rivela un\'altra) viene SMASCHERATO',
-         'fase=' + (sBug && sBug.fase) + ' causa=' + (sBug && sBug.causa));
+         'fase=' + (sFin && sFin.fase) + ' causa=' + (sFin && sFin.causa));
 
       await A.ctx.close(); aperti.pop();
       cb.chiudi();
@@ -296,7 +321,7 @@ async function giocaSerie(A, B, giriMax) {
     /* ======================================================== C) LA SERIE */
     if (vuole('C')) {
       console.log('\nC) LA SERIE — lo stesso punteggio sui due telefoni, tiro per tiro');
-      const cs = await T.serviCassetta();
+      const cs = await T.serviCassetta({ frenoAcceso: false });
       const A = await T.apri(browser, sg.porta); aperti.push(A);
       const B = await T.apri(browser, sg.porta); aperti.push(B);
       await T.collega(A, cs.porta, 'ALFA'); await T.collega(B, cs.porta, 'BETA');
@@ -328,34 +353,42 @@ async function giocaSerie(A, B, giriMax) {
       aperti.length = aperti.length - 2;
 
       /* C6 — IL PARI CHE DICHIARA UN ESITO SUO. Qui NON c'e' un'accusa:
-         due esiti diversi possono nascere da due motori diversi, e
-         davanti a un dubbio ci si astiene (il principio che regge tutta
-         l'onda D). Percio' la serie si ferma, e si ferma dicendo
-         «esiti-diversi», non «hai barato». Se il gioco credesse
-         all'esito dichiarato dall'altro invece di calcolare il proprio,
-         chi bara vincerebbe scrivendo la parola «gol». */
+         due esiti diversi possono nascere da due motori diversi, e davanti
+         a un dubbio ci si astiene (il principio che regge tutta l'onda D).
+         Percio' la serie si ferma dicendo «esiti-diversi», non «hai
+         barato». Se il gioco credesse all'esito dichiarato dall'altro
+         invece di calcolare il proprio, chi bara vincerebbe scrivendo la
+         parola «gol».
+
+         L'ESITO FALSO E' COSTRUITO PER ESSERE DIVERSO, non sperato tale:
+         si legge l'esito che il telefono vero ha calcolato e si dichiara
+         l'altro. Un falso che mandasse sempre «gol» sarebbe morso solo
+         quando il vero non e' gol, cioe' a volte — e un falso che morde a
+         volte non prova niente. */
       const A2 = await T.apri(browser, sg.porta); aperti.push(A2);
       await T.collega(A2, cs.porta, 'GAMMA'); await T.entra(A2);
       const baseC = 'http://127.0.0.1:' + cs.porta;
       const rc = await d_crea(A2);
       const credC = await T.credenziali(baseC);
-      const buge = new T.PariFinto(baseC, credC, rc.stanza, 'b', { esitosuo: () => 'gol' });
+      const buge = new T.PariFinto(baseC, credC, rc.stanza, 'b', {});
       const sc0 = await d_stato(A2);
-      await buge.saluta({ v: T.DISCHETTO_V, mv: sc0.motoreV, imp: sc0.impronta, rosa: [2, 2, 2], n: T.esa(Buffer.from([3, 3, 3, 3])) });
+      await buge.saluta({ v: T.DISCHETTO_V, mv: sc0.motoreV, imp: sc0.impronta,
+                          rosa: T.rosaFinta(4), n: T.esa(crypto.randomBytes(8)) });
+      for (let g = 0; g < 8; g++) await pariGiro(A2, buge);
+
       let sEs = null;
-      for (let t = 0; t < 4; t++) {
-        for (let g = 0; g < 8; g++) { await d_giro(A2); await buge.ritira(); }
-        await buge.impegna(t, () => mossaPara(t));
-        for (let g = 0; g < 8; g++) {
-          const s = await d_stato(A2);
-          if (s.fase === 'scegli') await d_scegli(A2, s.ruolo === 't' ? mossaTiro(s.tiro) : mossaPara(s.tiro));
-          await d_giro(A2); await buge.ritira();
-        }
-        await buge.rivela(t, 'gol');
+      for (let t = 0; t < 5; t++) {
+        const s = await d_stato(A2);
+        if (s.fase === 'fine') break;
+        await buge.impegna(t, () => mossaPari(s.ruolo, t));
+        for (let g = 0; g < 8; g++) await pariGiro(A2, buge);
+        /* l'esito del tiro prima, dichiarato al contrario */
+        const veri = await d_esiti(A2);
+        const vero = (t > 0 && veri[t - 1]) ? veri[t - 1].esito : null;
+        const falso = vero ? (vero === 'gol' ? 'parata' : 'gol') : null;
+        await buge.rivela(t, falso);
         for (let g = 0; g < 10; g++) {
-          const s = await d_stato(A2);
-          if (s.fase === 'scegli') await d_scegli(A2, s.ruolo === 't' ? mossaTiro(s.tiro) : mossaPara(s.tiro));
-          await d_giro(A2); await buge.ritira();
+          await pariGiro(A2, buge);
           sEs = await d_stato(A2);
           if (sEs.fase === 'fine') break;
         }
@@ -371,7 +404,7 @@ async function giocaSerie(A, B, giriMax) {
     /* ===================================================== D) LA CUCITURA */
     if (vuole('D')) {
       console.log('\nD) LA CUCITURA — il duello non sa quale filo ha sotto');
-      const cd = await T.serviCassetta();
+      const cd = await T.serviCassetta({ frenoAcceso: false });
       const A = await T.apri(browser, sg.porta); aperti.push(A);
       const B = await T.apri(browser, sg.porta); aperti.push(B);
       await T.collega(A, cd.porta, 'ALFA'); await T.collega(B, cd.porta, 'BETA');
@@ -386,12 +419,14 @@ async function giocaSerie(A, B, giriMax) {
         await giocaSerie(A, B, 600);
         return d_esiti(A);
       };
-      const viaCassetta = await conFilo('cassetta');
-      const viaDiretto = await conFilo('diretto');
-      const uguali = viaCassetta.length > 0 && viaCassetta.length === viaDiretto.length &&
-                     viaCassetta.every((x, i) => x.esito === viaDiretto[i].esito);
-      di(uguali, 'D1) stesso copione sul filo della cassetta e sul filo diretto -> stesso esito',
-         'cassetta ' + viaCassetta.map(x => x.esito[0]).join('') + ' · diretto ' + viaDiretto.map(x => x.esito[0]).join(''));
+      const viaOrdine = await conFilo('cassetta');
+      const viaSballo = await conFilo('sballato');
+      const uguali = viaOrdine.length > 0 && viaOrdine.length === viaSballo.length &&
+                     viaOrdine.every((x, i) => x.esito === viaSballo[i].esito);
+      di(uguali, 'D1) stesso copione sul filo ordinato e su uno che ritarda e mescola -> stesso esito',
+         'ordinato ' + viaOrdine.map(x => x.esito[0]).join('') + ' · sballato ' + viaSballo.map(x => x.esito[0]).join(''));
+      di(viaOrdine.length >= 2, 'D2) TESTIMONE — la serie non e\' vuota: ci sono tiri da confrontare',
+         viaOrdine.length + ' tiri');
 
       for (const P of [A, B]) await P.ctx.close();
       aperti.length = aperti.length - 2;
@@ -472,7 +507,7 @@ async function giocaSerie(A, B, giriMax) {
     /* ======================================================== G) IL GUASTO */
     if (vuole('G')) {
       console.log('\nG) IL GUASTO — che cosa vede chi resta');
-      const cg = await T.serviCassetta();
+      const cg = await T.serviCassetta({ frenoAcceso: false });
       const A = await T.apri(browser, sg.porta); aperti.push(A);
       const B = await T.apri(browser, sg.porta); aperti.push(B);
       await T.collega(A, cg.porta, 'ALFA'); await T.collega(B, cg.porta, 'BETA');

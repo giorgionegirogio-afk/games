@@ -267,6 +267,47 @@ di(serieA.every(v => v >= 0 && v < 1), 'il generatore sta in [0,1)');
 const z = generatore(0);
 di(Array.from({ length: 5 }, () => z()).every(v => v > 0), 'seme zero non incanta il generatore');
 
+/* ------------------------------------------------------- LA CASSETTA */
+/* Le regole del trasporto della sfida dal dischetto (voce #146). Qui si
+   prova quel che si puo' provare SENZA un server: la forma di quel che
+   arriva da uno sconosciuto, e la decisione «identico o diverso» che e'
+   meta' della fiducia del cantiere. Il vincolo di unicita' vero lo fa il
+   database (schema.sql, `unique (stanza, k, r, t)`) e non si puo'
+   provare qui: e' dichiarato, non attestato. */
+titolo('LA CASSETTA — quel che si puo\' provare senza un server');
+
+const formaStanza = v => /^[0-9A-Z]{6}$/.test(String(v || '').toUpperCase());
+di(formaStanza('6MHSP5'), 'un codice di sei caratteri passa');
+di(!formaStanza('6MHSP'), 'cinque no');
+di(!formaStanza('6MHSP55'), 'sette no');
+di(!formaStanza('6mhs p'), 'con uno spazio dentro no');
+di(!formaStanza(''), 'vuoto no');
+di(!formaStanza(null), 'niente no, e senza sollevare un\'eccezione');
+di(formaStanza('6mhsp5'), 'minuscolo passa, perche\' il server alza le lettere prima di guardare');
+
+const tipoOk = k => /^[SIRF]$/.test(String(k || ''));
+di(['S','I','R','F'].every(tipoOk), 'i quattro tipi di busta passano');
+di(!tipoOk('X') && !tipoOk('') && !tipoOk('SS'), 'un quinto tipo, il vuoto e il doppio no');
+
+/* il tiro si TOSA, non si rifiuta a caso: e' la stessa regola di
+   `intero` che vale per tutto quel che arriva da uno sconosciuto */
+di(intero(0, 0, 40, -1) === 0 && intero(40, 0, 40, -1) === 40, 'i tiri agli estremi passano interi');
+di(intero(1e9, 0, 40, -1) === 40 && intero(Infinity, 0, 40, -1) === 40,
+   'un tiro enorme si tosa a 40, e l\'infinito si comporta come 1e9');
+di(intero('gol', 0, 40, -1) === -1, 'un tiro che non e\' un numero cade sul ripiego');
+
+/* LA DECISIONE CHE VALE META' DELLA FIDUCIA: il secondo imbuco identico
+   e' un si' (il ritentativo dopo un imbuco perso deve funzionare), il
+   secondo imbuco DIVERSO e' un no (chi cambia idea dopo aver parlato). */
+const identico = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+di(identico({ h: 'abc' }, { h: 'abc' }), 'reimbucare la stessa busta e\' un si\': e\' il ritentativo');
+di(!identico({ h: 'abc' }, { h: 'abd' }), 'reimbucare una busta DIVERSA e\' un no: e\' cambiare idea dopo aver parlato');
+di(!identico({ m: { z: 0 } }, { m: { z: 1 } }), 'e vale anche dentro, non solo in superficie');
+
+/* la busta non e' una partita */
+const grande = JSON.stringify({ m: 'x'.repeat(5000) });
+di(grande.length > 4096, 'una busta oltre il tetto si riconosce dalla lunghezza del testo, non dai campi');
+
 /* ------------------------------------------------------------- fine */
 console.log('\n' + (ok + no) + ' controlli, ' + ok + ' passati, ' + no + ' falliti');
 process.exit(no ? 1 : 0);

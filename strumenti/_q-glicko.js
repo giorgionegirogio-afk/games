@@ -698,8 +698,20 @@ function spearman(a, b) {
       !new RegExp('alter table\\s+' + t + '\\s+enable row level security', 'i').test(schema));
     const revokeTab = (schema.match(/revoke all on ([\w,\s]+?) from anon, authenticated/i) || [, ''])[1];
     const fuoriRevoke = tabelle.filter(t => !new RegExp('\\b' + t + '\\b').test(revokeTab));
-    di(tabelle.length === 6 && senzaRls.length === 0 && fuoriRevoke.length === 0,
-       'D2) le tabelle sono ancora SEI, tutte con RLS e tutte nel revoke: questo cantiere non ne apre nessuna',
+    /* RETTIFICA A EDIZIONI (24 settembre 2026, voce #146). Qui c'era
+       `tabelle.length === 6` e la riga diceva «le tabelle sono ancora
+       SEI». Oggi sono SETTE: la voce #146 ha aggiunto `cassetta`, il
+       buca-lettere della sfida dal dischetto.
+
+       CHE COSA NON SI E' RETTIFICATO: `senzaRls` e `fuoriRevoke`, che
+       sono il vincolo vero — una tabella nuova senza RLS o fuori dal
+       revoke sarebbe l'unica porta aperta del database, e lo sarebbe in
+       silenzio. `cassetta` e' in tutti e due, e il conto nuovo vale solo
+       perche' quei due restano zero.
+       Fonte: rete/schema.sql (create table cassetta, alter table
+       cassetta enable row level security, e il revoke in fondo). */
+    di(tabelle.length === 7 && senzaRls.length === 0 && fuoriRevoke.length === 0,
+       'D2) le tabelle sono SETTE, tutte con RLS e tutte nel revoke (edizione del 24/9/2026: erano sei)',
        tabelle.join(', ') + (senzaRls.length ? ' — SENZA RLS: ' + senzaRls.join(', ') : '') +
        (fuoriRevoke.length ? ' — FUORI DAL REVOKE: ' + fuoriRevoke.join(', ') : ''));
 
@@ -798,8 +810,23 @@ function spearman(a, b) {
       if (m.length) freni.set(x.f, m);
     }
     const senzaFreno = testoApi.filter(x => !freni.has(x.f) && x.f !== 'entra.js');
-    di(api.length === 5 && senzaFreno.length === 0,
-       'D8) gli endpoint sono ancora CINQUE e ognuno ha il suo freno: questo cantiere non ne apre nessuno',
+    /* RETTIFICA A EDIZIONI (24 settembre 2026, voce #146). Qui c'era
+       `api.length === 5` e la riga diceva «gli endpoint sono ancora
+       CINQUE». Oggi sono SEI: la voce #146 ha aperto `/api/dischetto`,
+       la cassetta della sfida dal dischetto, e l'ha aperto APPOSTA —
+       non di straforo. Il vecchio numero non era sbagliato quando fu
+       scritto: diceva «QUESTO cantiere non apre endpoint», ed era vero.
+
+       CHE COSA NON SI E' RETTIFICATO, ed e' la parte che conta: il
+       controllo `senzaFreno` qui sopra non si tocca, e adesso copre
+       anche l'endpoint nuovo. La guardia serviva a impedire che una
+       superficie di rete nascesse IN SILENZIO, non a impedire che
+       nascesse: chi ne aggiunge un'altra deve passare di qui, scrivere
+       perche', e portarsi dietro il proprio freno.
+       Fonte: rete/api/dischetto.js (freno `dis:<id>`, 60 al minuto —
+       gli stessi numeri del fratello piu' largo, nessun privilegio). */
+    di(api.length === 6 && senzaFreno.length === 0,
+       'D8) gli endpoint sono SEI e ognuno ha il suo freno (edizione del 24/9/2026: erano cinque)',
        api.join(', ') + (senzaFreno.length ? ' — SENZA FRENO: ' + senzaFreno.map(x => x.f).join(', ') : ''));
 
     /* D9: L'ELO NON SI TOCCA. E' la decisione (a) scritta in una prova:

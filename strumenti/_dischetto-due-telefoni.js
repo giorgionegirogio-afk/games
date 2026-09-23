@@ -293,17 +293,28 @@ async function apri(browser, porta, viewport) {
   return { ctx, pag, errori };
 }
 
-/* collega il telefono alla cassetta finta e gli da' una rosa sua */
+/* collega il telefono alla cassetta finta e gli da' una rosa sua.
+
+   LA ROSA VARIA SULL'INTERO NOME, non sulla sua LUNGHEZZA — e questa
+   riga e' costata un rosso. La prima versione copiava l'idioma del #132
+   (`nome.length`) e dava ad ALFA e BETA, che hanno quattro lettere
+   tutte e due, LA STESSA ROSA IDENTICA. Il banco dichiarava rosso «ognuno
+   vede la rosa dell'altro e le due non sono la stessa» mentre il gioco
+   si comportava benissimo: stava misurando la propria tavola dei nomi.
+   E' la lezione 13 in miniatura — un banco deve poter misurare la
+   propria capacita' di distinguere prima di accusare qualcuno. */
 const collega = (P, portaServer, nome) => P.pag.evaluate(([p, nome]) => {
   const t = window.__test;
   t.reteBase('http://127.0.0.1:' + p);
   t.save.teamName = nome;
+  let sm = 0;
+  for (let i = 0; i < nome.length; i++) sm = (sm * 31 + nome.charCodeAt(i)) >>> 0;
   t.save.rosa = t.save.rosa.map((r, i) => Object.assign({}, r, {
     nome: nome + ' ' + (i + 1),
-    vel: 50 + ((i * 7 + nome.length * 3) % 30),
-    tiro: 50 + ((i * 11 + nome.length * 5) % 30),
-    tecnica: 50 + ((i * 5 + nome.length * 7) % 30),
-    tackle: 50 + ((i * 13 + nome.length * 2) % 30),
+    vel: 50 + ((i * 7 + sm * 3) % 30),
+    tiro: 50 + ((i * 11 + sm * 5) % 30),
+    tecnica: 50 + ((i * 5 + sm * 7) % 30),
+    tackle: 50 + ((i * 13 + sm * 2) % 30),
   }));
 }, [portaServer, nome]);
 
@@ -445,6 +456,22 @@ class PariFinto {
   }
 }
 
+/* LA ROSA DEL PARI FINTO, nella forma che `impaccaRosa` produce:
+   [quanti, vel,tiro,tecnica,tackle, ...]. La prima versione mandava
+   [1,2,3] — tre numeri qualsiasi — e il gioco rispondeva, giustamente,
+   `rose-corte`: il banco stava misurando la propria pigrizia e non il
+   protocollo. Un pari finto che non sa vestirsi non e' un avversario,
+   e' un messaggio malformato: quello va provato apposta, non per sbaglio
+   dentro a una prova che parla d'altro. */
+function rosaFinta(sale) {
+  const v = [5];
+  for (let i = 0; i < 5; i++) {
+    v.push(50 + ((i * 7 + sale * 3) % 30), 50 + ((i * 11 + sale * 5) % 30),
+           50 + ((i * 5 + sale * 7) % 30), 50 + ((i * 13 + sale * 2) % 30));
+  }
+  return v;
+}
+
 /* l'identita' del pari finto: la conia la cassetta come per un telefono
    vero, perche' il freno e' per identita' e un pari senza identita' non
    sarebbe frenato da niente */
@@ -456,5 +483,5 @@ async function credenziali(base) {
 module.exports = {
   RADICE, DISCHETTO_V, FRENO_TETTO, FRENO_SEC,
   serviGioco, serviCassetta, apri, collega, entra,
-  PariFinto, credenziali, impegnoDi, testoMossa, mescola, esa,
+  PariFinto, credenziali, rosaFinta, impegnoDi, testoMossa, mescola, esa,
 };
