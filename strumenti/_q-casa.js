@@ -71,6 +71,11 @@ const SECONDI = Math.max(5, parseInt(arg('secondi', '90'), 10) || 90);
 const TETTO_ULP = Math.max(1, parseInt(arg('tetto-ulp', '4'), 10) || 4);
 const NCAMP = Math.max(100, parseInt(arg('campioni', '3000'), 10) || 3000);
 const GIOCO = arg('gioco', process.env.GIOCO_PROVA || 'CALCETTO-il-gioco.html');
+/* --sorgente punta a un TESTO di libreria diverso da quello di casa: e'
+   la porta da cui entrano i falsi (_q-casa-falsi.js). Senza, si misura
+   la sorgente vera. */
+const SORG_FILE = arg('sorgente', '');
+const LIBRERIA = SORG_FILE ? fs.readFileSync(path.resolve(RADICE, SORG_FILE), 'utf8') : SORGENTE;
 
 /* le funzioni scritte in casa, col numero di argomenti che prendono */
 const FUN = [
@@ -205,6 +210,18 @@ function ulpFraBit(a, b) {
     const quante = FUN.reduce((s, [n]) => s + dati[n].camp.length, 0);
     if (!quante) { console.error('PROVA NULLA: nessun argomento raccolto'); process.exit(3); }
 
+    /* ---- S: la copia sola ---- */
+    console.log("S) LA COPIA SOLA — la libreria misurata qui e' quella che gira nel gioco");
+    console.log("   (un banco che provasse una seconda scrittura della stessa formula attesterebbe");
+    console.log("    una funzione e ne lascerebbe girare un'altra: e' il modo piu' silenzioso di mentire)");
+    const testoGioco = fs.readFileSync(path.join(RADICE, GIOCO), 'utf8');
+    const cMarchio = testoGioco.indexOf('LA MATEMATICA IN CASA (voce #143)') >= 0;
+    const cCombacia = cMarchio && testoGioco.indexOf(SORGENTE.trim()) >= 0;
+    di(cCombacia, 'il testo di _143-matematica.js sta nel gioco parola per parola',
+       cCombacia ? GIOCO : (cMarchio ? "C'E' UNA LIBRERIA NEL GIOCO MA IL TESTO E' DIVERSO" : "la libreria non e' innestata in " + GIOCO));
+    if (SORG_FILE) console.log('   (--sorgente ' + SORG_FILE + ': si sta misurando una libreria FINTA, per i falsi)');
+    console.log('');
+
     console.log('D) IL DOMINIO VERO — gli argomenti che il gioco passa davvero, contro il tetto dichiarato');
     console.log('   (tetto della riduzione d\'argomento: 2^31 = 2147483648; Mhypot straripa sopra ~1.3e154)');
     for (const [n, ar] of FUN) {
@@ -229,7 +246,7 @@ function ulpFraBit(a, b) {
     const res = {};
     for (const m of aperti) {
       res[m.nome] = await m.pag.evaluate(([g, a]) => new Function('return ' + g)()(...a),
-        [CALCOLO, [SORGENTE, nomi, dati]]);
+        [CALCOLO, [LIBRERIA, nomi, dati]]);
     }
     const base = aperti[0].nome, altri = aperti.slice(1).map(m => m.nome);
 
