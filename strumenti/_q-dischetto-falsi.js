@@ -30,7 +30,9 @@
                                                               -> C6
      vincitore   quando l'altro sparisce assegna la vittoria a chi
                  resta. Spegnere il telefono dell'altro diventa una
-                 strategia.                                   -> G4/G5
+                 strategia. Lascia la CAUSA giusta e cambia solo
+                 l'esito, apposta: un banco che guardasse la parola e
+                 non i punti lo promuoverebbe.                -> G5
      sfrenato    ritira senza pausa: sfonda il freno.         -> E1
      cieco       parla alla rete appena si apre il pannello.  -> F1
 
@@ -65,7 +67,7 @@ const FALSI = [
   { nome: 'credulone', toppa: '_crit-dischetto-credulone.js', morde: ['B3'] },
   { nome: 'semesuo',   toppa: '_crit-dischetto-semesuo.js',   morde: ['A3'] },
   { nome: 'fidato',    toppa: '_crit-dischetto-fidato.js',    morde: ['C6'] },
-  { nome: 'vincitore', toppa: '_crit-dischetto-vincitore.js', morde: ['G4', 'G5'] },
+  { nome: 'vincitore', toppa: '_crit-dischetto-vincitore.js', morde: ['G5'] },
   { nome: 'sfrenato',  toppa: '_crit-dischetto-sfrenato.js',  morde: ['E1'] },
   { nome: 'cieco',     toppa: '_crit-dischetto-cieco.js',     morde: ['F1'] },
 ];

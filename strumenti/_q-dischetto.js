@@ -31,10 +31,18 @@
       deve coincidere TIRO PER TIRO, non solo alla fine: due errori che
       si compensano darebbero un totale giusto e una partita diversa.
 
-   D) LA CUCITURA. Lo stesso copione sul filo della cassetta e su un
-      filo diretto finto (in-processo, ritardo zero) deve dare lo stesso
-      esito. E' la prova che il posto per WebRTC esiste davvero, senza
-      costruire WebRTC e senza dichiarare niente di non misurato.
+   D) LA CUCITURA. Su un filo che RITARDA di un giro e consegna ALLA
+      ROVESCIA, i due telefoni devono continuare a vedere lo stesso
+      esito tiro per tiro. E' la prova che il posto per WebRTC esiste
+      davvero — un DataChannel a maxRetransmits:0 consegna senza ordine
+      garantito — senza costruire WebRTC e senza dichiarare niente di
+      non misurato.
+
+      QUESTA PROVA E' NATA SBAGLIATA, e sta scritto anche nel corpo: la
+      prima versione confrontava una serie sul filo ordinato con una sul
+      filo sballato, ma ogni serie nasce da un appuntamento nuovo e
+      quindi da un SEME nuovo — due partite diverse. Passava due volte
+      su tre per fortuna. Il banco stava misurando il proprio sorteggio.
 
    E) I FRENI. Le richieste al minuto vere, contro il tetto di 60 che la
       cassetta ha preso dal fratello piu' largo del server vero. La spec
@@ -407,26 +415,43 @@ const mossaPari = (ruoloA, t) => (ruoloA === 't' ? mossaPara(t) : mossaTiro(t));
       const cd = await T.serviCassetta({ frenoAcceso: false });
       const A = await T.apri(browser, sg.porta); aperti.push(A);
       const B = await T.apri(browser, sg.porta); aperti.push(B);
-      await T.collega(A, cd.porta, 'ALFA'); await T.collega(B, cd.porta, 'BETA');
+      await T.collega(A, cd.porta, 'ALFA'); await T.collega(B, cd.porta, 'BETANOVE');
       await T.entra(A); await T.entra(B);
 
-      /* stesso appuntamento, stesse mosse, due fili diversi */
-      const conFilo = async filo => {
-        await A.pag.evaluate(f => window.__test.dischetto.filo(f), filo);
-        await B.pag.evaluate(f => window.__test.dischetto.filo(f), filo);
-        const r = await d_crea(A);
-        await d_entra(B, r.stanza);
-        await giocaSerie(A, B, 600);
-        return d_esiti(A);
-      };
-      const viaOrdine = await conFilo('cassetta');
-      const viaSballo = await conFilo('sballato');
-      const uguali = viaOrdine.length > 0 && viaOrdine.length === viaSballo.length &&
-                     viaOrdine.every((x, i) => x.esito === viaSballo[i].esito);
-      di(uguali, 'D1) stesso copione sul filo ordinato e su uno che ritarda e mescola -> stesso esito',
-         'ordinato ' + viaOrdine.map(x => x.esito[0]).join('') + ' · sballato ' + viaSballo.map(x => x.esito[0]).join(''));
-      di(viaOrdine.length >= 2, 'D2) TESTIMONE — la serie non e\' vuota: ci sono tiri da confrontare',
-         viaOrdine.length + ' tiri');
+      /* QUESTA PROVA E' NATA SBAGLIATA, e vale la pena scrivere come.
+
+         La prima versione giocava una serie sul filo ordinato e una sul
+         filo sballato e confrontava i due elenchi di esiti. Non poteva
+         funzionare: ogni serie nasce da un appuntamento nuovo, e ogni
+         appuntamento nuovo ha un SEME NUOVO — sono due partite diverse.
+         Passava due volte su tre per fortuna, e la terza stampava
+         «ordinato gggf · sballato ggfg» come se il filo avesse cambiato
+         il gioco. Il banco stava misurando il proprio sorteggio.
+
+         LA PROPRIETA' VERA e' un'altra, e si misura DENTRO una serie
+         sola: sul filo sballato — messaggi ritardati di un giro e
+         consegnati alla rovescia — i DUE TELEFONI devono continuare a
+         vedere lo stesso esito tiro per tiro, e la serie deve arrivare
+         in fondo. E' esattamente cio' che servirebbe il giorno in cui
+         qualcuno attaccasse un DataChannel, che in questa casa sarebbe
+         maxRetransmits:0, cioe' senza ordine garantito. */
+      await A.pag.evaluate(() => window.__test.dischetto.filo('sballato'));
+      await B.pag.evaluate(() => window.__test.dischetto.filo('sballato'));
+      const r = await d_crea(A);
+      await d_entra(B, r.stanza);
+      const fine = await giocaSerie(A, B, 900);
+      const [ea, eb] = await Promise.all([d_esiti(A), d_esiti(B)]);
+      const diversi = ea.filter((x, i) => !eb[i] || x.esito !== eb[i].esito).length;
+
+      di(!fine.scaduto && ea.length > 0,
+         'D1) su un filo che RITARDA e MESCOLA la serie arriva in fondo lo stesso',
+         'tiri ' + ea.length + ' · giri ' + fine.giri + (fine.scaduto ? ' · SCADUTA' : ''));
+      di(ea.length > 0 && ea.length === eb.length && diversi === 0,
+         'D2) e i due telefoni vedono lo STESSO esito tiro per tiro, come sul filo ordinato',
+         'A=' + ea.map(x => x.esito[0]).join('') + ' B=' + eb.map(x => x.esito[0]).join(''));
+      const filo = await A.pag.evaluate(() => window.__test.dischetto.filo('sballato'));
+      di(filo === 'sballato', 'D3) TESTIMONE — il filo sotto era davvero quello sballato, non la cassetta',
+         'filo=' + filo);
 
       for (const P of [A, B]) await P.ctx.close();
       aperti.length = aperti.length - 2;
