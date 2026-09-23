@@ -312,6 +312,26 @@ function referto(campione) {
   /* quanto dura uno stallo: il pacchetto piu' lento meno il ritardo scelto */
   fuori.stalloPiuLungo_ms = fuori.andata_max - fuori.D_rete_ms;
 
+  /* --- E LA DOMANDA DETTA AL CONTRARIO, che e' quella che si capisce.
+     Invece di «quanto ritardo serve per non stallare», si chiede: **se
+     prendo il ritardo massimo che il gioco tollera, quante volte al
+     minuto la partita si ferma, e per quanto?** Stesso conto, letto
+     dalla parte di chi gioca. La soglia S3 chiede meno di UNO al
+     minuto e mai piu' di 250 ms. */
+  fuori.stalli = [SOGLIE.S2_MARGINE_TICK, SOGLIE.S1_RETE_TICK].map(tick => {
+    const D = tick * TICK_MS;
+    const lenti = ord.filter(x => x * f > D);
+    const oltre = lenti.length + persi;              /* i persi stallano sempre */
+    const durate = lenti.map(x => x * f - D);
+    return {
+      D_tick: tick, D_ms: D, oltre,
+      quotaPct: 100 * oltre / fuori.inviati,
+      alMinuto: SOGLIE.S3_INVII_AL_MINUTO * oltre / fuori.inviati,
+      durataMedia_ms: durate.length ? durate.reduce((a, b) => a + b, 0) / durate.length : 0,
+      durataMax_ms: durate.length ? Math.max(...durate) : 0
+    };
+  });
+
   return fuori;
 }
 

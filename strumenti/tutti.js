@@ -962,6 +962,49 @@ const CANCELLI = [
   { nome: 'rete',        cmd: ['strumenti/_q-rete.js'],                                conta: true,  lento: false },
   { nome: 'sfida',       cmd: ['strumenti/_q-sfida.js'],                                conta: true,  lento: true  },
   /* =====================================================================
+     rete-latenza e rete-falsi: IL METRO DELLA RETE (voce #145, 23
+     settembre 2026, il secondo bivio dell'onda E).
+
+     PERCHE' SONO IN BATTERIA PUR PARLANDO DI RETE, e perche' NON la
+     toccano. Il cantiere e' fatto di due pezzi separati apposta:
+
+       · `strumenti/_145-campagna.js` tocca la rete vera (relay
+         WebSocket, STUN, il nostro edge Vercel, il censimento di
+         Supabase). NON e' un cancello e NON e' in batteria: non e'
+         ripetibile, dipende da servizi di altri, e un cancello che ogni
+         giorno dipende da un servizio esterno insegna a ignorarsi. E'
+         la stessa scelta che il #141 ha fatto per `_q-ritardo`.
+       · `_q-rete-latenza.js` misura IL METRO, offline e deterministico,
+         su dieci campioni sintetici dalla risposta nota; poi rilegge la
+         misura DEPOSITATA (`_analisi/misura-rete-145.json`) e ne
+         controlla l'onesta': ogni campione dichiara la sua sorgente,
+         nessun campione locale e' muto, la letteratura e' marcata con
+         la sua fonte, e cio' che si e' cercato e non trovato e'
+         depositato come ASSENZA invece di essere inventato.
+
+     E' NATO ROSSO, il 23 settembre, sulla prova 1a: nel repo non c'era
+     un solo numero di RTT. E' diventato verde quando la campagna ha
+     depositato. Se un giorno qualcuno cancellasse il deposito, torna
+     rosso — che e' giusto: l'onda E non ha il diritto di scrivere una
+     riga di lockstep senza una misura di rete in casa.
+
+     LE DUE PROVE CHE VALGONO PIU' DELLE ALTRE. La **0d** guarda le due
+     direzioni insieme: su un relay il percorso utile e' A->server->B,
+     due gambe, e l'eco ne misura due — quel numero E' GIA' la sola
+     andata e NON si divide; su un P2P e' l'opposto. La **0i** e' la
+     derivazione dello stallo: sei pacchetti lenti su milleduecento
+     lasciano il p95 innocente a 53 ms e fermano la partita tre volte al
+     minuto, perche' con 600 invii al minuto quel che conta e' il
+     p99,83. Un metro che guarda solo il p95 direbbe SI a una rete
+     ingiocabile.
+
+     `rete-falsi` gira i cinque falsi `_crit-rete-*` piu' il controllo
+     positivo. Misurato il 23 settembre: **15/15** il cancello, **6/6**
+     i falsi, ognuno morso dalla prova che il suo file dichiara.
+     Tutti e due offline e in pochi secondi: corrono in compagnia. */
+  { nome: 'rete-latenza', cmd: ['strumenti/_q-rete-latenza.js'],                        conta: true,  lento: false },
+  { nome: 'rete-falsi',   cmd: ['strumenti/_q-rete-falsi.js'],                          conta: true,  lento: false },
+  /* =====================================================================
      duello-impronta: LA RETE DI SICUREZZA DEL DUELLO, PROMOSSA (voce
      #131, correzione di revisione, 21 settembre 2026). Il cantiere #131
      ha fatto entrare il duello dal dischetto nel nastro (le tre porte

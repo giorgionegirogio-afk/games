@@ -517,6 +517,312 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **La misura della rete e del trasporto — #145 CANTIERE CHIUSO, e IL VERDETTO
+  È NO** (voce #145, 23 settembre 2026 — **tutte le misure di rete sono del 23,
+  come dice il deposito; il cantiere si è chiuso nella notte sul 24** —, cinque compiti dal merge-base
+  `55267d0` — spec `docs/superpowers/specs/2026-09-23-misura-rete-design.md`,
+  piano `docs/superpowers/plans/2026-09-23-misura-rete.md`, referto completo
+  `_analisi/MISURA-RETE-145.md`, dati grezzi
+  `_analisi/misura-rete-145.json`, progetto d'onda
+  `docs/superpowers/specs/2026-09-23-onda-e-architettura.md` §1 e §2.8).
+  **Secondo bivio dell'ONDA E**, e come il #141 non costruisce niente: produce
+  un numero e un verdetto, e il verdetto poteva essere no. **Il gioco non è
+  stato toccato: `MOTORE_V` resta 4.**
+
+  **LE SEI SOGLIE SONO STATE SCRITTE E COMMITTATE PRIMA CHE UN BANCO GIRASSE**
+  (`53d5ffa`, compito 0).
+
+  ---
+
+  ### (a) IL NODO SCIOLTO PRIMA DI MISURARE, o il NO sarebbe stato comprato a credito
+
+  Il #141 aveva scritto **`D_gioco = 0 tick`**, applicando la regola di casa
+  dell'estremo alto dell'intervallo. Preso alla lettera, `D_rete ≤ D_gioco`
+  è **falsa senza misurare niente**: nessuna rete consegna in zero
+  millisecondi. Sarebbe stato un no comprato a credito, e il committente ha
+  chiesto una misura che *possa* dire no, non una che dica no per costruzione.
+
+  La lettura onesta del gradino è un'altra, ed è stata scritta al compito 0:
+  **sotto il gradino (K=0) il gioco è intatto; sopra il gradino, da 50 a 300
+  ms il gioco costa lo stesso** (scarto 0,01 ± 0,22, non distinguibili,
+  #141). Quindi la domanda non è «quale D evita il danno» — non ce n'è
+  nessuno — ma **«il trasporto sta dentro l'intervallo che il #141 ha davvero
+  guardato, cioè D ≤ 18 tick?»**. Oltre i 300 ms non c'è misura del gioco:
+  c'è estrapolazione, che è il modo elegante di attestare.
+
+  ### (b) LA DERIVAZIONE CHE NESSUN DOCUMENTO DI CASA AVEVA SCRITTO
+
+  **Lo stallo non si sceglie, si calcola.** Un invio ogni 100 ms sono **600
+  pacchetti al minuto**; per stare sotto uno stallo al minuto serve
+  `P(andata > D) < 1/600 = 0,167%`, cioè **D deve coprire il p99,83 della
+  sola andata. Non il p95.** È la coda a decidere se un lockstep si può
+  giocare, e sotto si vede che è proprio lei a dire no.
+
+  E una regola che il metro incarna in un campo invece che nella testa di chi
+  legge: **su un relay il percorso utile è `A→server→B`, due gambe, e l'eco
+  `A→server→A` ne misura due — quel numero È GIÀ la sola andata e NON si
+  divide per due.** Su un P2P è l'opposto. Due situazioni che si somigliano e
+  chiedono il contrario.
+
+  ### (c) I NUMERI (tutti in ms; sorgente: **una macchina sola, connessione fissa italiana**)
+
+  | # | che cosa | tipo | n | p50 | p95 | p99 | p99,83 | persi |
+  |---|---|---|---|---|---|---|---|---|
+  | A | il **nostro** edge Vercel `fra1` | http | 300 | 51,6 | 71,4 | 233,5 | (n insuff.) | 0% |
+  | B1 | relay `ws.postman-echo.com` | relay | 3000 | 134 | **203** | **493** | **623** | 0% |
+  | B2 | relay `echo.websocket.org` | relay | 800 | 67 | **88** | **371** | **490** | 0% |
+  | E | **controllo**: stesso client su loopback | relay | 3000 | 1 | 2 | 2 | **2** | 0% |
+  | C | DataChannel fra due pari, stessa macchina | p2p | 400 | 2,0 | 2,5 | 2,7 | 2,8 | 0% |
+
+  **D_rete: 23,3 tick (B2) e 30,6 tick (B1). D_stallo: 30,4 e 38,4 tick.**
+  Intervalli di confidenza del p95 (non parametrici, binomiale sulle
+  statistiche d'ordine): semiampiezza **19,5** e **22,5 ms**, sotto il tetto
+  di 25 dichiarato: il campione regge e i numeri si possono trascrivere.
+
+  **E LA STESSA DOMANDA, DETTA DALLA PARTE DI CHI GIOCA.** «Quanto ritardo
+  serve per non stallare» è il modo in cui la chiede un architetto; chi gioca
+  la chiede al contrario: **se prendo il ritardo massimo che il gioco tollera,
+  quante volte al minuto la partita si ferma?**
+
+  | relay | D = 12 tick (200 ms) | D = **18 tick (300 ms)**, il massimo misurato dal #141 |
+  |---|---|---|
+  | B1 | **30,8 stalli/minuto**, media 157 ms (peggiore 444) | **17,2 stalli/minuto**, media 147 ms (peggiore 344) |
+  | B2 | **14,3 stalli/minuto**, media 148 ms (peggiore 354) | **9,0 stalli/minuto**, media 111 ms (peggiore 254) |
+
+  La soglia dichiarata era **meno di UNO al minuto**. Anche col ritardo più
+  generoso che il gioco sopporta, e sul migliore dei due relay, la partita si
+  fermerebbe **nove volte al minuto**: non è un margine stretto, è un fattore
+  nove. E la *durata* del singolo stallo starebbe quasi sempre dentro i 250 ms
+  dichiarati (111-157 ms in media): **non è la lunghezza dello stallo a
+  uccidere il lockstep, è la frequenza** — che è esattamente la ragione per cui
+  la misura favorisce la terza via, punto (i).
+
+  **LA RIGA E È LA PIÙ IMPORTANTE DI TUTTE, e senza di lei il resto non
+  varrebbe niente.** La sonda B misura con `Date.now()` dentro un processo
+  Node a un filo solo: se l'anello degli eventi si fermasse 200 ms per una
+  raccolta di memoria, quel ritardo diventerebbe «coda della rete» e **il
+  verdetto sarebbe mio, non della rete**. Lo stesso client, con le stesse
+  dormite e lo stesso parsing dei fotogrammi, è stato rigirato contro un relay
+  WebSocket **scritto a mano sul loopback** (il progetto non ha dipendenze e
+  non era il caso di aggiungerne una per un controllo): **3.000 pacchetti,
+  p99,83 = 2 ms, massimo 3 ms.** Il banco non ha code.
+
+  ### (d) LA MISURA CHE HA CAMBIATO IL VERDETTO MENTRE LO SCRIVEVO
+
+  Il progetto d'onda (§2.4) propone la mitigazione a buon mercato: ogni
+  pacchetto porta **gli ultimi R comandi**, quindi uno stallo chiede R
+  pacchetti *consecutivi* in ritardo. Col conto `600 · P^R`, a R=3:
+
+  > B1: D_stallo scende da 38,4 a **8,4 tick**. B2: da 30,4 a **4,6 tick**.
+
+  **Sono i due numeri che avrebbero fatto dire SÌ a questo cantiere.** Quel
+  conto assume ritardi **indipendenti**, e l'indipendenza si misura invece di
+  assumerla: fra i pacchetti sopra il p95, quanti ne hanno **un altro sopra il
+  p95 subito prima**? Se indipendenti, il 5%.
+
+  | | sopra il p95 | attaccati | quota | atteso |
+  |---|---|---|---|---|
+  | B1 | 148 | 116 | **78,4%** | 5% |
+  | B2 | 39 | 26 | **66,7%** | 5% |
+
+  **La coda arriva a raffica, tredici e sedici volte più di quanto l'indipendenza
+  preveda.** È il blocco in testa alla fila di un canale ordinato su TCP:
+  quando un pacchetto si ferma, tutti quelli dietro si fermano con lui, e **le
+  R copie stanno tutte nella stessa fila ferma.** Senza questa misura il
+  verbale avrebbe scritto «con la ridondanza il lockstep passa a 8,4 tick».
+
+  **E la coda non è nemmeno stabile.** Stesso relay, due corse a mezz'ora di
+  distanza la stessa sera: la mediana non si muove di un millisecondo (134 e
+  134), il p99 si muove del **47%** (335 → 493).
+
+  ### (e) I TRASPORTI
+
+  **Supabase Realtime NON ESISTE**, e nessun verbale lo aveva mai verificato:
+  nessun riferimento `<ref>.supabase.co` nel repo, nessuna variabile
+  `SUPABASE_*`, **zero variabili configurate** sul progetto Vercel
+  `calcetto-rete` (via API Vercel), il deployment di produzione risponde
+  **503 `DEPLOYMENT_PAUSED`**, e il DNS di un riferimento inventato dà
+  NXDOMAIN (niente carattere jolly, quindi l'assenza è un'assenza).
+  Quel che regge, **LETTO dalla documentazione ufficiale, non misurato**: il
+  protocollo Phoenix **si parla con un `WebSocket` nudo** — «zero dipendenze»
+  sopravvive. Non sopravvive «nessuna chiave nell'HTML»: l'`apikey` è
+  obbligatoria nell'URL.
+
+  **WebRTC con solo STUN: da qui passa** — 3 STUN su 3 rispondono, **una sola
+  porta esterna distinta** interrogandoli dallo **stesso socket**, tre giri su
+  tre: mappatura **indipendente dall'endpoint**. Zero candidati di relay
+  (nessun TURN). DataChannel aperto.
+
+  **IL BANCO SI È CONDANNATO DA SOLO, ed è la lezione del cantiere.** La
+  prima versione apriva **tre** `RTCPeerConnection`, una per STUN, e
+  confrontava le porte mappate: ne usciva 54986, 53587, 54035 e lo strumento
+  stampava **«NAT SIMMETRICO, serve un TURN»** — cioè condannava il P2P
+  dell'intera onda E. Era falso: **tre connessioni usano tre socket locali
+  diversi**, e qualunque NAT dà a socket diversi porte esterne diverse. Quel
+  banco misurava il proprio numero di socket. Il test giusto interroga più
+  STUN **dallo stesso socket** e conta i riflessi distinti — **e vuole la
+  guardia**, o mente al contrario: se due server tacessero il candidato
+  sarebbe uno solo lo stesso e si concluderebbe «a cono» misurando il
+  silenzio.
+
+  **Polling sulle funzioni di oggi**, riverificato sul codice e non ereditato:
+  `frenato('sfida:'+id, 30, 60)` (`rete/api/sfida.js:190`), `60,60`
+  (`:161` e `rete/api/avversario.js:106`) — **30-60 richieste al minuto**
+  contro le **600** di un lockstep a 10 Hz: dieci-venti volte sopra. **Ma un
+  duello non è 600 al minuto: sono pochi scambi, e ci sta dentro.**
+
+  ### (f) LA LETTERATURA, MARCATA, E L'ASSENZA DICHIARATA
+
+  **AGCOM, «Misura Internet Mobile 2025»** (Fondazione Ugo Bordoni, 45 centri
+  urbani italiani, settembre-dicembre 2025): RTT medio statico **27,97 ms**,
+  dinamico urbano **36,34**, extraurbano **44,02**, perdita **0,71%**. Tre
+  limiti che il rapporto stesso dichiara: è un RTT verso un **server** e non
+  un percorso fra pari; è una **media**, e qui decide la coda — **i
+  percentili non sono pubblicati**; ed è misurato a «migliore tecnologia
+  disponibile», quindi è un limite inferiore ottimistico.
+
+  **E ciò che si è cercato e non si è trovato è depositato come ASSENZA**,
+  non inventato: i percentili della latenza mobile italiana. Opensignal
+  (403), nPerf (PDF coi dati dentro immagini), Speedtest Global Index (non
+  raggiungibile). **È precisamente il numero che deciderebbe questo
+  cantiere.**
+
+  ### (g) I CINQUE FALSI, e il controllo positivo
+
+  `_q-rete-falsi.js` **6/6**, ognuno morso dalla prova che il suo file
+  dichiara, e nessuno fa la cosa ovvia: `due-campioni` lascia intatte le
+  porte della sorgente e del percorso (o lo prenderebbero loro, e non
+  proverebbe niente sulla numerosità); `locale` **non toglie** il controllo
+  della sorgente, gli **lava l'etichetta** prima di arrivarci; `potatore`
+  toglie il 5% peggiore lasciando mediana e media esatte al millesimo;
+  `mezzo-giro` dimezza il relay lasciando il P2P corretto e i percentili
+  grezzi intatti, **e il testo del campo continua a dire "nessuna
+  divisione"** mentre il codice divide; `sordo` riporta i persi in un campo
+  suo, giusto e inerte. Più il controllo positivo — il metro onesto passa
+  tutte e dieci le prove — che è la metà che manca a quasi tutti i banchi di
+  falsi.
+
+  ### (h) IL VERDETTO, applicando le soglie dichiarate il 23 settembre PRIMA di misurare
+
+  | soglia | esito | il numero |
+  |---|---|---|
+  | **S6 — campione** | **TIENE** | 3000 e 800 campioni, semiampiezza IC del p95 19,5 e 22,5 ms (tetto 25) |
+  | **S1 — `D_rete(p95) ≤ 18 tick`** | **NON TIENE** | **23,3** e **30,6 tick** |
+  | **S2 — `D_rete(p95) ≤ 12 tick`** | **NON TIENE** | idem |
+  | **S3 — stallo, `D ≥ p99,83`** | **NON TIENE** | **30,4** e **38,4 tick**, e la scorciatoia della ridondanza è **misurata invalida** |
+  | **S4 — trasporto** | **TIENE A METÀ** | esiste **WebRTC con STUN**; Supabase Realtime **non esiste** e chiederebbe una chiave che non ha dove stare |
+  | **S5 — P2P ≥ 90% su mobile italiano** | **NON MISURATA** | da rete fissa passa; sul CGNAT mobile è l'ignoto |
+
+  > **IL LOCKSTEP CONTINUO A 60 Hz NON È AMMESSO. IL VERDETTO È NO.**
+
+  **E il NO non è quello che si temeva.** Non è «la rete italiana è lenta»:
+  le mediane stanno benissimo — 67 ms a due gambe verso un relay pubblico
+  lontano, e AGCOM dà 28 ms di RTT medio sul mobile italiano. **Il NO
+  è la coda**: il p99 vale 3,7 e 5,5 volte il p50, non sta fermo nemmeno fra
+  due corse della stessa sera, e **arriva a raffica**, il che toglie di mezzo
+  l'unica mitigazione a buon mercato che il progetto d'onda aveva in mano.
+  **E c'è un secondo NO, più semplice e più duro: il trasporto del progetto
+  non esiste.**
+
+  ### (i) QUALE RAMO LA MISURA FAVORISCE: **LA TERZA VIA**, e per una ragione misurata
+
+  Il danno dello stallo è `600 invii/minuto × P(coda)`: **scala con la
+  FREQUENZA del canale**. Il calcio continuo a 60 Hz è il caso peggiore
+  possibile per una coda a raffica; **un duello no** — pochi scambi, non
+  seicento al minuto. Con dieci scambi per duello, la stessa coda che fa tre
+  stalli al minuto nel gioco aperto dà **0,017 stalli per duello**, e mezzo
+  secondo fra il tiro e il tuffo del portiere non è un blocco: è il momento.
+  E la terza via **sta dentro l'architettura di oggi, misurata**: i verbi del
+  duello sono già semantici nel nastro (`pickZone(z,u,v)`, `stopPower()`,
+  `pickKeeper(z)`, u/v al millesimo), il duello ha già il suo orologio
+  (`Duel.nDuello`/`Duel.passo`), e il polling di oggi **ci sta nei freni**.
+  Zero servizi nuovi, zero chiavi nuove, zero buchi in RLS, zero bolletta.
+
+  **Il server autoritativo, invece, non risolve il problema misurato**: una
+  flotta di browser headless costa un host sempre acceso, un sesto servizio e
+  una bolletta (progetto d'onda §5.2), e **non toglie la coda** — la tollera
+  in un altro modo, estrapolando o riavvolgendo, e il gioco non ha né l'uno né
+  l'altro. Si comprerebbe la parte cara senza comprare la cura.
+
+  ### (j) CHE COSA CAMBIEREBBE IL VERDETTO, e quale misura va fatta per prima
+
+  Scritto al compito 0, **prima** di misurare, e non cambiato dopo. Un relay
+  **nella stessa regione dell'edge**: i due misurati sono lontani (posizione
+  geografica non verificata: verificata è la loro latenza), e dal nostro `fra1` (p50 51,6, p99 233,5) un relay europeo darebbe
+  `D_rete ≈ 15 tick` — **S1 terrebbe**; ma il p99,83 di quella stessa misura
+  è 504 ms = 31 tick e **S3 non terrebbe lo stesso** (DERIVAZIONE, non
+  misura: a 300 campioni il p99,83 è il massimo, cioè un campione solo, e il
+  metro lo dichiara non misurabile sotto 600). Oppure un trasporto **non
+  ordinato**: la raffica è il blocco in testa alla fila di TCP, e un
+  DataChannel **inaffidabile e non ordinato** non ce l'ha per costruzione —
+  **è l'unica via tecnica che il NO lascia aperta**, e dipende tutta da S5,
+  che non è misurata.
+
+  **LA MISURA DA FARE PER PRIMA quando i telefoni ci saranno**, una sola e in
+  quest'ordine: due telefoni italiani, **operatori diversi**, rete mobile, un
+  pacchetto ogni 100 ms **per un'ora** (36.000 campioni — sotto i 600 il
+  p99,83 non esiste, e per misurarlo invece di vederlo ne servono decine di
+  migliaia), su un relay vero, con marcatura a sola andata; si riportano p50,
+  p95, p99, **p99,83**, massimo, jitter, perdita **e la quota di raffica**. E
+  nello stesso giro il tasso di riuscita di un DataChannel con solo STUN fra
+  quei due telefoni, che è S5 e l'altra metà del verdetto.
+
+  ### (k) RETTIFICA A EDIZIONI
+
+  `rete/LEGGIMI.md:167-173` conteneva **tre affermazioni non misurate
+  presentate come fatti** — che il trasporto sia Supabase Realtime, che 100
+  ms bastino, e che alla caduta «il gioco continua contro la CPU». Rettificate
+  in chiaro accanto al testo vecchio, con data, numeri e fonte. La terza non
+  è realizzabile in lockstep per costruzione: nell'istante in cui un lato
+  sostituisce una CPU non esiste più una verità condivisa; il degrado onesto è
+  troncare i due nastri allo stesso tick e sottomettere il proprio come sfida
+  asincrona.
+
+  **CANCELLI.** `rete-latenza` in batteria **`conta:true`** (15/15): offline,
+  deterministico, pochi secondi. `rete-falsi` in batteria **`conta:true`**
+  (6/6). La **campagna** (`_145-campagna.js`) NON è in batteria ed è la
+  scelta giusta: tocca servizi di altri, non è ripetibile, ed esce **3** se
+  non può misurare — mai un verde senza misura. Ha una modalità `--rileggi`
+  che rigiudica il deposito **senza toccare la rete**, perché il metro è puro.
+
+  **E IL METRO È DETERMINISTICO SU DATI VERI, misurato e non asserito**: la
+  rilettura del deposito (`--rileggi`, che non tocca la rete) riproduce un
+  file **byte per byte identico**. Un metro che desse due referti diversi
+  sullo stesso campione non avrebbe prodotto un verdetto, avrebbe prodotto
+  un'opinione.
+
+  **E UNA GUARDIA PAGATA SUBITO, sullo strumento e non sulla memoria**: una
+  corsa con `--sonde E` fatta per provare una modifica ha **riscritto il
+  deposito con un campione al posto di cinque**. La misura buona era già
+  committata e si è ripresa da lì; la prossima volta poteva non esserlo. Ora
+  una corsa **parziale non sovrascrive un deposito più ricco**: si ferma, dice
+  quali sonde perderebbe e come forzarla. Un attrezzo che cancella una misura
+  per distrazione è peggio di un attrezzo che non misura.
+
+  **RETI DI SICUREZZA, a cantiere chiuso.** **Il gioco non è stato toccato, ed
+  è verificato e non affermato**: `git diff main -- CALCETTO-il-gioco.html
+  sw.js index.html` è **vuoto**, il file è bit-identico a `main`. La batteria
+  intera, a cinque gruppi, **tutti i cancelli che contano verdi**: gruppo 1
+  **16/16**, gruppo 2 **18/18**, gruppo 3 **17/17**, gruppo 4 **9/9** (i
+  cronometrici da soli: `verbi-ritardo`, `motori` **19/19**, `casa` **20/20**,
+  `perimetro` **5/5**, `casa-falsi` **9/9**, `motore-nastro` **11/11**,
+  `motore-falsi` **14/14**, più i due nuovi), gruppo 5 **9/9 dei cancelli che
+  contano** (`abbandono`, `soak`, `determinismo-11`, `audio`, `volti`,
+  `giocata`, `prestazione`), e `rete/prove/tutte.js` **46/46**.
+
+  **E DUE ESITI CHE NON SONO ROSSI, e vanno detti per nome o il verde è
+  bugiardo.** `avvio-telefono` esce **3 (PROVA NULLA)**: `adb` c'è ma nessun
+  telefono è collegato, quindi non c'è misura e non c'è verdetto — e un
+  cancello che diventa verde quando non può misurare è peggio di nessun
+  cancello. `istantanea` (informativo, `conta:false`) esce **NO 42/56**
+  contro un registro del **20 agosto** fatto su un file diverso: è lo stesso
+  scostamento noto che il #141 e i cantieri prima di lui hanno già messo a
+  registro. **E qui non serve nemmeno confrontarlo, si dimostra**:
+  `istantanea` misura soltanto il file del gioco, e il file del gioco è
+  **bit-identico a `main`** — quindi il suo esito su questo ramo è per
+  costruzione lo stesso che su `main`. Non è una regressione, e non è una
+  diagnosi: è un'identità.
+
 - **Il comando senza schermo — #144 CANTIERE CHIUSO** (voce #144, 23 settembre
   2026, cinque compiti dal merge-base `c71a83e` — spec
   `docs/superpowers/specs/2026-09-23-comando-senza-schermo-design.md`, piano

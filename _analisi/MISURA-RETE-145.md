@@ -86,6 +86,25 @@ d'ordine): B1 `[193, 232]`, semiampiezza **19,5 ms**; B2 `[85, 130]`,
 semiampiezza **22,5 ms**. Tutti e due sotto il tetto di 25 ms della soglia S6:
 **il campione regge, e i numeri si possono trascrivere.**
 
+### 2.3bis La stessa domanda detta dalla parte di chi gioca
+
+«Quanto ritardo serve per non stallare» e' il modo in cui lo chiede un
+architetto. Chi gioca lo chiede al contrario: **se prendo il ritardo massimo
+che il gioco tollera, quante volte al minuto la partita si ferma?**
+
+| relay | D = 12 tick (200 ms) | D = **18 tick (300 ms)**, il massimo che il #141 ha misurato |
+|---|---|---|
+| **B1** | **30,8 stalli/minuto**, in media 157 ms (peggiore 444) | **17,2 stalli/minuto**, in media 147 ms (peggiore 344) |
+| **B2** | **14,3 stalli/minuto**, in media 148 ms (peggiore 354) | **9,0 stalli/minuto**, in media 111 ms (peggiore 254) |
+
+**La soglia dichiarata era «meno di UNO al minuto».** Anche prendendo il
+ritardo piu' generoso che il gioco sopporta, e sul migliore dei due relay, la
+partita si fermerebbe **nove volte al minuto**: non e' un margine stretto, e'
+un fattore nove. *(La durata del singolo stallo, invece, starebbe quasi sempre
+sotto i 250 ms dichiarati: 111-157 ms in media. **Non e' la lunghezza dello
+stallo a uccidere il lockstep, e' la frequenza** — e questa e' la stessa cosa
+che dira' §5.3 sulla terza via.)*
+
 ### 2.4 LA MISURA CHE HA CAMBIATO IL VERDETTO: la coda arriva a raffica
 
 Il progetto d'onda (§2.4) propone una mitigazione a buon mercato: ogni
@@ -106,7 +125,7 @@ pacchetto sopra il p95? Se fossero indipendenti sarebbe il 5%:
 | **B1** | 148 | 116 | **78,4%** | 5% |
 | **B2** | 39 | 26 | **66,7%** | 5% |
 
-**La coda arriva a raffica, quindici volte piu' di quanto l'indipendenza
+**La coda arriva a raffica, tredici e sedici volte piu' di quanto l'indipendenza
 preveda.** E' il comportamento di un canale **ordinato e affidabile su TCP**:
 quando un pacchetto si ferma, tutti quelli dietro si fermano con lui — il
 blocco in testa alla fila. **La ridondanza non compra niente contro una
@@ -135,7 +154,7 @@ ferma nemmeno sulla stessa connessione nella stessa sera.
 
 ### (1) Supabase Realtime — **NON ESISTE OGGI**
 
-Tre verifiche, tutte fatte il 23 settembre 2026:
+Cinque verifiche, tutte fatte il 23 settembre 2026:
 
 | verifica | esito |
 |---|---|
@@ -252,8 +271,8 @@ deciderebbe questo cantiere, e non esiste in forma leggibile.**
 
 **E il NO non e' quello che si temeva.** Non e' «la rete italiana e' lenta»:
 le mediane stanno benissimo — 67 ms a due gambe verso un relay
-transatlantico, e AGCOM da' 28 ms di RTT medio sul mobile italiano.
-**Il NO e' LA CODA.** Il p99 vale 2,7-5,5 volte il p50, non sta fermo
+pubblico lontano, e AGCOM da' 28 ms di RTT medio sul mobile italiano.
+**Il NO e' LA CODA.** Il p99 vale 3,7 e 5,5 volte il p50, non sta fermo
 nemmeno fra due corse della stessa sera, e **arriva a raffica** — il che
 toglie di mezzo l'unica mitigazione a buon mercato che il progetto d'onda
 aveva in mano.
@@ -267,7 +286,8 @@ dire che non regga: **non c'e'.**
 ### 5.1 Che cosa cambierebbe il verdetto — scritto prima di misurare, e non cambiato dopo
 
 - Un relay **nella stessa regione dell'edge**. I due misurati sono
-  transatlantici. Dal **nostro** edge `fra1` (p50 51,6, p99 233,5 su 300
+  lontani (la loro posizione geografica non l'ho verificata: quel che ho
+  verificato e' la loro latenza). Dal **nostro** edge `fra1` (p50 51,6, p99 233,5 su 300
   campioni) un relay europeo darebbe `D_rete ~ 250 ms = 15 tick`: **S1
   terrebbe**. Ma il p99,83 di quella stessa misura e' **504 ms = 31 tick**:
   **S3 non terrebbe lo stesso.** *(DERIVAZIONE, non misura: a 300 campioni il

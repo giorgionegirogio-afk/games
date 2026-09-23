@@ -233,7 +233,6 @@ function relayLocale() {
           const carico = Buffer.from(buf.slice(testaLen, testaLen + len));
           if (m) for (let j = 0; j < carico.length; j++) carico[j] ^= m[j & 3];
           buf = buf.slice(testaLen + len);
-          const op = buf.length >= 0 ? null : null;
           /* si rimanda indietro lo stesso carico, non mascherato */
           const fuori = Buffer.alloc(2 + carico.length);
           fuori[0] = 0x81; fuori[1] = carico.length; carico.copy(fuori, 2);
@@ -532,6 +531,16 @@ async function sondaD() {
        indipendenti, e le perdite di rete arrivano a raffica. */
     console.log('    con ridondanza R=3 (STIMA, perdite indipendenti): D_stallo ' +
                 f(r.D_stallo_R3_ms) + ' ms = ' + f(r.D_stallo_R3_ms / M.TICK_MS) + ' tick');
+    if (r.stalli) {
+      /* la domanda detta dalla parte di chi gioca */
+      for (const s of r.stalli) {
+        console.log('    se D = ' + s.D_tick + ' tick (' + s.D_ms.toFixed(0) + ' ms): la partita si ferma ' +
+                    s.alMinuto.toFixed(1) + ' volte al minuto' +
+                    (s.oltre ? ', in media ' + s.durataMedia_ms.toFixed(0) + ' ms (peggiore ' +
+                     s.durataMax_ms.toFixed(0) + ' ms)' : '') +
+                    '   [soglia S3: < 1/minuto, mai oltre ' + M.SOGLIE.S3_STALLO_MAX_MS + ' ms]');
+      }
+    }
     if (r.raffica) {
       const q = r.raffica.quotaPct;
       console.log('    raffica  ' + r.raffica.attaccati + ' dei ' + r.raffica.sopra + ' campioni sopra il p95 ' +
@@ -549,6 +558,26 @@ async function sondaD() {
 
   /* ---------------------------------------------------- il deposito */
   if (!fs.existsSync(path.dirname(DEPOSITO))) fs.mkdirSync(path.dirname(DEPOSITO), { recursive: true });
+  /* UNA GUARDIA PAGATA SUBITO. Una corsa con `--sonde E` per provare una
+     modifica ha riscritto il deposito con UN campione solo al posto di
+     cinque, e la misura buona era gia' committata: si e' ripresa da li'.
+     La prossima volta potrebbe non esserlo. Quindi una corsa PARZIALE
+     non sovrascrive un deposito piu' ricco: si ferma e dice come
+     forzarla. Un attrezzo che cancella una misura per distrazione e'
+     peggio di un attrezzo che non misura. */
+  if (fs.existsSync(DEPOSITO) && !process.argv.includes('--sovrascrivi')) {
+    const q = JSON.parse(fs.readFileSync(DEPOSITO, 'utf8'));
+    const vecchieSonde = new Set((q.campioni || []).filter(x => x.misure).map(x => x.sonda));
+    const nuoveSonde = new Set(campioni.map(x => x.sonda));
+    const perse = [...vecchieSonde].filter(s => !nuoveSonde.has(s));
+    if (perse.length) {
+      console.log('\n>>> NON SOVRASCRIVO: il deposito ha le sonde ' + [...vecchieSonde].join(',') +
+                  ' e questa corsa ne porta ' + [...nuoveSonde].join(',') + '.');
+      console.log('    Perderei ' + perse.join(',') + '. Rilancia con tutte le sonde, oppure --sovrascrivi');
+      console.log('    se e\' proprio quel che vuoi. Il referto qui sopra resta valido e stampato.');
+      process.exit(0);
+    }
+  }
   /* la letteratura sta in un file SUO, versionato a parte: i numeri che
      non sono miei non si rigenerano a ogni corsa, e non si mescolano mai
      coi campioni misurati */
