@@ -162,6 +162,7 @@ const bancoDi = pag => pag.evaluate(() =>
   const browser = {};
   const G = {};             /* le pagine-giudice, una per motore */
   let nulla = '';
+  let nienteDaAccusare = false;   /* vedi A1 e PROVA NULLA */
   try {
     console.log('=== UN ONESTO CON UN TELEFONO DI UN\'ALTRA MARCA (voce #142) ===');
     console.log('    gioco ' + (provaRel || 'CALCETTO-il-gioco.html') + ', ' + N_SFIDE +
@@ -258,14 +259,30 @@ const bancoDi = pag => pag.evaluate(() =>
     console.log('A1) L\'ESERCIZIO — col motore MASCHERATO il giudice rigioca, e su un motore diverso sbaglia');
     console.log('    (senza questa riga, «zero accuse» potrebbe voler dire «non c\'era niente da accusare»)');
     const eser = accuse(R.A1);
-    di(eser > 0, 'A1) su chromium, il nastro che dichiara l\'impronta DI CHROMIUM da\' NON TORNA',
+    /* =================================================================
+       E ZERO ACCUSE QUI HA DUE CAUSE DIVERSE, che il banco NON deve
+       confondere (rilievo trovato dal falso _crit-motore-pauroso, voce
+       #142, compito 3: il banco usciva 3 — «prova nulla» — dove doveva
+       uscire 1, e un 3 non accusa nessuno).
+
+         · zero accuse perche' i nastri TORNANO anche su chromium: non
+           c'era niente da accusare, e allora A2 non misura niente ->
+           PROVA NULLA, si esce 3 (e la si valuta IN FONDO, dopo aver
+           stampato tutto: fermarsi qui nasconderebbe la prova B, che e'
+           proprio quella che morde il caso qui sotto);
+         · zero accuse perche' il giudice SI E' ASTENUTO lo stesso, a
+           impronta coincidente: quella non e' prudenza, e' perdita di
+           copertura, ed e' un ROSSO che va detto qui e non altrove.
+       ================================================================= */
+    const astenutoInA1 = quanti(R.A1, x => x.verdetto === 'INCOMPLETO' &&
+                                           String(x.causa || '').indexOf('motore-js') === 0);
+    di(astenutoInA1 === 0, 'A1b) e a impronta COINCIDENTE non si astiene: sarebbe copertura buttata via',
+       astenutoInA1 + '/' + n + ' astensioni per il motore');
+    di(eser > 0 || astenutoInA1 > 0, 'A1) su chromium, il nastro che dichiara l\'impronta DI CHROMIUM da\' NON TORNA',
        eser + '/' + n + ' accuse — ' + stampa(conta(R.A1)));
     console.log('');
-    if (eser === 0) {
-      nulla = 'nessuno degli ' + n + ' nastri diverge su chromium nemmeno a motore mascherato: ' +
-              'la prova A2 non misurerebbe niente';
-      throw new Error(nulla);
-    }
+    /* la prova nulla si decide in fondo: vedi PROVA NULLA piu' sotto */
+    nienteDaAccusare = eser === 0 && astenutoInA1 === 0;
 
     /* ---- A2 / A3: la condanna ---- */
     console.log('A2/A3) LA CONDANNA — gli stessi nastri onesti, intatti, su un motore che non e\' il loro');
@@ -341,6 +358,17 @@ const bancoDi = pag => pag.evaluate(() =>
 
   const rossi = esiti.filter(x => !x).length;
   console.log(esiti.length + ' controlli, ' + (esiti.length - rossi) + ' passati, ' + rossi + ' falliti\n');
+  /* ---- PROVA NULLA, e si decide QUI e non a meta' banco (vedi A1) ----
+     Nessuno dei nastri di questa sessione divergeva su chromium nemmeno
+     a motore mascherato: allora «zero accuse» in A2 non e' una cura, e'
+     un caso fortunato, e un banco che lo chiamasse verde attesterebbe.
+     Si esce 3, che NON accusa il gioco, e si chiede piu' nastri. */
+  if (nienteDaAccusare) {
+    console.error('PROVA NULLA: nessuno dei ' + N_SFIDE + ' nastri diverge su chromium nemmeno a');
+    console.error('motore mascherato, quindi «zero accuse» non misurerebbe niente. Rilanciare');
+    console.error('con piu\' sfide (--sfide 8).');
+    process.exit(3);
+  }
   if (!rossi) {
     console.log('>>> UN ONESTO CON UN TELEFONO DI UN\'ALTRA MARCA NON VIENE PIU\' ACCUSATO:');
     console.log('    il nastro dichiara il motore, il giudice si astiene invece di togliere');
