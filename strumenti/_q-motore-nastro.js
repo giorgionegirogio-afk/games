@@ -118,8 +118,18 @@ async function apri(browser, porta) {
   const pag = await ctx.newPage();
   const errori = [];
   pag.on('pageerror', e => errori.push(e.message));
-  await pag.goto(`http://127.0.0.1:${porta}/CALCETTO-il-gioco.html`, { waitUntil: 'load' });
-  await pag.waitForFunction('window.__test !== undefined', null, { timeout: 40000 });
+  /* I TEMPI SONO LARGHI APPOSTA, e li ha misurati la batteria (23
+     settembre 2026, voce #142, compito 4). Questo banco apre TRE motori
+     veri e serve un file da 2,7 MB a sei contesti; lanciato in compagnia
+     di altri tre cancelli, il `goto` di serie (30 s) scadeva e il banco
+     usciva 2 — cioe' si dichiarava cieco per il carico della macchina
+     invece di misurare il gioco. La cura vera e' `solo:true` in
+     `tutti.js` (un banco cosi' non corre in compagnia); questi numeri
+     sono la seconda rete, per la macchina che quel giorno e' lenta lo
+     stesso. Un banco che esplode non accusa nessuno, ma non misura
+     nemmeno, e un cancello che non misura non serve a niente. */
+  await pag.goto(`http://127.0.0.1:${porta}/CALCETTO-il-gioco.html`, { waitUntil: 'load', timeout: 120000 });
+  await pag.waitForFunction('window.__test !== undefined', null, { timeout: 120000 });
   await pag.evaluate(() => { window.requestAnimationFrame = () => 0; });
   await pag.waitForTimeout(150);
   await pag.evaluate(() => {

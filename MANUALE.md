@@ -517,6 +517,200 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **Il motore nel nastro — #142 CANTIERE CHIUSO** (voce #142, 23 settembre
+  2026, cinque compiti dal merge-base `fc25184` — spec
+  `docs/superpowers/specs/2026-09-23-motore-nel-nastro-design.md`, piano
+  `docs/superpowers/plans/2026-09-23-motore-nel-nastro.md`). Cura un
+  **CRITICO IN PRODUZIONE dell'onda D** scoperto dal #141: **un giocatore
+  onesto poteva essere accusato perché aveva un telefono di un'altra marca.**
+
+  **LA CONDANNA, MISURATA SULLA CATENA VERA E NON RAGIONATA**
+  (`strumenti/_q-motore-nastro.js`, compito 1). Due telefoni, il server finto,
+  sfide giocate fino al fischio finale, e il nastro preso **dalla riga che il
+  server ha ricevuto** — stretto e riallargato come fa la staffetta. Otto
+  sfide oneste registrate su WebKit e rigiudicate con la finestra che il nastro
+  dichiara (915×412, DPR 1, banco identico sui tre motori):
+  **WebKit TORNA 8/8 · Chromium NON TORNA 7/8 · Firefox NON TORNA 1/8.** Alla
+  corsa a sei nastri del banco definitivo: **5 accuse su 6 su Chromium, 2 su 6
+  su Firefox.** Il critico è **peggiore dell'ipotesi**, non «qualche volta»: è
+  la norma, perché fra un iPhone e un Android il motore JavaScript è **sempre**
+  diverso e `staffetta.js` apriva `chromium.launch()` a riga fissa. NON TORNA è
+  l'unico verdetto che muove punti: disfa `delta_a` e `delta_d` (li toglie a
+  **due** persone), alza un `sospetto` che non decade mai e chiude la riga per
+  sempre. L'unico nastro salvo su Chromium si era salvato **per fortuna** — la
+  rigiocata era già divergiuta (3-3 contro lo 0-2 dichiarato) e si era fermata
+  su un duello dal dischetto di cui il nastro non aveva i comandi: un'astensione
+  per la causa sbagliata, non una cura.
+
+  **LA CAUSA** è quella isolata dal #141: ECMA-262 lascia le trascendenti
+  «implementation-approximated», e `Math.hypot` (`:8710`, 33 usi, una è `len`,
+  la distanza) dà l'ultimo bit diverso su **100 valori su 200** fra V8 e JSC.
+  Il nastro portava lo **schermo** (riga 10, #133) e non il **motore**, e
+  `motore-diverso` — la causa che esisteva già — parla di `MOTORE_V`, cioè
+  della versione del motore **di gioco**.
+
+  **LA CURA È LA DOTTRINA DEL #133 E DEL #139: ci si astiene, non si accusa.**
+  Una riga di tipo **11** nel nastro con l'**impronta funzionale** del motore.
+  **Non lo `userAgent`**, per tre ragioni che non sono preferenze: è un dato
+  personale che finirebbe su un server e nelle mani dell'avversario; cambia a
+  ogni aggiornamento del browser senza che il motore cambi davvero; e si
+  riscrive da una console in tre caratteri, mentre un conto **dev'essere
+  fatto**. Il motore si dichiara **facendo il conto**: 64 ingressi irrazionali
+  costruiti con sole moltiplicazioni e addizioni (che IEEE-754 obbliga a essere
+  esatte, così quel che si misura è la *funzione* e non il valore), sette
+  trascendenti ciascuno (`hypot`, `sin`, `cos`, `tan`, `exp`, `atan2`, `log`),
+  i 448 risultati letti **a bit** — `Float64Array`→`Uint32Array`, perché
+  `toString` arrotonda a 17 cifre e nasconde proprio l'ultimo bit — e ridotti
+  con **FNV-1a a 32 bit**, che usa solo `^` e `Math.imul`, cioè operazioni
+  intere esatte per norma, altrimenti l'impronta divergerebbe per colpa
+  dell'impronta. **Mai zero**: lo zero è già la parola che dice «non c'è».
+
+  **`pow` e `sqrt` sono escluse APPOSTA, ed è misurato perché**: IEEE-754 le
+  obbliga a essere correttamente arrotondate, e un'impronta fatta con loro vale
+  **1634607669 su tutti e tre i motori** — direbbe sempre «stesso motore».
+  **L'impronta vera separa tutti e tre**: chromium **3274447767**, webkit
+  **4281245088**, firefox **1495105755**, **stabile** su contesti freschi
+  (misurato due volte per motore dal banco, più tre volte per motore dalla
+  sonda `fuori/_sonda-142c.js`).
+
+  **IL GIUDICE SI ASTIENE**, in coda ai controlli dello schermo (lo schermo ha
+  tre cause che dicono cose diverse, una non riparabile in nessuna finestra; il
+  motore è binario): impronta diversa → `INCOMPLETO/motore-js-diverso`, **col
+  numero nel referto** perché chi chiama possa aprire il motore giusto;
+  impronta **assente** → `INCOMPLETO/motore-js-ignoto`, **e ci si astiene lo
+  stesso** — è la correzione di revisione che il #133 ha già pagato una volta
+  (IMPORTANTE-1). **L'esito, misurato: da 5 accuse su 6 a ZERO**, tutte
+  diventate `INCOMPLETO/motore-js-diverso`, e **su firefox da 2 a 0**. **E la
+  copertura non si è mangiata niente: sullo stesso motore i sei nastri danno
+  ancora TORNA 6 su 6.** 11 controlli su 11.
+
+  **IL PREZZO DEI NASTRI VECCHI, DICHIARATO E NON STIMATO.** Tutti i nastri
+  registrati prima di oggi diventano `INCOMPLETO/motore-js-ignoto`. **Quanti
+  siano non si può contare da qui, e si dice invece di inventarlo**: il
+  database di esercizio non sta nel repo e la staffetta non è mai stata
+  lanciata contro un Supabase vero (le sue due credenziali stanno
+  nell'ambiente). Quel che si è misurato è l'effetto: la prova E del banco
+  porta un nastro vero da TORNA a INCOMPLETO, e **l'unica fixture di nastro del
+  repo** (`_nastro-duello-congelato.js`, 142 222 caratteri, tipi di riga
+  0,1,2,3,6,7,10) **non ha la riga 11: 1 su 1.** Si paga perché
+  **l'alternativa all'astensione non è «verificarli», è ACCUSARLI** — quegli
+  stessi nastri, sul motore sbagliato, danno NON TORNA 5 volte su 6 — e perché
+  la riga resta a `verificata = 0`, cioè torna giudicabile da sé quando la
+  staffetta apre il motore giusto.
+
+  **E IL PREZZO SI È FATTO SENTIRE SUBITO, dove era giusto.** **Tre** reti di
+  sicurezza usano quella fixture per misurare **altro** (il duello dal
+  dischetto in `_q-giudice`, i cinque verdetti in `_q-staffetta`, la finestra
+  che cambia in `_q-finestra`) e avrebbero smesso di misurare quel che dicono.
+  Le prime due si sono viste subito; **la terza l'ha trovata la batteria**, ed
+  è la ragione per cui la si rilancia intera a ogni compito: `_q-finestra` C1
+  è uscita `INCOMPLETO/motore-js-ignoto` dove diceva `TORNA`. Si completa **a runtime** con l'impronta
+  di chi giudica — che è vera: quel nastro fu registrato su un Chromium di
+  questa macchina — invece di rigenerare la fixture con un numero fisso: quel
+  numero cambia con la versione del browser, e una fixture legata al Chromium
+  installato si spegne da sola altrove. Che un nastro **senza** riga 11 faccia
+  astenere il giudice resta misurato dove deve esserlo, nella prova E.
+
+  **LA STAFFETTA APRE IL MOTORE GIUSTO**, così l'astensione è una
+  **complicazione operativa** e non una perdita di copertura — è il giudizio
+  che la revisione del #133 ha dato per lo schermo. Il raggruppamento passa
+  dalla misura alla **coppia (misura, impronta)** (`915x412@3274447767`), e
+  all'avvio la staffetta **chiede** a ogni motore disponibile la sua impronta
+  invece di indovinarla dal nome — l'impronta è una proprietà della *versione*,
+  e una tabella per nome invecchierebbe in silenzio. **Misurato sul giro vero**
+  (`_t-142-staffetta-motori.js`, 8/8): due sfide giocate davvero su due motori,
+  con tutti e due in mano **due contesti, due TORNA, ognuna sul suo motore**;
+  **con un motore solo**, la riga che chiede l'altro **non si giudica su quello
+  che c'è** — resta a `verificata = 0`, non entra nel taccuino, nessuna parola
+  parte per lei, e il referto la grida. Ripiegare sarebbe tornare al difetto.
+
+  **E I REPLAY NON SI SPENGONO, MISURATO E NON DEDOTTO DAL CODICE**
+  (`fuori/_sonda-142d.js`). `Sfida.guarda` usa lo stesso vaglio ma
+  intercetta solo quattro cause **per nome**, e queste due non ci sono.
+  La stessa sfida vera, guardata tre volte dal telefono del difensore —
+  nastro intatto, nastro che dichiara un motore che non è quello di chi
+  guarda, nastro senza nessuna riga 11 — parte tutte e tre le volte
+  (`registroModo = 2`, scena `kickoff`, cinque uomini in campo), mentre il
+  giudizio sugli stessi tre dice `TORNA`, `INCOMPLETO/motore-js-diverso`
+  (col numero chiesto nel referto) e `INCOMPLETO/motore-js-ignoto`. Un film
+  approssimato costa niente; un verdetto approssimato costa punti a
+  qualcuno.
+
+  **QUATTRO FALSI NEL CASO PEGGIORE, 14 su 14**, e ognuno morso dalla prova che
+  dichiara, con la **bite list misurata**: **`muto`** (scrive l'impronta e non
+  la guarda — il difetto di oggi travestito da cura, e la terza volta che la
+  stessa ferita si presenta nello stesso posto dopo #132 e #133) cade su
+  **A2, E, F, F2**; **`accusa`** (se ne accorge e dice NON TORNA invece di «non
+  lo so» — il difetto del #133, già pagato una volta) su **A2, A3, F, F2**;
+  **`piatto`** (impronta di sole `pow` e `sqrt`) su **C, A2, F, F2**;
+  **`pauroso`** (si astiene sempre) su **A1b e B**, e passa **tutte** le altre
+  otto — è la perdita di copertura mascherata da prudenza. Più il **controllo
+  positivo**: il gioco vero passa **11 verdi su 11** e esce 0.
+
+  **E DUE FALSI HANNO CORRETTO IL BANCO, ed è la parte che vale più del
+  codice.** (1) `pauroso` faceva uscire il banco **3 invece di 1**: la prova A1
+  contava le accuse col motore mascherato e, trovandone zero, dichiarava «prova
+  nulla» — ma *zero accuse perché i nastri tornano* e *zero accuse perché il
+  giudice si è astenuto* sono due cose diverse, e **un 3 non accusa nessuno**;
+  per giunta si usciva prima di stampare la prova B, che è proprio quella che
+  lo morde. Da lì **A1b** e la prova nulla spostata in fondo. (2) Lo stesso
+  falso ha scoperto che il lettore di etichette di `_q-motore-falsi` filtrava
+  `[A-Z0-9]+`: **la `b` minuscola di A1b non entrava**, la riga spariva da
+  verdi e rosse, e il falso risultava «non morso». Da lì **V2**, che conta le
+  undici etichette lette.
+
+  **A1, IL CONTROLLO DI ESERCIZIO**, è la metà che manca a quasi tutti i banchi
+  di questo genere: dopo la cura il giudice si astiene *prima* di rigiocare,
+  quindi «zero accuse» potrebbe voler dire «non c'era niente da accusare». A1
+  maschera l'impronta del nastro con quella di chi giudica
+  (`_nastri-bugiardi.conMotore`), il giudice non si accorge di niente, rigioca,
+  e dice quel che avrebbe detto senza la cura — **5 accuse su 6**. Se non ne
+  trova nessuna il banco **esce 3** invece di dichiararsi verde, ed è successo
+  davvero alla corsa da una sfida sola.
+
+  **`MOTORE_V` RESTA 2, MISURATO** come nei #131/#132/#133/#139
+  (`_t-132-motorev.js --prima fuori/gioco-142-base.html`): **30 nastri su 30**
+  registrati sul gioco di `main` e rigiocati sul curato danno la stessa
+  partita, impronta campione per campione, punteggio e conto dei sorteggi; zero
+  semi dichiarati nulli, uno dei trenta passa dal dischetto. Le cure sono
+  additive: per un nastro vecchio il codice nuovo non gira mai. Il diff del
+  gioco è **216 righe aggiunte e 2 tolte** (le 2 sono la firma di `out` e la
+  riga del referto, riscritte per estensione).
+
+  **DUE ROSSI CHE NON ERANO REGRESSIONI, e misurati prima di scrivere la
+  parola**: al primo giro della batteria `verbi-ritardo` e `audio` sono usciti
+  rossi. Rimisurati **tre volte per versione, su due versioni**: sul gioco di
+  oggi **3/3 verdi tutti e due**; sul gioco di `main` (`fc25184`)
+  `verbi-ritardo` **NO-OK-OK**, e il banco si è dichiarato da sé «RUMOROSO
+  OGGI». Era rumore, e lo era già prima del cantiere.
+
+  **IN BATTERIA**: `motore-nastro` (conta, 6 sfide, ~68 s) e `motore-falsi`
+  (conta, 4 sfide × 5 corse), tutti e due **`solo:true`** — e non per il
+  cronometro: MISURATO che lanciati in compagnia di altri tre cancelli il
+  `goto` scade a 30 s (tre motori veri e un file da 2,7 MB a sei contesti), e
+  `motore-nastro` esce **2** («il banco è esploso», che non accusa il gioco ma
+  non misura nemmeno) mentre `motore-falsi`, che lo rilancia, conta **zero
+  etichette**. Da soli sono verdi; dentro il banco i tempi sono stati portati a
+  120 s come seconda rete. `motori` del #141 resta a **conta:false**: è
+  rosso per un guasto vero e aperto, e metterlo a true tingerebbe di rosso
+  l'intera batteria per una cosa già a registro.
+
+  **QUEL CHE QUESTA VOCE NON FA, ED È IL SEGUITO.** **La matematica scritta in
+  casa** — le trascendenti dalle sole operazioni IEEE-esatte — che farebbe
+  *convergere* i motori invece di far astenere il giudice. È il prerequisito
+  che il #141 ha messo prima del #145, e la misura da tenere accanto è la sua:
+  **sostituire il solo `hypot` con `sqrt(x*x+y*y)` fa convergere 7 semi su 8,
+  non 8**; restano `sin` 7/200, `cos` 3/200, `tan` 9/200, `exp` 2/200. Cambia
+  tutti i numeri del gioco e muove `MOTORE_V`. **E va detto che l'impronta è
+  una condizione NECESSARIA, non sufficiente**: due motori che la danno uguale
+  potrebbero ancora divergere su un valore non campionato, quindi il rischio
+  residuo di accusa ingiusta è **ridotto, non azzerato**. La direzione
+  dell'errore dell'impronta invece è sicura per costruzione — se cambia senza
+  che il motore cambi (una versione nuova del browser, una macchina
+  big-endian) si ottiene **un'astensione in più, mai un'accusa in più**. Terzo
+  seguito: **il conto vero dei nastri vecchi in esercizio**, che si potrà fare
+  solo con un database in mano.
+
 - **Il metro del ritardo — #141 CANTIERE CHIUSO, e IL VERDETTO È NO** (voce
   #141, 23 settembre 2026, sei compiti dal merge-base `2e728d6` — spec
   `docs/superpowers/specs/2026-09-23-metro-ritardo-design.md`, piano
@@ -2043,6 +2237,23 @@ Qui il registro completo, a edizioni.
   `carattere-assente`, `schermo-ignoto`, `schermo-diverso`) **il film si
   vede lo stesso** — rifiutare ogni replay fra schermi diversi vorrebbe
   dire spegnere la funzione per quasi tutti — ma il verdetto no.
+  **RETTIFICA A EDIZIONI (23 settembre 2026, voce #142).** I rifiuti del
+  vaglio non sono più nove ma **undici**: il #139 ha aggiunto
+  `schermo-cambiato` e il #142 `motore-js-diverso` e `motore-js-ignoto`,
+  l'impronta del motore JavaScript che il nastro adesso dichiara (riga di
+  tipo 11). `Sfida.guarda` continua a fermarsi sugli stessi quattro e non
+  su questi — li intercetta **per nome**, e questi due nomi non sono in
+  quella lista — quindi **i replay non si spengono**, per la stessa
+  ragione dello schermo: un film approssimato costa niente, un verdetto
+  approssimato costa punti a qualcuno. **E non è un'inferenza dal codice,
+  è misurato** (`fuori/_sonda-142d.js`, 23 settembre 2026): la stessa
+  sfida vera guardata tre volte dal telefono del difensore — nastro
+  intatto, nastro che dichiara un motore che non è quello di chi guarda,
+  nastro senza nessuna riga 11 — dà tutte e tre le volte
+  `registroModo = 2`, scena `kickoff`, cinque uomini in campo, mentre il
+  giudizio sugli stessi tre nastri dice `TORNA`,
+  `INCOMPLETO/motore-js-diverso` (col numero chiesto nel referto) e
+  `INCOMPLETO/motore-js-ignoto`. Il testo sopra resta dov'è.
   Comportamento visibile invariato: `_q-giudice` 21/21 e `_q-sfida` 54/54
   prima e dopo l'estrazione.
 

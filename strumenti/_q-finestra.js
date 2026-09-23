@@ -358,7 +358,19 @@ const mis = l => (l && l.length ? l.map(s => s[0] + 'x' + s[1]).join(' -> ') : '
     r.cambiaAssurdo = await giudizio(G1, cambia.crudo, [99, 0], opz(cambia));
 
     /* i nastri vecchi: la fixture congelata e i tre bisturi in Node */
-    const crudoFix = N.allarga(FIX_DUELLO.replay);
+    /* LA FIXTURE E' DI PRIMA DELLA VOCE #142 e non porta l'impronta del
+       motore JavaScript (riga di tipo 11): dal #142 il giudice si astiene
+       su un nastro cosi' (INCOMPLETO/motore-js-ignoto), e questa prova —
+       che misura la FINESTRA, non il motore — smetterebbe di misurare
+       quel che dice. Si completa a runtime con l'impronta di chi giudica,
+       che e' vera: quel nastro fu registrato su un Chromium di questa
+       macchina ed e' un Chromium di questa macchina a rigiocarlo. Che un
+       nastro senza riga 11 faccia astenere il giudice e' misurato dove
+       deve esserlo, nella prova E di _q-motore-nastro.js. */
+    const impQui = await G1.pag.evaluate(() =>
+      (window.__test && typeof window.__test.improntaMotore === 'function') ? window.__test.improntaMotore() : 0);
+    const crudoFix = impQui ? N.conMotore(N.allarga(FIX_DUELLO.replay), impQui)
+                            : N.allarga(FIX_DUELLO.replay);
     r.fix = await giudizio(G1, crudoFix, [FIX_DUELLO.gol_a | 0, FIX_DUELLO.gol_d | 0],
                            { seme: FIX_DUELLO.seme, taglia: FIX_DUELLO.taglia | 0 });
     r.senzaSchermo = await giudizio(G1, N.senzaSchermo(fermo.crudo), att(fermo), opz(fermo));

@@ -876,13 +876,19 @@ const CANCELLI = [
      «astenersi sempre» passerebbe a pieni voti), `motore-falsi` che il
      primo se ne accorgerebbe.
 
-     SONO LENTI E CI STANNO: il primo apre tre motori veri e gioca sei
-     sfide intere, il secondo lo rilancia cinque volte (i quattro falsi
-     piu' il controllo positivo). Non sono a cronometro — contano
-     verdetti — quindi possono correre in compagnia senza misurare il
-     carico della macchina. */
-  { nome: 'motore-nastro',   cmd: ['strumenti/_q-motore-nastro.js', '--sfide', '6'],              conta: true,  lento: true  },
-  { nome: 'motore-falsi',    cmd: ['strumenti/_q-motore-falsi.js', '--sfide', '4'],               conta: true,  lento: true  },
+     SONO LENTI E VANNO DA SOLI, E NON PER IL CRONOMETRO: il primo apre
+     TRE motori veri e serve un file da 2,7 MB a sei contesti, il secondo
+     lo rilancia cinque volte (i quattro falsi piu' il controllo
+     positivo). MISURATO il 23 settembre 2026: lanciati in compagnia di
+     altri tre cancelli, il `goto` scadeva a 30 s e `motore-nastro`
+     usciva **2** — «il banco e' esploso», cioe' si dichiarava cieco per
+     il carico della macchina — e `motore-falsi`, che lo rilancia, vedeva
+     lo stesso timeout e contava zero etichette. Un 2 non accusa il
+     gioco, ma un cancello che non misura non serve a niente. Quindi
+     `solo:true`, come `giocata` e `prestazione`, piu' tempi larghi
+     dentro il banco come seconda rete. */
+  { nome: 'motore-nastro',   cmd: ['strumenti/_q-motore-nastro.js', '--sfide', '6'],              conta: true,  lento: true, solo: true },
+  { nome: 'motore-falsi',    cmd: ['strumenti/_q-motore-falsi.js', '--sfide', '4'],               conta: true,  lento: true, solo: true },
   /* =====================================================================
      rete / sfida: LA SFIDA ASINCRONA, PROVATA SENZA RETE VERA (voce
      #130). Due banchi gia' scritti (data non censita in questo file, mai
