@@ -118,9 +118,59 @@ function infilaSchermo(nastro, misura, dove) {
   return rifai(p, fuori);
 }
 
+/* L'IMPRONTA DEL MOTORE JAVASCRIPT SCRITTA NEL NASTRO (riga di tipo 11,
+   voce #142), o null se quel nastro e' di prima di quella cura. Si legge
+   QUI, in Node, per la stessa ragione di schermoDi: un banco che chiede
+   al gioco se il gioco ha fatto il suo lavoro non misura niente. */
+function improntaDi(nastro) {
+  for (const z of spacca(nastro).pezzi) {
+    const v = z.split(',');
+    if (v[1] === '11') return (+v[3]) >>> 0;
+  }
+  return null;
+}
+
+/* =====================================================================
+   IL MOTORE MASCHERATO (voce #142) — e non e' un falso qualunque, e' IL
+   CONTROLLO DI ESERCIZIO del banco.
+
+   Dopo la cura il giudice si astiene PRIMA di rigiocare, quindi non si
+   sa piu' se quel nastro, su quel motore, sarebbe DAVVERO divergiuto: un
+   banco che misurasse solo l'astensione attesterebbe la propria cura su
+   nastri che magari non avevano niente da divergere (la lezione del
+   #141: su 3 nastri con zero gol si stampava «SOGLIA TENUTA» misurando
+   il nulla).
+
+   Qui si riscrive la riga 11 con l'impronta DI CHI GIUDICA: il giudice
+   crede che il motore coincida, procede, rigioca, e il verdetto che esce
+   e' quello che sarebbe uscito senza la cura. Se non esce NON TORNA, non
+   c'era niente da curare su quel nastro e la prova della condanna non
+   sta misurando niente.
+
+   Su un nastro di PRIMA della cura (senza riga 11) torna il nastro
+   com'era: li' il giudice non si astiene comunque, e il giudizio diretto
+   e' gia' l'esercizio. */
+function conMotore(nastro, impronta) {
+  const { p, pezzi } = spacca(nastro);
+  let n = 0;
+  const fuori = pezzi.map(z => {
+    const v = z.split(',');
+    if (v[1] !== '11') return z;
+    n++;
+    return v[0] + ',11,' + v[2] + ',' + ((impronta | 0) >>> 0);
+  });
+  return n ? rifai(p, fuori) : nastro;
+}
+
 module.exports = {
   allarga,
   spacca, rifai, schermoDi, schermiDi, righeSchermoDi, infilaSchermo,
+  improntaDi, conMotore,
+
+  /* L'IMPRONTA DEL MOTORE VIA (tipo 11, voce #142). Simula un nastro di
+     prima di quella cura: improntaDi() e improntaDelNastro() (lato
+     gioco) tornano null. -> INCOMPLETO/motore-js-ignoto */
+  senzaMotore: n => spegniTipo(n, 11),
 
   /* LE DUE ROSE VIA (tipo 7). Il giudice deve rifiutare: senza le rose
      dovrebbe ripiegare sul profilo vivo, cioe' giudicare un'altra
