@@ -45901,6 +45901,112 @@ ui.endTrofeo.innerHTML = icoSVG('trofeo',24)+' HAI VINTO IL TORNEO! '+icoSVG('tr
 })();
 
 /* =====================================================================
+   IL RITARDO D'INGRESSO, DAVANTI ALLE QUATTRO PORTE (voce #141).
+
+   Un comando dato al tick T esegue al tick T+K. A K=0 questo blocco non
+   fa niente: un confronto e un ritorno, zero sorteggi, zero rami nuovi
+   nella fisica. MOTORE_V resta 2 apposta, e un banco lo verifica.
+
+   L'AVVOLGIMENTO STA PIU' FUORI DEL REGISTRATORE, e l'ordine e' tutto:
+
+       dito -> [questa coda] -> [registratore] -> Touch5 vero
+
+   Cosi' il comando si REGISTRA AL TICK IN CUI ESEGUE, non a quello in
+   cui il dito lo ha dato. Il nastro deve raccontare quel che e'
+   SUCCESSO: avvolgendo piu' dentro si registrerebbe l'INTENTO, e il
+   replay di una partita ritardata non sarebbe quella partita.
+
+   L'OROLOGIO E' SUO. Reg.tick avanza solo a registro acceso (passo()
+   esce subito se modo === 0), e la prova umana si gioca a registro
+   spento: una coda appesa a un orologio fermo non scade mai.
+
+   IN RILETTURA LA CODA NON C'E'. Col nastro in mano (modo 2) i comandi
+   portano gia' il tick in cui devono eseguire; accodarli sarebbe
+   ritardare due volte. Il banco della gamba A trasla il NASTRO, questo
+   ritarda il DITO, e le due cose non si sommano mai.
+   ===================================================================== */
+const Ritardo = {
+  K: 0,            /* tick di ritardo; 0 = spento, e allora questo blocco e' inerte */
+  tick: 0,         /* orologio proprio: cammina anche a registro spento */
+  coda: [],        /* [tickScadenza, nomePorta, questo, a, b, c] */
+  porte: {},       /* i quattro metodi COME ERANO prima di questo avvolgimento */
+
+  imposta(k){
+    k = Math.max(0, Math.round(+k || 0));
+    /* i comandi gia' in coda appartengono al ritardo di PRIMA: cambiare
+       K con la coda piena mescolerebbe due ritardi in una partita sola */
+    this.coda.length = 0;
+    this.K = k;
+    return this.K;
+  },
+
+  /* si chiama all'inizio di ogni Reg.passo(), cioe' all'inizio di ogni
+     step(): e' lo stesso istante in cui il riproduttore del nastro
+     rimette in scena i suoi comandi, e deve esserlo — un comando
+     ritardato e un comando rigiocato devono arrivare al motore dalla
+     stessa porta e nello stesso punto del fotogramma */
+  passo(){
+    this.tick++;
+    if(this.K <= 0 || !this.coda.length) return;
+    let n = 0;
+    while(n < this.coda.length && this.coda[n][0] <= this.tick) n++;
+    if(!n) return;
+    const scaduti = this.coda.splice(0, n);
+    for(const r of scaduti){
+      const f = this.porte[r[1]];
+      /* un comando che non si puo' rigiocare non ferma la partita: la
+         stessa legge di Reg.passo, e per la stessa ragione */
+      if(f) try{ f.call(r[2], r[3], r[4], r[5]); }catch(e){}
+    }
+  },
+
+  azzera(){ this.coda.length = 0; this.tick = 0; },
+};
+
+(function(){
+  const nomi = ['start', 'move', 'chiudi', 'azzera'];
+  for(const nome of nomi){
+    const vero = Touch5[nome];
+    if(typeof vero !== 'function') continue;
+    Ritardo.porte[nome] = vero;
+    Touch5[nome] = function(a, b, c){
+      /* a ritardo spento, e col nastro in mano, questo non esiste */
+      if(Ritardo.K <= 0 || Reg.modo === 2) return vero.call(this, a, b, c);
+      Ritardo.coda.push([Ritardo.tick + Ritardo.K, nome, this, a, b, c]);
+      return undefined;
+    };
+  }
+
+  /* L'OROLOGIO E LO SVUOTAMENTO, appesi a Reg.passo dall'esterno, con la
+     stessa dottrina dell'avvolgimento qui sopra: dipende da un nome, non
+     da un corpo. La coda si svuota PRIMA che passo() esegua i comandi
+     del nastro, perche' a K=0 i due percorsi devono restare
+     indistinguibili. */
+  const veroPasso = Reg.passo;
+  Reg.passo = function(){
+    Ritardo.passo();
+    return veroPasso.call(this);
+  };
+
+  /* E LA CODA SI SVUOTA COL RESTO DEI COMANDI. Reg.azzeraComandi esiste
+     perche' l'origine della levetta sopravviveva a una partita e faceva
+     divergere la successiva (grep «I COMANDI SI AZZERANO PRIMA»). Un
+     comando accodato e non ancora scaduto e' la stessa malattia in forma
+     peggiore: arriverebbe dentro la partita DOPO, e nessuno saprebbe da
+     dove viene. */
+  const veroAzzeraComandi = Reg.azzeraComandi;
+  Reg.azzeraComandi = function(){
+    Ritardo.azzera();
+    return veroAzzeraComandi.call(this);
+  };
+})();
+
+/* LE DITA DEL BANCO. Stato del dito virtuale: due identificativi che
+   crescono a ogni rilascio, come fa il copione delle dita di
+   _q-sfida.js, perche' due tocchi diversi non condividano mai un id. */
+const DITA = { id: 7001, idB: 7002, giu: false, premuto: false };
+
+/* =====================================================================
    I DUE OROLOGI DEL DISCHETTO, AVVOLTI DALL'ESTERNO (voce #131).
 
    Stessa dottrina delle quattro porte qui sopra, e per una ragione in
@@ -46349,6 +46455,59 @@ const Rete = {
 
 window.__test = {
   get state(){ return G.scene; },
+  /* =====================================================================
+     IL RITARDO D'INGRESSO, APERTO AL BANCO E ALL'UOMO (voce #141).
+
+     ritardo(K) accoda i comandi di K tick SENZA RETE DI MEZZO. Serve
+     alla gamba B (i verbi con dita vere), alla gamba C (la prova umana
+     in cieco: l'uomo deve sentire il ritardo del GIOCO, non quello di
+     una rete che non c'e' ancora) e al #145, dove il ritardo fisso D e'
+     il cuore del lockstep.
+     ritardo(0) lo spegne, e a ritardo spento il gioco e' identico al
+     bit a quello di prima: MOTORE_V resta 2.
+     ritardoStato serve al banco per sapere se il ritardo e' davvero
+     acceso invece di crederci — una coda che non accoda e' precisamente
+     il falso che _q-ritardo-falsi.js e' fatto per condannare.
+     ===================================================================== */
+  ritardo(K){ return Ritardo.imposta(K); },
+  get ritardoStato(){ return { K: Ritardo.K, tick: Ritardo.tick, coda: Ritardo.coda.length }; },
+  /* =====================================================================
+     UN DITO, INIETTATO DALLA PORTA VERA (voce #141).
+
+     dx, dy: la direzione della levetta, in -1..+1. Si posa un dito nella
+     meta' sinistra e lo si sposta di dx,dy volte la corsa piena
+     (STICK_FULL = 46 px): la stessa geometria che legge humanMove.
+     premi: il disco grande. TENUTO fra un fotogramma e l'altro e' una
+     pressione TENUTA — si preme sul fronte di salita e si rilascia su
+     quello di discesa — perche' la CARICA del tiro e' la finestra dolce
+     piu' fragile sotto ritardo, e un impulso di un fotogramma non la
+     proverebbe mai.
+     dita(null) alza tutto.
+
+     PASSA DALLE QUATTRO PORTE, non da Touch5.stick. Scrivere dentro lo
+     stato della levetta sarebbe piu' corto e misurerebbe una cosa che
+     nessun dito puo' fare: il nastro non la vedrebbe, e nemmeno la coda
+     del ritardo qui sopra.
+     ===================================================================== */
+  dita(dx, dy, premi){
+    if(dx === null || dx === undefined){
+      if(DITA.giu){ Touch5.chiudi(DITA.id, false); DITA.giu = false; DITA.id += 2; }
+      if(DITA.premuto){ Touch5.chiudi(DITA.idB, false); DITA.premuto = false; DITA.idB += 2; }
+      return { giu:false, premuto:false };
+    }
+    const LX = Math.round(innerWidth * 0.20), LY = Math.round(innerHeight * 0.68);
+    const R = 46;                       /* STICK_FULL: la corsa piena della levetta */
+    const x = Math.round(LX + (+dx || 0) * R), y = Math.round(LY + (+dy || 0) * R);
+    if(!DITA.giu){ Touch5.start(DITA.id, LX, LY); DITA.giu = true; }
+    Touch5.move(DITA.id, x, y);
+    const b = touchBtnLayout(0)[0];
+    if(premi && !DITA.premuto && b){
+      Touch5.start(DITA.idB, Math.round(b.x), Math.round(b.y)); DITA.premuto = true;
+    }else if(!premi && DITA.premuto){
+      Touch5.chiudi(DITA.idB, false); DITA.premuto = false; DITA.idB += 2;
+    }
+    return { giu:DITA.giu, premuto:DITA.premuto, x:x, y:y };
+  },
   /* LA MENTALITA', per i banchi. Leggerla serve a un collaudo che voglia
      verificare che il valore di serie sia la voce neutra; imporla serve a
      un banco CPU contro CPU, dove nessuno apre il menu della pausa.

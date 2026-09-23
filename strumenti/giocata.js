@@ -1066,6 +1066,31 @@ function analizza(dati, comando, bersaglio) {
   const fileFilmato = arg('filmato', null);
   const fileJson = arg('json', null);
   const seme = +arg('seme', 20260731);
+  /* =====================================================================
+     IL RITARDO D'INGRESSO, ACCESO DA FUORI (voce #141, compito 3).
+
+     --ritardo K accende __test.ritardo(K): ogni comando del dito esegue
+     K tick dopo essere stato dato. Serve alla GAMBA B del metro del
+     ritardo — «i cinque verbi reggono a duecento millisecondi?» — e
+     riusa QUESTO strumento invece di copiarlo, perche' una copia e' un
+     posto in piu' dove la stessa ferita si riapre da sola.
+
+     A --ritardo 0 (il valore di serie, e quello della batteria) non
+     cambia NIENTE: nemmeno la chiamata parte.
+
+     E I DUE CANCELLI SI SPOSTANO DI K, che e' la sola parte discutibile
+     e va detta in chiaro. I cancelli sono 500 ms e 30 fotogrammi dal
+     comando alla risposta. Con un ritardo d'ingresso di K tick la
+     risposta arriva per costruzione K tick piu' tardi: lasciare i
+     cancelli fermi vorrebbe dire far bocciare il gioco dal ritardo che
+     il banco stesso ha acceso, cioe' misurare il proprio cancello.
+     La domanda della SOGLIA-VERBI non e' «il verbo e' ancora veloce»
+     (non lo e', e si sa gia' di quanto): e' «il verbo RIESCE ANCORA» —
+     il contatore sale, la palla parte, la carica cade nella finestra.
+     Percio' i cancelli diventano 500+K/60 ms e 30+K fotogrammi, e la
+     riga di testa lo dichiara a chi legge.
+     ===================================================================== */
+  const RITARDO = Math.max(0, parseInt(arg('ritardo', '0'), 10) || 0);
 
   const tmp = fileFilmato ? fs.mkdtempSync(path.join(os.tmpdir(), 'giocata-')) : null;
   const srv = await servi();
@@ -1137,12 +1162,32 @@ function analizza(dati, comando, bersaglio) {
     t.dismissSplash && t.dismissSplash();
     t.startMatch(1, 1);                     // 1 giocatore: la squadra 0 e' del dito
   });
+  /* il ritardo si accende DOPO startMatch, come la mentalita' e come il
+     CPU contro CPU: prima non c'e' ancora niente da ritardare, e
+     Reg.azzeraComandi (che startMatch chiama) svuoterebbe la coda */
+  if (RITARDO > 0) {
+    const acceso = await pag.evaluate(K => (typeof window.__test.ritardo === 'function')
+      ? window.__test.ritardo(K) : -1, RITARDO);
+    if (acceso !== RITARDO) {
+      console.error('BANCO NON VALIDO: --ritardo ' + RITARDO + ' chiesto, il gioco ha risposto ' + acceso +
+                    '.\nQuesto gioco non espone __test.ritardo (toppa _toppa-141-ritardo.js non applicata):');
+      console.error('senza l\'aggancio il banco misurerebbe il gioco SENZA ritardo e lo chiamerebbe');
+      console.error('«i verbi reggono a ' + Math.round(RITARDO * 1000 / 60) + ' ms», che e\' il peggiore dei verdetti falsi.');
+      process.exit(2);
+    }
+  }
   await pag.waitForTimeout(400);
 
   const cdp = await ctx.newCDPSession(pag);
   const raccolta = [];
 
-  console.log(`\n=== GIOCATE COL DITO${inPausa ? ' — GIOCO IN PAUSA (deve fallire)' : ''} ===\n`);
+  console.log(`\n=== GIOCATE COL DITO${inPausa ? ' — GIOCO IN PAUSA (deve fallire)' : ''}${RITARDO ? ` — RITARDO D'INGRESSO ${RITARDO} TICK (${Math.round(RITARDO * 1000 / 60)} ms)` : ''} ===`);
+  if (RITARDO) {
+    console.log(`    cancelli spostati di K: ${500 + Math.round(RITARDO * 1000 / 60)} ms / ${30 + RITARDO} fotogrammi.`);
+    console.log("    La domanda non e' «il verbo e' ancora veloce» — non lo e', ed e' tardo esattamente di K —");
+    console.log('    ma «il verbo RIESCE ANCORA»: il contatore sale, la palla parte, la carica cade in finestra.');
+  }
+  console.log('');
 
   for (const nome of nomi) {
     const g = GIOCATE[nome];
@@ -1224,8 +1269,11 @@ function analizza(dati, comando, bersaglio) {
        rossi su 10 in ENTRAMBE le versioni del gioco: un rosso che non
        distingue niente). Quando passa solo l'orologio dei fotogrammi,
        la nota lo dice col passo mediano misurato. */
-    const FOT_CANCELLO = 30;
-    const inTempoMs = a.latenzaMs != null && a.latenzaMs <= 500;
+    /* i due cancelli si spostano del ritardo acceso dal banco: vedi il
+       cappello di --ritardo. A --ritardo 0 sono 500 e 30, come sempre. */
+    const MS_CANCELLO = 500 + Math.round(RITARDO * 1000 / 60);
+    const FOT_CANCELLO = 30 + RITARDO;
+    const inTempoMs = a.latenzaMs != null && a.latenzaMs <= MS_CANCELLO;
     const inTempoFot = a.latenzaFot != null && a.latenzaFot <= FOT_CANCELLO;
     const rispondeInTempo = inTempoMs || inTempoFot;
     if (!inTempoMs && inTempoFot) noteGesto.push(
@@ -1267,7 +1315,7 @@ function analizza(dati, comando, bersaglio) {
       else if (!(a.zVoloMax > 10)) azioneNo = `cross a tabellino ma la palla non prende quota (z max ${a.zVoloMax.toFixed(1)}: sopra le teste serve 26)`;
     }
     if (!azioneNo && g.richiedeScivolata) {
-      const scOkMs = a.scivolataMs != null && a.scivolataMs <= 500;
+      const scOkMs = a.scivolataMs != null && a.scivolataMs <= MS_CANCELLO;
       const scOkFot = a.scivolataFot != null && a.scivolataFot <= FOT_CANCELLO;
       if (a.scivolataMs == null)
         azioneNo = 'il comandato non entra mai in scivolata (p.slide resta spento)';
@@ -1299,7 +1347,7 @@ function analizza(dati, comando, bersaglio) {
             ? `${chi} non cambia mai dopo il gesto: nessuna risposta`
             : `${chi} non cambia mai velocita' dopo il gesto: nessuna risposta`)
         : !rispondeInTempo
-          ? `risposta a ${a.latenzaMs.toFixed(0)} ms e ${a.latenzaFot != null ? a.latenzaFot : '?'} fotogrammi: oltre il cancello (500 ms / ${FOT_CANCELLO} fotogrammi)`
+          ? `risposta a ${a.latenzaMs.toFixed(0)} ms e ${a.latenzaFot != null ? a.latenzaFot : '?'} fotogrammi: oltre il cancello (${MS_CANCELLO} ms / ${FOT_CANCELLO} fotogrammi)`
           : azioneNo
             ? azioneNo + ` (latenza ${a.latenzaMs.toFixed(0)} ms)`
             : `latenza ${a.latenzaMs.toFixed(0)} ms (${a.latenzaFot != null ? a.latenzaFot + ' fotogrammi' : 'fotogrammi ignoti'}) ${daQuando}` +

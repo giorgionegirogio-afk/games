@@ -186,10 +186,32 @@ const COPIONE = `(function(passiMax){
     else if(giuB && f % 71 === 18){ Touch5.move(idB, grande.x - 26, grande.y - 14); }
     else if(giuB && f % 71 === 26){ Touch5.chiudi(idB, false); giuB = false; idB += 2; }
     if(f % 53 === 11){ const j = 900 + f; Touch5.start(j, piccolo.x, piccolo.y); Touch5.chiudi(j, false); }
+    /* =====================================================================
+       LE DITA SI ALZANO DENTRO IL CICLO, NON DOPO — e questa riga e'
+       costata un rosso su 120 (23 settembre 2026, seme 20260950).
+
+       Il copione di _q-sfida.js chiude le dita DOPO il ciclo, ed e'
+       giusto per quel banco. Qui no: un comando dato dopo l'ultima
+       simulate viene scritto al tick passiMax, e la rigiocata — che
+       gira esattamente 'passiMax' passi — consuma i tick da 0 a
+       passiMax-1 e quel comando non lo esegue MAI. Misurato: seme
+       20260950, registrato 1-3 con 4 tiri, rigiocato 1-3 con 3 tiri;
+       tre rigiocate di fila identiche fra loro e identiche in TUTTO il
+       resto (stesso punteggio, stesso specchio, stessi 6.251 sorteggi).
+       Non divergeva niente: mancava l'ultimo rilascio, che e' un tiro.
+
+       Chiudendo dentro l'ultima iterazione il comando finisce al tick
+       passiMax-1, che la rigiocata attraversa. La stessa ferita sta nel
+       copione di _q-sfida.js (righe 274-275) e li' non fa danno, perche'
+       quel banco non confronta una registrazione con una rigiocata a
+       tetto fisso: sta scritto qui perche' chi lo copiera' lo sappia.
+       ===================================================================== */
+    if(f === passiMax - 1){
+      if(giu){ Touch5.chiudi(idL, false); giu = false; }
+      if(giuB){ Touch5.chiudi(idB, false); giuB = false; }
+    }
     t.simulate(1/60); f++;
   }
-  if(giu) Touch5.chiudi(idL, false);
-  if(giuB) Touch5.chiudi(idB, false);
   return { passi:f, duelli:duelli };
 })`;
 
