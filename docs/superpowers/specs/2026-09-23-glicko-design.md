@@ -250,6 +250,13 @@ Ed e' la stessa grandezza che il mandato nomina nella formula dei trofei
 
 ### La scala nuova, e il pavimento che si alza
 
+> **RETTIFICA A EDIZIONI (23 settembre 2026, compito 3).** La scala che
+> segue, e i numeri della tabella sotto, sono quelli del PROGETTO: quattro
+> gradini e pavimento 8/6/4/1. Il banco li ha corretti tutti e due, e il
+> testo rettificato sta subito dopo. Si lascia in chiaro quel che si era
+> previsto, perche' la differenza fra il previsto e il misurato e' la
+> cosa piu' utile di questa pagina.
+
 ```js
 export const SCALA = [
   { forza:  8, punti:  120, equilibrio: 0.08, minimo: 8 },
@@ -296,6 +303,64 @@ aritmetica, non un difetto da riparare. Si scrive qui perche' il giorno
 in cui la base crescera' questo numero cambiera' da solo, e perche' un
 banco che non lo misurasse lascerebbe passare una finestra ancora piu'
 stretta senza dire niente.
+
+---
+
+### RETTIFICA A EDIZIONI (23 settembre 2026, compito 3): la scala vera
+
+Il progetto qui sopra e' stato corretto **tre volte dal banco**, ed e'
+la parte di questo cantiere che vale la pena di leggere. La scala vera,
+quella che sta in `rete/lib/abbinamento.js`:
+
+```js
+export const SCALA = [
+  { forza:  8, punti:  120, equilibrio: 0.08, minimo: 7 },
+  { forza: 20, punti:  300, equilibrio: 0.15, minimo: 5 },
+  { forza: 40, punti:  700, equilibrio: 0.25, minimo: 4 },
+  { forza: 99, punti: Infinity, equilibrio: 0.40, minimo: 2 },
+  { forza: 99, punti: Infinity, equilibrio: Infinity, minimo: 1 },
+];
+```
+
+**(1) I gradini sono CINQUE, non quattro.** Con quattro, su una base di
+dodici, stringere i primi tre faceva cadere la ricerca sull'ultimo molto
+piu' spesso (gradino medio da 2,00 a 3,24) — e l'ultimo, per
+costruzione, non ha limiti. Misurato: lo scarto mediano migliorava
+(291 → 226) e **la coda peggiorava** (p90 da 554 a **666**). Partite piu'
+giuste per quasi tutti, e qualche partita piu' assurda di prima per chi
+finiva in fondo alla scala. Il gradino in piu' e' un **atterraggio**:
+forza e punti gia' senza limite, ma l'equilibrio ancora a 0,40. Col
+quinto gradino il p90 su dodici va a **391** invece che a 666.
+
+**(2) Il pavimento e' 7/5/4/2/1, non 8/6/4/1.** 8/6/4 protegge il mazzo
+meglio di chiunque, e costa altrove: su dodici persone un gradino che ne
+chiede otto non si soddisfa quasi mai, la ricerca cade piu' in basso, e
+**la misura del #137 si disfaceva** — lo scarto mediano di *punti* sulla
+base da dodici passava da 147 a 213 (`_q-sospetto` C5, che con 7/5/4
+resta a 147). Il pavimento giusto e' il piu' alto che non disfaccia una
+misura gia' pagata.
+
+**(3) E 7/5/3 e' stato scartato da un SECONDO SEME, non da un'idea.** Su
+20260923 dava 4 avversari possibili sulla base di dodici e sembrava a
+posto; su 987654 e 555 ne dava **tre**. Per questo il banco ha preso
+`--seme`: un numero misurato su una popolazione sola e' un aneddoto, e
+qui l'aneddoto avrebbe fatto passare una finestra che affama qualcuno
+una volta su due.
+
+I numeri veri, misurati dal banco (5000 ricerche, seme 20260923; e le
+tre righe restano dentro le stesse soglie su 424242, 987654 e 555):
+
+| popolazione | | scarto vero mediano | p90 | «entro 100» | peggio servito | a vuoto |
+|---|---|---|---|---|---|---|
+| **400** | oggi (#137) | 133 | 355 | 40 % | 8 | 0 |
+| | **col nascosto** | **72** | **183** | **65 %** | 7 | 0 |
+| **60** | oggi (#137) | 151 | 340 | 34 % | 6 | 0 |
+| | **col nascosto** | **94** | **249** | **52 %** | 5 | 0 |
+| **12** | oggi (#137) | 291 | 554 | 21 % | 4 | 0 |
+| | **col nascosto** | **185** | **391** | **30 %** | 4 | 0 |
+
+E il rating nascosto stima l'abilita' vera meglio dei punti anche su
+questa popolazione: rho 0,978 contro 0,952.
 
 ### La terza coordinata NON esce dal database
 

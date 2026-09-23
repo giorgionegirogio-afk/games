@@ -347,12 +347,53 @@ end $$;
 -- cambiata due volte — e questo file resta idempotente come promette la
 -- sua intestazione.
 -- ---------------------------------------------------------------------
+-- ---------------------------------------------------------------------
+-- L'ATTESO DI GLICKO-2, IN SQL — la traduzione di `atteso()` di
+-- rete/lib/glicko.js (voce #140).
+--
+-- Sta in una funzione sua e non dentro il `where` di `trova_avversario`
+-- per una ragione sola: l'SQL DI QUESTO REPO NON SI ESEGUE (non c'e' un
+-- Postgres), quindi la sola difesa contro una divergenza fra le due
+-- lingue e' che si possano LEGGERE UNA ACCANTO ALL'ALTRA. Sepolta in
+-- una condizione lunga sei righe, nessuno se ne accorgerebbe.
+--
+-- `immutable`: stessi argomenti, stesso risultato, sempre. Serve al
+-- pianificatore per incorporarla nella scansione invece di chiamarla
+-- come una funzione vera riga per riga.
+--
+-- 400/ln(10) e' la scala di Glicko-2 (il paper la stampa 173.7178); si
+-- CALCOLA invece di ricopiarla, cosi' non ci sono due cifre da tenere
+-- allineate fra questo file e il modulo.
+--
+-- LE DUE INCERTEZZE SI COMPONGONO IN QUADRATURA, ed e' la cosa che fa
+-- funzionare tutto: due giocatori di cui non si sa niente hanno un
+-- atteso vicino a 0,5 comunque siano messi i loro rating. Il sistema
+-- dice «non lo so» invece di fingere una previsione — ed e' quello che
+-- permette a un giocatore nuovo di trovare un avversario.
+-- ---------------------------------------------------------------------
+create or replace function atteso_glicko(
+  ra real, rda real, rb real, rdb real
+) returns double precision language sql immutable as $$
+  select 1 / (1 + exp(
+    -- g(phi), con phi = sqrt(phi_a^2 + phi_b^2)
+    - (1 / sqrt(1 + 3 * (
+          (rda / (400 / ln(10)))^2 + (rdb / (400 / ln(10)))^2
+        ) / pi()^2))
+    -- per la differenza dei due rating, sulla scala interna
+    * ((ra - rb) / (400 / ln(10)))
+  ))
+$$;
+
+-- LA TRAPPOLA DI POSTGRES, UNA TERZA VOLTA (voce #140): la firma passa
+-- da cinque argomenti a sei, e una `create or replace` con firma diversa
+-- AFFIANCA invece di sostituire. Si butta anche quella.
 drop function if exists trova_avversario(uuid, int);
 drop function if exists trova_avversario(uuid, int, int, int);
+drop function if exists trova_avversario(uuid, int, int, int, int);
 
 create or replace function trova_avversario(
   io uuid, banda int default 8, banda_punti int default null,
-  separa int default 3, minimo int default 1
+  separa int default 3, minimo int default 1, equilibrio real default null
 )
 returns table (allenatore uuid, nome text, colori jsonb, rosa jsonb,
                modulo text, indole jsonb, forza int, punti int)
@@ -360,7 +401,11 @@ language sql stable as $$
   with mia as (
     select coalesce((select s.forza    from squadra    s where s.allenatore = io),   50) as f,
            coalesce((select p.punti    from punti      p where p.allenatore = io), 1000) as pt,
-           coalesce((select a.sospetto from allenatore a where a.id         = io),    0) as sp
+           coalesce((select a.sospetto from allenatore a where a.id         = io),    0) as sp,
+           -- i miei due numeri nascosti (voce #140). Entrano nel
+           -- confronto e NON escono nella tupla: vedi sotto.
+           coalesce((select p.nascosto   from punti p where p.allenatore = io), 1500) as nc,
+           coalesce((select p.incertezza from punti p where p.allenatore = io),  350) as ic
   ),
   buoni as (
     select s.allenatore as al, s.nome as nm, s.colori as co, s.rosa as ro,
@@ -375,6 +420,16 @@ language sql stable as $$
        and a.visto > now() - interval '30 days'
        and abs(s.forza - mia.f) <= banda
        and (banda_punti is null or abs(coalesce(p.punti, 1000) - mia.pt) <= banda_punti)
+       -- LA TERZA COORDINATA (voce #140): non «vicini di rating», ma
+       -- «la partita non dev'essere decisa prima del fischio». `null`
+       -- vuol dire nessun limite, come per i punti — e' l'ultimo
+       -- gradino della scala, quello che garantisce che nessuna sfida
+       -- si perda. La stessa riga, in JavaScript, e' `equilibrato` in
+       -- rete/lib/abbinamento.js.
+       and (equilibrio is null or abs(atteso_glicko(
+              mia.nc, mia.ic,
+              coalesce(p.nascosto, 1500), coalesce(p.incertezza, 350)
+            ) - 0.5) <= equilibrio)
        and (a.sospetto >= separa) = (mia.sp >= separa)
   )
   select al, nm, co, ro, mo, ind, fo, pt
@@ -620,7 +675,8 @@ alter table impegno    enable row level security;
 alter table freno      enable row level security;
 
 revoke all on allenatore, squadra, punti, sfida, impegno, freno from anon, authenticated;
-revoke all on function trova_avversario(uuid, int, int, int, int)      from anon, authenticated;
+revoke all on function trova_avversario(uuid, int, int, int, int, real) from anon, authenticated;
+revoke all on function atteso_glicko(real, real, real, real)          from anon, authenticated;
 revoke all on function frena(text, int, int)                          from anon, authenticated;
 revoke all on function muovi_punti(uuid, int, int, int, real, boolean) from anon, authenticated;
 revoke all on function posa_nascosto(uuid, real, real, real, date, int) from anon, authenticated;

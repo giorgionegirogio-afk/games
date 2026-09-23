@@ -53,6 +53,12 @@ const arg = (n, d) => {
 };
 const RETE = path.resolve(RADICE, arg('rete', 'rete'));
 const gruppiChiesti = String(arg('solo', 'A,B,C,D,E')).toUpperCase().split(',').map(s => s.trim());
+/* Il seme della popolazione simulata del gruppo C. Il valore di casa e'
+   fisso apposta — un cancello che cambia popolazione a ogni corsa non e'
+   un cancello — ma si puo' cambiare per rimisurare altrove: e' l'unico
+   modo di sapere se un numero e' una proprieta' o un aneddoto. Provato a
+   mano su 20260923, 424242, 987654 e 555. */
+const SEME = (+arg('seme', 20260923)) >>> 0 || 20260923;
 const vuole = g => gruppiChiesti.includes(g);
 
 let ok = 0, no = 0;
@@ -485,9 +491,9 @@ function spearman(a, b) {
   if (vuole('C')) {
     titolo('C) L\'ABBINAMENTO — 5000 ricerche, popolazione simulata, la grandezza e\' l\'ABILITA\' VERA');
 
-    di(haA && Array.isArray(A.SCALA) && A.SCALA.length === 4 &&
+    di(haA && Array.isArray(A.SCALA) && A.SCALA.length === 5 &&
        A.SCALA.every(g => 'forza' in g && 'punti' in g && 'equilibrio' in g && 'minimo' in g),
-       'C1) il gradino e\' una TERNA piu\' il pavimento: forza, punti, equilibrio, minimo',
+       'C1) CINQUE gradini, e ognuno e\' una TERNA piu\' il pavimento: forza, punti, equilibrio, minimo',
        haA && Array.isArray(A.SCALA) ? JSON.stringify(A.SCALA) : manca);
 
     const ultimo = haA && Array.isArray(A.SCALA) ? A.SCALA[A.SCALA.length - 1] : null;
@@ -496,9 +502,19 @@ function spearman(a, b) {
        'C2) l\'ULTIMO gradino e\' senza limite in tutte e TRE: nessuna sfida si puo\' perdere per questa aggiunta',
        ultimo ? JSON.stringify(ultimo) : manca);
 
-    di(haA && Array.isArray(A.SCALA) && A.SCALA.map(g => g.minimo | 0).join('/') === '8/6/4/1',
-       'C3) il pavimento del mazzo si alza a 8/6/4/1: e\' il prezzo della terza coordinata, non un ritocco',
-       haA && Array.isArray(A.SCALA) ? A.SCALA.map(g => g.minimo).join('/') : manca);
+    /* IL PAVIMENTO SALE E IL PENULTIMO GRADINO ESISTE, e sono tutti e
+       due il PREZZO della terza coordinata, tutti e due trovati dal
+       banco e non dal progetto. Stringere sopra spinge gente sotto:
+       senza il gradino d'atterraggio (forza e punti gia' senza limite,
+       ma l'equilibrio ancora a 0,40) su una base di dodici il p90 dello
+       scarto vero PEGGIORAVA, da 554 a 666. */
+    const atterraggio = haA && Array.isArray(A.SCALA) ? A.SCALA[A.SCALA.length - 2] : null;
+    di(haA && Array.isArray(A.SCALA) && A.SCALA.map(g => g.minimo | 0).join('/') === '7/5/4/2/1' &&
+       !!atterraggio && atterraggio.forza >= 99 && !Number.isFinite(atterraggio.punti) &&
+       Number.isFinite(atterraggio.equilibrio),
+       'C3) il pavimento sale a 7/5/4/2/1, e il penultimo gradino e\' un ATTERRAGGIO, non un muro',
+       haA && Array.isArray(A.SCALA) ? A.SCALA.map(g => g.minimo).join('/') +
+         ' · atterraggio ' + JSON.stringify(atterraggio) : manca);
 
     /* C4: LA TERZA COORDINATA GUARDA IL NASCOSTO, NON I PUNTI. E' la
        prova che condanna `_crit-glicko-visibile`, ed e' costruita nel
@@ -520,16 +536,28 @@ function spearman(a, b) {
        'C4) la terza coordinata legge il NASCOSTO: stessi punti e rating lontani = no, punti lontani e rating uguale = si\'',
        haA ? 'stessi punti ' + e1 + ', stesso rating ' + e2 : manca);
 
-    /* C5: e l'INCERTEZZA allarga. Due lontani di rating ma di cui non si
-       sa niente devono potersi incontrare: e' l'unico modo perche' un
-       giocatore nuovo trovi qualcuno. */
-    const nebbia = [
-      { id: 'x', punti: 1000, nascosto: 1200, incertezza: 350, forza: 70 },
-      { id: 'y', punti: 1000, nascosto: 1900, incertezza: 350, forza: 70 },
+    /* C5: e l'INCERTEZZA ALLARGA, il che e' tutto il motivo per cui la
+       coordinata e' l'ATTESO e non una distanza. La prova non e' «due
+       ignoti si incontrano sempre» — non e' vero e non dev'esserlo — ma
+       che LA STESSA DISTANZA DI RATING cambia verdetto a seconda di
+       quanto il sistema sa: trecento punti fra due CERTI sono una
+       partita decisa e si rifiutano, fra due IGNOTI sono un «non lo so»
+       e si ammettono. Senza questa riga un giocatore tornato dopo un
+       anno non troverebbe piu' nessuno. */
+    const largo = { forza: 40, punti: 700, equilibrio: 0.25, minimo: 1 };
+    const certi = [
+      { id: 'x', punti: 1000, nascosto: 1500, incertezza: 50, forza: 70 },
+      { id: 'y', punti: 1000, nascosto: 1800, incertezza: 50, forza: 70 },
     ];
-    di(haA && prova(() => A.equilibrato(nebbia[0], nebbia[1], gr), null) === true,
-       'C5) l\'INCERTEZZA allarga: due lontani di cui non si sa niente si incontrano (se no il nuovo non gioca mai)',
-       haA ? String(prova(() => A.equilibrato(nebbia[0], nebbia[1], gr), null)) : manca);
+    const ignoti = [
+      { id: 'x', punti: 1000, nascosto: 1500, incertezza: 350, forza: 70 },
+      { id: 'y', punti: 1000, nascosto: 1800, incertezza: 350, forza: 70 },
+    ];
+    const vCerti = haA ? prova(() => A.equilibrato(certi[0], certi[1], largo), null) : null;
+    const vIgnoti = haA ? prova(() => A.equilibrato(ignoti[0], ignoti[1], largo), null) : null;
+    di(vCerti === false && vIgnoti === true,
+       'C5) l\'INCERTEZZA allarga: 300 punti fra due CERTI si rifiutano, fra due IGNOTI si ammettono',
+       haA ? 'certi ' + vCerti + ' · ignoti ' + vIgnoti : manca);
 
     /* --- la misura vera, tre popolazioni, prima e dopo nella stessa corsa --- */
     const RICERCHE = 5000;
@@ -589,7 +617,7 @@ function spearman(a, b) {
     const riassunto = [];
     for (const b of basi) {
       if (!haG || !haA) { di(false, 'C6' + b.n + ') la misura su ' + b.nome, manca); continue; }
-      const { gente } = prova(() => storia(b.n, 60, 20260923), null) || {};
+      const { gente } = prova(() => storia(b.n, 60, SEME), null) || {};
       if (!gente) { di(false, 'C6' + b.n + ') la misura su ' + b.nome, 'la storia non si costruisce'); continue; }
       const p = prova(() => misura(gente, false), null);
       const d = prova(() => misura(gente, true), null);
@@ -623,7 +651,7 @@ function spearman(a, b) {
          g400.p.equi + '% -> ' + g400.d.equi + '%');
       /* E il rating nascosto DEVE stimare meglio dei punti, se no la
          terza coordinata sarebbe rumore vestito da misura. */
-      const gg = g400.b ? storia(400, 60, 20260923).gente : [];
+      const gg = g400.b ? storia(400, 60, SEME).gente : [];
       const ab = gg.map(x => x.abilita);
       const rp = spearman(ab, gg.map(x => x.punti)), rn = spearman(ab, gg.map(x => x.nascosto));
       di(rn > rp,
@@ -707,10 +735,35 @@ function spearman(a, b) {
     const tro = corpoDi('trova_avversario').replace(/\s+/g, ' ');
     const haArgomento = /equilibrio\s+real\s+default\s+null/i.test(tro);
     const haNullPassa = /equilibrio is null or /i.test(tro);
-    const haAtteso = /abs\s*\(\s*1\s*\/\s*\(\s*1\s*\+\s*exp\s*\(/i.test(tro) && /0\.5\s*\)\s*<=\s*equilibrio/i.test(tro);
-    di(haArgomento && haNullPassa && haAtteso,
-       'D5) l\'SQL porta la TERZA coordinata, e `null` vuol dire «nessun limite» come per i punti',
-       'argomento ' + haArgomento + ', null passa ' + haNullPassa + ', formula dell\'atteso ' + haAtteso);
+    const haPredicato = /abs\s*\(\s*atteso_glicko\s*\(/i.test(tro) && /-\s*0\.5\s*\)\s*<=\s*equilibrio/i.test(tro);
+    /* La FORMULA sta in una funzione sua, `atteso_glicko`, e non sepolta
+       in un `where` di sei righe: e' l'unica difesa contro una
+       divergenza fra le due lingue, perche' l'SQL qui non si esegue e le
+       due si possono soltanto LEGGERE una accanto all'altra. Le tre
+       cose che devono esserci sono le tre della formula: g(phi), le due
+       incertezze in QUADRATURA, e la logistica. */
+    const ag = corpoDi('atteso_glicko').replace(/\s+/g, ' ');
+    const haG = /1\s*\/\s*sqrt\s*\(\s*1\s*\+\s*3\s*\*/i.test(ag) && /pi\(\)\^2/i.test(ag);
+    const haQuadratura = /\(\s*rda\s*\/[^^]*\)\^2\s*\+\s*\(\s*rdb\s*\/[^^]*\)\^2/i.test(ag);
+    const haLogistica = /1\s*\/\s*\(\s*1\s*\+\s*exp\s*\(/i.test(ag);
+    const immutabile = /returns double precision language sql immutable/i.test(ag);
+    di(haArgomento && haNullPassa && haPredicato && haG && haQuadratura && haLogistica && immutabile,
+       'D5) l\'SQL porta la TERZA coordinata con la formula in chiaro, e `null` vuol dire «nessun limite»',
+       'argomento ' + haArgomento + ', null passa ' + haNullPassa + ', predicato ' + haPredicato +
+       ' — atteso_glicko: g ' + haG + ', quadratura ' + haQuadratura + ', logistica ' + haLogistica +
+       ', immutable ' + immutabile);
+
+    /* D5b: e i DUE NUMERI MIEI li prende il database da se'. Se li
+       leggesse l'endpoint per rimandarli dentro, farebbero due viaggi in
+       piu' per niente — e un numero che non esce mai da una macchina e'
+       l'unico che non puo' finire sul telefono di qualcun altro. */
+    const miaCte = /coalesce\s*\(\s*\(\s*select p\.nascosto\s+from punti p where p\.allenatore = io\s*\)\s*,\s*1500\s*\)/i.test(tro) &&
+                   /coalesce\s*\(\s*\(\s*select p\.incertezza\s+from punti p where p\.allenatore = io\s*\)\s*,\s*350\s*\)/i.test(tro);
+    const avv = leggi('api/avversario.js').replace(/\/\*[\s\S]*?\*\//g, '');
+    di(miaCte && !/select=[^'"`]*nascosto/i.test(avv) && !/select=[^'"`]*incertezza/i.test(avv),
+       'D5b) i miei due numeri nascosti li legge il DATABASE, non l\'endpoint: non escono nemmeno per tornare dentro',
+       'la CTE `mia` li prende: ' + miaCte + ' · l\'endpoint non li chiede: ' +
+       (!/select=[^'"`]*nascosto/i.test(avv)));
 
     /* D6: posa_nascosto e la sua guardia. Glicko-2 non si puo' scrivere
        come un incremento relativo: la formula ha bisogno del valore di

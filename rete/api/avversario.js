@@ -22,7 +22,7 @@
    fidarsi della classifica.
    ===================================================================== */
 import { db, rispondi, preflight, guaio, chiSei, frenato, configurato } from '../lib/comuni.js';
-import { SCALA, SOSPETTO_SEPARA, bandaSql, minimoSql, ammissibile } from '../lib/abbinamento.js';
+import { SCALA, SOSPETTO_SEPARA, bandaSql, minimoSql, equilibrioSql, ammissibile } from '../lib/abbinamento.js';
 
 /* -------------------------------------------------- l'avversario finto */
 /* Nomi e cognomi comuni, e nessuno di essi è di una persona reale né di
@@ -120,6 +120,13 @@ export default async function handler(req, res) {
        uso vero di UNA ricerca per pressione del dito. */
     const mia = await db.leggi('squadra', 'allenatore=eq.' + io.id + '&select=forza');
     const miaForza = (mia && mia[0] && mia[0].forza) || 50;
+    /* E I MIEI DUE NUMERI NASCOSTI NON SI LEGGONO QUI (voce #140), ed e'
+       una decisione, non una dimenticanza: `trova_avversario` se li
+       prende da se' nella CTE `mia`, dove il dato gia' sta. Tirarli
+       fuori per rimandarli dentro vorrebbe dire farli viaggiare due
+       volte in piu' per niente — e un numero che non esce mai da una
+       macchina e' l'unico che non puo' finire sul telefono di
+       qualcun altro. Quindi questa `select` resta com'era. */
     const mieiP = await db.leggi('punti', 'allenatore=eq.' + io.id + '&select=punti');
     const mieiPunti = (mieiP && mieiP[0] && mieiP[0].punti) || 1000;
     const me = { id: io.id, forza: miaForza, punti: mieiPunti };
@@ -159,7 +166,23 @@ export default async function handler(req, res) {
            risposta, quindi il sospetto nella tupla non ci entra;
          · il PAVIMENTO DEL MAZZO (`minimo`) — non è una proprietà del
            candidato, è una proprietà di quanti ce n'erano, e chi conta
-           è il database. */
+           è il database.
+
+       SEGUITO A EDIZIONI (23 settembre 2026, voce #140). Le cose che il
+       ricontrollo non può guardare adesso sono TRE: si aggiunge
+       l'EQUILIBRIO, la terza coordinata del gradino, per la stessa
+       ragione del sospetto — il rating nascosto non esce dal database, e
+       un rating che viaggia non è nascosto. Il prezzo è detto: se un
+       giorno il predicato divergesse fra `equilibrato` e
+       `atteso_glicko`, di qui non si vedrebbe. Il cambio è buono, perché
+       l'alternativa è mandare il rating di un'altra persona sul telefono
+       di chi la sfida.
+
+       E il ciclo non è cambiato di una riga: un argomento in più alla
+       stessa chiamata. Misurato (5000 ricerche, tre popolazioni): scarto
+       di abilità VERA fra i due abbinati da 136 a 67 su quattrocento,
+       abbinamenti equilibrati dal 39% al 67%, e ZERO ricerche in più
+       senza avversario. */
     let avv = null;
     for (const gradino of SCALA) {
       const r = await db.chiama('trova_avversario', {
@@ -168,6 +191,7 @@ export default async function handler(req, res) {
         banda_punti: bandaSql(gradino),
         separa: SOSPETTO_SEPARA,
         minimo: minimoSql(gradino),
+        equilibrio: equilibrioSql(gradino),
       });
       const c = r && r[0];
       if (!c) continue;
