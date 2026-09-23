@@ -843,6 +843,19 @@ const CANCELLI = [
      stampato, finche' il guasto non ha un cantiere. `lento:true`
      perche' apre tre browser diversi e gioca tre partite intere per
      ciascuno.
+
+     RETTIFICA A EDIZIONI (23 settembre 2026, voce #143, compito 4):
+     `motori` ADESSO CONTA. Il cantiere che la riga qui sopra aspettava
+     c'e' stato — le trascendenti della simulazione sono scritte in casa
+     con sole operazioni che IEEE-754 obbliga a essere correttamente
+     arrotondate — e il cancello e' passato da ZERO semi concordi su otto
+     a VENTI su venti. Un cancello che misura una cosa curata e non conta
+     e' il rovescio dello stesso errore: il giorno che qualcuno rimette
+     una `Math.sin` nella fisica, il lockstep dell'onda E si rompe in
+     silenzio e la batteria resta verde. Resta `lento:true` (tre browser,
+     tre partite per ciascuno) e in batteria gira a `--semi 2 --secondi
+     60`: la SOGLIA piena — venti semi da novanta secondi — sta nel
+     verbale del #143, perche' in batteria costerebbe un quarto d'ora.
      ===================================================================== */
   { nome: 'ritardo',         cmd: ['strumenti/_q-ritardo.js', '--solo-banco', '--nastri', '8',
                                    '--tetto', '2700', '--k', '0,18', '--pagine', '4'],           conta: true,  lento: true  },
@@ -860,7 +873,36 @@ const CANCELLI = [
      macchina (la stessa ragione di `giocata` e `prestazione`). */
   { nome: 'verbi-ritardo',   cmd: ['strumenti/_q-verbi-ritardo.js', '--ripetute', '3',
                                    '--k', '0,12'],                     conta: true,  lento: true, solo: true },
-  { nome: 'motori',          cmd: ['strumenti/_q-motori.js', '--semi', '2', '--secondi', '60'],   conta: false, lento: true  },
+  { nome: 'motori',          cmd: ['strumenti/_q-motori.js', '--semi', '2', '--secondi', '60'],   conta: true,  lento: true, solo: true },
+  /* =====================================================================
+     casa / perimetro / casa-falsi: LA MATEMATICA IN CASA (voce #143).
+
+     `casa` misura le sette funzioni scritte a mano sui tre motori e sul
+     dominio VERO del gioco — gli argomenti che la partita passa davvero,
+     non un intervallo comodo — e tiene due guardie che non stanno altrove:
+     che `pow` e `sqrt`, le due lasciate native APPOSTA, siano ancora
+     d'accordo fra i motori (se smettessero, vanno scritte in casa anche
+     loro), e che lo scarto dalla nativa resti sotto i 4 ulp, che e'
+     l'unica prova capace di vedere una funzione uguale ovunque ma STORTA.
+     Apre tre browser: `lento` e `solo`.
+
+     `perimetro` risponde alla domanda che nessun altro fa: QUALI chiamate
+     decidono la partita. Sporca una funzione per volta di un ulp e guarda
+     se l'impronta si muove. E resta utile per sempre, anche a cantiere
+     chiuso: il giorno in cui qualcuno mettesse una `Math.asin` dentro la
+     fisica, la riga finale — «ogni trascendente DENTRO il perimetro passa
+     da casa» — diventa rossa da sola, perche' misura il COMPORTAMENTO e
+     non un elenco scritto a mano.
+
+     `casa-falsi` e' il banco dei quattro mutanti, e il suo `--semi 8` NON
+     E' UN PARAMETRO DEL BANCO, E' PARTE DELLA SOGLIA: il falso
+     `solo-hypot` — la cura parziale che il #141 aveva gia' in mano — passa
+     su POCHI semi e cade solo quando ce ne sono abbastanza. Rilancia
+     `_q-motori` quattro volte su tre motori, quindi e' il piu' caro della
+     batteria: `lento` e `solo`, come `motore-falsi`. */
+  { nome: 'casa',            cmd: ['strumenti/_q-casa.js', '--secondi', '60'],                    conta: true,  lento: true, solo: true },
+  { nome: 'perimetro',       cmd: ['strumenti/_q-perimetro.js', '--semi', '2', '--secondi', '60'], conta: true, lento: true, solo: true },
+  { nome: 'casa-falsi',      cmd: ['strumenti/_q-casa-falsi.js', '--semi', '8'],                   conta: true, lento: true, solo: true },
   /* =====================================================================
      motore-nastro / motore-falsi: UN ONESTO CON UN TELEFONO DI UN'ALTRA
      MARCA (voce #142).

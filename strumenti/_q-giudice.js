@@ -212,7 +212,35 @@ const fotoStato = P => P.pag.evaluate(() => ({
     const senza = N.senzaRose(nastro);
     r.rose      = senza ? await giudizio(Gt, senza, atteso, opz) : { saltata: true };
     r.motore    = await giudizio(Gt, N.altroMotore(nastro), atteso, opz);
-    r.seme      = await giudizio(Gt, nastro, atteso, { seme: String(opz.seme) + '7', taglia: opz.taglia });
+    /* =====================================================================
+       H) IL GIUDICE RIGIOCA — E UN SEME SOLO NON BASTA A CHIEDERGLIELO
+       (ritaratura del 23 settembre 2026, voce #143, compito 4).
+
+       La domanda e' «il giudice RIGIOCA invece di leggere il punteggio
+       scritto nel nastro»; la prova era: cambia il seme, e il verdetto
+       deve diventare NON TORNA. Funzionava finche' la partita col seme
+       storto arrivava in fondo. MISURATO tre volte su tre col gioco del
+       #143: col seme `...7` la rigiocata (0-1 contro lo 0-2 dichiarato)
+       incontra un calcio piazzato di cui il nastro non ha i comandi, e
+       il giudice SI ASTIENE — INCOMPLETO, che e' la dottrina del #133 e
+       del #139 che fa il suo mestiere, non un guasto.
+
+       Un seme solo rende la prova un sorteggio: basta che quel seme
+       caschi su una partita che diverge verso il dischetto e la prova
+       e' rossa senza che nessuno abbia sbagliato niente. Qui se ne
+       provano QUATTRO e basta che UNO dia NON TORNA — perche' un solo
+       NON TORNA dimostra gia' che il giudice ha rigiocato, che e' tutto
+       quel che la prova afferma. Gli altri si stampano con la loro
+       causa, cosi' un'astensione sistematica si vedrebbe lo stesso: se
+       tutti e quattro si astenessero, la prova e' rossa e dice perche'.
+       ===================================================================== */
+    r.semi = [];
+    for (const suffisso of ['7', '13', '91', '457']) {
+      const g = await giudizio(Gt, nastro, atteso, { seme: String(opz.seme) + suffisso, taglia: opz.taglia });
+      r.semi.push({ suffisso, g });
+      if (g && (g.verdetto || g) === 'NON TORNA') break;
+    }
+    r.seme      = (r.semi.find(x => (x.g && (x.g.verdetto || x.g)) === 'NON TORNA') || r.semi[0]).g;
     r.stretto   = await giudizio(Gt, nastro, atteso, { seme: opz.seme, taglia: opz.taglia, tetto: 300 });
     r.bis1      = await giudizio(Gt, nastro, atteso, opz);
     r.bis2      = await giudizio(Gt, nastro, atteso, opz);
@@ -346,7 +374,9 @@ const fotoStato = P => P.pag.evaluate(() => ({
   /* ---- H) il giudice RIGIOCA ----------------------------------------- */
   di(v(r.seme) === 'NON TORNA',
      'H) con un ALTRO seme lo stesso nastro NON TORNA: il giudice rigioca, non legge',
-     v(r.seme) + ', rigiocata ' + g(r.seme) + ' contro ' + s0.fine.score.join('-'));
+     v(r.seme) + ', rigiocata ' + g(r.seme) + ' contro ' + s0.fine.score.join('-') +
+     '  ·  semi provati: ' + (r.semi || []).map(x => '+' + x.suffisso + ' ' + v(x.g) +
+       (x.g && x.g.causa ? '/' + x.g.causa : '')).join(', '));
 
   /* ---- I) NON FINISCE ------------------------------------------------ */
   di(v(r.stretto) === 'NON FINISCE' && (r.stretto.passi | 0) === 300,

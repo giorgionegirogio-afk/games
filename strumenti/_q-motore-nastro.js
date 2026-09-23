@@ -41,6 +41,15 @@
          crede che il motore coincida, rigioca, e dice quel che avrebbe
          detto senza la cura. Se A1 non trova NON TORNA su NESSUN
          nastro, A2 non sta misurando niente e si esce 3.
+         RETTIFICA A EDIZIONI (23 settembre 2026, voce #143): sul gioco
+         CURATO l'esercizio non riesce piu', e non e' un guasto — il
+         nastro mascherato rigioca e TORNA (misurato 6 su 6), perche' le
+         trascendenti della simulazione non dipendono piu' dal motore.
+         A1 misura adesso proprio quello, che e' una domanda piu' forte
+         di «nessuno lo accusa»; la condanna del #142 si riproduce col
+         gioco di prima (`--gioco fuori/143-prima.html`). Le righe
+         precedenti restano: dicevano il vero quando furono scritte, e
+         valgono ancora per ogni gioco senza la libreria del #143.
      A2) LA CONDANNA — gli stessi nastri, intatti, giudicati su Chromium:
          NESSUN NON TORNA. E' la prova che nasce ROSSA (oggi 7 su 8).
      A3) E SU FIREFOX, che non e' V8: la divergenza non e' «Chrome contro
@@ -173,6 +182,9 @@ const bancoDi = pag => pag.evaluate(() =>
   const G = {};             /* le pagine-giudice, una per motore */
   let nulla = '';
   let nienteDaAccusare = false;   /* vedi A1 e PROVA NULLA */
+  /* il testo del gioco che si sta provando: serve alla rettifica di A1
+     (voce #143), che deve sapere se le trascendenti passano da casa */
+  const testoGioco = fs.readFileSync(prova || path.join(RADICE, 'CALCETTO-il-gioco.html'), 'utf8');
   try {
     console.log('=== UN ONESTO CON UN TELEFONO DI UN\'ALTRA MARCA (voce #142) ===');
     console.log('    gioco ' + (provaRel || 'CALCETTO-il-gioco.html') + ', ' + N_SFIDE +
@@ -288,11 +300,53 @@ const bancoDi = pag => pag.evaluate(() =>
                                            String(x.causa || '').indexOf('motore-js') === 0);
     di(astenutoInA1 === 0, 'A1b) e a impronta COINCIDENTE non si astiene: sarebbe copertura buttata via',
        astenutoInA1 + '/' + n + ' astensioni per il motore');
-    di(eser > 0 || astenutoInA1 > 0, 'A1) su chromium, il nastro che dichiara l\'impronta DI CHROMIUM da\' NON TORNA',
-       eser + '/' + n + ' accuse — ' + stampa(conta(R.A1)));
+    /* =====================================================================
+       RETTIFICA A EDIZIONI (23 settembre 2026, voce #143, compito 4):
+       L'ESERCIZIO NON RIESCE PIU', E NON E' UN GUASTO — E' LA CURA.
+
+       A1 chiedeva: «col motore mascherato, il nastro di WebKit rigiocato
+       su Chromium da' NON TORNA?». Era la condanna del #142, e nasceva
+       verde perche' le trascendenti native davano l'ultimo bit diverso.
+       Il #143 le ha scritte in casa: adesso quel nastro, rigiocato
+       DAVVERO su Chromium, TORNA — misurato qui, 6 su 6. La domanda
+       vecchia non ha piu' risposta possibile su un gioco curato, e un
+       banco che continuasse a pretenderla sarebbe rosso per sempre su un
+       difetto che non c'e' piu'.
+
+       COSA MISURA ADESSO, ed e' una domanda piu' forte, non piu' debole:
+       che il nastro mascherato TORNI. Non «nessuno lo accusa» — quello
+       lo direbbe anche un giudice che si astiene sempre — ma «rigiocato
+       fino in fondo su un altro motore, il conto torna». E' la soglia
+       del #143 vista dal posto del giudice, e diventa rossa il giorno in
+       cui una trascendente tornasse in mano al telefono.
+
+       E LA CONDANNA DEL #142 NON SI PERDE: si riproduce quando serve, sul
+       gioco di prima —
+         node strumenti/_q-motore-nastro.js --gioco fuori/143-prima.html
+       che e' il gioco di `main` a `a2607d0`. La dottrina del #142 resta
+       necessaria: `pow` e `sqrt` restano native (misurate concordi, non
+       obbligate da nessuna norma tranne sqrt), il DISEGNO resta nativo, e
+       i nastri scritti prima del #143 esistono ancora.
+       ===================================================================== */
+    const curato = testoGioco.indexOf('LA MATEMATICA IN CASA (voce #143)') >= 0;
+    const tornaInA1 = quanti(R.A1, x => x.verdetto === 'TORNA');
+    if (curato) {
+      di(tornaInA1 === n && astenutoInA1 === 0,
+         'A1) il gioco porta la matematica in casa (#143): il nastro mascherato RIGIOCA E TORNA su un altro motore',
+         tornaInA1 + '/' + n + ' TORNA, ' + eser + ' accuse — ' + stampa(conta(R.A1)));
+      console.log('    (la condanna del #142 non si riproduce piu\' qui, ed e\' la cura: per rivederla,');
+      console.log('     `--gioco fuori/143-prima.html`, cioe\' il gioco di prima del #143)');
+    } else {
+      di(eser > 0 || astenutoInA1 > 0, 'A1) su chromium, il nastro che dichiara l\'impronta DI CHROMIUM da\' NON TORNA',
+         eser + '/' + n + ' accuse — ' + stampa(conta(R.A1)));
+    }
     console.log('');
-    /* la prova nulla si decide in fondo: vedi PROVA NULLA piu' sotto */
-    nienteDaAccusare = eser === 0 && astenutoInA1 === 0;
+    /* la prova nulla si decide in fondo: vedi PROVA NULLA piu' sotto.
+       Sul gioco curato «zero accuse» NON e' una prova nulla: e' il
+       risultato atteso e misurato, e la copertura che A1 dava prima la
+       da' adesso la riga qui sopra (il nastro TORNA, non «non lo accusa
+       nessuno»). */
+    nienteDaAccusare = !curato && eser === 0 && astenutoInA1 === 0;
 
     /* ---- A2 / A3: la condanna ---- */
     console.log('A2/A3) LA CONDANNA — gli stessi nastri onesti, intatti, su un motore che non e\' il loro');

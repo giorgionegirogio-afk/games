@@ -74,6 +74,48 @@ const FALSI = [
     cade: ['B', 'A1b'], tiene: ['A2', 'A3', 'C0', 'C', 'D', 'E', 'F', 'F2'] },
 ];
 
+/* =====================================================================
+   RITARATURA A EDIZIONI (23 settembre 2026, voce #143, compito 4):
+   A2 NON PUO' PIU' MORDERE «muto» E «piatto», E IL MOTIVO E' UNA CURA.
+
+   A2 e' «su chromium NESSUN nastro onesto viene accusato». Mordeva quei
+   due falsi perche', con un giudice che non legge l'impronta (muto) o
+   che ne legge una piatta (piatto), il nastro veniva RIGIOCATO su un
+   motore diverso — e allora divergeva, e l'onesto veniva accusato.
+
+   Il #143 ha scritto le trascendenti in casa: adesso quel nastro,
+   rigiocato davvero su Chromium, TORNA (misurato: 6 su 6,
+   `_q-motore-nastro.js` prova A1). Quindi col gioco curato nemmeno un
+   giudice rotto accusa un onesto, e A2 resta VERDE. Non e' una presa
+   che si allenta: e' il DANNO che non c'e' piu', e va detto come una
+   misura invece che nascosto spostando una soglia.
+
+   I DUE FALSI RESTANO BOCCIATI LO STESSO, e da prove che non dipendono
+   dalla divergenza: `muto` cade su E/F/F2, `piatto` su C/F/F2. E la
+   dottrina del #142 non decade — un'impronta rotta e' ancora
+   un'impronta rotta: restano fuori dal #143 il DISEGNO, `pow` e `sqrt`
+   (native per misura, non per norma) e tutti i nastri scritti prima,
+   che portano MOTORE_V 2.
+
+   Sul gioco di prima (`--gioco fuori/143-prima.html`) la bite list
+   vecchia vale ancora parola per parola, ed e' li' che si va a
+   rivederla.
+   ===================================================================== */
+const CURATO = (() => {
+  try {
+    const g = arg('gioco', process.env.GIOCO_PROVA || 'CALCETTO-il-gioco.html');
+    return require('fs').readFileSync(path.resolve(RADICE, g), 'utf8')
+             .indexOf('LA MATEMATICA IN CASA (voce #143)') >= 0;
+  } catch (e) { return false; }
+})();
+if (CURATO) {
+  for (const f of FALSI) {
+    if (f.nome !== 'muto' && f.nome !== 'piatto') continue;
+    f.cade = f.cade.filter(x => x !== 'A2');
+    if (f.tiene.indexOf('A2') < 0) f.tiene.push('A2');
+  }
+}
+
 const esiti = [];
 const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' : 'NO  ') + nome + (det ? '  [' + det + ']' : '')); };
 
@@ -132,6 +174,13 @@ function corri(gioco) {
      perse.length ? 'non lette: ' + perse.join(',') : (V.verdi.length + V.rosse.length) + ' etichette lette');
   console.log('');
 
+  if (CURATO) {
+    console.log('IL GIOCO PORTA LA MATEMATICA IN CASA (#143): A2 e\' stata tolta dalla bite list di');
+    console.log('«muto» e «piatto» e messa fra le prove che devono TENERE. Non e\' una presa che si');
+    console.log('allenta: col nastro che rigioca uguale su un altro motore, nemmeno un giudice rotto');
+    console.log('accusa un onesto — il danno non c\'e\' piu\'. I due falsi restano bocciati da E/F/F2 e');
+    console.log('da C/F/F2. Per la bite list vecchia: --gioco fuori/143-prima.html.\n');
+  }
   for (const f of FALSI) {
     if (SOLO.length && SOLO.indexOf(f.nome) < 0) continue;
     console.log('IL FALSO «' + f.nome + '» — ' + f.che);

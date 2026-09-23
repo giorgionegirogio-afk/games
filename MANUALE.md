@@ -517,6 +517,292 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **La matematica in casa — #143 CANTIERE CHIUSO** (voce #143, 23 settembre
+  2026, sei compiti dal merge-base `a2607d0` — spec
+  `docs/superpowers/specs/2026-09-23-matematica-in-casa-design.md`, piano
+  `docs/superpowers/plans/2026-09-23-matematica-in-casa.md`). È **la cura vera
+  del blocco che il #141 aveva misurato e il #142 aveva solo aggirato**: tre
+  motori JavaScript non facevano la stessa partita, e il #142 aveva curato
+  l'**accusa ingiusta** che ne derivava dichiarandosi un ripiego. Qui il
+  difetto si toglie alla radice, e il lockstep dell'onda E smette di essere
+  impossibile.
+
+  **LA CAUSA, IN UNA RIGA DI NORMA.** ECMA-262 lascia le trascendenti
+  «implementation-approximated»: due motori possono dare l'ultimo bit diverso e
+  restare tutti e due conformi. Misurato su 200 valori irrazionali, fra
+  Chromium (V8), WebKit (JSC) e Firefox (SpiderMonkey): **`hypot` 103 su 200,
+  `atan2` 24, `exp` 21, `tan` 9, `sin` 7, `log` 6, `cos` 3**. `sqrt` e `pow`
+  **0 su 200** — la prima perché IEEE-754 la obbliga, la seconda per fatto e
+  non per norma. In un motore caotico a sessanta passi al secondo un ultimo bit
+  diventa un gol: **otto semi su otto** davano partite diverse.
+
+  **IL PERIMETRO, MISURATO E NON DEDOTTO** (`strumenti/_q-perimetro.js`,
+  compito 1). Uno scanner che salta commenti, stringhe, template ed espressioni
+  regolari — perché metà del file è fatta di verbali che *parlano* di
+  `Math.hypot` — conta **452 siti eseguibili** (sin 161, cos 105, sqrt 45, exp
+  45, hypot 34, pow 30, atan2 27, tan 3, log 2). Accesi in una partita di
+  novanta secondi a taglia 5: **53 dentro la simulazione, 100 solo nel disegno,
+  74 solo al caricamento, 225 mai**. **243 chiamate per passo di simulazione,
+  1187 per fotogramma disegnato.** E la **sostituzione sporca** (si guasta una
+  funzione per volta e si guarda se l'impronta della partita cambia): **dentro**
+  sin, cos, exp, atan2, hypot, pow, sqrt; **fuori** log (chiamata 259 volte,
+  l'impronta non si muove nemmeno a 1e-9); **non misurata** tan (zero chiamate:
+  che non è «innocente», è «non guardata»).
+
+  **E LA PRIMA PROVA SPORCA ERA STATA RIFATTA**: aggiungeva un ulp a *ogni*
+  valore e dava zero semi cambiati per tutte e sei le funzioni — avrebbe assolto
+  l'intero perimetro in un colpo. Uno scarto sistematico verso l'alto si
+  semplifica nelle differenze e nei rapporti che il gioco fa subito dopo. Due
+  motori non sbagliano così: sbagliano metà dei valori, metà in su e metà in
+  giù. Rifatta come sbagliano loro, il referto cambia verdetto.
+
+  **LA SOSTITUZIONE È TOTALE, ED È UNA DECISIONE MISURATA**: **370 chiamate**
+  dirottate (160 `Msin`, 104 `Mcos`, 44 `Mexp`, 33 `Mhypot`, 26 `Matan2`, 2
+  `Mtan`, 1 `Mlog`), non le 53 viste. Sono i **225 mai accesi** il motivo:
+  dentro ci stanno il rigore, la rimessa, la taglia 11, i verbi che in CPU
+  contro CPU non escono mai. Innestare solo i 53 misurati sarebbe l'elenco
+  troncato che questa casa ha già pagato dodici volte — verde al cancello, e la
+  prima partita con un rigore che ricomincia a divergere fra due telefoni.
+
+  **LE FUNZIONI** (`strumenti/_143-matematica.js`, copia sola: lo stesso testo
+  che il gioco esegue e che il banco misura). Riduzione d'argomento di fdlibm —
+  π/2 spezzato in tre pezzi da 33 bit perché `n * pezzo` resti **esatto** — e
+  polinomi minimax, con sole operazioni che IEEE-754 obbliga a essere
+  correttamente arrotondate (`+ - * /`, `sqrt`) più le intere, esatte per
+  specifica. **Nessuna chiamata nativa dentro**: una sola rimetterebbe l'ultimo
+  bit nelle mani del telefono. Il **tetto è dichiarato invece che scoperto
+  dopo**: sopra 2^31 la via media di fdlibm perde i decimali senza dirlo, e lì
+  si dà NaN — un seno sbagliato cammina nella fisica per novanta secondi, un NaN
+  lo vede il primo passo. Il gioco, misurato, non supera 5,21e5.
+
+  **LA SOGLIA, TENUTA** (`strumenti/_q-motori.js`, `_q-casa.js`). Sul dominio
+  **vero** — gli argomenti che la partita passa davvero, raccolti chiamata per
+  chiamata — le sette di casa danno **zero differenze su 12.242 valori** fra i
+  tre motori, mentre sugli **stessi** argomenti le native divergono (`hypot`
+  1120/3000 su WebKit e 1099/3000 su Firefox, `atan2` 507/3000 su Firefox,
+  `log` 4/37). Lo scarto della casa dalla nativa sta entro **1 ulp** per sin,
+  cos, exp, log e atan2 e **2 ulp** per hypot, contro un tetto di 4. E il
+  cancello che decide, `_q-motori`, passa da **0 semi concordi su 8** a
+  **20 su 20**: stessa impronta, stesso punteggio, stesso conto dei sorteggi.
+
+  **`pow` E `sqrt` RESTANO NATIVE PERCHÉ MISURATO, non per fiducia**: 0
+  differenze su 3000 argomenti veri. `pow` sta **dentro** il perimetro (120.016
+  chiamate in 90 s), quindi non è un dettaglio: è un fatto delle implementazioni
+  di oggi, e c'è una riga in `_q-casa.js` e una in `_q-motori.js` che diventano
+  **rosse** il giorno in cui smettesse di esserlo, e dicono anche qual è la cura
+  (scriverle in casa come le altre).
+
+  **UN POSTO RESTA NATIVO PER FORZA**: `improntaMotore()` del #142, che dichiara
+  *quale* motore ha calcolato un nastro e lo fa chiamando le sette native.
+  Passandola da casa direbbe sempre «stesso motore» — attesterebbe invece di
+  misurare, cioè il falso `_crit-motore-piatto` rinato dentro la cura. Il suo
+  blocco è protetto per nome, e la toppa rifà la scansione dopo l'innesto e **si
+  rifiuta di scrivere** se resta anche una sola chiamata nativa fuori di lì.
+
+  **`MOTORE_V` 2 → 3, DECISO COL NUMERO** (`strumenti/_t-143-motorev.js`,
+  compito 4). Sei nastri registrati sul gioco di `main` (`a2607d0`) e rigiocati
+  sul curato, taglia 5, 2400 passi: **sei su sei finiscono in una partita
+  diversa**, e tutti e sei divergono **entro il quarto campione** (uno al terzo,
+  cinque al quarto), cioè entro il primo secondo e mezzo. Gli stessi nastri
+  rigiocati sul gioco che li ha scritti tornano **6 su 6**, quindi il confronto
+  non misura rumore. Con `MOTORE_V` a 3 la guardia che già esisteva in
+  `vagliaNastro` scatta da sola: verdetto **ALTRO MOTORE**, causa
+  `motore-diverso`, nessun accusato, nessun punto mosso — si perde il film, non
+  la persona. Il blocco del marchio di tipo 5 **non si toglie lo stesso**, ed è
+  una scelta dichiarata nel gioco: è l'unica guardia che separa «il duello non
+  c'era nel nastro» da «il motore è cambiato», e costa un confronto di interi.
+
+  **LA PRESTAZIONE, DUE VOLTE, E LA PRIMA NON VALE** (`strumenti/prestazione.js
+  --contro fuori/143-prima.html`, compito 4). Alla prima corsa lo strumento **si
+  è dichiarato cieco**: la sua prova (a) — lo stesso identico file contro sé
+  stesso — ha dato **−28,6%** sul fotogramma medio con un ballo fra repliche del
+  **1164%**, e la sua quinta avvertenza dice cosa fare in quel caso (non si
+  allarga la soglia, e **il numero non si trascrive da nessuna parte**). Il
+  referto che quella corsa aveva prodotto — un lusinghiero −29,4% sul fotogramma
+  medio — **è stato buttato**, perché era indistinguibile dal suo stesso errore.
+  Rifatta più tardi, a banco meno occupato (carico 44% contro 69%), **la prova
+  (a) è passata: risoluzione 4,6%**, e il confronto appaiato col gioco di `main`
+  dà **fotogramma medio 146,7 → 136,9 ms (−6,7%), tipico 146,4 → 144,7 ms
+  (−1,2%), p95 191,7 → 191,7 ms (−0,0%)**, tutti e tre entro il +25% ammesso.
+  **Letto onestamente**: il tipico e il p95 stanno **sotto la risoluzione**,
+  quindi lì non c'è nessuna differenza credibile; il fotogramma medio è appena
+  sopra, e va nella stessa direzione della misura per funzione. **Il gioco non
+  scatta, e non rallenta.**
+
+  **IL COSTO, MISURATO DOVE IL LAVORO È COSTANTE** (`strumenti/_t-143-costo.js`,
+  compito 4). Un cancello che si dichiara cieco metà delle volte non basta a
+  rispondere alla domanda seria di questo cantiere — 370 chiamate del gioco che
+  passano da funzioni scritte in JavaScript — perché il rumore di un banco
+  occupato è dello stesso ordine dell'effetto cercato. Il costo si è misurato
+  anche dove il lavoro
+  dentro il cronometro è costante: **duecentomila chiamate identiche, minimo su
+  sette ripetizioni**. Per chiamata la casa costa `sin` ×1,86, `log` ×1,71,
+  `cos` ×1,33, `exp` ×1,31, `tan` ×1,10 — ma `atan2` ×0,71 e **`hypot` ×0,50**,
+  e `hypot` da sola è **191,7 chiamate per passo sulle 276** perché `len`, la
+  distanza, passa di lì. Pesando ogni funzione per le chiamate che fa davvero:
+  **−0,0026 ms a passo di simulazione**, cioè **−0,015% del budget** di un
+  fotogramma a sessanta al secondo e −3,2% del passo (che costa 0,0799 ms).
+  **La cura non costa: rende.** La misura diretta a partita intera (quattro semi,
+  quattro ripetizioni della stessa partita, minimo) concorda nel segno: mediana
+  **−32,8%**, gamma da −45,1% a −9,3%, risoluzione 9,0% — ma è la meno solida
+  delle tre, perché fra i due file la partita non è la stessa. **Tre strumenti
+  diversi, tre numeri diversi, un solo segno**: −0,015% del budget per funzione,
+  −6,7% sul fotogramma medio appaiato, −32,8% sul passo a partita intera. In
+  batteria `prestazione --contro HEAD` è **verde**.
+
+  **DUE STESURE DELLO STRUMENTO DEL COSTO BUTTATE, E VANNO RACCONTATE.** La
+  prima tirava avanti la stessa partita per settemila passi su una partita che
+  ne dura cinquemilaquattrocento: dopo il fischio finale `simulate` torna
+  subito, e il minimo teneva **i lotti vuoti** (0,0133 ms contro una mediana di
+  0,1367 — l'impronta di un numero che misura il niente). La seconda riavviava
+  la partita e apriva una **terza scheda** sullo stesso file per dichiarare la
+  risoluzione, e quella terza scheda ha detto la cosa vera: fra un file e sé
+  stesso la differenza era **0,0000 esatto** mentre fra i due file era il 160%.
+  Due schede sullo stesso gioco col solito seme giocano *la stessa partita*: il
+  minimo non misurava il rumore del banco, misurava **la fase più leggera della
+  partita**. La cura non è una statistica più furba, è rendere costante il
+  lavoro dentro il cronometro.
+
+  **I QUATTRO FALSI, E LA LISTA DEI MORSI MISURATA**
+  (`strumenti/_q-casa-falsi.js`, 9 controlli su 9). Prima di tutto
+  l'**andata e ritorno**: `innesta(sguaina(gioco))` è il gioco **parola per
+  parola**, 370 chiamate tolte e rimesse — così i mutanti nascono dal gioco di
+  prima *ricostruito da quello di adesso* e non da un commit, e si prova per
+  giunta che la cura è esattamente una libreria più un cambio di nome.
+
+  | falso | la bugia | chi lo morde |
+  |---|---|---|
+  | `solo-hypot` | cura solo `hypot`, come il #141 aveva già in mano | `_q-motori` prova B: **4 semi concordi su 8**, e il primo che la smaschera è il **terzo** — un cancello a due semi l'avrebbe promossa |
+  | `storta` | `M_S1` con tredici cifre invece di ventuno: uguale ovunque, e sbagliata | `_q-casa` prova U: **28 ulp** contro un tetto di 4, mentre la prova C (la SOGLIA) resta **verde** — ed è quel che la rende pericolosa |
+  | `una-nativa` | 369 chiamate su 370, e quella che manca è `len` | la **guardia strutturale** della toppa (1 chiamata nativa fuori dal blocco protetto) **e** `_q-motori` prova B: **0 semi concordi su 8** |
+  | `impronta` | anche `improntaMotore()` passa da casa | il confronto delle impronte del #142: col mutante **62859382 su tutti e tre**, col gioco vero chromium 3274447767 · webkit 4281245088 · firefox 1495105755 |
+
+  Il numero di semi **non è un parametro del banco, è parte della soglia**: è
+  la sola cosa che separa `solo-hypot` dalla promozione.
+
+  **SETTE PROVE CHE NON POTEVANO PIÙ ESSERE VERDI, E NON ERANO GUASTI**
+  (compito 4). `_q-motori` chiudeva con «21 controlli, 14 passati, 7 falliti»
+  **seguito da** «SOGLIA-MOTORE TENUTA» e uscita 0. Le sette rosse erano le
+  sette native che divergono — rosse **per costruzione**, perché la norma
+  *permette* quella divergenza, e nessun lavoro dentro questa casa poteva
+  renderle verdi. Uno strumento che conta fra i propri fallimenti sette righe
+  che non possono passare insegna a leggere i suoi rossi senza crederci. Ed
+  erano anche cieche: dopo il compito 3 il gioco non chiama più nessuna di
+  quelle sette. Adesso **T è una misura dichiarata** più i due soli verdetti
+  che può dare onestamente (almeno una nativa diverga ancora — altrimenti la
+  prova H sarebbe verde per il motivo sbagliato, ed è la stessa guardia di
+  `_q-casa` prova N; `sqrt` e `pow` concordi, che sono le due lasciate native
+  apposta), e il cancello che mancava è la **prova H nuova**: le sette *di
+  casa*, lette da `window.Msin` **sulla pagina del gioco vero** e non da una
+  copia portata dal banco, perché una copia direbbe che la libreria di
+  `strumenti/` è uguale ovunque, che non è la domanda. Conto finale:
+  **21 controlli, 21 passati**. E l'uscita è stata riparata: prima si usciva 0
+  appena la prova B era verde, e da oggi un rosso fuori da B è comunque un
+  rosso. La **prova C** (la cura del #141, `hypot` riscritta come
+  `sqrt(x*x+y*y)`) adesso **si salta dichiarandolo** quando la libreria c'è:
+  rimetterebbe a posto una `Math.hypot` che il gioco non chiama più, e direbbe
+  «la cura non basta» per il motivo sbagliato.
+
+  **LA TORNATA DI RITARATURE, OGNUNA CON LA SUA RAGIONE** (compito 5). Cinque
+  ancore si sono mosse, e **nessuna era una regressione**: ognuna misurata anche
+  sul gioco di `main` con `--gioco fuori/143-prima.html`.
+
+  1. **`_q-mira` PIENO-IDENTICO.** Chiedeva che il gioco e `base113` combaciassero
+     **bit per bit**, e la riga diceva da sé «se combaciano, `MOTORE_V` non si
+     incrementa». `MOTORE_V` è salito. Misurato prima di toccare niente: la
+     traccia diverge al primo fotogramma di **5e-16 in relativo, cioè due ulp**,
+     con **gli stessi indici** (chi mira chi) e tutti gli altri campi identici.
+     La prova cambia **forma e non severità**: prima si chiede ancora
+     l'identità esatta (e su `main` la si ottiene ancora, `MOTORE_V` 1 contro 2),
+     e **solo quando l'identità è già rotta** si guarda se un cambio di motore
+     *dichiarato* la spieghi, con gli indici uguali e lo scarto sotto **1e-9** —
+     un tetto che sta sette ordini di grandezza sopra un ulp e quattro sotto un
+     cambio di decisione. Misurato oggi: **2,4e-14**.
+  2. **`_nastro-duello-congelato.js` rigenerato.** La fixture portava `MOTORE_V`
+     2 e quattro banchi in una volta la respingevano con **ALTRO
+     MOTORE/motore-diverso**: `giudice` (due prove), `finestra` (una),
+     `staffetta` (**sette**). Il rifiuto era **giusto** — è la guardia che fa il
+     suo mestiere — e il generatore prevedeva già questo giorno («si può
+     rilanciare se una cura futura del motore invalida questa fixture»).
+     Rigenerata: seme 20260803, 2-3, 19.508 byte stretti. `staffetta` e
+     `finestra` tornano verdi da sole. **Il generatore è stato corretto prima**,
+     perché il suo modello aveva perso due paragrafi di sapere pagato (il numero
+     di sfide *non* è fisso da sessione a sessione; forzare `rigori()` a metà
+     partita rompe la ripetibilità del nastro): una rigenerazione che cancella
+     un verbale è una regressione di documentazione.
+  3. **`_q-giudice` prova H.** «Cambia il seme e il verdetto deve diventare NON
+     TORNA» — cioè «il giudice rigioca invece di leggere». Col seme `…7` la
+     rigiocata incontra un calcio piazzato di cui il nastro non ha i comandi e
+     il giudice **si astiene** (INCOMPLETO/duello-senza-righe): la dottrina del
+     #133 e del #139 che fa il suo mestiere, non un guasto. Un seme solo rende
+     la prova un sorteggio: adesso se ne provano **quattro** e ne basta uno, e
+     tutti si stampano con la loro causa (misurato: `+7`
+     INCOMPLETO/duello-senza-righe, `+13` **NON TORNA**), così un'astensione
+     *sistematica* resterebbe rossa.
+  4. **`_q-sfida` sezione 10 — una prova ferma al 21 settembre che nessuno aveva
+     più svegliato.** Pretendeva che una partita passata dal dischetto **non si
+     facesse vedere affatto**: era la cura del #132, su un gioco in cui i comandi
+     del duello non entravano nel nastro. Il **#131** ce li ha messi, e da allora
+     quel marchio non si scrive più. Era rimasta verde per due giorni perché
+     **non si esercitava**: quando nessuna sfida della sessione incontra un
+     calcio piazzato, il ramo `else` dà un verde gratis — e sul gioco di `main`
+     quella sessione non ne aveva nessuna. Sul gioco del #143, che a parità di
+     copione gioca partite diverse, ce n'era una, e la prova è diventata rossa
+     **tre volte su tre**. Riscritta: o il replay **parte e finisce col punteggio
+     dichiarato**, o **non parte e il gioco dice la causa**. Misurato al primo
+     colpo: **tabellone 3-2, replay 3-2** — la promessa del #131 verificata da
+     capo a fondo per la prima volta. E il ramo del verde gratis adesso si
+     chiama **«PROVA NON ESERCITATA»**.
+  5. **`_q-motore-nastro` A1 e la bite list di `_q-motore-falsi`.** A1 era
+     l'esercizio del #142: col motore mascherato, il nastro di WebKit rigiocato
+     su Chromium **deve** dare NON TORNA. Non lo dà più, e **non è un guasto, è
+     la cura**: quel nastro adesso rigioca e **TORNA, 6 su 6**. A1 misura oggi
+     proprio quello — che è una domanda **più forte** di «nessuno lo accusa»,
+     perché quella la supererebbe anche un giudice che si astiene sempre — e la
+     condanna del #142 si riproduce quando serve col gioco di prima
+     (`--gioco fuori/143-prima.html`). Di conseguenza `A2` non può più mordere i
+     falsi `muto` e `piatto`: col nastro che rigioca uguale, **nemmeno un
+     giudice rotto accusa un onesto**. `A2` passa da `cade` a `tiene` per quei
+     due — e i due restano bocciati lo stesso, da `E/F/F2` e da `C/F/F2`
+     (`_q-motore-falsi` 14 su 14). **Il #142 non decade**: restano fuori dalla
+     cura il disegno, `pow` e `sqrt` (native per misura, non per norma) e tutti
+     i nastri scritti prima, che portano `MOTORE_V` 2.
+
+  **`_q-duello-impronta` (44/44), `folla`, `seme`, `_q-volo`, il fuzzer, il
+  soak, `_q-carta`, `_q-amici`, `_q-glicko`, `determinismo` e
+  `determinismo-11` non hanno avuto bisogno di nessuna ritaratura**: sono
+  passati al primo colpo sul gioco curato.
+
+  **LA BATTERIA**, a sei gruppi (`--tutto` chiede più del tempo di un comando):
+  19/19, 14/14, 5/5, 6/6, 15/15, e il gruppo dei cronometrici con `tocco`,
+  `volti`, `giocata` e **`prestazione` verdi**. Più una corsa intera dei
+  non-lenti in un colpo solo, a chiusura: **47 cancelli in 706 s, i 46 che
+  contano tutti passati**. `audio` e `avvio-telefono`
+  escono **3** (prova nulla: niente audio in questo banco, nessun telefono
+  collegato) e **un 3 non accusa il gioco**; `istantanea` e `avvio` sono
+  informativi e il loro registro di riferimento è del 20 agosto, su un file
+  diverso da quello di oggi. **`istantanea` è rossa anche sul gioco di `main`**
+  (45 quote su 56 contro le 42 su 56 del curato, stessi rilievi: erba senza
+  soggetti oltre il tetto, terzo centrale vuoto, ombre): **non è il #143**, ed è
+  un informativo il cui riferimento registrato era a sua volta una prova nulla,
+  cioè nessuna quota da confrontare.
+
+  **IN BATTERIA DA OGGI**: `motori` passa a **`conta:true`** — la riga che lo
+  teneva informativo diceva «finché il guasto non ha un cantiere», e il cantiere
+  c'è stato — più tre cancelli nuovi, `casa`, `perimetro` e `casa-falsi`, tutti
+  `lento` e `solo` perché aprono tre motori veri (`casa-falsi` ne rilancia
+  quattro corse).
+
+  **COSA RESTA APERTO, dichiarato**: il **disegno** non passa da casa (la cura
+  rende identica la simulazione, non la pittura: 1187 chiamate per fotogramma
+  restano native, e non spostano la partita perché la cottura delle tele è già
+  dietro il suo seme); **`pow` e `sqrt` native per misura e non per norma**, con
+  due righe rosse pronte il giorno che cambiasse; **`tan` non misurata** nel
+  perimetro (zero chiamate in novanta secondi a taglia 5) e innestata lo stesso,
+  che è la scelta giusta ma resta una cosa non guardata; il **determinismo pieno
+  vale a taglia 5** (voce #98, `rebuildCrowd` consuma PRNG in proporzione al
+  campo).
+
 - **Il motore nel nastro — #142 CANTIERE CHIUSO** (voce #142, 23 settembre
   2026, cinque compiti dal merge-base `fc25184` — spec
   `docs/superpowers/specs/2026-09-23-motore-nel-nastro-design.md`, piano

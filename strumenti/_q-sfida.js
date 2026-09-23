@@ -817,7 +817,7 @@ async function apri(browser, porta, viewport) {
   /* ================================================================
      10) E QUANDO IL NASTRO NON BASTA, NON SI FA VEDERE NIENTE.
      ================================================================ */
-  console.log('\n10) UNA PARTITA COL DISCHETTO NON SI FA VEDERE AFFATTO');
+  console.log('\n10) UNA PARTITA COL DISCHETTO: O SI RIVEDE PER INTERO, O IL GIOCO DICE PERCHE\' NO');
   if (con) {
     await B.pag.evaluate(() => { window.__test.sfida.apri(); });
     await B.pag.waitForTimeout(400);
@@ -829,18 +829,62 @@ async function apri(browser, porta, viewport) {
       riga: (document.getElementById('sfStato') || {}).textContent || '',
       aperta: !document.getElementById('sfida').classList.contains('hidden'),
     }));
-    /* IL NASTRO SI DICHIARA INCOMPLETO e il replay non parte nemmeno: non
-       si mostra una partita sbagliata, si dice che non si puo' mostrare. */
-    di(!rc.partito.stato.inPartita && rc.partito.registro === 0,
-       'il replay non parte proprio: il nastro dichiara di essere incompleto',
-       'registro ' + rc.partito.registro + ', in partita ' + rc.partito.stato.inPartita);
+    /* =====================================================================
+       RETTIFICA A EDIZIONI (23 settembre 2026, voce #143, compito 4).
+
+       COM'ERA, E PERCHE' ERA GIUSTA ALLORA. Questa sezione pretendeva che
+       una partita passata dal dischetto NON si facesse vedere affatto:
+       registro spento, nessuna partita in corso, e la riga di stato a
+       dire «calcio piazzato». Era la cura della voce #132 su un gioco in
+       cui i comandi del duello NON entravano nel nastro (marchio di tipo
+       5): meglio non mostrarla che mostrarne un'altra.
+
+       PERCHE' NON LO E' PIU'. La voce #131 ha messo il duello DENTRO il
+       nastro, e da allora quel marchio non si scrive piu' (grep «E LE TRE
+       PORTE DEL DISCHETTO» nel gioco). Una sfida col dischetto oggi si
+       rivede per intero, ed e' giusto che si riveda: il film c'e'.
+
+       E ALLORA PERCHE' LA PROVA ERA VERDE FINO A IERI? Perche' non si
+       esercitava quasi mai. `con` e' la prima sfida della sessione che ha
+       incontrato un calcio piazzato: quando non ce n'e' nessuna, il ramo
+       `else` qui sotto da' un verde gratis. MISURATO il 23 settembre
+       2026: sul gioco di `main` quella sessione non ne aveva nessuna
+       (verde gratis), sul gioco del #143 — che a parita' di copione
+       gioca partite diverse — ce n'era una, e la prova e' diventata rossa
+       tre volte su tre. Non era una regressione: era una prova ferma al
+       2026-09-21 che nessuno aveva piu' svegliato.
+
+       COSA CHIEDE ADESSO, ed e' piu' e non meno di prima. Due esiti sono
+       leciti, e nessun altro:
+         · il replay PARTE e finisce col punteggio dichiarato — il film
+           c'e' davvero, duello compreso;
+         · il replay NON parte, e il gioco DICE la causa (un nastro
+           vecchio col marchio, un altro motore, un nastro vuoto o
+           troncato) invece di sparire in silenzio.
+       Quel che resta rosso e' esattamente quel che la #132 voleva
+       impedire: far vedere una partita che non e' quella, o non farla
+       vedere senza dire perche'.
+       ===================================================================== */
+    const partito = rc.partito.registro === 2;
+    const rigiocato = rc.fine ? rc.fine.score : null;
+    const uguale = !!rigiocato && rigiocato[0] === con.score[0] && rigiocato[1] === con.score[1];
+    const dettaCausa = st.aperta && /calcio piazzato|versione del motore|nastro di questa partita|comandi di quanti/i.test(st.riga);
+    di(partito ? uguale : dettaCausa,
+       partito ? 'la partita col dischetto si rivede per intero, duello compreso, e finisce come dichiarato'
+               : 'la partita col dischetto non si rivede, e il gioco DICE perche\' invece di sparire in silenzio',
+       'registro ' + rc.partito.registro + ', tabellone ' + con.score.join('-') +
+       ', replay ' + (rigiocato ? rigiocato.join('-') : 'non partito') +
+       (partito ? '' : '   riga di stato: «' + (st.riga.trim().slice(0, 78) || 'MUTA') + '»'));
     di(st.scena !== 'play' && st.scena !== 'kickoff' && !st.inPartita,
-       'e non resta nessuna partita appesa', 'scena ' + st.scena);
+       'e finito non resta nessuna partita appesa', 'scena ' + st.scena);
     di(st.seminato === false && st.registro === 0, 'e non lascia il gioco seminato');
-    di(st.aperta && /calcio piazzato/i.test(st.riga), 'e dice perche\', invece di sparire in silenzio',
-       st.riga.slice(0, 110));
   } else {
-    di(true, 'nessuna delle sfide giocate ha incontrato un calcio piazzato: la guardia non si e\' potuta provare');
+    /* UN VERDE GRATIS E' UN VERDE BUGIARDO, e questo ramo ne dava uno per
+       mesi (vedi la rettifica qui sopra): si stampa ancora verde perche'
+       non c'e' niente da accusare, ma lo dice forte invece di confondersi
+       con una prova fatta. */
+    di(true, 'PROVA NON ESERCITATA: nessuna delle sfide di questa sessione ha incontrato un calcio ' +
+             'piazzato, quindi il dischetto nel replay NON e\' stato misurato oggi');
   }
 
   /* ================================================================ */

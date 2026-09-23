@@ -308,25 +308,111 @@ function saltoA(trace, mi) {
        scene su base113 e sul curato devono combaciare CAMPO PER CAMPO,
        fotogramma per fotogramma: non solo il giudizio finale, il numero
        esatto. Se combaciano, il ramo 'pieno' e' provato carattere per
-       carattere quello di prima: MOTORE_V non si incrementa. */
+       carattere quello di prima: MOTORE_V non si incrementa.
+
+       -------------------------------------------------------------------
+       RETTIFICA A EDIZIONI (23 settembre 2026, voce #143, compito 4).
+       -------------------------------------------------------------------
+       «Bit per bit» era la domanda giusta finche' i due file dichiaravano
+       LO STESSO MOTORE, ed e' esattamente quel che la riga qui sopra dice
+       («MOTORE_V non si incrementa»). Il #143 ha riscritto in casa tutte
+       le trascendenti della simulazione, e MOTORE_V e' salito a 3 con la
+       sua misura accanto (sei nastri su sei rigiocati diversi,
+       `strumenti/_t-143-motorev.js`). Da quel momento chiedere l'identita'
+       col file base113 — che dichiara MOTORE_V 2 — e' chiedere una cosa
+       impossibile: sarebbe un rosso che non si puo' curare, cioe' rumore,
+       e il rumore fa ignorare i rossi veri.
+
+       MISURATO su questo stesso banco prima di cambiare una riga: la
+       traccia diverge al PRIMO fotogramma, e diverge di
+       332.39272401893953 contro 332.3927240189397 — cinque per dieci alla
+       meno sedici in relativo, cioe' DUE ULP. Gli indici (chi mira chi)
+       sono gli stessi, tutti gli altri campi sono identici. Non e' una
+       decisione cambiata: e' l'ultimo bit.
+
+       Percio' la prova cambia FORMA e non severita':
+         · stesso MOTORE_V nei due file -> si pretende l'identita' esatta,
+           come prima, parola per parola;
+         · MOTORE_V diverso -> l'identita' non si puo' pretendere e si
+           dichiara. Restano due cose che il cantiere NON aveva il permesso
+           di cambiare, e che continuano a essere cancelli: gli INDICI
+           (il ramo 'pieno' sceglie gli stessi bersagli) e la DISTANZA
+           RELATIVA dei numeri, che deve stare sotto 1e-9.
+
+       PERCHE' 1e-9, e non una soglia scelta perche' passa: un ulp vale
+       circa 1e-16 in relativo, e un cambio di DECISIONE della mira
+       sposterebbe una coordinata di almeno un centesimo di unita' su
+       trecento, cioe' 3e-5. Il tetto sta in mezzo con sette ordini di
+       grandezza di margine sotto e quattro sopra, e lo scarto misurato si
+       stampa sempre: se un giorno salisse, si vedrebbe crescere prima di
+       sfondare. */
     {
-      let tutteUguali = true, primaDiff = null;
+      const mvDi = rel => {
+        try {
+          const m = fs.readFileSync(path.resolve(RADICE, rel), 'utf8').match(/const MOTORE_V = (\d+);/);
+          return m ? parseInt(m[1], 10) : null;
+        } catch (e) { return null; }
+      };
+      const mvA = mvDi(GIOCO_BASE), mvB = mvDi(GIOCO_CURATO);
+      const stessoMotore = mvA !== null && mvA === mvB;
+      const TETTO_REL = 1e-9;
+
+      let tutteUguali = true, primaDiff = null, peggioRel = 0, dovePeggio = null;
       for (const modo of ['cross', 'pass']) {
         const rA = await misura(base.pag, SEME, 'pieno', modo);
         const rB = await misura(curato.pag, SEME, 'pieno', modo);
         if (rA.errore || rB.errore) { tutteUguali = false; primaDiff = modo + ': BANCO — ' + (rA.errore || rB.errore); break; }
         if (rA.mi !== rB.mi || rA.pi !== rB.pi) { tutteUguali = false; primaDiff = modo + ': indici diversi (pi ' + rA.pi + '/' + rB.pi + ', mi ' + rA.mi + '/' + rB.mi + ')'; break; }
-        const sa = JSON.stringify(rA.trace), sb = JSON.stringify(rB.trace);
-        if (sa !== sb) {
-          tutteUguali = false;
+        /* lo scarto relativo piu' grande su tutti i campi di tutti i
+           fotogrammi: si misura SEMPRE, anche quando l'identita' basta,
+           perche' un numero che cresce si vede prima di sfondare */
+        for (let f = 0; f < Math.min(rA.trace.length, rB.trace.length); f++) {
+          const a = rA.trace[f], b = rB.trace[f];
+          if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
+            peggioRel = Infinity; dovePeggio = modo + ' fotogramma ' + f + ': tracce di forma diversa'; break;
+          }
+          for (let i = 0; i < a.length; i++) {
+            if (typeof a[i] !== 'number' || typeof b[i] !== 'number') {
+              if (a[i] !== b[i]) { peggioRel = Infinity; dovePeggio = modo + ' fotogramma ' + f + ' campo ' + i; }
+              continue;
+            }
+            const d = Math.abs(a[i] - b[i]);
+            if (!d) continue;
+            const rel = d / Math.max(1, Math.abs(a[i]));
+            if (rel > peggioRel) { peggioRel = rel; dovePeggio = modo + ' fotogramma ' + f + ' campo ' + i + ': ' + a[i] + ' contro ' + b[i]; }
+          }
+        }
+        if (JSON.stringify(rA.trace) !== JSON.stringify(rB.trace) && !primaDiff) {
           let f = 0; while (f < rA.trace.length && JSON.stringify(rA.trace[f]) === JSON.stringify(rB.trace[f])) f++;
-          primaDiff = modo + ': la traccia diverge al fotogramma ' + f + '  base=' + JSON.stringify(rA.trace[f]) + '  curato=' + JSON.stringify(rB.trace[f]);
-          break;
+          primaDiff = modo + ': la traccia diverge al fotogramma ' + f;
+          tutteUguali = false;
         }
       }
-      di(tutteUguali, 'PIENO-IDENTICO — peso \'pieno\': base113 e curato combaciano fotogramma per fotogramma (cross e passaggio)',
-        tutteUguali ? 'entrambe le scene, ' + FRAMES_TRACCIA + ' fotogrammi ciascuna, 0 differenze — MOTORE_V non si incrementa'
-                    : primaDiff + '  -- MOTORE_V andrebbe incrementato, decisione da prendere');
+      const scarto = peggioRel === 0 ? '0 (identiche)' : peggioRel.toExponential(1) + ' in relativo';
+      const mv = 'MOTORE_V ' + mvA + ' contro ' + mvB;
+      /* L'ORDINE CONTA, E NON E' UN DETTAGLIO. Prima si chiede l'IDENTITA',
+         come sempre: se c'e', il cancello e' quello di prima e la
+         rettifica non toglie niente a nessuno. Solo quando l'identita'
+         e' gia' rotta si guarda se un cambio di MOTORE_V DICHIARATO la
+         spiega. Il contrario — guardare prima il numero di versione e
+         allentare — avrebbe abbassato la presa anche sui casi in cui
+         l'identita' regge ancora (base113 dichiara MOTORE_V 1, il gioco
+         di `main` ne dichiara 2, e le tracce erano identiche lo stesso:
+         quel verde e' una misura, e non si butta). */
+      if (tutteUguali) {
+        di(true, 'PIENO-IDENTICO — peso \'pieno\': base113 e curato combaciano fotogramma per fotogramma (cross e passaggio)',
+           'entrambe le scene, ' + FRAMES_TRACCIA + ' fotogrammi ciascuna, 0 differenze (' + mv + ')');
+      } else if (!stessoMotore && primaDiff && primaDiff.indexOf('indici diversi') < 0 &&
+                 primaDiff.indexOf('BANCO') < 0 && peggioRel <= TETTO_REL) {
+        di(true, 'PIENO-VICINO — ' + mv + ': l\'identita\' e\' superata da un cambio di motore DICHIARATO, i bersagli no',
+           primaDiff + '. Scarto peggiore ' + scarto + ', tetto ' + TETTO_REL.toExponential(0) +
+           (dovePeggio ? ' (' + dovePeggio + ')' : '') + '. Indici uguali, decisioni uguali.');
+      } else {
+        di(false, 'PIENO-IDENTICO — peso \'pieno\': base113 e curato combaciano fotogramma per fotogramma (cross e passaggio)',
+           primaDiff + '  (scarto peggiore ' + scarto + (dovePeggio ? ', ' + dovePeggio : '') + '; ' + mv + ')' +
+           (stessoMotore ? '  -- MOTORE_V andrebbe incrementato, decisione da prendere'
+                         : '  -- il cambio di motore non basta a spiegarlo: guardare gli indici e lo scarto'));
+      }
     }
 
     /* ===================================================================

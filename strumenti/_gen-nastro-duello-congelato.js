@@ -44,15 +44,31 @@ const MAX = 40;
    cantiere: due mutanti sul cammino 'divagata' passavano 18/18 perche'
    nessuna asserzione lo condannava con certezza.
 
-   COME E' NATA. Il server finto assegna i semi in sequenza da 20260801
-   (grep "semeProssimo" in _sfida-due-telefoni.js): a partire da una
-   sessione vergine, la 12-esima sfida giocata dal copione fisso prende
-   il seme ${trovata.riga.seme} e passa naturalmente dal dischetto (nessuna
-   forzatura fuori banda: t.rigori() chiamato a meta' partita rompe la
-   ripetibilita' del nastro, misurato e scartato -- vedi il verbale del
-   22 settembre 2026 in MANUALE.md). Generata da
-   strumenti/_gen-nastro-duello-congelato.js, che si puo' rilanciare se
-   una cura futura del motore (MOTORE_V) invalida questa fixture.
+   COME E' NATA. Cercata giocando sfide vere in sequenza (stesso copione
+   fisso di _sfida-due-telefoni.js, server finto, nessuna forzatura
+   fuori banda) finche' una non e' passata da sola dal dischetto: il
+   server assegna i semi in ordine da 20260801, ma QUANTE sfide servano
+   per trovarne una con un duello non e' fisso da sessione a sessione
+   (la ricerca dell'avversario nel server finto consuma un numero di
+   turni variabile) -- il seme ${trovata.riga.seme} e' semplicemente quello su
+   cui e' capitata la ricerca l'ultima volta, alla ${n}-esima sfida. NON e'
+   un numero da cui si possa dedurre "la N-esima sfida ce l'ha sempre":
+   e' solo il seme di QUESTA fixture, congelato cosi' com'e' uscito.
+   PROVATO E SCARTATO: forzare rigori() a meta' partita con l'azione
+   fuori banda del copione (vedi B.giocaUna, parametro \`azioni\`) rompe
+   la ripetibilita' del nastro -- giudicato INTATTO da' NON TORNA
+   invece di TORNA, perche' quella chiamata non e' una riga del nastro
+   e sul replay non si ripete (misurato il 22 settembre 2026, revisione
+   voce #133). Un nastro non ripetibile non e' un nastro vero: da qui
+   la scelta di cercare un duello NATURALE invece di forzarlo.
+   Generata da strumenti/_gen-nastro-duello-congelato.js, che si puo'
+   rilanciare se una cura futura del motore (MOTORE_V) invalida questa
+   fixture -- ED E' SUCCESSO: la voce #143 ha portato MOTORE_V da 2 a 3
+   (le trascendenti scritte in casa) e la fixture di allora veniva
+   respinta con ALTRO MOTORE/motore-diverso da quattro banchi in una
+   volta (giudice, finestra, staffetta, e la staffetta su sette prove).
+   Il rifiuto era GIUSTO -- e' la guardia che fa il suo mestiere -- e la
+   cura e' rigenerare, non allentare.
 
    USO: _q-giudice.js la rigioca INTATTA (deve TORNARE) e poi senza le
    righe di tipo 6 del duello (N.senzaDuelli), che deve dare
