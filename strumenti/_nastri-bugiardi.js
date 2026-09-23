@@ -178,10 +178,87 @@ function conMotore(nastro, impronta) {
   return rifai(p, pezzi.concat(['0,11,0,' + ((impronta | 0) >>> 0)]));
 }
 
+/* =====================================================================
+   LA FINESTRA MASCHERATA (voce #144) — il gemello esatto di conMotore
+   qui sopra, e nasce dalla stessa lezione.
+
+   Dopo il #133 e il #139 il giudice si ASTIENE prima di rigiocare quando
+   lo schermo del nastro non e' il suo. Un banco che misurasse solo
+   l'astensione non saprebbe piu' dire se quel nastro, su quello schermo,
+   sarebbe DAVVERO divergiuto: attesterebbe la cura invece di misurarla
+   (la lezione del #141, e quella del #142 che ha prodotto conMotore).
+
+   Qui si riscrivono TUTTE le righe di tipo 10 con la misura di CHI
+   GIUDICA: il giudice crede che lo schermo coincida, procede, rigioca, e
+   il punteggio che ne esce e' quello che sarebbe uscito senza
+   l'astensione. E' quel punteggio — non il verdetto — la misura vera del
+   canale dei pixel.
+
+   Riscrive invece di aggiungere apposta: aggiungere lascerebbe le misure
+   vecchie e farebbe scattare schermo-cambiato, che e' un'altra
+   astensione e rimetterebbe il banco dove era. Su un nastro senza
+   nessuna riga 10 la infila, come conMotore, cosi' anche un nastro di
+   prima del #133 si lascia rigiocare.
+   Il pezzo nuovo porta dT = 0 e dMs = 0: la catena dei tick e dei
+   millisecondi resta intatta. */
+function conSchermo(nastro, misura) {
+  const { p, pezzi } = spacca(nastro);
+  const w = (misura && misura[0] | 0) || 0, h = (misura && misura[1] | 0) || 0;
+  let n = 0;
+  const fuori = pezzi.map(z => {
+    const v = z.split(',');
+    if (v[1] !== '10') return z;
+    n++;
+    return v[0] + ',10,' + v[2] + ',' + w + ',' + h;
+  });
+  if (n) return rifai(p, fuori);
+  return rifai(p, pezzi.concat(['0,10,0,' + w + ',' + h]));
+}
+
+/* I TIPI DI RIGA DEL NASTRO, CONTATI QUI IN NODE (voce #144). Serve a
+   dire se un nastro porta ancora un PIXEL (tipo 0 o tipo 1) o se e'
+   fatto di soli ATTI (tipo 12 e 13). Si conta in Node e non chiedendolo
+   al gioco, per la stessa ragione di schermoDi: un banco che chiede al
+   gioco se il gioco ha fatto il suo lavoro non misura niente. */
+function tipiDi(nastro) {
+  const c = {};
+  for (const z of spacca(nastro).pezzi) {
+    const t = z.split(',')[1];
+    c[t] = (c[t] || 0) + 1;
+  }
+  return c;
+}
+
+/* GLI ATTI DEL NASTRO (righe di tipo 12, voce #144), gia' spacchettati:
+   {id, t, esito, slot, ux, uy}. Il banco li legge per verificare che la
+   SQUADRA viaggi davvero nel comando invece di essere dedotta dalla x. */
+/* QUESTO NASTRO PORTA ANCORA UN PIXEL? (voce #144). La gemella in Node
+   di `nastroHaPixel()` dentro il gioco, e le due devono rispondere la
+   stessa cosa: il giudice la usa per sapere se astenersi sullo schermo,
+   la staffetta per sapere se quel nastro chiede una finestra sua. Un
+   nastro di soli ATTI (tipi 12 e 13) non chiede niente e si giudica
+   dove capita; uno con dentro anche un solo tipo 0 o tipo 1 porta il
+   pixel di un altro telefono. */
+function haPixel(nastro) {
+  const c = tipiDi(nastro);
+  return !!((c['0'] | 0) + (c['1'] | 0));
+}
+
+function attiDi(nastro) {
+  const v = [];
+  for (const z of spacca(nastro).pezzi) {
+    const p = z.split(',');
+    if (p[1] !== '12') continue;
+    v.push({ id: +p[3], t: +p[4], esito: +p[5], slot: +p[6], ux: +p[7], uy: +p[8] });
+  }
+  return v;
+}
+
 module.exports = {
   allarga,
   spacca, rifai, schermoDi, schermiDi, righeSchermoDi, infilaSchermo,
   improntaDi, conMotore,
+  conSchermo, tipiDi, attiDi, haPixel,
 
   /* L'IMPRONTA DEL MOTORE VIA (tipo 11, voce #142). Simula un nastro di
      prima di quella cura: improntaDi() e improntaDelNastro() (lato
