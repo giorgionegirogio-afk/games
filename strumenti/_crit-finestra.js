@@ -43,7 +43,7 @@ function falso(conf) {
   const attesi = (conf.attesi || []).concat([
     ['function giudica(nastro, atteso, opz){', 1],
     ['function schermiDelNastro(){', 1],
-    ['const MOTORE_V = 2;', 1],
+    ['const MOTORE_V = ', 1],
   ]);
   const rotti = attesi.filter(([s, k]) => (out.split(s).length - 1) !== k)
     .map(([s, k]) => s + ' atteso ' + k + ', trovato ' + (out.split(s).length - 1));

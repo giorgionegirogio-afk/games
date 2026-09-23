@@ -35,6 +35,6 @@ require('./_crit-giudice.js').falso({
          "  if(false && motoreV !== MOTORE_V) return fermo('ALTRO MOTORE','motore-diverso');",
   attesi: [
     ['const motoreV = Reg.motoreV|0;', 1],
-    ['const MOTORE_V = 2;', 1],
+    ['const MOTORE_V = ', 1],
   ],
 });

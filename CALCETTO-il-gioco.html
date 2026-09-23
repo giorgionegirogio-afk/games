@@ -13978,8 +13978,30 @@ function touchBtnLayout(t){
    cioe' entro il primo secondo e mezzo di partita. Le righe precedenti restano
    com'erano scritte: dicevano il vero quando furono scritte, e il
    metodo che descrivono e' quello che ha deciso anche questa volta.
+
+   RETTIFICA A EDIZIONI (23 settembre 2026, voce #144). Il numero qui
+   sotto **non e' piu' 3, e' 4**, e stavolta NON perche' la simulazione
+   sia cambiata: e' cambiato che cosa si REGISTRA. I comandi non sono
+   piu' pixel (tipi 0 e 1) ma atti risolti (tipi 12 e 13), e un gioco
+   della versione di ieri non ha un ramo per leggerli: li butta in
+   silenzio e rigioca una partita in cui nessuno ha toccato lo schermo.
+
+   MISURATO con strumenti/_t-144-motorev.js, nei due versi:
+     · quattro nastri del merge-base (c71a83e) rigiocati sul curato:
+       **quattro su quattro IDENTICI**, ottanta campioni d'impronta
+       ciascuno. La cura, di suo, non cambia nessuna partita;
+     · quattro nastri del curato rigiocati sul gioco di ieri: **quattro
+       su quattro in una partita DIVERSA**, tutti allo stesso campione —
+       il primo, cioe' entro il primo mezzo secondo — con **170 righe
+       lette su 2749**.
+
+   Percio' il numero sale: non per la cura, ma perche' senza di lui un
+   telefono rimasto indietro (e il service worker ignora la query
+   string, quindi restare indietro e' facile) direbbe NON TORNA a un
+   onesto invece di ALTRO MOTORE. Il prezzo — i nastri v3 diventano
+   ingiudicabili — si paga volentieri e dura poco: v3 e' di ieri.
    ===================================================================== */
-const MOTORE_V = 3;
+const MOTORE_V = 4;
 
 /* =====================================================================
    L'IMPRONTA DEL MOTORE JAVASCRIPT (voce #142, compito 2).
