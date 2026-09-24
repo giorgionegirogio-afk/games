@@ -585,6 +585,209 @@ Qui il registro completo, a edizioni.
   zero, e la revisione dell'intera postura «zero permessi, zero conti, nessuna
   chiave nell'HTML»). **Nessuna delle due è stata provata.**
 
+- **VOLUME E GESTO — #152 LA PRODUZIONE, E DUE BERSAGLI SU TRE** (voce #152,
+  24 settembre 2026, cinque compiti dal merge-base `4ed12a6` — spec
+  `docs/superpowers/specs/2026-09-24-volume-e-gesto-design.md`, piano
+  `docs/superpowers/plans/2026-09-24-volume-e-gesto.md`). **`MOTORE_V` resta
+  6**; la partita non si muove di un bit (44.925 sorteggi contro 44.925 su
+  otto partite, zero con un conto diverso); il file cresce di **13.806 byte**,
+  di cui **204 di tabelle** e il resto commenti — **il budget dichiarato era
+  +12 kB e si sfora del 15%**, tutto in prosa.
+
+  È la produzione di ciò che il #151 aveva prototipato: da Blender **le
+  tabelle, non i pixel**. Priorità **(1) figure e animazioni** del committente.
+
+  ### (a) IL METRO AVEVA UN BUCO, E SI CHIUDE PRIMA DI TOCCARE IL GIOCO
+
+  Il #151 aveva scoperto che `istantanea` dà **42/56 anche a una versione in
+  cui le due squadre vestono uguale**: sette colonne su otto istanti e nessuna
+  che dica «si capisce chi è chi». `strumenti/_q-divise.js` è la colonna che
+  mancava, ed è **`conta:true`** dal primo giorno.
+
+  **Si misura sui PIXEL e non si può fare altrimenti**: il controllo ovvio
+  (`TEAMCOL[0] !== TEAMCOL[1]`) sarebbe passato sull'atlas, dove i due kit
+  erano diversi *nello stato* e identici *sullo schermo*. La maschera è la
+  stessa `Rig3D.disegna` del fotogramma vero ridipinta in nero, **una figura
+  alla volta** per non perdere l'etichetta della squadra, **erosa di un pixel**
+  perché il bordo antialias è metà maglia e metà erba.
+
+  Il numero è la **distanza in variazione totale** fra i due istogrammi di
+  tinta, e non un conteggio di colori: contando le *colonne*, il #151 aveva
+  visto la versione che veste tutti uguale risultare **più varia** del gioco.
+  La soglia non viene dal peggio osservato ma dalla separazione — gioco
+  **0,665**, falso peggiore **0,237**, media geometrica 0,397, soglia **0,40**.
+
+  I due falsi (`_crit-152-divise.js`) **non toccano `TEAMCOL`**: la squadra 1
+  si *disegna* col kit della 0 (la firma esatta del guasto dell'atlas), e nel
+  caso peggiore con la stessa tinta **ruotata di dodici gradi** — due divise
+  diverse per una stringa e identiche per un occhio. Esito: gioco **verde
+  4/4** istanti, «uguale» **rosso 0/4**, «quasi» **rosso 0/4**.
+
+  La seconda campana — la distanza fra le tinte dominanti, 180° contro 0° —
+  passa **insieme** alla prima e non da sola: in un istante i falsi danno 180°
+  di dominante (la colonna più piena è la **pelle**) e da sola quella li
+  avrebbe assolti.
+
+  ### (b) IL VOLUME — ottanta volte dove c'era un `if`
+
+  L'ombreggiatura interna era **una decisione binaria per arto**: «se il punto
+  medio sta a est della verticale del bacino, tinta fredda». Non guardava
+  **come è girato** l'arto, quindi due braccia opposte dalla stessa parte del
+  bacino prendevano la stessa tinta.
+
+  Adesso la sceglie la tabella che `strumenti/blender/luce.py` ha calcolato col
+  `ray_cast` sulla geometria vera, sotto il `SOLE` letto dal gioco, su tutti e
+  192 i fotogrammi del prototipo e **con l'auto-ombreggiatura dentro**: fra
+  ovest ed est **0,188 contro 0,002**, cioè ottanta volte. Accanto, l'**accesso
+  ambientale** per segmento (testa 0,80, spalla 0,52, ascella 0,23, coscia
+  0,14) e la **rampa trasversale** che fa leggere un tratto come un cilindro.
+  **Tre tabelle, 204 byte scritti nel file, zero pixel di texture.**
+
+  **RETTIFICA AL #151**: l'`ao` di `luce.py` è `libero/totale`, cioè **accesso**
+  ambientale e non occlusione. Il commento del prototipo diceva il contrario;
+  il codice lo usava già nel verso giusto.
+
+  **IL COSTO HA DECISO LA FORMA, e il banco appaiato quel giorno non era in
+  grado di misurarlo.** `prestazione.js` ha dichiarato da sé «ballo fra
+  repliche dello stesso file **277,1%**» e ha dato **tutti e tre** i confronti
+  per non provati; due corse dello stesso paio hanno detto **+8,1%** e
+  **+2,9%**, in ordine invertito. Il numero buono viene da
+  `strumenti/_sonda-152-fili.js`, che non ha un secondo file in mezzo — stessa
+  pagina, stessa partita, stesso fotogramma, l'interruttore girato a caldo,
+  24 blocchi da 60 disegni alternati:
+
+  | forma | taglia 11 (22 figure) | taglia 5 (10 figure) |
+  |---|---|---|
+  | nessun filo | 0,435 ms | 8,566 ms |
+  | **un filo caldo** | 0,441 ms · **+1,3%** | 8,666 ms · **+1,2%** |
+  | due fili | 0,475 ms · **+9,2%** | — |
+
+  Il budget era **+8%**: il secondo filo dappertutto lo sfora, il primo ci sta
+  dentro **sette volte**. Perciò il filo caldo va su **tutte** le figure —
+  anche le ventidue della partita, che prima restavano tratti piatti, perché
+  il blocco girava solo con `lodOn` — e il filo freddo resta **da vicino**,
+  dove le figure sono quattro e il costo non si misura. In partita la seconda
+  metà del volume ce l'ha già **la tinta dell'arto**.
+
+  ### (c) LE OMBRE — il bersaglio NON è stato preso, e si dice coi numeri
+
+  **Due rettifiche prima del resto.** (1) Il #151 diceva che il difetto delle
+  ombre è la **lunghezza** («la punta schiarita al 40%»): era vero il 15
+  agosto, **non lo è più**. Rimisurate oggi, le ventidue ombre misurabili
+  stanno fra **1,19 e 2,56** volte la figura contro un minimo di 1,2, e
+  **nessuna cade per la lunghezza**. (2) Lo scarto che il metro stampa come
+  «staccata» **non vuol dire staccata**: misurato su tutte le ricorrenze,
+  prima e dopo, `primoBuio` vale **sempre −1** — la marcia finale non trova
+  *nessun* tratto scuro, non ne trova uno che comincia tardi. Da oggi il
+  dettaglio stampa il numero accanto al nome.
+
+  **Dove sta il difetto, contato.** Otto istanti per otto figure: 64
+  osservazioni, 22 ombre misurate e 42 scartate. `in duello` 11, `sul bordo`
+  10, `piedi fuori dal manto` 7 — **28 su 42, due terzi** — dicono dove la
+  **camera** ha messo le figure, non come è disegnata la loro ombra. Nessuna
+  cura al disegno li può toccare, ed era il tetto di questo compito.
+
+  **La causa curabile**, col conto che la prova. Il metro chiama manto un
+  pixel col canale più alto sopra **0,18**. Sul manto misurato all'istante 7,
+  `rgb(41·73·36)`, con l'alfa d'ombra a 0,70: una capsula dà **0,190** (è
+  manto); **la macchia di contatto, che era NERO PURO all'81% di alfa, dà
+  0,096** — non è manto. Cioè la cosa che deve dire «il corpo tocca terra»
+  **non esisteva per nessuna misura**, e il disco che il metro guarda attorno
+  ai piedi si riempiva di pixel che non erano né manto né corpo: esattamente
+  lo scarto «piedi fuori dal manto». Era anche l'ultima ombra nera del gioco,
+  contro la prima riga del contratto di `SOLE` («MAI nero puro»).
+
+  **La cura**: la macchia prende la tinta dell'ombra — **(8·40·22)** — **alla
+  stessa alfa**, perché schiarirla farebbe galleggiare ventidue uomini per far
+  contento un istogramma; e si **stringe** da 20×11,2 a **14×7,8** unità
+  (venti erano più dell'intera capsula: era alla lettera «una pozza larga
+  quanto lunga»), con la **quota** dentro come già fa il pallone. Le due tinte
+  sono dichiarate in **un posto solo**: erano **tre**.
+
+  | | merge-base | oggi |
+  |---|---|---|
+  | figure con un'ombra **misurabile** | 22 | **23** |
+  | scartate «due ombre addosso» | 4 | **2** |
+  | scartate «pozza di buio» | 3 | **1** |
+  | scartate «troppo sottile» | 2 | **1** |
+  | scartate «traccia insufficiente» | 2 | **1** |
+  | scartate «staccata» (vedi rettifica) | 3 | 8 |
+  | duello / bordo / fuori dal manto | 28 | 28 |
+
+  **LA COLONNA «OMBRE» RESTA 5/8.** Il bersaglio del cantiere era portarla
+  sopra; non ci è arrivata. I due istanti che cadono per «meno di due figure
+  giudicabili» cadono su duello, bordo e piedi fuori dal manto; il terzo cade
+  per **una figura sola**, a 127 px dal bordo destro, la cui ombra **esce dal
+  quadro** mentre a monte le passa sopra il buio di un compagno (−145° contro
+  i 23° delle altre).
+
+  **PROVATO E SCARTATO**, scritto perché nessuno lo rifaccia: dare a
+  `OMBRA_TINTA` più margine sul pavimento del valore — (14·38·32) →
+  (13·47·31), così che anche **due** capsule accavallate tornino manto (0,162
+  → 0,193) — **non muove le ombre di un istante** e sposta «il centro è sera»:
+  l'istante 8 passa da −15,5% a **−14,5%** di saturazione, cioè da OK a NO,
+  perché la tinta nuova è più satura (0,723 contro 0,632). Rimesso a posto.
+
+  ### (d) IL GESTO — misurare tutte le clip prima di toccarne una
+
+  `strumenti/_q-gesto.js` somma le distanze percorse dai **diciotto giunti**
+  lungo ogni gesto, leggendo il rig dall'API di banco che il gioco espone già:
+
+  > rovesciata 77,61 m · tuffo 67,14 · presa 31,39 · tiro 28,41 · scivolata
+  > 23,44 · rinvio 20,99 · cross 17,41 · filtrante 17,25 · contrasto 15,91 ·
+  > passaggio 13,63 · testa 12,77 · **frenata 3,41**
+
+  Quasi **quattro volte** sotto il penultimo, e **meno del doppio di un uomo
+  fermo** (la clip `fermo` ne fa 2,71). In mezzo non c'è nessuno: è un fosso,
+  e la soglia sta nella sua media geometrica (**6,5 m**, più **0,45 m** di
+  escursione). Il cancello **nasce rosso 9/10**.
+
+  L'arresto aveva **mezzo tempo su tre**. Adesso ha la **PIANTATA** (il bacino
+  affonda sotto il peso che arriva e risale: prima un uomo passava da sette
+  metri al secondo a zero senza che il baricentro si muovesse di un
+  centimetro), la **SOVRAPPOSIZIONE** (i piedi si fermano e il busto no: prima
+  il busto era già arretrato al primo fotogramma, cioè *arrivava* a gesto
+  finito invece di finirci) e la **CHIUSURA** (la gamba di dietro si raccoglie
+  invece di restare aperta a compasso). **Il tempo non è inventato**, ed è la
+  regola del respiro del #147: `rigStato` manda già la clip da 0,04 a 0,74
+  lungo `FRENA_T`, e quella finestra non si sposta di un fotogramma.
+  Misurato: **cammino 3,41 → 10,46 m**, escursione **0,362 → 0,558**,
+  cancello **10/10**.
+
+  **IL CONTRASTO NON SI TOCCA**, e la ragione è già scritta nel gioco accanto
+  a `rigStato`: la fase parte da 0,26 — il fotogramma in cui il piede tocca —
+  «perché il contrasto non ha carica». La carica è già disegnata nella clip;
+  il gioco sceglie di non mostrarla perché la meccanica non concede un istante
+  fra la decisione e il contatto. Dargliela sarebbe un'animazione più bella e
+  **una bugia sulla meccanica** — il caso che il #147 ha risolto nell'altro
+  verso, dove il ritardo c'era davvero.
+
+  **DUE MISURE PROVATE E BUTTATE**, e sta scritto dentro il cancello:
+  *anticipazione* e *chiusura* definite proiettando il cammino del giunto più
+  veloce sulla direzione della sua velocità al picco bocciavano **nove clip su
+  dieci, compreso il TIRO** — la clip di cui il file documenta per esteso i
+  quattro tempi. Un cancello che boccia la cosa meglio fatta del file non sta
+  misurando quella cosa: sta misurando quale giunto capita di essere il più
+  veloce in un fotogramma.
+
+  ### (e) I NUMERI DI CHIUSURA
+
+  `istantanea` **42/56, colonna per colonna identica** al merge-base — erba
+  1/8 · palla 8/8 · figura 8/8 · **ombre 5/8** · prato 8/8 · centro sera 7/8 ·
+  centro abitato 5/8. **Nessuna voce è scesa; nessuna è salita.**
+  Due cancelli nuovi in batteria, tutt'e due `conta:true`: **divise** e
+  **gesto**. La prova che si guarda sta in `strumenti/_152-accanto/`.
+
+  ### (f) QUELLO CHE QUESTA VOCE NON HA FATTO
+
+  Le **ombre** restano **5/8** e la causa residua è fuori dal disegno delle
+  ombre (la camera mette due terzi delle figure dove il metro non giudica):
+  chi riapre parta da lì, non dalla lunghezza e non dalla tinta. Non sono
+  state toccate l'**interfaccia** né gli **effetti d'impatto**, che restano le
+  priorità **2** e **3** del committente. Il **contrasto** e le clip del
+  portiere restano senza un contatto dichiarato, quindi senza un cancello che
+  ne giudichi i tempi.
+
 - **LE FIGURE DA BLENDER — #151 PROTOTIPO MISURATO, VERDETTO: GLI SPRITE NON
   CONVENGONO** (voce #151, 24 settembre 2026, cinque compiti dal merge-base
   `c1e01fb` — spec `docs/superpowers/specs/2026-09-24-figure-blender-design.md`,
