@@ -47,7 +47,7 @@ const RADICE = path.resolve(__dirname, '..');
 
 /* La versione del protocollo. Deve combaciare con DISCHETTO_V nel
    gioco: se non combacia, l'appuntamento non si fa — ed e' apposta. */
-const DISCHETTO_V = 1;
+const DISCHETTO_V = 2;
 
 /* Il tetto del freno della cassetta: gli STESSI numeri del fratello
    piu' largo del server vero (`sfl:` e `avv:` valgono 60 al minuto).
@@ -215,7 +215,11 @@ function serviCassetta(opz) {
       const nome = String(corpo.stanza || '');
       if (!/^[A-Z0-9]{4,12}$/.test(nome)) return di(400, { ok: false, errore: 'stanza-forma' });
       const k = String(corpo.k || '');
-      if (!/^[SIRF]$/.test(k)) return di(400, { ok: false, errore: 'tipo' });
+      /* CINQUE TIPI DAL v2 (voce #150): la busta `N` e' la rivelazione
+         del nonce del saluto. La cassetta finta deve avere le STESSE
+         regole di rifiuto del server vero — un messaggio che qui passa
+         deve passare anche di la'. */
+      if (!/^[SIRNF]$/.test(k)) return di(400, { ok: false, errore: 'tipo' });
       const r = String(corpo.r || '');
       if (r !== 'a' && r !== 'b') return di(400, { ok: false, errore: 'lato' });
       const t = Math.round(Number(corpo.t));
@@ -449,6 +453,25 @@ class PariFinto {
                     impegnato. Il suo esito atteso e' lo STALLO.
      ===================================================================== */
 
+  /* =====================================================================
+     IL FIATO DEL GIOCO, e perche' senza un banco attesta (voce #150).
+
+     Un pari che ASPETTA deve lasciar girare l'altro. Nel gioco vero la
+     guida batte da se' ogni 900 ms; qui il giro di rete del telefono lo
+     fa il BANCO, e se il pari resta chiuso nel proprio ciclo di ritiri
+     il gioco non parla mai — non perche' sia prudente, perche' nessuno
+     l'ha fatto camminare.
+
+     MISURATO, e costato un falso: la mezza cura `sbrigativo` (impegna il
+     nonce e lo rivela senza aspettare l'impegno dell'altro) NON VENIVA
+     MORSA. Il baro paziente si arrendeva dopo quaranta ritiri a vuoto e
+     il banco stampava «stallo», cioe' esattamente il verde che il gioco
+     curato deve dare. Il banco stava misurando la propria fretta.
+
+     Chi usa il pari in un'attesa gli mette in mano questo respiro:
+       P.respiro = () => window.__test.dischetto.giro()   (dal banco) */
+  async respira() { if (this.respiro) { try { await this.respiro(); } catch (e) {} } }
+
   /* il nonce dell'altro, comunque il protocollo glielo faccia arrivare:
      dentro la sua rivelazione (v2) o dentro il suo saluto (v1) */
   suoNonce() {
@@ -482,12 +505,12 @@ class PariFinto {
       /* NON SI IMPEGNA FINCHE' NON SA TUTTO. Su v2 non sapra' mai niente:
          il gioco non rivela a chi non ha parlato, e questo e' lo stallo
          che il cancello pretende. */
-      for (let g = 0; g < 40 && !this.suoNonce(); g++) await this.ritira();
+      for (let g = 0; g < 40 && !this.suoNonce(); g++) { await this.respira(); await this.ritira(); }
       const suo = this.suoNonce();
       if (suo) this.mioNonce = this.macina(suo);
       else { this.pazienzaPersa = true; return { ok: false, errore: 'mai-visto-il-nonce' }; }
     } else if (this.bugia.semesuo) {
-      for (let g = 0; g < 40 && !this.trova('S', this.altro, 0); g++) await this.ritira();
+      for (let g = 0; g < 40 && !this.trova('S', this.altro, 0); g++) { await this.respira(); await this.ritira(); }
       const suo = this.trova('S', this.altro, 0);
       /* su v1 `suo.d.n` c'e' e la macinatura morde; su v2 c'e' solo
          `suo.d.hn`, e macina() torna il nonce di partenza */
@@ -542,7 +565,7 @@ class PariFinto {
      che un baro farebbe se il protocollo glielo lasciasse fare. */
   async impegna(t, scegli) {
     if (this.bugia.veggente) {
-      for (let g = 0; g < 60 && !this.trova('R', this.altro, t); g++) await this.ritira();
+      for (let g = 0; g < 60 && !this.trova('R', this.altro, t); g++) { await this.respira(); await this.ritira(); }
       const sua = this.trova('R', this.altro, t);
       if (sua) this.sbirciato = sua.d.m;
     }

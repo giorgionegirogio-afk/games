@@ -165,6 +165,13 @@ async function pariGiro(A, pari) {
   }
   await d_giro(A);
   await pari.ritira();
+  /* IL SECONDO TEMPO DEL SALUTO (voce #150). Dal protocollo v2 il nonce
+     dell'appuntamento si rivela con una busta a parte, e il pari finto
+     la manda da qui — dopo il ritiro, perche' la sua regola e' la stessa
+     del gioco: non si rivela a chi non si e' ancora impegnato. Senza
+     questa riga il banco resterebbe in 'attesa-nonce' per sempre e
+     dichiarerebbe rossi tre gruppi misurando la propria distrazione. */
+  await pari.rivelaNonce();
   return s;
 }
 

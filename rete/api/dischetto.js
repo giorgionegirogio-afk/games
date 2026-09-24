@@ -105,7 +105,11 @@ export default async function handler(req, res) {
     const stanza = String(c.stanza || '').toUpperCase();
     if (!/^[0-9A-Z]{6}$/.test(stanza)) return rispondi(res, 400, { ok: false, errore: 'stanza-forma' });
     const k = String(c.k || '');
-    if (!/^[SIRF]$/.test(k)) return rispondi(res, 400, { ok: false, errore: 'tipo' });
+    /* CINQUE TIPI DAL PROTOCOLLO v2 (voce #150): S saluto (che dal v2
+       porta l'IMPEGNO del nonce, non il nonce), N la rivelazione di quel
+       nonce, I l'impegno del tiro, R la sua rivelazione, F la fine. Il
+       server non legge dentro nessuna delle cinque: sposta buste. */
+    if (!/^[SIRNF]$/.test(k)) return rispondi(res, 400, { ok: false, errore: 'tipo' });
     const r = String(c.r || '');
     if (r !== 'a' && r !== 'b') return rispondi(res, 400, { ok: false, errore: 'lato' });
     const t = intero(c.t, 0, TIRO_MAX, -1);

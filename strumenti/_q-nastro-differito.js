@@ -57,7 +57,8 @@
         B5  tolta SOLO la riga 15, le 14 restano   dischetto-assente
         B6  tolte la 15 E tutte le 14 (il residuo) duelli-senza-atti
         B7  il bit «chi ha tirato per primo» girato dischetto-primo-incoerente
-        B8  la riga 15 con una versione ignota     dischetto-versione
+        B8  la riga 15 col protocollo VECCHIO      dischetto-versione
+        B8b e la stessa con uno FUTURO             dischetto-versione
 
    C) LA STAFFETTA LI SA LAVORARE. Un nastro giudicabile che il
       verificatore differito non sa prendere in mano non serve a niente.
@@ -510,14 +511,38 @@ const giudizio = (Gi, testo, atteso, seme) => Gi.pag.evaluate(([testo, atteso, s
          differita: `:47888` la definisce, `:48147` la scrive, `:48647` la
          controlla SOLO DAL VIVO. Un nastro di un dischetto che non
          conosciamo non si puo' rigiocare — e' la stessa cosa che il #107
-         dice del motore e il #142 del suo impronta. */
-      const v2 = cambiaArg(nA, 15, 0, 2);
-      const vV2 = v2.fatto ? await giudizio(Gi, v2.testo, seg, sA.seme) : null;
-      di(!!vV2 && vV2.verdetto === 'INCOMPLETO' && vV2.causa === 'dischetto-versione',
-         'B8) la riga 15 dichiara un protocollo che non conosciamo: astensione, non un verdetto',
-         vV2 ? ('v ' + v2.prima + ' -> 2 · ' + vV2.verdetto + (vV2.causa ? '/' + vV2.causa : '') +
-                ' · rigiocato ' + JSON.stringify(vV2.gol) + ' · passi ' + vV2.passi)
-             : 'PROVA NON ESERCITATA: nessuna riga 15');
+         dice del motore e il #142 del suo impronta.
+
+         RETTIFICA A EDIZIONI (24 settembre 2026, voce #150). Fino a ieri
+         questa prova scriveva nella riga 15 la versione **2** e si
+         aspettava un'astensione. Era giusto finche' DISCHETTO_V valeva 1.
+         Col seme a due mani la versione E' 2, e la prova ha misurato per
+         una corsa la versione CORRENTE: TORNA, rigiocato [1,2] in 646
+         passi — cioe' il verde giusto letto come un rosso. Adesso le
+         versioni provate sono DUE e nessuna delle due puo' essere quella
+         del gioco, perche' si prendono dalla riga stessa:
+
+           B8   la versione VECCHIA (uno in meno): e' il caso vero, i
+                nastri del protocollo v1 esistono e vanno rifiutati con
+                causa, mai accusati.
+           B8b  una versione FUTURA (sette in piu'): il giorno in cui
+                arrivera' un v3, un telefono fermo al v2 deve astenersi e
+                non inventarsi un verdetto. */
+      const vOra = argomentiDi(rigaDiTipo(nA, 15)).split(',')[0] | 0;
+      const prove8 = [
+        ['B8', vOra - 1, 'la riga 15 dichiara il protocollo VECCHIO: astensione, non un verdetto'],
+        ['B8b', vOra + 7, 'e nemmeno uno FUTURO si giudica: la stessa astensione, dall\'altra parte'],
+      ];
+      for (const [nome, vNuova, frase] of prove8) {
+        const vx = cambiaArg(nA, 15, 0, vNuova);
+        const vVx = vx.fatto ? await giudizio(Gi, vx.testo, seg, sA.seme) : null;
+        di(!!vVx && vVx.verdetto === 'INCOMPLETO' && vVx.causa === 'dischetto-versione' && vNuova !== vOra,
+           nome + ') ' + frase,
+           vVx ? ('v ' + vx.prima + ' -> ' + vNuova + ' · ' + vVx.verdetto + (vVx.causa ? '/' + vVx.causa : '') +
+                  ' · rigiocato ' + JSON.stringify(vVx.gol) + ' · passi ' + vVx.passi +
+                  (vNuova === vOra ? '   LA PROVA STA MISURANDO LA VERSIONE CORRENTE' : ''))
+               : 'PROVA NON ESERCITATA: nessuna riga 15');
+      }
     }
 
     /* ======================================================= GRUPPO C */

@@ -285,9 +285,11 @@ di(!formaStanza(''), 'vuoto no');
 di(!formaStanza(null), 'niente no, e senza sollevare un\'eccezione');
 di(formaStanza('6mhsp5'), 'minuscolo passa, perche\' il server alza le lettere prima di guardare');
 
-const tipoOk = k => /^[SIRF]$/.test(String(k || ''));
-di(['S','I','R','F'].every(tipoOk), 'i quattro tipi di busta passano');
-di(!tipoOk('X') && !tipoOk('') && !tipoOk('SS'), 'un quinto tipo, il vuoto e il doppio no');
+/* CINQUE TIPI DAL v2 (voce #150): la busta `N` porta la rivelazione del
+   nonce del saluto, che dal v2 viaggia impegnato e non in chiaro. */
+const tipoOk = k => /^[SIRNF]$/.test(String(k || ''));
+di(['S','I','R','N','F'].every(tipoOk), 'i cinque tipi di busta passano');
+di(!tipoOk('X') && !tipoOk('') && !tipoOk('SS'), 'un sesto tipo, il vuoto e il doppio no');
 
 /* il tiro si TOSA, non si rifiuta a caso: e' la stessa regola di
    `intero` che vale per tutto quel che arriva da uno sconosciuto */

@@ -173,6 +173,12 @@ const d_vers = P => P.pag.evaluate(() => window.__test.dischetto.v | 0);
       const r = await d_crea(A);
       const cred = await T.credenziali(base);
       const P = new T.PariFinto(base, cred, r.stanza, 'b', bugia || {});
+      /* IL RESPIRO DEL GIOCO, ed e' la riga che fa di questo banco una
+         misura invece di un'attestazione: mentre il baro aspetta, il
+         telefono deve poter fare il proprio giro di rete. Senza, il baro
+         paziente si arrende prima che il gioco abbia parlato e la MEZZA
+         CURA passa per cura — misurato, voce #150. */
+      P.respiro = () => d_giro(A);
       const s0 = await d_stato(A);
       await P.saluta({ v: (vFinta == null ? VERS : vFinta), mv: s0.motoreV, imp: s0.impronta,
                        rosa: T.rosaFinta(3), n: T.esa(crypto.randomBytes(8)) });

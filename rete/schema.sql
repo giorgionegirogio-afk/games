@@ -321,7 +321,9 @@ end $$;
 create table if not exists cassetta (
   i            bigserial primary key,
   stanza       text not null check (stanza ~ '^[0-9A-Z]{6}$'),
-  k            text not null check (k in ('S','I','R','F')),
+  -- CINQUE TIPI DAL PROTOCOLLO v2 (voce #150): `N` porta la rivelazione
+  -- del nonce del saluto, che dal v2 viaggia impegnato e non in chiaro.
+  k            text not null check (k in ('S','I','R','N','F')),
   r            text not null check (r in ('a','b')),
   t            int  not null check (t >= 0 and t <= 40),
   d            jsonb,

@@ -48051,7 +48051,7 @@ const Rete = {
    una soglia di meno di una. Un duello sono pochi scambi: lo stesso
    difetto costa 0,017 stalli per duello.
    ===================================================================== */
-const DISCHETTO_V = 1;
+const DISCHETTO_V = 2;
 
 /* La durata vera di un tiro, dichiarata dal gioco e non indovinata dal
    banco: e' il numero con cui «richieste per tiro» diventa «richieste
@@ -48164,6 +48164,37 @@ function dsTestoMossa(m){
 function dsImpegno(t, lato, mossa, nonce){
   return dsSha256('D1|' + t + '|' + lato + '|' + dsTestoMossa(mossa) + '|' + nonce).slice(0,32);
 }
+/* =====================================================================
+   L'IMPEGNO DEL SALUTO (voce #150) — lo stesso schema, sul nonce.
+
+   COM'ERA. Il nonce dell'appuntamento viaggiava dentro il saluto, in
+   chiaro, e il commento accanto diceva che a impedire la scelta era la
+   riga «si chiude quando tutti e due hanno parlato». NON LO IMPEDIVA:
+   impediva che il GIOCO chiudesse prima, non che un pari scritto a mano
+   RITARDASSE il proprio saluto. La cassetta e' pubblica; chi entra per
+   secondo legge il nonce dell'altro, ne macina quattromila finche' non
+   trova quello che gli porta il seme che vuole, e solo allora parla. Il
+   gioco non aveva modo di sapere che aveva aspettato.
+   MISURATO: 400 appuntamenti su 400 vinti dal baro (_q-dischetto-seme).
+
+   NON E' UN SECONDO SCHEMA D'IMPEGNO, e' lo stesso: la dsSha256 e'
+   quella confrontata con Node su 409 casi (cancello sha256), e la regola
+   che lo regge e' quella del #146 — la rivelazione parte solo se
+   l'impegno dell'altro e' gia' in casa.
+
+   IL LATO STA DENTRO LA STRINGA, e non e' un vezzo. Senza, il baro
+   copierebbe l'impegno dell'altro, aspetterebbe la sua rivelazione e
+   rivelerebbe lo STESSO nonce: il seme diventerebbe dsMescola(n, n),
+   cioe' un numero che l'onesto non ha scelto da solo. Col lato dentro,
+   la copia non ricompone e cade su 'saluto-non-torna'.
+
+   IL PREFISSO E' 'DS1|' E NON 'D1|': due stringhe con lo stesso prefisso
+   non devono mai poter essere la stessa: un impegno del saluto non deve
+   poter essere riusato come impegno di un tiro.
+   ===================================================================== */
+function dsImpegnoSaluto(lato, nonce){
+  return dsSha256('DS1|' + lato + '|' + nonce).slice(0,32);
+}
 /* il seme a due mani: quando scegli il tuo nonce non conosci quello
    dell'altro, quindi nessuno dei due puo' cercarsi una partita comoda */
 function dsMescola(na, nb){
@@ -48256,7 +48287,8 @@ const Dischetto = {
   vuoto(){
     return {
       fase: 'spento', stanza: '', lato: '',
-      mioNonce: '', mioSaluto: null, suoSaluto: null,
+      mioNonce: '', suoNonce: '', mandatoN: false,
+      mioSaluto: null, suoSaluto: null,
       seme: 0, primo: '', taglia: 5, suaRosa: '',
       tiro: 0, ruolo: '', mossa: null, nonce: '',
       serie: { seg: [0,0], tiri: [0,0] },
@@ -48419,6 +48451,11 @@ const Dischetto = {
     S.mutoDa = nuovi ? 0 : (S.mutoDa + 1);
 
     await this.manda();
+    /* L'APPUNTAMENTO SI CHIUDE QUI, E QUANDO I DUE TEMPI SONO COMPIUTI
+       TUTTI E DUE (voce #150): la mia rivelazione e' partita e la sua e'
+       arrivata. Non prima — e stavolta e' vero, perche' la mia non parte
+       se il suo impegno non e' in casa. */
+    if(S.fase === 'attesa-nonce' && S.mandatoN && S.suoNonce) this.chiudiAppuntamento();
     this.avanza();
 
     /* L'ALTRO CHE NON RISPONDE non e' un colpevole: e' un'incompiuta.
@@ -48434,6 +48471,14 @@ const Dischetto = {
 
   async manda(){
     const S = this.s;
+    /* LA SECONDA RIGA CHE VALE META' DEL CANTIERE (voce #150), ed e' la
+       gemella di quella dei tiri: il nonce si rivela SOLO a chi ha gia'
+       imbucato il proprio impegno. Toglila e chi parla per secondo si
+       sceglie il seme, cioe' la partita. */
+    if(S.suoSaluto && !S.mandatoN){
+      const r = await this.filoOra.manda({ k:'N', r:S.lato, t:0, d:{ n:S.mioNonce } });
+      if(r && r.ok && !r.perso) S.mandatoN = true;
+    }
     const t = S.tiro;
     /* l'impegno, appena c'e' */
     if(S.mieiImpegni[t] && !S.mandatoI[t]){
@@ -48457,7 +48502,11 @@ const Dischetto = {
     const S = this.s;
     S.visti.push({ k:m.k, r:m.r, t:m.t });
     if(m.r === S.lato) return false;          /* l'eco del mio non dice niente */
-    if(m.k === 'S'){ if(!S.suoSaluto){ this.chiudiAppuntamento(m.d); return true; } return false; }
+    /* IL SALUTO NON CHIUDE PIU' NIENTE (voce #150): porta un impegno, e
+       un impegno da solo non fa un seme. Chiude la busta 'N', quando i
+       due tempi sono compiuti tutti e due. */
+    if(m.k === 'S'){ if(!S.suoSaluto){ this.leggiSaluto(m.d); return true; } return false; }
+    if(m.k === 'N'){ if(!S.suoNonce){ S.suoNonce = (m.d && m.d.n) || ''; return true; } return false; }
     if(m.k === 'I'){ if(!S.suoiImpegni[m.t]){ S.suoiImpegni[m.t] = m.d && m.d.h; return true; } return false; }
     if(m.k === 'R'){
       if(S.sueMosse[m.t]) return false;
@@ -48473,7 +48522,8 @@ const Dischetto = {
   /* ------------------------------------------------------ risolvere */
   avanza(){
     const S = this.s;
-    if(S.fase === 'fine' || S.fase === 'attesa-pari' || S.fase === 'pronto') return;
+    if(S.fase === 'fine' || S.fase === 'attesa-pari' ||
+       S.fase === 'attesa-nonce' || S.fase === 'pronto') return;
     const t = S.tiro;
     if(!S.mandatoR[t] || !S.sueMosse[t]) return;
 
@@ -48597,7 +48647,8 @@ const Dischetto = {
     const S = this.s;
     if(!S || this.risolvendo) return false;
     return S.fase === 'scegli' || S.fase === 'attesa-impegno' ||
-           S.fase === 'attesa-pari' || S.fase === 'pronto';
+           S.fase === 'attesa-pari' || S.fase === 'attesa-nonce' ||
+           S.fase === 'pronto';
   },
 
   catturaAttiva(){
@@ -48718,6 +48769,7 @@ const Dischetto = {
       'versione-diversa':   'Uno dei due telefoni ha una versione diversa del gioco. Aggiornate tutti e due e riprovate.',
       'motore-diverso':     'I due telefoni hanno due versioni diverse del gioco: la serie non è partita apposta, invece di darvi due partite diverse.',
       'impegno-non-torna':  'La mossa rivelata non è quella che era stata chiusa: la serie si ferma qui.',
+      'saluto-non-torna':   'Il numero rivelato per il sorteggio non è quello che era stato chiuso: la serie non parte.',
       'esiti-diversi':      'I due telefoni hanno visto due esiti diversi dello stesso tiro. Non si può dire chi ha ragione, e la serie si annulla.',
       'mossa-storta':       'È arrivata una mossa che non sta nel ruolo giusto: la serie si annulla.',
       'rose-corte':         'Una delle due squadre non ha abbastanza giocatori per una serie di rigori.',
@@ -48733,6 +48785,7 @@ const Dischetto = {
     const S = this.s;
     if(!S || S.fase === 'spento') return 'Nessuna sfida aperta.';
     if(S.fase === 'attesa-pari') return 'Sfida aperta. Manda il codice e aspetta che l’altro entri.';
+    if(S.fase === 'attesa-nonce') return 'Ci siete tutti e due: si sta tirando a sorte in due, e nessuno dei due può barare.';
     if(S.fase === 'pronto') return 'Ci siamo: si comincia.';
     if(S.fase === 'scegli')
       return S.ruolo === 't' ? 'Tocca a te: tira. Mira nello specchio e ferma la barra.'
@@ -48837,13 +48890,18 @@ const Dischetto = {
     return c;
   },
 
+  /* IL SALUTO NON PORTA PIU' IL NONCE (voce #150): porta il suo IMPEGNO.
+     Il nonce resta in casa e si rivela dopo, con la busta 'N', e solo a
+     chi si e' impegnato a sua volta. */
   mioSaluto(){
+    const S = this.s;
+    S.mioNonce = dsCaso(8);
     return {
       v: DISCHETTO_V,
       mv: MOTORE_V,
       imp: improntaMotore(),
       rosa: impaccaRosa(SAVE.rosa),
-      n: dsCaso(8),
+      hn: dsImpegnoSaluto(S.lato, S.mioNonce),
     };
   },
 
@@ -48854,7 +48912,6 @@ const Dischetto = {
     S.lato = 'a';
     this.filoOra.apri(S.stanza);
     S.mioSaluto = this.mioSaluto();
-    S.mioNonce = S.mioSaluto.n;
     const r = await this.filoOra.manda({ k:'S', r:'a', t:0, d:S.mioSaluto });
     S.rete = Rete.stato;
     if(!r || !r.ok) { S.fase = 'fine'; S.causa = 'rete'; return { ok:false, errore:(r&&r.errore)||'rete', stanza:S.stanza }; }
@@ -48871,7 +48928,6 @@ const Dischetto = {
     S.lato = 'b';
     this.filoOra.apri(c);
     S.mioSaluto = this.mioSaluto();
-    S.mioNonce = S.mioSaluto.n;
     const r = await this.filoOra.manda({ k:'S', r:'b', t:0, d:S.mioSaluto });
     S.rete = Rete.stato;
     if(!r || !r.ok) { S.fase = 'fine'; S.causa = 'rete'; return { ok:false, errore:(r&&r.errore)||'rete' }; }
@@ -48884,13 +48940,29 @@ const Dischetto = {
      riga a impedire che il secondo scelga il proprio nonce sapendo il
      primo. Il nonce si manda PRIMA di guardare, sempre — crea e
      entra mandano il saluto come prima cosa che fanno. */
-  chiudiAppuntamento(suo){
+  /* IL PRIMO TEMPO: si guarda con chi si ha a che fare, e nient'altro.
+     Qui il seme non si puo' ancora fare, perche' il nonce dell'altro non
+     c'e': c'e' solo il suo impegno. */
+  leggiSaluto(suo){
     const S = this.s;
     S.suoSaluto = suo;
     if(suo.v !== DISCHETTO_V){ S.fase='fine'; S.causa='versione-diversa'; return; }
     if(suo.mv !== MOTORE_V){ S.fase='fine'; S.causa='motore-diverso'; return; }
-    const na = S.lato === 'a' ? S.mioNonce : suo.n;
-    const nb = S.lato === 'a' ? suo.n : S.mioNonce;
+    S.fase = 'attesa-nonce';
+  },
+
+  /* IL SECONDO TEMPO: la rivelazione e' arrivata e la mia e' partita.
+     Prima di fare il seme, l'impegno deve ricomporre — ed e' il secondo
+     dei due soli punti del protocollo in cui non c'e' un dubbio ma un
+     hash che non torna (l'altro e' impegno-non-torna, sui tiri). */
+  chiudiAppuntamento(){
+    const S = this.s;
+    const suo = S.suoSaluto;
+    if(dsImpegnoSaluto(S.lato === 'a' ? 'b' : 'a', S.suoNonce) !== suo.hn){
+      S.fase='fine'; S.causa='saluto-non-torna'; return;
+    }
+    const na = S.lato === 'a' ? S.mioNonce : S.suoNonce;
+    const nb = S.lato === 'a' ? S.suoNonce : S.mioNonce;
     S.seme = dsMescola(na, nb);
     /* LA REGOLA STA IN dsPrimoDalSeme, E QUI SI CHIAMA (voce #149): una
        porta sola per chi gioca e per chi giudica. */
