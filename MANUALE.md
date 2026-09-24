@@ -635,11 +635,23 @@ Qui il registro completo, a edizioni.
 
   Si aggiunge `INCOMPLETO/duelli-senza-atti`, e **si legge nel nastro, prima
   di rigiocare**: un nastro che **non dichiara la serie**, che porta comandi
-  di duello (tipo 6) e **nessun atto di gioco** — niente 12/13, i diti che si
-  posano e si muovono; niente 0/1, i pixel dei nastri di prima — non è il
-  nastro di una partita giocata. Chi l'ha registrato **non ha mai toccato il
-  campo**: ha solo scelto dove tirare. **Non serviva nessuna firma: bastava
-  guardare di che cosa è fatto il nastro.**
+  di duello (tipo 6) e **nessun atto di gioco** non è il nastro di una partita
+  giocata. Chi l'ha registrato **non ha mai toccato il campo**: ha solo scelto
+  dove tirare. **Non serviva nessuna firma: bastava guardare di che cosa è
+  fatto il nastro.**
+
+  **GLI ATTI SONO SEI TIPI E SI CONTANO TUTTI**, non i più comodi: 12 e 13 (il
+  dito che si posa e che si muove, #144), 0 e 1 (i pixel dei nastri di prima
+  del #144), 2 (il dito che si stacca) e **4, il tasto**. Il quattro è il tipo
+  che la prima stesura aveva dimenticato, e non è un dettaglio: **chi gioca una
+  sfida da tastiera non scrive nessun 12 e nessun 13**, e il suo nastro onesto
+  sarebbe finito in astensione per sempre.
+
+  **E IL BORDO CHE RESTA, dichiarato**: un tasto premuto per sbaglio *durante*
+  una serie scrive un tipo 4, e quel nastro — se anche gli togliessero la 15 e
+  le 14 — tornerebbe a rigiocarsi come una partita. È il residuo del residuo,
+  vale **zero su un telefono** (non c'è tastiera) e si preferisce a
+  un'astensione su ogni sfida giocata da tastiera.
 
   **E CI SONO VOLUTE TRE FORME, perché le prime due si sono rotte in due modi
   diversi — ed è la parte di questo cantiere che vale la pena leggere.**
@@ -866,10 +878,19 @@ Qui il registro completo, a edizioni.
 
   ### (j-bis) LA BATTERIA, INTERA — e il difetto che ha trovato solo lei
 
-  `node strumenti/tutti.js --tutto`, **78 cancelli**, **1628 s** di orologio,
-  sul file `8a7d1f59a7e7`. Tre rossi alla prima corsa — `salvataggio`,
-  `verbi-ritardo`, `nastro-falsi` — e **nessuno dei tre è una regressione**,
-  ma solo uno dei tre era rumore. Rimisurati con `--ripetuto 3`:
+  **LA CORSA DI CHIUSURA**, sul gioco spedito (file `0d2479d759e8`):
+  `node strumenti/tutti.js --tutto`, **78 cancelli**, **1592 s** di orologio,
+  **75 OK e ZERO rossi fra i cancelli che contano**. I due NO sono tutti e due
+  informativi e tutti e due dichiarati: `dischetto-seme` (il difetto aperto del
+  §f) e `istantanea` (**42/56**, identico a `main`, vedi (i)). **Il verdetto
+  della batteria è «PROVA NULLA» e non «verde»** — `avvio-telefono` esce **3**
+  perché non c'è nessun telefono Android collegato — e si scrive così invece di
+  arrotondare. Fuori dalla batteria: `rete/prove/tutte.js` **62/62**.
+
+  **LA CORSA PRIMA**, sul gioco con la seconda forma della guardia del residuo
+  (file `8a7d1f59a7e7`, 1628 s): tre rossi — `salvataggio`, `verbi-ritardo`,
+  `nastro-falsi` — e **nessuno dei tre era una regressione**, ma solo uno dei
+  tre era rumore. Rimisurati con `--ripetuto 3`:
 
   | cancello | corsa 1 | corsa 2 | corsa 3 | giudizio |
   |---|---|---|---|---|
@@ -888,12 +909,10 @@ Qui il registro completo, a edizioni.
   parziale l'avrebbe trovato. È la seconda metà della regola 4: quando
   ribattezzi una causa, cerca subito chi la nominava.
 
-  Fuori dalla batteria: `rete/prove/tutte.js` **62/62**. Gli informativi:
-  `istantanea` **42/56** (identico a `main`, vedi (i)), `avvio` verde,
-  `dischetto-seme` **rosso e dichiarato** (§f), `avvio-telefono` **uscita 3**
-  perché non c'è nessun telefono Android collegato — quindi il verdetto della
-  batteria è **«prova nulla», non «verde»**, e si scrive così invece di
-  arrotondare.
+  **E ALLA CORSA DI CHIUSURA TUTTI E TRE SONO VERDI**: `nastro-falsi` perché
+  il falso è stato riparato, `salvataggio` e `verbi-ritardo` perché erano
+  rumore — e il secondo resta dichiarato RUMOROSO, che è la sola cosa onesta
+  da scrivergli accanto.
 
   ### (k) CHE COSA RESTA APERTO
 

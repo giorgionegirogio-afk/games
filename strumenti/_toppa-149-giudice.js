@@ -88,12 +88,23 @@ COPPIE.push([
 
      E NON SERVIVA NESSUNA FIRMA: bastava guardare di che cosa e' fatto il
      nastro. Un nastro di una serie dal dischetto porta COMANDI DI DUELLO
-     (tipo 6) e NESSUN ATTO DI GIOCO — niente tipo 12 o 13 (i diti che si
-     posano e si muovono, voce #144) e niente tipo 0 o 1 (i pixel dei
-     nastri di prima). Chi l'ha registrato non ha mai toccato il campo:
-     ha solo scelto dove tirare. Un nastro cosi' NON E' il nastro di una
-     partita giocata, e rigiocarlo come novanta secondi di calcio vuol
-     dire rigiocare un'altra cosa e poi confrontarne il punteggio.
+     (tipo 6) e NESSUN ATTO DI GIOCO. Gli atti sono SEI tipi e si contano
+     tutti, non i piu' comodi: 12 e 13 (il dito che si posa e che si
+     muove, voce #144), 0 e 1 (i pixel dei nastri di prima del #144), 2
+     (il dito che si stacca) e 4 (IL TASTO — e questo e' il tipo che la
+     prima stesura di questa riga aveva dimenticato: chi gioca una sfida
+     da tastiera non scrive nessun 12 e nessun 13, e un suo nastro onesto
+     sarebbe finito in astensione). Chi ha registrato un nastro senza
+     nessuno di quei sei non ha mai toccato il campo: ha solo scelto dove
+     tirare. Un nastro cosi' NON E' il nastro di una partita giocata, e
+     rigiocarlo come novanta secondi di calcio vuol dire rigiocare
+     un'altra cosa e poi confrontarne il punteggio.
+
+     IL BORDO, DICHIARATO: un tasto premuto per sbaglio DURANTE una serie
+     scrive un tipo 4, e quel nastro — se anche gli togliessero la 15 e
+     le 14 — tornerebbe a rigiocarsi come una partita. E' il residuo del
+     residuo, vale su un telefono zero (non c'e' tastiera) e si preferisce
+     a un'astensione su ogni sfida giocata da tastiera.
 
      SOLO SE IL NASTRO NON DICHIARA LA SERIE (disco e' null): una serie che si
      dichiara si apre con avviaRigori e questa riga non la riguarda.
@@ -117,7 +128,7 @@ COPPIE.push([
     for(const r of Reg.righe){
       const tp = r[1];
       if(tp === 6) duelli++;
-      else if(tp === 0 || tp === 1 || tp === 12 || tp === 13) atti++;
+      else if(tp === 0 || tp === 1 || tp === 2 || tp === 4 || tp === 12 || tp === 13) atti++;
     }
     if(duelli > 0 && atti === 0) return no('INCOMPLETO','duelli-senza-atti');
   }

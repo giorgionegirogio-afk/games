@@ -44,7 +44,7 @@ const COPPIE = [
     for(const r of Reg.righe){
       const tp = r[1];
       if(tp === 6) duelli++;
-      else if(tp === 0 || tp === 1 || tp === 12 || tp === 13) atti++;
+      else if(tp === 0 || tp === 1 || tp === 2 || tp === 4 || tp === 12 || tp === 13) atti++;
     }
     if(duelli > 0 && atti === 0) return no('INCOMPLETO','duelli-senza-atti');
   }`,
