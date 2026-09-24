@@ -1,6 +1,6 @@
 /* =====================================================================
-   _q-nastro-falsi.js — I SETTE FALSI CHE CONDANNANO IL BANCO
-   (voce #148, compito 1)
+   _q-nastro-falsi.js — GLI OTTO FALSI CHE CONDANNANO IL BANCO
+   (voce #148, compito 1 · l'ottavo dalla voce #149, compito 1)
 
    PERCHE' ESISTE. Un banco che stampa undici OK non ha ancora provato
    niente: potrebbe essere verde perche' il gioco e' giusto, o perche'
@@ -10,13 +10,13 @@
    due telefoni mentre stava guardando UN MILLISECONDO di scarto
    d'orologio.
 
-   Qui si costruiscono SETTE VERSIONI BUGIARDE DEL GIOCO, e per ognuna si
+   Qui si costruiscono OTTO VERSIONI BUGIARDE DEL GIOCO, e per ognuna si
    dichiara PRIMA quali prove devono cadere E quali devono RESTARE VERDI.
    La seconda meta' e' quella che fa la differenza fra un banco che
    discrimina e uno che e' rosso comunque: se un falso facesse cadere
    tutto, il banco non starebbe distinguendo niente.
 
-   I SETTE, e le prove che ciascuno muove:
+   GLI OTTO, e le prove che ciascuno muove:
 
      possesso        ognuno si mette in casa: su un capo le rose sono
                      scambiate.               -> A3, A6 · A1 resta VERDE
@@ -42,6 +42,16 @@
                      stimato.                 -> A1, A2, A5 (i passi esplodono)
      punteggio       il giudice guarda G.score invece dei rigori segnati.
                                               -> A1, A2 · A5 e A6 VERDI
+     mezza-guardia   LA CURA PIGRA (voce #149): il giudice pretende la
+                     riga 15 quando ci sono le 14, e basta. Non legge la
+                     versione del protocollo, non riscontra il primo
+                     tiratore col seme, non si accorge dei comandi di
+                     duello rimasti non letti. E' la forma che il
+                     revisore avrebbe accettato leggendo solo il primo
+                     dei quattro punti della cura.
+                                              -> B6, B7, B8 · B1 e B5 VERDI
+                     GIRA SUL GRUPPO B, non sul gruppo A: le quattro
+                     astensioni del #149 stanno li'.
 
    E LA COSA CHE I TRE FALSI DELLE ROSE HANNO INSEGNATO AL BANCO, che e'
    una misura e non un'opinione: IN UNA SERIE DI RIGORI IL PUNTEGGIO NON
@@ -91,12 +101,14 @@ const FALSI = [
   { nome: 'primo-storto', crit: '_crit-nastro-primo-storto.js', morde: ['A7'],             lascia: ['A3', 'A5', 'A6'] },
   { nome: 'serie-cieca',  crit: '_crit-giudice-serie-cieca.js', morde: ['A1', 'A2', 'A5'], lascia: ['A3', 'A6'] },
   { nome: 'punteggio',    crit: '_crit-giudice-punteggio.js',   morde: ['A1', 'A2'],       lascia: ['A3', 'A5', 'A6'] },
+  { nome: 'mezza-guardia', crit: '_crit-giudice-mezza-guardia.js', gruppo: 'B',
+    morde: ['B6', 'B7', 'B8'], lascia: ['B1', 'B5'] },
 ];
-/* l'ottavo: si costruisce, si misura e si dichiara. Non ha un `morde`. */
+/* il nono: si costruisce, si misura e si dichiara. Non ha un `morde`. */
 const OTTAVO = { nome: 'tardi', crit: '_crit-nastro-tardi.js' };
 
-function corri(fileGioco) {
-  const a = ['strumenti/_q-nastro-differito.js', '--gioco', path.relative(RADICE, fileGioco).split(path.sep).join('/'), '--solo', 'A'];
+function corri(fileGioco, gruppo) {
+  const a = ['strumenti/_q-nastro-differito.js', '--gioco', path.relative(RADICE, fileGioco).split(path.sep).join('/'), '--solo', gruppo || 'A'];
   const r = spawnSync(process.execPath, a, { cwd: RADICE, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   return { uscita: r.status, testo: (r.stdout || '') + (r.stderr || '') };
 }
@@ -111,7 +123,7 @@ const verde = (testo, p) => new RegExp('^\\s*OK\\s+' + p + '\\)', 'm').test(test
      di lasciare che sette falsi «non costruiti» sembrino sette buchi. */
   if (!fs.readFileSync(GIOCO, 'utf8').includes('Reg.carta(')) {
     console.log('  PROVA NULLA: questo gioco non ha ancora la cura del #148 (Reg.carta) —');
-    console.log('               i sette falsi si costruiscono sopra di lei.');
+    console.log('               gli otto falsi si costruiscono sopra di lei.');
     process.exit(3);
   }
 
@@ -124,7 +136,7 @@ const verde = (testo, p) => new RegExp('^\\s*OK\\s+' + p + '\\)', 'm').test(test
     process.exit(3);
   }
   const ok = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7'].every(p => verde(onesto.testo, p));
-  console.log('  ' + (ok ? 'OK  ' : 'NO  ') + 'il gioco ONESTO passa il gruppo A (senza, i sette non provano niente)');
+  console.log('  ' + (ok ? 'OK  ' : 'NO  ') + 'il gioco ONESTO passa il gruppo A (senza, gli otto non provano niente)');
   if (!ok) {
     console.log(onesto.testo.split('\n').filter(r => /^\s*(OK|NO)\s+A/.test(r)).join('\n'));
     console.log('\n  IL BANCO NON PUO\' CONDANNARE NESSUNO: il gioco onesto e\' gia\' rosso.');
@@ -141,7 +153,7 @@ const verde = (testo, p) => new RegExp('^\\s*OK\\s+' + p + '\\)', 'm').test(test
       scappati++;
       continue;
     }
-    const r = corri(via);
+    const r = corri(via, f.gruppo);
     if (r.uscita === 3) {
       console.log('  NO  ' + f.nome.padEnd(13) + ' PROVA NULLA sul falso: ' +
                   (r.testo.match(/PROVA NULLA:.*/) || [''])[0]);

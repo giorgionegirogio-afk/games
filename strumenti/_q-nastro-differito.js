@@ -47,6 +47,18 @@
       testimonianze tolte, motore diverso, MOTORE_V diverso, rose tolte.
       Sono i quattro «non lo so» che non muovono un punto.
 
+      E DAL #149 SONO OTTO. La revisione d'insieme dell'onda E ha giudicato
+      lo stesso nastro onesto cambiando UNA COSA ALLA VOLTA, e tre modi su
+      dieci davano NON TORNA a due persone oneste; il quarto (la versione
+      del protocollo) dava TORNA a un nastro che il gioco non sa leggere.
+      B5..B8 sono quei quattro casi, e pretendono la CAUSA e non solo il
+      verdetto:
+
+        B5  tolta SOLO la riga 15, le 14 restano   dischetto-assente
+        B6  tolte la 15 E tutte le 14 (il residuo) duelli-non-letti
+        B7  il bit «chi ha tirato per primo» girato dischetto-primo-incoerente
+        B8  la riga 15 con una versione ignota     dischetto-versione
+
    C) LA STAFFETTA LI SA LAVORARE. Un nastro giudicabile che il
       verificatore differito non sa prendere in mano non serve a niente.
       C1 misura il raggruppamento (un nastro del dischetto non porta
@@ -163,6 +175,31 @@ function togliTipo(testo, tipo) {
     return v[0] + ',3,' + v[2];
   });
   return { testo: p[0] + '|' + p[1] + '|' + p[2] + '|' + pezzi.join(';'), tolti };
+}
+
+/* =====================================================================
+   UN ARGOMENTO SOLO, CAMBIATO IN UNA RIGA SOLA (voce #149).
+
+   `i` conta DOPO i tre scarti di testa (dT, tipo, dMs), quindi per la riga
+   15 l'indice 0 e' la versione del protocollo e l'indice 1 e' chi ha tirato
+   per primo. Si cambia la PRIMA riga di quel tipo, che e' quella che
+   `vagliaNastro` legge (`&& !disco`).
+
+   UNA COSA ALLA VOLTA, ed e' la regola di `_nastri-bugiardi.js`: dT e dMs
+   non si toccano, la catena dei tick resta intatta, e il nastro falso e'
+   falso per UNA ragione sola. Se fosse falso per due, un rosso non direbbe
+   quale delle due ha morso. */
+function cambiaArg(testo, tipo, i, v) {
+  const p = String(testo).split('|');
+  let fatto = false, prima = null;
+  const pezzi = (p[3] || '').split(';').filter(Boolean).map(z => {
+    const c = z.split(',');
+    if (fatto || c[1] !== String(tipo) || c.length <= 3 + i) return z;
+    fatto = true; prima = c[3 + i];
+    c[3 + i] = String(v);
+    return c.join(',');
+  });
+  return { testo: p[0] + '|' + p[1] + '|' + p[2] + '|' + pezzi.join(';'), fatto, prima };
 }
 
 /* il giudizio su una pagina PULITA: e' quel che fa la staffetta, e
@@ -382,7 +419,7 @@ const giudizio = (Gi, testo, atteso, seme) => Gi.pag.evaluate(([testo, atteso, s
 
     /* ======================================================= GRUPPO B */
     if (vuole('B')) {
-      console.log('\n  B) LE ASTENSIONI GIUSTE RESTANO (nessuna accusa, quattro «non lo so»)');
+      console.log('\n  B) LE ASTENSIONI GIUSTE RESTANO (nessuna accusa, otto «non lo so»)');
       const sp14 = togliTipo(nA, 14);
       const v14 = sp14.tolti ? await giudizio(Gi, sp14.testo, seg, sA.seme) : null;
       di(!!v14 && v14.verdetto === 'INCOMPLETO' && v14.causa === 'testimonianze-assenti',
@@ -406,6 +443,81 @@ const giudizio = (Gi, testo, atteso, seme) => Gi.pag.evaluate(([testo, atteso, s
       di(!!vRo && vRo.verdetto === 'INCOMPLETO' && vRo.causa === 'rose-assenti',
          'B4) tolte le rose: INCOMPLETO/rose-assenti, come per ogni altro nastro',
          vRo ? (vRo.verdetto + '/' + vRo.causa) : 'PROVA NON ESERCITATA: il nastro non porta nessuna riga 7');
+
+      /* =====================================================================
+         I QUATTRO MODI DI FARSI ACCUSARE DA ONESTI (voce #149).
+
+         NASCONO ROSSE, ed e' dichiarato: sul gioco del merge-base `b87f512`
+         B5 e B6 danno NON TORNA (misurato dalla revisione d'insieme: atteso
+         [2,1], rigiocato [1,3] in 7839 passi), B7 da' NON TORNA (rigiocato
+         [1,2] in 646 passi) e B8 da' TORNA a un nastro di un protocollo che
+         il gioco non conosce.
+
+         UNA COSA ALLA VOLTA. Ognuna di queste quattro prove parte dal
+         NASTRO VERO della serie di sopra e ne cambia UN dettaglio. E' la
+         forma della revisione: un banco che cambiasse due cose non saprebbe
+         quale delle due ha morso.
+
+         E TUTTE E QUATTRO PRETENDONO UN'ASTENSIONE, mai un'accusa. E' lo
+         standard che il #133 (`schermo-ignoto`) e il #142
+         (`motore-js-ignoto`) hanno gia' scritto due volte: un nastro senza
+         la riga che serve NON SI PUO' SAPERE, e procedere alla cieca
+         produce accuse false in una sola direzione. Il verdetto giusto e'
+         INCOMPLETO, che non muove un punto a nessuno.
+
+         LA CAUSA SI PRETENDE, non solo il verdetto: quattro astensioni con
+         la causa sbagliata sarebbero un banco che attesta. E ognuna ha la
+         SUA causa, perche' ognuna morde per una ragione diversa — un banco
+         che chiedesse solo «INCOMPLETO» resterebbe verde su una cura che
+         cura il caso sbagliato (e' quel che il falso
+         `_crit-giudice-mezza-guardia` mette alla prova). */
+      const sp15 = togliTipo(nA, 15);
+      const v15 = sp15.tolti ? await giudizio(Gi, sp15.testo, seg, sA.seme) : null;
+      di(!!v15 && v15.verdetto === 'INCOMPLETO' && v15.causa === 'dischetto-assente',
+         'B5) tolta SOLO la riga 15 (le 14 restano), il giudice si astiene: non rigioca calcio',
+         v15 ? ('tolte ' + sp15.tolti + ' -> ' + v15.verdetto + (v15.causa ? '/' + v15.causa : '') +
+                ' · rigiocato ' + JSON.stringify(v15.gol) + ' · passi ' + v15.passi)
+             : 'PROVA NON ESERCITATA: nessuna riga 15');
+
+      /* IL RESIDUO, che il #147 dichiarava «indistinguibile da una partita
+         normale». Era vero per IDENTIFICARE la serie e falso per ASTENERSI:
+         il nastro porta trenta comandi di duello che una partita di calcio
+         non raccoglie mai, e quello si vede senza nessuna firma. */
+      const sp1514 = togliTipo(togliTipo(nA, 15).testo, 14);
+      const v1514 = (sp15.tolti && sp1514.tolti) ? await giudizio(Gi, sp1514.testo, seg, sA.seme) : null;
+      di(!!v1514 && v1514.verdetto === 'INCOMPLETO' && v1514.causa === 'duelli-non-letti',
+         'B6) IL RESIDUO: tolte la 15 E tutte le 14, si astiene lo stesso (i duelli restano non letti)',
+         v1514 ? ('tolte ' + sp15.tolti + '+' + sp1514.tolti + ' -> ' + v1514.verdetto +
+                  (v1514.causa ? '/' + v1514.causa : '') + ' · rigiocato ' + JSON.stringify(v1514.gol) +
+                  ' · passi ' + v1514.passi)
+               : 'PROVA NON ESERCITATA: mancano la riga 15 o le righe 14');
+
+      /* IL BIT CAPOVOLTO. Il #148 ha scelto apposta di non ri-dedurre
+         `primo` dentro `giudica` per non duplicare la regola del sorteggio,
+         e il prezzo accettato era questa accusa. Il riscontro col seme
+         ASTIENE senza duplicare: la regola vive in un posto solo e la
+         chiamano tutti e due i capi. */
+      const gir = cambiaArg(nA, 15, 1, ((argomentiDi(rigaDiTipo(nA, 15)).split(',')[1] | 0) ? 0 : 1));
+      const vGir = gir.fatto ? await giudizio(Gi, gir.testo, seg, sA.seme) : null;
+      di(!!vGir && vGir.verdetto === 'INCOMPLETO' && vGir.causa === 'dischetto-primo-incoerente',
+         'B7) capovolto il bit «chi ha tirato per primo», si astiene invece di rigiocare un\'altra serie',
+         vGir ? ('primo ' + gir.prima + ' -> ' + (gir.prima | 0 ? 0 : 1) + ' · ' + vGir.verdetto +
+                 (vGir.causa ? '/' + vGir.causa : '') + ' · rigiocato ' + JSON.stringify(vGir.gol) +
+                 ' · passi ' + vGir.passi)
+              : 'PROVA NON ESERCITATA: la riga 15 non porta il secondo numero');
+
+      /* LA VERSIONE DEL PROTOCOLLO, scritta dal #147 e mai letta in
+         differita: `:47888` la definisce, `:48147` la scrive, `:48647` la
+         controlla SOLO DAL VIVO. Un nastro di un dischetto che non
+         conosciamo non si puo' rigiocare — e' la stessa cosa che il #107
+         dice del motore e il #142 del suo impronta. */
+      const v2 = cambiaArg(nA, 15, 0, 2);
+      const vV2 = v2.fatto ? await giudizio(Gi, v2.testo, seg, sA.seme) : null;
+      di(!!vV2 && vV2.verdetto === 'INCOMPLETO' && vV2.causa === 'dischetto-versione',
+         'B8) la riga 15 dichiara un protocollo che non conosciamo: astensione, non un verdetto',
+         vV2 ? ('v ' + v2.prima + ' -> 2 · ' + vV2.verdetto + (vV2.causa ? '/' + vV2.causa : '') +
+                ' · rigiocato ' + JSON.stringify(vV2.gol) + ' · passi ' + vV2.passi)
+             : 'PROVA NON ESERCITATA: nessuna riga 15');
     }
 
     /* ======================================================= GRUPPO C */
