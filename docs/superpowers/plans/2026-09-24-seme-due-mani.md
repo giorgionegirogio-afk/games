@@ -69,6 +69,17 @@ sul gioco da 2,8 MB).
 
 ## C3 — la versione, e i falsi riscritti
 
+> **RETTIFICA A EDIZIONI (24 settembre 2026, a cantiere fatto).** Il punto 1 —
+> `DISCHETTO_V` 1 → 2 — **è stato fatto in C2, non qui**, e il piano aveva
+> torto a separarli. La prova è stata immediata: col saluto a due tempi e la
+> versione ancora a 1, un telefono nuovo e uno vecchio si danno appuntamento
+> credendo di parlarsi, e il nuovo accusa il vecchio di `saluto-non-torna`
+> invece di dire «versione diversa». **Un protocollo che cambia e un numero
+> che non si muove è esattamente l'accusa falsa che questa casa non vuole.**
+> In C2 è entrato anche il punto 2 (B8 di `_q-nastro-differito`), perché la
+> rete di sicurezza deve essere verde a ogni compito e la versione la rompeva.
+> C3 è rimasto la registrazione dei tre falsi nuovi nei due banchi dei falsi.
+
 1. `DISCHETTO_V` 1 → 2 (gioco, `_dischetto-due-telefoni.js`).
 2. Verifica che una serie registrata su v1 prenda **INCOMPLETO /
    dischetto-versione** e non NON TORNA — misurata, non dichiarata.

@@ -239,6 +239,15 @@ Quando tutte e sei sono verdi, `dischetto-seme` torna a **`conta:true`** in
 | **C1** | il banco che condanna: `_q-dischetto-seme` riscritto (nasce ROSSO — oggi il baro vince 400/400) + i tre falsi del gioco |
 | **C2** | l'impegno sul saluto nel gioco, la fase `attesa-nonce`, la busta `N` (gioco, cassetta finta, `rete/api/dischetto.js`, `rete/prove/tutte.js`) |
 | **C3** | `DISCHETTO_V` 1 → 2, il rifiuto con causa vera delle serie vecchie, `PariFinto` e i sette falsi riscritti |
+
+> **RETTIFICA A EDIZIONI (24 settembre 2026, a cantiere fatto).** `DISCHETTO_V`
+> 1 → 2 **è entrato in C2 insieme al protocollo, non in C3**: separarli lascia
+> per un commit un telefono nuovo e uno vecchio che si danno appuntamento
+> credendo di parlarsi, e il nuovo accusa il vecchio di `saluto-non-torna`
+> invece di dire «versione diversa». Con la versione si è mosso in C2 anche
+> `_q-nastro-differito` B8, che scriveva nella riga 15 proprio la versione 2 e
+> nello stesso istante ha smesso di misurare una versione ignota. C3 è rimasto
+> la registrazione dei tre falsi nuovi nei due banchi dei falsi.
 | **C4** | il ritmo rimisurato, la batteria intera, `dischetto-seme` a `conta:true`, verbale e rettifiche a edizioni |
 
 ---
