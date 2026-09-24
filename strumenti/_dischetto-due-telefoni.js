@@ -369,6 +369,24 @@ function mescola(na, nb) {
   return h.readUInt32BE(0);
 }
 
+/* =====================================================================
+   L'IMPEGNO DEL SALUTO (voce #150) — lo stesso schema in due tempi che
+   il #146 usa per i tiri, applicato al nonce dell'appuntamento.
+
+   IL LATO STA DENTRO LA STRINGA, e non e' un vezzo. Senza, il baro
+   copierebbe l'impegno dell'altro, aspetterebbe la sua rivelazione e
+   rivelerebbe lo STESSO nonce: il seme diventerebbe mescola(n, n), cioe'
+   un numero che l'onesto non ha scelto da solo. Col lato dentro, la
+   copia non ricompone e cade su `saluto-non-torna`.
+
+   La forma della stringa e' il contratto e va identica nel gioco
+   (`dsImpegnoSaluto`): cambiare un separatore qui e non la' vuol dire
+   che nessuno dei due riesce piu' a credere all'altro.
+   ===================================================================== */
+function impegnoSaluto(lato, nonce) {
+  return crypto.createHash('sha256').update('DS1|' + lato + '|' + nonce).digest('hex').slice(0, 32);
+}
+
 class PariFinto {
   constructor(base, cred, stanza, lato, bugia) {
     this.base = base; this.cred = cred; this.stanza = stanza;
@@ -403,28 +421,121 @@ class PariFinto {
     return this.chiama('/api/dischetto', 'POST', { stanza: this.stanza, k, r: this.lato, t, d });
   }
 
-  /* IL SALUTO. `semesuo` lo ritarda finche' non vede quello dell'altro:
-     cosi' puo' scegliersi un nonce che gli porti il seme che vuole. */
+  /* =====================================================================
+     IL SALUTO, E LE QUATTRO MANI CHE PROVANO A SCEGLIERE IL SEME.
+
+     IL PARI PARLA TUTTE E DUE LE VERSIONI (voce #150), e lo decide dal
+     `v` che gli si mette in mano — non da una manopola sua. Un pari che
+     scegliesse da se' la versione misurerebbe la propria idea del
+     protocollo invece di quella del gioco.
+
+       v1  il nonce viaggia DENTRO il saluto, in chiaro.
+       v2  il saluto porta l'IMPEGNO del nonce; il nonce si rivela con
+           una busta `N`, e il pari onesto la manda solo quando ha in
+           casa l'impegno dell'altro — la stessa regola d'oro del gioco.
+
+     LE BUGIE DEL SEME, tutte e tre nel caso peggiore:
+
+       semesuo      ritarda il saluto finche' non vede quello dell'altro,
+                    e poi macina 4096 nonce per il bit che vuole. Su v1
+                    vince sempre; su v2 il saluto dell'altro porta solo
+                    un impegno e la macinatura non serve a niente.
+       semerivelato si impegna su un nonce, aspetta la RIVELAZIONE
+                    dell'altro e poi ne rivela un ALTRO, scelto. E' il
+                    baro che l'impegno esiste per fermare.
+       semepaziente non parla finche' non ha in mano il NONCE dell'altro.
+                    Su v1 lo trova dentro il saluto; su v2 non arriva
+                    mai, perche' l'onesto non rivela a chi non si e'
+                    impegnato. Il suo esito atteso e' lo STALLO.
+     ===================================================================== */
+
+  /* il nonce dell'altro, comunque il protocollo glielo faccia arrivare:
+     dentro la sua rivelazione (v2) o dentro il suo saluto (v1) */
+  suoNonce() {
+    const n = this.trova('N', this.altro, 0);
+    if (n && n.d && n.d.n) return n.d.n;
+    const s = this.trova('S', this.altro, 0);
+    return (s && s.d && s.d.n) || null;
+  }
+
+  /* macina nonce finche' non ne trova uno che dia il seme col bit che il
+     baro vuole — cioe' «tiro io per primo». 4096 tentativi bastano: il
+     bit e' uno solo, e la probabilita' di non trovarlo e' 2^-4096. */
+  macina(suo) {
+    if (!suo) return this.mioNonce;
+    for (let k = 0; k < 4096; k++) {
+      const n = esa(crypto.randomBytes(8));
+      const sm = this.lato === 'a' ? mescola(n, suo) : mescola(suo, n);
+      if ((sm & 1) === (this.lato === 'b' ? 1 : 0)) return n;
+    }
+    return this.mioNonce;
+  }
+
   async saluta(dati) {
-    if (this.bugia.semesuo) {
+    this.duetempi = (dati && (dati.v | 0)) >= 2;
+    this.mioNonce = (dati && dati.n) || esa(crypto.randomBytes(8));
+    this.mandataN = false;
+    this.nonceRivelato = null;
+    this.pazienzaPersa = false;
+
+    if (this.bugia.semepaziente) {
+      /* NON SI IMPEGNA FINCHE' NON SA TUTTO. Su v2 non sapra' mai niente:
+         il gioco non rivela a chi non ha parlato, e questo e' lo stallo
+         che il cancello pretende. */
+      for (let g = 0; g < 40 && !this.suoNonce(); g++) await this.ritira();
+      const suo = this.suoNonce();
+      if (suo) this.mioNonce = this.macina(suo);
+      else { this.pazienzaPersa = true; return { ok: false, errore: 'mai-visto-il-nonce' }; }
+    } else if (this.bugia.semesuo) {
       for (let g = 0; g < 40 && !this.trova('S', this.altro, 0); g++) await this.ritira();
       const suo = this.trova('S', this.altro, 0);
-      if (suo) {
-        /* cerca un nonce che dia un seme con il bit voluto: e' il baro
-           sul sorteggio, e deve fallire perche' il suo nonce arriva
-           DOPO che l'altro ha gia' parlato — ma solo se il gioco
-           pretende di vedere l'impegno dell'altro prima di guardare il
-           proprio. Se il gioco non lo pretende, questa bugia passa, e il
-           banco deve accorgersene. */
-        for (let k = 0; k < 4096; k++) {
-          const n = esa(crypto.randomBytes(4));
-          const sm = this.lato === 'a' ? mescola(n, suo.d.n) : mescola(suo.d.n, n);
-          if ((sm & 1) === (this.lato === 'b' ? 1 : 0)) { dati = Object.assign({}, dati, { n }); break; }
-        }
-      }
+      /* su v1 `suo.d.n` c'e' e la macinatura morde; su v2 c'e' solo
+         `suo.d.hn`, e macina() torna il nonce di partenza */
+      if (suo) this.mioNonce = this.macina(suo.d && suo.d.n);
     }
-    this.mioSaluto = dati;
-    return this.imbuca('S', 0, dati);
+
+    const d = Object.assign({}, dati);
+    if (this.duetempi) { delete d.n; d.hn = impegnoSaluto(this.lato, this.mioNonce); }
+    else d.n = this.mioNonce;
+    this.mioSaluto = d;
+    return this.imbuca('S', 0, d);
+  }
+
+  /* IL SECONDO TEMPO. Si chiama a ogni giro del banco: parla da se'
+     quando puo', e la regola d'oro vale anche per il pari onesto —
+     niente rivelazione senza l'impegno dell'altro in casa. */
+  async rivelaNonce() {
+    if (this.mandataN) return null;
+
+    if (!this.duetempi) {
+      /* v1 NON HA UN SECONDO TEMPO. Il caso peggiore che resta al baro e'
+         REIMBUCARE il saluto con un nonce diverso dopo aver visto quello
+         dell'altro: la cassetta risponde 409 'gia-detto' e il gioco ha
+         gia' letto il primo. E' la guardia del TRASPORTO, non quella del
+         protocollo, e il cancello deve saperlo distinguere. */
+      if (!this.bugia.semerivelato || this.ritentato) return null;
+      const suo = this.suoNonce();
+      if (!suo) return null;
+      this.ritentato = true;
+      this.nonceRivelato = this.macina(suo);
+      const d = Object.assign({}, this.mioSaluto, { n: this.nonceRivelato });
+      return this.imbuca('S', 0, d);
+    }
+
+    let n = this.mioNonce;
+    if (this.bugia.semerivelato) {
+      /* aspetta la rivelazione dell'altro, poi ne rivela una DIVERSA da
+         quella impegnata: l'impegno esiste per bocciare esattamente
+         questo, e se non lo boccia il cancello deve accorgersene */
+      const suo = this.suoNonce();
+      if (!suo) return null;
+      n = this.macina(suo);
+    } else if (!this.bugia.rivelasubito && !this.trova('S', this.altro, 0)) {
+      return null;
+    }
+    this.mandataN = true;
+    this.nonceRivelato = n;
+    return this.imbuca('N', 0, { n });
   }
 
   /* L'IMPEGNO. `veggente` aspetta la RIVELAZIONE dell'altro: e' quel
@@ -483,5 +594,5 @@ async function credenziali(base) {
 module.exports = {
   RADICE, DISCHETTO_V, FRENO_TETTO, FRENO_SEC,
   serviGioco, serviCassetta, apri, collega, entra,
-  PariFinto, credenziali, rosaFinta, impegnoDi, testoMossa, mescola, esa,
+  PariFinto, credenziali, rosaFinta, impegnoDi, impegnoSaluto, testoMossa, mescola, esa,
 };
