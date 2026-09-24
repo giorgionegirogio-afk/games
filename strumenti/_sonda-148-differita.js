@@ -51,6 +51,11 @@ function rigaDiTipo(testo, tipo) {
   }
   return '';
 }
+/* GLI ARGOMENTI, SENZA I DUE SCARTI DI TESTA (tick e millisecondi): due
+   telefoni non possono avere lo stesso scarto di orologio da muro, e
+   confrontare le righe intere farebbe dire «rose diverse» a una sonda
+   che sta guardando un millisecondo. */
+const argomentiDi = riga => riga ? riga.split(',').slice(3).join(',') : '';
 
 (async () => {
   const prova = process.argv[2] || null;
@@ -98,8 +103,9 @@ function rigaDiTipo(testo, tipo) {
     const r7a = rigaDiTipo(mA.testo, 7), r7b = rigaDiTipo(mB.testo, 7);
     console.log('riga 7 di A       : ' + (r7a || '(nessuna)'));
     console.log('riga 7 di B       : ' + (r7b || '(nessuna)'));
-    console.log('LE DUE ROSE       : ' + (r7a && r7a === r7b ? 'IDENTICHE sui due telefoni'
-      : (!r7a && !r7b ? 'ASSENTI da tutti e due' : 'DIVERSE — e sarebbe il guaio peggiore')));
+    const a7a = argomentiDi(r7a), a7b = argomentiDi(r7b);
+    console.log('LE DUE ROSE       : ' + (a7a && a7a === a7b ? 'IDENTICHE sui due telefoni (' + a7a.split(',').length + ' numeri)'
+      : (!a7a && !a7b ? 'ASSENTI da tutti e due' : 'DIVERSE — e sarebbe il guaio peggiore')));
     console.log('riga 10 di A      : ' + (rigaDiTipo(mA.testo, 10) || '(nessuna)'));
     console.log('riga 11 di A      : ' + (rigaDiTipo(mA.testo, 11) || '(nessuna)'));
 
