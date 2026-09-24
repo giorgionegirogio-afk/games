@@ -60,6 +60,10 @@ bozze-rig3d/*.png
 
 # le istantanee del freeze-frame test: si rigenerano con strumenti/istantanea.js
 istantanee*/
+# le istantanee e i ritagli della voce #151 (le tre versioni a confronto):
+# si rigenerano con istantanea.js --gioco e con strumenti/_151-accanto.js
+strumenti/_151-ist-*/
+strumenti/_151-accanto/
 _v26-prima/
 foto-v26-prima-gol.png
 
