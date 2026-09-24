@@ -64,6 +64,9 @@ istantanee*/
 # si rigenerano con istantanea.js --gioco e con strumenti/_151-accanto.js
 strumenti/_151-ist-*/
 strumenti/_151-accanto/
+# il ritaglio prima/dopo della voce #152: si rigenera con
+# strumenti/_152-accanto.js dalle due corse di istantanea.js
+strumenti/_152-accanto/
 _v26-prima/
 foto-v26-prima-gol.png
 
