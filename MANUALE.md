@@ -517,6 +517,216 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **IL NASTRO DEL DISCHETTO SI PUÒ CONFERMARE — #148 CANTIERE CHIUSO, e con
+  lui l'ONDA E per davvero** (voce #148, 24 settembre 2026, quattro compiti
+  dal merge-base `01265bc` — spec
+  `docs/superpowers/specs/2026-09-24-nastro-giudicabile-design.md`, piano
+  `docs/superpowers/plans/2026-09-24-nastro-giudicabile.md`). **`MOTORE_V`
+  sale da 4 a 5** con una misura in tre versi (vedi (d)); **`DISCHETTO_V`
+  resta 1**, e non è una dimenticanza: nessun *messaggio* del protocollo è
+  cambiato.
+
+  L'**onda D** (#133 giudice, #134 sigillo, #137 sospetto, #138 staffetta)
+  ha costruito un verificatore differito perché «la classifica si ripulisce
+  da sola» fosse un fatto misurato. L'**onda E** (#141-#147) ha costruito la
+  sfida dal dischetto fra due telefoni. **Fino a oggi le due onde non si
+  parlavano fino in fondo: i nastri della seconda non erano confermabili dal
+  primo.** Questo cantiere le cuce.
+
+  ### (a) LA DIAGNOSI DEL #147 ERA GIUSTA A METÀ, e la seconda metà era il contrario
+
+  Il #147 lascia scritto che mancano tre righe e che «il seguito è piccolo:
+  tre righe in `avvia`». **Misurato** (`strumenti/_sonda-148-differita.js`,
+  merge-base `01265bc`, serie **vera, onesta e giocata fino in fondo** fra
+  due telefoni):
+
+  | gioco | nastro | verdetto su una serie onesta |
+  |---|---|---|
+  | merge-base | `{3:2, 6:12, 14:6, 15:1}` | `INCOMPLETO / rose-assenti` |
+  | **con le tre righe e basta** | `{3:2, 6:30, 7:1, 10:1, 11:1, 14:18, 15:1}` | **`NON TORNA`** · atteso [4,3] · rigiocato [3,2] · **8462 passi** |
+
+  **Ottomilaquattrocentosessantadue passi sono novanta secondi di calcio.**
+  Il nastro di una serie non porta nessun atto di gioco aperto (tipi 12/13:
+  zero): porta i **comandi del duello** (tipo 6), e senza una serie aperta
+  quei comandi non hanno un duello in cui cadere. E il punteggio dichiarato è
+  quello della **serie**, mentre `G.score` dopo una serie vale 1-0 (la rete
+  che decide, `programmaRigore`). **Le tre righe da sole non confermavano una
+  serie onesta: la facevano accusare** — e NON TORNA è l'unico dei cinque
+  verdetti che muove punti, a *due* persone insieme. Meglio l'astensione di
+  ieri.
+
+  ### (b) LA CURA: una porta sola, e un ramo del giudice
+
+  1. **`Reg.carta(mentA, mentD, pacA, pacD, iCar)`** scrive le tre righe
+     d'identità — rose (7), schermo (10), impronta del motore (11) — in
+     quell'ordine, che è quello su cui poggia ogni nastro già scritto (la
+     lettura delle rose è *posizionale*). Non è codice nuovo: è il blocco che
+     stava dentro `Sfida.gioca`, **spostato** coi commenti del #132, #133,
+     #139 e #142 che ne spiegano il perché. Due copie divergono — è la
+     lezione che il #134 ha già pagato con `vagliaNastro`.
+  2. **`Dischetto.avvia` chiama la stessa porta**, con `1, 1` (le due posture
+     che passa a `startMatch`), le due rose **per lato** (`rA`, `rB`) e
+     `indiceCarattere('FUORI')`, che vale `-1`: `caratterePer('FUORI')` e
+     `carPerIndice(-1)` danno tutti e due `CAR_NEUTRO`, quindi il giudice
+     scende in campo con la stessa CPU.
+  3. **La riga 15 porta anche chi tira per primo.** Sarebbe deducibile dal
+     seme (`S.primo = (S.seme & 1) ? 'b' : 'a'`), e non lo si deduce: sarebbe
+     una seconda copia della regola del sorteggio, e il giorno in cui il
+     dischetto la cambiasse i nastri vecchi verrebbero rigiocati storti **in
+     silenzio**. Il fatto sta nel nastro — la scelta del #133 per lo schermo
+     e del #142 per il motore.
+  4. **`giudica` apre la serie**: se `vagliaNastro` trova la riga 15, dopo
+     `startMatch` fa `G.kickTeam = disco.primo; avviaRigori();` — le stesse
+     due righe, nello stesso ordine, di `Dischetto.avvia` — e alla fine
+     confronta **`G.rigori.seg`** invece di `G.score`. Per ogni altro nastro
+     `disco` è `null` e non cambia niente.
+
+  ### (c) LE ROSE SONO QUELLE VERE — e la misura che ha corretto il timore
+
+  La riga di tipo 7 scritta dai **due** telefoni è identica numero per numero
+  (45 numeri), e sono **le rose vere dei due telefoni, per lato**: il
+  cancello le rifà in Node dal salvataggio di ciascuno e le confronta con
+  quelle scritte (prova A6).
+
+  **E qui la misura ha corretto il mandato.** Il timore era «se scrivessi
+  rose sbagliate il giudice direbbe NON TORNA a un onesto». **Su una serie
+  non succede**: tre falsi — rose scambiate, rose per possesso, due volte la
+  propria rosa — danno **tutti e tre lo stesso punteggio rigiocato**, quindi
+  `TORNA`. La ragione sta nel codice ed è netta: **il duello dei rigori non
+  legge nessun attributo di nessun giocatore** — `Duel.resolve` guarda le
+  zone, la banda di potenza, `pkCopertura` e `D.save`. Le rose nel nastro di
+  una serie servono a passare il vaglio e a dire chi ha giocato; su una sfida
+  *asincrona*, dove le rose scendono in campo davvero, il timore resta
+  fondato. **Il cancello ha dovuto cambiare prova**, non aspettarsi un
+  punteggio sbagliato.
+
+  ### (d) `MOTORE_V` 4 → 5, e il criterio di casa va letto più largo di come è scritto
+
+  `strumenti/_t-148-motorev.js`, tre versi:
+
+  | verso | che cosa | esito |
+  |---|---|---|
+  | 1 | quattro nastri della **sfida** del merge-base rigiocati sul curato | **4 su 4 identici**, 80 campioni ciascuno |
+  | 2 | un nastro di una **serie** del curato **letto** dal gioco di ieri | **34 righe contro 34**, 100 campioni identici, stesso punteggio; testimone: un comando sporcato diverge al campione 69 |
+  | 3 | lo stesso nastro **giudicato** | oggi **TORNA** (2-3, 1011 passi) · ieri **NON TORNA** (1-3, **7156 passi**) |
+
+  **È il terzo che comanda.** Il criterio scritto in casa — «`MOTORE_V` si
+  incrementa quando una cura cambia l'esito di sequenze di comandi identiche»
+  — guarderebbe il verso 2 e direbbe di no: i tipi 7, 10 e 11 il gioco di
+  ieri li conosce da mesi, quindi lo scarto di righe è **zero**, che è
+  esattamente il numero di righe dei tipi nuovi (nessuno) — il criterio del
+  #147 tenuto **stretto**, non rilassato. Il pericolo sta un piano più su:
+  **quel che è cambiato non è come si legge un nastro, è come si giudica.**
+  Il numero va letto così: *se una cura cambia il verdetto che un altro
+  telefono darebbe sullo stesso nastro, sale.* Il prezzo — i nastri v4
+  ingiudicabili — si paga volentieri: v4 è del 23 settembre, e la riga resta
+  a `verificata = 0`, quindi torna giudicabile da sé. Il numero protegge
+  anche l'appuntamento: `chiudiAppuntamento` rifiuta un pari con
+  `suo.mv !== MOTORE_V`. La **fixture congelata** è stata rigenerata
+  (`_gen-nastro-duello-congelato.js`), come al #143.
+
+  ### (e) IL CANCELLO, NATO ROSSO, E I SETTE FALSI
+
+  `strumenti/_q-nastro-differito.js`, **12 prove**, nate **9 rosse su 11**
+  sul merge-base (A tutto rosso, C tutto rosso; verdi solo B1 e B3, che il
+  #147 e il #107 avevano già comprato — e il banco lo dice, se no un rosso
+  grosso nasconderebbe un verde comprato con un'assenza). Sul curato:
+  **12 su 12**. Giudica su una **terza pagina pulita**, che è quel che fa la
+  staffetta.
+
+  `strumenti/_q-nastro-falsi.js`, **7 su 7 morsi come dichiarato**, e ogni
+  falso ha una firma diversa: `possesso` → A3+A6 (A1 verde), `scambiate` →
+  **solo A6** (A1 e A3 verdi: la bugia è coerente e nessun confronto fra i
+  due capi la vede), `mie` → A3+A6, `solo-a` → A2+A3+A6, `primo-storto` →
+  **A7**, `serie-cieca` → A1+A2+**A5** (i passi esplodono), `punteggio` →
+  A1+A2 con A5 verde. **L'ottavo è dichiarato e NON è morso**: chi scrive le
+  tre righe *dopo* il primo tiro non lo distingue nessuna prova, perché per
+  un nastro senza pixel l'ordine delle righe di testa non è un formato (le
+  tre astensioni dello schermo, le uniche che guardino l'ordine, dal #144 non
+  si applicano).
+
+  **E UN SECONDO FALSO È SCAPPATO, nella batteria intera.** `primo-storto`
+  era dichiarato «morso da A1+A2»: il giudice apre una serie diversa e quasi
+  sempre ne esce un punteggio diverso — ma **quasi**, e in una corsa la serie
+  sbagliata ha dato per caso lo stesso punteggio di quella vera. Un falso che
+  morde a caso non condanna nessuno: condanna chi lo rilancia. Da lì nasce
+  **A7**, che confronta la riga 15 con la verità (`primo`, letto dallo stato
+  del dischetto) invece che col punteggio, ed è deterministica su qualunque
+  serie. **È la stessa forma dell'errore delle rose** (§c): due volte, in
+  questo cantiere, una prova è stata riscritta perché guardava l'effetto
+  invece del fatto.
+
+  **E il banco ha dovuto spegnere il freno della cassetta finta.** Per
+  scegliere una serie col punteggio distinguibile servono più appuntamenti, e
+  il freno finto vale 60 richieste al minuto per identità come quello vero:
+  **misurato**, il terzo appuntamento finisce «incompiuta» e il quarto e il
+  quinto muoiono su «rete» prima di cominciare, e il banco dichiarava PROVA
+  NULLA dando la colpa alla serie. Col freno spento, sei appuntamenti di fila
+  finiscono tutti e sei. Il freno lo misura `_q-dischetto` E1, che è il suo
+  posto.
+
+  ### (f) IL BANCO HA SBAGLIATO DUE VOLTE, E LE DUE VOLTE ACCUSAVA IL GIOCO
+
+  1. **Confrontava le righe intere.** `0,7,0,…` contro `0,7,1,…` è **un
+     millisecondo** di scarto d'orologio da muro, non una rosa: il banco
+     dichiarava «le due rose sono DIVERSE» su due nastri che il giudice
+     faceva tornare tutti e due. Due telefoni non possono avere lo stesso
+     scarto, e non devono.
+  2. **Leggeva le rose tardi.** Confrontate col salvataggio *dopo* la serie,
+     due attributi su quaranta risultavano più bassi di uno: **una partita
+     che finisce fa crescere qualche giocatore**, e il nastro l'aveva scritta
+     prima.
+
+  E una terza, che non era un difetto del banco ma una proprietà del gioco
+  che nessuno aveva misurato: **le rose non muovono una serie di rigori**
+  (§c). Tre falsi dichiarati «mordibili da A1» sono scappati tutti e tre, e
+  la prova è stata riscritta.
+
+  ### (g) LA STAFFETTA, senza un adattamento
+
+  Un nastro del dischetto si raggruppa **come gli altri**: non porta pixel,
+  quindi l'etichetta è `qualunque` (regola del #144) e la chiave è
+  `qualunque@3274447767` (l'impronta del motore, regola del #142). La
+  staffetta vera — il suo `giro()`, con un banco finto che fa due sole cose:
+  dare la riga e ricevere la parola — lo pesca, lo giudica e manda **`TORNA`**
+  al database. **Nessun adattamento è stato necessario**, e lo dice una
+  misura (prove C1 e C2), non una lettura del codice.
+
+  ### (g-bis) LA BATTERIA, INTERA — e le quattro ferite ereditate
+
+  `node strumenti/tutti.js --tutto`, **76 cancelli**, 1570 s di orologio, sul
+  file spedito: **73 cancelli che contano verdi, zero rossi**. Dentro ci sono i
+  due nuovi, `nastro-differito` (18 s) e `nastro-falsi` (120 s), registrati
+  `conta:true`. Gli altri tre: `avvio` informativo **verde**; `istantanea`
+  informativo **rosso** con il referto **identico riga per riga a quello del
+  #147** (42/56, 1/8, 8/8, 8/8, 5/8, 8/8, 7/8, 5/8), cioè non è una
+  regressione ma un confronto contro un registro del 20 agosto il cui
+  riferimento era una prova nulla; `avvio-telefono` **PROVA NULLA (uscita 3)**,
+  perché non c'è nessun telefono Android collegato. **Il verdetto della
+  batteria è quindi «prova nulla», non «verde»**, e si scrive così invece di
+  arrotondare. Fuori dalla batteria: `rete/prove/tutte.js` **62/62**.
+  `--ripetuto 3` sui due nuovi: **stabili**, nessuna divergenza fra le tre
+  corse.
+
+  **E la batteria intera ha trovato quel che il piano non nominava** (lezione
+  22, sesta occorrenza). Spostare tre righe dentro `Reg.carta` ha cambiato
+  `Reg.motore();` in `this.motore();` e `Reg.schermo(…)` in `this.schermo(…)`,
+  e **quattro mutanti di altri cantieri ancoravano su quelle stringhe**:
+  `_crit-motore-muto` (che fa rosso `motore-falsi`) e i tre
+  `_crit-finestra-*`. È la regola 4 nella sua seconda metà — «quando ripari
+  uno strumento, cerca subito la stessa ferita negli strumenti che l'hanno
+  copiato» — e qui l'origine non era una riparazione ma uno spostamento.
+  Riparati tutti e quattro, con la ragione scritta accanto.
+
+  ### (h) CHE COSA RESTA APERTO
+
+  **Nessuno pubblica ancora un nastro del dischetto su un server.** La serie
+  è fra due telefoni e resta lì: questo cantiere rende il nastro
+  **giudicabile**, non lo spedisce. Che ci arrivi è un altro cantiere. Resta
+  il **residuo (2) del #147** — chi toglie *tutte* le 14 *e* la 15 — e resta
+  per statuto: chiuderlo vuol dire firmare, e firmare vuole una chiave.
+  Restano **S5** (WebRTC sul CGNAT mobile) e il **backend vero a 503**.
+
 - **IL VOLTO — #147 CANTIERE CHIUSO, e con lui l'ONDA E** (voce #147, 24
   settembre 2026, cinque compiti dal merge-base `999fbf8` — spec
   `docs/superpowers/specs/2026-09-24-il-volto-design.md`, piano
@@ -801,6 +1011,19 @@ Qui il registro completo, a edizioni.
   ma **una serie onesta non si può confermare in differita**. È un seguito, ed
   è piccolo: tre righe in `avvia`, e il giudice sa già leggerle. Va scritto
   qui perché è la cosa che chi legge il verbale crederebbe fatta.
+
+  > **RETTIFICA A EDIZIONI (24 settembre 2026, voce #148).** Il buco è
+  > **chiuso**, e la stima era **giusta a metà**. La prima metà regge parola
+  > per parola: misurata di nuovo su una serie giocata **fino in fondo**
+  > (`strumenti/_sonda-148-differita.js`), una serie vera dà
+  > `INCOMPLETO / rose-assenti`. **La seconda metà no: «tre righe in `avvia`»
+  > non era la cura, era il danno.** Con le tre righe e basta, la stessa serie
+  > onesta prende **NON TORNA** (atteso [4,3], rigiocato [3,2], **8462
+  > passi** — cioè novanta secondi di calcio invece di una serie di rigori),
+  > perché `giudica` non apriva la serie e confrontava `G.score` invece dei
+  > rigori segnati. La cura vera sono le tre righe **più** un ramo del
+  > giudice, e `MOTORE_V` è salito a **5** con la prova in mano. Il verbale
+  > del #148, in cima a questo registro, porta i numeri.
 
   E restano, invariati: il **residuo della cura (c)** (§e), **S5** (WebRTC sul
   CGNAT mobile) e il **backend vero a 503**, quindi tutte le misure di rete di

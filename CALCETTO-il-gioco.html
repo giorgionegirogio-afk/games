@@ -14234,7 +14234,47 @@ function touchBtnLayout(t){
    onesto invece di ALTRO MOTORE. Il prezzo — i nastri v3 diventano
    ingiudicabili — si paga volentieri e dura poco: v3 e' di ieri.
    ===================================================================== */
-const MOTORE_V = 4;
+/* =====================================================================
+   RETTIFICA A EDIZIONI (24 settembre 2026, voce #148). IL NUMERO QUI
+   SOTTO NON E' PIU' 4, E' 5 — e stavolta non e' cambiata ne' la
+   simulazione (come al #143) ne' quel che si REGISTRA (come al #144):
+   e' cambiato che cosa si SA GIUDICARE.
+
+   Dal #148 il nastro di una serie dal dischetto porta le sue tre righe
+   d'identita' (le rose, lo schermo, l'impronta) e la riga 15 dice anche
+   chi ha tirato per primo; e il giudice, davanti a un nastro cosi', APRE
+   LA SERIE invece di rigiocare novanta secondi di calcio.
+
+   Un gioco della versione di ieri quelle righe le legge tutte — non sono
+   tipi nuovi, sono righe nuove di tipi vecchi — e proprio per questo il
+   vaglio le accetta, e poi la rigiocata va a sbattere.
+
+   MISURATO con strumenti/_t-148-motorev.js, nei TRE versi:
+     · quattro nastri della SFIDA registrati sul merge-base (01265bc) e
+       rigiocati sul curato: QUATTRO SU QUATTRO IDENTICI, 80 campioni
+       ciascuno. La cura, di suo, non cambia nessuna partita;
+     · un nastro di una SERIE vera del curato, LETTO dal gioco di ieri:
+       34 righe contro 34, 100 campioni identici, stesso punteggio. Lo
+       scarto di righe e' ZERO, che e' esattamente il numero di righe dei
+       tipi nuovi (nessuno): il criterio del #147 tenuto stretto, non
+       rilassato;
+     · lo stesso nastro GIUDICATO: oggi TORNA (2-3, 1011 passi), ieri
+       NON TORNA (1-3, 7156 passi).
+
+   Percio' il numero sale: non per la cura, ma perche' senza di lui un
+   telefono rimasto indietro direbbe NON TORNA a DUE persone oneste
+   invece di ALTRO MOTORE. E NON TORNA e' l'unico dei cinque verdetti che
+   muove punti. Il prezzo — i nastri v4 diventano ingiudicabili — si paga
+   volentieri e dura poco: v4 e' del 23 settembre.
+
+   E UNA NOTA PER CHI LEGGERA' DOMANI: il criterio scritto in casa parla
+   di «esito di sequenze di comandi identiche», e qui i comandi danno lo
+   stesso esito (verso 2). Il criterio va letto piu' largo di come e'
+   scritto: quel che protegge non e' la simulazione, e' il VERDETTO. Se
+   una cura cambia il verdetto che un altro telefono darebbe sullo stesso
+   nastro, il numero sale.
+   ===================================================================== */
+const MOTORE_V = 5;
 
 /* =====================================================================
    L'IMPRONTA DEL MOTORE JAVASCRIPT (voce #142, compito 2).

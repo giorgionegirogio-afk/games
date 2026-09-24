@@ -43,7 +43,13 @@ require('./_crit-giudice.js').falso({
     /* il formato resta perfetto: e' proprio questo che rende il falso cattivo */
     ["pezzi.push(dT + ',11,' + dMs + ',' + ((r[3]|0) >>> 0));", 1],
     ['else if(tipo === 11)  this.righe.push([tick, 11, ms, (v[3]|0) >>> 0]);', 1],
-    ['    Reg.motore();', 1],
+    /* DAL #148 LA RIGA STA DENTRO Reg.carta, la porta unica che scrive le
+       tre righe d'identita' del nastro (rose, schermo, impronta): il
+       blocco e' stato spostato dentro un metodo di Reg, quindi `this.`.
+       Senza questa riparazione il falso non si costruiva piu' e
+       _q-motore-falsi diventava rosso su una cosa che non e' un difetto
+       del gioco -- la ferita ereditata di cui parla la regola 4. */
+    ['    this.motore();', 1],
     ['function improntaMotore(){', 1],
     ['function improntaDelNastro(){', 1],
     ['  improntaMotore(){ return improntaMotore(); },', 1],

@@ -18,16 +18,29 @@
       esattamente quel che fa la staffetta, e che impedisce al banco di
       giudicare dentro la stessa pagina che ha appena giocato.
 
-      A4 GUARDA LE DUE ROSE. La riga di tipo 7 dei due telefoni dev'essere
-      identica carattere per carattere: il lato 'a' e' la squadra 0 anche
-      sul telefono di 'b'. Se non lo fosse, il giudice direbbe NON TORNA
-      a un onesto — il difetto peggiore di tutta l'onda D — e lo direbbe
-      a UN capo solo, cioe' nel modo piu' difficile da vedere.
+      LE SETTE PROVE DEL GRUPPO A, e nessuna e' un doppione:
 
-      A5 E' IL TESTIMONE, e senza di lui A2/A3 non provano niente
-      (lezione 18). Un giudice che dicesse TORNA a qualunque cosa darebbe
-      A2 e A3 verdi senza discriminare: percio' lo STESSO nastro, con un
-      punteggio dichiarato sbagliato di uno, deve prendere NON TORNA.
+        A1  il nastro di chi ha creato la stanza torna
+        A2  e quello di chi e' entrato col codice, con lo stesso verdetto
+        A3  le due righe di tipo 7 sono identiche sui due capi
+        A4  TESTIMONE: lo stesso nastro con un punteggio dichiarato
+            sbagliato di uno deve dare NON TORNA
+        A5  la rigiocata costa i passi di una SERIE, non di una partita
+        A6  e le rose scritte sono quelle VERE dei due telefoni, per lato
+        A7  e la riga 15 dichiara chi ha tirato per primo
+
+      A4 E' IL TESTIMONE, e senza di lui A1/A2 non provano niente (lezione
+      18): un giudice che dicesse TORNA a qualunque cosa li darebbe verdi
+      senza discriminare niente.
+
+      A3, A6 E A7 GUARDANO IL NASTRO E NON IL VERDETTO, e non e' una
+      ridondanza: e' una misura. In una serie di rigori il punteggio NON
+      DIPENDE dalle rose (il duello legge le zone, la banda e D.save, non
+      gli attributi), quindi tre falsi che scrivono rose sbagliate danno
+      TORNA lo stesso; e un falso che dichiara il primo tiratore
+      sbagliato fa cadere A1 QUASI sempre, cioe' non abbastanza per
+      condannarlo. Le tre prove che confrontano il nastro con la verita'
+      sono deterministiche, e sono quelle che prendono quelle bugie.
 
    B) LE ASTENSIONI GIUSTE RESTANO. La cura non deve comprare il verde di
       A spegnendo i rifiuti che l'onda D e il #147 hanno gia' pagato:
@@ -164,7 +177,15 @@ const giudizio = (Gi, testo, atteso, seme) => Gi.pag.evaluate(([testo, atteso, s
   console.log('\nIL NASTRO DEL DISCHETTO, GIUDICATO IN DIFFERITA' + (GIOCO ? '   [' + GIOCO + ']' : ''));
 
   const srv = await T.serviGioco(PROVA);
-  const cass = await T.serviCassetta({});
+  /* LA CASSETTA SENZA FRENO, ed e' una riparazione pagata con un rosso.
+     Il freno finto vale 60 richieste al minuto per identita', come quello
+     vero, e il banco puo' aver bisogno di piu' di un appuntamento (vedi
+     la scelta della serie, piu' sotto). MISURATO col freno acceso: il
+     terzo appuntamento finisce «incompiuta», il quarto e il quinto
+     muoiono su «rete» prima di cominciare, e il banco dichiarava PROVA
+     NULLA dando la colpa alla serie. Il freno non e' quel che si misura
+     qui: lo misura _q-dischetto E1, che e' il suo posto. */
+  const cass = await T.serviCassetta({ frenoAcceso: false });
   const browser = await chromium.launch();
   let esploso = null;
   const aperti = [];
@@ -330,6 +351,33 @@ const giudizio = (Gi, testo, atteso, seme) => Gi.pag.evaluate(([testo, atteso, s
          r7a === attese && r7b === attese ? 'tutte e due come attese, ' + attese.split(',').length + ' numeri'
            : ('attese  ' + attese + '\n        nel nastro A ' + (r7a || '(niente)') +
               '\n        nel nastro B ' + (r7b || '(niente)')));
+
+      /* =====================================================================
+         A7 — E LA RIGA 15 DICE CHI HA TIRATO DAVVERO PER PRIMO.
+
+         QUESTA PROVA E' NATA DA UN FALSO SCAPPATO, ed e' il secondo caso
+         di questo cantiere in cui il banco dichiarava di saper prendere
+         una bugia e non la prendeva. `_crit-nastro-primo-storto` scrive
+         `1 - G.kickTeam`: il giudice apre la serie col tiratore
+         sbagliato, rigioca una serie DIVERSA, e quasi sempre ne esce un
+         punteggio diverso — quindi A1 e A2 cadono. QUASI sempre: nella
+         batteria intera del compito 3 la serie sbagliata ha dato per caso
+         lo stesso punteggio di quella vera, il falso e' passato e il
+         banco l'ha dichiarato sfuggito. Un falso che morde a caso non
+         condanna nessuno: condanna chi lo rilancia.
+
+         Qui il confronto e' con la verita' e non col punteggio: chi tira
+         per primo lo sa lo stato del dischetto (`primo`, che viene dal
+         seme), e la riga 15 deve dire lo stesso. Deterministica su
+         qualunque serie. */
+      const primoVero = (sA.primo === 'a') ? 0 : 1;
+      const r15a = argomentiDi(rigaDiTipo(nA, 15)).split(',');
+      const r15b = argomentiDi(rigaDiTipo(nB, 15)).split(',');
+      const dice = v => (v.length > 1 && (v[1] | 0) === primoVero);
+      di(dice(r15a) && dice(r15b),
+         'A7) e la riga 15 dichiara CHI HA TIRATO PER PRIMO, su tutti e due i capi',
+         'primo vero ' + sA.primo + ' (squadra ' + primoVero + ') · riga 15 di A [' +
+         r15a.join(',') + '] · di B [' + r15b.join(',') + ']');
     }
 
     /* ======================================================= GRUPPO B */

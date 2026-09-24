@@ -36,6 +36,8 @@ require('./_crit-finestra.js').falso({
   attesi: [
     ['  try{ Reg.schermo(VW, VH); }catch(e){}', 1],
     ["if(sc.length > 1) return no('INCOMPLETO','schermo-cambiato');", 1],
-    ['    Reg.schermo(innerWidth|0, innerHeight|0);', 1],
+    /* DAL #148 LA RIGA STA DENTRO Reg.carta (vedi _toppa-148-differita.js):
+       il blocco e' stato spostato dentro un metodo di Reg, quindi `this.`. */
+    ['    this.schermo(innerWidth|0, innerHeight|0);', 1],
   ],
 });

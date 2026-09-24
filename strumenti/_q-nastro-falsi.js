@@ -27,7 +27,16 @@
      solo-a          le tre righe solo sul telefono che ha creato la
                      stanza.                  -> A2, A3, A6 · A1 VERDE
      primo-storto    la riga 15 dichiara sempre l'altro tiratore.
-                                              -> A1, A2 · A5 e A6 VERDI
+                                              -> A7 · A3, A5 e A6 VERDI
+                     E A1/A2 NON SONO NELL'ELENCO, APPOSTA. Il giudice
+                     apre una serie DIVERSA e quasi sempre ne esce un
+                     punteggio diverso -- ma nella batteria intera del
+                     compito 3 la serie sbagliata ha dato per caso lo
+                     stesso punteggio, il falso e' passato, e il banco
+                     l'ha dichiarato sfuggito. Un falso che morde a caso
+                     non condanna nessuno: condanna chi lo rilancia.
+                     A7 e' nata da qui, e confronta la riga 15 con la
+                     verita' invece che col punteggio.
      serie-cieca     il giudice non apre la serie: e' il gioco di ieri
                      piu' le tre righe, cioe' la cura che il #147 aveva
                      stimato.                 -> A1, A2, A5 (i passi esplodono)
@@ -79,7 +88,7 @@ const FALSI = [
   { nome: 'scambiate',    crit: '_crit-nastro-scambiate.js',    morde: ['A6'],             lascia: ['A1', 'A3', 'A5'] },
   { nome: 'mie',          crit: '_crit-nastro-mie.js',          morde: ['A3', 'A6'],       lascia: ['A1', 'A5'] },
   { nome: 'solo-a',       crit: '_crit-nastro-solo-a.js',       morde: ['A2', 'A3', 'A6'], lascia: ['A1'] },
-  { nome: 'primo-storto', crit: '_crit-nastro-primo-storto.js', morde: ['A1', 'A2'],       lascia: ['A3', 'A5', 'A6'] },
+  { nome: 'primo-storto', crit: '_crit-nastro-primo-storto.js', morde: ['A7'],             lascia: ['A3', 'A5', 'A6'] },
   { nome: 'serie-cieca',  crit: '_crit-giudice-serie-cieca.js', morde: ['A1', 'A2', 'A5'], lascia: ['A3', 'A6'] },
   { nome: 'punteggio',    crit: '_crit-giudice-punteggio.js',   morde: ['A1', 'A2'],       lascia: ['A3', 'A5', 'A6'] },
 ];
@@ -114,7 +123,7 @@ const verde = (testo, p) => new RegExp('^\\s*OK\\s+' + p + '\\)', 'm').test(test
     console.log('  PROVA NULLA: ' + (onesto.testo.match(/PROVA NULLA:.*/) || ['il banco non ha potuto misurare'])[0]);
     process.exit(3);
   }
-  const ok = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'].every(p => verde(onesto.testo, p));
+  const ok = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7'].every(p => verde(onesto.testo, p));
   console.log('  ' + (ok ? 'OK  ' : 'NO  ') + 'il gioco ONESTO passa il gruppo A (senza, i sette non provano niente)');
   if (!ok) {
     console.log(onesto.testo.split('\n').filter(r => /^\s*(OK|NO)\s+A/.test(r)).join('\n'));
@@ -159,7 +168,7 @@ const verde = (testo, p) => new RegExp('^\\s*OK\\s+' + p + '\\)', 'm').test(test
   let rigaOttavo = 'non costruito: ' + (cO.stderr || '').trim();
   if (cO.status === 0) {
     const rO = corri(viaO);
-    const rosse = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'].filter(p => rossa(rO.testo, p));
+    const rosse = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7'].filter(p => rossa(rO.testo, p));
     rigaOttavo = rosse.length ? ('MORSO da ' + rosse.join('+') + ' — la dichiarazione qui sotto va riscritta')
                               : 'NON MORSO, come dichiarato';
   }
