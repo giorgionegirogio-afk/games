@@ -311,6 +311,33 @@ function contaTipi(nastro) {
           const sa0 = await d_stato(A);
           di(sa0.fase === 'scegli' || sa0.fase === 'pronto',
             'B4) anche chi ha creato arriva alla serie, senza toccare altro', 'fase ' + sa0.fase + ' · causa ' + sa0.causa);
+
+          /* =====================================================================
+             B5 — CHIUDI LASCIA DAVVERO LA PARTITA.
+
+             Questa prova non e' nata da un falso: e' nata leggendo il
+             codice del pannello dopo averlo scritto. CHIUDI spegne il
+             protocollo (fase 'fine') ma la PARTITA resta in piedi, e da
+             quel momento il cancello sul duello non trattiene piu'
+             niente: la CPU riprende a tirare e a tuffarsi al posto delle
+             due persone, e chi ha premuto CHIUDI si ritrova a guardare
+             una serie di rigori che si gioca da sola. Nessuna eccezione,
+             nessun rosso in console: solo una schermata in cui si e'
+             rimasti chiusi dentro.
+             Si pretende che dopo CHIUDI si sia al menu, che la sfida sia
+             sganciata e che il duello sia spento. */
+          const chiuso = await A.pag.evaluate(() => {
+            const t = window.__test;
+            const prima = { scena: t.state, duel: t.Duel.phase, sfida: !!t.sfidaStato.inPartita };
+            t.dischetto.chiudi();
+            return { prima, scena: t.state, duel: t.Duel.phase, sfida: !!t.sfidaStato.inPartita,
+                     pannello: !!(document.getElementById('sfidaDischetto') &&
+                                  !document.getElementById('sfidaDischetto').classList.contains('hidden')) };
+          });
+          di(chiuso.prima.sfida && chiuso.scena === 'menu' && !chiuso.sfida && chiuso.duel === 'off',
+            'B5) CHIUDI lascia la partita: si torna al menu e la CPU non resta a giocare da sola',
+            'prima: scena ' + chiuso.prima.scena + ' duello ' + chiuso.prima.duel + ' in partita ' + chiuso.prima.sfida +
+            ' · dopo: scena ' + chiuso.scena + ' duello ' + chiuso.duel + ' in partita ' + chiuso.sfida);
         }
 
         if (vuole('C')) {
