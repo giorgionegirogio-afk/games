@@ -1,6 +1,7 @@
 /* =====================================================================
-   _q-nastro-falsi.js — GLI OTTO FALSI CHE CONDANNANO IL BANCO
-   (voce #148, compito 1 · l'ottavo dalla voce #149, compito 1)
+   _q-nastro-falsi.js — I NOVE FALSI CHE CONDANNANO IL BANCO
+   (voce #148 compito 1 · l'ottavo dal #149 compito 1 · il nono, quello
+   della versione vecchia, dal #150 compito 3)
 
    PERCHE' ESISTE. Un banco che stampa undici OK non ha ancora provato
    niente: potrebbe essere verde perche' il gioco e' giusto, o perche'
@@ -65,6 +66,17 @@
                                               -> B6, B7, B8 · B1 e B5 VERDI
                      GIRA SUL GRUPPO B, non sul gruppo A: le quattro
                      astensioni del #149 stanno li'.
+     vecchio         ACCETTA UNA SERIE DI VERSIONE VECCHIA SENZA DIRLO
+                     (voce #150). Il seme a due mani porta DISCHETTO_V da
+                     1 a 2: i nastri del protocollo vecchio non si possono
+                     piu' rigiocare, e vanno RIFIUTATI CON CAUSA, mai
+                     accusati. Questo falso toglie la guardia — UNA SOLA,
+                     e li' sta la differenza con `mezza-guardia`, che ne
+                     toglie tre e si fa prendere da una qualsiasi delle
+                     altre due. E' il piu' difficile da mordere dei due,
+                     ed e' quello che dice se B8 misura davvero la
+                     versione o e' verde per compagnia.
+                                              -> B8 · B1, B5, B6, B7 VERDI
 
    E LA COSA CHE I TRE FALSI DELLE ROSE HANNO INSEGNATO AL BANCO, che e'
    una misura e non un'opinione: IN UNA SERIE DI RIGORI IL PUNTEGGIO NON
@@ -117,6 +129,8 @@ const FALSI = [
   { nome: 'punteggio',    crit: '_crit-giudice-punteggio.js',   morde: ['A1', 'A2'],       lascia: ['A3', 'A5', 'A6'] },
   { nome: 'mezza-guardia', crit: '_crit-giudice-mezza-guardia.js', gruppo: 'B',
     morde: ['B6', 'B7', 'B8'], lascia: ['B1', 'B5'] },
+  { nome: 'vecchio',      crit: '_crit-dischetto-vecchio.js',    gruppo: 'B',
+    morde: ['B8'], lascia: ['B1', 'B5', 'B6', 'B7'] },
 ];
 /* il nono: si costruisce, si misura e si dichiara. Non ha un `morde`. */
 const OTTAVO = { nome: 'tardi', crit: '_crit-nastro-tardi.js' };
@@ -130,7 +144,7 @@ const rossa = (testo, p) => new RegExp('^\\s*NO\\s+' + p + '\\)', 'm').test(test
 const verde = (testo, p) => new RegExp('^\\s*OK\\s+' + p + '\\)', 'm').test(testo);
 
 (async () => {
-  console.log('\nGLI OTTO FALSI DEL NASTRO GIUDICABILE');
+  console.log('\nI ' + FALSI.length + ' FALSI DEL NASTRO GIUDICABILE');
   if (!fs.existsSync(GIOCO)) { console.error('PROVA NULLA: ' + GIOCO + ' non esiste'); process.exit(3); }
   /* PRIMA DELLA CURA GLI OTTO NON ESISTONO, e non e' un rosso: i loro
      ancoraggi sono dentro la cura. Dirlo qui, con la causa vera, invece

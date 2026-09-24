@@ -1,6 +1,6 @@
 /* =====================================================================
-   _q-dischetto-falsi.js — I SETTE FALSI CHE CONDANNANO IL BANCO
-   (voce #146, compito 1)
+   _q-dischetto-falsi.js — I NOVE FALSI CHE CONDANNANO IL BANCO
+   (voce #146 compito 1; i due del seme a due mani, voce #150 compito 3)
 
    PERCHE' ESISTE. Un banco a due telefoni che stampa sette OK non ha
    ancora provato niente: potrebbe essere verde perche' il gioco e'
@@ -11,12 +11,12 @@
    ha avuto una sonda che condannava l'intero P2P misurando il proprio
    numero di socket.
 
-   Percio' qui si costruiscono SETTE VERSIONI BUGIARDE DEL GIOCO, e per
+   Percio' qui si costruiscono NOVE VERSIONI BUGIARDE DEL GIOCO, e per
    ognuna si dichiara PRIMA quale prova deve farla cadere. Un falso che
    non viene morso non e' un fallimento del falso: e' un buco nel banco,
    e il banco va riparato, non il falso addolcito.
 
-   I SETTE, e la prova che ciascuno deve far diventare rossa:
+   I NOVE, e la prova che ciascuno deve far diventare rossa:
 
      gentile     rivela senza aspettare l'impegno dell'altro.
                  E' IL PIU' CATTIVO: funziona, la serie finisce, i
@@ -45,6 +45,26 @@
                  RIENTRO sotto il tetto dopo il primo 429.
      cieco       parla alla rete appena si apre il pannello.  -> F1
 
+   E I DUE DEL SEME A DUE MANI (voce #150), che abitano l'altro cancello
+   del cantiere — `_q-dischetto-seme.js`, le prove S1..S7:
+
+     sbrigativo  LA MEZZA CURA, e il piu' cattivo di tutti e nove:
+                 impegna il nonce del saluto come si deve — la busta
+                 porta `hn` e non il nonce, chi guardasse solo la
+                 cassetta direbbe «curato» — e poi lo rivela LO STESSO,
+                 senza aspettare l'impegno dell'altro. E' il gemello di
+                 `gentile` un piano piu' su. Il #149 ha scritto che una
+                 mezza cura del protocollo e' peggio del buco dichiarato:
+                 questo e' quel falso.                        -> S5
+                 E NON LO MORDE S1, che e' la cosa da sapere: il baro di
+                 S1 legge il saluto dell'altro, e anche nella mezza cura
+                 il saluto porta solo un impegno. A farsi servire e' solo
+                 chi si RIFIUTA di impegnarsi e aspetta.
+     credone     non verifica che il nonce rivelato ricomponga l'impegno
+                 del saluto: l'impegno diventa una decorazione, e i due
+                 telefoni onesti escono lo stesso con lo stesso seme.
+                 E' il gemello di `credulone`.                -> S4
+
    IL CONTROLLO POSITIVO, che e' la meta' che manca a quasi tutti i
    banchi di falsi: PRIMA si verifica che il gioco ONESTO passi. Senza,
    un banco rotto in modo da essere rosso SEMPRE «condannerebbe» tutti e
@@ -70,15 +90,24 @@ const RADICE = path.resolve(__dirname, '..');
 const arg = n => { const i = process.argv.indexOf('--' + n); return i > 0 ? process.argv[i + 1] : null; };
 const GIOCO = arg('gioco') ? path.resolve(RADICE, arg('gioco')) : path.join(RADICE, 'CALCETTO-il-gioco.html');
 
-/* nome del falso -> {toppa, prove che DEVONO diventare rosse} */
+/* nome del falso -> {toppa, banco, prove che DEVONO diventare rosse}
+   `banco` dice QUALE cancello le prove nominate abitano: 'dischetto'
+   (_q-dischetto.js, i gruppi A..G) o 'seme' (_q-dischetto-seme.js, le
+   prove S1..S7 del seme a due mani, voce #150). */
 const FALSI = [
-  { nome: 'gentile',   toppa: '_crit-dischetto-gentile.js',   morde: ['B1'] },
-  { nome: 'credulone', toppa: '_crit-dischetto-credulone.js', morde: ['B3'] },
-  { nome: 'semesuo',   toppa: '_crit-dischetto-semesuo.js',   morde: ['A3'] },
-  { nome: 'fidato',    toppa: '_crit-dischetto-fidato.js',    morde: ['C6'] },
-  { nome: 'vincitore', toppa: '_crit-dischetto-vincitore.js', morde: ['G5'] },
-  { nome: 'sfrenato',  toppa: '_crit-dischetto-sfrenato.js',  morde: ['E1b'] },
-  { nome: 'cieco',     toppa: '_crit-dischetto-cieco.js',     morde: ['F1'] },
+  { nome: 'gentile',    toppa: '_crit-dischetto-gentile.js',    morde: ['B1'] },
+  { nome: 'credulone',  toppa: '_crit-dischetto-credulone.js',  morde: ['B3'] },
+  { nome: 'semesuo',    toppa: '_crit-dischetto-semesuo.js',    morde: ['A3'] },
+  { nome: 'fidato',     toppa: '_crit-dischetto-fidato.js',     morde: ['C6'] },
+  { nome: 'vincitore',  toppa: '_crit-dischetto-vincitore.js',  morde: ['G5'] },
+  { nome: 'sfrenato',   toppa: '_crit-dischetto-sfrenato.js',   morde: ['E1b'] },
+  { nome: 'cieco',      toppa: '_crit-dischetto-cieco.js',      morde: ['F1'] },
+  /* I DUE DEL SEME A DUE MANI (voce #150). Stanno qui e non in un banco
+     nuovo perche' la bite list di un cantiere si legge in un posto solo:
+     un secondo elenco di falsi accanto al primo e' il modo piu' rapido
+     per averne uno dei due dimenticato. */
+  { nome: 'sbrigativo', toppa: '_crit-dischetto-sbrigativo.js', banco: 'seme', morde: ['S5'] },
+  { nome: 'credone',    toppa: '_crit-dischetto-credone.js',    banco: 'seme', morde: ['S4'] },
 ];
 
 /* quali gruppi servono a una prova: si corre solo quel gruppo, se no
@@ -88,6 +117,20 @@ const gruppoDi = p => p[0];
 function corri(fileGioco, gruppi) {
   const a = ['strumenti/_q-dischetto.js', '--gioco', path.relative(RADICE, fileGioco)];
   if (gruppi) a.push('--solo', gruppi.join(','));
+  const r = spawnSync(process.execPath, a, { cwd: RADICE, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  return { uscita: r.status, testo: (r.stdout || '') + (r.stderr || '') };
+}
+
+/* IL BANCO DEL SEME, A TAGLIA RIDOTTA, E SI DICHIARA PERCHE'. Alla
+   taglia piena (400 per braccio) il cancello costa 38 s, e nove falsi
+   piu' il controllo positivo farebbero sei minuti di sola attesa. Qui
+   non serve la potenza statistica: le due prove che devono mordere —
+   S4 e S5 — sono SECCHE (20 su 20 o 0 su 20), e vent'anta tentativi
+   bastano a distinguere «mai» da «sempre». Il braccio statistico resta
+   a 80 solo per tenere in piedi il controllo positivo. */
+function corriSeme(fileGioco) {
+  const a = ['strumenti/_q-dischetto-seme.js', '--gioco', path.relative(RADICE, fileGioco),
+             '--giri', '80', '--secchi', '20'];
   const r = spawnSync(process.execPath, a, { cwd: RADICE, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   return { uscita: r.status, testo: (r.stdout || '') + (r.stderr || '') };
 }
@@ -102,12 +145,17 @@ const verde = (testo, prova) => new RegExp('^\\s*OK\\s+' + prova + '\\)', 'm').t
   if (!fs.existsSync(GIOCO)) { console.error('PROVA NULLA: ' + GIOCO + ' non esiste'); process.exit(3); }
 
   /* ------------------------------------------- IL CONTROLLO POSITIVO */
-  const gruppiTutti = [...new Set(FALSI.flatMap(f => f.morde.map(gruppoDi)))].sort();
+  const gruppiTutti = [...new Set(FALSI.filter(f => f.banco !== 'seme').flatMap(f => f.morde.map(gruppoDi)))].sort();
   const onesto = corri(GIOCO, gruppiTutti);
   if (/PORTA\).*ASSENTE/.test(onesto.testo)) {
     console.log('  PROVA NULLA: il gioco non ha ancora la sfida dal dischetto — i falsi si costruiscono sopra la cura.');
     process.exit(3);
   }
+  /* il controllo positivo vale per TUTTI E DUE i banchi: un banco del
+     seme gia' rosso sul gioco onesto non potrebbe discriminare niente */
+  const onestoS = corriSeme(GIOCO);
+  onesto.testo += '\n' + onestoS.testo;
+  if (onestoS.uscita === 2) onesto.uscita = 2;
   const provTutte = FALSI.flatMap(f => f.morde);
 
   /* «ROSSA» E «ASSENTE» NON SONO LA STESSA COSA, e confonderle e' il modo
@@ -153,7 +201,7 @@ const verde = (testo, prova) => new RegExp('^\\s*OK\\s+' + prova + '\\)', 'm').t
       console.log('    ??  ' + f.nome.padEnd(11) + ' LA TOPPA NON SI APPLICA: ' + (t.stderr || t.stdout || '').trim());
       scappati++; continue;
     }
-    const r = corri(usc, [...new Set(f.morde.map(gruppoDi))]);
+    const r = (f.banco === 'seme') ? corriSeme(usc) : corri(usc, [...new Set(f.morde.map(gruppoDi))]);
     const morso = f.morde.every(p => rossa(r.testo, p));
     console.log('    ' + (morso ? 'MORSO ' : 'SCAPPA') + '  ' + f.nome.padEnd(11) + ' atteso rosso su ' + f.morde.join(',') +
                 '   ->  ' + f.morde.map(p => p + '=' + (rossa(r.testo, p) ? 'NO' : (verde(r.testo, p) ? 'OK' : '?'))).join(' '));
