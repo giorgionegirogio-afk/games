@@ -874,7 +874,7 @@ Qui il registro completo, a edizioni.
   PER BYTE** (`_toppa-149-giudice`, `-motorev`, `-guida`, `-cbrt`,
   `-commenti`): è la prova, non la promessa, che il file da 2,8 MB è stato
   toccato solo dagli attrezzi ad ancore. Diff del gioco contro `b87f512`:
-  **274 righe aggiunte, 10 tolte**.
+  **272 righe aggiunte, 10 tolte**.
 
   ### (j-bis) LA BATTERIA, INTERA — e il difetto che ha trovato solo lei
 
