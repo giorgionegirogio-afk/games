@@ -1704,6 +1704,14 @@ const CANCELLI = [
      tocco reale), quindi un rosso qui e' un rosso. Sa dire PROVA NULLA
      (codice 3) quando in quadro non c'e' abbastanza corpo per squadra. */
   { nome: 'divise',      cmd: ['strumenti/_q-divise.js'],                               conta: true,  lento: false },
+  /* gesto: IL MOVIMENTO DELLE CLIP (voce #152). Misura il cammino dei
+     diciotto giunti lungo ogni gesto e l'escursione massima, leggendo il
+     rig dall'API di banco che il gioco espone gia'. CONTA perche' nasce
+     rosso e sa dirlo: sul merge-base 4ed12a6 dava 9 su 10, con la
+     frenata a 3,41 metri contro i 12,77 della penultima clip e i 2,71 di
+     un uomo FERMO. Deterministico (nessun disegno, nessun cronometro,
+     solo aritmetica sui giunti), quindi corre in compagnia. */
+  { nome: 'gesto',       cmd: ['strumenti/_q-gesto.js'],                                conta: true,  lento: false },
   { nome: 'volti',       cmd: ['strumenti/volti.js'],                                   conta: true,  lento: true },
   /* da qui in giu': cronometrici, girano da soli */
   { nome: 'giocata',     cmd: ['strumenti/giocata.js', '--tutte'],                      conta: true,  lento: false, solo: true },
