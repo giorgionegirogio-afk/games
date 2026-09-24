@@ -721,6 +721,19 @@ Qui il registro completo, a edizioni.
   quadro** mentre a monte le passa sopra il buio di un compagno (−145° contro
   i 23° delle altre).
 
+  **IL CRITERIO DI RINUNCIA E' SCATTATO, E LA DEROGA E' DICHIARATA.** La
+  spec, scritta prima di misurare, diceva: «C — le ombre. Si rinuncia se
+  dopo la cura le ombre non salgono sopra 5/8». Non sono salite, quindi il
+  criterio ha detto di rinunciare. **La cura e' stata spedita lo stesso, e
+  la ragione sta scritta qui invece di essere taciuta**: non e' un
+  compromesso sul bersaglio ma una modifica che (i) chiude una violazione
+  della legge che il file dichiara di suo («tintaOmbra: MAI nero puro»),
+  (ii) non costa un'operazione di canvas, (iii) non fa scendere nessuna
+  colonna e ne guadagna una figura misurabile, e (iv) toglie di mezzo
+  meta' degli scarti di qualita' dell'ombra. Rinunciarci avrebbe buttato
+  via una riparazione vera perche' il cancello che non la vede non si e'
+  mosso. **Chi legge decida se la deroga regge: sta qui perche' si possa.**
+
   **PROVATO E SCARTATO**, scritto perché nessuno lo rifaccia: dare a
   `OMBRA_TINTA` più margine sul pavimento del valore — (14·38·32) →
   (13·47·31), così che anche **due** capsule accavallate tornino manto (0,162
