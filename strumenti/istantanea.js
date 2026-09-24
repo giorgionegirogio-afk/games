@@ -2373,7 +2373,13 @@ function misuraInPagina(arg) {
        Misurato: è l'ultimo caso che portava una direzione a 79 gradi dalle
        altre in un fotogramma dove il gioco le disegna tutte a 20. */
     if (primoBuio < 0 || primoBuio > 0.5 * h) {
-      ombre.push({ idx: f.idx, pixel: n, ombra: false, staccata: true, x: ax, y: ay });
+      /* QUANTO E' STACCATA, E NON SOLO CHE LO E' (voce #152). Uno scarto
+         che non porta il suo numero manda chi ripara a indovinare: «la
+         macchia comincia a 78 px su una figura di 100, e la soglia sono
+         50» dice dove intervenire, «staccata» no. Si stampa soltanto:
+         nessun verdetto cambia. */
+      ombre.push({ idx: f.idx, pixel: n, ombra: false, staccata: true, x: ax, y: ay,
+                   primoBuio: primoBuio, h: h, tetto: Math.round(0.5 * h) });
       continue;
     }
     /* la stessa marcia lungo la direzione DICHIARATA dal gioco: se qui
@@ -3248,7 +3254,8 @@ async function rampaDellaLuce(pag, S) {
           console.log('           fig ' + String(ob.idx).padStart(2) +
             ` @${String(ob.x).padStart(4)},${String(ob.y).padStart(4)}` +
             (ob.ombra ? `  dir ${ob.dir.toFixed(0).padStart(5)}°  lung ${ob.rapporto.toFixed(2)}x  (${ob.lung} px su ${ob.h} di figura, ${ob.pixel} pixel d'ombra; sulla dichiarata ${ob.lungDich} px, larga ${ob.larghezza})`
-              : `  SCARTATA: ${mot} (${ob.pixel} pixel)`));
+              : `  SCARTATA: ${mot} (${ob.pixel} pixel${ob.staccata
+                  ? `; il primo buio a ${ob.primoBuio} px su una figura di ${ob.h}, tetto ${ob.tetto}` : ''})`));
           /* IL PROFILO DELLA MARCIA, dieci gradi per casella: e' l'unico
              modo di distinguere «l'ombra punta altrove» da «attorno alla
              figura e' buio in ogni direzione». Il primo e' un difetto del

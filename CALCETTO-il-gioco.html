@@ -8198,7 +8198,11 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs,fil
          dentro, verde sopra il blu — cosi' la macchia di contatto e la
          capsula proiettata che le passa sotto sono lo stesso colore
          invece di due grigi diversi. */
-      ctx.globalAlpha=0.22*(0.40+0.60*fo); ctx.fillStyle='rgb(14,38,32)';
+      /* LA TERZA COPIA DELLA TINTA (voce #152). Questa macchia si
+         disegna solo in camera bassa — il gol e il dischetto — ed e' la
+         stessa cosa della macchia di contatto in pianta: adesso legge
+         OMBRA_CONTATTO, cosi' le due scene raccontano lo stesso buio. */
+      ctx.globalAlpha=0.22*(0.40+0.60*fo); ctx.fillStyle='rgb('+OMBRA_CONTATTO+')';
       ctx.beginPath();
       ctx.ellipse(gx, gy, 0.27*s*fo, (0.27*s*cam.se+0.5)*fo, 0,0,TAU);
       ctx.fill();
@@ -35202,18 +35206,57 @@ const cmpY=(a,b)=>a.y-b.y;
    sfumatura radiale, cotta UNA VOLTA in un canvas fuori schermo e poi
    ridisegnata schiacciata, costa un drawImage per ombra (meno di tre fill)
    e ha la penombra continua che ha un'ombra vera sull'erba. */
+/* =====================================================================
+   LE DUE TINTE DELL'OMBRA A TERRA — dichiarate QUI e in nessun altro
+   posto (voce #152).
+
+   Prima erano tre: la terna della capsula lunga scritta dentro
+   buildOmbraLungaTex, la STESSA terna ricopiata a mano dentro
+   drawOmbreGiocatori per il tratto del contorno, e un NERO PURO dentro
+   buildOmbraTex per la macchia di contatto. Tre posti, e il terzo
+   raccontava un'altra luce: e' la ferita che questo file si e' gia'
+   aperto due volte con la direzione del sole.
+
+   OMBRA_TINTA (14·38·32) — l'ombra portata. Il VALORE non e' cambiato:
+   e' la terna del 16 agosto, con tutto il ragionamento che sta dentro
+   buildOmbraLungaTex ancora valido parola per parola. Qui si e' solo
+   smesso di scriverla due volte.
+
+   OMBRA_CONTATTO (8·40·22) — la macchia sotto i piedi: la stessa
+   famiglia, un gradino sotto. Serve a dire «il corpo TOCCA TERRA», e
+   fin qui lo diceva in NERO PURO — l'ultima ombra nera rimasta nel
+   gioco, contro la prima riga del contratto scritto in testa a SOLE.
+   Il nero non e' solo brutto sull'erba: e' INVISIBILE a ogni misura,
+   perche' il metro chiama ombra solo un pixel che sia ancora manto, e
+   il nero al 48% porta il manto a 0,096 di valore contro un pavimento
+   di 0,18. La macchia che ancora la figura al terreno non esisteva per
+   nessuno strumento, e il disco che il metro guarda attorno ai piedi si
+   riempiva di pixel che non erano ne' manto ne' corpo.
+   L'alfa NON e' stata toccata: schiarire la macchia farebbe galleggiare
+   ventidue uomini per far contento un istogramma.
+   ===================================================================== */
+const OMBRA_TINTA='rgb(14,38,32)';
+const OMBRA_CONTATTO=[8,40,22];
 let ombraTex=null, poolTex=null;
 function buildOmbraTex(){
   const N=128;
   ombraTex=document.createElement('canvas');
   ombraTex.width=N; ombraTex.height=N;
   const c=ombraTex.getContext('2d');
+  /* LA MACCHIA DI CONTATTO PRENDE LA TINTA DELL'OMBRA (voce #152).
+     Qui c'era rgba(0,0,0,...) su tutte e cinque le fermate. Le cinque
+     fermate e le cinque alfe restano quelle: cambia soltanto di che
+     colore e' il buio. Col nero, sopra la capsula, il pixel finiva a
+     0,096 di valore — fuori dalla famiglia del prato, quindi fuori da
+     ogni misura d'ombra; con (8·40·22) sta a 0,174 al centro e torna
+     manto dal 38% del raggio in fuori. */
+  const OC=OMBRA_CONTATTO.join(',');
   const g=c.createRadialGradient(N/2,N/2,0,N/2,N/2,N/2);
-  g.addColorStop(0,   'rgba(0,0,0,.60)');
-  g.addColorStop(0.38,'rgba(0,0,0,.54)');
-  g.addColorStop(0.64,'rgba(0,0,0,.36)');
-  g.addColorStop(0.86,'rgba(0,0,0,.11)');
-  g.addColorStop(1,   'rgba(0,0,0,0)');
+  g.addColorStop(0,   'rgba('+OC+',.60)');
+  g.addColorStop(0.38,'rgba('+OC+',.54)');
+  g.addColorStop(0.64,'rgba('+OC+',.36)');
+  g.addColorStop(0.86,'rgba('+OC+',.11)');
+  g.addColorStop(1,   'rgba('+OC+',0)');
   c.fillStyle=g; c.fillRect(0,0,N,N);
   /* pozza calda del portatore di palla: stessa forma, tinta d'oro */
   poolTex=document.createElement('canvas');
@@ -35386,7 +35429,10 @@ function buildOmbraLungaTex(){
      la misura chiede, e la chimica resta quella dell'erba — verde sopra
      il blu, rosso il canale piu' basso — che e' la ragione per cui
      questa tinta esiste (vedi il blocco qui sopra). */
-  const R=14, G2=38, B=32;
+  /* LA TERNA ARRIVA DA OMBRA_TINTA e non si riscrive qui (voce #152):
+     era una delle tre copie, e la copia e' la verita' che diverge. I
+     numeri sono gli stessi — il ragionamento qui sopra non si tocca. */
+  const [R,G2,B]=OMBRA_TINTA.slice(4,-1).split(',').map(Number);
   /* =================================================================
      LA GEOMETRIA, IN CHIARO. Sono i sei numeri che decidono se il
      cancello delle ombre e' verde, e stanno qui perche' chi li tocca
@@ -36402,7 +36448,7 @@ function drawOmbreGiocatori(lista){
      sottile del busto (7,5), cioe' una sola larghezza che regge sia gli
      arti sia il tronco. Il tronco resta largo lo stesso perche' i suoi
      due fianchi sono ossa del tracciato. */
-  ctx.strokeStyle='rgb(14,38,32)';
+  ctx.strokeStyle=OMBRA_TINTA;
   ctx.lineCap='round'; ctx.lineJoin='round';
   ctx.lineWidth=OMBRA_LARG;
   for(const p of lista){
@@ -36471,8 +36517,30 @@ function drawOmbreGiocatori(lista){
       const av=ph*(p.amp||1.1)*0.35, la=ph*3.0;
       const cx=p.x+ca*av-sa*la, cy=p.y+7.0+sa*av+ca*la;
       const CX= cx*C+cy*S, CY=-cx*S+cy*C;
+      /* =============================================================
+         LA MACCHIA SI STRINGE, DA 20 x 11,2 UNITA' A 14 x 7,8.
+
+         Venti unita' di larghezza erano PIU' dell'intera capsula (15,2
+         unita', cioe' due volte semiCorto): la macchia che deve dire
+         «qui poggia un piede» era, alla lettera, «una pozza di buio
+         larga quanto lunga» — che e' il nome di uno degli scarti del
+         metro, e in un istante ne ha fatti cadere due. A quattordici sta
+         sotto la capsula e legge come un'impronta.
+         L'ALFA NON SI TOCCA: e' lei che ancora la figura al terreno.
+         Quello che cambia e' il COLORE (vedi OMBRA_CONTATTO): il nero
+         puro non era solo contro il contratto di SOLE, era invisibile a
+         ogni misura, perche' un pixel che non e' piu' manto non puo'
+         essere manto imbrunito.
+
+         LA QUOTA ENTRA ANCHE QUI. La capsula gia' si stacca, rimpicciolisce
+         e schiarisce col salto (k, r, a); la macchia restava larga uguale,
+         e un uomo a mezz'aria lasciava l'impronta di un uomo fermo. Adesso
+         si stringe con la STESSA r della capsula — la stessa legge che il
+         pallone applica gia' alla sua («si spegne in nove unita' di quota:
+         un pallone in volo non tocca niente»), e da oggi corpo e pallone
+         non raccontano due fisiche diverse. */
       ctx.globalAlpha=ac*0.80;
-      ctx.drawImage(ombraTex, CX-10, CY-5.6, 20, 11.2);
+      ctx.drawImage(ombraTex, CX-7*r, CY-3.9*r, 14*r, 7.8*r);
     }
   }
   ctx.globalAlpha=1;
