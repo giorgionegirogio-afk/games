@@ -585,6 +585,314 @@ Qui il registro completo, a edizioni.
   zero, e la revisione dell'intera postura «zero permessi, zero conti, nessuna
   chiave nell'HTML»). **Nessuna delle due è stata provata.**
 
+- **LA CURA DELLA REVISIONE D'INSIEME — #149 CANTIERE CHIUSO** (voce #149, 24
+  settembre 2026, cinque compiti dal merge-base `b87f512` — spec
+  `docs/superpowers/specs/2026-09-24-cura-revisione-design.md`, piano
+  `docs/superpowers/plans/2026-09-24-cura-revisione.md`). **`MOTORE_V` sale da
+  5 a 6** con una misura su quattro serie vere (vedi (d)); **`DISCHETTO_V`
+  resta 1** (nessun messaggio del protocollo è cambiato). Non aggiunge gioco:
+  cura i rilievi della revisione d'insieme dell'ONDA E, che aveva dato **«NON
+  CHIUSA ONESTAMENTE: NO»**.
+
+  ### (a) IL CRITICO — una serie onesta si faceva accusare in tre modi
+
+  Il revisore ha giudicato **lo stesso nastro onesto** (serie 2-1, seme
+  1561173679, 1068 caratteri) cambiando **una cosa alla volta**. Tre casi
+  davano **NON TORNA a due persone oneste**, e uno dava **TORNA** a un nastro
+  che il gioco non sa leggere:
+
+  | che cosa si cambia | ieri | oggi |
+  |---|---|---|
+  | SOLO la riga 15 tolta, le 14 restano | **NON TORNA**, [1,3] in 7839 passi | `INCOMPLETO/dischetto-assente` |
+  | la 15 **e** tutte le 14 (il residuo) | **NON TORNA**, [1,3] in 7839 passi | `INCOMPLETO/duelli-mai-letti` |
+  | il bit «chi ha tirato per primo» capovolto | **NON TORNA**, [1,2] in 646 passi | `INCOMPLETO/dischetto-primo-incoerente` |
+  | la riga 15 con una versione ignota (`v = 2`) | **TORNA** | `INCOMPLETO/dischetto-versione` |
+
+  **RIMISURATI IN MODO INDIPENDENTE** dal banco di questo cantiere su
+  un'altra serie (2-1, 1069 caratteri, seme 2312852291): NON TORNA [0,1] in
+  5984 passi, NON TORNA [0,1] in 5984, NON TORNA [1,2] in 646, TORNA.
+
+  **LA CAUSA, IN CODICE**: la guardia delle testimonianze del #147 era **a
+  senso unico** — pretendeva «la 15 vuole le 14» e **mai** «le 14 vogliono la
+  15». Tolta la sola 15, `disco` resta `null`, `giudica` non apre la serie,
+  rigioca novanta secondi di calcio e confronta `G.score` (che dopo una serie
+  vale 1-0) col punteggio dei rigori.
+
+  **LO STANDARD VIOLATO ERA QUELLO DI CASA.** Il #133 (`schermo-ignoto`) e il
+  #142 (`motore-js-ignoto`) hanno scritto due volte la stessa frase: *un
+  nastro senza quella riga non si può sapere; procedere alla cieca produce
+  accuse false in una sola direzione, quindi ci si astiene*. Per la riga 15 si
+  procedeva alla cieca.
+
+  ### (b) IL RESIDUO NON ERA INCHIUDIBILE: era stato guardato da un lato solo
+
+  Il #147 aveva dichiarato che chi toglie *tutte* le 14 *e* la 15 ottiene «un
+  nastro indistinguibile da una partita normale», e che chiuderlo vorrebbe
+  dire **firmare** la 15 — una firma vuole una chiave, e in questo gioco non
+  c'è. **La dichiarazione era vera per IDENTIFICARE la serie e falsa per
+  ASTENERSI.** Un nastro di una serie è fatto di **comandi di duello**, e
+  novanta secondi di calcio non ne raccolgono nemmeno uno.
+
+  Si aggiunge `INCOMPLETO/duelli-mai-letti`, ed è la **metà gemella** di
+  `duello-senza-righe` (#131): quella si alza quando si apre un duello e il
+  nastro non ha righe, questa quando il nastro ha righe e non si apre mai il
+  duello che le consumi. **Non nomina né la riga 15 né le 14**: prende il
+  residuo senza sapere che esiste un dischetto, ed è la ragione per cui è la
+  forma giusta.
+
+  **E LA SOGLIA GLIEL'HA INSEGNATA UNA RETE DI SICUREZZA.** La prima stesura
+  diceva «se avanza anche un comando solo, astieniti», e `_q-staffetta` B1 è
+  diventato **rosso**: pretende `NON TORNA` sul nastro di una sfida vera
+  giudicato col **seme sbagliato**, e la forma larga lo trasformava in
+  un'astensione — cioè rovesciava una decisione del #133 senza una misura che
+  la giustificasse. **MISURATO** (`strumenti/_sonda-149-duelli.js`):
+
+  | nastro | comandi di duello avanzati |
+  |---|---|
+  | sfida congelata, seme sbagliato | **4 su 6** |
+  | serie dal dischetto, il residuo | **12 su 12** |
+  | nastri onesti (sfida e serie) | **0 su 6** e **0 su 12** |
+  | punteggio gonfiato di uno (nastro onesto) | **0 su 6**, e resta NON TORNA |
+
+  I due casi sono **diversi in natura, non di grado**: con qualche comando
+  letto la rigiocata era entrata nel nastro e poi ne è uscita — una
+  divergenza, e il giudice ha già due risposte per quella; con **nessun**
+  comando letto non è mai entrata. La soglia è «nemmeno uno». **Resta aperta,
+  col numero accanto, la domanda se un nastro che diverge a metà meriti
+  un'accusa o un'astensione**: questo cantiere non ha la misura per
+  rispondere e non la inventa.
+
+  ### (c) IL PRIMO TIRATORE: una porta sola, e un riscontro che si astiene
+
+  Il #148 aveva rifiutato — **con ragione** — di ri-dedurre `primo` dentro
+  `giudica`: «sarebbe una SECONDA COPIA della regola del sorteggio, e il
+  giorno in cui il dischetto la cambiasse i nastri vecchi verrebbero
+  rigiocati storti in silenzio». **Il prezzo accettato però era un'accusa.**
+
+  La forma che astiene **senza duplicare** è una **porta sola**, che è il modo
+  di casa (`vagliaNastro`, `improntaDelNastro`, `Reg.carta`): `dsPrimoDalSeme`
+  è l'unico posto in cui la regola vive, e la chiamano **tutti e due** i capi —
+  `chiudiAppuntamento` e il giudice. Il giudice **non la usa per decidere chi
+  tira** (continua a leggere la riga 15, come il #148 ha stabilito): la usa per
+  un **riscontro**, e quando i due testimoni si contraddicono non si sa quale
+  menta, quindi si astiene.
+
+  ### (d) `MOTORE_V` DA 5 A 6 — e una serie sola avrebbe detto il contrario
+
+  `strumenti/_t-149-motorev.js`, **quattro serie vere** fra due telefoni:
+
+  - **VERSO 1** — il nastro **onesto**, dai due giudici: **NEUTRO 4 volte su
+    4** (stesso verdetto TORNA, stesso punteggio rigiocato, stesso numero di
+    passi: 646 e 1011). La cura non cambia nessuna partita e nessun verdetto
+    onesto.
+  - **VERSO 2** — i quattro nastri della revisione, dai due giudici: **16
+    verdetti su 16 cambiano**, e **NOVE di quei sedici sono un NON TORNA del
+    giudice di ieri**.
+
+  **IL CRITERIO È QUELLO ALLARGATO DAL #148**, parola per parola: «se una cura
+  cambia il verdetto che un altro telefono darebbe sullo stesso nastro, il
+  numero sale». Il criterio stretto («l'esito di sequenze di comandi
+  identiche») direbbe di no, e il verso 1 lo misura.
+
+  **E LA MISURA VOLEVA PIÙ DI UNA SERIE.** Alla prima corsa — una serie sola
+  (1-2, seme 2485500926) — il giudice di ieri disse **TORNA su tre casi su
+  quattro**: novanta secondi di calcio finiti **per caso** con lo stesso
+  punteggio della serie. Con quel referto in mano si sarebbe scritto
+  «`MOTORE_V` può restare 5» **avendo in mano una moneta**.
+
+  **IL PREZZO, dichiarato**: i nastri v5 diventano ingiudicabili. Dura poco —
+  v5 era della notte prima — e la riga resta a `verificata = 0`.
+
+  ### (e) I DUE CANCELLI CHE ATTESTAVANO INVECE DI MISURARE
+
+  **`_q-nastro-tronco` C** era verde per il motivo sbagliato: il nastro finto
+  `'1|2||'` veniva respinto da `motoreV !== MOTORE_V`, non dalla guardia del
+  nastro vuoto. Se quella guardia fosse sparita, la prova sarebbe restata
+  verde. Adesso `MOTORE_V` si legge **dal file** del gioco in prova e si
+  pretende la **causa** `nastro-vuoto`. Col falso `_crit-vuoto-cieco`, che
+  toglie quella riga sola, la prova **diventa rossa** (misurato: `rifiutato
+  false`, causa `rose-assenti`) — e prima non lo sarebbe diventata.
+
+  **`_q-dischetto` E** attestava il freno: contava le richieste pedalando
+  `battito()` a mano e le convertiva in «al minuto» moltiplicando per
+  `DISCHETTO_SEC_TIRO = 10`, **una costante che nel gioco non scandisce
+  niente**. Il ritmo della rete lo decide `Dischetto.ritmo()` (900 ms, 2200
+  quando la rete è dichiarata lenta), e la guida che lo usa partiva dai due
+  bottoni, non da `crea`/`entra`: **nei banchi non aveva mai girato**.
+
+  **RIMISURATO** col gioco che si guida da solo e col metro giusto
+  (`puntaAlMinuto`, che esisteva e non usava nessuno): **la punta è 74-88
+  richieste/min per identità contro un tetto di 60** (tre corse: 74, 76 e 88),
+  non le 34,5 verbalizzate. Il danno d'uso resta nullo, **e anche questo è misurato**: il
+  gioco prende i 429, dichiara la rete **lenta**, allarga il ritmo **da 900 a
+  2200 ms** e le serie arrivano in fondo lo stesso.
+
+  **E IL CANCELLO NUOVO HA DOVUTO ESSERE RISCRITTO DUE VOLTE.** La prima
+  stesura chiedeva che il gioco «se ne accorgesse»: `_crit-dischetto-sfrenato`
+  (sette ritiri per giro) **se ne accorge benissimo** e continua a chiedere
+  sette volte tanto — falso scappato. La seconda misurava il ritmo dopo il
+  primo 429 con l'orologio da muro: **verde da sola, rossa dentro la batteria
+  carica**, cioè un cancello che cambia colore col carico. Il metro che non
+  dipende dal carico è **richieste per battito**, e la soglia — tre: un
+  ritiro e due invii — **viene dal protocollo, non dal referto**. Misurato:
+  1,3-1,9 sul gioco onesto, oltre sette sullo sfrenato.
+
+  ### (f) IL SEME A DUE MANI NON È PROTETTO — DIFETTO APERTO, con la misura
+
+  Il commento accanto a `chiudiAppuntamento` dice: «SI CHIUDE QUANDO TUTTI E
+  DUE HANNO PARLATO, e non prima: è questa riga a impedire che il secondo
+  scelga il proprio nonce sapendo il primo». **La riga non lo impedisce.**
+  Impedisce che il *gioco* chiuda prima, non che un pari scritto a mano
+  **ritardi il proprio saluto**: la cassetta è pubblica, chi entra per secondo
+  legge il nonce dell'altro, ne prova quattromila e parla solo quando ha
+  trovato quello che gli conviene.
+
+  **MISURATO** (`strumenti/_q-dischetto-seme.js`, cancello nuovo): il pari che
+  si sceglie il nonce vince il bit **10 volte su 10**; col **testimone**
+  accanto, lo stesso pari a bugia spenta vince **5 su 10**. **E non è solo il
+  bit**: con il nonce dell'altro in mano si sceglie l'**intero seme**, cioè il
+  dado di tutta la partita.
+
+  **L'ARMA ESISTEVA GIÀ E NON LA IMBRACCIAVA NESSUNO**: la bugia `semesuo` di
+  `PariFinto` porta dal #146 il commento «se il gioco non lo pretende, questa
+  bugia passa, e il banco deve accorgersene». Nessun cancello la metteva in
+  campo. Adesso sì, e il cancello sta in batteria a **`conta:false`** — la
+  stessa forma con cui `motori` è stato tenuto in campo: un guasto aperto si
+  misura in permanenza col numero accanto.
+
+  **LA CURA NON È IN QUESTO CANTIERE, E IL PERCHÉ È SCRITTO**: è lo stesso
+  schema in due tempi del #146 applicato al saluto (impegno SHA-256 sul nonce,
+  poi rivelazione), e vuole un giro di rete in più nell'appuntamento, una fase
+  nuova, `DISCHETTO_V` da 1 a 2 e la riscrittura di `PariFinto` e dei sette
+  falsi del dischetto. **Una mezza cura del protocollo è peggio del buco
+  dichiarato.**
+
+  ### (g) I «409 CASI» DELLA SHA-256 ADESSO HANNO UNO STRUMENTO
+
+  Il verbale del #146 dichiarava «identiche tutte e 409» e **quei 409 casi non
+  avevano nessuno strumento che li producesse**. La regola di casa è «o si
+  scrive il banco, o si ritira il numero»: il banco c'è
+  (`strumenti/_q-sha256.js`, `conta:true`), **409 casi ricostruiti e
+  dichiarati** — 256 lunghezze da 0 a 255 byte, 128 stringhe da un generatore
+  seminato, 25 casi scomodi — **tutti identici a Node**, i tre bordi di
+  riempimento compresi, col testimone.
+
+  **E IL BANCO HA TROVATO UN LIMITE AL PRIMO VERDE**: fuori dal piano base
+  `dsSha256` scrive **CESU-8** e non UTF-8 (tre byte per unità UTF-16, e
+  un'emoji è due surrogati), quindi il digest **diverge** da quello di Node.
+  Non morde, e il perché si **misura** invece di ragionarlo: su 660 mosse
+  generate il carattere più alto che il protocollo passa a `dsSha256` è **116**
+  — tutto ASCII. Il giorno in cui una parola scritta da una persona entrasse
+  nel protocollo, il cancello lo direbbe **prima** che due telefoni si accusino
+  a vicenda.
+
+  ### (h) `Math.cbrt` È USCITA DAL GIOCO
+
+  Era l'**unica trascendente fuori dalle sette** che `improntaMotore` campiona
+  e che `_q-casa` misura (margine fra i tre motori: 6483 ulp), e la catena era
+  `Math.cbrt → DS_K → dsSha256 → dsImpegno → impegno-non-torna`, cioè
+  **l'unica accusa di tutto il cantiere del dischetto**. La cura non è
+  coprirla: le 64 costanti K **non sono un conto del gioco**, sono una tavola
+  dello standard (FIPS 180-4). Adesso sono scritte, con la ricetta accanto, e
+  `_q-sha256` verifica il risultato contro Node.
+
+  ### (i) LE RETTIFICHE A EDIZIONI, una per rilievo
+
+  - **La dichiarazione al committente**, in testa a questo registro, in
+    `PUNTO-DEL-LAVORO.md` e in `_analisi/MAPPA-MANDATO.md` (che non era
+    toccato dal 18 settembre e registrava ancora il live 1v1 come programma
+    corrente). Era dichiarata onestamente **in una copia sola**, il progetto
+    d'onda §5.4.
+  - **`istantanea`**: «45 su 56 contro 42, non è il #143» era **rovesciata**.
+    Rimisurata su tre versioni: `a2607d0` **45/56**, `main` **42/56**, il
+    gioco del #149 **42/56**. **Il #143 ha perso tre quote** — due di *ombre*
+    e una di *terzo centrale abitato* — e non sono mai tornate.
+  - **«nessun innocente viene accusato»** (#146 §j e #147 §e): falsa, e il
+    caso della riga 15 tolta la smentisce con due misure.
+  - **Il #146 §j** descriveva come «da fare» due cose già fatte dal #147:
+    rettificato (zero occorrenze di «RETTIFICA» in tutta la voce, mentre
+    `PUNTO` le rettificava).
+  - **L'etichetta del #145**: `D_rete(p95)` è in realtà `andata_p99 + 1 tick`.
+    **Con la lettura letterale S1 terrebbe** (13,2 e 6,3 tick); il NO regge
+    perché a farlo cadere è S3.
+  - **`rete/LEGGIMI.md`**: gli endpoint sono **sei**, non cinque
+    (`/api/dischetto` non era nominato).
+  - **I limiti rimessi dove si leggono**: «il pannello non è mai stato visto
+    da un occhio umano» (stava solo in `PUNTO`), il **server finto** della
+    cassetta (sparito dalla §(h) del #148), la **SOGLIA-UMANA** del #141 (mai
+    più nominata, e l'onda è stata dichiarata chiusa tre volte senza di lei).
+  - **Minori**: `tutti.js` diceva `motori` a `conta:false` (è `true` da
+    `c71a83e`); tre commenti del gioco dicevano «MOTORE_V resta 4/2»;
+    `MOTORE_V` nella carta sta in **quattro bit** (margine **9**, e ora un
+    cancello lo sorveglia); il conto delle prove di `nastro-differito` (13,
+    non 12; oggi 17); la coda del #145 vale **3,68 e 5,54** volte la mediana
+    (`PUNTO` diceva 2,7); il puntatore §5.3 → **§5.4**; «la piega non si è
+    mossa di un pixel» è vero per **quattro** bersagli e falso per **due**
+    (+56 px).
+
+  ### (j) GLI STRUMENTI, E LA PROVA CHE IL GIOCO È STATO TOCCATO SOLO DA LORO
+
+  Cancelli nuovi: **`sha256`** (`conta:true`) e **`dischetto-seme`**
+  (`conta:false`, difetto aperto). Prove nuove: quattro in
+  `_q-nastro-differito` (B5..B8, **17 su 17**), una in `_q-carta` (A6, i
+  quattro bit del motore), due in `_q-dischetto` (E1b ed E1c). Falsi nuovi:
+  `_crit-giudice-mezza-guardia` (la cura pigra: morso da **B6+B7+B8**, lascia
+  verdi **B1+B5**) e `_crit-vuoto-cieco`. **E la dichiarazione di
+  `primo-storto` è stata rettificata**: dal #149 non morde più a caso — il
+  riscontro col seme lo fa astenere **sempre**, quindi cadono A1, A2, A4, A5 e
+  A7, e restano verdi A3 e A6.
+
+  **LE CINQUE TOPPE APPLICATE IN FILA AL MERGE-BASE RIPRODUCONO IL GIOCO BYTE
+  PER BYTE** (`_toppa-149-giudice`, `-motorev`, `-guida`, `-cbrt`,
+  `-commenti`): è la prova, non la promessa, che il file da 2,8 MB è stato
+  toccato solo dagli attrezzi ad ancore. Diff del gioco contro `b87f512`:
+  **274 righe aggiunte, 10 tolte**.
+
+  ### (j-bis) LA BATTERIA, INTERA — e il difetto che ha trovato solo lei
+
+  `node strumenti/tutti.js --tutto`, **78 cancelli**, **1628 s** di orologio,
+  sul file `8a7d1f59a7e7`. Tre rossi alla prima corsa — `salvataggio`,
+  `verbi-ritardo`, `nastro-falsi` — e **nessuno dei tre è una regressione**,
+  ma solo uno dei tre era rumore. Rimisurati con `--ripetuto 3`:
+
+  | cancello | corsa 1 | corsa 2 | corsa 3 | giudizio |
+  |---|---|---|---|---|
+  | `salvataggio` | OK 11/11 | OK 11/11 | OK 11/11 | **stabile** — il rosso della batteria era carico, non gioco |
+  | `nastro-falsi` | OK | OK | OK | **stabile**, dopo la riparazione qui sotto |
+  | `verbi-ritardo` | OK | NO | OK | **RUMOROSO**, e lo dichiara da sé — già noto dal #142 |
+
+  **E LA BATTERIA INTERA HA TROVATO QUEL CHE IL PIANO NON NOMINAVA** (lezione
+  22, **settima occorrenza**). Il falso `_crit-giudice-mezza-guardia`
+  ancorava sul nome vecchio della causa — `duelli-non-letti` —, rimasto lì
+  quando la guardia è stata ristretta e ribattezzata `duelli-mai-letti` a
+  metà cantiere. Il falso **non si costruiva più**, e un falso che non nasce
+  non condanna nessuno: `nastro-falsi` è rosso per il suo banco, non per il
+  gioco. **Era invisibile a tutti i cancelli del compito in corso** — il
+  banco `nastro-differito` era 17 su 17, il gioco giusto — e nessuna corsa
+  parziale l'avrebbe trovato. È la seconda metà della regola 4: quando
+  ribattezzi una causa, cerca subito chi la nominava.
+
+  Fuori dalla batteria: `rete/prove/tutte.js` **62/62**. Gli informativi:
+  `istantanea` **42/56** (identico a `main`, vedi (i)), `avvio` verde,
+  `dischetto-seme` **rosso e dichiarato** (§f), `avvio-telefono` **uscita 3**
+  perché non c'è nessun telefono Android collegato — quindi il verdetto della
+  batteria è **«prova nulla», non «verde»**, e si scrive così invece di
+  arrotondare.
+
+  ### (k) CHE COSA RESTA APERTO
+
+  - **Il seme a due mani** (§f), difetto aperto con la misura accanto.
+  - **Un nastro che diverge a metà** prende ancora `NON TORNA` (§b): la
+    domanda è aperta e non c'è la misura per chiuderla.
+  - **Il `catch` muto** di `Reg.scrivi(15, …)`: non si ripara, perché con le
+    guardie del #149 il suo fallimento produce un'astensione e non un'accusa —
+    ma **non lascia traccia**, quindi chi lo subisse non saprebbe mai perché
+    la sua serie non è giudicabile. Dichiarato accanto alla riga.
+  - **Tutto ciò che sta nella dichiarazione al committente**, in testa a
+    questo registro: il live 1v1, il lockstep, il server autoritativo, il
+    DataChannel, un server vero, la pubblicazione del nastro, S5, la
+    SOGLIA-UMANA e il collaudo umano del pannello.
+
 - **IL NASTRO DEL DISCHETTO SI PUÒ CONFERMARE — #148 CANTIERE CHIUSO, e con
   lui l'ONDA E per davvero** (voce #148, 24 settembre 2026, quattro compiti
   dal merge-base `01265bc` — spec

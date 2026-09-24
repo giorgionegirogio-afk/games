@@ -64,10 +64,17 @@ condannato, reti di sicurezza verdi.
    per `DISCHETTO_SEC_TIRO`; si **rimisura** la punta vera e si riscrive la
    soglia che il banco pretende (il gioco degrada, quindi la prova vera è
    «degrada», non «sta sotto 60»).
-3. Il falso del seme: `_crit-dischetto-nonce-scelto.js` (o l'arma già
-   presente in `_dischetto-due-telefoni.js:406-428`) messo in campo in
-   `_q-dischetto-falsi`. **Si misura** quante volte su N il secondo vince il
-   bit. Poi si valuta la cura del protocollo e **si dichiara**.
+3. Il falso del seme: l'arma già presente in
+   `_dischetto-due-telefoni.js:406-428` (la bugia `semesuo` di `PariFinto`)
+   messa in campo da un cancello nuovo, `_q-dischetto-seme.js`. **Si misura**
+   quante volte su N il secondo vince il bit, col testimone a bugia spenta.
+   Poi si valuta la cura del protocollo e **si dichiara**.
+
+   *(Esito: **10 su 10** con la bugia, **5 su 10** col testimone. Il cancello
+   entra in batteria a `conta:false` — la forma con cui `motori` è stato
+   tenuto in campo — perché misura un **difetto aperto**: la cura tocca il
+   protocollo, `DISCHETTO_V` e i sette falsi del dischetto, ed è un cantiere
+   suo.)*
 
 ## C4 — le rettifiche documentali, la batteria, il verbale
 

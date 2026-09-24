@@ -39,7 +39,7 @@ const COPPIE = [
   }`,
    `  /* la cura pigra si fida del bit del nastro senza riscontrarlo */`],
   /* via i comandi di duello rimasti non letti */
-  [`  if(avanzati) return dico('INCOMPLETO','duelli-non-letti', piu);`,
+  [`  if(maiLetti) return dico('INCOMPLETO','duelli-mai-letti', piu);`,
    `  /* la cura pigra non guarda i comandi di duello rimasti in canna */`],
 ];
 

@@ -157,6 +157,17 @@ if (process.argv.includes('--carico')) {
                  registrata toglie il verde semplice. E quando dichiara
                  «il banco non ha otto campioni» esce 3, e qui si legge
                  PROVA NULLA, non un numero.
+     dischetto-seme
+                 conta:false PERCHE' MISURA UN DIFETTO APERTO (voce #149):
+                 il nonce del saluto del dischetto viaggia in chiaro, e chi
+                 entra per secondo puo' ritardare il proprio saluto e
+                 sceglierselo — misurato 10 su 10, col testimone a bugia
+                 spenta a 5 su 10. Non e' un cancello rotto: e' rosso
+                 perche' il gioco lo e', ed e' la stessa forma con cui
+                 `motori` e' stato tenuto in campo fino al #143. Torna a
+                 conta:true il giorno in cui il saluto avra' il suo impegno
+                 in due tempi — cantiere suo: tocca il protocollo,
+                 DISCHETTO_V e i sette falsi del dischetto.
      avvio       conta:false PERCHE' e' un SIMULATORE, e per sua stessa
                  ammissione il meno credibile della casa: sul medesimo file
                  ha dichiarato 2083 ms con dispersione 205,1% e poi 4018 ms

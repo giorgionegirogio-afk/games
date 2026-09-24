@@ -125,9 +125,15 @@ difetto, e va **dichiarato** accanto alla riga.
 
 ### 1.4 Il banco
 
-Tre prove nuove nel **gruppo B** di `_q-nastro-differito` (B5, B6, B7), più
+**Quattro** prove nuove nel **gruppo B** di `_q-nastro-differito` — B5, B6,
+B7 e **B8** (la versione ignota del protocollo, che è il quarto caso e non
+era nell'elenco delle tre accuse perché dà TORNA invece di NON TORNA) — più
 il **falso che condanna una cura pigra**: una cura che si limitasse alla
 riga (a) lascerebbe verdi 8 e 10b, e il banco deve dirlo.
+
+*(Esito: nate **13 su 17**, cioè quattro rosse; sul curato **17 su 17**. Il
+falso `_crit-giudice-mezza-guardia` è morso da B6+B7+B8 e lascia verdi B1 e
+B5, come dichiarato.)*
 
 ---
 
