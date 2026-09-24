@@ -1693,6 +1693,17 @@ const CANCELLI = [
      rumoroso di casa: da oggi corre IN FILA. */
   { nome: 'audio',       cmd: ['strumenti/audio.js'],                                     conta: true, lento: true },
   { nome: 'istantanea',  cmd: ['strumenti/istantanea.js', '--dir', 'istantanee-tutti'], conta: false, lento: false },
+  /* divise: LA COLONNA CHE MANCAVA AL METRO (voce #152). Il #151 ha
+     misurato che `istantanea` da' 42/56 anche a una versione in cui le
+     due squadre vestono uguale: sette colonne su otto istanti e nessuna
+     che dica «si capisce chi e' chi». CONTA da subito, e puo' contare
+     perche' nasce con i suoi due falsi gia' rossi — `_crit-152-divise.js`
+     veste la squadra 1 col kit della 0 (TV 0,203) e, nel caso peggiore,
+     con dodici gradi di tinta di differenza (TV 0,237), contro lo 0,665
+     del gioco. Deterministico (passo fisso, seme fisso, taglia 5, nessun
+     tocco reale), quindi un rosso qui e' un rosso. Sa dire PROVA NULLA
+     (codice 3) quando in quadro non c'e' abbastanza corpo per squadra. */
+  { nome: 'divise',      cmd: ['strumenti/_q-divise.js'],                               conta: true,  lento: false },
   { nome: 'volti',       cmd: ['strumenti/volti.js'],                                   conta: true,  lento: true },
   /* da qui in giu': cronometrici, girano da soli */
   { nome: 'giocata',     cmd: ['strumenti/giocata.js', '--tutte'],                      conta: true,  lento: false, solo: true },
