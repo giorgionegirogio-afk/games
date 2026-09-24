@@ -585,6 +585,245 @@ Qui il registro completo, a edizioni.
   zero, e la revisione dell'intera postura «zero permessi, zero conti, nessuna
   chiave nell'HTML»). **Nessuna delle due è stata provata.**
 
+- **LE FIGURE DA BLENDER — #151 PROTOTIPO MISURATO, VERDETTO: GLI SPRITE NON
+  CONVENGONO** (voce #151, 24 settembre 2026, cinque compiti dal merge-base
+  `c1e01fb` — spec `docs/superpowers/specs/2026-09-24-figure-blender-design.md`,
+  piano `docs/superpowers/plans/2026-09-24-figure-blender.md`). **Il gioco
+  spedito non è stato toccato**: `git diff` su `CALCETTO-il-gioco.html` è vuoto
+  a ogni compito, `MOTORE_V` resta **6**. Le due versioni misurate vivono in
+  `fuori/`, che non è tracciata.
+
+  Il committente aveva chiesto **grafica e animazioni di qualità premium**
+  (riferimenti Subway Surfers e FIFA Mobile), priorità **(1) figure e
+  animazioni**. Questa voce **non rifà la grafica**: costruisce la pipeline e
+  porta i numeri con cui decidere. **Il criterio di rinuncia è stato scritto
+  nella spec prima di misurare** (sezione 6, sette condizioni), e qui è
+  applicato riga per riga.
+
+  ### (a) LA RETTIFICA CHE CAMBIA TUTTO IL CONTO — il gioco non è «piatto»
+
+  Il mandato diceva «silhouette piatte, senza volume». **È vero per
+  l'ombreggiatura e falso per la geometria**, e la differenza decide il
+  verdetto. `Rig3D` (`:5108`) è già una libreria **pseudo-3D**: **18 giunti** in
+  metri, **27 clip**, **4 corporature**, **yaw continuo**, due camere, fusione
+  fra due pose, 14 capsule con le loro tinte di kit, numero di maglia ancorato
+  al torso. Quello che manca davvero è **una riga**, la `:8352`: l'ombreggiatura
+  interna è **una decisione binaria per arto** — se il punto medio del segmento
+  sta a est della verticale del bacino, tinta fredda — che **non guarda nemmeno
+  come è girato l'arto**. Un atlas non aggiunge tridimensionalità a un sistema
+  che ce l'ha già: **gliela toglie** insieme allo yaw continuo, alle corporature
+  e alle tinte di kit a runtime.
+
+  **Seconda rettifica, con la data accanto**: il mandato dava le ombre a 3/8.
+  Rimisurate sul merge-base sono **5/8** (il 3/8 è l'edizione del 15 agosto,
+  superata il 16). La base è **42/56**: erba 1/8 · palla 8/8 · figura 8/8 ·
+  ombre 5/8 · prato 8/8 · centro sera 7/8 · centro abitato 5/8.
+
+  ### (b) LA PIPELINE — `strumenti/blender/`, headless, e il suo cancello
+
+  Sei script Python (`comune` `figura` `anima` `atlante` `luce` `pose`) lanciati
+  con `blender --background --factory-startup --python`. **Il corpo non ha
+  proporzioni sue**: legge `N_THIGH…N_HEADR`, `HIPW` e le larghezze dei `SEGS`
+  dal gioco. **La camera non somiglia a quella del gioco, è la stessa**: la
+  proiezione `SY = cy − (y·ce + z·se)·s` è esattamente un'ortografica inclinata
+  di (90−E) attorno a X, e `prova_proiezione()` confronta le due su quattro
+  punti — **scarto 1,8e-7 m**.
+
+  `strumenti/_t-151-blender.js` **è nato rosso a 1 su 4** (Blender c'era, il
+  resto no) ed è finito **6 su 6**:
+  - **B** il corpo di Blender è il corpo del gioco: **11 misure, scarto massimo
+    5,96e-8 m** contro un tetto di 1e-4 (e il cancello **rilegge le costanti dal
+    gioco per conto suo** invece di fidarsi del JSON). Statura misurata 1,874 m.
+  - **C1** le pose di **192 fotogrammi identiche al byte**.
+  - **C2** l'immagine identica **entro il rumore misurato**.
+  - **C3** il falso: **un giunto spostato di 1 mm muove 60.381 byte**,
+    **48 volte la soglia di C2** (ne bastano 10) e cambia anche l'impronta delle
+    pose.
+
+  ### (c) «DUE PNG IDENTICI AL BYTE» NON SI PUÒ AVERE — e il perché è misurato
+
+  Il piano lo chiedeva. La prima corsa è stata rossa, e sotto c'erano **due
+  difetti distinti**.
+
+  **Il primo era vero e riparabile**: Blender scrive nel PNG i chunk `tEXt`
+  **`Date`** (l'ora da muro) e **`RenderTime`** (`00:01.75` la prima corsa,
+  `00:00.03` la seconda, perché la prima paga la compilazione degli shader). Due
+  numeri che col disegno non c'entrano niente rendevano irriproducibile la
+  pipeline **a pixel identici**. Tolti tutti gli `use_stamp`.
+
+  **Il secondo non si ripara.** Dopo la cura il cancello è tornato verde, e
+  **alla seconda esecuzione è tornato rosso**: un verde misurato una volta non è
+  una legge. Sette atlanti di fila, confrontati pixel per pixel: le corse che
+  differiscono differiscono di **3 e 5 byte su 3.145.728**, scarto massimo
+  **5 su 255**, sempre dentro **una cella sola** e sempre su un bordo. Spento
+  l'antialias il fenomeno **resta**: non è l'accumulo dell'antialias, è il test
+  punto-dentro-triangolo della GPU. È lo stesso rumore che `istantanea.js`
+  dichiara da agosto per Chromium (79 pixel su un milione e mezzo).
+
+  **Perciò il cancello misura due cose invece di attestarne una**: le **pose**
+  (aritmetica su CPU) identiche al byte, l'**immagine** entro una tolleranza, e
+  un **falso** che prova che quella tolleranza non ingoia una modifica vera.
+
+  **E LA TOLLERANZA È STATA RIFATTA DUE VOLTE NELLO STESSO GIORNO, perché la
+  prima forma era sbagliata nel modo tipico.** La prima era «16 byte», cioè
+  **tre volte il peggio di sette corse**: alla nona corsa il cancello ha letto
+  **18 ed è diventato rosso da solo**, senza che niente fosse cambiato. **Sette
+  misure non fissano una coda**, e una soglia presa dal peggio osservato è una
+  soglia che prima o poi il rumore passa. La forma che regge **non viene dal
+  rumore, viene dalla separazione** — che è una proprietà del fenomeno e non del
+  campione: il rumore sta sotto **1,4e-6** del foglio, il falso da un millimetro
+  a **4,8e-3**, e in mezzo ci sono **tremilaquattrocento volte**. La soglia è la
+  media geometrica arrotondata, **1e-4**: settanta volte sopra il rumore e
+  **quarantotto** sotto il falso, e C3 verifica ogni volta che il falso la passi
+  con almeno dieci volte di margine. **Lo scarto massimo per byte è stato tolto
+  dai cancelli** e si stampa soltanto: un pixel di bordo può passare da
+  trasparente a tinta piena, cioè 255 su un canale, e un numero che il rumore
+  può portare al massimo del suo intervallo non discrimina niente.
+
+  **E UN DRIVER GRAFICO CHE SI SCHIANTA NON È UN ROSSO.** Due volte in un
+  pomeriggio — sempre con la macchina carica dalla batteria — Blender è morto
+  con `EXCEPTION_ACCESS_VIOLATION` dentro `ig9icd64.dll`, lo stesso script che
+  poco prima e poco dopo ha renderizzato 192 fotogrammi senza una piega. Il
+  cancello adesso riconosce la firma dello schianto e dà **prova nulla**
+  (codice 3), non rosso: è la regola 26 applicata a un banco che ha una GPU
+  dentro. **Un cancello che chiama rosso un driver che muore manda qualcuno a
+  riparare il disegno invece del banco.**
+
+  ### (d) IL PESO DELL'ATLAS — misurato nella sua forma migliore
+
+  Prototipo: **una figura, due clip** (`corsa` = `ActNodeMoveDirection`,
+  `tiro` = `ActNodeKickBall`, presi dalla **tassonomia** di
+  `fcm-estratto/g-anim.txt`: due nomi, non un pixel), **otto direzioni × dodici
+  fotogrammi**, **una divisa** — cioè il caso **più favorevole all'atlas**.
+
+  **Il margine della cella è misurato, non scelto**: proiettando tutti e 192 i
+  fotogrammi, la semi-estensione vera è x 0,864 m e y 1,004 m più il raggio
+  della capsula più grossa: **margine 1,643**, non 1,35. Conseguenza che pesa
+  sul verdetto: **una cella di 128 px contiene una figura alta 77,6 px, mentre
+  il gioco la disegna alta 93**. Per pareggiarla la cella deve salire a 160, e
+  la memoria con lei (×1,56). **Il disegno procedurale quel margine non lo
+  paga**: traccia le linee dove vanno, senza riquadro.
+
+  | forma | PNG | base64 | memoria di texture |
+  |---|---|---|---|
+  | com'è (RGBA truecolor) | 1876 kB | **2501 kB** (90% del gioco intero) | 12,00 MB |
+  | ritagliata (106×106) | 1083 kB | **1444 kB** | 8,23 MB |
+  | indicizzata | **non si può**: oltre 4096 colori distinti | — | — |
+
+  L'indicizzata non è un dettaglio tecnico, è il cuore: **l'ombreggiatura
+  morbida che dà il volume È fatta di gradazioni**, cioè proprio di quello che
+  una tavolozza non comprime. **L'atlas paga in peso esattamente la cosa per cui
+  lo si vorrebbe.**
+
+  **Copertura piena** (clip e corporature **contate nel gioco**: 27 e 4):
+  **648 MB** di texture — ventisette volte il tetto — e **131,91 MB** di base64
+  nel file, **quarantanove volte il gioco intero**. Le divise non sono nemmeno
+  in questo conto.
+
+  **Decodifica in Chrome**, profilo dichiarato (915×412 a due punti per pixel,
+  `isMobile`, `Emulation.setCPUThrottlingRate`): 38,4 ms a 1×, 42,1 a 4×, 45,0
+  a 6×. **Ventidue figure blittate**: 4,30 ms a 1×, 27,60 a 4×, **53,10 a 6×**,
+  contro i 16,7 ms di bilancio di un fotogramma a sessanta.
+
+  ### (e) LE DUE VIE NEL GIOCO VERO — e il difetto che `istantanea` non vede
+
+  `fuori/151-atlante.html` (+90%, da 2,71 a 5,16 MB) e `fuori/151-luce.html`
+  (+4.117 byte, di cui ~330 di tabelle e il resto commenti).
+
+  | | istantanea | prestazione 4× | avvio 4× | senza-rete | sorteggi |
+  |---|---|---|---|---|---|
+  | oggi | **42/56** | — | 5930 ms (disp. 5,8%) | 6/6 | 44.925 |
+  | luce | **42/56**, colonna per colonna | +6,6% (segno sicuro) | 5727 ms (18,8%) | 6/6 | 44.925 |
+  | atlante | **42/56**, colonna per colonna | −5,8% (segno **non** sicuro) | 6962 ms (14,0%) | 6/6 | 44.925 |
+
+  Zero partite con un conto di `dado()` diverso, su otto partite, per tutt'e
+  due: **nessuna delle due tocca la simulazione**.
+
+  **E POI IL FATTO CHE CONTA.** Il freeze-frame test dà **42/56 a una versione
+  in cui le due squadre vestono uguale**: lo sprite cuoce le cinque tinte del
+  kit, e nel gioco le squadre nascono generate — sul campo restano ventidue
+  maglie rosse identiche, senza capelli e senza faccia. **Sette cancelli su otto
+  istanti non hanno una colonna per «si distinguono le squadre»**, e questo è un
+  buco del metro prima che un difetto del prototipo. `strumenti/_151-accanto.js`
+  lo misura:
+  - **sui corpi** (maschera = la silhouette che `istantanea` produce già):
+    luce **6,61** livelli di luminanza, atlante **47,10**; i corpi sono l'1,8%
+    del quadro, ed è lì che si è lavorato;
+  - **famiglie di tinta addosso alle figure, contate come archi contigui**:
+    oggi **3** · luce **3** · atlante **UNO SOLO**.
+
+  Quello strumento **ha mentito due volte prima di misurare**, e sta scritto
+  dentro. (i) La prima stesura guidava il gioco da sé e fotografava a 26
+  secondi: dava «differenza 0,00, INERTE» su tutt'e tre, cioè **accusava le
+  toppe di non fare niente**; la schermata cadeva su un angolo di campo **senza
+  figure**, e tre quadri di solo prato sono identici qualunque cosa faccia il
+  rig. La cura è **non avere un secondo banco**: gli otto istanti li sceglie già
+  `istantanea.js`, con la garanzia misurata che siano otto campioni
+  indipendenti. (ii) La seconda contava le **colonne** di tinta invece degli
+  **archi**: un kit rosso cade su 340, 0, 20 e 40 gradi perché l'ombreggiatura
+  lo sposta, e l'atlante — che veste tutti uguale — risultava **più vario** del
+  gioco. **Un numero che sale quando la cosa misurata scompare non la sta
+  misurando.**
+
+  ### (f) IL VERDETTO — il criterio di rinuncia applicato
+
+  | # | criterio (scritto prima di misurare) | esito |
+  |---|---|---|
+  | 1 | base64 ≤ 700 kB | **NON PASSATO**: 1444 kB nella forma migliore, **2,06 volte** |
+  | 2 | texture ≤ 24 MB | passa sul prototipo (12,00 MB), **NON PASSA** a copertura piena (**648 MB**) |
+  | 3 | `istantanea` non perde quote | passato (42/56) |
+  | 4 | `prestazione` dentro la dispersione | passato (−5,8%) |
+  | 5 | `avvio` non peggiora | **+1032 ms**, direzione attesa dal +90% di peso, numero **non provato** (la dispersione è dello stesso ordine della differenza) |
+  | 6 | `senza-rete` 6/6 | passato |
+  | 7 | nessuna espressività persa | **NON PASSATO**, e misurato: kit cotto (1 arco di tinta contro 3), yaw quantizzato a 8, una corporatura su 4, nessuna fusione fra pose, nessun numero di maglia |
+
+  **Tre su sette non passano. GLI SPRITE NON CONVENGONO**, e non per un
+  dettaglio di taglia: non convengono **per costruzione**, perché il gioco è un
+  file solo e perché la cosa che l'atlas dovrebbe comprare — il volume — è
+  esattamente la cosa che lo rende incomprimibile. **Il costo degli sprite non è
+  la CPU** (sul banco sono perfino più veloci del rig): **è la memoria e il
+  peso**, e sono i due vincoli che il mandato dichiara non negoziabili.
+
+  ### (g) LA TERZA VIA — Blender che calcola, 279 byte
+
+  `strumenti/blender/luce.py` calcola col `ray_cast` sulla geometria vera, senza
+  un render e senza un campione casuale, sotto il `SOLE` del gioco (letto dal
+  gioco: `dir [0.9406,0.3402]`, `alt 20`):
+  - **rampa[16]** — il profilo di luminanza **attraverso** un arto: 0,79 → 0,00,
+    monotona. È quella che fa leggere un tratto piatto come un cilindro.
+  - **azimut[16]** — la luce diretta secondo **come è girato** l'arto, mediata su
+    tutti e 192 i fotogrammi, **con l'auto-ombreggiatura vera** (un braccio
+    dietro il busto è scuro perché il busto gli sta davanti, non perché sta a
+    est): **0,188 a ovest contro 0,002 a est**, cioè ottanta volte dove il gioco
+    oggi ha un `if`.
+  - **ao[13]** — l'occlusione per segmento: ascella 0,23, spalla 0,52, testa
+    0,80, coscia 0,14 (le cosce si occludono a vicenda). **Non si ricava per
+    formula**: dipende dal corpo intero.
+
+  **Le tre tabelle pesano 279 byte.** `pose.py` esporta in più le 1296
+  coordinate delle due clip: **4005 byte** in JSON compatto, **1296** in interi a
+  un byte — il peso del gesto senza un pixel di texture.
+
+  **I quattro criteri di adozione della terza via sono tutti passati**:
+  `istantanea` non peggiora (42/56), il file cresce di **4.117 byte** contro un
+  tetto di 8 kB, `prestazione` sta dentro (+6,6% contro +25% ammesso),
+  l'impronta della partita è identica (44.925 = 44.925, zero partite diverse).
+
+  **RACCOMANDAZIONE.** Non spedire l'atlas, in nessun formato e con nessun
+  numero di direzioni. Prendere da Blender **le tabelle, non i pixel**. Il
+  +6,6% di fotogramma a freno 4× è il prezzo di **due tratti in più per arto su
+  otto arti**, ed è la prima cosa da stringere in un cantiere di produzione
+  (un tratto solo, oppure solo per le figure più vicine).
+
+  ### (h) QUELLO CHE QUESTA VOCE NON HA FATTO
+
+  Né l'una né l'altra via tocca le **OMBRE**, che restano **5/8** e sono la
+  colonna più debole: quel difetto sta in `drawOmbreGiocatori` — la punta
+  dell'ombra schiarita al 40% che sotto il 15% di stacco non si distingue dalle
+  strisce di rasatura — **non nella figura**. Non sono state toccate
+  l'**interfaccia** né gli **effetti d'impatto**, che erano le priorità 2 e 3 del
+  committente.
+
 - **IL SEME A DUE MANI — #150 CANTIERE CHIUSO** (voce #150, 24 settembre 2026,
   cinque compiti dal merge-base `ffc4139` — spec
   `docs/superpowers/specs/2026-09-24-seme-due-mani-design.md`, piano

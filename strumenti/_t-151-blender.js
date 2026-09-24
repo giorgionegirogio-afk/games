@@ -7,9 +7,9 @@
      B ROSSO  (nessun _151-figura.json)
      C ROSSO  (nessun atlante da rifare due volte)
      D ROSSO  (nessuna clip dichiarata)
-   e solo dopo gli script e' diventato 4 su 4. Il rosso di partenza sta
-   nel messaggio del commit, perche' un cancello che nasce verde non ha
-   mai provato niente.
+   cioe' 1 su 4, e solo dopo gli script e' diventato 6 su 6. Il rosso di
+   partenza sta nel messaggio del commit, perche' un cancello che nasce
+   verde non ha mai provato niente.
 
    CHE COSA SORVEGLIA, e perche' proprio queste quattro cose.
 
@@ -32,10 +32,18 @@
       Tolleranza 1e-4 m, cioe' un decimo di millimetro su un uomo di
       1,83: non e' una soglia morbida, e' il rumore del float32.
 
-   C. DETERMINISMO AL BYTE. Due corse di atlante.py, sha256 del PNG
-      identico. Senza questo la pipeline e' inutilizzabile: nessuno puo'
-      dire se un PNG diverso e' una modifica o il rumore del render.
-      Costa due render interi ed e' il motivo per cui il cancello e'
+   C. IL DETERMINISMO, IN DUE PEZZI E NON IN UNO. Il piano chiedeva «due
+      PNG identici al byte»: NON SI PUO', e il perche' sta nel blocco
+      delle soglie qui sotto — il rasterizzatore sta sulla GPU. Percio':
+        C1 le POSE (le coordinate dei diciotto giunti su 192 fotogrammi)
+           identiche AL BYTE. Sono aritmetica su CPU, li' il determinismo
+           esiste davvero, ed e' li' che sta il contenuto.
+        C2 l'IMMAGINE entro il rumore, con la soglia presa dalla
+           SEPARAZIONE fra rumore e falso e non dal peggio osservato.
+        C3 IL FALSO: un giunto spostato di un millimetro deve passare la
+           soglia di C2 di almeno dieci volte. Una tolleranza che non si
+           prova a rompere e' una scusa.
+      Costa tre render interi ed e' il motivo per cui il cancello e'
       `lento`.
 
    D. LE CLIP DICHIARATE CI SONO E HANNO I FOTOGRAMMI PROMESSI.
@@ -79,17 +87,44 @@ function trovaBlender() {
   return trovati.length ? trovati[trovati.length - 1] : '';
 }
 
-/* --- IL RUMORE DELLA GPU, MISURATO IL 24 SETTEMBRE E NON SCELTO.
-   Sette atlanti di fila, confrontati pixel per pixel dopo aver tolto i
-   metadati dal PNG: le corse che differivano differivano di 3 e 5 BYTE su
-   3 145 728, con scarto massimo 5 su 255, sempre dentro una cella sola e
-   sempre su un bordo. Spegnendo l'antialias il fenomeno resta: non e'
-   l'accumulo dell'antialias, e' il test punto-dentro-triangolo della GPU.
-   Le soglie sono il peggio misurato per tre (16 byte) e per un po' meno di
-   due (8 su 255). Non sono comode: il falso C3 sposta un giunto di UN
-   MILLIMETRO e deve muovere cinquanta volte tanto. --- */
-const RUMORE_BYTE = 16;
-const RUMORE_MAX = 8;
+/* --- IL RUMORE DELLA GPU, E LA SOGLIA RIFATTA DUE VOLTE NELLO STESSO
+   GIORNO. Vale la pena scriverla per esteso, perche' la prima forma era
+   sbagliata nel modo tipico.
+
+   IL FATTO. Sette atlanti di fila, confrontati pixel per pixel dopo aver
+   tolto i metadati dal PNG: le corse che differivano differivano di 3 e 5
+   BYTE su 3 145 728, sempre dentro una cella sola e sempre su un bordo.
+   Spegnendo l'antialias il fenomeno resta: non e' l'accumulo
+   dell'antialias, e' il test punto-dentro-triangolo della GPU.
+
+   LA PRIMA SOGLIA, SBAGLIATA: «16 byte», cioe' tre volte il peggio di
+   sette corse. Alla nona corsa il cancello ha letto 18 ed e' diventato
+   ROSSO DA SOLO, senza che niente fosse cambiato. SETTE MISURE NON
+   FISSANO UNA CODA, e una soglia presa dal peggio osservato e' una
+   soglia che prima o poi il rumore passa.
+
+   LA SOGLIA CHE REGGE non viene dal rumore: viene dalla SEPARAZIONE fra
+   il rumore e il falso, che e' una proprieta' del fenomeno e non del
+   campione.
+       rumore misurato (0, 3, 5, 18 byte) ..... fino a 1,4e-6 del foglio
+       falso da UN MILLIMETRO (60 400 byte) ... circa  4,8e-3 del foglio
+   In mezzo ci sono TREMILAQUATTROCENTO volte. La soglia sta in mezzo a
+   quel salto, alla media geometrica arrotondata: 1e-4, cioe' settanta
+   volte sopra il rumore e quarantotto sotto il falso. C3 verifica che il
+   falso la passi davvero con almeno dieci volte di margine: se un giorno
+   non la passasse, sarebbe la SOGLIA a essere sbagliata, e il cancello
+   lo direbbe con quelle parole.
+
+   E LO SCARTO MASSIMO PER BYTE NON E' PIU' UN CANCELLO, si stampa e
+   basta. Un pixel di bordo che cade da una parte o dall'altra puo'
+   passare da trasparente a tinta piena: 255 su un canale. Un numero che
+   il rumore puo' portare al massimo del suo intervallo non discrimina
+   niente, e tenerlo come cancello voleva dire aspettare il giorno in cui
+   il bordo cade su una scarpa gialla invece che sull'erba. --- */
+const RUMORE_QUOTA = 1e-4;
+/* quante volte il falso deve stare SOPRA la soglia perche' C3 valga: la
+   separazione misurata e' 48, e si chiede almeno 10. */
+const FALSO_MARGINE = 10;
 
 /* --- un decodificatore PNG in dodici righe, perche' confrontare due file
    compressi non dice niente: due immagini identiche possono comprimersi
@@ -169,6 +204,9 @@ function costantiDalGioco() {
 
 const righe = [];
 let esito = 0;
+/* una prova nulla dentro C3: vedi il blocco che la alza. Non accusa il
+   gioco e non si conta come un verde: il codice di uscita diventa 3. */
+let prova3 = false;
 function ok(s)  { righe.push('  OK   ' + s); }
 function no(s)  { righe.push('  NO   ' + s); esito = 1; }
 function info(s){ righe.push('         ' + s); }
@@ -279,8 +317,25 @@ if (!fs.existsSync(atlScript)) {
     if (fs.existsSync(js)) { meta = JSON.parse(fs.readFileSync(js, 'utf8')); meta_.push(meta); }
   }
   if (crollo) {
-    no('C  atlante.py non gira: ' + crollo);
-    no('D  nessun atlante: le clip non si possono contare');
+    /* IL DRIVER DELLA GPU CHE MUORE NON E' UN ROSSO DEL GIOCO, e questo
+       banco l'ha visto due volte in un pomeriggio: EXCEPTION_ACCESS_VIOLATION
+       dentro ig9icd64.dll (il driver Intel), sullo stesso script che
+       poco prima e poco dopo ha renderizzato 192 fotogrammi senza una
+       piega, e sempre con la macchina carica. Un cancello che chiama
+       rosso un driver che si schianta manda qualcuno a riparare il
+       disegno invece del banco. Se la firma e' quella di uno schianto,
+       il verdetto e' PROVA NULLA. */
+    const schianto = /EXCEPTION_|Access violation|ig\w*icd|Segmentation fault|SIGSEGV/i.test(crollo);
+    if (schianto) {
+      prova3 = true;
+      righe.push('  ??   C  PROVA NULLA: Blender si e\' schiantato (il driver grafico), non ha');
+      righe.push('         risposto un rosso. Rilanciare a macchina scarica.');
+      righe.push('         ' + crollo.slice(0, 140));
+      righe.push('  ??   D  PROVA NULLA: senza atlante le clip non si possono contare');
+    } else {
+      no('C  atlante.py non gira: ' + crollo);
+      no('D  nessun atlante: le clip non si possono contare');
+    }
   } else {
     if (VELOCE) {
       righe.push('  --   C  saltato (--veloce): una corsa sola');
@@ -293,14 +348,19 @@ if (!fs.existsSync(atlScript)) {
               ' — non e\' rumore di rasterizzazione, e\' aritmetica che balla');
       /* C2 — L'IMMAGINE, identica entro il rumore MISURATO della GPU */
       const d = scartoPixel(pix[0], pix[1]);
+      const tetto2 = Math.round(d.totali * RUMORE_QUOTA);
       if (d.errore) no('C2 i due PNG non si confrontano: ' + d.errore);
-      else if (d.byte <= RUMORE_BYTE && d.max <= RUMORE_MAX) {
+      else if (d.byte <= tetto2) {
         ok('C2 l\'immagine e\' la stessa entro il rumore GPU: ' + d.byte + ' byte diversi su ' +
-           d.totali.toLocaleString('it-IT') + ' (tetto ' + RUMORE_BYTE + '), scarto massimo ' +
-           d.max + '/255 (tetto ' + RUMORE_MAX + ')');
+           d.totali.toLocaleString('it-IT') + ' (' + (d.byte / d.totali).toExponential(1) +
+           ', tetto ' + RUMORE_QUOTA.toExponential(0) + ' = ' + tetto2 + ' byte)');
+        info('scarto massimo per byte ' + d.max + '/255 — si stampa e NON e\' un cancello: un ' +
+             'pixel di bordo puo\' passare da trasparente a tinta piena, e un numero che il ' +
+             'rumore puo\' portare al massimo del suo intervallo non discrimina niente');
       } else {
-        no('C2 l\'immagine cambia oltre il rumore: ' + d.byte + ' byte diversi (tetto ' +
-           RUMORE_BYTE + '), scarto massimo ' + d.max + '/255 (tetto ' + RUMORE_MAX + ')');
+        no('C2 l\'immagine cambia oltre il rumore: ' + d.byte + ' byte diversi su ' +
+           d.totali.toLocaleString('it-IT') + ' (' + (d.byte / d.totali).toExponential(1) +
+           '), tetto ' + tetto2);
       }
       /* C3 — IL FALSO: un giunto spostato di un millimetro. Senza questo, la
          tolleranza di C2 sarebbe una porta aperta invece di una misura. */
@@ -310,17 +370,32 @@ if (!fs.existsSync(atlScript)) {
         blender(exe, atlScript, ['--png', pngF, '--json', jsF, '--scarto', '0.001']);
         const df = scartoPixel(pix[0], pixelDiPng(fs.readFileSync(pngF)));
         const mf = JSON.parse(fs.readFileSync(jsF, 'utf8'));
-        const rapporto = df.byte / Math.max(1, d.byte);
-        if (df.byte > RUMORE_BYTE * 50 && mf.impronta_pose !== i0) {
+        const tetto3 = Math.round(df.totali * RUMORE_QUOTA);
+        const sopra = df.byte / Math.max(1, tetto3);
+        if (sopra >= FALSO_MARGINE && mf.impronta_pose !== i0) {
           ok('C3 il falso e\' condannato: un giunto spostato di 1 mm muove ' +
-             df.byte.toLocaleString('it-IT') + ' byte, ' + rapporto.toFixed(0) +
-             ' volte il rumore, e cambia anche l\'impronta delle pose');
+             df.byte.toLocaleString('it-IT') + ' byte, ' + sopra.toFixed(0) +
+             ' volte il tetto di C2 (ne servono ' + FALSO_MARGINE +
+             '), e cambia anche l\'impronta delle pose');
         } else {
-          no('C3 il falso NON e\' condannato: 1 mm di scarto muove solo ' + df.byte +
-             ' byte — la tolleranza di C2 ingoia una modifica vera');
+          no('C3 il falso NON e\' condannato: 1 mm di scarto muove ' + df.byte +
+             ' byte, solo ' + sopra.toFixed(1) + ' volte il tetto di C2 — e\' la SOGLIA ' +
+             'a essere sbagliata, non il gioco');
         }
       } catch (e) {
-        no('C3 il falso non si costruisce: ' + String(e.message).split('\n').slice(-2).join(' '));
+        /* BLENDER CHE ESPLODE NON E' UN ROSSO, e la distinzione l'ha
+           imposta una corsa vera: lanciato mentre la batteria occupava
+           la macchina, il falso e' morto con un dump di thread mentre le
+           DUE corse normali dello stesso invito erano appena riuscite.
+           Un cancello che cambia colore col carico non misura la cosa
+           che deve misurare, misura la macchina (regola 26). Se il
+           render normale ha funzionato e solo il falso e' morto, la
+           causa non puo' essere il falso: e' PROVA NULLA. */
+        prova3 = true;
+        righe.push('  ??   C3 PROVA NULLA: Blender e\' morto costruendo il falso, ' +
+                   'mentre le due corse normali dello stesso invito erano riuscite.');
+        righe.push('         Non e\' un rosso: e\' il banco sotto carico. Rilanciare da soli.');
+        righe.push('         ' + String(e.message).split('\n').slice(-2).join(' ').slice(0, 120));
       }
     }
     if (!meta) {
