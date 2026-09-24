@@ -20,7 +20,7 @@ Questo file e lo spec. Nessuna riga di gioco.
    - **B5** tolta SOLO la riga 15, le 14 restano → atteso
      `INCOMPLETO/dischetto-assente`
    - **B6** tolte la 15 **e** tutte le 14 (il residuo) → atteso
-     `INCOMPLETO/duelli-non-letti`
+     `INCOMPLETO/duelli-mai-letti`
    - **B7** il bit `primo` della riga 15 capovolto → atteso
      `INCOMPLETO/dischetto-primo-incoerente`
    - **B8** la riga 15 con `v = 2` (un protocollo che non conosciamo) →
@@ -43,8 +43,9 @@ applicazione una-volta-sola:
 3. `dsPrimoDalSeme(seme)` — porta sola — chiamata da `chiudiAppuntamento` e
    dal giudice; il giudice la usa **solo per il riscontro**:
    `INCOMPLETO/dischetto-primo-incoerente`.
-4. Alla fine della rigiocata: `Reg.iDuello < Reg.duelli.length` →
-   `INCOMPLETO/duelli-non-letti`.
+4. Alla fine della rigiocata: **nessun** comando di duello letto mentre il
+   nastro ne porta → `INCOMPLETO/duelli-mai-letti` (la soglia è «nemmeno
+   uno» e non «qualcuno»: lo dice una misura, vedi lo spec §1.3(c)).
 5. Il `catch` muto di `:48147`: commento di dichiarazione accanto.
 6. **`MOTORE_V`**: si misura se la cura cambia il verdetto su nastri già
    scritti. Quattro verdetti cambiano (da NON TORNA/TORNA a INCOMPLETO) su

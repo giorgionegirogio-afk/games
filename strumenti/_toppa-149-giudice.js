@@ -174,15 +174,57 @@ COPPIE.push([
      trenta comandi di duello che novanta secondi di calcio non
      raccolgono, e quello si vede senza nessuna chiave e senza nessuna
      firma. MISURATO: NON TORNA, rigiocato [0,1] in 5984 passi; con questa
-     riga, INCOMPLETO/duelli-non-letti.
+     riga, INCOMPLETO/duelli-mai-letti.
 
      E NON E' UNA GUARDIA DEL DISCHETTO: non nomina ne' la riga 15 ne' le
      14, e vale per qualunque nastro. E' la ragione per cui e' la forma
      giusta — prende il residuo senza sapere che esiste un dischetto.
 
      SI LEGGE QUI, prima di Reg.spegni(), che azzera i due contatori. */
-  const avanzati = Math.max(0, ((Reg.duelli && Reg.duelli.length) | 0) - (Reg.iDuello | 0));
+  const duelliTot = (Reg.duelli && Reg.duelli.length) | 0;
+  const avanzati = Math.max(0, duelliTot - (Reg.iDuello | 0));
+  /* =====================================================================
+     E LA SOGLIA E' «NEMMENO UNO», NON «QUALCUNO» — ED E' UNA MISURA.
+
+     La prima stesura di questa riga diceva «se ne avanza anche uno solo,
+     astieniti». Faceva il suo mestiere sul residuo, e ne prendeva un
+     altro che non le spettava: il nastro di una sfida vera giudicato col
+     SEME SBAGLIATO, che il #133 ha deciso di trattare come NON TORNA e
+     che _q-staffetta B1 sorveglia. MISURATO (strumenti/_sonda-149-duelli.js):
+
+       sfida congelata, seme sbagliato   4 comandi avanzati su 6
+       serie dal dischetto, il residuo   12 comandi avanzati su 12
+       nastri onesti (sfida e serie)     0 su 6 e 0 su 12
+       punteggio gonfiato di uno         0 su 6, e resta NON TORNA
+
+     I DUE CASI SONO DIVERSI IN NATURA, non di grado. Con QUALCHE comando
+     letto la rigiocata era entrata nel nastro e poi ne e' uscita: e' una
+     DIVERGENZA, e il giudice ha gia' due risposte per quella (NON TORNA
+     dal #133, duello-senza-righe dal #131). Con NESSUN comando letto la
+     rigiocata non e' mai entrata: non e' la stessa partita andata male,
+     e' un'altra partita, e su un'altra partita non si sa niente.
+
+     LA FORMA LARGA AVREBBE ROVESCIATO UNA DECISIONE DEL #133 senza una
+     misura che la giustificasse, e questo cantiere non ne ha una. Resta
+     aperta la domanda — «un nastro che diverge a meta' merita un'accusa
+     o un'astensione?» — e resta aperta CON IL NUMERO ACCANTO, che e'
+     l'unico modo onesto di lasciarla aperta.
+
+     SI LEGGE QUI, prima di Reg.spegni(), che azzera i due contatori. */
+  const maiLetti = duelliTot > 0 && avanzati === duelliTot;
   Giudizio.attivo = false; Giudizio.divagata = false;`]);
+
+/* e il referto dice SEMPRE quanti comandi di duello sono avanzati e quanti
+   ce n'erano: un numero che si leggesse solo quando il verdetto lo nomina
+   non si potrebbe misurare. */
+COPPIE.push([
+`  const piu = { motoreV:motoreV, righe:righe, passi:passi, gol:gol };`,
+`  /* \`avanzati\` STA SEMPRE NEL REFERTO (voce #149), non solo sulla causa
+     che lo nomina: e' il numero con cui si misura QUANTO la rigiocata si e'
+     scostata dal nastro, e una sonda che potesse leggerlo solo quando il
+     verdetto e' gia' quello non misurerebbe niente. */
+  const piu = { motoreV:motoreV, righe:righe, passi:passi, gol:gol,
+                avanzati:avanzati, duelli:duelliTot };`]);
 
 COPPIE.push([
 `  if(divagata) return dico('INCOMPLETO','duello-senza-righe', piu);
@@ -196,7 +238,7 @@ COPPIE.push([
      li' vorrebbe dire dare la colpa al nastro del tetto di chi giudica.
      Qui la partita e' FINITA: se il nastro ha ancora comandi di duello in
      canna, e' la rigiocata che ha preso un'altra strada. */
-  if(avanzati) return dico('INCOMPLETO','duelli-non-letti', Object.assign({ avanzati:avanzati }, piu));`]);
+  if(maiLetti) return dico('INCOMPLETO','duelli-mai-letti', piu);`]);
 
 /* -------------------------------------------------------------------- 5
    IL catch MUTO, DICHIARATO (non curato: vedi il commento). */
@@ -209,7 +251,7 @@ COPPIE.push([
        nastro senza la riga 15 — cioe' il nastro del caso che la revisione
        d'insieme ha chiamato «il residuo». NON SI RIPARA QUI, e la ragione
        e' una misura: con le due guardie del #149 in piedi (dischetto-
-       assente e duelli-non-letti) l'esito di quel fallimento non e' piu'
+       assente e duelli-mai-letti) l'esito di quel fallimento non e' piu'
        un'accusa ma un'ASTENSIONE, cioe' esattamente il verdetto giusto
        per un nastro che non si puo' sapere. Far esplodere la serie qui
        costerebbe una partita vera a due persone per salvare un nastro.
@@ -237,8 +279,8 @@ const PROVE = [
   ['function dsPrimoDalSeme(seme){', 1],
   ["S.primo = dsPrimoDalSeme(S.seme) ? 'b' : 'a';", 1],
   ["'dischetto-primo-incoerente'", 1],
-  ["const avanzati = Math.max(0,", 1],
-  ["'duelli-non-letti'", 1],
+  ["const maiLetti = duelliTot > 0 && avanzati === duelliTot;", 1],
+  ["'duelli-mai-letti'", 1],
   ["S.primo = (S.seme & 1) ? 'b' : 'a';", 0],
 ];
 for (const [ago, quante] of PROVE) {

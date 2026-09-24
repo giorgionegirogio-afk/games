@@ -75,10 +75,27 @@ il giudice ha già la metà gemella di questo controllo: `duello-senza-righe`
 righe**. Manca l'altra metà: **il nastro ha righe e non si apre mai il
 duello che le consumi**.
 
-Si aggiunge `INCOMPLETO/duelli-non-letti`. Non è una guardia del dischetto:
-è una guardia del *giudice*, e vale per qualunque nastro la cui rigiocata
-abbia preso un'altra strada. Prende il caso 8 senza sapere niente del
-dischetto — ed è la ragione per cui è la forma giusta.
+Si aggiunge `INCOMPLETO/duelli-mai-letti`. Non è una guardia del dischetto:
+è una guardia del *giudice*, e vale per qualunque nastro. Prende il caso 8
+senza sapere niente del dischetto — ed è la ragione per cui è la forma
+giusta.
+
+> **RETTIFICA A EDIZIONI (24 settembre 2026, in corso di cantiere).** La
+> prima stesura diceva «se avanza anche un comando solo, astieniti», ed è
+> stata **bocciata da una rete di sicurezza**: `_q-staffetta` B1 pretende
+> `NON TORNA` sul nastro di una sfida vera giudicato col **seme sbagliato**,
+> e la forma larga lo trasformava in un'astensione — cioè rovesciava una
+> decisione del #133 senza una misura che la giustificasse.
+> **MISURATO** (`strumenti/_sonda-149-duelli.js`): sfida congelata col seme
+> sbagliato **4 comandi avanzati su 6**; serie dal dischetto, il residuo,
+> **12 su 12**; nastri onesti **0 su 6 e 0 su 12**; punteggio gonfiato di uno
+> **0 su 6, e resta NON TORNA**. I due casi sono **diversi in natura**: con
+> qualche comando letto la rigiocata era entrata nel nastro e poi ne è
+> uscita (una divergenza, e il giudice ha già due risposte per quella); con
+> **nessun** comando letto non è mai entrata. La soglia diventa «nemmeno
+> uno». **Resta aperta**, col numero accanto, la domanda se un nastro che
+> diverge a metà meriti un'accusa o un'astensione: questo cantiere non ha la
+> misura per rispondere e non la inventa.
 
 **(d) Il bit `primo` (caso 10b).** Il #148 ha deciso apposta di **non**
 ri-dedurre `primo` dentro `giudica`, per non fare una seconda copia della

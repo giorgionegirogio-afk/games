@@ -27,16 +27,29 @@
      solo-a          le tre righe solo sul telefono che ha creato la
                      stanza.                  -> A2, A3, A6 · A1 VERDE
      primo-storto    la riga 15 dichiara sempre l'altro tiratore.
-                                              -> A7 · A3, A5 e A6 VERDI
-                     E A1/A2 NON SONO NELL'ELENCO, APPOSTA. Il giudice
-                     apre una serie DIVERSA e quasi sempre ne esce un
-                     punteggio diverso -- ma nella batteria intera del
-                     compito 3 la serie sbagliata ha dato per caso lo
-                     stesso punteggio, il falso e' passato, e il banco
-                     l'ha dichiarato sfuggito. Un falso che morde a caso
-                     non condanna nessuno: condanna chi lo rilancia.
-                     A7 e' nata da qui, e confronta la riga 15 con la
-                     verita' invece che col punteggio.
+                                              -> A1, A2, A4, A5, A7 ·
+                                                 A3 e A6 VERDI
+                     RETTIFICA A EDIZIONI (24 settembre 2026, voce #149).
+                     Fino a ieri questa riga diceva «-> A7 · A3, A5 e A6
+                     VERDI», e spiegava perche' A1/A2 non c'erano: il
+                     giudice apriva una serie DIVERSA e QUASI sempre ne
+                     usciva un punteggio diverso -- ma nella batteria
+                     intera del compito 3 del #148 la serie sbagliata
+                     aveva dato per caso lo stesso punteggio, il falso
+                     era passato, e il banco l'aveva dichiarato sfuggito.
+                     Un falso che morde a caso non condanna nessuno:
+                     condanna chi lo rilancia. A7 e' nata da li'.
+                     ADESSO IL FALSO NON MORDE PIU' A CASO, e la ragione
+                     e' la cura del #149: il giudice RISCONTRA il bit del
+                     nastro con quello che il seme sa, e su un nastro che
+                     dichiara sempre l'altro tiratore si astiene SEMPRE
+                     (INCOMPLETO/dischetto-primo-incoerente, passi 0,
+                     misurato). Percio' cadono anche A1, A2 e A4 — che
+                     pretendono un verdetto — e A5, che pretende una
+                     rigiocata che adesso non avviene: nessuna serie
+                     sbagliata viene piu' giocata, ed e' il punto della
+                     cura. A3 e A6 restano verdi perche' le rose non le
+                     tocca nessuno.
      serie-cieca     il giudice non apre la serie: e' il gioco di ieri
                      piu' le tre righe, cioe' la cura che il #147 aveva
                      stimato.                 -> A1, A2, A5 (i passi esplodono)
@@ -67,16 +80,16 @@
    IL CONTROLLO POSITIVO, che e' la meta' che manca a quasi tutti i
    banchi di falsi: PRIMA si verifica che il gioco ONESTO passi. Senza,
    un banco rotto in modo da essere rosso SEMPRE «condannerebbe» tutti e
-   sette senza discriminare niente.
+   otto senza discriminare niente.
 
-   E L'OTTAVO, dichiarato in fondo perche' e' scomodo: `_crit-nastro-
+   E IL NONO, dichiarato in fondo perche' e' scomodo: `_crit-nastro-
    tardi` scrive le tre righe DOPO il primo tiro, e questo banco NON LO
    MORDE. Non e' una svista: per un nastro del dischetto l'ordine delle
    righe di testa non e' un formato (vagliaNastro le cerca scorrendo, e
    le tre astensioni dello schermo — le uniche che guardino l'ordine —
    su un nastro senza pixel non si applicano, voce #144). Si costruisce e
-   si misura lo stesso, perche' un banco che morde sette su sette senza
-   aver cercato l'ottavo sta attestando.
+   si misura lo stesso, perche' un banco che morde otto su otto senza
+   aver cercato il nono sta attestando.
 
    uso:  node strumenti/_q-nastro-falsi.js [--gioco f.html]
    esce  0 se il gioco onesto passa e ogni falso e' morso come dichiarato
@@ -98,7 +111,8 @@ const FALSI = [
   { nome: 'scambiate',    crit: '_crit-nastro-scambiate.js',    morde: ['A6'],             lascia: ['A1', 'A3', 'A5'] },
   { nome: 'mie',          crit: '_crit-nastro-mie.js',          morde: ['A3', 'A6'],       lascia: ['A1', 'A5'] },
   { nome: 'solo-a',       crit: '_crit-nastro-solo-a.js',       morde: ['A2', 'A3', 'A6'], lascia: ['A1'] },
-  { nome: 'primo-storto', crit: '_crit-nastro-primo-storto.js', morde: ['A7'],             lascia: ['A3', 'A5', 'A6'] },
+  { nome: 'primo-storto', crit: '_crit-nastro-primo-storto.js',
+    morde: ['A1', 'A2', 'A4', 'A5', 'A7'], lascia: ['A3', 'A6'] },
   { nome: 'serie-cieca',  crit: '_crit-giudice-serie-cieca.js', morde: ['A1', 'A2', 'A5'], lascia: ['A3', 'A6'] },
   { nome: 'punteggio',    crit: '_crit-giudice-punteggio.js',   morde: ['A1', 'A2'],       lascia: ['A3', 'A5', 'A6'] },
   { nome: 'mezza-guardia', crit: '_crit-giudice-mezza-guardia.js', gruppo: 'B',
@@ -116,11 +130,11 @@ const rossa = (testo, p) => new RegExp('^\\s*NO\\s+' + p + '\\)', 'm').test(test
 const verde = (testo, p) => new RegExp('^\\s*OK\\s+' + p + '\\)', 'm').test(testo);
 
 (async () => {
-  console.log('\nI SETTE FALSI DEL NASTRO GIUDICABILE');
+  console.log('\nGLI OTTO FALSI DEL NASTRO GIUDICABILE');
   if (!fs.existsSync(GIOCO)) { console.error('PROVA NULLA: ' + GIOCO + ' non esiste'); process.exit(3); }
-  /* PRIMA DELLA CURA I SETTE NON ESISTONO, e non e' un rosso: i loro
+  /* PRIMA DELLA CURA GLI OTTO NON ESISTONO, e non e' un rosso: i loro
      ancoraggi sono dentro la cura. Dirlo qui, con la causa vera, invece
-     di lasciare che sette falsi «non costruiti» sembrino sette buchi. */
+     di lasciare che otto falsi «non costruiti» sembrino otto buchi. */
   if (!fs.readFileSync(GIOCO, 'utf8').includes('Reg.carta(')) {
     console.log('  PROVA NULLA: questo gioco non ha ancora la cura del #148 (Reg.carta) —');
     console.log('               gli otto falsi si costruiscono sopra di lei.');

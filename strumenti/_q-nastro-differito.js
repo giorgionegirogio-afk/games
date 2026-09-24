@@ -55,7 +55,7 @@
       verdetto:
 
         B5  tolta SOLO la riga 15, le 14 restano   dischetto-assente
-        B6  tolte la 15 E tutte le 14 (il residuo) duelli-non-letti
+        B6  tolte la 15 E tutte le 14 (il residuo) duelli-mai-letti
         B7  il bit «chi ha tirato per primo» girato dischetto-primo-incoerente
         B8  la riga 15 con una versione ignota     dischetto-versione
 
@@ -485,8 +485,8 @@ const giudizio = (Gi, testo, atteso, seme) => Gi.pag.evaluate(([testo, atteso, s
          non raccoglie mai, e quello si vede senza nessuna firma. */
       const sp1514 = togliTipo(togliTipo(nA, 15).testo, 14);
       const v1514 = (sp15.tolti && sp1514.tolti) ? await giudizio(Gi, sp1514.testo, seg, sA.seme) : null;
-      di(!!v1514 && v1514.verdetto === 'INCOMPLETO' && v1514.causa === 'duelli-non-letti',
-         'B6) IL RESIDUO: tolte la 15 E tutte le 14, si astiene lo stesso (i duelli restano non letti)',
+      di(!!v1514 && v1514.verdetto === 'INCOMPLETO' && v1514.causa === 'duelli-mai-letti',
+         'B6) IL RESIDUO: tolte la 15 E tutte le 14, si astiene lo stesso (i duelli non li legge nessuno)',
          v1514 ? ('tolte ' + sp15.tolti + '+' + sp1514.tolti + ' -> ' + v1514.verdetto +
                   (v1514.causa ? '/' + v1514.causa : '') + ' · rigiocato ' + JSON.stringify(v1514.gol) +
                   ' · passi ' + v1514.passi)
