@@ -14621,6 +14621,87 @@ const Reg = {
     this.scrivi(11, [imp]);
   },
 
+  /* =====================================================================
+     LA CARTA D'IDENTITA' DELLA PARTITA, IN UNA PORTA SOLA (voce #148).
+
+     Tre righe, sempre in quest'ordine: le due ROSE (7), lo SCHERMO (10),
+     l'IMPRONTA DEL MOTORE JAVASCRIPT (11). Le scrive chiunque apra un
+     nastro che qualcun altro dovra' rigiocare — oggi Sfida.gioca e
+     Dischetto.avvia — e le scrive DA QUI, non ognuno per conto suo.
+
+     PERCHE' UNA PORTA E NON DUE COPIE. E' la lezione che il #134 ha gia'
+     pagato costruendo vagliaNastro come porta unica fra Sfida.guarda e
+     giudica: due copie della stessa cosa divergono, e quando divergono
+     il nastro dice una cosa e chi lo rigioca ne fa un'altra — cioe' un
+     NON TORNA a un onesto, che e' l'unico verdetto che toglie punti.
+     MISURATO al contrario: finche' la porta non c'era, Dischetto.avvia
+     non scriveva NESSUNA delle tre e il nastro di una serie vera era
+     INCOMPLETO/rose-assenti (strumenti/_sonda-148-differita.js).
+
+     L'ORDINE NON E' UN GUSTO. Rose, schermo, impronta e' l'ordine su cui
+     poggia ogni nastro gia' scritto: la lettura delle due rose e'
+     POSIZIONALE (spaccaRosa torna «fine»), quindi spostare una riga
+     slitterebbe gli indici di un nastro di ieri.
+
+     I QUATTRO COMMENTI QUI SOTTO NON SONO NUOVI: sono quelli del #132
+     (le rose e l'indice di carattere), del #133 e del #139 (lo schermo),
+     del #142 (il motore), scritti dentro Sfida.gioca quando il chiamante
+     era uno solo e spostati qui quando sono diventati due.
+     ===================================================================== */
+  carta(mentA, mentD, pacA, pacD, iCar){
+    /* LE DUE SQUADRE, prima riga del nastro. Da qui in poi questa partita
+       si puo' rifare anche fra un mese, anche se tutti e due nel
+       frattempo saranno cresciuti: il nastro se le porta dietro. */
+    /* IN CODA, DOPO LE DUE ROSE (voce #132, compito 2). In coda e non in
+       testa perche' la lettura e' posizionale: chi rilegge sa gia' dove
+       finiscono le rose (spaccaRosa torna «fine»), quindi trova l'indice
+       se c'e' e non trova niente se il nastro e' di ieri. Spostarlo in
+       testa avrebbe fatto slittare di uno tutti gli indici di un nastro
+       vecchio. */
+    this.scrivi(7, [mentA, mentD].concat(pacA, pacD, [iCar]));
+    /* =====================================================================
+       E LO SCHERMO SU CUI SI STA PER GIOCARE (voce #133, compito 3).
+
+       Il nastro registra i tocchi in coordinate di SCHERMO. Dove finisce
+       un tocco lo decidono touchBtnLayout (i pulsanti virtuali) e
+       SCALE/OX/OY (la conversione schermo -> campo), e tutti e tre
+       derivano da innerWidth/innerHeight (grep «function resize»). Lo
+       stesso tocco a (841, 342) preme il disco grande su uno schermo
+       915x412 e non preme NIENTE su uno 800x360, dove quel punto e'
+       fuori dalla finestra.
+
+       MISURATO (strumenti/_t-giudice-schermo.js, e le due sonde citate
+       nella sua lettera di testa): stesso nastro, partita dichiarata
+       3-4; a 915x413, 916x412, 930x412 e 915x430 torna 3-4, a 844x390 e
+       a 800x360 finisce 0-3, a 1024x460 finisce 1-3. Non e' una lama:
+       quindici pixel non spostano niente, settanta spostano tutto.
+
+       Una riga in piu' di due numeri, e chi rilegge puo' dire la causa
+       vera invece di dare la colpa alla rosa cresciuta di un altro.
+
+       RETTIFICA A EDIZIONI (22 settembre 2026, voce #139). Questa non e'
+       piu' l'unica riga di tipo 10 del nastro, ed e' la cura di un
+       CRITICO: una sola riga diceva la misura di PARTENZA e taceva ogni
+       cambio successivo, cosi' il giudice trovava la misura giusta e
+       rigiocava una partita che non era quella. Adesso passa dalla porta
+       Reg.schermo, che e' la stessa che chiama resize(): qui scrive,
+       perche' e' la prima misura del nastro; dopo scrive chiunque muova
+       la finestra. La riga resta in questo punto esatto — subito dopo le
+       due rose — quindi un nastro a finestra ferma e' identico a quello
+       di ieri.
+       ===================================================================== */
+    this.schermo(innerWidth|0, innerHeight|0);
+    /* E IL MOTORE JAVASCRIPT (voce #142), subito dopo lo schermo e per
+       lo stesso motivo: senza, chi rigiochera' questo nastro non ha modo
+       di sapere se sta rifacendo la stessa partita o un'altra che le
+       somiglia. Misurato: sei sfide oneste registrate su WebKit,
+       rigiudicate su Chromium, danno cinque NON TORNA su sei — e NON
+       TORNA toglie i punti a due persone. Qui e non altrove perche' qui
+       il registro e' gia' acceso e la partita non e' ancora cominciata:
+       il conto delle 448 trascendenti non tocca il dado seminato. */
+    this.motore();
+  },
+
   /* IL PASSO. Si chiama all'inizio di ogni step(): fa avanzare l'orologio
      del registro e, in rilettura, rimette in scena tutti i comandi che a
      questo passo erano stati dati. */
@@ -14914,7 +14995,7 @@ const Reg = {
            sapere che quel nastro DEVE portare le sue testimonianze —
            senza, chi le togliesse tutte non lascerebbe niente da
            controllare, e il controllo sarebbe circolare. */
-        pezzi.push(dT + ',15,' + dMs + ',' + (r[3]|0));
+        pezzi.push(dT + ',15,' + dMs + ',' + (r[3]|0) + ',' + (r[4]|0));
       } else if(tipo === 7){
         /* LE DUE SQUADRE. Interi e virgole, lunghezza variabile, scritti
            una volta sola in testa alla partita; in rilettura non fanno
@@ -14979,7 +15060,7 @@ const Reg = {
         this.righe.push([tick, 13, ms, id, x, y]);
       }
       else if(tipo === 14)  this.righe.push([tick, 14, ms].concat(v.slice(3).map(x => (x|0) >>> 0)));
-      else if(tipo === 15)  this.righe.push([tick, 15, ms, v[3]|0]);
+      else if(tipo === 15)  this.righe.push([tick, 15, ms, v[3]|0, v[4]|0]);
       else if(tipo === 7)   this.righe.push([tick, 7, ms].concat(v.slice(3)));
     }
     this.i = 0; this.tick = 0; this.modo = 2;
@@ -45470,57 +45551,12 @@ const Sfida = {
                 vero:!!r.vero, replay:false };
     SEME.accendi(semeDaTesto(r.seme));
     Reg.accendi();
-    /* LE DUE SQUADRE, prima riga del nastro. Da qui in poi questa partita
-       si puo' rifare anche fra un mese, anche se tutti e due nel
-       frattempo saranno cresciuti: il nastro se le porta dietro. */
-    /* IN CODA, DOPO LE DUE ROSE (voce #132, compito 2). In coda e non in
-       testa perche' la lettura e' posizionale: chi rilegge sa gia' dove
-       finiscono le rose (spaccaRosa torna «fine»), quindi trova l'indice
-       se c'e' e non trova niente se il nastro e' di ieri. Spostarlo in
-       testa avrebbe fatto slittare di uno tutti gli indici di un nastro
-       vecchio. */
-    Reg.scrivi(7, [mentMia, mentSua].concat(impaccaRosa(SAVE.rosa), impaccaRosa(a.rosa), [iCarSua]));
-    /* =====================================================================
-       E LO SCHERMO SU CUI SI STA PER GIOCARE (voce #133, compito 3).
-
-       Il nastro registra i tocchi in coordinate di SCHERMO. Dove finisce
-       un tocco lo decidono touchBtnLayout (i pulsanti virtuali) e
-       SCALE/OX/OY (la conversione schermo -> campo), e tutti e tre
-       derivano da innerWidth/innerHeight (grep «function resize»). Lo
-       stesso tocco a (841, 342) preme il disco grande su uno schermo
-       915x412 e non preme NIENTE su uno 800x360, dove quel punto e'
-       fuori dalla finestra.
-
-       MISURATO (strumenti/_t-giudice-schermo.js, e le due sonde citate
-       nella sua lettera di testa): stesso nastro, partita dichiarata
-       3-4; a 915x413, 916x412, 930x412 e 915x430 torna 3-4, a 844x390 e
-       a 800x360 finisce 0-3, a 1024x460 finisce 1-3. Non e' una lama:
-       quindici pixel non spostano niente, settanta spostano tutto.
-
-       Una riga in piu' di due numeri, e chi rilegge puo' dire la causa
-       vera invece di dare la colpa alla rosa cresciuta di un altro.
-
-       RETTIFICA A EDIZIONI (22 settembre 2026, voce #139). Questa non e'
-       piu' l'unica riga di tipo 10 del nastro, ed e' la cura di un
-       CRITICO: una sola riga diceva la misura di PARTENZA e taceva ogni
-       cambio successivo, cosi' il giudice trovava la misura giusta e
-       rigiocava una partita che non era quella. Adesso passa dalla porta
-       Reg.schermo, che e' la stessa che chiama resize(): qui scrive,
-       perche' e' la prima misura del nastro; dopo scrive chiunque muova
-       la finestra. La riga resta in questo punto esatto — subito dopo le
-       due rose — quindi un nastro a finestra ferma e' identico a quello
-       di ieri.
-       ===================================================================== */
-    Reg.schermo(innerWidth|0, innerHeight|0);
-    /* E IL MOTORE JAVASCRIPT (voce #142), subito dopo lo schermo e per
-       lo stesso motivo: senza, chi rigiochera' questo nastro non ha modo
-       di sapere se sta rifacendo la stessa partita o un'altra che le
-       somiglia. Misurato: sei sfide oneste registrate su WebKit,
-       rigiudicate su Chromium, danno cinque NON TORNA su sei — e NON
-       TORNA toglie i punti a due persone. Qui e non altrove perche' qui
-       il registro e' gia' acceso e la partita non e' ancora cominciata:
-       il conto delle 448 trascendenti non tocca il dado seminato. */
-    Reg.motore();
+    /* LA CARTA D'IDENTITA' DEL NASTRO, DA UNA PORTA SOLA (voce #148): le
+       due rose, lo schermo e l'impronta del motore, in quest'ordine. Il
+       perche' di ognuna delle tre sta sopra Reg.carta, dove il testo si e'
+       spostato il giorno in cui il chiamante ha smesso di essere uno solo:
+       Dischetto.avvia chiama la stessa porta con le sue due rose. */
+    Reg.carta(mentMia, mentSua, impaccaRosa(SAVE.rosa), impaccaRosa(a.rosa), iCarSua);
     startMatch(1, SFIDA_DIFF, {
       size: taglia,
       /* LA GABBIA, SEMPRE, A 5/7 (rilievo C1 della revisione finale, voce
@@ -46639,7 +46675,7 @@ function vagliaNastro(righe){
   const out = { verdetto:'', causa:'', motoreV:motoreV, righe:righe,
                 dati:null, mentAtt:undefined, mentDif:undefined,
                 rosaAtt:null, rosaDif:null, carDif:undefined, schermo:null,
-                schermi:null, impronta:0 };
+                schermi:null, impronta:0, disco:null };
   const no = (verdetto, causa) => { out.verdetto = verdetto; out.causa = causa; return out; };
   if(motoreV !== MOTORE_V) return no('ALTRO MOTORE','motore-diverso');
   if(righe === 0) return no('INCOMPLETO','nastro-vuoto');
@@ -46647,18 +46683,24 @@ function vagliaNastro(righe){
   let marchio = false, dati = null;
   /* LE TESTIMONIANZE DEL DISCHETTO, RACCOLTE NELLO STESSO GIRO (voce
      #147): quali tiri hanno la loro prova, e da quale lato. */
-  let disco = false;
+  /* DAL #148 NON E' PIU' UNA BANDIERA MA IL FATTO INTERO: la versione
+     del protocollo e CHI HA TIRATO PER PRIMO, che e' quel che serve a
+     giudica per aprire la serie con lo stesso tiratore. */
+  let disco = null;
   const testi = new Map();
   for(const r of Reg.righe){
     if(r[1] === 5) marchio = true;
     else if(r[1] === 7 && !dati) dati = r;
-    else if(r[1] === 15) disco = true;
+    else if(r[1] === 15 && !disco) disco = { v: r[3]|0, primo: (r[4]|0) ? 1 : 0 };
     else if(r[1] === 14){
       const nt = r[3]|0;
       if(!testi.has(nt)) testi.set(nt, 0);
       testi.set(nt, testi.get(nt) | (1 << ((r[4]|0) ? 1 : 0)));
     }
   }
+  /* E IL FATTO ESCE NEL REFERTO (voce #148), prima di qualunque rifiuto:
+     chi chiama deve poterlo leggere anche quando il vaglio si ferma. */
+  out.disco = disco;
   /* il marchio di tipo 5 e' il segno dei nastri scritti PRIMA della voce
      #131: quelli il duello non ce l'hanno davvero */
   if(marchio) return no('INCOMPLETO','duello-marchiato');
@@ -46921,6 +46963,9 @@ function giudica(nastro, atteso, opz){
   }
   const mentAtt = vag.mentAtt, mentDif = vag.mentDif, carDif = vag.carDif;
   const rosaAtt = vag.rosaAtt, rosaDif = vag.rosaDif;
+  /* LA SERIE DAL DISCHETTO, SE IL NASTRO NE E' UNA (voce #148): null per
+     ogni altro nastro, e allora tutto quel che segue e' identico a ieri. */
+  const disco = vag.disco;
   /* ------------------------------------------------ si rigioca */
   const nomePrima = G.teamName;
   const colA = coloriBuoni(null), colD = { maglia:'#cf3e6b', calzoncini:'#123a80' };
@@ -46969,6 +47014,32 @@ function giudica(nastro, atteso, opz){
       opp: { n:'GIUDIZIO D', c1:colD.maglia, c2:colD.calzoncini, pat:1,
              ment:mentDif, car:carDif, rosa:rosaDif },
     });
+    /* =====================================================================
+       E SE IL NASTRO E' DI UNA SERIE DAL DISCHETTO, SI APRE LA SERIE
+       (voce #148).
+
+       PERCHE' SERVE. Il nastro di una serie non porta nessun atto di
+       gioco aperto: porta i COMANDI DEL DUELLO (tipo 6), e senza una
+       serie aperta quei comandi non hanno un duello in cui cadere. Un
+       giudice che rigiocasse il nastro come una partita qualunque
+       macinerebbe novanta secondi di calcio e poi direbbe NON TORNA a
+       due persone oneste. MISURATO prima di scrivere questa riga
+       (strumenti/_sonda-148-differita.js, serie vera 4-3): NON TORNA,
+       rigiocato 3-2, 8462 passi.
+
+       LE DUE RIGHE SONO LE STESSE DI Dischetto.avvia, nello stesso
+       ordine: chi ha registrato e chi rigioca devono attraversare la
+       stessa porta, se no la serie non e' quella. Il primo tiratore
+       viene DAL NASTRO (riga 15) e non da una seconda deduzione del
+       seme.
+
+       E QUI, non prima di startMatch: startMatch scrive G.kickTeam da se'
+       col dado seminato, e avviaRigori legge quello. Metterle prima
+       vorrebbe dire scrivere un numero che startMatch cancella. */
+    if(disco){
+      G.kickTeam = disco.primo;
+      avviaRigori();
+    }
     /* IL CICLO E' QUELLO DI __test.simulate, senza i due cronometri
        dell'effetto scossa: qui non si disegna niente. */
     while(passi < tetto){
@@ -46980,7 +47051,20 @@ function giudica(nastro, atteso, opz){
     }
     if(G.scene === 'end') finita = true;
   }catch(e){ scoppio = String(e && e.message || e); }
-  const gol = [G.score[0]|0, G.score[1]|0];
+  /* =====================================================================
+     IL PUNTEGGIO DI UNA SERIE E' LA SERIE (voce #148).
+
+     Dopo una serie di rigori G.score vale 1-0 o 0-1: e' la rete che
+     decide, aggiunta da programmaRigore per chiudere la partita. Il
+     punteggio che le due persone hanno visto sul tabellone — e che il
+     pannello del #147 mostra, e che una riga di database dichiarerebbe —
+     e' invece quello dei RIGORI SEGNATI. Confrontare il primo col
+     secondo darebbe NON TORNA a ogni serie onesta.
+
+     Per ogni altro nastro non cambia niente: G.rigori e' null e disco
+     anche. ===================================================================== */
+  const gol = (disco && G.rigori) ? [G.rigori.seg[0]|0, G.rigori.seg[1]|0]
+                                  : [G.score[0]|0, G.score[1]|0];
   const divagata = Giudizio.divagata;
   Giudizio.attivo = false; Giudizio.divagata = false;
   /* LA PULIZIA, sempre e comunque: una partita non finita resta appesa
@@ -47962,19 +48046,65 @@ const Dischetto = {
                 dischetto:{ stanza:S.stanza, lato:S.lato } };
     SEME.accendi(S.seme >>> 0);
     try{ Reg.accendi(); }catch(e){}
+    /* =====================================================================
+       E LA CARTA D'IDENTITA' DEL NASTRO, DALLA PORTA DI Sfida.gioca
+       (voce #148).
+
+       Fino a ieri queste tre righe non c'erano, e il nastro di una serie
+       vera non si poteva confermare: INCOMPLETO/rose-assenti, misurato
+       su una serie onesta giocata fino in fondo fra due telefoni
+       (strumenti/_sonda-148-differita.js).
+
+       LE DUE POSTURE SONO 1 E 1 perche' 1 e 1 e' quel che si passa a
+       startMatch qui sotto; le due rose sono rA e rB, cioe' quelle
+       assegnate PER LATO e non per possesso. E' la ragione per cui la
+       riga di tipo 7 scritta dai DUE telefoni e' identica carattere per
+       carattere (misurato): il lato 'a' e' la squadra 0 anche sul
+       telefono di 'b', come dice il commento qui sopra.
+
+       E L'INDICE DI CARATTERE E' QUELLO DI 'FUORI', cioe' -1: 'FUORI'
+       non compare in CARATTERE, quindi caratterePer('FUORI') — quel che
+       startMatch fa qui sotto, dove nessun car e' passato — e
+       carPerIndice(-1) — quel che fara' il giudice leggendo il nastro —
+       danno tutti e due CAR_NEUTRO. Scriverlo invece di ometterlo non e'
+       pedanteria: senza l'indice in coda il giudice si astiene con
+       carattere-assente.
+
+       PRIMA di startMatch, come in Sfida.gioca, e per lo stesso motivo:
+       il registro e' gia' acceso e la partita non e' ancora nata. Il
+       conto delle 448 trascendenti dell'impronta non tocca il dado
+       seminato (voce #142). */
+    try{ Reg.carta(1, 1, rA, rB, indiceCarattere('FUORI')); }catch(e){}
     startMatch(1, SFIDA_DIFF, {
       size: 5, sponde: 'gabbia', miraGuidata: 'pieno',
       mia: { n:'CASA',  c1:'#3355aa', c2:'#111820', pat:0, ment:1, rosa:rosaA },
       opp: { n:'FUORI', c1:'#cf3e6b', c2:'#123a80', pat:1, ment:1, rosa:rosaB },
     });
+    /* chi tira per primo l'ha deciso il seme, non una persona */
+    G.kickTeam = (S.primo === 'a') ? 0 : 1;
     /* LA CARTA D'IDENTITA' DEL NASTRO (voce #147). Si scrive DOPO
        startMatch, che e' il posto in cui il registro nasce, e prima del
        primo tiro. Da questa riga il giudice sa che il nastro deve
        portare le sue testimonianze: senza, chi le togliesse tutte
-       renderebbe la serie indistinguibile da una partita qualunque. */
-    try{ Reg.scrivi(15, [DISCHETTO_V]); }catch(e){}
-    /* chi tira per primo l'ha deciso il seme, non una persona */
-    G.kickTeam = (S.primo === 'a') ? 0 : 1;
+       renderebbe la serie indistinguibile da una partita qualunque.
+
+       RETTIFICA A EDIZIONI (24 settembre 2026, voce #148). La riga porta
+       adesso DUE numeri, e il secondo e' CHI TIRA PER PRIMO. Senza, il
+       giudice non sa aprire la serie: la deve aprire con lo stesso primo
+       tiratore, se no e' un'altra serie e il verdetto e' NON TORNA a un
+       onesto.
+
+       SI SCRIVE INVECE DI FARLO RI-DEDURRE, e il dato sarebbe deducibile
+       (S.primo viene dal seme, e il seme il giudice ce l'ha). Sarebbe una
+       SECONDA COPIA della regola del sorteggio, e il giorno in cui il
+       dischetto la cambiasse i nastri vecchi verrebbero rigiocati storti
+       in silenzio. Il fatto sta nel nastro: e' la scelta del #133 per lo
+       schermo e del #142 per il motore.
+
+       E PERCIO' QUESTA RIGA STA DOPO G.kickTeam e non prima: scrive quel
+       che il gioco HA DECISO, non una seconda deduzione dello stesso
+       dato. */
+    try{ Reg.scrivi(15, [DISCHETTO_V, G.kickTeam]); }catch(e){}
     avviaRigori();
     S.tiro = 0;
     S.ruolo = this.ruoloOra();

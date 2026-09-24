@@ -1067,6 +1067,28 @@ const CANCELLI = [
   { nome: 'volto',           cmd: ['strumenti/_q-volto.js'],                            conta: true,  lento: true  },
   { nome: 'volto-falsi',     cmd: ['strumenti/_q-volto-falsi.js'],                      conta: true,  lento: true  },
   /* =====================================================================
+     IL NASTRO GIUDICABILE (voce #148), l'ultimo tassello dell'onda E, e
+     l'unico cancello che tenga insieme le DUE onde.
+
+     L'onda D ha costruito un verificatore differito (#133 giudice, #134
+     sigillo, #137 sospetto, #138 staffetta) perche' «la classifica si
+     ripulisce da sola» fosse un fatto misurato. L'onda E ha costruito la
+     sfida dal dischetto (#146, #147). Fino al #148 i nastri della
+     seconda NON ERANO CONFERMABILI dal primo: una serie onesta prendeva
+     INCOMPLETO/rose-assenti, cioe' un'astensione per sempre.
+
+     E NON BASTAVA METTERE LE RIGHE. MISURATO (la sonda del compito 0):
+     con le tre righe e basta, la serie onesta prendeva NON TORNA —
+     8462 passi, cioe' novanta secondi di calcio invece di una serie di
+     rigori. Questo cancello e' l'unico posto in cui quella differenza si
+     vede: A5 guarda i PASSI, non solo il verdetto.
+
+     `lento` perche' apre tre contesti, gioca serie intere e fa girare la
+     staffetta vera; i falsi rifanno il giro su sette versioni bugiarde
+     del gioco. */
+  { nome: 'nastro-differito', cmd: ['strumenti/_q-nastro-differito.js'],                conta: true,  lento: true  },
+  { nome: 'nastro-falsi',     cmd: ['strumenti/_q-nastro-falsi.js'],                    conta: true,  lento: true  },
+  /* =====================================================================
      ment-nastro / carattere-nastro / rosa-scala / nastro-tronco: I CINQUE
      CANALI DELLA VOCE #132, SORVEGLIATI (correzione di revisione, 21
      settembre 2026). Lo stesso rilievo che duello-impronta ha gia' pagato
