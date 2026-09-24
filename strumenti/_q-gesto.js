@@ -61,6 +61,10 @@
      testa             12,77         0,590
      FRENATA            3,41         0,362
 
+   (Il tuffo e la presa compaiono nella classifica ma NON si giudicano:
+   sono clip del portiere senza un contatto dichiarato, e stanno qui per
+   dare la scala. Il cancello giudica le dieci della lista GESTI.)
+
    Undici gesti su dodici stanno fra 12,77 e 77,61 metri; uno sta a
    3,41, cioe' quasi QUATTRO VOLTE sotto il penultimo. In mezzo non c'e'
    nessuno: e' un fosso, non una coda. La soglia sta nella media
