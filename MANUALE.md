@@ -517,6 +517,323 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **IL VOLTO — #147 CANTIERE CHIUSO, e con lui l'ONDA E** (voce #147, 24
+  settembre 2026, cinque compiti dal merge-base `999fbf8` — spec
+  `docs/superpowers/specs/2026-09-24-il-volto-design.md`, piano
+  `docs/superpowers/plans/2026-09-24-il-volto.md`). **`MOTORE_V` resta 4 e
+  `DISCHETTO_V` resta 1**, e lo dice una misura nei due versi (vedi (f)).
+  Sette cantieri di misura avevano costruito una sfida dal dischetto fra due
+  telefoni che funziona e che **nessuno poteva giocare**: il #146 l'aveva
+  dichiarato da sé («il pannello sullo schermo non c'è: chi gioca non la
+  vede»). Questo cantiere chiude quella riga, mette in scena il ritardo, e
+  cura — restringendolo, non chiudendolo — il buco di verifica differita.
+
+  ### (a) LA PIEGA, che è il vincolo che ha comandato il cantiere
+
+  La schermata SFIDA è misurata a due formati (`_q-sigillo` B3, `_q-carta`
+  D4) e il commento accanto a `btnSfidaCarta` porta i tre numeri che il #135
+  ha pagato. **Misurati prima** (`strumenti/_sonda-147-piega.js`, merge-base
+  `999fbf8`, **identici a 800x360 e a 915x412**):
+
+  | bersaglio | prima | dopo | scarto |
+  |---|---|---|---|
+  | CERCA AVVERSARIO | **220** | **220** | **0** |
+  | prima riga della lista | **329** | **329** | **0** |
+  | primo GUARDA | **308** | **308** | **0** |
+  | SFIDA DI CARTA (lista vuota) | **347** | **347** | **0** |
+  | SFIDA DAL DISCHETTO | — | **403** | voce nuova |
+  | TORNA AL MENU | 418 | **474** | +56 |
+  | altezza scorribile | 466 | **522** | +56 |
+
+  **Il posto non è stato scelto: è stato dedotto e poi misurato.** I tre
+  bersagli stanno tutti e tre *sopra* `btnSfidaCarta`, e in un flusso
+  verticale la loro posizione dipende solo da ciò che li precede: quindi la
+  voce nuova va **dopo** la carta e non può muoverli. Il 418 di prima dice
+  l'altra metà: **la riga delle azioni stava già sotto la piega ai due
+  formati**, e `.ov` ha `overflow-y:auto`. In questa schermata «sotto la
+  piega» vuol dire **una scrollata**, non un bottone perduto.
+
+  **E una misura ha cambiato una riga di CSS.** La prima stesura metteva la
+  voce e basta, e il banco dava CERCA/riga/GUARDA/CARTA fermi e la voce
+  nuova… **allo stesso identico posto della carta, 301-347 tutte e due**
+  (`strumenti/_diag-147-voce.js`). Causa: `.voce` non dichiara `display`,
+  quindi un `<button>` è `inline-block`, e `.box` è larga 640 a tutti i
+  formati — le due voci stavano **sulla stessa riga**. Costava **zero pixel
+  di piega**, ed è stata la tentazione. È stata rifiutata, e la ragione
+  vale più del pixel risparmiato: **una disposizione che dipende dalla
+  larghezza non si misura una volta sola**. Basta un telefono più stretto o
+  una parola più lunga e le due voci vanno a capo — e in quell'istante la
+  piega si muove **a casa di qualcun altro, dove nessun banco guarda**.
+  `#btnSfidaDischetto{display:block}`, e i 56 px si pagano e si dichiarano.
+
+  ### (b) IL PANNELLO — che cosa si può fare, col dito
+
+  Dalla schermata SFIDA: **creare** una sfida e ottenere il codice di sei
+  caratteri da mandare a un amico; **entrare** con un codice ricevuto;
+  **vedere la serie** mentre va — chi tira, chi para, il punteggio, i tiri
+  già fatti come pallini pieni e vuoti, il codice della stanza; **vedere
+  come finisce**, con la causa vera detta in italiano.
+
+  **Nessuna delle frasi accusa**, tranne una, ed è l'unica in cui non c'è un
+  dubbio ma un hash che non torna (`impegno-non-torna`). Chi sparisce legge
+  «la serie si annulla, perché una connessione caduta non è una resa».
+
+  **La fascia sopra il duello** (`#dsFascia`) è `position:fixed`: non entra
+  nel flusso di nessuna schermata, quindi non può muovere nessuna piega. È
+  lì che si vede la serie mentre si tira, perché il duello ha bisogno dello
+  schermo intero per la mira.
+
+  ### (c) IL PEZZO DURO: il dito che diventa una mossa
+
+  Il protocollo pretende che la mossa si chiuda **al buio**, e le tre porte
+  vere (`pickZone`/`stopPower`/`pickKeeper`) le chiama `risolviDuello`
+  quando le due mosse sono sul tavolo. Se le chiamasse il dito, il duello si
+  risolverebbe in locale, le righe di tipo 6 uscirebbero doppie e
+  `risolviDuello` non troverebbe mai `phase === 'zone'`.
+
+  **Le tre porte si avvolgono una seconda volta**, e l'avvolgimento sta
+  *fuori* da quello del nastro (il blocco del dischetto viene dopo nel file:
+  chi arriva dopo sta fuori). A cattura accesa — solo a fase `scegli` — le
+  porte **registrano invece di passare**. La barra di cattura ha la **legge
+  della barra vera** (`cursor += dir*dt*1.15`), perché i suoi tick sono
+  esattamente quelli che l'altro telefono rigiocherà uno per uno.
+
+  **E un cancello sul duello, che è anche l'immagine del cantiere.** Con
+  `rAF` vivo, `Duel.update` farebbe due cose che in una sfida fra due
+  persone non deve fare: la CPU tira da sé (`s.pickZone((dado()*3)|0)`) e la
+  CPU si tuffa da sé — e `dado()` è il PRNG **di gioco**. Finché il
+  dischetto aspetta, il duello avanza **solo i suoi orologi di
+  presentazione**. Il fiato trattenuto del progetto d'onda non è una scelta
+  di regia: **è la correttezza**.
+
+  **E i due ruoli si dicono la verità**: chi gioca dal lato `b` ha
+  `G.cpu[1]` vero e senza una riga leggerebbe «TIRA LA CPU» mentre tira lui.
+  Di più: nel rigore normale il portiere sceglie in fase `wait`, *dopo* che
+  il tiratore ha fermato la barra; qui i due scelgono insieme in fase
+  `zone`, quindi il dito passa sempre dal gesto della mira e a dividere i
+  ruoli è la cattura, non il gestore del tocco.
+
+  ### (d) IL RESPIRO — il ritardo messo in scena, e i suoi quattro numeri
+
+  Progetto d'onda §6: «quando dai un comando, il giocatore non parte di
+  scatto: **prende fiato**». L'anello del comandato si **stringe** mentre il
+  comando matura e arriva al colmo **sul tick in cui esegue**, con un arco
+  d'anticipazione color avorio — non verde-lime, che è l'anello del
+  fiato-fatica del #112: due anelli, due cose, due tinte.
+
+  **La carica non conta i fotogrammi: legge l'orologio del ritardo.** È 1
+  meno quanto manca, diviso K. Così «dura esattamente K e finisce sul tick
+  in cui il comando esegue» è la **definizione**, non una taratura — e non
+  può sfasarsi su un telefono lento.
+
+  | | misura | soglia dichiarata prima |
+  |---|---|---|
+  | E1 | K = 12, carica a 0/6/12 tick = **0 / 0,5 / 1,0** | colmo al tick K, valori crescenti |
+  | E2 | **0,5 → 0,5** dopo **90 fotogrammi** a orologio fermo | invariata e > 0 |
+  | E3 | impronta **1072987814 = 1072987814**, pallone **965082173,382998999** identico, punteggio 0-0 | identici |
+  | E4 | sorteggi di gioco **176 con · 176 senza · delta 0** | delta 0 |
+
+  **E3 ed E4 sono le due che contano**: il respiro **non cambia la partita di
+  un bit** e **non consuma un sorteggio di gioco**. Il tremolio esce da
+  `dadoDeco()`, il PRNG dedicato della cosmetica (cura #129) — e il #132
+  aveva trovato che l'**audio** mangiava sorteggi, quindi qui non si è
+  ragionato, si è contato.
+
+  **A K = 0 il respiro non esiste**: nessuna coda, nessuna carica, nessun
+  pixel diverso. È la ragione per cui `_q-istantanea` non si muove e per cui
+  `MOTORE_V` resta 4.
+
+  **E l'indicatore di connessione è lo stesso oggetto**, come chiedeva il
+  progetto: nella fascia del dischetto non c'è un numero di millisecondi,
+  c'è la stessa carica, e quando l'altro tarda il fiato resta trattenuto.
+  Un oggetto, due significati, zero interfaccia nuova.
+
+  ### (e) LA CURA DEL BUCO DI VERIFICA DIFFERITA — e il buco era più grande
+
+  Il #146 aveva scritto: «`vagliaNastro` non pretende le righe di tipo 14;
+  un nastro a cui fossero tolte passerebbe come partita normale».
+  **Misurando si è trovato di peggio** (`strumenti/_sonda-147-quattordici.js`,
+  serie vera fra due telefoni, tre tiri, merge-base `999fbf8`):
+
+  ```
+  righe in memoria 17 · righe rilette 11 · nastro 173 caratteri
+  per tipo nel testo: {3: 2, 6: 9}      <- ZERO righe di tipo 14
+  verdetto del giudice: INCOMPLETO / rose-assenti
+  ```
+
+  **Le 14 non arrivavano nemmeno nel nastro**: `Reg.serializza` non aveva un
+  ramo per il tipo 14 e `Reg.deserializza` neppure. `Dischetto.testimonia`
+  scriveva la riga in memoria e la prima serializzazione la buttava. Il #146
+  aveva letto il codice del giudice e aveva ragione su quello; **la riga a
+  monte non l'aveva guardata nessuno, e ragionando non si sarebbe trovata.**
+
+  **La cura, doppia:** (1) `serializza`/`deserializza` imparano il tipo 14 e
+  il tipo **15** — la *carta d'identità* della serie, `[DISCHETTO_V]`, scritta
+  da `Dischetto.avvia`; (2) `vagliaNastro` pretende le testimonianze e **si
+  astiene** se mancano (`INCOMPLETO / testimonianze-assenti`, mai un'accusa).
+
+  **Perché serve la 15 e non basta guardare le 14**: chiedere «se ci sono
+  righe di tipo 14, controllale» è **circolare** — chi le toglie tutte non
+  lascia niente da controllare. Il riconoscimento è nei due versi (15
+  *oppure* almeno una 14), così prende anche chi ne togliesse *alcune*.
+
+  **Dove sta il controllo, e perché lì**: subito dopo `duello-marchiato` e
+  **prima** di `rose-assenti`, e la collocazione è una misura — un nastro
+  vero oggi è già `INCOMPLETO/rose-assenti`, quindi un controllo in coda non
+  sarebbe mai stato raggiunto su un nastro vero e sarebbe stato verificabile
+  solo su un nastro costruito dal banco, cioè **non verificato**.
+
+  **MISURATO dopo la cura** (`_q-volto` G, serie vera fra due telefoni):
+
+  ```
+  nastro: 1111 caratteri, per tipo {3: 2, 6: 12, 14: 8, 15: 1}
+  con le 14:            INCOMPLETO / rose-assenti
+  tolte le 8 righe 14:  INCOMPLETO / testimonianze-assenti
+  ```
+
+  Il falso **non è un mutante del gioco: è un mutante del nastro** — si
+  tolgono otto righe vere da un nastro vero, riversando i loro due delta sul
+  primo pezzo superstite perché il nastro resti valido. Un mutante del gioco
+  avrebbe provato che il gioco sa rifiutare il *proprio* nastro rotto, non
+  quello di un altro.
+
+  **IL RESIDUO, dichiarato.** Chi toglie **tutte** le 14 **e** la 15 ottiene
+  un nastro indistinguibile da una partita normale: il punteggio rigioca
+  giusto, **nessun innocente viene accusato**, e la prova di lealtà non
+  viene rifatta. Questa cura **restringe** il buco, non lo chiude, e la
+  ragione è strutturale: chiuderlo vorrebbe dire **firmare** la 15, una
+  firma vuole una chiave, e in questo gioco non c'è nessuna chiave — per
+  statuto (`rete/LEGGIMI.md:181-183`), non per dimenticanza.
+
+  ### (f) `MOTORE_V`, misurato nei due versi — e un criterio rettificato
+
+  `strumenti/_t-147-motorev.js` non riscrive niente: lancia i due attrezzi
+  che esistono già coi file di questo cantiere.
+
+  - **VERSO 1** — nastri del merge-base rigiocati sul curato
+    (`_t-144-motorev.js`): **4 su 4 identici**, **80 campioni** ciascuno,
+    **2749 righe**, punteggi 0-1 / 0-2 / 0-1 / 0-0.
+  - **VERSO 2** — un nastro di una serie di rigori **vera** fra due telefoni
+    (21 righe, 12 di tipo 6, 6 di tipo 14, 1 di tipo 15) letto dal gioco di
+    ieri (`_t-146-motorev.js`): **nessuna eccezione**, **100 campioni
+    identici**, **stesso punteggio 1-0**, col testimone che diverge al
+    **campione 69** su un nastro sporcato in un comando.
+  - **`MOTORE_V` RESTA 4**, e lo dice la misura.
+
+  **E UN CRITERIO DEL #146 È STATO RETTIFICATO A EDIZIONI, non rilassato.**
+  `_t-146-motorev.js` pretendeva che il gioco di ieri leggesse *le stesse
+  righe* del curato, e al #146 era esatto — ma per una ragione che allora
+  non era stata misurata: **le 14 non arrivavano nel nastro**, quindi i due
+  giochi leggevano per forza lo stesso numero. Dal #147 le 14 e la 15
+  viaggiano, e un gioco di ieri le butta — `deserializza` aggiorna i due
+  delta **prima** di smistare il tipo, quindi una riga sconosciuta non
+  sposta di un tick quelle dopo. Il criterio nuovo **stringe**: lo scarto
+  deve essere **esattamente** il numero di righe dei tipi nuovi. **Misurato**:
+  oggi **21** righe, ieri **14**, righe dei tipi nuovi **7**, atteso **14**.
+  Se ne mancasse una in più o in meno, il gioco di ieri starebbe leggendo
+  male un comando — che è il difetto che il #144 ha trovato (170 su 2749).
+
+  **IL PREZZO, dichiarato**: un giudice di ieri non *controlla* le
+  testimonianze. Non accusa un innocente (è quel che `MOTORE_V` protegge);
+  assolve un colpevole. Per quello c'è `DISCHETTO_V`, che se ne accorge
+  **prima**: la sfida non comincia nemmeno.
+
+  ### (g) IL DIFETTO CHE IL BANCO NON AVEVA CERCATO, e che è nato rosso
+
+  CHIUDI spegneva il protocollo e **lasciava la partita in piedi** — e
+  appena il protocollo è spento il cancello sul duello non trattiene più
+  niente, quindi la CPU riprendeva a tirare e a tuffarsi al posto delle due
+  persone. Chi premeva CHIUDI restava chiuso dentro a guardare una serie che
+  si gioca da sola. **Misurato prima della cura** (`_q-volto` B5): prima di
+  CHIUDI scena `freekick`, duello `zone`, in partita `true`; **dopo, gli
+  stessi tre**. La cura usa la porta che il gioco ha già, `abbandonaSfida()`,
+  e riapre SFIDA col pannello.
+
+  ### (h) IL BANCO, E I NOVE FALSI
+
+  `_q-volto.js`, sette gruppi. **Nato rosso** sul merge-base — e due dei
+  suoi quattro verdi erano **comprati con un'assenza**, smascherati dal
+  banco stesso prima di avere un solo mutante: C1 cercava la mossa
+  dell'altro in un tabellone che non esiste, G3 assolveva un giudice che si
+  ferma prima.
+
+  **E C1 è stata riscritta una seconda volta, per una scoperta che vale più
+  della prova.** Misurando si è visto che la proprietà che voleva
+  sorvegliare **non è raggiungibile dal pannello**: la mossa dell'altro non
+  arriva *mai* sul telefono prima che io mi sia impegnato, perché `manda()`
+  spedisce la rivelazione solo se ha in casa l'impegno dell'altro. È del
+  **protocollo** (#146, falso `gentile`), non del volto — e un cancello che
+  la rimisurasse qui **passerebbe sempre, anche su un pannello scritto
+  male**. Al suo posto C1 misura l'istante che il pannello *può* rompere:
+  **mentre la barra corre sotto il dito, l'impegno non deve essere partito**
+  — col testimone che dopo il rilascio la rivelazione arriva eccome
+  (**0 rivelazioni con la barra in corsa, 2 dopo**).
+
+  **BITE LIST 9 su 9**, col controllo positivo:
+
+  | falso | prova | esito |
+  |---|---|---|
+  | `volto-sopra` (la voce sopra la lista) | A1 | **MORSO** |
+  | `volto-muto` (il pannello che non fa niente) | B2 | **MORSO** |
+  | `volto-ansioso` (l'impegno a gesto non finito) | C1 | **MORSO** |
+  | `volto-svelto` (la cattura spenta, le porte vere) | D1 | **MORSO** |
+  | `volto-rete` (il pannello che parla alla rete all'apertura) | F1 | **MORSO** |
+  | `respiro-piatto` (la carica ferma) | E1 | **MORSO** |
+  | `respiro-rotella` (la carica azzerata a orologio fermo) | E2 | **MORSO** |
+  | `respiro-motore` (il respiro che sposta il giocatore) | E3 | **MORSO** |
+  | `respiro-dado` (il tremolio da `dado()`) | E4 | **MORSO** |
+
+  **E DUE DICHIARATI NON MORSI**, perché un banco che morde nove su nove
+  senza aver cercato il decimo sta attestando: **il pannello brutto** (un
+  volto che funziona e parla male — la qualità di una frase non si misura
+  con un cancello) e **il tabellone spione**, che *non si può costruire* per
+  la ragione detta sopra.
+
+  ### (i) CHE COSA RESTA APERTO, e il seguito che nasce qui
+
+  **Un nastro di una serie dal dischetto non è ancora giudicabile in
+  differita, e non per le testimonianze.** Gli mancano la riga delle **rose**
+  (tipo 7), quella dello **schermo** (10) e quella dell'**impronta del
+  motore** (11): `Reg.scrivi(7, …)` vive dentro `Sfida.gioca`, cioè nel
+  percorso della sfida *asincrona*, e `Dischetto.avvia` non ci passa.
+  **Misurato**: il verdetto su un nastro vero è `INCOMPLETO / rose-assenti`
+  sia prima sia dopo questo cantiere. Non accusa nessuno — è un'astensione —
+  ma **una serie onesta non si può confermare in differita**. È un seguito, ed
+  è piccolo: tre righe in `avvia`, e il giudice sa già leggerle. Va scritto
+  qui perché è la cosa che chi legge il verbale crederebbe fatta.
+
+  E restano, invariati: il **residuo della cura (c)** (§e), **S5** (WebRTC sul
+  CGNAT mobile) e il **backend vero a 503**, quindi tutte le misure di rete di
+  questo cantiere sono contro un server finto in memoria.
+
+  ### (h-bis) LA BATTERIA, INTERA
+
+  `node strumenti/tutti.js --tutto`, **74 cancelli**, 2679 s di orologio, sul
+  file spedito: **71 cancelli che contano verdi, zero rossi**. Dentro ci sono i
+  due nuovi, `volto` (100 s) e `volto-falsi` (381 s), registrati `conta:true`.
+  Gli altri tre: `avvio` informativo **verde**; `istantanea` informativo
+  **rosso** — e **misurato sul merge-base dà lo stesso identico referto, riga
+  per riga** (42/56, 1/8, 8/8, 8/8, 5/8, 8/8, 7/8, 5/8), quindi non è una
+  regressione di questo cantiere ma un confronto contro un registro del 20
+  agosto il cui riferimento era **una prova nulla**; `avvio-telefono`
+  **PROVA NULLA (uscita 3)**, perché non c'è nessun telefono Android collegato
+  — e un cancello che diventasse verde quando non può misurare sarebbe peggio
+  di nessun cancello. **Il verdetto della batteria è quindi «prova nulla», non
+  «verde»**, e si scrive così invece di arrotondare.
+
+  E fuori dalla batteria: `rete/prove/tutte.js` **62/62**.
+
+  ### (j) UNA VERIFICA D'INTEGRITÀ CHE VALE LA PENA RIPETERE
+
+  Le **quattro toppe** di questo cantiere (`_toppa-147-pannello.js`,
+  `-respiro.js`, `-testimonianze.js`, `-chiudi.js`) applicate in fila al
+  merge-base `999fbf8` riproducono il gioco spedito **byte per byte**. È la
+  prova, e non la promessa, che il file da 2,8 MB è stato toccato **solo**
+  dagli attrezzi ad ancore — e nel frattempo ha anche pescato una sciatteria:
+  dodici accenti erano finiti **decomposti** (`e` + U+0300) invece che
+  precomposti, e sono stati normalizzati sia nel gioco sia nella toppa, così
+  che la riapplicazione torni identica.
+
 - **LA SFIDA DAL DISCHETTO — #146 CANTIERE CHIUSO** (voce #146, 24 settembre
   2026, cinque compiti dal merge-base `5038eee` — spec
   `docs/superpowers/specs/2026-09-24-sfida-dal-dischetto-design.md`, piano

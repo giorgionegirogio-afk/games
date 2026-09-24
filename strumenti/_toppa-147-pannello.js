@@ -386,17 +386,17 @@ const B5 = `  /* APRIRE IL PANNELLO NON E' PARLARE ALLA RETE. Il cancello F del
   perCausa(c){
     const T = {
       'versione-diversa':   'Uno dei due telefoni ha una versione diversa del gioco. Aggiornate tutti e due e riprovate.',
-      'motore-diverso':     'I due telefoni hanno due versioni diverse del gioco: la serie non è partita apposta, invece di darvi due partite diverse.',
-      'impegno-non-torna':  'La mossa rivelata non è quella che era stata chiusa: la serie si ferma qui.',
-      'esiti-diversi':      'I due telefoni hanno visto due esiti diversi dello stesso tiro. Non si può dire chi ha ragione, e la serie si annulla.',
-      'mossa-storta':       'È arrivata una mossa che non sta nel ruolo giusto: la serie si annulla.',
+      'motore-diverso':     'I due telefoni hanno due versioni diverse del gioco: la serie non è partita apposta, invece di darvi due partite diverse.',
+      'impegno-non-torna':  'La mossa rivelata non è quella che era stata chiusa: la serie si ferma qui.',
+      'esiti-diversi':      'I due telefoni hanno visto due esiti diversi dello stesso tiro. Non si può dire chi ha ragione, e la serie si annulla.',
+      'mossa-storta':       'È arrivata una mossa che non sta nel ruolo giusto: la serie si annulla.',
       'rose-corte':         'Una delle due squadre non ha abbastanza giocatori per una serie di rigori.',
-      'incompiuta':         'L’altro telefono non risponde più. La serie si annulla: chi sparisce non perde, perché una connessione caduta non è una resa.',
+      'incompiuta':         'L’altro telefono non risponde più. La serie si annulla: chi sparisce non perde, perché una connessione caduta non è una resa.',
       'rete':               'Non si riesce a parlare col server. Riprova quando hai campo.',
       'chiuso':             'Hai chiuso la sfida.',
       'finita':             '',
     };
-    return T[c] !== undefined ? T[c] : ('La serie si è fermata: ' + c + '.');
+    return T[c] !== undefined ? T[c] : ('La serie si è fermata: ' + c + '.');
   },
 
   frase(){
@@ -412,7 +412,7 @@ const B5 = `  /* APRIRE IL PANNELLO NON E' PARLARE ALLA RETE. Il cancello F del
       if(S.causa === 'finita' || !S.causa){
         if(S.fine === 'vinta') return 'Hai vinto la serie.';
         if(S.fine === 'persa') return 'Hai perso la serie.';
-        return 'Serie finita in parità.';
+        return 'Serie finita in parità.';
       }
       return this.perCausa(S.causa);
     }
@@ -440,7 +440,7 @@ const B5 = `  /* APRIRE IL PANNELLO NON E' PARLARE ALLA RETE. Il cancello F del
     if(m && S && S.stanza && S.lato === 'a') m.value = S.stanza;
     const v = q('dsVia');
     if(v && S && S.stanza && S.lato === 'a')
-      v.textContent = 'Questo è il codice della tua sfida: mandalo a chi vuoi sfidare. Resta aperta finché non entra.';
+      v.textContent = 'Questo è il codice della tua sfida: mandalo a chi vuoi sfidare. Resta aperta finché non entra.';
     /* LA FASCIA: c'e' solo quando c'e' una serie in corso, e sparisce da
        se'. Un pannello che restasse sopra il duello a serie finita
        coprirebbe il gol. */
@@ -482,7 +482,7 @@ const B5 = `  /* APRIRE IL PANNELLO NON E' PARLARE ALLA RETE. Il cancello F del
     else {
       const e = document.getElementById('dsStato');
       if(e) e.textContent = (r && r.errore === 'codice-storto')
-        ? 'Il codice è di sei caratteri: lettere e cifre, niente altro.'
+        ? 'Il codice è di sei caratteri: lettere e cifre, niente altro.'
         : 'Non si riesce a parlare col server. Riprova quando hai campo.';
     }
     if(r && r.ok) this.ridipingi();

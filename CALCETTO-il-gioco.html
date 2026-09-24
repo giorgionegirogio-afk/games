@@ -14891,6 +14891,30 @@ const Reg = {
         const px = ux.has(id) ? ux.get(id) : 0, py = uy.has(id) ? uy.get(id) : 0;
         ux.set(id, x); uy.set(id, y);
         pezzi.push(dT + ',13,' + dMs + ',' + id + ',' + (x - px) + ',' + (y - py));
+      } else if(tipo === 14){
+        /* LA TESTIMONIANZA DEL DISCHETTO (voce #146, messa nel nastro
+           dalla voce #147). Dieci o quattordici numeri: il tiro, il
+           lato, le quattro parole dell'impegno, le quattro del nonce e
+           la mossa. Non e' un comando — i comandi sono le righe di tipo
+           6, che le tre porte scrivono da se' — ed e' la prova che la
+           mossa dell'altro non me la sono inventata io.
+           >>> 0 E NON |0, e non e' un vezzo: una parola di SHA-256 sta
+           sopra 2^31 una volta su due, e dal |0 tornerebbe negativa.
+           E' la stessa riga che il #142 ha gia' dovuto scrivere per
+           l'impronta del motore, e per la stessa ragione.
+           FINO A OGGI QUESTO RAMO NON C'ERA: Dischetto.testimonia
+           scriveva la riga in memoria e la prima serializzazione la
+           buttava (misurato, strumenti/_sonda-147-quattordici.js: nastro
+           di una serie vera, per tipo {3,6} e zero 14). */
+        pezzi.push(dT + ',14,' + dMs + ',' + r.slice(3).map(x => (x|0) >>> 0).join(','));
+      } else if(tipo === 15){
+        /* LA CARTA D'IDENTITA' DELLA PARTITA (voce #147). Un numero
+           solo, una volta sola: la versione del protocollo del
+           dischetto. In rilettura non fa niente. Serve a chi GIUDICA per
+           sapere che quel nastro DEVE portare le sue testimonianze —
+           senza, chi le togliesse tutte non lascerebbe niente da
+           controllare, e il controllo sarebbe circolare. */
+        pezzi.push(dT + ',15,' + dMs + ',' + (r[3]|0));
       } else if(tipo === 7){
         /* LE DUE SQUADRE. Interi e virgole, lunghezza variabile, scritti
            una volta sola in testa alla partita; in rilettura non fanno
@@ -14954,6 +14978,8 @@ const Reg = {
         ux.set(id, x); uy.set(id, y);
         this.righe.push([tick, 13, ms, id, x, y]);
       }
+      else if(tipo === 14)  this.righe.push([tick, 14, ms].concat(v.slice(3).map(x => (x|0) >>> 0)));
+      else if(tipo === 15)  this.righe.push([tick, 15, ms, v[3]|0]);
       else if(tipo === 7)   this.righe.push([tick, 7, ms].concat(v.slice(3)));
     }
     this.i = 0; this.tick = 0; this.modo = 2;
@@ -46619,13 +46645,67 @@ function vagliaNastro(righe){
   if(righe === 0) return no('INCOMPLETO','nastro-vuoto');
   if(Reg.troncato) return no('INCOMPLETO','nastro-troncato');
   let marchio = false, dati = null;
+  /* LE TESTIMONIANZE DEL DISCHETTO, RACCOLTE NELLO STESSO GIRO (voce
+     #147): quali tiri hanno la loro prova, e da quale lato. */
+  let disco = false;
+  const testi = new Map();
   for(const r of Reg.righe){
     if(r[1] === 5) marchio = true;
     else if(r[1] === 7 && !dati) dati = r;
+    else if(r[1] === 15) disco = true;
+    else if(r[1] === 14){
+      const nt = r[3]|0;
+      if(!testi.has(nt)) testi.set(nt, 0);
+      testi.set(nt, testi.get(nt) | (1 << ((r[4]|0) ? 1 : 0)));
+    }
   }
   /* il marchio di tipo 5 e' il segno dei nastri scritti PRIMA della voce
      #131: quelli il duello non ce l'hanno davvero */
   if(marchio) return no('INCOMPLETO','duello-marchiato');
+  /* =====================================================================
+     E UN NASTRO DEL DISCHETTO DEVE PORTARE LE SUE TESTIMONIANZE
+     (voce #147, la cura del buco che il #146 ha dichiarato da se').
+
+     La verifica dell'impegno vive in DIRETTA: nessuno rivela finche' non
+     ha l'impegno dell'altro, e chi rivela una mossa che non aveva
+     impegnato viene fermato sul posto. In DIFFERITA quella prova va
+     RIFATTA, e per rifarla ci vogliono le righe di tipo 14. Un nastro a
+     cui fossero tolte rigiocherebbe un punteggio giusto — nessun
+     innocente accusato — ma la prova di lealta' non verrebbe rifatta.
+
+     IL RICONOSCIMENTO E' NEI DUE VERSI, e non per abbondanza: la 15
+     dice «qui si e' giocato dal dischetto» ed e' cio' che rende il
+     controllo non circolare; la presenza di una 14 qualunque prende chi
+     ne togliesse solo ALCUNE. Servono tutti e due.
+
+     SI STA QUI, prima di rose-assenti, e la collocazione e' una misura:
+     un nastro di una serie vera oggi e' gia' INCOMPLETO/rose-assenti
+     (strumenti/_sonda-147-quattordici.js), quindi un controllo in coda
+     non sarebbe mai stato raggiunto su un nastro vero — sarebbe stato
+     verificabile solo su un nastro costruito dal banco, cioe' non
+     verificato. E nel merito e' il posto giusto: duello-marchiato e
+     questa dicono una proprieta' DEL NASTRO, rose-assenti dice che cosa
+     manca per RIGIOCARLO.
+
+     SI ASTIENE, NON ACCUSA. INCOMPLETO non muove punti, la riga resta a
+     verificata = 0 e torna giudicabile il giorno in cui arriva
+     completa. E' il principio di tutta l'onda D.
+
+     IL RESIDUO, SCRITTO QUI. Chi toglie TUTTE le 14 E la 15 ottiene un
+     nastro indistinguibile da una partita normale. Questa riga
+     RESTRINGE il buco, non lo chiude: chiuderlo vorrebbe dire FIRMARE
+     la 15, una firma vuole una chiave, e in questo gioco non c'e'
+     nessuna chiave per statuto. Non e' una svista.
+     ===================================================================== */
+  if(disco || testi.size){
+    let buone = testi.size > 0;
+    for(let i = 0; i < testi.size && buone; i++){
+      /* TUTTE E DUE LE TESTIMONIANZE, E I TIRI SENZA BUCHI: ogni tiro da
+         0 a N-1 deve avere la propria e quella dell'altro. */
+      if(testi.get(i) !== 3) buone = false;
+    }
+    if(!buone) return no('INCOMPLETO','testimonianze-assenti');
+  }
   if(!(dati && dati.length > 6)) return no('INCOMPLETO','rose-assenti');
   /* I NOMI NON SI PASSANO (il terzo argomento resta null): nel nastro non
      ci sono, e spaccaRosa li sa fare da se'. Un nome non muove una
@@ -47887,6 +47967,12 @@ const Dischetto = {
       mia: { n:'CASA',  c1:'#3355aa', c2:'#111820', pat:0, ment:1, rosa:rosaA },
       opp: { n:'FUORI', c1:'#cf3e6b', c2:'#123a80', pat:1, ment:1, rosa:rosaB },
     });
+    /* LA CARTA D'IDENTITA' DEL NASTRO (voce #147). Si scrive DOPO
+       startMatch, che e' il posto in cui il registro nasce, e prima del
+       primo tiro. Da questa riga il giudice sa che il nastro deve
+       portare le sue testimonianze: senza, chi le togliesse tutte
+       renderebbe la serie indistinguibile da una partita qualunque. */
+    try{ Reg.scrivi(15, [DISCHETTO_V]); }catch(e){}
     /* chi tira per primo l'ha deciso il seme, non una persona */
     G.kickTeam = (S.primo === 'a') ? 0 : 1;
     avviaRigori();
@@ -48217,17 +48303,17 @@ const Dischetto = {
   perCausa(c){
     const T = {
       'versione-diversa':   'Uno dei due telefoni ha una versione diversa del gioco. Aggiornate tutti e due e riprovate.',
-      'motore-diverso':     'I due telefoni hanno due versioni diverse del gioco: la serie non è partita apposta, invece di darvi due partite diverse.',
-      'impegno-non-torna':  'La mossa rivelata non è quella che era stata chiusa: la serie si ferma qui.',
-      'esiti-diversi':      'I due telefoni hanno visto due esiti diversi dello stesso tiro. Non si può dire chi ha ragione, e la serie si annulla.',
-      'mossa-storta':       'È arrivata una mossa che non sta nel ruolo giusto: la serie si annulla.',
+      'motore-diverso':     'I due telefoni hanno due versioni diverse del gioco: la serie non è partita apposta, invece di darvi due partite diverse.',
+      'impegno-non-torna':  'La mossa rivelata non è quella che era stata chiusa: la serie si ferma qui.',
+      'esiti-diversi':      'I due telefoni hanno visto due esiti diversi dello stesso tiro. Non si può dire chi ha ragione, e la serie si annulla.',
+      'mossa-storta':       'È arrivata una mossa che non sta nel ruolo giusto: la serie si annulla.',
       'rose-corte':         'Una delle due squadre non ha abbastanza giocatori per una serie di rigori.',
-      'incompiuta':         'L’altro telefono non risponde più. La serie si annulla: chi sparisce non perde, perché una connessione caduta non è una resa.',
+      'incompiuta':         'L’altro telefono non risponde più. La serie si annulla: chi sparisce non perde, perché una connessione caduta non è una resa.',
       'rete':               'Non si riesce a parlare col server. Riprova quando hai campo.',
       'chiuso':             'Hai chiuso la sfida.',
       'finita':             '',
     };
-    return T[c] !== undefined ? T[c] : ('La serie si è fermata: ' + c + '.');
+    return T[c] !== undefined ? T[c] : ('La serie si è fermata: ' + c + '.');
   },
 
   frase(){
@@ -48243,7 +48329,7 @@ const Dischetto = {
       if(S.causa === 'finita' || !S.causa){
         if(S.fine === 'vinta') return 'Hai vinto la serie.';
         if(S.fine === 'persa') return 'Hai perso la serie.';
-        return 'Serie finita in parità.';
+        return 'Serie finita in parità.';
       }
       return this.perCausa(S.causa);
     }
@@ -48271,7 +48357,7 @@ const Dischetto = {
     if(m && S && S.stanza && S.lato === 'a') m.value = S.stanza;
     const v = q('dsVia');
     if(v && S && S.stanza && S.lato === 'a')
-      v.textContent = 'Questo è il codice della tua sfida: mandalo a chi vuoi sfidare. Resta aperta finché non entra.';
+      v.textContent = 'Questo è il codice della tua sfida: mandalo a chi vuoi sfidare. Resta aperta finché non entra.';
     /* LA FASCIA: c'e' solo quando c'e' una serie in corso, e sparisce da
        se'. Un pannello che restasse sopra il duello a serie finita
        coprirebbe il gol. */
@@ -48313,7 +48399,7 @@ const Dischetto = {
     else {
       const e = document.getElementById('dsStato');
       if(e) e.textContent = (r && r.errore === 'codice-storto')
-        ? 'Il codice è di sei caratteri: lettere e cifre, niente altro.'
+        ? 'Il codice è di sei caratteri: lettere e cifre, niente altro.'
         : 'Non si riesce a parlare col server. Riprova quando hai campo.';
     }
     if(r && r.ok) this.ridipingi();
@@ -48496,7 +48582,37 @@ const Dischetto = {
     this.fermaGuida();
     this.barra = null;
     try{ const f = document.getElementById('dsFascia'); if(f) hide(f); }catch(e){}
-    return veroChiudi.call(this);
+    const r = veroChiudi.call(this);
+    /* =====================================================================
+       E SI ESCE DALLA PARTITA (voce #147, compito 4).
+
+       Senza queste righe CHIUDI spegne il protocollo e lascia la partita
+       in piedi; e appena il protocollo e' spento il cancello sul duello
+       non trattiene piu' niente, quindi la CPU riprende a tirare e a
+       tuffarsi al posto delle due persone. Chi ha premuto CHIUDI resta
+       chiuso dentro a guardare una serie che si gioca da sola.
+       MISURATO prima della cura (_q-volto B5): scena freekick, duello
+       zone e partita viva sia prima sia dopo il CHIUDI.
+
+       Si usa la porta che il gioco ha gia' — abbandonaSfida(), la stessa
+       del bottone ABBANDONA della pausa — e si rifa' la sua uscita.
+       SOLO se la partita e' del dischetto: chiudi() si chiama anche dal
+       banco su una pagina senza partita, e uscire da una partita che non
+       c'e' spegnerebbe il registro di qualcun altro. */
+    try{
+      if(G.sfida && G.sfida.chi === 'DISCHETTO'){
+        abbandonaSfida();
+        Duel.phase = 'off';
+        G.paused = false; hide(ui.pausa);
+        hideAllScreens(); hide(ui.duel); show(ui.menu);
+        setScene('menu'); Audio5.crowdLevel(0);
+        /* e si torna dove si era: chi ha chiuso una sfida vuole vedere
+           che e' chiusa, non ritrovarsi al menu senza sapere perche' */
+        Sfida.apri();
+        this.mostra();
+      }
+    }catch(e){}
+    return r;
   };
 })();
 

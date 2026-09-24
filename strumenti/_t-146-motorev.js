@@ -176,9 +176,45 @@ async function rigiocaSu(browser, porta, nastro, seme) {
 
     di(!suVecchio.errore, 'VERSO 2a) il gioco di ieri non si schianta sul nastro di oggi',
        suVecchio.errore || 'nessuna eccezione');
-    di(suVecchio.righe === suNuovo.righe,
-       'VERSO 2b) il gioco di ieri legge LE STESSE righe del curato (il #144 ne leggeva 170 su 2749)',
-       'ieri ' + suVecchio.righe + ' · oggi ' + suNuovo.righe);
+    /* =====================================================================
+       RETTIFICA A EDIZIONI (24 settembre 2026, voce #147, compito 4).
+
+       IL TESTO VECCHIO, che resta scritto perche' era giusto quando e'
+       stato scritto: «il gioco di ieri legge LE STESSE righe del curato»,
+       cioe' `suVecchio.righe === suNuovo.righe`. Al #146 quel confronto
+       era esatto, e per una ragione che allora nessuno aveva misurato:
+       le righe di tipo 14 NON ARRIVAVANO NEL NASTRO — `Reg.serializza`
+       non aveva un ramo per quel tipo, quindi i due giochi leggevano per
+       forza lo stesso numero di righe.
+
+       DAL #147 LE 14 VIAGGIANO, e con loro la 15. Un gioco di ieri non
+       conosce ne' l'uno ne' l'altro tipo e li BUTTA — `deserializza`
+       aggiorna i due delta PRIMA di smistare il tipo, quindi una riga
+       sconosciuta non sposta di un tick quelle dopo. Percio' oggi il
+       conto DEVE differire, ed esattamente di quelle righe li'.
+
+       IL CRITERIO NON SI RILASSA, SI STRINGE: non «gli scarti si
+       perdonano», ma «lo scarto deve essere ESATTAMENTE il numero di
+       righe dei tipi nuovi». Se ne mancasse una in piu' o una in meno,
+       il gioco di ieri starebbe leggendo male un comando, ed e'
+       precisamente il difetto che il #144 ha trovato (170 righe su
+       2749). MISURATO il 24 settembre 2026: oggi 21 righe, ieri 14,
+       sei di tipo 14 e una di tipo 15 — e le due partite restano
+       identiche su 100 campioni, stesso punteggio.
+       ===================================================================== */
+    const nuovi = (function(testo){
+      let n = 0;
+      for(const pezzo of (String(testo).split('|')[3] || '').split(';')){
+        if(!pezzo) continue;
+        const tp = Number(pezzo.split(',')[1]);
+        if(tp === 14 || tp === 15) n++;
+      }
+      return n;
+    })(preso.nastro);
+    di(suVecchio.righe === suNuovo.righe - nuovi,
+       'VERSO 2b) il gioco di ieri legge le stesse righe MENO quelle dei tipi che non conosce',
+       'ieri ' + suVecchio.righe + ' · oggi ' + suNuovo.righe + ' · righe dei tipi nuovi (14 e 15) ' + nuovi +
+       ' · atteso ieri ' + (suNuovo.righe - nuovi));
     const sc = primoScarto(suVecchio.impronte, suNuovo.impronte);
     di(sc === -1, 'VERSO 2c) e finisce nella STESSA partita, campione per campione',
        sc === -1 ? (suNuovo.impronte.length + ' campioni identici') : ('primo scarto al campione ' + sc + ' su ' + suNuovo.impronte.length));
@@ -204,7 +240,7 @@ async function rigiocaSu(browser, porta, nastro, seme) {
     }
 
     console.log('\n  IL VERDETTO SU MOTORE_V');
-    const neutro = !suVecchio.errore && suVecchio.righe === suNuovo.righe && sc === -1;
+    const neutro = !suVecchio.errore && suVecchio.righe === suNuovo.righe - nuovi && sc === -1;
     if (neutro) {
       console.log('    MOTORE_V PUO\' RESTARE 4. Il tipo 14 non e\' un comando: il gioco di ieri');
       console.log('    lo butta in silenzio e rigioca ESATTAMENTE la stessa partita, quindi non');

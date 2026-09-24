@@ -1047,6 +1047,25 @@ const CANCELLI = [
      costano sette volte tanto e stanno anche loro fra i lenti. */
   { nome: 'dischetto',       cmd: ['strumenti/_q-dischetto.js'],                        conta: true,  lento: true  },
   { nome: 'dischetto-falsi', cmd: ['strumenti/_q-dischetto-falsi.js'],                  conta: true,  lento: true  },
+
+  /* IL VOLTO (voce #147). Il pannello con cui una persona gioca la sfida
+     dal dischetto, il respiro, e la cura del buco di verifica differita.
+     Tre cose in un cancello solo perche' sono la stessa cosa vista da
+     tre lati: che la sfida dell'onda E si possa GIOCARE.
+
+     E IL PRIMO GRUPPO NON E' DEL DISCHETTO, E' DELLA PAGINA. A misura la
+     piega della schermata SFIDA a 800x360 e a 915x412 — CERCA
+     AVVERSARIO, la prima riga, il primo GUARDA, SFIDA DI CARTA — con i
+     numeri di prima MISURATI e non indovinati. E' lo stesso terreno di
+     _q-sigillo B3 e _q-carta D4, e non e' un doppione: quelli
+     sorvegliano la disposizione di IERI, questo il prezzo di una voce in
+     piu'. Costa poco e prende il difetto che nessuna eccezione segnala.
+
+     `lento` perche' apre due contesti di browser e gioca serie intere,
+     come `dischetto`. I falsi girano il banco su NOVE versioni bugiarde
+     del gioco e stanno anche loro fra i lenti. */
+  { nome: 'volto',           cmd: ['strumenti/_q-volto.js'],                            conta: true,  lento: true  },
+  { nome: 'volto-falsi',     cmd: ['strumenti/_q-volto-falsi.js'],                      conta: true,  lento: true  },
   /* =====================================================================
      ment-nastro / carattere-nastro / rosa-scala / nastro-tronco: I CINQUE
      CANALI DELLA VOCE #132, SORVEGLIATI (correzione di revisione, 21

@@ -349,3 +349,51 @@ tre rossi è uscito **solo dai cancelli lenti**.
 4. **«`MOTORE_V` resta 4»** prima di averlo misurato nei due versi.
 5. **«La voce nuova sta sopra la piega su ogni telefono.»** A 800x360 con cinque
    righe di lista scende: si dichiara il numero e si dice che `.ov` scorre.
+
+---
+
+## 9. RETTIFICHE A EDIZIONI (24 settembre 2026, a cantiere chiuso)
+
+Questo progetto è stato scritto **prima** di misurare. Quattro sue affermazioni
+sono state superate dalle misure, e si correggono qui **senza cancellare il
+testo di sopra**, che resta per far vedere che cosa ci si aspettava.
+
+**(1) §1.1 — la piega: la predizione ha tenuto, ma per poco, e non per il
+motivo scritto.** I tre bersagli non si sono mossi di un pixel (220 / 329 /
+308) e `SFIDA DI CARTA` nemmeno (347). Ma la prima stesura metteva la voce e
+basta, e la voce nuova finiva **sulla stessa riga della carta**, tutte e due a
+301-347 (`strumenti/_diag-147-voce.js`): `.voce` non dichiara `display`, quindi
+un `<button>` è `inline-block`, e `.box` è larga 640 a tutti i formati. Costava
+**zero pixel di piega** ed è stata **rifiutata lo stesso**, perché una
+disposizione che dipende dalla larghezza non si misura una volta sola.
+`#btnSfidaDischetto{display:block}`, e i 56 px si pagano: TORNA AL MENU da 418
+a 474, scorribile da 466 a 522. **Il ramo di riserva di §1.2 non è servito.**
+
+**(2) §4 — il buco era più grande di come è scritto.** §4.1 riporta il #146
+(«`vagliaNastro` non pretende le righe di tipo 14»). **Misurato**
+(`strumenti/_sonda-147-quattordici.js`): quelle righe **non arrivavano nemmeno
+nel nastro** — `Reg.serializza` non aveva un ramo per il tipo 14 e
+`Reg.deserializza` neppure. La cura di §4.3 è quindi **doppia**, e la seconda
+metà (far viaggiare le 14) non era prevista da questo documento.
+
+**(3) §4.3 — il posto del controllo è cambiato per una misura.** Il progetto lo
+metteva «in coda a tutti gli altri, lo stesso posto del #142». Sta invece
+**prima di `rose-assenti`**, perché un nastro vero oggi è già
+`INCOMPLETO/rose-assenti` e in coda il controllo non sarebbe mai stato
+raggiunto su un nastro vero — sarebbe stato verificabile solo su un nastro
+costruito dal banco, cioè **non verificato**.
+
+**(4) §6.1 — il falso `_crit-volto-spione` non esiste, e la ragione è una
+scoperta.** Non si può costruire a livello di pannello: la mossa dell'altro
+**non arriva mai** sul telefono prima che io mi sia impegnato, perché `manda()`
+spedisce la rivelazione solo se ha in casa l'impegno dell'altro. La proprietà è
+del **protocollo** (#146, falso `gentile`), non del volto. Al suo posto c'è
+`_crit-volto-ansioso`, che attacca l'istante che il pannello **può** rompere:
+quando parte il mio impegno. E la prova C1 è stata riscritta di conseguenza —
+la sua prima stesura sarebbe stata verde **sempre**, anche su un pannello
+scritto male.
+
+**(5) Una cosa che questo progetto non aveva previsto affatto**, trovata
+leggendo il proprio codice e **misurata prima di curarla** (`_q-volto` B5):
+CHIUDI spegneva il protocollo e **lasciava la partita in piedi**, e da lì la
+CPU riprendeva a giocare al posto delle due persone.

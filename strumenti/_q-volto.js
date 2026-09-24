@@ -29,6 +29,13 @@
       ENTRA, e l'appuntamento si chiude su tutti e due. Un pannello che
       si apre e non fa niente e' il falso `_crit-volto-muto`.
 
+      E B5 NON E' NATA DA UN FALSO, e' nata leggendo il pannello dopo
+      averlo scritto: CHIUDI spegneva il protocollo e lasciava la PARTITA
+      in piedi, e da quel momento il cancello sul duello non trattiene
+      piu' niente — la CPU riprende a tirare e a tuffarsi al posto delle
+      due persone, e chi ha premuto CHIUDI resta a guardare una serie che
+      si gioca da sola. Nessuna eccezione, nessun rosso in console.
+
    C) IL TABELLONE. Durante la serie si deve vedere il punteggio, il
       tiro, il proprio ruolo e i tiri gia' fatti; alla fine si deve
       vedere come e' finita.
@@ -354,14 +361,21 @@ function contaTipi(nastro) {
              darebbe un referto senza prove — cioe' un falso assolto per
              assenza. Si apre l'appuntamento dal pannello, che e' anche il
              modo in cui lo aprirebbe un dito. */
+          /* E SI APRE SEMPRE UNA SERIE NUOVA, non si eredita quella di B.
+             B5 chiude la partita apposta (e' la sua misura), quindi
+             ereditarla vorrebbe dire misurare C su un telefono al menu.
+             E si ASPETTA che l'appuntamento si chiuda su tutti e due
+             girando la rete, invece di dare per fatto che un giro basti:
+             la prima stesura ne faceva uno solo, e quando non bastava C1
+             usciva rossa con «zero rivelazioni» su una serie che non era
+             mai cominciata — un'assenza scambiata per una misura. */
           {
-            const s0 = await d_stato(A);
-            if (s0.fase !== 'scegli' && s0.fase !== 'attesa-impegno') {
-              const r = await A.pag.evaluate(async () => await window.__test.dischetto.crea());
-              if (r && r.stanza) {
-                await B.pag.evaluate(async c => await window.__test.dischetto.entra(c), r.stanza);
-                await d_giro(A);
-              }
+            const r = await A.pag.evaluate(async () => await window.__test.dischetto.crea());
+            if (r && r.stanza) await B.pag.evaluate(async c => await window.__test.dischetto.entra(c), r.stanza);
+            for (let k = 0; k < 20; k++) {
+              const [x, y] = await Promise.all([d_stato(A), d_stato(B)]);
+              if (x.fase === 'scegli' && y.fase === 'scegli') break;
+              await Promise.all([d_giro(A), d_giro(B)]);
             }
           }
 
