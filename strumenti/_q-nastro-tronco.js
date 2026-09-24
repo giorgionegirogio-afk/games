@@ -38,9 +38,26 @@
    LE PROVE
      A) un nastro che ha toccato il tetto porta il marchio;
      B) e Sfida.guarda lo rifiuta, dicendo perche';
-     C) un nastro vuoto viene rifiutato, dicendo perche';
+     C) un nastro vuoto viene rifiutato, E PER LA CAUSA GIUSTA;
      D) non-regressione: un nastro normale non porta il marchio e si
         rivede come prima, col punteggio dichiarato.
+
+   RETTIFICA A EDIZIONI (24 settembre 2026, voce #149). LA PROVA C ERA
+   VERDE PER IL MOTIVO SBAGLIATO, e la revisione d'insieme dell'onda E
+   l'ha presa. Il nastro finto era scritto `'1|2||'`: quel `2` e' il
+   MOTORE_V del nastro, e da quando il numero e' salito (4 al #144, 5 al
+   #148, 6 al #149) a respingerlo non era piu' la guardia del nastro
+   vuoto ma `motoreV !== MOTORE_V`. Se la guardia del vuoto fosse
+   sparita, la prova sarebbe restata verde: un cancello che attesta
+   invece di misurare.
+
+   LA CURA, in due pezzi. Il primo: MOTORE_V si LEGGE DAL FILE del gioco
+   in prova (come fa `_t-143-motorev.js:177`), cosi' il nastro finto ha
+   la versione giusta e la strada del motore e' chiusa. Il secondo: non
+   basta piu' «rifiutato», si pretende la CAUSA — `nastro-vuoto` — e la
+   si chiede a `giudica`, che e' la stessa porta di `Sfida.guarda`
+   (`vagliaNastro`, voce #134). Col falso `_crit-vuoto-cieco.js`, che
+   toglie quella riga sola, la prova diventa rossa: MISURATO.
 
    uso:  node strumenti/_q-nastro-tronco.js
          node strumenti/_q-nastro-tronco.js --gioco fuori/falso.html
@@ -73,6 +90,7 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
   const ss = await B.serviServer();
   let browser;
   let lunga = null, lungaRep = null, corta = null, cortaRep = null, vuotaRep = null, vuotaId = 0;
+  let vuotaVerdetto = null, mvFile = 0;
   try {
     browser = await chromium.launch();
     console.log('=== IL NASTRO CHE TRONCA IN SILENZIO (voce #132, compito 4) ===');
@@ -105,11 +123,30 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
        che chi RILEGGE deve accorgersene comunque, che sia arrivato da un
        guasto, da una rete storta o da qualcuno che ci prova. */
     if (corta.riga) {
+      /* IL MOTORE_V SI LEGGE DAL FILE, non si indovina (voce #149): con
+         un numero qualunque in testa il nastro finto verrebbe respinto
+         da `motoreV !== MOTORE_V` e la guardia del vuoto non sarebbe
+         mai raggiunta. E' la stessa lettura di `_t-143-motorev.js`. */
+      const testoGioco = fs.readFileSync(prova || path.join(RADICE, 'CALCETTO-il-gioco.html'), 'utf8');
+      const mm = testoGioco.match(/const MOTORE_V = (\d+)/);
+      if (!mm) throw new Error('MOTORE_V non trovato nel file del gioco');
+      mvFile = parseInt(mm[1], 10);
+      const nastroVuoto = '1|' + mvFile + '||';
       vuotaId = ss.db.sfide.length + 1;
       ss.db.sfide.push(Object.assign({}, corta.riga, {
-        id: vuotaId, replay: '1|2||', gol_a: 3, gol_d: 0, vista: false,
+        id: vuotaId, replay: nastroVuoto, gol_a: 3, gol_d: 0, vista: false,
       }));
       vuotaRep = await B.guardaUna(Bt, vuotaId, []);
+      /* E LA CAUSA, chiesta alla stessa porta che usa Sfida.guarda. Su
+         una TERZA pagina pulita: Bt ha appena finito un replay, e un
+         giudizio dentro la pagina che ha appena riletto misurerebbe
+         quella pagina. */
+      const Gt = await B.apri(browser, sg.porta);
+      vuotaVerdetto = await Gt.pag.evaluate(([n, s]) => {
+        const v = window.__test.giudica(n, [3, 0], { seme: String(s), taglia: 5 });
+        return { verdetto: v.verdetto, causa: v.causa, motoreV: v.motoreV };
+      }, [nastroVuoto, corta.via && corta.via.seme ? corta.via.seme : 20260801]);
+      await Gt.ctx.close();
     }
 
     if (At.errori.length || Bt.errori.length)
@@ -154,8 +191,11 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
        ', riga «' + String(lungaRep.rigaFine).slice(0, 70) + '»') : 'nessun replay'));
 
   const rifiutaVuoto = !!(vuotaRep && vuotaRep.rifiutato);
-  di(rifiutaVuoto, 'C) e un nastro VUOTO non passa per buono',
-     (vuotaRep ? ('rifiutato ' + vuotaRep.rifiutato + ', riga «' +
+  const causaVuoto = vuotaVerdetto ? (vuotaVerdetto.verdetto + '/' + vuotaVerdetto.causa) : '';
+  di(rifiutaVuoto && causaVuoto === 'INCOMPLETO/nastro-vuoto',
+     'C) e un nastro VUOTO non passa per buono, E PER LA CAUSA GIUSTA',
+     (vuotaRep ? ('MOTORE_V del file ' + mvFile + ' (niente strada del motore) · rifiutato ' +
+       vuotaRep.rifiutato + ' · causa ' + (causaVuoto || 'NON CHIESTA') + ' · riga «' +
        String(vuotaRep.rigaFine).slice(0, 70) + '»') : 'nessun replay'));
 
   const nienteMarchio = corta.fine.tipi.indexOf('9') < 0 && corta.fine.troncato !== true;

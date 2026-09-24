@@ -907,7 +907,13 @@ const CANCELLI = [
      motore-nastro / motore-falsi: UN ONESTO CON UN TELEFONO DI UN'ALTRA
      MARCA (voce #142).
 
-     `motori` qui sopra ha misurato il difetto e sta a conta:false apposta
+     RETTIFICA A EDIZIONI (24 settembre 2026, voce #149): la riga qui
+     sotto e' SUPERATA. `motori` e' passato a `conta:true` col #143 (commit
+     `c71a83e`, e lo dice la lettera che sta piu' su, «`motori` ADESSO
+     CONTA»): quel che segue va letto come il perche' storico, non come lo
+     stato di oggi.
+
+     `motori` qui sopra ha misurato il difetto e stava a conta:false apposta
      — e' rosso per un guasto vero e aperto (le trascendenti divergono, e
      la cura e' il cantiere della matematica scritta in casa), e metterlo
      a true tingerebbe di rosso l'intera batteria per una cosa gia' a
@@ -1047,6 +1053,45 @@ const CANCELLI = [
      costano sette volte tanto e stanno anche loro fra i lenti. */
   { nome: 'dischetto',       cmd: ['strumenti/_q-dischetto.js'],                        conta: true,  lento: true  },
   { nome: 'dischetto-falsi', cmd: ['strumenti/_q-dischetto-falsi.js'],                  conta: true,  lento: true  },
+
+  /* =====================================================================
+     IL SEME A DUE MANI, E LA MANO CHE SE LO SCEGLIE (voce #149).
+
+     `dischetto-seme` NON CONTA, e non e' pigrizia: OGGI E' ROSSO, e lo e'
+     per un guasto vero e aperto. Il nonce del saluto viaggia in chiaro, e
+     chi entra per secondo puo' ritardare il proprio saluto, leggere quello
+     dell'altro e cercarsi un nonce che gli porti il seme che vuole —
+     MISURATO 10 su 10 dal pari finto, col testimone accanto (a bugia
+     spenta non vince sempre). Non e' solo il bit del primo tiratore: e'
+     l'INTERO seme, cioe' il dado di tutta la partita.
+
+     E' la stessa forma con cui `motori` e' stato tenuto in campo: un
+     guasto aperto si misura in permanenza con il numero accanto, e si
+     toglie da `conta` finche' non ha il suo cantiere — metterlo a true
+     tingerebbe di rosso l'intera batteria per una cosa gia' a registro.
+
+     LA CURA E' NOTA e non sta qui: lo schema in due tempi del #146
+     applicato al saluto (impegno SHA-256 sul nonce, poi rivelazione).
+     Vuole un giro di rete in piu' nell'appuntamento, una fase nuova,
+     `DISCHETTO_V` da 1 a 2 e la riscrittura dei sette falsi del
+     dischetto. E' un cantiere suo. */
+  { nome: 'dischetto-seme',  cmd: ['strumenti/_q-dischetto-seme.js'],                   conta: false, lento: true  },
+
+  /* =====================================================================
+     LA SHA-256 SCRITTA A MANO (voce #149).
+
+     Il verbale del #146 dichiarava «confrontata con quella di Node su 409
+     casi ... identiche tutte e 409», e la revisione d'insieme dell'onda E
+     ha cercato quei 409 casi senza trovarli: il confronto era stato fatto
+     una volta, a mano, e il numero era finito a verbale senza uno
+     strumento che lo rifacesse. La regola di casa dice «o si scrive il
+     banco, o si ritira il numero»: eccolo. Regge `dsImpegno`, cioe' la
+     funzione da cui dipende l'unica accusa del cantiere del dischetto.
+
+     Deterministico (nessun sorteggio: 256 lunghezze, 128 stringhe da un
+     generatore seminato, 25 casi scomodi) e veloce — una pagina sola,
+     nessuna partita. */
+  { nome: 'sha256',          cmd: ['strumenti/_q-sha256.js'],                           conta: true,  lento: false },
 
   /* IL VOLTO (voce #147). Il pannello con cui una persona gioca la sfida
      dal dischetto, il respiro, e la cura del buco di verifica differita.

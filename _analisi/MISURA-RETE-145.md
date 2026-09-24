@@ -261,8 +261,14 @@ deciderebbe questo cantiere, e non esiste in forma leggibile.**
 | soglia | esito | il numero |
 |---|---|---|
 | **S6 — campione** | **TIENE** | 3000 e 800 campioni; semiampiezza dell'IC del p95 19,5 e 22,5 ms, tetto 25 |
-| **S1 — `D_rete(p95) <= 18 tick`** | **NON TIENE** | **23,3 tick** (B2) e **30,6 tick** (B1) |
-| **S2 — `D_rete(p95) <= 12 tick`** | **NON TIENE** | idem |
+| **S1 — `D_rete <= 18 tick`** | **NON TIENE** | **23,3 tick** (B2) e **30,6 tick** (B1) |
+| **S2 — `D_rete <= 12 tick`** | **NON TIENE** | idem |
+
+> **RETTIFICA A EDIZIONI (24 settembre 2026, voce #149).** Le due etichette
+> dicevano `D_rete(p95)`, e la quantita' confrontata e' `andata_p99 + 1 tick`
+> (la formula sta in chiaro al §1 di questo stesso referto, righe 26-27).
+> Con la lettura letterale **S1 terrebbe**: 13,2 tick su B1 e 6,3 su B2. Il
+> **NO regge lo stesso** perche' lo fa cadere S3, non S1.
 | **S3 — stallo, `D >= p99,83`** | **NON TIENE** | **30,4 tick** (B2) e **38,4 tick** (B1); e la scorciatoia della ridondanza e' **misurata invalida** (raffica 66,7% e 78,4% contro il 5% atteso) |
 | **S4 — trasporto** | **TIENE A META'** | esiste **un** trasporto senza servizio nuovo e senza dipendenze: **WebRTC con STUN**. Supabase Realtime **non esiste** (nessun progetto), e chiederebbe un `apikey` che oggi non ha dove stare |
 | **S5 — P2P >= 90% su mobile italiano** | **NON MISURATA** | da questa rete fissa la mappatura e' a cono e il P2P passa; sul CGNAT mobile italiano **e' l'ignoto** |

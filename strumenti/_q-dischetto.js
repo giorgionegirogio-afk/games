@@ -459,8 +459,40 @@ const mossaPari = (ruoloA, t) => (ruoloA === 't' ? mossaPara(t) : mossaTiro(t));
     }
 
     /* ======================================================== E) I FRENI */
+    /* =====================================================================
+       RETTIFICA A EDIZIONI (24 settembre 2026, voce #149). QUESTO GRUPPO
+       ATTESTAVA INVECE DI MISURARE, e la revisione d'insieme dell'onda E
+       l'ha preso.
+
+       COM'ERA. Il banco pedalava `battito()` a mano il piu' in fretta
+       possibile, contava le richieste, le divideva per i tiri e le
+       convertiva in «al minuto» moltiplicando per `DISCHETTO_SEC_TIRO =
+       10`. Ne usciva 5,8 per tiro, cioe' 34,5 al minuto contro un tetto
+       di 60, e il verbale scriveva «sta sotto il tetto».
+
+       PERCHE' ERA FALSO. `DISCHETTO_SEC_TIRO` nel gioco NON SCANDISCE
+       NIENTE: e' un numero che compare nello stato e basta. Il ritmo
+       della rete lo decide `Dischetto.ritmo()` — 900 ms, 2200 quando la
+       rete e' dichiarata lenta — e la guida che lo usa (`avviaGuida`)
+       parte dai due bottoni, non da `crea`/`entra`: nei banchi non ha
+       mai girato. Il numero verbalizzato era il ritmo del BANCO
+       travestito da ritmo del gioco.
+
+       COM'E' ADESSO. Il gioco si guida DA SOLO (`avviaGuida`, aperta al
+       banco dalla voce #149), il banco risponde solo quando la serie gli
+       chiede una mossa, e la punta si legge col metro giusto —
+       `puntaAlMinuto` della cassetta, la finestra scorrevole di sessanta
+       secondi piu' affollata per identita', che esisteva gia' e non
+       usava nessuno.
+
+       E LA PROVA NON E' PIU' «STA SOTTO IL TETTO», perche' non ci sta:
+       la domanda vera e' se il gioco SE NE ACCORGE. Un gioco che sfonda
+       il tetto in silenzio e' rotto; uno che prende 429, lo dichiara e
+       allarga il ritmo sta facendo quel che deve. E1 misura la punta e
+       pretende l'una o l'altra cosa.
+       ===================================================================== */
     if (vuole('E')) {
-      console.log('\nE) I FRENI — le richieste al minuto vere, contro il tetto di ' + T.FRENO_TETTO);
+      console.log('\nE) I FRENI — la punta vera al minuto, SULLA GUIDA DEL GIOCO, contro il tetto di ' + T.FRENO_TETTO);
       const ce = await T.serviCassetta();
       const A = await T.apri(browser, sg.porta); aperti.push(A);
       const B = await T.apri(browser, sg.porta); aperti.push(B);
@@ -468,36 +500,133 @@ const mossaPari = (ruoloA, t) => (ruoloA === 't' ? mossaPara(t) : mossaTiro(t));
       await T.entra(A); await T.entra(B);
       ce.azzeraConto();
 
-      const r = await d_crea(A);
-      await d_entra(B, r.stanza);
-      const t0 = Date.now();
-      const fine = await giocaSerie(A, B, 600);
-      const durata = (Date.now() - t0) / 1000;
+      const haGuida = await A.pag.evaluate(() =>
+        !!(window.__test.dischetto && typeof window.__test.dischetto.avviaGuida === 'function'));
+      if (!haGuida) {
+        di(false, 'E1) PROVA NON ESERCITATA: questo gioco non apre la guida al banco (voce #149)',
+           'senza avviaGuida/ritmo la punta al minuto non si puo\' misurare, si puo\' solo stimare');
+      } else {
+        /* LA FINESTRA DEVE ESSERE PIENA. `puntaAlMinuto` conta la finestra
+           scorrevole di sessanta secondi piu' affollata: su una corsa piu'
+           corta di un minuto restituirebbe il TOTALE, cioe' un numero piu'
+           piccolo del vero, e il banco direbbe «sta sotto il tetto» per non
+           aver guardato abbastanza a lungo. Percio' si gioca una serie dopo
+           l'altra finche' la finestra non e' piena. */
+        const FINESTRA = 70000;
+        const t0 = Date.now();
+        let serie = 0, finite = 0, ritmoMax = 0, ritmoMin = 1e9, lenta = false;
+        while (Date.now() - t0 < FINESTRA && serie < 8) {
+          serie++;
+          const rr = await d_crea(A);
+          await d_entra(B, rr.stanza);
+          await A.pag.evaluate(() => window.__test.dischetto.avviaGuida());
+          await B.pag.evaluate(() => window.__test.dischetto.avviaGuida());
+          let viva = true;
+          while (viva && Date.now() - t0 < FINESTRA) {
+            for (const P of [A, B]) {
+              const s = await d_stato(P);
+              if (s && s.fase === 'scegli') await d_scegli(P, s.ruolo === 't' ? mossaTiro(s.tiro) : mossaPara(s.tiro));
+              if (s && s.rete === 'lenta') lenta = true;
+            }
+            const rm = await A.pag.evaluate(() => window.__test.dischetto.ritmo());
+            if (rm > ritmoMax) ritmoMax = rm;
+            if (rm < ritmoMin) ritmoMin = rm;
+            const sa = await d_stato(A), sb = await d_stato(B);
+            if (sa.fase === 'fine' && sb.fase === 'fine') {
+              viva = false;
+              if (sa.causa === 'finita' && sb.causa === 'finita') finite++;
+            }
+            await A.pag.waitForTimeout(120);
+          }
+          await A.pag.evaluate(() => window.__test.dischetto.fermaGuida());
+          await B.pag.evaluate(() => window.__test.dischetto.fermaGuida());
+        }
+        const durata = (Date.now() - t0) / 1000;
+        const identita = [...new Set(ce.stato.richieste.map(x => x.chi))].filter(x => x && x !== '?');
+        const punte = identita.map(id => ce.puntaAlMinuto(id));
+        const punta = punte.length ? Math.max.apply(null, punte) : 0;
+        const rifiuti = ce.stato.richieste.filter(x => x.esito === 429).length;
+        const piena = durata >= 60;
 
-      /* IL BANCO NON ASPETTA: fa girare la rete il piu' in fretta
-         possibile, quindi il tempo vero e' piu' corto del tempo di una
-         serie giocata da due persone. Percio' il numero che conta non e'
-         "richieste al minuto misurate col cronometro di questo banco" —
-         sarebbe il ritmo del banco, non del gioco. Il numero onesto e'
-         RICHIESTE PER TIRO: quello non dipende da quanto in fretta il
-         banco pedala, e si converte nel tetto con la durata vera di un
-         tiro dichiarata dal gioco. */
-      const tiri = (await d_esiti(A)).length || 1;
-      const richA = ce.conta(null, 'imbuca') + ce.conta(null, 'ritira');
-      const perTiro = richA / tiri / 2;   /* per telefono */
-      const secPerTiro = fine.sa && fine.sa.secPerTiro ? fine.sa.secPerTiro : 10;
-      const alMinuto = perTiro * (60 / secPerTiro);
-      di(alMinuto <= T.FRENO_TETTO, 'E1) le richieste al minuto stanno sotto il tetto del freno',
-         perTiro.toFixed(1) + ' per tiro · ' + alMinuto.toFixed(1) + '/min contro ' + T.FRENO_TETTO +
-         '   (serie di ' + tiri + ' tiri in ' + durata.toFixed(1) + ' s di banco)');
+        const sano = punta <= T.FRENO_TETTO || (rifiuti > 0 && lenta && ritmoMax > ritmoMin);
+        di(piena && sano,
+           'E1) o la punta sta sotto il tetto, o il gioco SE NE ACCORGE e allarga il ritmo',
+           'punta ' + punta + '/min per identita\' (tetto ' + T.FRENO_TETTO + ') · punte ' +
+           JSON.stringify(punte) + ' · 429 presi ' + rifiuti + ' · rete lenta ' + (lenta ? 'SI' : 'no') +
+           ' · ritmo da ' + ritmoMin + ' a ' + ritmoMax + ' ms · ' + serie + ' serie in ' +
+           durata.toFixed(0) + ' s' + (piena ? '' : '   FINESTRA NON PIENA: la punta e\' sottostimata'));
+
+        /* =====================================================================
+           E1b — E ACCORGERSENE NON BASTA: QUANTE RICHIESTE PER BATTITO?
+
+           QUESTA PROVA E' NATA DA UN FALSO SCAPPATO, ed è il secondo caso di
+           questa casa in cui un banco dichiarava di saper prendere una bugia
+           e non la prendeva. Con la sola E1, `_crit-dischetto-sfrenato`
+           (sette ritiri per giro invece di uno) restava VERDE: il gioco
+           bugiardo sfonda il tetto, prende i 429, dichiara la rete lenta e
+           allarga il ritmo — fa tutto quel che E1 chiede — e continua a
+           chiedere sette volte tanto. «Se ne accorge» non è la proprietà che
+           protegge la bolletta.
+
+           E LA SECONDA STESURA L'HA PRESA MA ERA RUMOROSA, e va scritto
+           perché. Misurava le richieste al minuto DOPO il primo 429 con
+           l'orologio da muro: da sola dava 52,0/min (verde), dentro la
+           corsa dei falsi — sei gruppi in parallelo, macchina carica — la
+           stessa misura passava il tetto e il CONTROLLO POSITIVO diventava
+           rosso. Un cancello che cambia colore col carico non misura il
+           gioco: misura la macchina. Ed è esattamente l'errore che questo
+           cantiere sta curando altrove.
+
+           IL METRO CHE NON DIPENDE DAL CARICO E' RICHIESTE PER BATTITO. Il
+           battito è l'unità del protocollo (un `giro()`: un ritiro e gli
+           invii che ci stanno), il gioco lo conta da sé (`battiti`), e
+           quante richieste ne escono è una proprietà del PROTOCOLLO, non
+           dell'orologio. Le richieste al minuto si ricavano moltiplicando
+           per il ritmo che il gioco DICHIARA (`ritmo()`), non per una
+           costante scelta dal banco: al ritmo lento — quello in cui il
+           gioco entra dopo i 429, cioè il regime in cui vive quando il freno
+           morde — il conto deve stare sotto il tetto.
+
+           MISURATO sul gioco onesto (24 settembre 2026): 1,3 richieste per
+           battito, cioè ~35/min al ritmo lento di 2200 ms. Su
+           `_crit-dischetto-sfrenato`: sette ritiri per battito, cioè ~199/min
+           allo stesso ritmo. Fra i due non c'è carico che tenga. */
+        const battiti = (await A.pag.evaluate(() => window.__test.dischetto.battiti())) +
+                        (await B.pag.evaluate(() => window.__test.dischetto.battiti()));
+        const richTot = ce.stato.richieste.filter(x => x.chi && x.chi !== '?').length;
+        const perBattito = battiti > 0 ? richTot / battiti : 0;
+        const alMinutoLento = perBattito * (60000 / (ritmoMax || 2200));
+        /* LA SOGLIA E' TRE, E VIENE DAL PROTOCOLLO, NON DAL TETTO. Un
+           battito e' UN ritiro piu' gli invii che ci stanno, e gli invii che
+           un tiro puo' avere pendenti sono DUE (l'impegno e la
+           rivelazione): tre richieste e' il massimo che il protocollo
+           ammette per battito, e non e' un numero scelto guardando il
+           referto. Il gioco onesto misura 1,3-1,9; lo sfrenato, che ne
+           aggiunge sei di suo, sta sopra sette. Fra i due non c'e' carico
+           che tenga — ed e' il punto: il tetto al minuto lo si DICHIARA
+           accanto (al ritmo lento che il gioco stesso dichiara), perche'
+           quel numero dipende da quanti tiri cadono nella finestra e un
+           cancello non si appende a una cosa cosi'. */
+        di(battiti > 20 && perBattito > 0 && perBattito <= 3,
+           'E1b) e accorgersene non basta: un battito costa al massimo TRE richieste (un ritiro, due invii)',
+           perBattito.toFixed(2) + ' richieste per battito · ' + richTot + ' richieste in ' +
+           battiti + ' battiti · al ritmo lento di ' + (ritmoMax || 2200) + ' ms fanno ' +
+           alMinutoLento.toFixed(1) + '/min (tetto ' + T.FRENO_TETTO + ')' +
+           (battiti > 20 ? '' : '   PROVA NON ESERCITATA: troppi pochi battiti'));
+
+        di(finite > 0,
+           'E1c) e col freno acceso una serie arriva in fondo lo stesso (il danno d\'uso)',
+           finite + ' serie finite su ' + serie + ' cominciate');
+      }
 
       /* IL FRENO C'E' DAVVERO: una raffica deve prendere 429. Senza
          questa, E1 potrebbe essere verde perche' il freno non esiste. */
       const cred = await T.credenziali('http://127.0.0.1:' + ce.porta);
-      const raff = new T.PariFinto('http://127.0.0.1:' + ce.porta, cred, r.stanza, 'b', {});
-      const rifiuti = await raff.raffica(T.FRENO_TETTO + 20);
-      di(rifiuti > 0, 'E2) TESTIMONE — il freno morde: una raffica prende 429',
-         rifiuti + ' rifiuti su ' + (T.FRENO_TETTO + 20) + ' richieste');
+      const rst = await d_crea(A);
+      const raff = new T.PariFinto('http://127.0.0.1:' + ce.porta, cred, rst.stanza, 'b', {});
+      const rifiuti2 = await raff.raffica(T.FRENO_TETTO + 20);
+      di(rifiuti2 > 0, 'E2) TESTIMONE — il freno morde: una raffica prende 429',
+         rifiuti2 + ' rifiuti su ' + (T.FRENO_TETTO + 20) + ' richieste');
 
       for (const P of [A, B]) await P.ctx.close();
       aperti.length = aperti.length - 2;

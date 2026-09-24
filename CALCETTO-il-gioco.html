@@ -9235,6 +9235,12 @@ const rndDeco=(a,b)=>a+dadoDeco()*(b-a);
    A K = 0 QUESTO BLOCCO E' INERTE: nessuna coda, nessuna carica, nessun
    pixel diverso. E' la ragione per cui il gioco offline di oggi non si
    muove di un bit e MOTORE_V resta 4.
+
+   RETTIFICA A EDIZIONI (24 settembre 2026, voce #149). «MOTORE_V resta 4»
+   dice il vero DI QUESTA CURA e il falso del valore di oggi: il numero e'
+   salito tre volte dopo, e nessuna delle tre per colpa di questo blocco
+   (4 -> 5 al #148, 5 -> 6 al #149; prima, 2 -> 4 al #144). La frase va
+   letta come «questa cura non lo muove», che e' quel che voleva dire.
    ===================================================================== */
 /* quanto dura lo scarico dopo il colmo, in tick. Il fiato non si spegne
    di scatto: il piede si e' piantato, e il peso torna. */
@@ -44777,6 +44783,21 @@ function impaccaCarta(o){
   const rA = Array.isArray(o.rosaA) ? o.rosaA.slice(0,24) : [];
   const rD = Array.isArray(o.rosaD) ? o.rosaD.slice(0,24) : [];
   met((o.ver === undefined ? CARTA_VER : (o.ver|0)) & 15, 4);
+  /* =====================================================================
+     IL MOTORE NELLA CARTA STA IN QUATTRO BIT, E IL MARGINE E' UN NUMERO
+     (voce #149). Quattro bit arrivano a 15. MOTORE_V oggi vale 6, quindi
+     il margine e' NOVE — e i salti sono stati quattro in due giorni
+     (2 -> 4 al #144, 4 -> 5 al #148, 5 -> 6 al #149).
+
+     IL GIORNO IN CUI PASSASSE 15, & 15 TRONCHEREBBE IN SILENZIO: una
+     carta dichiarerebbe un motore che non e' il suo, e chi la leggesse
+     direbbe «altro-motore» a se' stesso senza capire perche'. Allargare
+     il campo oggi vorrebbe dire cambiare il formato della carta, cioe'
+     buttare le carte in giro: non si fa per un margine, si fa quando
+     serve. Quel che si fa oggi e' non lasciare che arrivi di sorpresa —
+     strumenti/_q-carta.js ha un cancello che diventa rosso PRIMA, a
+     MOTORE_V 15.
+     ===================================================================== */
   met((o.motore === undefined ? MOTORE_V : (o.motore|0)) & 15, 4);
   met(Math.max(0, [5,7,11].indexOf(o.taglia|0)) & 3, 2);
   met(o.seme >>> 0, 32);
@@ -47454,6 +47475,11 @@ ui.endTrofeo.innerHTML = icoSVG('trofeo',24)+' HAI VINTO IL TORNEO! '+icoSVG('tr
    fa niente: un confronto e un ritorno, zero sorteggi, zero rami nuovi
    nella fisica. MOTORE_V resta 2 apposta, e un banco lo verifica.
 
+   RETTIFICA A EDIZIONI (24 settembre 2026, voce #149): il 2 era il valore
+   del giorno del #141. Oggi MOTORE_V vale 6 — quattro salti in mezzo, e
+   nessuno per colpa di questa coda. Quel che resta vero, ed e' quel che
+   la riga voleva dire, e' che a K=0 questo blocco non muove un bit.
+
    L'AVVOLGIMENTO STA PIU' FUORI DEL REGISTRATORE, e l'ordine e' tutto:
 
        dito -> [questa coda] -> [registratore] -> Touch5 vero
@@ -48038,12 +48064,44 @@ const DISCHETTO_SEC_TIRO = 10;
 /* A mano perche' il gioco e' un file solo. crypto.subtle sarebbe piu'
    corta ma e' asincrona e su file:// non e' garantita, e questo gioco
    gira anche da file://. */
-const DS_K = (function(){
-  const k = [], p = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,107,109,113,127,131,
-             137,139,149,151,157,163,167,173,179,181,191,193,197,199,211,223,227,229,233,239,241,251,257,263,269,271,277,281,283,293,307,311];
-  for(let i=0;i<64;i++) k.push(Math.floor((Math.cbrt(p[i]) % 1) * 4294967296) >>> 0);
-  return k;
-})();
+/* =====================================================================
+   LE 64 COSTANTI K, SCRITTE E NON CALCOLATE (voce #149).
+
+   COM'ERA, E PERCHE' NON VA PIU' BENE. Fino a ieri questa tavola nasceva
+   da `Math.cbrt` sui primi 64 numeri primi:
+
+     for(let i=0;i<64;i++) k.push(Math.floor((Math.cbrt(p[i]) % 1) * 4294967296) >>> 0);
+
+   Elegante e sbagliato di posto. `Math.cbrt` era l'UNICA trascendente del
+   gioco fuori dalle sette che improntaMotore campiona (sin, cos, tan,
+   atan2, exp, log, hypot) e che _q-casa misura: margine fra i tre motori
+   6483 ulp. Oggi le 64 costanti escono identiche su tutti e tre — MISURATO
+   — ma la catena era `Math.cbrt -> DS_K -> dsSha256 -> dsImpegno ->
+   impegno-non-torna`, cioe' l'UNICA accusa di tutto il cantiere del
+   dischetto. Due telefoni con la stessa impronta sulle sette campionate e
+   un `cbrt` diverso si sarebbero accusati a vicenda di barare.
+
+   E LA CURA NON E' COPRIRE LA TRASCENDENTE, E' TOGLIERLA: queste non sono
+   un conto del gioco, sono una TAVOLA DELLO STANDARD (FIPS 180-4, i primi
+   32 bit della parte frazionaria della radice cubica dei primi 64 numeri
+   primi). Scriverle costa settecento byte e toglie una dipendenza dal
+   motore JavaScript da sotto l'unica accusa che il gioco sa fare.
+
+   LA RICETTA RESTA SCRITTA, cosi' chi vuole puo' rifarle:
+     Math.floor((Math.cbrt(primo) % 1) * 2**32) >>> 0
+   e strumenti/_q-sha256.js verifica il risultato contro la SHA-256 di
+   Node su 409 casi, i tre bordi di riempimento e un testimone.
+   ===================================================================== */
+const DS_K = [
+  0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+  0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+  0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+  0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+  0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+  0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+  0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+  0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2,
+];
 const DS_H0 = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
 
 function dsSha256(testo){
@@ -49001,6 +49059,21 @@ window.__test = {
       battito: () => Dischetto.battito(),
       ridipingi: () => Dischetto.ridipingi(),
       mostra: () => Dischetto.mostra(),
+      /* LA GUIDA VERA (voce #149). battito() a mano misura il
+         PROTOCOLLO; queste tre misurano il RITMO, che e' un'altra
+         domanda e vuole l'orologio del gioco invece di quello del
+         banco. avviaGuida parte dai due bottoni e non da crea/entra:
+         senza queste porte nessun banco l'ha mai vista girare, e le
+         richieste al minuto di _q-dischetto E1 erano il ritmo del banco
+         moltiplicato per una costante che non scandisce niente. */
+      avviaGuida: () => Dischetto.avviaGuida(),
+      fermaGuida: () => Dischetto.fermaGuida(),
+      ritmo: () => Dischetto.ritmo(),
+      /* quanti battiti sono stati dati da quando la pagina e' aperta. E' il
+         denominatore dell'unica misura del ritmo che non dipende dal carico
+         della macchina: RICHIESTE PER BATTITO. Le richieste al minuto si
+         ricavano da quella e da ritmo(), cioe' dall'orologio del gioco. */
+      battiti: () => Dischetto.battiti | 0,
     };
   },
   /* =====================================================================
@@ -49012,7 +49085,9 @@ window.__test = {
      una rete che non c'e' ancora) e al #145, dove il ritardo fisso D e'
      il cuore del lockstep.
      ritardo(0) lo spegne, e a ritardo spento il gioco e' identico al
-     bit a quello di prima: MOTORE_V resta 2.
+     bit a quello di prima (RETTIFICA A EDIZIONI, 24 settembre 2026, voce
+     #149: allora MOTORE_V valeva 2 e oggi vale 6 — l'identita' al bit
+     regge, il numero no).
      ritardoStato serve al banco per sapere se il ritardo e' davvero
      acceso invece di crederci — una coda che non accoda e' precisamente
      il falso che _q-ritardo-falsi.js e' fatto per condannare.

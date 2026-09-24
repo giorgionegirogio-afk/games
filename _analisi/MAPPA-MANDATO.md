@@ -809,3 +809,81 @@ da collocare dopo l'onda A (è contenuto di gioco della decomposizione
 originaria, come lo era #87) o quando il committente lo chiama; il suo
 progetto dovrà scavare `MINIERA-FCM.md` (scavi 4-5: comandi e gioco aereo)
 come da direttiva di casa.
+
+
+---
+
+## Rettifica del controllore (24 settembre 2026, voce #149)
+
+**QUESTA MAPPA NON È STATA TOCCATA DAL 18 SETTEMBRE, e registra ancora il
+live 1v1 come programma corrente dell'onda E.** Il testo qui sopra resta
+com'è: diceva il vero quando è stato scritto. Quel che segue è il seguito,
+scritto perché la revisione d'insieme dell'onda E ha trovato che la
+sostituzione era dichiarata onestamente **in una copia sola** (il progetto
+d'onda), e in nessuno dei posti dove si va a leggere.
+
+**CHE COSA IL COMMITTENTE AVEVA CHIESTO.** Il **live 1v1**, entrato in
+programma come **onda E** con la decisione del 17 settembre 2026, notte:
+«progetto d'architettura dedicato (**lockstep** prima; il **server
+autoritativo** solo se la misura dice che il lockstep non basta)». Nel
+vocabolario agli atti di questa casa «onda E» **significa** «live 1v1»
+(`_analisi/MAPPA-MANDATO.md`, decisioni del committente, punto 2).
+
+**CHE COSA HA RICEVUTO.** Una **sfida dal dischetto**: una serie di rigori a
+cinque tiri per parte, a turni, fra due telefoni che si passano messaggi
+attraverso una cassetta REST. Non è il live 1v1 in nessuna forma.
+
+**PERCHÉ.** Lo dice una misura, ed è il #145: `S1` e `S2` non tengono
+(D_rete 30,6 e 23,3 tick contro 18 e 12), `S3` non tiene (D_stallo 38,4 e
+30,4 tick, e la scorciatoia della ridondanza è misurata invalida perché la
+coda arriva a raffica), `S4` tiene a metà, `S5` non è misurata, `S6` tiene.
+**Il lockstep continuo a 60 Hz non è ammesso.** La terza via — il 1v1 a
+turni fatto di duelli — sta dentro l'architettura di oggi e la misura la
+favorisce. Lo scrive senza attenuanti il progetto d'onda
+(`docs/superpowers/specs/2026-09-23-onda-e-architettura.md` §5.4): «**Non è
+il gioco che il committente ha chiesto**; è il gioco che l'infrastruttura
+che abbiamo sa davvero consegnare se la misura dice no».
+
+**E QUELLA FRASE, FINO A OGGI, ESISTEVA IN UNA COPIA SOLA.** Non in
+`MANUALE.md`, non in `PUNTO-DEL-LAVORO.md`, non nei verbali #146, #147 e
+#148 — che invece dicono **tre volte «ONDA E CHIUSA»**. Questa rettifica la
+mette dove si legge.
+
+**L'ELENCO DI CIÒ CHE NON È STATO CONSEGNATO**, per intero e senza
+attenuanti:
+
+1. **Il live 1v1, in nessuna forma.** C'è una serie di rigori a cinque tiri.
+2. **Il lockstep**, né continuo né a D ridotta: **non una riga**.
+3. **Il server autoritativo** — l'alternativa che il committente aveva messo
+   lui sul tavolo — **scartato per ragionamento e costo, senza nessuna
+   misura su di esso**.
+4. **Il DataChannel non ordinato**, che il #145 chiama «l'unica via tecnica
+   che il NO lascia aperta» e che il #146 riclassifica come «latenza che la
+   misura dice che non serve».
+5. **Un server vero.** `calcetto-rete` risponde **503**, nessun progetto
+   Supabase esiste, e **la sfida dal dischetto non ha mai girato su nessuna
+   rete**: tutte le misure sono contro una cassetta finta in memoria. **Due
+   persone, oggi, non possono giocarla.**
+6. **La pubblicazione del nastro**: la classifica non si muove.
+7. **Le due misure che i cantieri stessi hanno dichiarato decisive**: **S5**
+   (P2P ≥ 90% su mobile italiano, «NON MISURATA») e la **SOGLIA-UMANA** del
+   #141 («**NON ESEGUITA — richiede il committente**»). L'onda è stata
+   dichiarata chiusa **tre volte** senza di loro.
+8. **Un collaudo umano del pannello**: il volto del #147 **non è mai stato
+   visto da un occhio umano** — questo limite stava scritto solo in
+   `PUNTO-DEL-LAVORO.md`, e non nel verbale del cantiere che l'ha costruito.
+
+**CHE COSA RESTA IN PIEDI, perché non è poco.** Il determinismo, il nastro e
+i suoi quindici tipi di riga, il giudice differito coi suoi cinque verdetti,
+la matematica scritta in casa del #143, il comando semantico del #142,
+l'astensione del #139, l'appuntamento del #144 e l'impegno in due tempi del
+#146: ogni pezzo serve anche al live 1v1, il giorno in cui una misura lo
+riaprisse. Il NO del #145 è sul **lockstep continuo a 60 Hz da rete fissa
+italiana**, non sull'idea.
+
+**LA DECISIONE NON È DI CHI SCRIVE.** Se il committente vuole il live 1v1,
+le strade misurate sono due e hanno un prezzo scritto: il **DataChannel non
+ordinato** (che chiede S5, cioè la misura mancante) e il **server
+autoritativo** (che chiede un host sempre acceso, una bolletta che non è
+più zero, e la revisione dell'intera postura «zero permessi, zero conti,
+nessuna chiave nell'HTML»). Nessuna delle due è stata provata.

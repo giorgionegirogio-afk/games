@@ -517,6 +517,74 @@ Qui il registro completo, a edizioni.
 
 ## A registro — ciò che resta, e in che stato
 
+- **LA DICHIARAZIONE AL COMMITTENTE — che cosa aveva chiesto, che cosa ha
+  ricevuto, e che cosa NON ha ricevuto** (scritta dalla voce #149, 24
+  settembre 2026, su rilievo della revisione d'insieme dell'onda E; sta in
+  cima perché è la cosa che chi apre questo registro deve leggere per prima,
+  e perché per tre cantieri non è stata scritta da nessuna parte).
+
+  **CHE COSA IL COMMITTENTE AVEVA CHIESTO.** Il **live 1v1**, entrato in
+  programma come **onda E** con la sua decisione del 17 settembre 2026:
+  «progetto d'architettura dedicato (**lockstep** prima; il **server
+  autoritativo** solo se la misura dice che il lockstep non basta)». Nel
+  vocabolario agli atti di questa casa «onda E» **significa** «live 1v1»
+  (`_analisi/MAPPA-MANDATO.md`, decisioni del committente, punto 2).
+
+  **CHE COSA HA RICEVUTO.** Una **sfida dal dischetto**: una serie di rigori a
+  cinque tiri per parte, a turni, fra due telefoni che si passano messaggi
+  attraverso una cassetta REST.
+
+  **PERCHÉ.** Lo dice una misura, ed è il **#145**: `S1` e `S2` non tengono
+  (D_rete 30,6 e 23,3 tick contro 18 e 12), `S3` non tiene (D_stallo 38,4 e
+  30,4 tick, e la scorciatoia della ridondanza è misurata invalida perché la
+  coda arriva a raffica), `S4` tiene a metà, `S5` **non è misurata**, `S6`
+  tiene. Il lockstep continuo a 60 Hz **non è ammesso**. Lo scrive senza
+  attenuanti il progetto d'onda
+  (`docs/superpowers/specs/2026-09-23-onda-e-architettura.md` §5.4): «**Non è
+  il gioco che il committente ha chiesto**; è il gioco che l'infrastruttura
+  che abbiamo sa davvero consegnare se la misura dice no».
+
+  **E QUELLA FRASE, FINO A OGGI, ESISTEVA IN UNA COPIA SOLA.** Non qui, non in
+  `PUNTO-DEL-LAVORO.md`, non nei verbali #146, #147 e #148 — che invece dicono
+  **tre volte «ONDA E CHIUSA»**.
+
+  **L'ELENCO DI CIÒ CHE NON È STATO CONSEGNATO**, per intero:
+
+  1. **Il live 1v1, in nessuna forma.** C'è una serie di rigori a cinque tiri.
+  2. **Il lockstep**, né continuo né a D ridotta: **non una riga**.
+  3. **Il server autoritativo** — l'alternativa che il committente aveva messo
+     lui sul tavolo — **scartato per ragionamento e costo, senza nessuna
+     misura su di esso**.
+  4. **Il DataChannel non ordinato**, che il #145 chiama «l'unica via tecnica
+     che il NO lascia aperta» e che il #146 riclassifica come «latenza che la
+     misura dice che non serve».
+  5. **Un server vero.** `calcetto-rete` risponde **503**, nessun progetto
+     Supabase esiste, e **la sfida dal dischetto non ha mai girato su nessuna
+     rete**: ogni misura è contro una cassetta finta in memoria. **Due persone,
+     oggi, non possono giocarla.**
+  6. **La pubblicazione del nastro**: la classifica non si muove.
+  7. **Le due misure che i cantieri stessi hanno dichiarato decisive**: **S5**
+     (P2P ≥ 90% su mobile italiano, «NON MISURATA») e la **SOGLIA-UMANA** del
+     #141 («**NON ESEGUITA — richiede il committente**»). L'onda è stata
+     dichiarata chiusa **tre volte** senza di loro.
+  8. **Un collaudo umano del pannello**: il volto del #147 **non è mai stato
+     visto da un occhio umano**.
+
+  **CHE COSA RESTA IN PIEDI, perché non è poco.** Il determinismo, il nastro e
+  i suoi quindici tipi di riga, il giudice differito coi suoi cinque verdetti,
+  la matematica scritta in casa del #143, il comando semantico del #142,
+  l'astensione del #139, l'appuntamento del #144 e l'impegno in due tempi del
+  #146: ogni pezzo serve anche al live 1v1, il giorno in cui una misura lo
+  riaprisse. Il NO del #145 è sul **lockstep continuo a 60 Hz da rete fissa
+  italiana**, non sull'idea.
+
+  **LA DECISIONE NON È DI CHI SCRIVE.** Se il committente vuole il live 1v1, le
+  strade misurate sono due e hanno un prezzo scritto: il **DataChannel non
+  ordinato** (che chiede S5, cioè la misura mancante) e il **server
+  autoritativo** (che chiede un host sempre acceso, una bolletta che non è più
+  zero, e la revisione dell'intera postura «zero permessi, zero conti, nessuna
+  chiave nell'HTML»). **Nessuna delle due è stata provata.**
+
 - **IL NASTRO DEL DISCHETTO SI PUÒ CONFERMARE — #148 CANTIERE CHIUSO, e con
   lui l'ONDA E per davvero** (voce #148, 24 settembre 2026, quattro compiti
   dal merge-base `01265bc` — spec
@@ -634,6 +702,14 @@ Qui il registro completo, a edizioni.
   **12 su 12**. Giudica su una **terza pagina pulita**, che è quel che fa la
   staffetta.
 
+  > **RETTIFICA A EDIZIONI (24 settembre 2026, voce #149).** Le prove erano
+  > **13**, non 12: sette nel gruppo A, quattro in B, due in C — e
+  > `PUNTO-DEL-LAVORO.md` scriveva 13 mentre questo registro scriveva 12, per
+  > un giorno intero. **Dal #149 sono 17**: il gruppo B ne ha quattro in più
+  > (B5..B8, i quattro modi di accusare due persone oneste che la revisione
+  > d'insieme ha misurato). Nate **13 su 17** sul merge-base `b87f512`, cioè
+  > quattro rosse; sul curato **17 su 17**.
+
   `strumenti/_q-nastro-falsi.js`, **7 su 7 morsi come dichiarato**, e ogni
   falso ha una firma diversa: `possesso` → A3+A6 (A1 verde), `scambiate` →
   **solo A6** (A1 e A3 verdi: la bugia è coerente e nessun confronto fra i
@@ -727,6 +803,27 @@ Qui il registro completo, a edizioni.
   per statuto: chiuderlo vuol dire firmare, e firmare vuole una chiave.
   Restano **S5** (WebRTC sul CGNAT mobile) e il **backend vero a 503**.
 
+  > **RETTIFICA A EDIZIONI (24 settembre 2026, voce #149), e sono tre cose.**
+  >
+  > **(1) Il residuo non restava per statuto: restava perché era stato
+  > guardato da un lato solo.** Il nastro di una serie è fatto di comandi di
+  > duello, e novanta secondi di calcio non ne raccolgono nemmeno uno: 12
+  > avanzati su 12, misurato (`strumenti/_sonda-149-duelli.js`). Curato dal
+  > #149 senza nessuna firma e senza nessuna chiave
+  > (`INCOMPLETO/duelli-mai-letti`). E finché è restato aperto **non era
+  > un'astensione ma un'accusa**: NON TORNA a due persone oneste.
+  >
+  > **(2) IL SERVER DELLA CASSETTA È FINTO, e questa §(h) non lo diceva** —
+  > lo diceva il #146 e poi è sparito. Tutte le misure di questo cantiere e di
+  > quelli del dischetto girano contro una **cassetta in memoria scritta in
+  > Node** (`strumenti/_dischetto-due-telefoni.js`): `calcetto-rete` risponde
+  > **503 `DEPLOYMENT_PAUSED`** e **nessun progetto Supabase esiste**. **La
+  > sfida dal dischetto non ha mai girato su nessuna rete vera, e due persone
+  > oggi non possono giocarla.**
+  >
+  > **(3) «con lui l'ONDA E per davvero» va letto con la dichiarazione al
+  > committente in testa a questo registro**: l'onda E doveva essere il live
+  > 1v1, e quel che è stato consegnato è una serie di rigori.
 - **IL VOLTO — #147 CANTIERE CHIUSO, e con lui l'ONDA E** (voce #147, 24
   settembre 2026, cinque compiti dal merge-base `999fbf8` — spec
   `docs/superpowers/specs/2026-09-24-il-volto-design.md`, piano
@@ -738,6 +835,16 @@ Qui il registro completo, a edizioni.
   vede»). Questo cantiere chiude quella riga, mette in scena il ritardo, e
   cura — restringendolo, non chiudendolo — il buco di verifica differita.
 
+  > **LIMITE DICHIARATO, RIMESSO DOVE SI LEGGE (rettifica a edizioni, 24
+  > settembre 2026, voce #149).** **Questo pannello non è mai stato visto da
+  > un occhio umano.** È stato disegnato, misurato al pixel da due cancelli e
+  > guidato da un banco a due telefoni; nessuna persona l'ha aperto, letto e
+  > usato. Il limite stava scritto **solo** in `PUNTO-DEL-LAVORO.md`, e non
+  > nel verbale del cantiere che l'ha costruito: chi leggesse solo il registro
+  > crederebbe il contrario. Un pannello che nessuno ha guardato può essere
+  > corretto al pixel e illeggibile — e il #141 aveva già una soglia apposta
+  > per questo, la **SOGLIA-UMANA**, dichiarata «NON ESEGUITA — richiede il
+  > committente» e mai più nominata da nessun cantiere.
   ### (a) LA PIEGA, che è il vincolo che ha comandato il cantiere
 
   La schermata SFIDA è misurata a due formati (`_q-sigillo` B3, `_q-carta`
@@ -914,6 +1021,31 @@ Qui il registro completo, a edizioni.
   ragione è strutturale: chiuderlo vorrebbe dire **firmare** la 15, una
   firma vuole una chiave, e in questo gioco non c'è nessuna chiave — per
   statuto (`rete/LEGGIMI.md:181-183`), non per dimenticanza.
+
+  > **RETTIFICA A EDIZIONI (24 settembre 2026, voce #149). QUESTO PARAGRAFO È
+  > FALSO IN DUE PUNTI, ed è stato misurato.**
+  >
+  > **(1) «nessun innocente viene accusato» non è vero.** La revisione
+  > d'insieme dell'onda E ha giudicato il nastro di una serie **onesta** (2-1,
+  > seme 1561173679, 1068 caratteri) togliendo **solo la riga 15** e lasciando
+  > le 14: **NON TORNA**, rigiocato [1,3] in **7839 passi**, cioè novanta
+  > secondi di calcio al posto di una serie. Rimisurato in modo indipendente
+  > dal banco del #149 su un'altra serie onesta (2-1, 1069 caratteri): **NON
+  > TORNA**, rigiocato [0,1] in **5984 passi**. La guardia del #147 era **a
+  > senso unico** — pretendeva «la 15 vuole le 14» e mai «le 14 vogliono la
+  > 15» — e il verdetto che ne usciva toglieva punti a **due** persone.
+  > Curato dal #149 (`INCOMPLETO/dischetto-assente`).
+  >
+  > **(2) «indistinguibile da una partita normale» era vero per
+  > IDENTIFICARE la serie e falso per ASTENERSI.** Il nastro di una serie è
+  > fatto di **comandi di duello** (tipo 6) e nient'altro: novanta secondi di
+  > calcio non ne raccolgono **nemmeno uno**. Misurato
+  > (`strumenti/_sonda-149-duelli.js`): il residuo lascia **12 comandi
+  > avanzati su 12**, un nastro onesto ne lascia **0**. Non serviva nessuna
+  > firma e nessuna chiave: bastava guardare il cursore dei duelli. Curato dal
+  > #149 (`INCOMPLETO/duelli-mai-letti`), e il verdetto giusto era
+  > un'astensione, non un'accusa. **Il residuo del #147 non era inchiudibile:
+  > era stato guardato da un lato solo.**
 
   ### (f) `MOTORE_V`, misurato nei due versi — e un criterio rettificato
 
@@ -1171,6 +1303,20 @@ Qui il registro completo, a edizioni.
   bordi di riempimento (55, 56, 64 byte) e il testo con accenti, che è dove le
   implementazioni scritte a mano sbagliano: **identiche tutte e 409**.
 
+  > **RETTIFICA A EDIZIONI (24 settembre 2026, voce #149).** Quei 409 casi
+  > **non avevano nessuno strumento che li producesse**: «409» non compariva
+  > in `strumenti/`, né in `rete/`, né nel piano, né nella spec. Il confronto
+  > era stato fatto **una volta, a mano**, e il numero era finito a verbale
+  > senza un banco che lo rifacesse — mentre la funzione regge `dsImpegno`,
+  > cioè l'unica accusa di tutto il cantiere del dischetto. La regola di casa
+  > è «o si scrive il banco, o si ritira il numero»: **il banco adesso c'è**
+  > (`strumenti/_q-sha256.js`, in batteria come `sha256`, `conta:true`,
+  > deterministico e veloce). I 409 casi sono ricostruiti e dichiarati: 256
+  > lunghezze da 0 a 255 byte (dentro ci sono i tre bordi), 128 stringhe da un
+  > generatore seminato, 25 casi scomodi (accenti, emoji fuori dal piano base,
+  > forme vere del protocollo). Col testimone: un carattere in più deve
+  > cambiare il digest, e cambiarlo **come lo cambia Node**.
+
   **Che cosa succede se uno bara — misurato, non ragionato:**
 
   | tentativo | esito misurato |
@@ -1196,6 +1342,37 @@ Qui il registro completo, a edizioni.
   di 80 richieste ne prende **20 rifiutate con 429**, quindi il freno morde
   davvero — senza quella prova, «sta sotto il tetto» potrebbe essere vero
   perché il freno non esiste.
+
+  > **RETTIFICA A EDIZIONI (24 settembre 2026, voce #149). «34,5 al minuto
+  > contro un tetto di 60» È FALSO, e lo era per come il numero veniva
+  > ottenuto.** Il cancello E1 pedalava `battito()` a mano il più in fretta
+  > possibile e convertiva «richieste per tiro» in «al minuto» moltiplicando
+  > per `DISCHETTO_SEC_TIRO = 10` — **una costante che nel gioco non
+  > scandisce niente**. Il ritmo della rete lo decide `Dischetto.ritmo()`
+  > (900 ms, 2200 quando la rete è dichiarata lenta), e la guida che lo usa
+  > partiva dai due bottoni, non da `crea`/`entra`: **nei banchi non aveva
+  > mai girato**. Quel 34,5 era il ritmo del banco travestito da ritmo del
+  > gioco.
+  >
+  > **RIMISURATO** col gioco che si guida da solo (`avviaGuida`, aperta al
+  > banco dal #149) e col metro giusto (`puntaAlMinuto`, la finestra
+  > scorrevole di 60 s più affollata per identità, che esisteva già e non
+  > usava nessuno), su 70 s di orologio e quattro serie:
+  > **la punta è 76 e 75 richieste/min per identità, contro un tetto di 60.**
+  > (La revisione d'insieme, che l'aveva trovato per prima, aveva misurato
+  > 76-77.)
+  >
+  > **IL DANNO D'USO RESTA NULLO, e anche questo è misurato**: il gioco prende
+  > i 429 (26 nella corsa), dichiara la rete **lenta**, allarga il ritmo da
+  > **900 a 2200 ms**, e **dal primo 429 in poi il ritmo rientra a 52,0
+  > richieste/min, sotto il tetto**; tre serie su quattro arrivano in fondo
+  > col freno acceso. **Ma la frase «sta sotto il tetto» era falsa**, e con
+  > lei le altre due dello stesso paragrafo (le 5,8 per tiro e la conversione
+  > con `DISCHETTO_SEC_TIRO`). Il cancello adesso misura la punta vera e
+  > pretende il **rientro** — ed è stato un falso a insegnarglielo:
+  > `_crit-dischetto-sfrenato` (sette ritiri per giro) **se ne accorge**
+  > benissimo e continua a chiedere sette volte tanto, quindi «accorgersene»
+  > non era la proprietà da pretendere.
 
   ### (f) `MOTORE_V` RESTA 4, E LO DICE UNA MISURA
 
@@ -1295,6 +1472,14 @@ Qui il registro completo, a edizioni.
 
   ### (j) CHE COSA RESTA DA FARE, in chiaro
 
+  > **RETTIFICA A EDIZIONI (24 settembre 2026, voce #149).** Questo elenco è
+  > **superato in due voci su tre**, e fino a oggi nessuna riga lo diceva: la
+  > revisione d'insieme dell'onda E ha trovato che `PUNTO-DEL-LAVORO.md`
+  > rettificava correttamente le stesse due cose mentre **il registro — cioè
+  > la fonte — non le rettificava affatto** (zero occorrenze di «RETTIFICA» in
+  > tutta la voce #146). Le due voci superate sono segnate qui sotto una per
+  > una. **Resta vera** solo la terza, S5.
+
   - **Il pannello sullo schermo.** La sfida dal dischetto oggi si guida da
     `window.__test.dischetto` e dal motore; **i due bottoni CREA/ENTRA accanto a
     SFIDA DI CARTA non sono stati disegnati.** Il cancello F misura già che
@@ -1307,11 +1492,32 @@ Qui il registro completo, a edizioni.
     (329) né il primo GUARDA (308). **Una `voce` in più sposta il taglio**, cioè
     è un cantiere di disposizione con i suoi due cancelli, non una riga di HTML
     da aggiungere in coda a questo.
+
+    > **SUPERATA (24 settembre 2026, voce #147, rettificata qui dal #149).** I
+    > bottoni **ci sono**: dalla schermata SFIDA si crea una sfida dal
+    > dischetto, si entra col codice, si gioca e si finisce col dito. E il
+    > cantiere di disposizione è stato fatto davvero: la piega **non si è
+    > mossa di un pixel su quattro bersagli** (CERCA 220→220, prima riga
+    > 329→329, GUARDA 308→308, CARTA 347→347) e **si è mossa di +56 px su
+    > due** (TORNA AL MENU 418→474, fine scorribile 466→522), perché la voce
+    > nuova sta a 403. Fonti: `strumenti/_q-volto.js`,
+    > `strumenti/_sonda-147-piega.js`.
   - **Il giudice non pretende ancora le testimonianze.** `vagliaNastro` non ha
     un ramo per il tipo 14: un nastro a cui le righe 14 fossero state *tolte*
     verrebbe giudicato come una partita normale. Il punteggio rigiocherebbe
     comunque giusto (i comandi sono le righe di tipo 6), quindi **nessun
     innocente viene accusato**; ma la prova di lealtà non verrebbe rifatta.
+
+    > **SUPERATA DUE VOLTE (24 settembre 2026, voci #147 e #149).** (a) Il
+    > ramo per il tipo 14 **c'è** dal #147 — e il buco era più grande di come
+    > è scritto qui: le righe 14 **non arrivavano nemmeno nel nastro**, perché
+    > `serializza` non aveva un ramo per quel tipo (misurato,
+    > `strumenti/_sonda-147-quattordici.js`). (b) **«nessun innocente viene
+    > accusato» è FALSO**, e l'ha misurato la revisione d'insieme dell'onda E:
+    > un nastro di una serie **onesta** a cui si tolga la sola riga 15 prende
+    > **NON TORNA** (rigiocato [1,3] in 7839 passi; rimisurato dal #149 su
+    > un'altra serie: [0,1] in 5984 passi). La frase gemella sta a `:910-916`
+    > ed è rettificata lì con gli stessi numeri. Curato dal #149.
   - **S5**, e la misura a due telefoni veri del #145 §5.2.
 
 
@@ -1505,8 +1711,21 @@ Qui il registro completo, a edizioni.
   | soglia | esito | il numero |
   |---|---|---|
   | **S6 — campione** | **TIENE** | 3000 e 800 campioni, semiampiezza IC del p95 19,5 e 22,5 ms (tetto 25) |
-  | **S1 — `D_rete(p95) ≤ 18 tick`** | **NON TIENE** | **23,3** e **30,6 tick** |
-  | **S2 — `D_rete(p95) ≤ 12 tick`** | **NON TIENE** | idem |
+  | **S1 — `D_rete ≤ 18 tick`** | **NON TIENE** | **23,3** e **30,6 tick** |
+  | **S2 — `D_rete ≤ 12 tick`** | **NON TIENE** | idem |
+
+  > **RETTIFICA A EDIZIONI (24 settembre 2026, voce #149).** Le due righe qui
+  > sopra portavano l'etichetta **`D_rete(p95)`**, e la quantità confrontata
+  > **non è il p95**: `D_rete = andata_p95 + (p99 − p95) + 1 tick`, cioè
+  > **`andata_p99 + 1 tick`** (la formula sta in chiaro nel referto,
+  > `_analisi/MISURA-RETE-145.md:26-27`, e nel codice di
+  > `strumenti/_145-metro-rete.js`). **Non è pedanteria: con la lettura
+  > letterale S1 TERREBBE** — 203 ms + 1 tick = **13,2 tick** su B1 e 88 ms
+  > + 1 tick = **6,3 tick** su B2, tutti e due sotto i 18. **Il NO del #145
+  > regge lo stesso**, perché a farlo cadere è S3 (lo stallo, 30,4 e 38,4
+  > tick contro 18) — ma il verbale faceva credere che a sfondare fosse il
+  > p95, e non è vero. L'etichetta è corretta qui, nel referto e nello
+  > strumento.
   | **S3 — stallo, `D ≥ p99,83`** | **NON TIENE** | **30,4** e **38,4 tick**, e la scorciatoia della ridondanza è **misurata invalida** |
   | **S4 — trasporto** | **TIENE A METÀ** | esiste **WebRTC con STUN**; Supabase Realtime **non esiste** e chiederebbe una chiave che non ha dove stare |
   | **S5 — P2P ≥ 90% su mobile italiano** | **NON MISURATA** | da rete fissa passa; sul CGNAT mobile è l'ignoto |
@@ -2145,6 +2364,42 @@ Qui il registro completo, a edizioni.
   un informativo il cui riferimento registrato era a sua volta una prova nulla,
   cioè nessuna quota da confrontare.
 
+  > **RETTIFICA A EDIZIONI (24 settembre 2026, voce #149). QUESTA CONCLUSIONE
+  > È ROVESCIATA, E LO ROVESCIA IL SUO STESSO NUMERO.** «45 su 56 prima, 42 su
+  > 56 dopo» non è la prova che *non* è il #143: è **la prova che è il #143**,
+  > e sono **tre quote perse**. La frase le ha lette come «rosso prima, rosso
+  > anche dopo, quindi non è mio», ma il cancello non dà un rosso e basta: dà
+  > un **conteggio**, e il conteggio è sceso di tre nel cantiere che stava
+  > misurando sé stesso.
+  >
+  > **RIMISURATO IL 24 SETTEMBRE 2026, tre versioni, stesso seme (20260728),
+  > stessa macchina, stesso strumento** (`strumenti/istantanea.js --gioco`):
+  >
+  > | versione | quote | ombre | terzo centrale abitato |
+  > |---|---|---|---|
+  > | `a2607d0` (merge-base del #143, cioè PRIMA) | **45 / 56** | 7 / 8 | 6 / 8 |
+  > | `b87f512` (`main` di oggi) | **42 / 56** | 5 / 8 | 5 / 8 |
+  > | il gioco del #149 | **42 / 56** | 5 / 8 | 5 / 8 |
+  >
+  > **Le tre quote perse sono due di OMBRE e una di TERZO CENTRALE ABITATO**, e
+  > le altre cinque famiglie (erba, palla, figura, prato, centro sera) non si
+  > muovono di una quota. **Non sono mai tornate**: da `a2607d0` a oggi il
+  > numero è fermo a 42, e il #149 — che non tocca un pixel — lo lascia
+  > esattamente lì.
+  >
+  > **E IL DANNO NON È SOLO DI TRE QUOTE.** Da quella frase in poi **42/56 è
+  > diventata la base**, e il #145, il #147 e il #148 hanno archiviato lo
+  > stesso rosso come «identico al merge-base» senza che nessuno riaprisse il
+  > conto. **Un numero letto al contrario una volta diventa il riferimento di
+  > tutti quelli dopo**: è la ragione per cui una quota che scende si
+  > attribuisce subito, anche quando il cancello non conta.
+  >
+  > **Che cosa NON dice questa rettifica**: non dice *quale* riga del #143 ha
+  > perso le tre quote. Dice che il confronto che il #143 ha fatto — `a2607d0`
+  > contro il proprio curato — è il confronto giusto, e che il suo esito è
+  > l'opposto di quello scritto. Trovare la riga è un cantiere di grafica, non
+  > di aritmetica.
+
   **IN BATTERIA DA OGGI**: `motori` passa a **`conta:true`** — la riga che lo
   teneva informativo diceva «finché il guasto non ha un cantiere», e il cantiere
   c'è stato — più tre cancelli nuovi, `casa`, `perimetro` e `casa-falsi`, tutti
@@ -2596,8 +2851,11 @@ Qui il registro completo, a edizioni.
   **CHE COSA CAMBIEREBBE SE L'UOMO DICESSE NO** sta scritto nel protocollo
   §6: cadrebbe la SOGLIA-D e con essa il margine, e resterebbero tre strade
   in quest'ordine — D più piccola (solo se il #143 misura una rete che la
-  regge), **il 1v1 a turni** del progetto d'onda §5.3 (che sta dentro
-  l'architettura di oggi), e il server autoritativo col prezzo scritto in
+  regge), **il 1v1 a turni** del progetto d'onda **§5.4** (rettifica a
+  edizioni, 24 settembre 2026, voce #149: il puntatore diceva §5.3, che è
+  «che cosa sopravvive a un NO»; la terza via sta al §5.4, ed è lì che sta
+  anche la frase «non è il gioco che il committente ha chiesto») (che sta
+  dentro l'architettura di oggi), e il server autoritativo col prezzo scritto in
   chiaro. **Nessuna delle tre butterebbe il lavoro già fatto.**
 
   ---

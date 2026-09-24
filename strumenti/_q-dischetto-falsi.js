@@ -33,7 +33,16 @@
                  strategia. Lascia la CAUSA giusta e cambia solo
                  l'esito, apposta: un banco che guardasse la parola e
                  non i punti lo promuoverebbe.                -> G5
-     sfrenato    ritira senza pausa: sfonda il freno.         -> E1
+     sfrenato    ritira senza pausa: sfonda il freno.         -> E1b
+                 RETTIFICA A EDIZIONI (24 settembre 2026, voce #149):
+                 era «-> E1», ed E1 non lo mordeva piu'. Il gruppo E e'
+                 stato rifatto perche' attestava (moltiplicava le
+                 richieste per una costante che nel gioco non scandisce
+                 niente), e nella prima stesura nuova chiedeva solo che
+                 il gioco SI ACCORGESSE di sfondare: lo sfrenato se ne
+                 accorge benissimo e continua a chiedere sette volte
+                 tanto. La prova che lo prende e' E1b, che pretende il
+                 RIENTRO sotto il tetto dopo il primo 429.
      cieco       parla alla rete appena si apre il pannello.  -> F1
 
    IL CONTROLLO POSITIVO, che e' la meta' che manca a quasi tutti i
@@ -68,7 +77,7 @@ const FALSI = [
   { nome: 'semesuo',   toppa: '_crit-dischetto-semesuo.js',   morde: ['A3'] },
   { nome: 'fidato',    toppa: '_crit-dischetto-fidato.js',    morde: ['C6'] },
   { nome: 'vincitore', toppa: '_crit-dischetto-vincitore.js', morde: ['G5'] },
-  { nome: 'sfrenato',  toppa: '_crit-dischetto-sfrenato.js',  morde: ['E1'] },
+  { nome: 'sfrenato',  toppa: '_crit-dischetto-sfrenato.js',  morde: ['E1b'] },
   { nome: 'cieco',     toppa: '_crit-dischetto-cieco.js',     morde: ['F1'] },
 ];
 

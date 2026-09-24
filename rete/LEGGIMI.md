@@ -266,7 +266,14 @@ Con le funzioni davanti, ogni scrittura passa da codice che possiamo leggere,
 provare e misurare. La superficie esposta è di cinque endpoint, non di dodici
 tabelle.
 
-## I cinque endpoint
+> **RETTIFICA A EDIZIONI (24 settembre 2026, voce #149).** Gli endpoint sono
+> **SEI** dal #146: la cassetta del dischetto (`/api/dischetto`) è il sesto, e
+> questa pagina non l'aveva mai nominata. `_q-sospetto` D8 — la guardia che
+> congela la superficie — era già stata rettificata a sei il 24 settembre; qui
+> no, e per un giorno le due fonti si sono contraddette. Il testo qui sopra
+> resta com'era scritto: dice il vero di quando è stato scritto.
+
+## I sei endpoint
 
 | endpoint | fa |
 |---|---|
@@ -275,6 +282,7 @@ tabelle.
 | `GET /api/avversario` | ti dà una squadra vicina di forza da attaccare |
 | `POST /api/sfida` | manda esito + replay, il server valida e assegna i punti |
 | `GET /api/classifica` | i primi cento, più la tua posizione |
+| `POST`/`GET` **`/api/dischetto`** | la **cassetta** della sfida dal dischetto (voce #146): imbuca un messaggio del protocollo e ritira quelli nuovi. Scrittura sola una volta per `(stanza, tiro, lato, tipo)` — lo fa il vincolo di unicità del database, non un `if` —, freno `dis:<id>` a 60 al minuto come gli altri, nessun privilegio |
 
 Ognuno è un file in `api/`, con in testa il commento che dice perché esiste e
 che cosa rifiuta.

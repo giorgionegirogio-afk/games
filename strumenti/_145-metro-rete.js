@@ -371,13 +371,21 @@ function giudica(r) {
   }
   if (nulla) return { esito: 'PROVA-NULLA', righe, causa: nulla };
 
+  /* L'ETICHETTA DICE LA QUANTITA' CHE SI CONFRONTA (voce #149). Fino a
+     ieri diceva «D_rete(p95)», e la quantita' confrontata e' invece
+     `andata_p99 + 1 tick` (vedi il calcolo di D_rete_ms qui sopra: p95 +
+     (p99 - p95) + un tick). Non e' pedanteria: con la lettura LETTERALE
+     dell'etichetta S1 TERREBBE — 13,2 tick su B1 e 6,3 su B2 — e il NO
+     del #145 sembrerebbe venire dal p95 quando viene dalla coda. Il NO
+     regge lo stesso perche' S3 fallisce, ma il verbale faceva credere
+     una cosa per un'altra. */
   const s1 = r.D_rete_tick <= SOGLIE.S1_RETE_TICK;
-  di('S1 — D_rete(p95) <= ' + SOGLIE.S1_RETE_TICK + ' tick (300 ms)',
+  di('S1 — D_rete (= andata p99 + 1 tick) <= ' + SOGLIE.S1_RETE_TICK + ' tick (300 ms)',
      s1 ? 'TIENE' : 'NON TIENE',
      'D_rete = ' + r.D_rete_ms.toFixed(1) + ' ms = ' + r.D_rete_tick.toFixed(1) + ' tick');
 
   const s2 = r.D_rete_tick <= SOGLIE.S2_MARGINE_TICK;
-  di('S2 — D_rete(p95) <= ' + SOGLIE.S2_MARGINE_TICK + ' tick (200 ms)',
+  di('S2 — D_rete (= andata p99 + 1 tick) <= ' + SOGLIE.S2_MARGINE_TICK + ' tick (200 ms)',
      s2 ? 'TIENE' : 'NON TIENE',
      'D_rete = ' + r.D_rete_tick.toFixed(1) + ' tick');
 

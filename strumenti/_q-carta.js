@@ -259,6 +259,34 @@ async function gruppoA(browser, porta) {
        'trasferimento letto come sfida -> ' + r.trasfComeSfida +
        ' · la sfida contiene punti: ' + r.sfidaHaPunti +
        ' · accettaTrasferimento(sfida) -> ' + r.sfidaComeTrasferimento.accettato);
+
+    /* =====================================================================
+       A6 — IL MOTORE STA IN QUATTRO BIT, E IL MARGINE VA SORVEGLIATO
+       (voce #149, rilievo minore della revisione d'insieme dell'onda E).
+
+       `impaccaCarta` e `impaccaEsito` scrivono il motore con `& 15`, cioe'
+       in quattro bit: sopra 15 il numero si TRONCA IN SILENZIO e la carta
+       dichiara un motore che non e' il suo. Chi la legge trova
+       «altro-motore» e non ha modo di capire perche'.
+
+       QUESTO CANCELLO DIVENTA ROSSO PRIMA, non dopo: a MOTORE_V 15 dice
+       che il campo e' pieno, e a 16 sarebbe gia' tardi. Il numero e'
+       salito quattro volte in due giorni (2 -> 4 al #144, 4 -> 5 al #148,
+       5 -> 6 al #149), quindi non e' un margine teorico.
+
+       SI LEGGE DAL FILE, non dalla pagina: e' la costante del gioco in
+       prova, non la versione scritta in un nastro — sono due numeri
+       diversi con lo stesso nome, ed e' la trappola che
+       `_t-143-motorev.js` ha gia' pagato. */
+    const mvFile = (() => {
+      const f = provaRel ? path.resolve(RADICE, provaRel) : path.join(RADICE, 'CALCETTO-il-gioco.html');
+      const m = fs.readFileSync(f, 'utf8').match(/const MOTORE_V = ([0-9]+);/);
+      return m ? parseInt(m[1], 10) : -1;
+    })();
+    di(mvFile > 0 && mvFile < 15,
+       'A6) MOTORE_V sta ancora nei quattro bit della carta, e il margine e\' dichiarato',
+       'MOTORE_V ' + mvFile + ' su un massimo di 15 · margine ' + (15 - mvFile) +
+       (mvFile >= 15 ? '   IL CAMPO E\' PIENO: allargare i bit o fermare i salti' : ''));
   } finally { await P.ctx.close(); }
 }
 
