@@ -88,6 +88,17 @@ function di(ok, nome, det) {
   esiti.push(!!ok);
   console.log((ok ? '  OK  ' : '  NO  ') + nome + (det ? '   [' + det + ']' : ''));
 }
+/* PROVA NULLA — quando il banco NON HA AVUTO DI CHE MISURARE (voce #150).
+   Non e' un verde e non e' un rosso: si stampa, non entra nel conto, e si
+   dichiara in fondo. La casa lo dice da sempre per le assenze — «un'assenza
+   vale prova nulla, non un verde» — e vale altrettanto nell'altro verso:
+   accusare il gioco con un banco che non ha avuto materiale e' il modo
+   piu' rapido per mandare qualcuno a riparare la cosa sbagliata. */
+let nulle = 0;
+function diNulla(nome, perche) {
+  nulle++;
+  console.log('  ??  ' + nome + '   [PROVA NULLA: ' + perche + ']');
+}
 
 /* =====================================================================
    LE MOSSE SONO UNA TAVOLA FISSA, non un sorteggio.
@@ -621,9 +632,21 @@ const mossaPari = (ruoloA, t) => (ruoloA === 't' ? mossaPara(t) : mossaTiro(t));
            alMinutoLento.toFixed(1) + '/min (tetto ' + T.FRENO_TETTO + ')' +
            (battiti > 20 ? '' : '   PROVA NON ESERCITATA: troppi pochi battiti'));
 
-        di(finite > 0,
-           'E1c) e col freno acceso una serie arriva in fondo lo stesso (il danno d\'uso)',
-           finite + ' serie finite su ' + serie + ' cominciate');
+        /* E1c E' L'ULTIMA PROVA DI QUESTO GRUPPO MISURATA COL MURO, e
+           percio' l'unica che il carico possa far cambiare colore: quante
+           serie stiano in settanta secondi dipende dalla macchina, non dal
+           gioco. Con UNA SOLA serie cominciata, «zero finite su una» non e'
+           un danno d'uso misurato: e' un campione di uno. MISURATO il 24
+           settembre (voce #150): lo stesso file usciva rosso qui dentro la
+           batteria e verde da solo, tre corse su tre. Sotto le due serie
+           si dichiara PROVA NULLA, e il metro che NON dipende dal carico
+           resta E1b — richieste per battito. */
+        const nomeE1c = "E1c) e col freno acceso una serie arriva in fondo lo stesso (il danno d'uso)";
+        if (serie < 2) {
+          diNulla(nomeE1c, "in 70 s e' cominciata " + serie + " serie, e un campione di uno non misura un danno d'uso");
+        } else {
+          di(finite > 0, nomeE1c, finite + ' serie finite su ' + serie + ' cominciate');
+        }
       }
 
       /* IL FRENO C'E' DAVVERO: una raffica deve prendere 429. Senza
@@ -769,6 +792,7 @@ const mossaPari = (ruoloA, t) => (ruoloA === 't' ? mossaPara(t) : mossaTiro(t));
     console.error(esploso && esploso.stack);
     process.exit(2);
   }
+  if (nulle) console.log('\n  PROVE NULLE: ' + nulle + ' (il banco non ha avuto di che misurare, e non accusa nessuno)');
   const rossi = esiti.filter(x => !x).length;
   console.log('\n  ' + (esiti.length - rossi) + ' su ' + esiti.length + (rossi ? ('   ROSSI: ' + rossi) : '   verde'));
   process.exit(rossi ? 1 : 0);

@@ -158,6 +158,13 @@ if (process.argv.includes('--carico')) {
                  «il banco non ha otto campioni» esce 3, e qui si legge
                  PROVA NULLA, non un numero.
      dischetto-seme
+                 RETTIFICA A EDIZIONI (24 settembre 2026, voce #150):
+                 ADESSO CONTA. Il buco e' chiuso — il saluto porta
+                 l'impegno del nonce e la rivelazione parte solo verso chi
+                 si e' impegnato — e il baro e' sceso da 400 su 400 a 204
+                 su 400, cioe' il caso puro (il testimone a bugia spenta
+                 ne fa 201). Il testo di ieri resta qui
+                 sotto perche' era vero quando e' stato scritto.
                  conta:false PERCHE' MISURA UN DIFETTO APERTO (voce #149):
                  il nonce del saluto del dischetto viaggia in chiaro, e chi
                  entra per secondo puo' ritardare il proprio saluto e
@@ -168,6 +175,7 @@ if (process.argv.includes('--carico')) {
                  conta:true il giorno in cui il saluto avra' il suo impegno
                  in due tempi — cantiere suo: tocca il protocollo,
                  DISCHETTO_V e i sette falsi del dischetto.
+                 [quel giorno e' stato il 24 settembre 2026, voce #150]
      avvio       conta:false PERCHE' e' un SIMULATORE, e per sua stessa
                  ammissione il meno credibile della casa: sul medesimo file
                  ha dichiarato 2083 ms con dispersione 205,1% e poi 4018 ms
@@ -1068,6 +1076,30 @@ const CANCELLI = [
   /* =====================================================================
      IL SEME A DUE MANI, E LA MANO CHE SE LO SCEGLIE (voce #149).
 
+     RETTIFICA A EDIZIONI (24 settembre 2026, voce #150): IL BUCO E'
+     CHIUSO E IL CANCELLO CONTA. Il testo di ieri resta qui sotto senza
+     una riga tolta, perche' era vero quando e' stato scritto.
+
+     LA CURA. Il saluto porta l'IMPEGNO del nonce (`dsImpegnoSaluto`,
+     lo stesso schema dei tiri, non un secondo) e il nonce esce con una
+     busta `N` che parte solo verso chi si e' gia' impegnato a sua volta.
+     DISCHETTO_V e' 2, le buste sono cinque, e i nastri del protocollo
+     vecchio prendono INCOMPLETO/dischetto-versione — rifiutati con causa,
+     mai accusati (misurato: rigiocato null, zero passi).
+
+     MISURATO il 24 settembre, 400 appuntamenti per braccio: il baro che
+     si sceglie il nonce passa da 400 su 400 a 204 su 400, cioe' il caso
+     puro (soglia 224, falso rosso 0,71%, potenza 94% contro un baro al
+     60%). Chi rivela un nonce diverso da quello impegnato e' rifiutato
+     40 volte su 40; chi non si impegna resta in stallo 40 su 40.
+
+     E IL GIRO DI RETE IN PIU' NON SI VEDE SUL FRENO: 1,763 richieste per
+     battito prima, 1,763 dopo (sei corse per parte, dispersione 6,3% e
+     7,6%) — le due richieste in piu' per lato aggiungono anche un
+     battito al denominatore. Punta al minuto per identita' 86,3 prima e
+     82,5 dopo: la stessa banda.
+
+     ------------------------------- il testo del #149, che resta ------
      `dischetto-seme` NON CONTA, e non e' pigrizia: OGGI E' ROSSO, e lo e'
      per un guasto vero e aperto. Il nonce del saluto viaggia in chiaro, e
      chi entra per secondo puo' ritardare il proprio saluto, leggere quello
@@ -1086,7 +1118,7 @@ const CANCELLI = [
      Vuole un giro di rete in piu' nell'appuntamento, una fase nuova,
      `DISCHETTO_V` da 1 a 2 e la riscrittura dei sette falsi del
      dischetto. E' un cantiere suo. */
-  { nome: 'dischetto-seme',  cmd: ['strumenti/_q-dischetto-seme.js'],                   conta: false, lento: true  },
+  { nome: 'dischetto-seme',  cmd: ['strumenti/_q-dischetto-seme.js'],                   conta: true,  lento: true  },
 
   /* =====================================================================
      LA SHA-256 SCRITTA A MANO (voce #149).

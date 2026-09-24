@@ -585,6 +585,194 @@ Qui il registro completo, a edizioni.
   zero, e la revisione dell'intera postura «zero permessi, zero conti, nessuna
   chiave nell'HTML»). **Nessuna delle due è stata provata.**
 
+- **IL SEME A DUE MANI — #150 CANTIERE CHIUSO** (voce #150, 24 settembre 2026,
+  cinque compiti dal merge-base `ffc4139` — spec
+  `docs/superpowers/specs/2026-09-24-seme-due-mani-design.md`, piano
+  `docs/superpowers/plans/2026-09-24-seme-due-mani.md`). **`DISCHETTO_V` sale
+  da 1 a 2** (il saluto è un messaggio diverso); **`MOTORE_V` resta 6** — la
+  simulazione non è toccata, e le quattordici modifiche del gioco stanno tutte
+  dentro il blocco `Dischetto` (`:48051`–`:48969`). Chiude il **difetto aperto
+  più grave lasciato dall'ONDA E**, quello che il #149 aveva misurato,
+  dichiarato e — con una ragione buona — rimandato.
+
+  ### (a) IL BUCO, E LA CURA
+
+  Il seme della serie nasce «a due mani» (`dsMescola` dei due nonce) e decide
+  anche **chi tira per primo**. Ma il nonce viaggiava **dentro il saluto, in
+  chiaro**: chi entra per secondo legge quello dell'altro, ne macina
+  quattromila finché non trova quello che gli porta il seme che vuole, e solo
+  allora parla. Il gioco non aveva modo di sapere che aveva aspettato.
+
+  **La cura è lo schema in due tempi del #146, applicato al saluto** — e non
+  uno schema nuovo, che sarebbe stata una seconda superficie da sorvegliare:
+
+  - `dsImpegnoSaluto(lato, nonce) = dsSha256('DS1|' + lato + '|' + nonce)`
+    troncata a 128 bit, sulla **stessa `dsSha256`** verificata contro Node su
+    409 casi (cancello `sha256`);
+  - la busta del saluto porta **`hn`** e non `n`; il nonce esce con una busta
+    nuova, **`N`**, e `manda()` la spedisce **solo se l'impegno dell'altro è
+    già in casa** — la stessa regola d'oro che il #147 dichiara essere ciò che
+    rende il tabellone spione impossibile da costruire;
+  - fase nuova nella macchina a stati: **`attesa-nonce`**, che `trattiene()` e
+    `avanza()` conoscono (durante l'attesa il duello **non avanza**: se
+    avanzasse, `Duel.update` farebbe tirare la CPU al posto dell'altra persona
+    e consumerebbe il PRNG di gioco);
+  - `chiudiAppuntamento` si divide in **`leggiSaluto`** (versione e motore) e
+    la chiusura vera, che pretende che l'impegno **ricomponga**: se non
+    ricompone, `fine` / **`saluto-non-torna`**, che è il secondo dei due soli
+    punti del protocollo in cui non c'è un dubbio ma un hash che non torna.
+
+  **IL LATO STA DENTRO LA STRINGA DELL'IMPEGNO, e non è un vezzo.** Senza, il
+  baro copierebbe l'`hn` dell'altro, aspetterebbe la sua rivelazione e
+  rivelerebbe lo **stesso** nonce: il seme diventerebbe `dsMescola(n, n)`, cioè
+  un numero che l'onesto non ha scelto da solo. Col lato dentro, la copia non
+  ricompone.
+
+  ### (b) LA MISURA, E LA SUA POTENZA DICHIARATA PRIMA
+
+  Il cancello `_q-dischetto-seme` è stato **riscritto**: da due prove e dieci
+  giri a **sette prove e 400 appuntamenti per braccio**. Il #149 lo aveva
+  costruito per **documentare** un buco; adesso deve **condannarlo**, e dieci
+  prove distinguono male 5/10 da 7/10 (il #141 aveva già pagato la stessa
+  lezione con un'altra moneta: «il 95% non è decidibile con 6 tentativi»).
+
+  **La soglia e la potenza si stampano prima di misurare**, e il cancello le
+  ricalcola sul `n` che gli è stato dato: rosso se il baro vince più di
+  `n/2 + 1,225·√n`, cioè **224 su 400** (56%) — **falso rosso 0,71%** sotto il
+  caso puro, **potenza 94,3%** contro un baro al 60%, **99,99%** al 65%,
+  **certa** contro il difetto di ieri.
+
+  | | prima (base `ffc4139`) | dopo |
+  |---|---|---|
+  | **S1** il baro che ritarda il saluto e si sceglie il nonce | **400 su 400** | **204 su 400** (51,0%) |
+  | **S2** testimone, lo stesso braccio a bugia spenta | 186 su 400 | 201 su 400 (50,3%) |
+  | **S3** saluti del gioco col nonce in chiaro, letti **dentro la cassetta** | **800 su 800** | **0 su 800** |
+  | **S4** chi rivela un nonce diverso da quello impegnato | (l'impegno non esisteva) | **0 su 40**, causa `saluto-non-torna` ×40 |
+  | **S5** chi aspetta il nonce dell'altro prima di scegliere il proprio | **40 su 40** chiusi, bit vinto 40 su 40 | **0 su 40**, **40 stalli** |
+  | **S6** testimone del banco, due telefoni onesti | 5 su 5 | 5 su 5 |
+  | **S7** versione che non conosciamo | rifiutata 5 su 5 | rifiutata 5 su 5 |
+
+  **E il banco porta il proprio testimone del ricalcolo**: S4 non si accontenta
+  di «l'appuntamento si è chiuso», **ricompone il seme a mano** dal nonce del
+  gioco e da quello rivelato — e dichiara che ci riesce (**400 su 400** semi
+  onesti ricomposti). Senza, S4 sarebbe verde per cecità invece che per merito.
+
+  `dischetto-seme` torna a **`conta:true`** in `tutti.js`, e il commento del
+  #149 resta lì sotto, rettificato a edizioni e non cancellato.
+
+  ### (c) IL GIRO DI RETE IN PIÙ, E CHE COSA COSTA DAVVERO
+
+  L'appuntamento passa da **2 a 4 richieste per lato** (+1 imbuco, +1 ritiro).
+  Il #149 aveva misurato la punta vera a **74-88/min per identità** contro un
+  tetto di **60**: il gioco **sfonda già** il tetto e degrada bene (se ne
+  accorge, allarga il ritmo, la serie arriva in fondo).
+
+  **MISURATO, sei corse per parte, sullo stesso banco e sulla stessa macchina**
+  (`_q-dischetto --solo E`, cassetta finta, freno acceso):
+
+  | | base `ffc4139` | voce #150 |
+  |---|---|---|
+  | **richieste per battito** (il metro che **non** dipende dal carico, #149) | **1,763** (dispersione 6,3%) | **1,763** (7,6%) |
+  | al ritmo lento dichiarato dal gioco (2200 ms) | 48,1/min | 48,0/min |
+  | punta al minuto per identità | 86,3 ± 6,6 | 82,5 ± 8,6 |
+  | serie cominciate in 70 s | 3,5 in media (2-4) | 3,8 in media (3-4) |
+
+  **Le due richieste in più non si vedono, e il perché è semplice**: aggiungono
+  anche **un battito al denominatore**. La differenza misurata sul metro buono
+  è **0,000 ± 0,071** (t = 0,0). **Il freno non è peggiorato**, e il numero si
+  scrive anche se fosse comodo tacerlo.
+
+  ### (d) LA VERSIONE VECCHIA SI RIFIUTA, NON SI ACCUSA
+
+  `DISCHETTO_V` 1 → 2 vale anche per i **nastri**: la riga 15 porta la versione,
+  e la guardia che il #149 aveva appena messo (`INCOMPLETO` /
+  `dischetto-versione`) **scatta davvero** — **misurato**: un nastro che
+  dichiara il protocollo vecchio prende `INCOMPLETO/dischetto-versione`,
+  **rigiocato `null`, zero passi**. Si astiene: non muove punti e torna
+  giudicabile il giorno in cui arriva intero.
+
+  E **la prova che lo misura era diventata bugiarda nello stesso istante**:
+  `_q-nastro-differito` B8 scriveva nella riga 15 la versione **2**, che fino a
+  ieri era ignota e da oggi è la corrente — per una corsa ha misurato il
+  verdetto giusto leggendolo come un rosso (`TORNA`, rigiocato [1,2], 646
+  passi). Adesso le versioni provate sono **due e si prendono dalla riga
+  stessa**: **B8** quella vecchia (`v-1`), **B8b** una futura (`v+7`). Nessuna
+  delle due può mai essere quella del gioco.
+
+  ### (e) I FALSI — tre nuovi, e uno che non veniva morso
+
+  | falso | che cosa toglie | morso da |
+  |---|---|---|
+  | **`sbrigativo`** — **LA MEZZA CURA** | impegna il nonce **come si deve** e lo rivela **lo stesso**, senza aspettare l'impegno dell'altro. Chi guardasse solo la cassetta direbbe «curato». | **S5**, 20 su 20 |
+  | **`credone`** | non verifica che il nonce rivelato ricomponga l'impegno: l'impegno diventa una decorazione, e i due telefoni onesti escono lo stesso con lo stesso seme | **S4**, 20 su 20 |
+  | **`vecchio`** | accetta una serie di versione vecchia senza dirlo — **una sola** guardia tolta, dove `mezza-guardia` ne toglie tre | **B8** |
+
+  **E S1 NON MORDE `sbrigativo`**, che è la cosa da sapere di questo falso: il
+  baro di S1 legge il **saluto** dell'altro, e anche nella mezza cura il saluto
+  porta solo un impegno — macinare quattromila nonce contro un hash non serve a
+  niente (S1 resta verde, 44 su 80). A farsi servire è solo chi si **rifiuta**
+  di impegnarsi e aspetta. **Senza S5, la mezza cura sarebbe passata per cura**
+  — cioè esattamente la cosa che il #149 ha dichiarato peggiore del buco.
+
+  I due banchi dei falsi passano a **nove ciascuno**: `dischetto-falsi` 9 su 9
+  morsi (controllo positivo 9 su 9 prove verdi sull'onesto), `nastro-falsi` 9
+  su 9 morsi come dichiarato, con l'ottavo che **non** morde sempre dichiarato.
+
+  ### (f) DUE BANCHI CHE ATTESTAVANO, TROVATI MENTRE LI SI USAVA
+
+  1. **Il pari che aspetta non faceva camminare il gioco.** Nel gioco vero la
+     guida batte da sé ogni 900 ms; sul banco il giro di rete lo fa il banco.
+     Il baro paziente si arrendeva dopo quaranta ritiri a vuoto e il cancello
+     stampava «stallo» — cioè **il verde giusto del gioco curato** — mentre il
+     gioco non aveva mai parlato. **La mezza cura passava per cura.** Adesso
+     `PariFinto` ha un `respiro` che il banco gli mette in mano, e la mezza
+     cura viene morsa 20 volte su 20.
+  2. **E1c accusava con un campione di uno.** È l'ultima prova del gruppo E
+     misurata **col muro**: quante serie stiano in settanta secondi dipende
+     dalla macchina. **Misurato**: lo stesso file usciva **rosso dentro la
+     batteria** («0 serie finite su 1 cominciata») e **verde da solo, tre corse
+     su tre**, in 90-91 s — identici ai 90-91 s della base misurata in un
+     albero di lavoro sul commit `ffc4139`, coi suoi strumenti. Sotto le due
+     serie adesso dichiara **PROVA NULLA**: un'assenza non è un verde, e non è
+     nemmeno un rosso. Il metro che non dipende dal carico resta **E1b**.
+
+  Con questa cura `--ripetuto 3` dichiara `dischetto`, `dischetto-seme` e
+  `volto` **stabili**; prima della cura `dischetto` usciva «**RUMOROSO OGGI**».
+
+  ### (g) QUEL CHE HA DOVUTO IMPARARE IL RESTO DELLA CASA
+
+  Il protocollo ha **cinque** buste e non più quattro (`S I R N F`): l'hanno
+  imparato la cassetta finta, `rete/api/dischetto.js`, `rete/schema.sql` (il
+  `check (k in …)`) e `rete/prove/tutte.js`. Tre banchi pompavano un solo giro
+  di rete e restavano in `attesa-nonce`: `_q-dischetto` (`pariGiro` chiama
+  `rivelaNonce`), `_q-volto` (D0 gira finché la fase non è quella che serve) e
+  il cancello del seme.
+
+  ### (h) LE RETI, E LA BATTERIA
+
+  **La batteria intera**, a gruppi (`--tutto` chiede ~1600 s e lo strumento
+  muore a 10 minuti): **77 cancelli su 78 eseguiti, zero rossi fra quelli che
+  contano**. Il solo non eseguito è `avvio-telefono`, che vuole un telefono
+  Android collegato. L'unico NO è **`istantanea`** (informativo, `conta:false`)
+  a **42/56**, **identico sulla base** `ffc4139` con le stesse sotto-quote
+  (1/8 8/8 8/8 5/8 8/8 7/8 5/8): **pre-esistente, misurato, non una
+  regressione**. Fuori dalla batteria: `rete/prove/tutte.js` **62/62**.
+
+  ### (i) CHE COSA RESTA APERTO, di questo cantiere
+
+  - **Il riavvio.** Chi vede il seme e non gli piace può chiudere
+    l'appuntamento prima del primo tiro e rifarne un altro. Non è curabile con
+    un impegno: è la stessa forma dell'ottavo falso del #146 — **si toglie
+    l'incentivo invece di sorvegliarlo**, e oggi l'abbandono non è una vittoria
+    di nessuno (`incompiuta`, `fine=null`, misurato da G4/G5). Scritto perché
+    chi legge domani non lo scambi per una svista.
+  - **Il banco è finto e si dichiara.** Ogni misura di questo cantiere è contro
+    la **cassetta in memoria**. Il server Vercel è stato riattivato e risponde,
+    ma **non ha un database**: senza `SUPABASE_URL` e `SUPABASE_SERVICE_KEY`
+    gli endpoint dicono `{"ok":false,"errore":"spento"}`. **Due persone, oggi,
+    non possono ancora giocarla** — il punto 5 della dichiarazione al
+    committente resta dov'è.
+
 - **LA CURA DELLA REVISIONE D'INSIEME — #149 CANTIERE CHIUSO** (voce #149, 24
   settembre 2026, cinque compiti dal merge-base `b87f512` — spec
   `docs/superpowers/specs/2026-09-24-cura-revisione-design.md`, piano
@@ -767,6 +955,19 @@ Qui il registro completo, a edizioni.
 
   ### (f) IL SEME A DUE MANI NON È PROTETTO — DIFETTO APERTO, con la misura
 
+  > **RETTIFICA A EDIZIONI (24 settembre 2026, voce #150): IL DIFETTO È
+  > CHIUSO.** Il saluto porta l'**impegno** del nonce (`dsImpegnoSaluto`) e il
+  > nonce esce con una busta `N` che parte **solo verso chi si è già
+  > impegnato**; `DISCHETTO_V` è **2**. **Misurato su 400 appuntamenti per
+  > braccio**: il baro che si sceglie il nonce passa da **400 su 400** a **204
+  > su 400** (il testimone a bugia spenta ne fa 201) — soglia 224, falso rosso
+  > 0,71%, potenza 94,3% contro un baro al 60%. Chi rivela un nonce diverso da
+  > quello impegnato è rifiutato **40 su 40** (`saluto-non-torna`); chi non si
+  > impegna resta in stallo **40 su 40**. `dischetto-seme` è tornato a
+  > **`conta:true`**. Il verbale sta nella voce **#150**, in testa a questo
+  > registro. Il testo qui sotto resta senza una riga tolta: era vero quando è
+  > stato scritto, e la misura di allora è quella che ha reso possibile questa.
+
   Il commento accanto a `chiudiAppuntamento` dice: «SI CHIUDE QUANDO TUTTI E
   DUE HANNO PARLATO, e non prima: è questa riga a impedire che il secondo
   scelga il proprio nonce sapendo il primo». **La riga non lo impedisce.**
@@ -882,7 +1083,9 @@ Qui il registro completo, a edizioni.
   `node strumenti/tutti.js --tutto`, **78 cancelli**, **1592 s** di orologio,
   **75 OK e ZERO rossi fra i cancelli che contano**. I due NO sono tutti e due
   informativi e tutti e due dichiarati: `dischetto-seme` (il difetto aperto del
-  §f) e `istantanea` (**42/56**, identico a `main`, vedi (i)). **Il verdetto
+  §f — **rettificato a edizioni il 24 settembre 2026, voce #150: curato, e il
+  cancello è tornato a `conta:true`**) e `istantanea` (**42/56**, identico a
+  `main`, vedi (i)). **Il verdetto
   della batteria è «PROVA NULLA» e non «verde»** — `avvio-telefono` esce **3**
   perché non c'è nessun telefono Android collegato — e si scrive così invece di
   arrotondare. Fuori dalla batteria: `rete/prove/tutte.js` **62/62**.
@@ -917,6 +1120,9 @@ Qui il registro completo, a edizioni.
   ### (k) CHE COSA RESTA APERTO
 
   - **Il seme a due mani** (§f), difetto aperto con la misura accanto.
+    **RETTIFICA A EDIZIONI (24 settembre 2026, voce #150): non è più aperto** —
+    il saluto ha il suo impegno in due tempi, `DISCHETTO_V` è 2 e il baro è
+    sceso da 400 su 400 a 204 su 400. Vedi la voce **#150**.
   - **Un nastro che diverge a metà** prende ancora `NON TORNA` (§b): la
     domanda è aperta e non c'è la misura per chiuderla.
   - **Il `catch` muto** di `Reg.scrivi(15, …)`: non si ripara, perché con le

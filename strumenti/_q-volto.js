@@ -512,7 +512,18 @@ function contaTipi(nastro) {
         if (!rD.ok) { di(false, 'D0) una seconda sfida per provare il dito', rD.perche); }
         else {
           await B.pag.evaluate(async s => await window.__test.dischetto.entra(s), rD.stanza);
-          await d_giro(A);
+          /* L'APPUNTAMENTO VUOLE PIU' DI UN GIRO (voce #150): dal
+             protocollo v2 il saluto e' in due tempi — l'impegno del
+             nonce, e poi il nonce a chi si e' impegnato — quindi un solo
+             giro su un solo telefono lo lascia a meta' e il banco
+             dichiarerebbe 'attesa-nonce' come se fosse un guasto.
+             Si gira finche' la fase non e' quella che serve, con un
+             tetto: un banco che aspetta per sempre non misura niente. */
+          for (let g = 0; g < 20; g++) {
+            const x = await d_stato(A);
+            if (x.fase === 'scegli' || x.fase === 'fine') break;
+            await Promise.all([d_giro(A), d_giro(B)]);
+          }
           const s = await d_stato(A);
           if (s.fase !== 'scegli') di(false, 'D0) la seconda sfida arriva a scegliere', 'fase ' + s.fase + '/' + s.causa);
           else {
