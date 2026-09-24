@@ -31,10 +31,20 @@
 
    C) IL TABELLONE. Durante la serie si deve vedere il punteggio, il
       tiro, il proprio ruolo e i tiri gia' fatti; alla fine si deve
-      vedere come e' finita. E — la meta' che conta — NON si deve vedere
-      la mossa dell'altro prima della rivelazione: e' il falso
-      `_crit-volto-spione`, e il banco lo cerca confrontando il testo che
-      il pannello mostra su A con la mossa che B ha davvero posato.
+      vedere come e' finita.
+
+      E C1 E' STATA RISCRITTA, per una ragione che vale piu' della
+      prova. Cercava la mossa dell'altro nel tabellone «prima della
+      rivelazione»: misurando si e' scoperto che quella mossa non arriva
+      MAI sul telefono prima che io mi sia impegnato, perche' `manda()`
+      spedisce la rivelazione solo se ha in casa l'impegno dell'altro. La
+      proprieta' e' del PROTOCOLLO (#146, falso «gentile»), non del
+      volto, e un cancello che la rimisurasse qui passerebbe SEMPRE,
+      anche su un pannello scritto male. Al suo posto C1 misura l'istante
+      che il pannello PUO' rompere: mentre la barra corre sotto il dito,
+      l'impegno non deve essere partito — col testimone che dopo il
+      rilascio la rivelazione arriva eccome. Il falso e'
+      `_crit-volto-ansioso`.
 
    D) IL DITO CHE DIVENTA UNA MOSSA. Le tre porte del duello, in
       cattura, devono POSARE la mossa e NON risolvere il duello: se
@@ -498,6 +508,15 @@ function contaTipi(nastro) {
             t.respiro.accendi();
             t.dita(0.8, 0, false);
             for (let i = 0; i < 12; i++) { t.disegna(); t.simulate(1 / 60); }
+            /* SI LEGGE DOPO UN FOTOGRAMMA, NON PRIMA, e la prima stesura
+               sbagliava proprio qui: l'ultimo `disegna` del ciclo sta a un
+               tick indietro rispetto all'ultimo `simulate`, quindi la
+               carica letta era quella del tick prima (0,458 contro 0,500)
+               e il banco accusava il gioco di aver mosso il fiato a
+               orologio fermo, mentre stava misurando il proprio ordine di
+               chiamate. Un fotogramma di allineamento, e la prova torna
+               quella che dice di essere. */
+            t.disegna();
             const prima = +window.__test.respiro.stato.carica.toFixed(6);
             /* l'orologio si ferma: non si simula piu' niente, si disegna
                e basta. E' il fiato trattenuto. */
