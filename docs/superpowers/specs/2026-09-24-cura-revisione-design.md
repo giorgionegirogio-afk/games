@@ -75,27 +75,47 @@ il giudice ha già la metà gemella di questo controllo: `duello-senza-righe`
 righe**. Manca l'altra metà: **il nastro ha righe e non si apre mai il
 duello che le consumi**.
 
-Si aggiunge `INCOMPLETO/duelli-mai-letti`. Non è una guardia del dischetto:
-è una guardia del *giudice*, e vale per qualunque nastro. Prende il caso 8
-senza sapere niente del dischetto — ed è la ragione per cui è la forma
-giusta.
+Si aggiunge `INCOMPLETO/duelli-senza-atti`, e **si legge nel nastro, prima di
+rigiocare**: un nastro che non dichiara la serie, che porta comandi di duello
+(tipo 6) e **nessun atto di gioco** (niente 12/13, niente 0/1), non è il nastro
+di una partita giocata — chi l'ha registrato non ha mai toccato il campo.
+Non serviva nessuna firma: bastava guardare di che cosa è fatto.
 
-> **RETTIFICA A EDIZIONI (24 settembre 2026, in corso di cantiere).** La
-> prima stesura diceva «se avanza anche un comando solo, astieniti», ed è
-> stata **bocciata da una rete di sicurezza**: `_q-staffetta` B1 pretende
-> `NON TORNA` sul nastro di una sfida vera giudicato col **seme sbagliato**,
-> e la forma larga lo trasformava in un'astensione — cioè rovesciava una
-> decisione del #133 senza una misura che la giustificasse.
+> **RETTIFICA A EDIZIONI (24 settembre 2026, in corso di cantiere). QUESTA
+> CURA HA AVUTO TRE FORME, E LE PRIME DUE SI SONO ROTTE IN DUE MODI
+> DIVERSI.**
+>
+> **(1) LARGA** — «se dei comandi di duello ne avanza anche uno solo,
+> astieniti». Bocciata da una **rete di sicurezza**: `_q-staffetta` B1
+> pretende `NON TORNA` sul nastro di una sfida vera giudicato col **seme
+> sbagliato**, e la forma larga lo trasformava in un'astensione — cioè
+> rovesciava una decisione del #133 senza una misura che la giustificasse.
 > **MISURATO** (`strumenti/_sonda-149-duelli.js`): sfida congelata col seme
 > sbagliato **4 comandi avanzati su 6**; serie dal dischetto, il residuo,
 > **12 su 12**; nastri onesti **0 su 6 e 0 su 12**; punteggio gonfiato di uno
 > **0 su 6, e resta NON TORNA**. I due casi sono **diversi in natura**: con
 > qualche comando letto la rigiocata era entrata nel nastro e poi ne è
 > uscita (una divergenza, e il giudice ha già due risposte per quella); con
-> **nessun** comando letto non è mai entrata. La soglia diventa «nemmeno
-> uno». **Resta aperta**, col numero accanto, la domanda se un nastro che
-> diverge a metà meriti un'accusa o un'astensione: questo cantiere non ha la
-> misura per rispondere e non la inventa.
+> **nessun** comando letto non è mai entrata.
+>
+> **(2) STRETTA** — «nemmeno uno letto». **Non è deterministica, e l'ha detto
+> una corsa**: novanta secondi di calcio a volte aprono un calcio piazzato e
+> ne consumano uno, e allora la guardia non scatta. Misurato: B6 verde su
+> quattro serie e **rosso sulla quinta** (NON TORNA, rigiocato [1,3] in 7675
+> passi). Un cancello che cambia colore da solo è esattamente quel che
+> questo cantiere sta curando altrove.
+>
+> **(3) NEL NASTRO** — quella che resta. Non si guarda più che cosa la
+> rigiocata ha consumato: si guarda **di che cosa è fatto il nastro**, prima
+> di rigiocare. Comandi di duello e nessun atto di gioco. Stesso nastro,
+> stesso verdetto, sempre, e zero passi rigiocati. Il conteggio dei comandi
+> avanzati resta **nel referto**, perché è con quello che si misura quanto
+> una rigiocata si è scostata, ma non decide niente.
+>
+> **Resta aperta**, col numero accanto, la domanda se un nastro che diverge a
+> metà meriti un'accusa o un'astensione (4 comandi avanzati su 6 sul seme
+> sbagliato): questo cantiere non ha la misura per rispondere e non la
+> inventa.
 
 **(d) Il bit `primo` (caso 10b).** Il #148 ha deciso apposta di **non**
 ri-dedurre `primo` dentro `giudica`, per non fare una seconda copia della

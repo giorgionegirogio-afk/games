@@ -2,7 +2,8 @@
    _sonda-149-duelli.js — QUANTI COMANDI DI DUELLO RESTANO IN CANNA?
    (voce #149, sonda usa-e-getta)
 
-   LA DOMANDA. La guardia `duelli-non-letti` del #149 prende il residuo
+   LA DOMANDA (nella forma in cui è nata). La guardia del residuo, nella
+   sua prima stesura, prendeva il residuo
    del #147 (la riga 15 e le 14 tolte) — ma ha preso anche il caso
    «seme sbagliato» di `_q-staffetta` B1, che il #133 aveva deciso di
    trattare come NON TORNA. Prima di scegliere una forma piu' stretta

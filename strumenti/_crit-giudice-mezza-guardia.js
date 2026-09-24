@@ -38,9 +38,17 @@ const COPPIE = [
     return dico('INCOMPLETO','dischetto-primo-incoerente', { motoreV:motoreV, righe:righe });
   }`,
    `  /* la cura pigra si fida del bit del nastro senza riscontrarlo */`],
-  /* via i comandi di duello rimasti non letti */
-  [`  if(maiLetti) return dico('INCOMPLETO','duelli-mai-letti', piu);`,
-   `  /* la cura pigra non guarda i comandi di duello rimasti in canna */`],
+  /* via la guardia del nastro fatto di soli duelli */
+  [`  if(!disco){
+    let duelli = 0, atti = 0;
+    for(const r of Reg.righe){
+      const tp = r[1];
+      if(tp === 6) duelli++;
+      else if(tp === 0 || tp === 1 || tp === 12 || tp === 13) atti++;
+    }
+    if(duelli > 0 && atti === 0) return no('INCOMPLETO','duelli-senza-atti');
+  }`,
+   `  /* la cura pigra non guarda di che cosa e' fatto il nastro */`],
 ];
 
 const [, , ing, usc] = process.argv;

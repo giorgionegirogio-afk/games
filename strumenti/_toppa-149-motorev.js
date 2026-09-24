@@ -71,7 +71,7 @@ const B = `/* ==================================================================
 
    Dal #149 il giudice si astiene su quattro nastri su cui prima dava un
    verdetto: la riga 15 tolta mentre le 14 restano (dischetto-assente),
-   la 15 E le 14 tolte (duelli-mai-letti), il bit del primo tiratore che
+   la 15 E le 14 tolte (duelli-senza-atti), il bit del primo tiratore che
    non torna col seme (dischetto-primo-incoerente), una versione del
    protocollo che non conosciamo (dischetto-versione).
 

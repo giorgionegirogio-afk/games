@@ -604,7 +604,7 @@ Qui il registro completo, a edizioni.
   | che cosa si cambia | ieri | oggi |
   |---|---|---|
   | SOLO la riga 15 tolta, le 14 restano | **NON TORNA**, [1,3] in 7839 passi | `INCOMPLETO/dischetto-assente` |
-  | la 15 **e** tutte le 14 (il residuo) | **NON TORNA**, [1,3] in 7839 passi | `INCOMPLETO/duelli-mai-letti` |
+  | la 15 **e** tutte le 14 (il residuo) | **NON TORNA**, [1,3] in 7839 passi | `INCOMPLETO/duelli-senza-atti` |
   | il bit «chi ha tirato per primo» capovolto | **NON TORNA**, [1,2] in 646 passi | `INCOMPLETO/dischetto-primo-incoerente` |
   | la riga 15 con una versione ignota (`v = 2`) | **TORNA** | `INCOMPLETO/dischetto-versione` |
 
@@ -633,19 +633,23 @@ Qui il registro completo, a edizioni.
   ASTENERSI.** Un nastro di una serie è fatto di **comandi di duello**, e
   novanta secondi di calcio non ne raccolgono nemmeno uno.
 
-  Si aggiunge `INCOMPLETO/duelli-mai-letti`, ed è la **metà gemella** di
-  `duello-senza-righe` (#131): quella si alza quando si apre un duello e il
-  nastro non ha righe, questa quando il nastro ha righe e non si apre mai il
-  duello che le consumi. **Non nomina né la riga 15 né le 14**: prende il
-  residuo senza sapere che esiste un dischetto, ed è la ragione per cui è la
-  forma giusta.
+  Si aggiunge `INCOMPLETO/duelli-senza-atti`, e **si legge nel nastro, prima
+  di rigiocare**: un nastro che **non dichiara la serie**, che porta comandi
+  di duello (tipo 6) e **nessun atto di gioco** — niente 12/13, i diti che si
+  posano e si muovono; niente 0/1, i pixel dei nastri di prima — non è il
+  nastro di una partita giocata. Chi l'ha registrato **non ha mai toccato il
+  campo**: ha solo scelto dove tirare. **Non serviva nessuna firma: bastava
+  guardare di che cosa è fatto il nastro.**
 
-  **E LA SOGLIA GLIEL'HA INSEGNATA UNA RETE DI SICUREZZA.** La prima stesura
-  diceva «se avanza anche un comando solo, astieniti», e `_q-staffetta` B1 è
-  diventato **rosso**: pretende `NON TORNA` sul nastro di una sfida vera
-  giudicato col **seme sbagliato**, e la forma larga lo trasformava in
-  un'astensione — cioè rovesciava una decisione del #133 senza una misura che
-  la giustificasse. **MISURATO** (`strumenti/_sonda-149-duelli.js`):
+  **E CI SONO VOLUTE TRE FORME, perché le prime due si sono rotte in due modi
+  diversi — ed è la parte di questo cantiere che vale la pena leggere.**
+
+  **(1) LARGA**, «se dei comandi di duello ne avanza anche uno solo,
+  astieniti». **Bocciata da una rete di sicurezza**: `_q-staffetta` B1
+  pretende `NON TORNA` sul nastro di una sfida vera giudicato col **seme
+  sbagliato**, e la forma larga lo trasformava in un'astensione — cioè
+  rovesciava una decisione del #133 senza una misura che la giustificasse.
+  **MISURATO** (`strumenti/_sonda-149-duelli.js`):
 
   | nastro | comandi di duello avanzati |
   |---|---|
@@ -654,13 +658,25 @@ Qui il registro completo, a edizioni.
   | nastri onesti (sfida e serie) | **0 su 6** e **0 su 12** |
   | punteggio gonfiato di uno (nastro onesto) | **0 su 6**, e resta NON TORNA |
 
-  I due casi sono **diversi in natura, non di grado**: con qualche comando
-  letto la rigiocata era entrata nel nastro e poi ne è uscita — una
-  divergenza, e il giudice ha già due risposte per quella; con **nessun**
-  comando letto non è mai entrata. La soglia è «nemmeno uno». **Resta aperta,
-  col numero accanto, la domanda se un nastro che diverge a metà meriti
-  un'accusa o un'astensione**: questo cantiere non ha la misura per
-  rispondere e non la inventa.
+  **(2) STRETTA**, «nemmeno uno letto». Sembrava separare i due casi «in
+  natura e non di grado» — e **non è deterministica**: novanta secondi di
+  calcio ogni tanto aprono un calcio piazzato e ne consumano uno, e allora la
+  guardia non scatta. **Misurato**: la prova B6 verde su quattro serie e
+  **rossa sulla quinta** (NON TORNA, rigiocato [1,3] in 7675 passi). Un
+  cancello che cambia colore da solo è esattamente quel che questo cantiere
+  sta curando altrove, e sarebbe finito in batteria a `conta:true`.
+
+  **(3) NEL NASTRO**, quella che resta. Non si guarda più che cosa la
+  rigiocata **ha consumato** — che dipende da come va la rigiocata — ma di
+  che cosa **è fatto il nastro**, che non dipende da niente. Stesso nastro,
+  stesso verdetto, sempre, e **zero passi rigiocati**. Il conteggio dei
+  comandi avanzati resta **nel referto**, perché è con quello che si misura
+  quanto una rigiocata si è scostata, ma **non decide più niente**.
+
+  **Resta aperta, col numero accanto, la domanda se un nastro che diverge a
+  metà meriti un'accusa o un'astensione** (4 comandi avanzati su 6 sul seme
+  sbagliato): questo cantiere non ha la misura per rispondere e non la
+  inventa.
 
   ### (c) IL PRIMO TIRATORE: una porta sola, e un riscontro che si astiene
 
@@ -864,8 +880,8 @@ Qui il registro completo, a edizioni.
   **E LA BATTERIA INTERA HA TROVATO QUEL CHE IL PIANO NON NOMINAVA** (lezione
   22, **settima occorrenza**). Il falso `_crit-giudice-mezza-guardia`
   ancorava sul nome vecchio della causa — `duelli-non-letti` —, rimasto lì
-  quando la guardia è stata ristretta e ribattezzata `duelli-mai-letti` a
-  metà cantiere. Il falso **non si costruiva più**, e un falso che non nasce
+  quando la guardia è stata ristretta e ribattezzata a metà cantiere (e poi
+  rifatta una terza volta, `duelli-senza-atti`). Il falso **non si costruiva più**, e un falso che non nasce
   non condanna nessuno: `nastro-falsi` è rosso per il suo banco, non per il
   gioco. **Era invisibile a tutti i cancelli del compito in corso** — il
   banco `nastro-differito` era 17 su 17, il gioco giusto — e nessuna corsa
@@ -1118,7 +1134,7 @@ Qui il registro completo, a edizioni.
   > duello, e novanta secondi di calcio non ne raccolgono nemmeno uno: 12
   > avanzati su 12, misurato (`strumenti/_sonda-149-duelli.js`). Curato dal
   > #149 senza nessuna firma e senza nessuna chiave
-  > (`INCOMPLETO/duelli-mai-letti`). E finché è restato aperto **non era
+  > (`INCOMPLETO/duelli-senza-atti`). E finché è restato aperto **non era
   > un'astensione ma un'accusa**: NON TORNA a due persone oneste.
   >
   > **(2) IL SERVER DELLA CASSETTA È FINTO, e questa §(h) non lo diceva** —
@@ -1351,7 +1367,7 @@ Qui il registro completo, a edizioni.
   > (`strumenti/_sonda-149-duelli.js`): il residuo lascia **12 comandi
   > avanzati su 12**, un nastro onesto ne lascia **0**. Non serviva nessuna
   > firma e nessuna chiave: bastava guardare il cursore dei duelli. Curato dal
-  > #149 (`INCOMPLETO/duelli-mai-letti`), e il verdetto giusto era
+  > #149 (`INCOMPLETO/duelli-senza-atti`), e il verdetto giusto era
   > un'astensione, non un'accusa. **Il residuo del #147 non era inchiudibile:
   > era stato guardato da un lato solo.**
 
