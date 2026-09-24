@@ -823,6 +823,24 @@ Qui il registro completo, a edizioni.
 
   E fuori dalla batteria: `rete/prove/tutte.js` **62/62**.
 
+  ### (h-ter) IL BANCO NON E' RIPETIBILE, E ADESSO LO DICE
+
+  `_q-volto` apre due contesti di browser e gioca serie intere contro una
+  cassetta finta: **non è ripetibile**, come tutti i banchi a due telefoni.
+  **MISURATO: dodici corse di fila, undici a 25/25 e una a 22/23** — e in
+  quella dodicesima le prove mancanti erano **due**, non una rossa: un gruppo
+  non era arrivato a misurare mentre la stessa macchina copiava cinque file da
+  2,8 MB. Un cancello `conta:true` che in quel caso dicesse «rosso»
+  accuserebbe il gioco col proprio affanno.
+
+  Percio' i fallimenti di **preparazione** — la sfida che non si apre, i due
+  telefoni che non arrivano a scegliere, il testimone di C1 che non vede la
+  rivelazione nemmeno dopo il rilascio — escono `??` e portano l'uscita a
+  **3**, non a 1. **Un rosso vince su tutto**: se anche una sola prova è rossa
+  l'uscita resta 1, perché un difetto trovato non si cancella dicendo che il
+  banco era stanco. Dopo la cura: **quindici corse, quindici a 25/25, uscita
+  0**; sul merge-base **4/20, sedici rosse, uscita 1**.
+
   ### (j) UNA VERIFICA D'INTEGRITÀ CHE VALE LA PENA RIPETERE
 
   Le **quattro toppe** di questo cantiere (`_toppa-147-pannello.js`,

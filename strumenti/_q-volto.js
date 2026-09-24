@@ -122,9 +122,34 @@ const SOLO = arg('solo') ? arg('solo').split(',').map(s => s.trim().toUpperCase(
 const vuole = g => !SOLO || SOLO.includes(g);
 
 const esiti = [];
+const nulle = [];
 function di(ok, nome, det) {
   esiti.push(!!ok);
   console.log((ok ? '  OK  ' : '  NO  ') + nome + (det ? '   [' + det + ']' : ''));
+}
+/* =====================================================================
+   LA PROVA NULLA, E PERCHE' NON E' UN ROSSO.
+
+   Questo banco apre due contesti di browser e gioca serie intere contro
+   una cassetta finta: NON e' ripetibile, e sotto carico un appuntamento
+   puo' non chiudersi in venti giri. In quel caso il banco non ha
+   misurato niente — e un banco che non ha misurato non assolve e non
+   condanna. MISURATO: dodici corse di fila, undici a 25/25 e una a
+   22/23 con due prove mancanti, e quella dodicesima girava mentre la
+   stessa macchina copiava cinque file da 2,8 MB. Le due prove che
+   mancavano non erano un difetto del gioco: erano un gruppo che non e'
+   arrivato a misurare.
+
+   Percio' i fallimenti di PREPARAZIONE — la sfida che non si apre, i due
+   telefoni che non arrivano a scegliere, il testimone che non vede
+   niente nemmeno quando dovrebbe — escono «??» e portano l'uscita a 3,
+   non a 1. UN ROSSO VINCE SU TUTTO: se anche una sola prova e' rossa
+   l'uscita resta 1, perche' un difetto trovato non si cancella dicendo
+   che il banco era stanco.
+   ===================================================================== */
+function diNulla(nome, perche) {
+  nulle.push(nome);
+  console.log('  ??  ' + nome + '   [PROVA NULLA: ' + perche + ']');
 }
 
 /* =====================================================================
@@ -436,13 +461,26 @@ function contaTipi(nastro) {
           const rDopo = await vistoR(TIR);
 
           const c1vivo = !!(vTIR.stato && vTIR.stato.replace(/\s+/g, '').length > 4);
-          const c1 = c1vivo && mira.barra && barraViva && rPrima === 0 && rDopo > 0;
-          di(c1, 'C1) mentre la barra corre l\'impegno non e\' partito, e nessuna rivelazione e\' arrivata',
-            (c1vivo ? '' : 'PROVA NULLA: il tabellone non dice niente · ') +
-            (rDopo > 0 ? '' : 'PROVA NULLA: il testimone non ha visto la rivelazione nemmeno dopo · ') +
-            'barra alla mira ' + mira.barra + ' · barra dopo quattro giri ' + barraViva +
+          const det1 = 'barra alla mira ' + mira.barra + ' · barra dopo quattro giri ' + barraViva +
             ' · rivelazioni viste: ' + rPrima + ' con la barra in corsa, ' + rDopo + ' dopo il rilascio' +
-            ' · pannello: ' + String(vTIR.stato || '').replace(/\s+/g, ' ').slice(0, 90));
+            ' · pannello: ' + String(vTIR.stato || '').replace(/\s+/g, ' ').slice(0, 90);
+          /* IL TESTIMONE DECIDE SE QUESTA PROVA VALE. Se dopo il rilascio
+             la rivelazione NON arriva, il banco non ha visto girare il
+             protocollo: «zero rivelazioni con la barra in corsa» sarebbe
+             vero anche su una serie mai cominciata. E' una PROVA NULLA, e
+             sotto carico capita (misurato: una corsa su dodici). Se
+             invece il testimone ha visto, allora lo zero di prima e' una
+             misura vera e vale come rosso o come verde. */
+          if (vTIR.stato === null)
+            di(false, 'C1) mentre la barra corre l\'impegno non e\' partito, e nessuna rivelazione e\' arrivata',
+              'il tabellone non esiste · ' + det1);
+          else if (!c1vivo || rDopo === 0)
+            diNulla('C1) mentre la barra corre l\'impegno non e\' partito',
+              (c1vivo ? 'il testimone non ha visto la rivelazione nemmeno dopo il rilascio'
+                      : 'il tabellone non dice niente') + ' · ' + det1);
+          else
+            di(mira.barra && barraViva && rPrima === 0,
+              'C1) mentre la barra corre l\'impegno non e\' partito, e nessuna rivelazione e\' arrivata', det1);
 
           /* si gioca la serie fino in fondo e si guarda che cosa dice */
           let giri = 0;
@@ -703,8 +741,15 @@ function contaTipi(nastro) {
   }
 
   const no = esiti.filter(x => !x).length;
-  console.log('\n' + (esiti.length - no) + '/' + esiti.length + ' verdi' + (no ? ' — ' + no + ' ROSSI' : ''));
-  process.exit(no ? 1 : 0);
+  console.log('\n' + (esiti.length - no) + '/' + esiti.length + ' verdi' +
+    (no ? ' — ' + no + ' ROSSI' : '') +
+    (nulle.length ? ' — ' + nulle.length + ' PROVE NULLE: ' + nulle.join(', ') : ''));
+  if (no) process.exit(1);
+  if (nulle.length) {
+    console.log('  Nessun rosso, ma il banco non ha misurato tutto: uscita 3, non verde.');
+    process.exit(3);
+  }
+  process.exit(0);
 })().catch(e => { console.error('BANCO ESPLOSO: ' + (e && e.stack || e)); process.exit(2); });
 
 /* un ridipinto del pannello senza aspettare il timer: il battito e' la
