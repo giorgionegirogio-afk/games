@@ -59,19 +59,33 @@
      --fili 1L   il filo caldo su tutte, il freddo solo da vicino
    MISURATO IL 24 SETTEMBRE 2026 con strumenti/_sonda-152-fili.js —
    stessa pagina, stessa partita, stesso fotogramma, l'interruttore
-   girato a caldo, ventiquattro blocchi da sessanta disegni alternati:
+   girato a caldo, venti/ventiquattro blocchi da sessanta disegni
+   alternati, a taglia 11 con ventidue figure in campo:
 
-     taglia 11, 22 figure    fili 0  0,435 ms   (riferimento)
-                             fili 1  0,441 ms   +1,3%
-                             fili 2  0,475 ms   +9,2%
-     taglia  5, 10 figure    fili 0  8,566 ms   (riferimento)
-                             fili 1  8,666 ms   +1,2%
+     freno 1x   fili 0  0,435 ms   (disp. 30%)   (riferimento)
+                fili 1  0,441 ms   (disp. 26%)   +1,3%
+                fili 2  0,475 ms   (disp. 25%)   +9,2%
+     freno 4x   fili 0  7,678 ms   (disp. 23%)   (riferimento)
+                fili 1  7,922 ms   (disp. 22%)   +3,2%
+                fili 2  8,222 ms   (disp. 20%)   +7,1%
+     freno 6x   PROVA NULLA
+     taglia 5, freno 1x, 10 figure
+                fili 0  8,566 ms   ·  fili 1  8,666 ms   +1,2%
 
-   IL SECONDO FILO COSTA SETTE VOLTE IL PRIMO, e non e' un paradosso:
-   il filo caldo si disegna dove il tratto e' gia' stato toccato, il
-   freddo apre un secondo tracciato con un'altra tinta e un'altra alfa
-   dall'altra parte dell'asse. Il +9,2% dei due fili sfora il budget di
-   questa voce (+8%); il +1,3% del solo caldo ci sta dentro sette volte.
+   IL FRENO 6x NON HA DATO UN NUMERO, E NON SI TRASCRIVE. Venti blocchi
+   da sessanta disegni: dispersione 92-98% su tutte e tre le forme, e
+   l'ordine ROVESCIATO (un filo +17,1%, due fili −2,5%). Un numero con la
+   dispersione fuori soglia non e' un numero, e due fili che costano MENO
+   di uno sono la firma del rumore, non una misura. Si dichiara prova
+   nulla invece di scegliere il numero che fa comodo.
+
+   I DUE FRENI CHE HANNO MISURATO DICONO LA STESSA COSA: il secondo filo
+   costa da due a sette volte il primo, e non e' un paradosso — il filo
+   caldo si disegna dove il tratto e' gia' stato toccato, il freddo apre
+   un secondo tracciato con un'altra tinta e un'altra alfa dall'altra
+   parte dell'asse. Il budget di questa voce e' +8%: i due fili lo
+   sfiorano a 4x (+7,1%) e lo sforano a 1x (+9,2%); il solo caldo ci sta
+   dentro con margine a tutt'e due i freni (+1,3% e +3,2%).
 
    PERCHE' LA FORMA SCELTA E' «1L» E NON «1». Il #151 aveva ragione a
    dire che un cilindro si legge perche' ha DUE bordi diversi — ma la
@@ -85,7 +99,7 @@
    e il costo non si misura. E' la stessa logica con cui il file gia'
    tiene le dita, la faccia e la suola sotto lodOn.
    Chi vuole rimetterlo dappertutto deve prima rifare la misura qui
-   sopra: sono +9,2% a taglia 11, non un'opinione.
+   sopra: sono +9,2% a 1x e +7,1% a 4x su taglia 11, non un'opinione.
 
    E NON TOCCA LA SIMULAZIONE. Vive dentro disegna(), che e'
    presentazione: non legge ne' scrive nessuno stato di gioco, non

@@ -656,11 +656,21 @@ Qui il registro completo, a edizioni.
   pagina, stessa partita, stesso fotogramma, l'interruttore girato a caldo,
   24 blocchi da 60 disegni alternati:
 
-  | forma | taglia 11 (22 figure) | taglia 5 (10 figure) |
-  |---|---|---|
-  | nessun filo | 0,435 ms | 8,566 ms |
-  | **un filo caldo** | 0,441 ms · **+1,3%** | 8,666 ms · **+1,2%** |
-  | due fili | 0,475 ms · **+9,2%** | — |
+  | forma | 1× (taglia 11) | 4× (taglia 11) | 6× |
+  |---|---|---|---|
+  | nessun filo | 0,435 ms | 7,678 ms | — |
+  | **un filo caldo** | 0,441 ms · **+1,3%** | 7,922 ms · **+3,2%** | — |
+  | due fili | 0,475 ms · **+9,2%** | 8,222 ms · **+7,1%** | — |
+
+  (dispersioni 20–30%; a taglia 5 con dieci figure, a 1×: 8,566 → 8,666 ms,
+  **+1,2%** per il filo caldo.)
+
+  **IL FRENO 6× NON HA DATO UN NUMERO E NON SI TRASCRIVE**: venti blocchi da
+  sessanta disegni, **dispersione 92–98%** su tutte e tre le forme e l'ordine
+  **rovesciato** (un filo +17,1%, due fili −2,5%). Due fili che costano *meno*
+  di uno sono la firma del rumore, non una misura: si dichiara **prova nulla**
+  invece di scegliere il numero che fa comodo. I due freni che hanno misurato
+  dicono la stessa cosa.
 
   Il budget era **+8%**: il secondo filo dappertutto lo sfora, il primo ci sta
   dentro **sette volte**. Perciò il filo caldo va su **tutte** le figure —
