@@ -767,8 +767,18 @@ function misuraCorsa(){
     const st = B.statura ? B.statura() : 1;
     const cd = B.cadenza ? B.cadenza() : 1;
     const pa = B.falcata ? B.falcata() : 1;
+    /* LA CIMA SI DICHIARA DUE VOLTE, E LA SECONDA E' QUELLA VERA (voce
+       #155, giro 2). `cima` e' misurata nello spazio del RIG, dove la
+       statura non e' ancora entrata: un piccoletto con la testa piu'
+       grossa (hr 1,20) ci esce PIU' ALTO dello spilungone, e la giuria
+       l'ha colto — «in spazio-rig la statura e' invertita». Non era una
+       bugia del gioco: era il provino che stampava meta' del conto.
+       `cimaDis` e' la stessa cima MOLTIPLICATA PER LA STATURA, cioe'
+       l'altezza che finisce davvero sullo schermo, ed e' quella che
+       deve concordare con i pixel misurati in prova-corpi-50. */
     righe.push({corp:c, falcata:+(z1-z0).toFixed(4), alzata:+y1.toFixed(4),
-                cima:+cima.toFixed(4), statura:+st.toFixed(4),
+                cima:+cima.toFixed(4), cimaDis:+(cima*st).toFixed(4),
+                statura:+st.toFixed(4),
                 passo:+pa.toFixed(3), freq:+(R.CLIPS.corsa.freq*cd).toFixed(3)});
   }
   B.corpora(3,0);
@@ -1128,36 +1138,91 @@ function vistaCorsa(){
   const m = rifai('corsa','uno',()=>misuraCorsa(),1e9);
   const NOMI=['spilungone','tarchiato','piccoletto','neutro'];
   const col = VW/K.nCorpi;
-  const base = VH*0.70;
-  const h = Math.min(S.h*0.7, base*0.72, col*0.70);
+  const base = VH*0.52;
+  const h = Math.min(S.h*0.55, base*0.80, col*0.62);
   for(let c=0;c<K.nCorpi;c++){
     const cx = col*(c+0.5);
     figura(g, cx, base, h, {clip:'corsa', corp:c, senzaGiunti:true});
     g.save(); g.textAlign='center';
     g.font='700 13px ui-monospace,Consolas,monospace'; g.fillStyle='#fff';
-    g.fillText(NOMI[c], cx, base+56);
+    g.fillText(NOMI[c], cx, base+24);
     g.font='11.5px ui-monospace,Consolas,monospace'; g.fillStyle='#3fe6b0';
-    g.fillText('falcata '+m.righe[c].falcata.toFixed(4)+' m', cx, base+78);
+    g.fillText('falcata '+m.righe[c].falcata.toFixed(4)+' m'
+             + (m.righe[c].freq===undefined?'':'   cadenza '+m.righe[c].freq.toFixed(2)+' Hz'), cx, base+42);
     g.fillStyle='rgba(255,255,255,.66)';
-    g.fillText('alzata del piede '+m.righe[c].alzata.toFixed(4)+' m', cx, base+96);
-    g.fillText('cima della testa '+m.righe[c].cima.toFixed(4)+' m', cx, base+114);
+    g.fillText('alzata del piede '+m.righe[c].alzata.toFixed(4)+' m', cx, base+58);
+    /* la cima DISEGNATA (cima x statura) e, fra parentesi, quella del
+       rig: due numeri perche' il primo e' quello che si vede e il
+       secondo e' quello che la gabbia misura */
+    g.fillText('cima DISEGNATA '+m.righe[c].cimaDis.toFixed(4)+' m'
+             + '   (rig '+m.righe[c].cima.toFixed(4)+')', cx, base+74);
     g.restore();
     if(c<K.nCorpi-1){
       g.strokeStyle='rgba(255,255,255,.08)';
-      g.beginPath(); g.moveTo(col*(c+1),60); g.lineTo(col*(c+1),VH-8); g.stroke();
+      g.beginPath(); g.moveTo(col*(c+1),60); g.lineTo(col*(c+1),base+82); g.stroke();
     }
   }
+  /* =================================================================
+     LO SFASAMENTO SI MOSTRA, NON SI AFFERMA (voce #155, giro 2).
+     La didascalia vecchia diceva «quattro uomini diversi corrono alla
+     stessa cadenza e con lo stesso passo: lasciali andare e non si
+     sfasano mai» mentre i numeri stampati sotto le figure dicevano gia'
+     falcate e cadenze diverse: lo strumento ATTESTAVA invece di
+     misurare, ed e' l'ottavo rilievo della giuria. Qui sotto c'e' la
+     prova, e non e' una frase: le quattro corporature disegnate allo
+     STESSO ISTANTE, non alla stessa fase, a sei istanti successivi. Se
+     le cadenze fossero uguali le quattro colonne resterebbero in passo
+     per sempre; sfasandosi, si vede a occhio dove finisce il passo.
+     La fase la calcola il RIG: disegna() fa u = tSec x freq x CAD, e
+     CAD e' la cadenza della corporatura. Il provino passa lo stesso
+     tSec a tutte e quattro e non tocca nient'altro. */
+  const ISTANTI = [0.00, 0.20, 0.40, 0.60, 0.80, 1.00];
+  const hs = Math.min(64, (VH-base-150)/1.1);
+  const cw2 = VW/(ISTANTI.length+1);
+  const yTop = base+112;
+  g.save();
+  g.font='700 12px ui-monospace,Consolas,monospace'; g.fillStyle='#ffb020';
+  g.textAlign='left';
+  g.fillText('LO STESSO ISTANTE, NON LA STESSA FASE — le quattro corporature lasciate andare insieme', 12, yTop-14);
+  g.restore();
+  for(let c=0;c<K.nCorpi;c++){
+    const yy = yTop + hs*(0.92) + c*0;  // una riga sola: le quattro accostate
+    for(let t=0;t<ISTANTI.length;t++){
+      const cx = cw2*(t+0.5) + (c-1.5)*(cw2/K.nCorpi);
+      /* tSec identico per tutte e quattro: figura() passa al rig
+         u/freq come tempo, quindi qui u = tSec x freq riporta lo stesso
+         ISTANTE. La FASE la calcola il rig, u' = tSec x freq x CAD, e
+         CAD e' la cadenza della corporatura: e' li' che nasce lo
+         sfasamento, non qui. */
+      const u = ISTANTI[t]*R.CLIPS['corsa'].freq;
+      figura(g, cx, yy, hs, {clip:'corsa', corp:c, u:u, senzaGiunti:true, ombra:false});
+    }
+  }
+  g.save(); g.textAlign='center';
+  g.font='11px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(255,255,255,.55)';
+  for(let t=0;t<ISTANTI.length;t++)
+    g.fillText('t = '+ISTANTI[t].toFixed(2)+' s', cw2*(t+0.5), yTop+hs*0.92+18);
+  g.restore();
+
   const f = m.righe.map(r=>r.falcata);
-  const uguali = (Math.max.apply(null,f)-Math.min.apply(null,f)) < 0.0005;
+  const cd = m.righe.map(r=>(r.freq===undefined?0:r.freq));
+  const dF = (Math.max.apply(null,f)-Math.min.apply(null,f));
+  const dC = (Math.max.apply(null,cd)-Math.min.apply(null,cd));
+  const uguali = dF < 0.0005;
   g.save();
   g.font='600 12px ui-monospace,Consolas,monospace';
   g.fillStyle = uguali ? '#ff7a6a' : '#3fe6b0';
-  g.fillText('frequenza della corsa: '+m.freq+' — costante della CLIP, non del giocatore'
+  g.fillText('frequenza nominale della clip: '+m.freq+' Hz — la CADENZA la moltiplica il giocatore'
            + (uguali ? '; e la falcata e\' IDENTICA per tutte e quattro le corporature' : ''), 12, 22);
   g.font='11px ui-monospace,Consolas,monospace';
-  g.fillStyle='rgba(255,255,255,.55)';
-  g.fillText('quattro uomini diversi corrono alla stessa cadenza e con lo stesso passo: '
-           + 'lasciali andare e non si sfasano mai.', 12, 40);
+  g.fillStyle='rgba(255,255,255,.62)';
+  /* LA DIDASCALIA DICE QUELLO CHE I NUMERI DICONO, e non il contrario:
+     si scrive dalle misure appena prese, non a mano. */
+  g.fillText('MISURATO ORA: falcate da '+Math.min.apply(null,f).toFixed(3)+' a '+Math.max.apply(null,f).toFixed(3)
+           + ' m (scarto '+dF.toFixed(3)+'), cadenze da '+Math.min.apply(null,cd).toFixed(2)+' a '
+           + Math.max.apply(null,cd).toFixed(2)+' Hz (scarto '+dC.toFixed(2)+').'
+           + (dC>0.01 ? '  Lasciati andare, si sfasano: vedi la striscia in basso.'
+                      : '  Cadenze uguali: lasciati andare NON si sfasano mai.'), 12, 40);
   g.restore();
 }
 
@@ -1386,41 +1451,79 @@ function vistaSagoma40(){
    3. MUSO — otto imbardate a 50 px, dettaglio spento (C2)
    ===================================================================== */
 function vistaMuso(){
-  const N = 8, COL = 4, RIG = 2;
-  const Q = 4, CW1 = 56, CH1 = 70, ET = 34, TESTA = 44;   // la cella contiene la figura intera
+  /* DUE RIGHE, E LA SECONDA E' IL MEZZO CRITERIO CHE MANCAVA (voce #155,
+     giro 2). La giuria chiede che «petto e testa raccontino due cose
+     diverse quando il giocatore corre guardandosi indietro»: finche' la
+     faccia si disegnava sull'imbardata del corpo era impossibile, e il
+     provino non poteva nemmeno mostrarlo. Adesso il rig ha una
+     dichiarazione monouso — Rig3D.guarda(rad) — e la seconda riga la usa
+     al massimo che il collo concede. Le due righe hanno TUTTO uguale
+     tranne quella: stessa clip, stessa fase, stesse otto imbardate. */
+  const N = 8, COL = 8;
+  const Q = 4, CW1 = 56, CH1 = 70, ET = 52, TESTA = 48;
   const CW = CW1*Q, CH = CH1*Q;
-  dimensiona({w:COL*CW, h:RIG*(CH+ET)+TESTA});
+  const RIGHE = [
+    {gira:0,     et:'la testa segue il petto'},
+    {gira:1.15,  et:'corre GUARDANDOSI INDIETRO (collo a 66 gradi, il massimo)'},
+  ];
+  const puo = (typeof R.guarda === 'function');
+  dimensiona({w:COL*CW, h:RIGHE.length*(CH+ET)+TESTA});
   g.setTransform(DPR,0,0,DPR,0,0);
   g.fillStyle='#0b0d0a'; g.fillRect(0,0,VW,VH);
-  for(let i=0;i<N;i++){
-    const yd = i*45;
-    preparaI(CW1, CH1);
-    dipingiFondo(gI, CW1, CH1, 12);
-    figura(gI, CW1*0.5, CH1*0.76, 50, {clip:S.clip, yawDeg:yd, lod:'off',
-                                       senzaGiunti:true, ombra:false});
-    const x0=(i%COL)*CW, y0=((i/COL)|0)*(CH+ET)+TESTA;
-    blitNetto(g, cvI, x0, y0, Q);
-    g.save();
-    g.strokeStyle='rgba(255,255,255,.14)'; g.strokeRect(x0+0.5,y0+0.5,CW-1,CH-1);
-    g.textAlign='center';
-    g.font='700 14px ui-monospace,Consolas,monospace'; g.fillStyle='#ffb020';
-    g.fillText(yd+'°', x0+CW/2, y0+CH+18);
-    /* LA FRECCIA DEL VERO: dove il corpo guarda DAVVERO, calcolata con
-       la stessa proiezione del rig (avanti = (sin yaw, -cos yaw x sin E)).
-       Non serve a giudicare: serve a poter dire se si e' indovinato. */
-    const a = yd*Math.PI/180;
-    const fx = Math.sin(a), fy = -Math.cos(a)*K.CAM_SE;
-    const L = Math.hypot(fx,fy)||1;
-    const px = x0+CW/2, py = y0+CH+30, R = 13;
-    g.strokeStyle='rgba(63,230,176,.85)'; g.lineWidth=2;
-    g.beginPath(); g.moveTo(px-fx/L*R, py-fy/L*R*0.5);
-    g.lineTo(px+fx/L*R, py+fy/L*R*0.5); g.stroke();
-    g.fillStyle='rgba(63,230,176,.95)';
-    g.beginPath(); g.arc(px+fx/L*R, py+fy/L*R*0.5, 3.2, 0, 6.283); g.fill();
+  for(let ri=0; ri<RIGHE.length; ri++){
+    const RG = RIGHE[ri];
+    for(let i=0;i<N;i++){
+      const yd = i*45;
+      preparaI(CW1, CH1);
+      dipingiFondo(gI, CW1, CH1, 12);
+      /* la dichiarazione va fatta PRIMA di ogni disegna: e' monouso, la
+         consuma la figura e si spegne da sola */
+      if(puo && RG.gira) R.guarda(RG.gira);
+      figura(gI, CW1*0.5, CH1*0.76, 50, {clip:S.clip, yawDeg:yd, lod:'off',
+                                         senzaGiunti:true, ombra:false});
+      const x0=i*CW, y0=ri*(CH+ET)+TESTA;
+      blitNetto(g, cvI, x0, y0, Q);
+      g.save();
+      g.strokeStyle='rgba(255,255,255,.14)'; g.strokeRect(x0+0.5,y0+0.5,CW-1,CH-1);
+      g.textAlign='center';
+      g.font='700 14px ui-monospace,Consolas,monospace'; g.fillStyle='#ffb020';
+      g.fillText(yd+'°', x0+CW/2, y0+CH+18);
+      /* LA FRECCIA DEL VERO: dove il PETTO guarda davvero, calcolata con
+         la stessa proiezione del rig (avanti = (sin yaw, -cos yaw x sin E)).
+         Non serve a giudicare: serve a poter dire se si e' indovinato. */
+      const a = yd*Math.PI/180;
+      const fx = Math.sin(a), fy = -Math.cos(a)*K.CAM_SE;
+      const L = Math.hypot(fx,fy)||1;
+      const px = x0+CW/2, py = y0+CH+32, Rr = 13;
+      g.strokeStyle='rgba(63,230,176,.85)'; g.lineWidth=2;
+      g.beginPath(); g.moveTo(px-fx/L*Rr, py-fy/L*Rr*0.5);
+      g.lineTo(px+fx/L*Rr, py+fy/L*Rr*0.5); g.stroke();
+      g.fillStyle='rgba(63,230,176,.95)';
+      g.beginPath(); g.arc(px+fx/L*Rr, py+fy/L*Rr*0.5, 3.2, 0, 6.283); g.fill();
+      /* e dove guarda la TESTA, in ambra: la seconda freccia esiste solo
+         se le due cose sono diverse davvero */
+      if(RG.gira){
+        const b = a + RG.gira;
+        const hx = Math.sin(b), hy = -Math.cos(b)*K.CAM_SE;
+        const M = Math.hypot(hx,hy)||1;
+        g.strokeStyle='rgba(255,176,32,.9)'; g.lineWidth=2;
+        g.beginPath(); g.moveTo(px-hx/M*Rr, py-hy/M*Rr*0.5);
+        g.lineTo(px+hx/M*Rr, py+hy/M*Rr*0.5); g.stroke();
+        g.fillStyle='rgba(255,176,32,.95)';
+        g.beginPath(); g.arc(px+hx/M*Rr, py+hy/M*Rr*0.5, 3.2, 0, 6.283); g.fill();
+      }
+      g.restore();
+    }
+    g.save(); g.textAlign='left';
+    g.font='700 13px ui-monospace,Consolas,monospace';
+    g.fillStyle = (RG.gira && !puo) ? '#ff7a6a' : '#fff';
+    g.fillText((RG.gira && !puo)
+      ? 'RIGA NULLA: questo gioco non ha Rig3D.guarda — le due righe sono lo STESSO disegno'
+      : RG.et, 10, ri*(CH+ET)+TESTA+CH+46);
     g.restore();
   }
-  titolo('IL MUSO — una figura, otto imbardate, 50 px, dettaglio SPENTO, x'+Q+' a pixel netti  ('+S.clip+', u '+S.u.toFixed(3)+')',
-    'in 8 casi su 8 si indovina il davanti entro +-45 gradi? il pallino verde dice dov\'e\' il davanti VERO: si copre, si indovina, si scopre.');
+  titolo('IL MUSO — otto imbardate, 50 px, dettaglio SPENTO, x'+Q+' a pixel netti  ('+S.clip+', u '+S.u.toFixed(3)+')',
+    'in 8 casi su 8 si indovina il davanti entro +-45 gradi? verde = dove guarda il PETTO, ambra = dove guarda la TESTA. Si copre, si indovina, si scopre.');
 }
 
 /* =====================================================================
@@ -1433,33 +1536,126 @@ function vistaMuso(){
    ===================================================================== */
 const OMBRA_STATI = [
   {clip:'tuffo', u:0.10, et:'APPOGGIO',    su:'il portiere carica a terra'},
-  {clip:'tuffo', u:0.36, et:'MEZZ\'ARIA',  su:'orizzontale, in volo'},
-  {clip:'tuffo', u:0.66, et:'ATTERRAGGIO', su:'la botta sul fianco'},
+  {clip:'tuffo', u:0.40, et:'MEZZ\'ARIA',  su:'orizzontale, in volo'},
+  {clip:'tuffo', u:0.70, et:'ATTERRAGGIO', su:'la botta sul fianco'},
 ];
+
+/* =====================================================================
+   L'OMBRA DELLA PARTITA, non quella del rig — LA RETTIFICA DEL GIRO 2.
+
+   COM'ERA E PERCHE' ERA NULLA. Questa vista disegnava la figura a 140 px
+   con `ombra:true`, cioe' accendeva il ramo `!senzaOmbra` DENTRO
+   Rig3D.disegna. In partita quel ramo non gira mai: drawPlayer chiama
+   con senzaOmbra=true e l'ombra la fa drawOmbreGiocatori, in pianta,
+   fuori dal rig. La giuria l'ha colto e ha dichiarato nullo il criterio:
+   «l'ombra e' stata migliorata nella camera sbagliata». Aveva ragione.
+
+   COM'E' ADESSO. Si disegna la figura ESATTAMENTE come in partita —
+   50 px, camera alto, senzaOmbra=true — e sotto di lei si getta l'ombra
+   con le funzioni DEL GIOCO: ombraGeometria per la direzione del sole e
+   la lunghezza, Rig3D.ombraTraccia per il tracciato dei diciassette
+   ossi, ombraTex/ombraLungaTex per la macchia di contatto e la capsula,
+   OMBRA_TINTA/OMBRA_LARG/OMBRA_MT per tinta, larghezza e quota. Non c'e'
+   una geometria del provino: c'e' la sequenza di drawOmbreGiocatori
+   applicata a UNA figura invece che a ventidue, e le righe che la
+   compongono stanno qui sotto in chiaro perche' chi confronta possa
+   metterle accanto a quelle del gioco.
+   ===================================================================== */
+let OMB = null;
+function ombraRoba(){
+  if(OMB) return OMB;
+  OMB = W.eval('(function(){ if(typeof buildOmbraTex==="function"){ if(!ombraTex) buildOmbraTex(); }'
+      + ' if(typeof buildOmbraLungaTex==="function"){ if(!ombraLungaTex) buildOmbraLungaTex(); }'
+      + ' return {geo:ombraGeometria(), tinta:OMBRA_TINTA, larg:OMBRA_LARG,'
+      + ' mt:(typeof OMBRA_MT!=="undefined"?OMBRA_MT:0), alfa:ombraAlfa(),'
+      + ' tex:ombraTex, lunga:ombraLungaTex}; })()');
+  return OMB;
+}
+/* quanto il corpo si stacca dal manto, in unita' di schermo: e' il
+   numero che governa tutto il resto, e si stampa sotto ogni colonna */
+function ariaDi(clip,u){
+  const O = ombraRoba();
+  if(!O.mt || typeof R.quotaAria!=='function') return 0;
+  return R.quotaAria(clip, u/R.CLIPS[clip].freq) * O.mt;
+}
+function ombraPartita(gg, cx, cy, hCss, clip, u, yawDeg){
+  const O = ombraRoba();
+  const GEO = O.geo, C = GEO.ux, Sy = GEO.uy;
+  const tSec = u/R.CLIPS[clip].freq;
+  const h = ariaDi(clip,u) || 0;
+  const k = 1+h*0.05, r = 1-h*0.030, a = 1-h*0.055;
+  const sc = hCss/K.RIG_H;
+  /* il giocatore sta RIG_PIEDI unita' sopra l'ancora della figura: e' lo
+     stesso scarto che drawPlayer mette fra p.y e il cy del rig */
+  const px = cx, py = cy - K.RIG_PIEDI;
+  const fx = px+GEO.piedeX*k, fy = py+GEO.piedeY*k;
+  const X = fx*C+fy*Sy, Y = -fx*Sy+fy*C;
+  const lk = look();
+  /* lo stesso conto del gioco: sfoca il VOLO, non il saliscendi della
+     falcata (che qui e' zero, la figura non corre) */
+  const lw = h>1.0 ? O.larg*(1+h*0.230) : O.larg;
+  gg.save();
+  gg.translate(cx, cy); gg.scale(sc, sc); gg.translate(-cx, -cy);
+  gg.rotate(GEO.rot);
+  gg.strokeStyle = O.tinta; gg.lineCap='round'; gg.lineJoin='round';
+  gg.lineWidth = lw;
+  gg.globalAlpha = a*O.alfa;
+  let fatta = false;
+  try{
+    fatta = R.ombraTraccia(gg, X, Y, K.RIG_H, yawDeg*Math.PI/180,
+              clip, tSec, lk.corp, lk.varb||0, C, Sy, GEO.perMetro, r, !!lk.manc);
+  }catch(e){ fatta = false; }
+  if(!fatta && O.lunga){
+    const L = GEO.lungRiposo*r, sm2 = GEO.semiCorto*r;
+    gg.drawImage(O.lunga, X-L*0.1455, Y-sm2, L*1.164, sm2*2);
+  }
+  const ac = a*Math.max(0, 1-h*0.16);
+  if(ac>0.02 && O.tex){
+    const cxm = px, cym = py+7.0;
+    const CX = cxm*C+cym*Sy, CY = -cxm*Sy+cym*C;
+    gg.globalAlpha = ac*0.80;
+    gg.drawImage(O.tex, CX-7*r, CY-3.9*r, 14*r, 7.8*r);
+  }
+  gg.globalAlpha = 1;
+  gg.restore();
+  return {h:h, k:k, r:r, a:a, lw:lw, contatto:ac>0.02};
+}
+
 function vistaOmbra(){
   const N = OMBRA_STATI.length;
-  const Q = 2, CW1 = 210, CH1 = 190, ET = 92, TESTA = 46;
+  const Q = 4, CW1 = 108, CH1 = 104, ET = 112, TESTA = 50;
   const CW = CW1*Q, CH = CH1*Q;
   dimensiona({w:N*CW, h:2*CH+ET+TESTA});
   g.setTransform(DPR,0,0,DPR,0,0);
   g.fillStyle='#0b0d0a'; g.fillRect(0,0,VW,VH);
-  const H = 140;
+  /* LA TAGLIA E' QUELLA DELLA PARTITA: 50 px, non 140. Il criterio si da'
+     a cinquanta pixel, e un'ombra giudicata a centoquaranta e' un'ombra
+     che nessuno vedra' mai. */
+  const H = 50, YAW = 54;
   for(let i=0;i<N;i++){
     const st = OMBRA_STATI[i];
-    /* A: senza ombra. B: con ombra. La DIFFERENZA e' l'ombra, isolata al
-       pixel: cosi' «l'ombra cambia» non e' un'impressione ma un conto. */
+    /* A: la sola figura, senza ombra (che e' come drawPlayer la disegna).
+       B: la stessa piu' l'ombra della PARTITA. La differenza e' l'ombra,
+       isolata al pixel. */
     cvJ.width=CW1; cvJ.height=CH1;
     gJ.setTransform(1,0,0,1,0,0); gJ.clearRect(0,0,CW1,CH1);
-    figura(gJ, CW1*0.5, CH1*0.70, H, {clip:st.clip, u:st.u, senzaGiunti:true, ombra:false});
+    figura(gJ, CW1*0.5, CH1*0.62, H, {clip:st.clip, u:st.u, yawDeg:YAW,
+                                      lod:'off', senzaGiunti:true, ombra:false});
     const A = gJ.getImageData(0,0,CW1,CH1).data;
+
     preparaI(CW1, CH1);
-    dipingiFondo(gI, CW1, CH1, 26);
-    figura(gI, CW1*0.5, CH1*0.70, H, {clip:st.clip, u:st.u, senzaGiunti:true, ombra:true});
-    const xC=i*CW;
+    dipingiFondo(gI, CW1, CH1, 16);
+    const dati = ombraPartita(gI, CW1*0.5, CH1*0.62, H, st.clip, st.u, YAW);
+    figura(gI, CW1*0.5, CH1*0.62, H, {clip:st.clip, u:st.u, yawDeg:YAW,
+                                      lod:'off', senzaGiunti:true, ombra:false});
+    const xC = i*CW;
     blitNetto(g, cvI, xC, TESTA, Q);
+
     /* la seconda passata, sul TRASPARENTE, per la differenza */
     preparaI(CW1, CH1);
-    figura(gI, CW1*0.5, CH1*0.70, H, {clip:st.clip, u:st.u, senzaGiunti:true, ombra:true});
+    ombraPartita(gI, CW1*0.5, CH1*0.62, H, st.clip, st.u, YAW);
+    figura(gI, CW1*0.5, CH1*0.62, H, {clip:st.clip, u:st.u, yawDeg:YAW,
+                                      lod:'off', senzaGiunti:true, ombra:false});
     const B = gI.getImageData(0,0,CW1,CH1).data;
     let n=0, x0=1e9,x1=-1,y0=1e9,y1=-1;
     const D = gI.createImageData(CW1,CH1);
@@ -1484,21 +1680,22 @@ function vistaOmbra(){
     g.font='700 15px ui-monospace,Consolas,monospace'; g.fillStyle='#ffb020';
     g.fillText(st.et, xC+CW/2, TESTA+2*CH+22);
     g.font='11.5px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(255,255,255,.66)';
-    g.fillText(st.su+'   (u '+st.u.toFixed(2)+')', xC+CW/2, TESTA+2*CH+40);
+    g.fillText(st.su+'   (u '+st.u.toFixed(2)+', figura '+H+' px, senzaOmbra=true)', xC+CW/2, TESTA+2*CH+40);
     g.font='12px ui-monospace,Consolas,monospace'; g.fillStyle='#3fe6b0';
-    /* «VISIBILE» e non «totale», e la differenza conta: la parte
-       d'ombra che il corpo copre non compare nella differenza, quindi
-       non si conta. E' cio' che l'occhio vede, ed e' anche il motivo per
-       cui l'appoggio — dove il corpo sta sopra la sua ombra — segna meno
-       pixel dell'atterraggio, dove l'ombra si allarga fuori. */
     g.fillText(n>0 ? ('ombra VISIBILE: '+n+' px, scatola '+(x1-x0+1)+'x'+(y1-y0+1))
                    : 'NESSUNA ombra misurata', xC+CW/2, TESTA+2*CH+60);
-    g.font='11px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(255,255,255,.45)';
-    g.fillText('sopra: la figura sul manto · sotto: la sola ombra', xC+CW/2, TESTA+2*CH+78);
+    /* I NUMERI CHE DECIDONO, stampati: se sono uguali nei tre stati,
+       l'ombra non cambia e il criterio e' bocciato comunque appaia. */
+    g.font='11px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(255,255,255,.82)';
+    g.fillText('quota ' + dati.h.toFixed(2) + '   distanza x' + dati.k.toFixed(3)
+             + '   taglia x' + dati.r.toFixed(3) + '   alfa x' + dati.a.toFixed(3),
+             xC+CW/2, TESTA+2*CH+80);
+    g.fillText('tratto ' + dati.lw.toFixed(2) + ' unita   ·   macchia di contatto '
+             + (dati.contatto?'ACCESA':'SPENTA'), xC+CW/2, TESTA+2*CH+97);
     g.restore();
   }
-  titolo('IL PESO — l\'ombra nei tre stati, e L\'OMBRA DA SOLA (in ambra, la differenza con/senza)',
-    'la stessa clip, tre fasi: se i tre conti di pixel e le tre scatole sono uguali, l\'ombra non cambia e il criterio e\' bocciato.');
+  titolo('IL PESO — l\'ombra DELLA PARTITA nei tre stati, e l\'ombra DA SOLA (in ambra, la differenza con/senza)',
+    'figura 50 px, camera alto, senzaOmbra=true come drawPlayer: disegna drawOmbreGiocatori, non il ramo del rig. Se i tre conti e le tre scatole sono uguali, l\'ombra non cambia.');
 }
 
 /* la divisa AVVERSARIA, assemblata DAL GIOCO: rigLook con team 1 legge
