@@ -181,7 +181,10 @@ const ALTEZZA = 40;
         if (gOK) r.gambe++;
         r.masse += m.masse; r.inch += m.inch; r.scavo += m.scavo;
         if (m.scavo >= 0.33) r.scavoOK++;
-        r.det.push({ r3:m.r3, r2:m.r2, gb:m.gb, masse:m.masse });
+        /* il dettaglio PER IMBARDATA: senza, si sa che una clip vale 2 su
+           4 ma non QUALI due, e si gira una manopola al buio. Lo stampa
+           --det; il conto di sopra non cambia di un bit. */
+        r.det.push({ yaw, r3:m.r3, r2:m.r2, gb:m.gb, bOK, gOK, masse:m.masse });
       }
       r.masse /= IMBARDATE.length; r.inch /= IMBARDATE.length; r.scavo /= IMBARDATE.length;
       righe.push(r);
@@ -198,6 +201,10 @@ const ALTEZZA = 40;
               + String(r.gambe).padStart(5) + '        ' + String(r.scavoOK).padStart(3)
               + '     ' + r.scavo.toFixed(3) + '  ' + r.masse.toFixed(2).padStart(5)
               + '   ' + r.inch.toFixed(3));
+    if (process.argv.includes('--det')) {
+      console.log('      ' + r.det.map(d => d ? (d.yaw + ':' + (d.bOK ? 'B' : 'b') + (d.gOK ? 'G' : 'g')
+                + '(' + d.r3 + '/' + d.r2 + '/' + d.gb + ')') : '-').join('  '));
+    }
     bTot += r.braccia; gTot += r.gambe; mTot += r.masse; sTot += r.scavo; sOK += r.scavoOK;
     if (r.braccia >= 3 && r.scavoOK === 4) pien++;
   }

@@ -16,14 +16,36 @@
    1 = non si sovrappongono per niente.
 
      morti     coppie sotto 0,040 — «indistinguibili a occhio»
+     fermi     coppie sotto UN QUARTO della mediana della clip — «la
+               meta' morta»: il fotogramma non e' identico al vicino, ma
+               dentro QUESTO gesto non sta succedendo niente
      scatti    coppie sopra 3 volte la mediana della clip — «un salto»
      mediana   quanto si muove un fotogramma tipico
      minimo    la coppia piu' ferma della clip
 
-   Le due soglie sono dichiarate qui e non altrove. 0,040 viene dal
+   Le tre soglie sono dichiarate qui e non altrove. 0,040 viene dal
    confronto con l'occhio sul foglio del 25 settembre: le otto coppie
    che la giuria ha chiamato identiche in fasi-frenata stanno tutte
    sotto 0,030, e la prima coppia che un uomo distingue sta a 0,044.
+
+   RETTIFICA DEL 25 SETTEMBRE, SERA (voce #155, giro 3). Il rilievo 6
+   della giuria chiedeva: «0,040 lascia passare tiro 12/13 a 0,064 e
+   scivolata 5/6 a 0,045, dove il corpo e' fermo e si muove solo il
+   pallone. ESCLUDI LA PALLA dalla maschera (o alza la soglia a 0,08) e
+   rimisura.» La prima meta' non si puo' fare perche' e' gia' fatta: il
+   look che questo banco passa al rig dichiara palla:null, e
+   Rig3D.disegna disegna la palla della clip solo se look.palla NON e'
+   null (la riga e' `if(clip.palla && look.palla!==null)`). Nella
+   maschera misurata qui il pallone non c'e' mai stato, e quei 0,064
+   sono corpo. La seconda meta' — alzare la soglia a 0,08 — renderebbe
+   il banco PIU' PERMISSIVO, non piu' severo: chiamerebbe morte anche
+   coppie che si muovono davvero.
+   Quello che la giuria ha VISTO sul foglio resta vero («in tiro la
+   gamba resta alzata uguale dal 10/16 al 14/16»), e per contarlo
+   serviva una misura RELATIVA invece che assoluta: una coppia a 0,064
+   dentro una clip la cui mediana e' 0,26 e' ferma, la stessa coppia
+   dentro una clip la cui mediana e' 0,07 e' viva. E' la colonna
+   `fermi`, e nasce da questo rilievo.
 
    NON E' UN CANCELLO: stampa e non boccia. Uscite: 0 misurato, 2 banco
    esploso, 3 prova nulla.
@@ -46,6 +68,10 @@ if (!fs.existsSync(path.join(RADICE, GIOCO))) { console.error('PROVA NULLA: manc
    nel fascicolo */
 const CLIP = ['tuffo', 'tiro', 'corsa', 'scivolata', 'contrasto', 'frenata', 'rovesciata'];
 const MORTO = 0.040;
+/* la soglia RELATIVA: un quarto della mediana della clip. Vedi la
+   rettifica in testa al file — e' la misura che coglie «la gamba resta
+   alzata uguale», che una soglia assoluta non puo' cogliere. */
+const FERMO_K = 0.25;
 
 (async () => {
   let br;
@@ -99,18 +125,21 @@ const MORTO = 0.040;
   }, { CLIP });
 
   console.log('[155-fotogrammi] file: ' + GIOCO + '  ·  16 fotogrammi, 50 px, nero, imbardata 54 gradi');
-  console.log('  clip          morti(<' + MORTO.toFixed(3) + ')  scatti  mediana  minimo  massimo');
-  let mTot = 0, sTot = 0;
+  console.log('  clip          morti(<' + MORTO.toFixed(3) + ')  fermi(<' + FERMO_K.toFixed(2)
+            + 'x med)  scatti  mediana  minimo  massimo');
+  let mTot = 0, sTot = 0, fTot = 0;
   for (const r of out) {
     const morti = r.dd.filter(v => v < MORTO).length;
+    const fermi = r.dd.filter(v => v < FERMO_K * r.med).length;
     const scatti = r.dd.filter(v => v > 3 * r.med).length;
-    mTot += morti; sTot += scatti;
-    console.log('  ' + r.clip.padEnd(12) + String(morti).padStart(8) + String(scatti).padStart(8)
+    mTot += morti; sTot += scatti; fTot += fermi;
+    console.log('  ' + r.clip.padEnd(12) + String(morti).padStart(8) + String(fermi).padStart(12)
+              + String(scatti).padStart(8)
               + '   ' + r.med.toFixed(3) + '   ' + r.min.toFixed(3) + '   ' + r.max.toFixed(3));
-    console.log('      ' + r.dd.map((v,i) => (v<MORTO ? '·' : v>3*r.med ? '!' : ' ') + v.toFixed(3)).join(' '));
+    console.log('      ' + r.dd.map((v,i) => (v<MORTO ? '·' : v<FERMO_K*r.med ? 'o' : v>3*r.med ? '!' : ' ') + v.toFixed(3)).join(' '));
   }
   console.log('  TOTALE: fotogrammi morti ' + mTot + ' su ' + (out.length*15)
-            + ' coppie  ·  scatti ' + sTot);
+            + ' coppie  ·  fermi ' + fTot + '  ·  scatti ' + sTot);
   await br.close();
   process.exit(0);
 })();

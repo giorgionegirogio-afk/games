@@ -1534,10 +1534,24 @@ function vistaMuso(){
    pixel, senza il corpo sopra. Cosi' «l'ombra cambia» non e'
    un'impressione: e' una scatola e un conto di pixel.
    ===================================================================== */
+/* QUATTRO STATI E NON PIU' TRE (voce #155, giro 3). Il rilievo del giro
+   2 chiedeva «metti l'ATTERRAGGIO nel fascicolo come coppia dove la
+   differenza si veda senza ingrandire x3»: la colonna c'era gia' ma
+   pescava a u 0,70, cioe' cinque centesimi DOPO la botta, dove il corpo
+   e' gia' fermo. Qui l'impatto ha la sua colonna alla fase in cui la
+   quota smette di essere positiva, e accanto resta quella di poco dopo
+   a fare da controllo: se le due sono uguali, l'ombra non ha imparato
+   niente. */
 const OMBRA_STATI = [
   {clip:'tuffo', u:0.10, et:'APPOGGIO',    su:'il portiere carica a terra'},
   {clip:'tuffo', u:0.40, et:'MEZZ\'ARIA',  su:'orizzontale, in volo'},
-  {clip:'tuffo', u:0.70, et:'ATTERRAGGIO', su:'la botta sul fianco'},
+  /* 0,5625 e' il 9/16 esatto, cioe' LA FASE in cui la tabella della
+     quota smette di essere positiva: la stampa strumenti/_156-impatto.js,
+     non e' scritta a occhio. La quarta colonna resta a 0,70 — la stessa
+     fase che il fascicolo del giro 2 chiamava ATTERRAGGIO — e serve a
+     far vedere che l'impatto si RILASSA invece di restare acceso. */
+  {clip:'tuffo', u:0.5625, et:'IMPATTO',     su:'il corpo arriva sul manto'},
+  {clip:'tuffo', u:0.70,   et:'ATTERRAGGIO', su:'tre fotogrammi dopo'},
 ];
 
 /* =====================================================================
@@ -1567,6 +1581,14 @@ function ombraRoba(){
   OMB = W.eval('(function(){ if(typeof buildOmbraTex==="function"){ if(!ombraTex) buildOmbraTex(); }'
       + ' if(typeof buildOmbraLungaTex==="function"){ if(!ombraLungaTex) buildOmbraLungaTex(); }'
       + ' return {geo:ombraGeometria(), tinta:OMBRA_TINTA, larg:OMBRA_LARG,'
+      /* LA FORMULA VIENE DAL GIOCO, NON DA QUI (voce #155, giro 3). Il
+         provino ricopiava i quattro numeri dell'ombra — k, r, a, lw —
+         e stamparli era il suo mestiere, ma ricopiarli voleva dire
+         tenere una seconda verita' che un giorno diverge. Adesso la
+         funzione e' UNA e sta nel gioco (ombraParam); qui si legge e
+         basta. Se il file guardato non ce l'ha (il PRIMA del
+         confronto), si ricade sulla formula che quel file usava. */
+      + ' param:(typeof ombraParam==="function"?ombraParam:null),'
       + ' mt:(typeof OMBRA_MT!=="undefined"?OMBRA_MT:0), alfa:ombraAlfa(),'
       + ' tex:ombraTex, lunga:ombraLungaTex}; })()');
   return OMB;
@@ -1583,7 +1605,14 @@ function ombraPartita(gg, cx, cy, hCss, clip, u, yawDeg){
   const GEO = O.geo, C = GEO.ux, Sy = GEO.uy;
   const tSec = u/R.CLIPS[clip].freq;
   const h = ariaDi(clip,u) || 0;
-  const k = 1+h*0.05, r = 1-h*0.030, a = 1-h*0.055;
+  const imp = (typeof R.impatto==='function') ? R.impatto(clip,tSec) : 0;
+  /* i quattro numeri: dal gioco se il gioco li sa dare, se no la
+     formula che quel file usava — vedi il riquadro dentro ombraRoba */
+  const PA = O.param ? O.param(h,h,imp)
+                     : {k:1+h*0.05, r:1-h*0.030, a:1-h*0.055,
+                        lw:(h>1.0?O.larg*(1+h*0.230):O.larg),
+                        ac:(1-h*0.055)*Math.max(0,1-h*0.16), imp:0};
+  const k = PA.k, r = PA.r, a = PA.a;
   const sc = hCss/K.RIG_H;
   /* il giocatore sta RIG_PIEDI unita' sopra l'ancora della figura: e' lo
      stesso scarto che drawPlayer mette fra p.y e il cy del rig */
@@ -1593,7 +1622,7 @@ function ombraPartita(gg, cx, cy, hCss, clip, u, yawDeg){
   const lk = look();
   /* lo stesso conto del gioco: sfoca il VOLO, non il saliscendi della
      falcata (che qui e' zero, la figura non corre) */
-  const lw = h>1.0 ? O.larg*(1+h*0.230) : O.larg;
+  const lw = PA.lw;
   gg.save();
   gg.translate(cx, cy); gg.scale(sc, sc); gg.translate(-cx, -cy);
   gg.rotate(GEO.rot);
@@ -1609,16 +1638,17 @@ function ombraPartita(gg, cx, cy, hCss, clip, u, yawDeg){
     const L = GEO.lungRiposo*r, sm2 = GEO.semiCorto*r;
     gg.drawImage(O.lunga, X-L*0.1455, Y-sm2, L*1.164, sm2*2);
   }
-  const ac = a*Math.max(0, 1-h*0.16);
+  const ac = PA.ac;
   if(ac>0.02 && O.tex){
     const cxm = px, cym = py+7.0;
     const CX = cxm*C+cym*Sy, CY = -cxm*Sy+cym*C;
+    const rc = r*(1+0.40*(PA.imp||0));
     gg.globalAlpha = ac*0.80;
-    gg.drawImage(O.tex, CX-7*r, CY-3.9*r, 14*r, 7.8*r);
+    gg.drawImage(O.tex, CX-7*rc, CY-3.9*rc, 14*rc, 7.8*rc);
   }
   gg.globalAlpha = 1;
   gg.restore();
-  return {h:h, k:k, r:r, a:a, lw:lw, contatto:ac>0.02};
+  return {h:h, k:k, r:r, a:a, lw:lw, imp:(PA.imp||0), ac:ac, contatto:ac>0.02};
 }
 
 function vistaOmbra(){
@@ -1687,15 +1717,17 @@ function vistaOmbra(){
     /* I NUMERI CHE DECIDONO, stampati: se sono uguali nei tre stati,
        l'ombra non cambia e il criterio e' bocciato comunque appaia. */
     g.font='11px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(255,255,255,.82)';
-    g.fillText('quota ' + dati.h.toFixed(2) + '   distanza x' + dati.k.toFixed(3)
+    g.fillText('quota ' + dati.h.toFixed(2) + '   impatto ' + dati.imp.toFixed(2)
+             + '   distanza x' + dati.k.toFixed(3)
              + '   taglia x' + dati.r.toFixed(3) + '   alfa x' + dati.a.toFixed(3),
              xC+CW/2, TESTA+2*CH+80);
-    g.fillText('tratto ' + dati.lw.toFixed(2) + ' unita   ·   macchia di contatto '
-             + (dati.contatto?'ACCESA':'SPENTA'), xC+CW/2, TESTA+2*CH+97);
+    g.fillText('tratto ' + dati.lw.toFixed(2) + ' unita   ·   macchia x'
+             + dati.ac.toFixed(2) + ' ' + (dati.contatto?'ACCESA':'SPENTA'),
+             xC+CW/2, TESTA+2*CH+97);
     g.restore();
   }
-  titolo('IL PESO — l\'ombra DELLA PARTITA nei tre stati, e l\'ombra DA SOLA (in ambra, la differenza con/senza)',
-    'figura 50 px, camera alto, senzaOmbra=true come drawPlayer: disegna drawOmbreGiocatori, non il ramo del rig. Se i tre conti e le tre scatole sono uguali, l\'ombra non cambia.');
+  titolo('IL PESO — l\'ombra DELLA PARTITA nei quattro stati, e l\'ombra DA SOLA (in ambra, la differenza con/senza)',
+    'figura 50 px, camera alto, senzaOmbra=true come drawPlayer: disegna drawOmbreGiocatori, non il ramo del rig. Se i quattro conti e le quattro scatole sono uguali, l\'ombra non cambia.');
 }
 
 /* la divisa AVVERSARIA, assemblata DAL GIOCO: rigLook con team 1 legge
@@ -1767,6 +1799,7 @@ function vistaValore(){
      scarpe. Qui si legge, non si opina. */
   const lk = look();
   const VOCI = [['maglia',lk.maglia,'divisa'],['2a tinta',lk.maglia2,'divisa'],
+                ['manica',lk.manica,'divisa'],
                 ['calzoncini',lk.pantaloncini,'divisa'],['calze',lk.calze,'divisa'],
                 ['scarpe',lk.scarpe,'SCARPE'],['pelle',lk.pelle,'PELLE'],
                 ['capelli',lk.capelli,'capelli']];
@@ -1798,16 +1831,21 @@ function vistaValore(){
                   spegnerebbe lo spicchio della faccia, che sotto i 120
                   px e' l'unica cosa che dice il fronte: la scelta e'
                   dichiarata, non nascosta. */
-  const estremo = v => v.fam==='PELLE' || v.fam==='SCARPE';
-  const okLett = !estremo(piuScuro) && !estremo(piuChiaro);
+  /* UN VERDETTO SOLO, E QUELLO DURO (voce #155, giro 3). Qui stavano
+     DUE letture dello stesso criterio, stampate insieme: «PASSA
+     (letterale)» e «NON PASSA (stretta)» sugli stessi numeri. La giuria
+     l'ha chiamata col suo nome — «uno strumento che dice due verdetti
+     sta attestando» — e ha ragione: due verdetti sono zero verdetti,
+     perche' chi legge sceglie quello che gli conviene.
+     Resta la lettura STRETTA, che e' quella scritta nel criterio C5:
+     «la cosa piu' scura e la cosa piu' chiara della figura appartengono
+     alla DIVISA, non alla pelle ne' alle scarpe». Se un giorno cade,
+     cade in chiaro. */
   const okStretto = piuScuro.fam==='divisa' && piuChiaro.fam==='divisa';
   g.font='700 12px ui-monospace,Consolas,monospace';
-  g.fillStyle = okLett ? '#3fe6b0' : '#ff7a6a';
-  g.fillText((okLett?'PASSA':'NON PASSA')+' (letterale): ne\' pelle', xT, y); y+=16;
-  g.fillText('ne\' scarpe stanno agli estremi', xT, y); y+=20;
-  g.fillStyle = okStretto ? '#3fe6b0' : '#ffb020';
-  g.fillText((okStretto?'PASSA':'NON PASSA')+' (stretta): entrambi', xT, y); y+=16;
-  g.fillText('gli estremi sono capi della divisa', xT, y); y+=20;
+  g.fillStyle = okStretto ? '#3fe6b0' : '#ff7a6a';
+  g.fillText((okStretto?'PASSA':'NON PASSA')+': i due estremi del', xT, y); y+=16;
+  g.fillText('valore sono capi della divisa', xT, y); y+=20;
   g.font='11px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(255,255,255,.55)';
   g.fillText('piu\' scuro: '+piuScuro.n+' ('+piuScuro.L.toFixed(0)+')', xT, y); y+=16;
   g.fillText('piu\' chiaro: '+piuChiaro.n+' ('+piuChiaro.L.toFixed(0)+')', xT, y);
@@ -1886,7 +1924,12 @@ function vistaCorpi50(){
     const r = cor.righe[c] || {};
     const righe = [
       'sagoma '+alte[c]+' x '+larghe[c]+' px',
-      'TESTA '+teste[c]+' px - inchiostro '+inchio[c],
+      /* IL RIEMPIMENTO, e non e' un numero in piu' per bellezza: fra due
+         uomini alti quasi uguali la differenza che si LEGGE in nero e'
+         quanto sono pieni, non i due pixel di statura. Va stampato
+         accanto alla scatola perche' chi guarda possa verificarlo
+         invece di crederci. */
+      'TESTA '+teste[c]+' px - pieno '+(100*inchio[c]/(alte[c]*larghe[c])).toFixed(0)+'%',
       'statura x'+(r.statura!==undefined?r.statura.toFixed(3):'?'),
       'falcata '+(r.falcata!==undefined?r.falcata.toFixed(3):'?')+' m',
       'cadenza '+(r.freq!==undefined?r.freq.toFixed(2):'?')+' Hz',
