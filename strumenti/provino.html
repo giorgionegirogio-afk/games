@@ -1,0 +1,1430 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IL PROVINO — le figure di CALCETTO, guardate da vicino</title>
+<!-- =====================================================================
+     IL PROVINO — perche' esiste e a che domanda risponde.
+
+     LA DOMANDA: «come faccio a vedere la qualita' dei giocatori?».
+     Oggi non si puo'. In partita la camera sta lontana: la figura e' alta
+     RIG_H x S2 x P_DIS, cioe' una cinquantina di pixel, e il livello di
+     dettaglio del rig (LOD_PX = 120 px di altezza A SCHERMO, gioco riga
+     7755) si accende solo SOPRA quella soglia. Volto, dita, colletto,
+     suola e il secondo filo d'ombra esistono, sono scritti, sono pagati —
+     e in una partita vera non si vedono MAI. Chi giudica il gioco
+     giocandolo non sta giudicando le figure: sta giudicando quaranta
+     pixel di sagoma.
+
+     COSA FA QUESTO STRUMENTO: apre il gioco in un iframe e prende da
+     LI' il rig vero — Rig3D, le sue 27 clip, la sua rigLook, le sue
+     divise, i suoi campi. Non ridisegna niente per conto proprio: se
+     copiasse il disegno, il provino mentirebbe e il committente
+     giudicherebbe una figura che in campo non esiste. Poi la mostra
+     grande, a fotogramma singolo, al rallentatore, da tutte le direzioni,
+     e la affianca a se stessa a quattro scale — perche' la cosa che serve
+     vedere non e' «com'e' bella da vicino», e' CHE COSA SPARISCE quando
+     rimpicciolisce.
+
+     COSA RENDE VISIBILE (sono le voci del censimento del 24 settembre):
+       - il LOD: interruttore a tre stati, e l'elenco di cio' che cade;
+       - la statura: le quattro corporature affiancate, con l'altezza
+         MISURATA a pixel — CORPI ha g:1.00 su tutte e quattro le righe,
+         quindi i quattro fisici sono alti uguali e qui si vede;
+       - il piede: poseCalcio arma SEMPRE la gamba destra, non esiste un
+         mancino, e la tabella lo misura sui giunti invece di dirlo;
+       - la corsa: la frequenza e' una costante della clip (2,6) e non
+         dipende dal giocatore, quindi due figure affiancate restano in
+         passo per sempre.
+
+     COSA NON FA: non tocca il gioco. Nessun aggancio nuovo nel file del
+     gioco, nessuna riga aggiunta: tutto passa da iframe.contentWindow.eval,
+     che raggiunge le dichiarazioni di modulo (const di primo livello) senza
+     bisogno che il gioco le esporti. Non e' un cancello e non sta in
+     batteria: e' un microscopio, e il giudizio resta all'uomo.
+
+     COME SI APRE (il service worker del gioco ignora la query string,
+     quindi il provino lo disinstalla e svuota le cache da se' prima di
+     caricare l'iframe: senza questo si guarderebbe la copia di ieri):
+       python -m http.server 8777 --bind 127.0.0.1
+       http://127.0.0.1:8777/strumenti/provino.html
+     ===================================================================== -->
+<style>
+:root{
+  --fondo:#101215; --pan:#191c21; --pan2:#21252b; --bordo:#2e343c;
+  --testo:#d9d5c9; --tenue:#8d9299; --ambra:#ffb020; --verde:#3fe6b0;
+  --rosso:#ff7a6a;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--fondo); color:var(--testo);
+  font:13px/1.45 "Segoe UI",system-ui,-apple-system,sans-serif;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+header{
+  flex:0 0 auto; display:flex; align-items:baseline; gap:14px;
+  padding:9px 14px; border-bottom:1px solid var(--bordo); background:var(--pan);
+}
+header h1{
+  margin:0; font-size:15px; letter-spacing:.20em; font-weight:700; color:var(--ambra);
+}
+header .sot{color:var(--tenue); font-size:11.5px}
+header #stato{margin-left:auto; font-size:11.5px; font-family:ui-monospace,Consolas,monospace}
+#stato.ok{color:var(--verde)} #stato.ko{color:var(--rosso)}
+
+#corpo{flex:1 1 auto; display:flex; min-height:0}
+
+/* ---- colonna dei comandi ---- */
+#comandi{
+  flex:0 0 288px; overflow-y:auto; background:var(--pan);
+  border-right:1px solid var(--bordo); padding:10px 12px 40px;
+}
+#comandi::-webkit-scrollbar{width:9px}
+#comandi::-webkit-scrollbar-thumb{background:#333a43;border-radius:5px}
+fieldset{border:0; border-top:1px solid var(--bordo); margin:0 0 4px; padding:10px 0 12px}
+fieldset:first-of-type{border-top:0}
+legend{
+  padding:0; font-size:10px; letter-spacing:.17em; color:var(--tenue);
+  text-transform:uppercase;
+}
+label.r{display:block; font-size:11px; color:var(--tenue); margin:8px 0 3px}
+select,input[type=text]{
+  width:100%; background:var(--pan2); color:var(--testo);
+  border:1px solid var(--bordo); border-radius:3px; padding:5px 6px; font:inherit;
+}
+select:focus,button:focus{outline:1px solid var(--ambra); outline-offset:1px}
+input[type=range]{width:100%; margin:3px 0; accent-color:var(--ambra)}
+.fila{display:flex; gap:5px; flex-wrap:wrap}
+.fila>*{flex:1 1 auto}
+button{
+  background:var(--pan2); color:var(--testo); border:1px solid var(--bordo);
+  border-radius:3px; padding:5px 8px; font:inherit; cursor:pointer; white-space:nowrap;
+}
+button:hover{background:#2b3138}
+button.on{background:var(--ambra); border-color:var(--ambra); color:#17140c; font-weight:600}
+.num{
+  font-family:ui-monospace,Consolas,monospace; font-size:11px; color:var(--ambra);
+  float:right; font-weight:600;
+}
+.nota{font-size:10.5px; color:var(--tenue); margin:6px 0 0; line-height:1.4}
+.griglia4{display:grid; grid-template-columns:1fr 1fr; gap:5px}
+
+/* ---- scena ---- */
+#scena{flex:1 1 auto; display:flex; flex-direction:column; min-width:0}
+#schede{
+  flex:0 0 auto; display:flex; gap:2px; padding:7px 12px 0;
+  border-bottom:1px solid var(--bordo); background:var(--pan);
+}
+#schede button{
+  border-bottom:0; border-radius:3px 3px 0 0; font-size:11.5px;
+  letter-spacing:.06em; padding:6px 12px;
+}
+#schede button.on{background:var(--fondo); border-color:var(--bordo); color:var(--ambra)}
+#palco{flex:1 1 auto; position:relative; min-height:0; overflow:auto}
+#tela{display:block}
+#didascalia{
+  position:absolute; left:16px; top:12px; pointer-events:none;
+  text-shadow:0 1px 3px #000,0 0 12px #000;
+}
+#didascalia .clip{
+  font-size:26px; font-weight:700; letter-spacing:.06em; color:#fff; margin:0;
+}
+#didascalia .sub{
+  font-size:11px; font-family:ui-monospace,Consolas,monospace; color:#cfd4da; margin:2px 0 0;
+}
+#lettura{
+  flex:0 0 auto; padding:6px 14px; border-top:1px solid var(--bordo);
+  background:var(--pan); font-family:ui-monospace,Consolas,monospace;
+  font-size:11px; color:var(--tenue); white-space:pre-wrap;
+}
+#lettura b{color:var(--testo); font-weight:600}
+#lettura .v{color:var(--verde)} #lettura .k{color:var(--rosso)} #lettura .a{color:var(--ambra)}
+iframe#gioco{
+  position:fixed; left:-4000px; top:0; width:420px; height:760px;
+  border:0; opacity:0; pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>IL PROVINO</h1>
+  <span class="sot">le figure di CALCETTO, guardate da vicino &mdash; rig preso dal gioco vero, non copiato</span>
+  <span id="stato">aggancio in corso&hellip;</span>
+</header>
+
+<div id="corpo">
+  <div id="comandi">
+
+    <fieldset>
+      <legend>Clip</legend>
+      <select id="selClip" size="14"></select>
+      <p class="nota" id="notaClip"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Fase</legend>
+      <label class="r">fotogramma <span class="num" id="numFase">&mdash;</span></label>
+      <input type="range" id="rgU" min="0" max="1" step="0.0005" value="0.2">
+      <div class="fila">
+        <button id="bPrev" title="freccia sinistra">&#9664; 1 fot.</button>
+        <button id="bPlay" title="barra spazio">&#9654; via</button>
+        <button id="bNext" title="freccia destra">1 fot. &#9654;</button>
+      </div>
+      <label class="r">rallentatore <span class="num" id="numVel">1,00&times;</span></label>
+      <input type="range" id="rgVel" min="0.1" max="1" step="0.05" value="0.35">
+    </fieldset>
+
+    <fieldset>
+      <legend>Direzione</legend>
+      <label class="r">imbardata <span class="num" id="numYaw">&mdash;</span></label>
+      <input type="range" id="rgYaw" min="0" max="360" step="1" value="54">
+      <div class="fila">
+        <button data-yaw="54">provino</button>
+        <button data-yaw="0">di spalle</button>
+        <button data-yaw="90">di lato</button>
+        <button data-yaw="180">di fronte</button>
+      </div>
+      <p class="nota">54&deg; (0,95 rad) e' la direzione del foglio a contatto
+      di <b>?banco=silhouette</b>: la stessa, per poter confrontare.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Taglia a schermo</legend>
+      <label class="r">altezza della figura <span class="num" id="numH">&mdash;</span></label>
+      <input type="range" id="rgH" min="24" max="1400" step="2" value="420">
+      <div class="fila">
+        <button data-h="40">40 px sagoma</button>
+        <button data-h="120">120 soglia</button>
+        <button id="bHpart">partita</button>
+        <button id="bHpieno">riempi</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Dettaglio (LOD)</legend>
+      <div class="fila">
+        <button data-lod="auto" class="on">come in partita</button>
+        <button data-lod="on">acceso</button>
+        <button data-lod="off">spento</button>
+      </div>
+      <p class="nota" id="notaLod"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Corporatura</legend>
+      <div class="griglia4" id="boxCorpi"></div>
+      <p class="nota">In partita rigLook usa <b>corp % 3</b>: la quarta
+      (neutro) non esce mai in campo. Qui si possono vedere tutte.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Divisa</legend>
+      <select id="selKit"></select>
+      <label class="r">ruolo</label>
+      <div class="fila">
+        <button data-ruolo="campo" class="on">giocatore</button>
+        <button data-ruolo="gk">portiere</button>
+      </div>
+      <label class="r">pelle / capelli / taglio</label>
+      <div class="fila">
+        <select id="selPelle" style="flex:1 1 30%"></select>
+        <select id="selCapelli" style="flex:1 1 30%"></select>
+        <select id="selTaglio" style="flex:1 1 30%"></select>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Sfondo</legend>
+      <select id="selFondo"></select>
+      <div class="fila" style="margin-top:6px">
+        <button id="bOmbra" class="on">ombra</button>
+        <button id="bPalla" class="on">palla della clip</button>
+        <button id="bGiunti">giunti</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Fogli</legend>
+      <div class="fila">
+        <button id="bPng">salva PNG della vista</button>
+      </div>
+      <p class="nota">Le viste <b>foglio</b> e <b>fasi</b> sono le due che si
+      guardano in dieci secondi: tutte e 27 le clip, o una clip in sedici
+      fotogrammi.</p>
+    </fieldset>
+
+  </div>
+
+  <div id="scena">
+    <div id="schede"></div>
+    <div id="palco">
+      <canvas id="tela"></canvas>
+      <div id="didascalia"><p class="clip">&mdash;</p><p class="sub"></p></div>
+    </div>
+    <div id="lettura">aggancio del rig in corso&hellip;</div>
+  </div>
+</div>
+
+<iframe id="gioco" title="CALCETTO (sorgente del rig)"></iframe>
+
+<script>
+/* =====================================================================
+   1. L'AGGANCIO AL GIOCO — e perche' passa da eval.
+
+   Rig3D e le costanti del gioco sono `const` di PRIMO LIVELLO in uno
+   script classico: vivono nel record dichiarativo dell'ambiente globale
+   di quella finestra, NON su window. Percio' iframe.contentWindow.Rig3D
+   e' undefined (misurato), mentre iframe.contentWindow.eval('Rig3D')
+   restituisce l'oggetto vero. E' la sola via che non chiede al gioco di
+   esportare niente: zero righe aggiunte al file del gioco.
+   ===================================================================== */
+const URL_GIOCO = '../CALCETTO-il-gioco.html';
+const ifr = document.getElementById('gioco');
+const elStato = document.getElementById('stato');
+const elLett = document.getElementById('lettura');
+
+let W = null;          // la finestra del gioco
+let R = null;          // Rig3D, quello vero
+let K = {};            // le costanti lette dal gioco
+let CLIPS = [];        // i nomi delle clip, nell'ordine del gioco
+let rigLook = null;    // la funzione del gioco che assembla la divisa
+let impostaTinte = null;
+
+/* famiglie delle clip: servono solo a raggruppare il menu, non al disegno */
+const FAMIGLIA = {
+  fermo:'campo', camminata:'campo', corsa:'campo', frenata:'campo',
+  finta:'campo', scivolata:'campo', contrasto:'campo', rimessa:'campo',
+  passaggio:'calcio', filtrante:'calcio', cross:'calcio', tiro:'calcio',
+  testa:'calcio', rovesciata:'calcio',
+  attesaGK:'portiere', parata:'portiere', tuffo:'portiere', presa:'portiere',
+  rinvio:'portiere', pugni:'portiere', respinta:'portiere', sfugge:'portiere',
+  esultanza:'festa', cielo:'festa', ginocchia:'festa', pugno:'festa',
+  delusione:'festa',
+};
+const ETICHETTA = {campo:'campo', calcio:'calcio al pallone',
+                   portiere:'portiere', festa:'festa e delusione'};
+
+/* le cinque clip che passano da poseCalcio piu' il colpo di testa: sono
+   quelle su cui si misura il piede che arma */
+const CLIP_CALCIO = ['passaggio','filtrante','cross','tiro','testa'];
+
+/* LA SOGLIA DEL DETTAGLIO. LOD_PX vive DENTRO la chiusura di Rig3D e non
+   e' esportato, quindi qui e' dichiarata (gioco riga 7755) e poi
+   MISURATA: misuraSoglia() la ritrova dai pixel, e la lettura in fondo
+   dice se il numero dichiarato coincide con quello misurato. Un numero
+   copiato e mai verificato e' esattamente il modo in cui uno strumento
+   comincia ad attestare invece di misurare. */
+const LOD_DICHIARATA = 120;
+let LOD_MISURATA = null;
+
+/* prima di caricare l'iframe: via il service worker e via le cache.
+   sw.js ignora la query string (ignoreSearch:true), quindi ?v=N non
+   serve a niente e senza questa pulizia si guarderebbe la copia vecchia. */
+async function pulisciCache(){
+  let n=0, c=0;
+  try{
+    if(navigator.serviceWorker){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for(const r of regs){ await r.unregister(); n++; }
+    }
+  }catch(e){}
+  try{
+    if(window.caches){
+      const k = await caches.keys();
+      for(const q of k){ await caches.delete(q); c++; }
+    }
+  }catch(e){}
+  return {sw:n, cache:c};
+}
+
+async function aggancia(){
+  const p = await pulisciCache();
+  await new Promise(res=>{
+    ifr.addEventListener('load', res, {once:true});
+    ifr.src = URL_GIOCO + '?provino';
+  });
+  W = ifr.contentWindow;
+  /* il rig esiste al parse dello script, ma SOLE e le tinte squadra
+     arrivano piu' in basso nel file: si aspetta che ci sia tutto */
+  const t0 = performance.now();
+  for(;;){
+    let pronto = false;
+    try{
+      pronto = W.eval('typeof Rig3D==="object" && typeof SOLE==="object"'
+                    + ' && typeof rigLook==="function" && typeof TEAMCOL==="object"');
+    }catch(e){}
+    if(pronto) break;
+    if(performance.now()-t0 > 20000) throw new Error('il rig non e\' comparso in 20 s');
+    await new Promise(r=>setTimeout(r,60));
+  }
+  R = W.eval('Rig3D');
+  CLIPS = Object.keys(R.CLIPS);
+  rigLook = W.eval('rigLook');
+  /* il portiere: gkKit legge GK_UNICA, che senza una partita non e'
+     ancora stato eletto. Si semina con la scelta del gioco stesso. */
+  W.eval('if(typeof GK_UNICA==="undefined"||!GK_UNICA) GK_UNICA=GK_SCELTE[1];');
+  impostaTinte = W.eval('(function(c1,c2,pat){TEAMCOL[0]=c1;TEAMCOL2[0]=c2;TEAMPAT[0]=pat|0;})');
+  K = W.eval('({RIG_H:RIG_H, RIG_PIEDI:RIG_PIEDI, P_DIS:P_DIS, RIG_YAW_K:RIG_YAW_K,'
+           + ' S2_BASE:S2_BASE, S2_MIN:S2_MIN, S2_MAX:S2_MAX, S2_GOL:S2_GOL,'
+           + ' nCorpi:Rig3D.banco.nCorpi, dpr:devicePixelRatio,'
+           + ' KITS:KITS.map(k=>({nome:k.nome,c1:k.c1,c2:k.c2,pat:k.pat})),'
+           + ' POOL:TOUR_POOL.map(k=>({nome:k.n,c1:k.c1,c2:k.c2,pat:k.pat})),'
+           + ' GK:GK_SCELTE.map(g=>[g[0],g[1]]),'
+           + ' SKIN:SKIN.slice(), HAIR:HAIR.slice(),'
+           + ' FIELDS:FIELDS.map(f=>({id:f.id,nome:f.nome,g1:f.th.g1,g2:f.th.g2})),'
+           + ' PALLA:Rig3D.lookPredefinito.palla})');
+  elStato.className='ok';
+  elStato.textContent = 'rig agganciato · '+CLIPS.length+' clip · '
+                      + K.nCorpi+' corporature · sw rimossi '+p.sw+', cache '+p.cache;
+  return true;
+}
+
+/* =====================================================================
+   2. LO STATO DEL PROVINO
+   ===================================================================== */
+const S = {
+  clip:'corsa',
+  u:0.20,
+  via:true,
+  vel:0.35,
+  yawDeg:54,
+  h:420,
+  lod:'auto',
+  corp:3,
+  kit:0,
+  ruolo:'campo',
+  pelle:0, capelli:0, taglio:1,
+  fondo:0,
+  ombra:true, palla:true, giunti:false,
+  vista:'figura',
+};
+
+const VISTE = [
+  ['figura',  'FIGURA'],
+  ['scale',   'SCALE'],
+  ['lod',     'LOD'],
+  ['statura', 'STATURA'],
+  ['piede',   'PIEDE'],
+  ['corsa',   'CORSA'],
+  ['fasi',    'FASI'],
+  ['foglio',  'FOGLIO (27)'],
+];
+
+/* =====================================================================
+   3. IL DISEGNO — una sola porta, e passa per Rig3D.disegna del gioco.
+
+   hPx resta RIG_H (le unita' del gioco) e la taglia a schermo la fa la
+   trasformazione del contesto, esattamente come in drawPlayer: cosi'
+   l'ultimo argomento (pxs) e' la scala VERA e la legge del LOD
+   — hPx*pxs >= LOD_PX — resta quella della partita.
+
+   L'INTERRUTTORE DEL LOD MENTE AL RIG, E VA DETTO. La soglia E' l'altezza
+   a schermo: non esiste un modo di avere una figura di 400 px col
+   dettaglio spento se non dichiarando al rig una scala falsa. Effetto
+   collaterale dichiarato: il tetto del contorno unico vale 1,35/pxs,
+   quindi con la scala falsa il bordo scuro cambia spessore. Su 'auto'
+   nessuno mente e quello che si vede e' quello che il gioco disegna.
+   ===================================================================== */
+const LOOKS = new Map();
+function look(){
+  const kit = kitCorrente();
+  const chiave = [kit.c1,kit.c2,kit.pat,S.ruolo,S.corp,S.pelle,S.capelli,S.taglio,S.palla].join('|');
+  let lk = LOOKS.get(chiave);
+  if(lk) return lk;
+  impostaTinte(kit.c1, kit.c2, kit.pat);
+  /* la divisa la assembla il GIOCO (rigLook): maglia, seconda tinta,
+     motivo, pantaloncini, calze, risvolto, scarpe. Il provino ne prende
+     una copia e cambia solo le due cose che deve poter mostrare —
+     la corporatura (rigLook fa corp%3 e la quarta non esce mai) e la
+     palla della clip (in partita e' sempre spenta: il pallone vero e'
+     uno solo). Copia e non l'originale, cosi' la cache del gioco resta
+     quella del gioco. */
+  const p = {role:(S.ruolo==='gk'?'gk':'fw'), team:0,
+             skin:K.SKIN[S.pelle], hair:K.HAIR[S.capelli],
+             taglio:S.taglio, corp:0, seme:0};
+  lk = Object.assign({}, rigLook(p));
+  lk.corp = S.corp;
+  lk.varb = 0;
+  lk.palla = S.palla ? K.PALLA : null;
+  delete lk._lume; delete lk._ombra; delete lk._ombS;
+  if(LOOKS.size>48) LOOKS.clear();
+  LOOKS.set(chiave, lk);
+  return lk;
+}
+function kitCorrente(){
+  const tutti = elencoKit();
+  return tutti[Math.min(S.kit, tutti.length-1)];
+}
+function elencoKit(){
+  const v = [];
+  for(const k of K.KITS) v.push({nome:'casa · '+k.nome, c1:k.c1, c2:k.c2, pat:k.pat});
+  for(const k of K.POOL) v.push({nome:'torneo · '+k.nome, c1:k.c1, c2:k.c2, pat:k.pat});
+  return v;
+}
+
+/* pxs da dichiarare al rig per una figura alta hCss pixel a schermo */
+function scalaDichiarata(hCss, modo){
+  const vera = hCss / K.RIG_H;
+  if(modo==='on')  return Math.max(vera, (LOD_DICHIARATA+1)/K.RIG_H);
+  if(modo==='off') return Math.min(vera, (LOD_DICHIARATA-1)/K.RIG_H);
+  return vera;
+}
+
+/* la primitiva: una figura alta hCss, piedi in (cx,cy), in pixel CSS.
+   opt: {clip,u,yawDeg,corp,lod,ombra,lk} — tutto opzionale */
+function figura(g, cx, cy, hCss, opt){
+  opt = opt || {};
+  const nome = opt.clip || S.clip;
+  const clip = R.CLIPS[nome];
+  if(!clip) return;
+  const lk = opt.lk || look();
+  const corp = (opt.corp===undefined) ? S.corp : opt.corp;
+  const eraCorp = lk.corp; lk.corp = corp;
+  const u = (opt.u===undefined) ? S.u : opt.u;
+  const yaw = ((opt.yawDeg===undefined?S.yawDeg:opt.yawDeg)) * Math.PI/180;
+  const sc = hCss / K.RIG_H;
+  const pxs = scalaDichiarata(hCss, opt.lod || S.lod);
+  g.save();
+  g.translate(cx, cy); g.scale(sc, sc); g.translate(-cx, -cy);
+  R.disegna(g, cx, cy, K.RIG_H, yaw, 'alto', nome, u/clip.freq, lk,
+            !(opt.ombra===undefined ? S.ombra : opt.ombra), pxs);
+  g.restore();
+  lk.corp = eraCorp;
+  if(S.giunti && !opt.senzaGiunti) segnaGiunti(g, cx, cy, sc);
+}
+
+/* I DICIOTTO GIUNTI dell'ULTIMA figura disegnata. Rig3D.giunti() li
+   lascia in coordinate del contesto COME ERA DENTRO disegna(), cioe'
+   prima della scala che il provino ha messo attorno a (cx,cy): vanno
+   riportati nella scala di fuori, se no si accalcano tutti sul centro.
+   (Era il primo difetto del provino stesso, colto sullo scatto.) */
+function segnaGiunti(g, cx, cy, sc){
+  const J = R.giunti(), n = J.nomi;
+  const X = i => cx + (J.x[i]-cx)*sc, Y = i => cy + (J.y[i]-cy)*sc;
+  g.save();
+  g.fillStyle = 'rgba(255,176,32,.9)';
+  for(let i=0;i<J.n;i++){
+    g.beginPath(); g.arc(X(i), Y(i), 2.6, 0, 6.283); g.fill();
+  }
+  /* i due piedi si nominano: sono quelli della tabella del PIEDE */
+  g.font = '700 12px ui-monospace,Consolas,monospace';
+  g.strokeStyle='rgba(0,0,0,.75)'; g.lineWidth=3;
+  g.strokeText('TOR', X(n.TOR)+6, Y(n.TOR)-5);
+  g.fillStyle = '#ffb020'; g.fillText('TOR', X(n.TOR)+6, Y(n.TOR)-5);
+  g.strokeText('TOL', X(n.TOL)+6, Y(n.TOL)-5);
+  g.fillStyle = '#3fe6b0'; g.fillText('TOL', X(n.TOL)+6, Y(n.TOL)-5);
+  g.restore();
+}
+
+/* =====================================================================
+   4. LE MISURE — cio' che il provino dice lo misura, non lo afferma.
+
+   LE MISURE A PIXEL COSTANO (getImageData su una tela grande quanto la
+   figura), e una misura rifatta sessanta volte al secondo ferma la
+   pagina. Percio' passano tutte da rifai(): stessa chiave, stesso
+   risultato; chiave diversa, si rimisura al massimo ogni 200 ms. Il
+   numero che si legge e' SEMPRE un numero misurato, mai una stima —
+   solo, ogni tanto, misurato un quinto di secondo fa.
+   ===================================================================== */
+const cvM = document.createElement('canvas');
+const gM = cvM.getContext('2d', {willReadFrequently:true});
+
+const MEMO = new Map();
+function rifai(nome, chiave, fn, msec){
+  const v = MEMO.get(nome);
+  const ora = performance.now();
+  if(v && (v.chiave===chiave || ora-v.t < (msec||200))) {
+    if(v.chiave===chiave) return v.val;
+    return v.val;
+  }
+  const val = fn();
+  MEMO.set(nome, {chiave, val, t:ora});
+  return val;
+}
+
+/* scatola dell'inchiostro (alfa > 16) di una figura disegnata da sola */
+function scatola(hCss, opt){
+  const L = Math.ceil(hCss*2.2)+40;
+  cvM.width = L; cvM.height = L;
+  gM.clearRect(0,0,L,L);
+  const salvaGiunti = S.giunti; S.giunti = false;
+  figura(gM, L/2, L*0.86, hCss, Object.assign({ombra:false}, opt||{}));
+  S.giunti = salvaGiunti;
+  const d = gM.getImageData(0,0,L,L).data;
+  let x0=1e9,y0=1e9,x1=-1,y1=-1,n=0;
+  for(let y=0;y<L;y++) for(let x=0;x<L;x++){
+    if(d[(y*L+x)*4+3]>16){ n++; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+  }
+  if(n===0) return {vuota:true, alt:0, larg:0, ink:0};
+  return {vuota:false, alt:y1-y0+1, larg:x1-x0+1, ink:n,
+          riempimento:n/((x1-x0+1)*(y1-y0+1))};
+}
+
+/* LA SOGLIA DEL DETTAGLIO, MISURATA. Si tiene FERMA la geometria (la
+   trasformazione del contesto non cambia) e si muove solo cio' che il rig
+   crede della propria scala: allora l'immagine cambia poco e con
+   continuita' (il tetto del contorno), tranne nel punto in cui il LOD
+   scatta. Il salto piu' grande e' la soglia. */
+function misuraSoglia(){
+  const L=260, alt=240;
+  cvM.width=L; cvM.height=L;
+  const firme=[], lo=100, hi=140;
+  const salvaGiunti=S.giunti; S.giunti=false;
+  for(let h=lo; h<=hi; h++){
+    gM.clearRect(0,0,L,L);
+    const sc = alt/K.RIG_H;
+    gM.save();
+    gM.translate(L/2, L*0.9); gM.scale(sc,sc); gM.translate(-L/2,-L*0.9);
+    R.disegna(gM, L/2, L*0.9, K.RIG_H, 0.95, 'alto', 'fermo', 0.2/R.CLIPS.fermo.freq,
+              look(), true, h/K.RIG_H);
+    gM.restore();
+    const d = gM.getImageData(0,0,L,L).data;
+    const f = new Uint8Array(L*L);
+    for(let i=0,j=3;i<f.length;i++,j+=4) f[i] = d[j]>16 ? 1 : 0;
+    firme.push(f);
+  }
+  S.giunti=salvaGiunti;
+  let best=0, bestH=0, secondo=0;
+  for(let i=1;i<firme.length;i++){
+    let diff=0; const a=firme[i-1], b=firme[i];
+    for(let k=0;k<a.length;k++) if(a[k]!==b[k]) diff++;
+    if(diff>best){ secondo=best; best=diff; bestH=lo+i; }
+    else if(diff>secondo) secondo=diff;
+  }
+  return {soglia:bestH, salto:best, secondo:secondo};
+}
+
+/* IL PIEDE CHE ARMA. Per ogni clip di calcio si valuta la posa su 120
+   fasi e si guarda quanto AVANTI (z) e quanto ALTO (y) arriva ciascuna
+   delle due punte. Chi va piu' avanti e piu' alto e' il piede che
+   calcia. Si usa lo stesso scratch del banco del gioco (Rig3D.banco.P),
+   che e' la strada del banco ?gabbia: nessun secondo modo di valutare
+   una posa, quindi nessuna seconda verita'. */
+function misuraPiede(){
+  const B = R.banco, J = R.giunti().nomi, FASI = 120;
+  const fuori = [];
+  for(const nome of CLIP_CALCIO){
+    const c = R.CLIPS[nome]; if(!c) continue;
+    B.corpora(3,0);
+    let zR=-1e9, zL=-1e9, yR=-1e9, yL=-1e9, uR=0, uL=0;
+    for(let f=0; f<FASI; f++){
+      const u=f/FASI;
+      c.pose(u);
+      const zr=B.P[J.TOR*3+2], zl=B.P[J.TOL*3+2];
+      const yr=B.P[J.TOR*3+1], yl=B.P[J.TOL*3+1];
+      if(zr>zR){ zR=zr; uR=u; }
+      if(zl>zL){ zL=zl; uL=u; }
+      if(yr>yR) yR=yr;
+      if(yl>yL) yL=yl;
+    }
+    fuori.push({clip:nome, zR:+zR.toFixed(3), zL:+zL.toFixed(3),
+                yR:+yR.toFixed(3), yL:+yL.toFixed(3),
+                arma:(zR>zL?'destro':'sinistro'), uArma:+uR.toFixed(2)});
+  }
+  B.corpora(3,0);
+  return fuori;
+}
+
+/* LE OSSA VIVE, corporatura per corporatura. B.OSSA porta per ogni osso
+   una CHIUSURA f() che restituisce la lunghezza nominale CORRENTE: dopo
+   B.corpora(c) quelle chiusure parlano del corpo c. E' la strada del
+   banco ?gabbia, e dice la statura in metri invece di dedurla dai pixel
+   — che e' il punto, perche' a pixel la testa piu' grossa del piccoletto
+   falsa la scatola di qualche unita' e farebbe sembrare diversa una
+   statura che e' identica. */
+function misuraOssa(){
+  const B = R.banco, fuori = [];
+  const prendi = nome => { for(const o of B.OSSA) if(o.n===nome) return o.f(); return 0; };
+  for(let c=0;c<K.nCorpi;c++){
+    B.corpora(c,0);
+    fuori.push({
+      corp:c,
+      gamba:  +(prendi('cosciaR')+prendi('tibiaR')).toFixed(4),
+      coscia: +prendi('cosciaR').toFixed(4),
+      tibia:  +prendi('tibiaR').toFixed(4),
+      busto:  +prendi('busto').toFixed(4),
+      spalle: +prendi('spalle').toFixed(4),
+      braccio:+(prendi('braccioR')+prendi('avambraccioR')).toFixed(4),
+      testa:  +B.testa().toFixed(4),
+    });
+  }
+  B.corpora(3,0);
+  return fuori;
+}
+
+/* LA CORSA. La frequenza e' un campo della clip, non del giocatore: qui
+   si misura anche la FALCATA (escursione in z della punta) per tutte e
+   quattro le corporature. Se la falcata e' identica, due figure
+   affiancate non possono che restare in passo. */
+function misuraCorsa(){
+  const B = R.banco, J = R.giunti().nomi, FASI = 120;
+  const righe = [];
+  for(let c=0;c<K.nCorpi;c++){
+    B.corpora(c,0);
+    let z0=1e9, z1=-1e9, y1=-1e9, cima=-1e9;
+    for(let f=0;f<FASI;f++){
+      R.CLIPS.corsa.pose(f/FASI);
+      const z=B.P[J.TOR*3+2], y=B.P[J.TOR*3+1];
+      if(z<z0)z0=z; if(z>z1)z1=z; if(y>y1)y1=y;
+      const t=B.P[J.HEAD*3+1]+B.testa(); if(t>cima)cima=t;
+    }
+    righe.push({corp:c, falcata:+(z1-z0).toFixed(4), alzata:+y1.toFixed(4),
+                cima:+cima.toFixed(4)});
+  }
+  B.corpora(3,0);
+  return {freq:R.CLIPS.corsa.freq, righe};
+}
+
+/* =====================================================================
+   5. LE VISTE
+   ===================================================================== */
+const tela = document.getElementById('tela');
+const g = tela.getContext('2d');
+const palco = document.getElementById('palco');
+const didaClip = document.querySelector('#didascalia .clip');
+const didaSub  = document.querySelector('#didascalia .sub');
+
+let VW=0, VH=0, DPR=1;
+function dimensiona(forza){
+  DPR = Math.min(2, window.devicePixelRatio||1);
+  const w = Math.max(320, forza ? forza.w : palco.clientWidth);
+  const h = Math.max(240, forza ? forza.h : palco.clientHeight);
+  if(VW===w && VH===h && tela.width===Math.round(w*DPR)) return;
+  VW=w; VH=h;
+  tela.width = Math.round(w*DPR); tela.height = Math.round(h*DPR);
+  tela.style.width = w+'px'; tela.style.height = h+'px';
+}
+
+const FONDI = [
+  {nome:'nero (la sagoma)',   tipo:'tinta', c:'#000000'},
+  {nome:'grigio neutro 50%',  tipo:'tinta', c:'#808080'},
+  {nome:'grigio scuro 20%',   tipo:'tinta', c:'#333333'},
+  {nome:'bianco',             tipo:'tinta', c:'#ffffff'},
+];
+function fondoCorrente(){
+  if(S.fondo < FONDI.length) return FONDI[S.fondo];
+  const f = K.FIELDS[S.fondo - FONDI.length];
+  return {nome:'erba · '+f.nome, tipo:'erba', g1:f.g1, g2:f.g2};
+}
+function dipingiFondo(g, w, h, passo){
+  const f = fondoCorrente();
+  if(f.tipo==='tinta'){ g.fillStyle=f.c; g.fillRect(0,0,w,h); return; }
+  /* le due tinte del manto del campo scelto, a bande come il gioco:
+     serve a giudicare il CONTRASTO, non a rifare il campo */
+  const P = passo || 46;
+  g.fillStyle=f.g1; g.fillRect(0,0,w,h);
+  g.fillStyle=f.g2;
+  for(let x=0;x<w;x+=P*2) g.fillRect(x,0,P,h);
+}
+
+function disegnaTutto(){
+  if(!R) return;
+  dimensiona();
+  g.setTransform(DPR,0,0,DPR,0,0);
+  const V = S.vista;
+  if(V==='figura')      vistaFigura();
+  else if(V==='scale')  vistaScale();
+  else if(V==='lod')    vistaLod();
+  else if(V==='statura')vistaStatura();
+  else if(V==='piede')  vistaPiede();
+  else if(V==='corsa')  vistaCorsa();
+  else if(V==='fasi')   vistaFasi();
+  else if(V==='foglio') vistaFoglio();
+  aggiornaDidascalia();
+}
+
+/* ---- FIGURA: una sola, grande ---- */
+function vistaFigura(){
+  dipingiFondo(g, VW, VH);
+  /* 0,78 e non 0,92: le pose che allungano in avanti (fermo, scivolata,
+     tuffo) mandano i piedi SOTTO il punto d'appoggio, e una figura con i
+     piedi tagliati non si puo' giudicare */
+  const base = VH*0.80;
+  const h = Math.min(S.h, base*0.94);
+  figura(g, VW/2, base, h);
+  /* il righello della soglia: dove starebbe la cima di una figura di
+     120 px e di una di partita, per confronto a occhio */
+  const parti = altezzaPartita();
+  rigaSoglia(g, VW, base, LOD_DICHIARATA, 'soglia del dettaglio '+LOD_DICHIARATA+' px', '#ffb020');
+  rigaSoglia(g, VW, base, parti, 'la figura in partita ('+parti.toFixed(0)+' px)', '#3fe6b0');
+}
+
+/* ---- LOD: la stessa figura due volte, acceso e spento ---- */
+const CADUTE = [
+  'il VOLTO: occhi, sopracciglia, accenno del naso',
+  'le DITA e il pollice delle mani (restano bozzoli)',
+  'la rastrematura dell\'avambraccio (-20%)',
+  'il TAGLIO dei capelli: ciuffo, riccio, fascetta',
+  'il COLLETTO in seconda tinta',
+  'i due VELI di tessuto (restano due tinte piene)',
+  'il SECONDO filo d\'ombra sugli arti (resta solo il filo di luce)',
+  'la SUOLA e il lampo sulle scarpe',
+  'le spalle TONDE (sotto soglia il tronco si taglia piatto)',
+];
+function vistaLod(){
+  dipingiFondo(g, VW, VH);
+  /* le figure a sinistra, l'elenco di cio' che cade a destra: la colonna
+     dell'elenco e' larga quanto la riga piu' lunga, non quanto capita */
+  const xEl = Math.max(VW*0.56, VW-430);
+  const base = VH*0.68;
+  const h = Math.min(S.h, base*0.86, xEl*0.46);
+  const due = [
+    {lod:'on',  cx:xEl*0.26, et:'DETTAGLIO ACCESO', su:'come nel primo piano del gol', col:'#3fe6b0'},
+    {lod:'off', cx:xEl*0.74, et:'DETTAGLIO SPENTO', su:'come in OGNI partita', col:'#ff7a6a'},
+  ];
+  for(const d of due){
+    figura(g, d.cx, base, h, {lod:d.lod, senzaGiunti:true});
+    g.save(); g.textAlign='center';
+    g.font='700 14px ui-monospace,Consolas,monospace'; g.fillStyle=d.col;
+    g.fillText(d.et, d.cx, base+58);
+    g.font='11.5px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(255,255,255,.72)';
+    g.fillText(d.su, d.cx, base+76);
+    g.restore();
+  }
+  g.save();
+  g.strokeStyle='rgba(255,255,255,.10)';
+  g.beginPath(); g.moveTo(xEl-16,20); g.lineTo(xEl-16,VH-14); g.stroke();
+  g.font='700 12.5px ui-monospace,Consolas,monospace'; g.fillStyle='#fff';
+  g.fillText('CHE COSA SPARISCE', xEl, 36);
+  g.font='11.5px ui-monospace,Consolas,monospace';
+  g.fillStyle='rgba(255,255,255,.62)';
+  g.fillText('nove cose, e in partita cadono tutte e nove', xEl, 54);
+  let y = 80;
+  for(const t of CADUTE){
+    g.fillStyle='rgba(255,255,255,.85)';
+    g.fillText('• '+t, xEl, y); y += 19;
+  }
+  y += 12;
+  g.fillStyle='#ffb020';
+  g.fillText('la figura in partita e\' alta '+altezzaPartita().toFixed(0)+' px,', xEl, y); y+=18;
+  g.fillText('la soglia del dettaglio e\' '+LOD_DICHIARATA+' px:', xEl, y); y+=18;
+  g.fillText('la figura di destra e\' quella che', xEl, y); y+=18;
+  g.fillText('il giocatore vede SEMPRE.', xEl, y); y+=28;
+  g.fillStyle='rgba(255,255,255,.42)';
+  for(const t of [
+    '(per tenere la figura grande col dettaglio',
+    'spento si dichiara al rig una scala falsa:',
+    'e\' l\'unico modo, perche\' la soglia E\' l\'altezza',
+    'a schermo. Effetto collaterale dichiarato:',
+    'cambia il tetto del contorno, 1,35/pxs.)']){
+    g.fillText(t, xEl, y); y+=17;
+  }
+  g.restore();
+}
+function rigaSoglia(g, w, yBase, h, testo, col){
+  g.save();
+  g.strokeStyle=col; g.globalAlpha=0.45; g.setLineDash([5,5]); g.lineWidth=1;
+  g.beginPath(); g.moveTo(0, yBase-h); g.lineTo(w, yBase-h); g.stroke();
+  g.setLineDash([]); g.globalAlpha=0.9;
+  g.font='600 10px ui-monospace,Consolas,monospace'; g.fillStyle=col;
+  g.fillText(testo, 8, yBase-h-4);
+  g.restore();
+}
+function altezzaPartita(){
+  /* l'altezza a schermo di una figura in partita: RIG_H x S2 x P_DIS.
+     S2 e' lo zoom di riposo della camera (S2_BASE), gli estremi di
+     gioco sono S2_MIN e S2_MAX, il fermo del gol S2_GOL. */
+  return K.RIG_H * K.S2_BASE * K.P_DIS;
+}
+
+/* ---- SCALE: la stessa clip a quattro taglie, e la lente accanto ---- */
+function vistaScale(){
+  dipingiFondo(g, VW, VH);
+  const parti = altezzaPartita();
+  const col = VW/4;
+  const grande = Math.min(300, VH*0.46, col*0.80);
+  const T = [
+    {h:40,             et:'40 px — la prova della sagoma (silhouette.js)'},
+    {h:parti,          et:parti.toFixed(0)+' px — LA PARTITA (34 × '+K.S2_BASE.toFixed(2)+' × '+K.P_DIS+')'},
+    {h:LOD_DICHIARATA, et:LOD_DICHIARATA+' px — la soglia del dettaglio'},
+    {h:grande,         et:Math.round(grande)+' px — grande: tutto il dettaglio'},
+  ];
+  const base = VH*0.56;
+  g.font='600 11px ui-monospace,Consolas,monospace';
+  for(let i=0;i<T.length;i++){
+    const cx = col*(i+0.5);
+    figura(g, cx, base, T[i].h, {senzaGiunti:true, ombra:false});
+    /* LA LENTE: lo stesso disegno, ingrandito a pixel senza
+       interpolazione. Non e' un secondo disegno: e' QUEL disegno visto
+       da vicino, che e' la sola cosa che risponde a «che cosa sparisce».
+       Sulla colonna grande non serve (ingrandirebbe di meno di uno) e
+       non si stampa: una lente che rimpicciolisce non e' una lente. */
+    const q = lente(g, cx, base, T[i].h, cx, VH*0.92, Math.min(230, VH*0.30));
+    g.fillStyle='rgba(255,255,255,.92)';
+    g.textAlign='center';
+    g.fillText(T[i].et, cx, base+26);
+    g.fillStyle = q>1.05 ? 'rgba(255,176,32,.85)' : 'rgba(255,255,255,.35)';
+    g.fillText(q>1.05 ? 'la lente: ×'+q.toFixed(1)
+                      : 'niente lente: e\' gia\' grande', cx, base+44);
+    g.textAlign='left';
+    if(i<T.length-1){
+      g.strokeStyle='rgba(255,255,255,.10)';
+      g.beginPath(); g.moveTo(col*(i+1),0); g.lineTo(col*(i+1),VH); g.stroke();
+    }
+  }
+  g.fillStyle='rgba(255,255,255,.62)';
+  g.font='11px ui-monospace,Consolas,monospace';
+  g.fillText('in alto la figura alla sua TAGLIA VERA · in basso lo STESSO disegno '
+           + 'ingrandito a pixel (nessuna interpolazione, nessun secondo disegno): '
+           + 'quello che manca non c\'era', 12, VH-12);
+}
+/* ingrandisce a pixel un pezzo della tela: la finestra sorgente e'
+   centrata sulla figura appena disegnata. Restituisce l'ingrandimento
+   applicato (1 = nessuna lente stampata). */
+function lente(g, sx, sBase, hFig, dx, dBase, dAlt){
+  const w = Math.ceil(hFig*0.9)+6, h = Math.ceil(hFig*1.08)+8;
+  const q = dAlt/h;
+  if(q<=1.05) return 1;
+  const x0 = Math.round(sx-w/2), y0 = Math.round(sBase-h+8);
+  g.save();
+  g.imageSmoothingEnabled = false;
+  g.drawImage(tela,
+    Math.round(x0*DPR), Math.round(y0*DPR), Math.round(w*DPR), Math.round(h*DPR),
+    dx-w*q/2, dBase-h*q, w*q, h*q);
+  g.strokeStyle='rgba(255,176,32,.55)'; g.lineWidth=1;
+  g.strokeRect(dx-w*q/2, dBase-h*q, w*q, h*q);
+  g.restore();
+  return q;
+}
+
+/* ---- STATURA: le quattro corporature affiancate, misurate ---- */
+function vistaStatura(){
+  dipingiFondo(g, VW, VH);
+  const NOMI = ['spilungone','tarchiato','piccoletto','neutro'];
+  const col = VW/K.nCorpi;
+  const base = VH*0.64;
+  const h = Math.min(S.h, (base-130)*0.98, col*1.00);
+  const ossa = rifai('ossa','uno',()=>misuraOssa(),1e9);
+  const mis = rifai('statura',
+    [S.clip, S.u.toFixed(3), S.yawDeg, Math.round(h), S.lod, S.kit, S.ruolo].join('|'),
+    ()=>{ const v=[]; for(let c=0;c<K.nCorpi;c++)
+            v.push(scatola(h, {corp:c, clip:S.clip, senzaGiunti:true})); return v; });
+  let minA=1e9, maxA=-1;
+  for(const m of mis){ if(m.alt<minA)minA=m.alt; if(m.alt>maxA)maxA=m.alt; }
+  for(let c=0;c<K.nCorpi;c++){
+    const cx = col*(c+0.5);
+    figura(g, cx, base, h, {corp:c, senzaGiunti:true});
+    g.save();
+    g.textAlign='center';
+    g.font='700 13px ui-monospace,Consolas,monospace';
+    g.fillStyle = c===3 ? 'rgba(255,255,255,.70)' : '#ffffff';
+    g.fillText(NOMI[c]+(c===3?'  (mai in partita)':''), cx, base+44);
+    g.font='11.5px ui-monospace,Consolas,monospace';
+    g.fillStyle='#3fe6b0';
+    g.fillText('gamba '+ossa[c].gamba.toFixed(3)+' m', cx, base+66);
+    g.fillStyle='rgba(255,255,255,.55)';
+    g.fillText('(coscia '+ossa[c].coscia.toFixed(3)+' + tibia '+ossa[c].tibia.toFixed(3)+')', cx, base+83);
+    g.fillStyle='rgba(255,255,255,.72)';
+    g.fillText('busto '+ossa[c].busto.toFixed(3)+'   spalle '+ossa[c].spalle.toFixed(3), cx, base+104);
+    g.fillText('testa '+ossa[c].testa.toFixed(3)+'   braccio '+ossa[c].braccio.toFixed(3), cx, base+122);
+    g.fillStyle='#ffb020';
+    g.fillText('a schermo: alto '+mis[c].alt+' px, largo '+mis[c].larg+' px', cx, base+144);
+    g.restore();
+    /* la riga di livello della cima: e' lei a dire che sono alti uguali */
+    g.save();
+    g.strokeStyle='rgba(255,176,32,.40)'; g.setLineDash([4,4]);
+    const yc = base - mis[c].alt;
+    g.beginPath(); g.moveTo(col*c+6, yc); g.lineTo(col*(c+1)-6, yc); g.stroke();
+    g.restore();
+    if(c<K.nCorpi-1){
+      g.strokeStyle='rgba(255,255,255,.08)';
+      g.beginPath(); g.moveTo(col*(c+1),60); g.lineTo(col*(c+1),VH-8); g.stroke();
+    }
+  }
+  const gambe = ossa.map(o=>o.gamba);
+  const ugualiGamba = (Math.max.apply(null,gambe)-Math.min.apply(null,gambe)) < 1e-4;
+  g.save();
+  g.font='700 13px ui-monospace,Consolas,monospace';
+  g.fillStyle = ugualiGamba ? '#ff7a6a' : '#3fe6b0';
+  g.fillText(ugualiGamba
+    ? 'LA GAMBA E\' LUNGA '+gambe[0].toFixed(3)+' m IN TUTTE E QUATTRO: i fisici sono ALTI UGUALI '
+      + '(CORPI porta g:1.00 su ogni riga, gioco riga 5198)'
+    : 'le gambe hanno lunghezze diverse: '+gambe.join(' / '), 14, 26);
+  g.font='11.5px ui-monospace,Consolas,monospace';
+  g.fillStyle='rgba(255,255,255,.62)';
+  g.fillText('lo scarto a schermo e\' '+(maxA-minA)+' px su '+maxA+' ('
+           + (100*(maxA-minA)/maxA).toFixed(1)+'%) e viene SOLO dal raggio della testa '
+           + '(hr 0,96 / 1,00 / 1,05) e dalle spalle: la statura non c\'entra.', 14, 46);
+  g.fillText('cio\' che distingue i quattro uomini e\' il RAPPORTO fra le masse, non i centimetri. '
+           + 'Il meccanismo del bacino (DP/DPQ) esiste e funziona: e\' spento a g 1,00.', 14, 64);
+  g.restore();
+}
+
+/* ---- PIEDE: le clip di calcio e il lato che arma ---- */
+function vistaPiede(){
+  dipingiFondo(g, VW, VH);
+  const tab = rifai('piede','uno',()=>misuraPiede(),1e9);
+  const col = VW/tab.length;
+  const base = VH*0.62;
+  const h = Math.min(Math.max(140, S.h*0.5), base*0.70, col*0.80);
+  for(let i=0;i<tab.length;i++){
+    const t = tab[i], cx = col*(i+0.5);
+    const salva = S.giunti; S.giunti = true;
+    figura(g, cx, base, h, {clip:t.clip, u:t.uArma});
+    S.giunti = salva;
+    g.save();
+    g.textAlign='center';
+    g.font='700 14px ui-monospace,Consolas,monospace';
+    g.fillStyle='#fff'; g.fillText(t.clip, cx, base+58);
+    g.font='12px ui-monospace,Consolas,monospace';
+    g.fillStyle = t.arma==='destro' ? '#ffb020' : '#3fe6b0';
+    g.fillText('arma il piede '+t.arma.toUpperCase(), cx, base+80);
+    g.font='11.5px ui-monospace,Consolas,monospace';
+    g.fillStyle='rgba(255,255,255,.70)';
+    g.fillText('punta destra  avanti z '+t.zR.toFixed(3)+' m', cx, base+104);
+    g.fillText('punta sinistra avanti z '+t.zL.toFixed(3)+' m', cx, base+122);
+    g.fillText('fase dell\'armo u '+t.uArma.toFixed(2), cx, base+140);
+    g.restore();
+    if(i<tab.length-1){
+      g.strokeStyle='rgba(255,255,255,.08)';
+      g.beginPath(); g.moveTo(col*(i+1),60); g.lineTo(col*(i+1),VH-8); g.stroke();
+    }
+  }
+  const tuttiDx = tab.every(t=>t.arma==='destro');
+  g.save();
+  g.font='600 12px ui-monospace,Consolas,monospace';
+  g.fillStyle = tuttiDx ? '#ff7a6a' : '#3fe6b0';
+  g.fillText(tuttiDx
+    ? 'tutte e '+tab.length+' le clip armano la gamba DESTRA: NON ESISTE UN MANCINO (poseCalcio, gioco riga 5887)'
+    : 'le clip non armano tutte lo stesso lato', 12, 22);
+  g.font='11px ui-monospace,Consolas,monospace';
+  g.fillStyle='rgba(255,255,255,.55)';
+  g.fillText('misurato sui giunti TOR/TOL su 120 fasi, con lo stesso scratch del banco ?gabbia: '
+           + 'gamba destra calciante, sinistra d\'appoggio, in ogni clip e a ogni fase.', 12, 40);
+  g.restore();
+}
+
+/* ---- CORSA: due figure in passo, e la frequenza che non varia ---- */
+function vistaCorsa(){
+  dipingiFondo(g, VW, VH);
+  const m = rifai('corsa','uno',()=>misuraCorsa(),1e9);
+  const NOMI=['spilungone','tarchiato','piccoletto','neutro'];
+  const col = VW/K.nCorpi;
+  const base = VH*0.70;
+  const h = Math.min(S.h*0.7, base*0.72, col*0.70);
+  for(let c=0;c<K.nCorpi;c++){
+    const cx = col*(c+0.5);
+    figura(g, cx, base, h, {clip:'corsa', corp:c, senzaGiunti:true});
+    g.save(); g.textAlign='center';
+    g.font='700 13px ui-monospace,Consolas,monospace'; g.fillStyle='#fff';
+    g.fillText(NOMI[c], cx, base+56);
+    g.font='11.5px ui-monospace,Consolas,monospace'; g.fillStyle='#3fe6b0';
+    g.fillText('falcata '+m.righe[c].falcata.toFixed(4)+' m', cx, base+78);
+    g.fillStyle='rgba(255,255,255,.66)';
+    g.fillText('alzata del piede '+m.righe[c].alzata.toFixed(4)+' m', cx, base+96);
+    g.fillText('cima della testa '+m.righe[c].cima.toFixed(4)+' m', cx, base+114);
+    g.restore();
+    if(c<K.nCorpi-1){
+      g.strokeStyle='rgba(255,255,255,.08)';
+      g.beginPath(); g.moveTo(col*(c+1),60); g.lineTo(col*(c+1),VH-8); g.stroke();
+    }
+  }
+  const f = m.righe.map(r=>r.falcata);
+  const uguali = (Math.max.apply(null,f)-Math.min.apply(null,f)) < 0.0005;
+  g.save();
+  g.font='600 12px ui-monospace,Consolas,monospace';
+  g.fillStyle = uguali ? '#ff7a6a' : '#3fe6b0';
+  g.fillText('frequenza della corsa: '+m.freq+' — costante della CLIP, non del giocatore'
+           + (uguali ? '; e la falcata e\' IDENTICA per tutte e quattro le corporature' : ''), 12, 22);
+  g.font='11px ui-monospace,Consolas,monospace';
+  g.fillStyle='rgba(255,255,255,.55)';
+  g.fillText('quattro uomini diversi corrono alla stessa cadenza e con lo stesso passo: '
+           + 'lasciali andare e non si sfasano mai.', 12, 40);
+  g.restore();
+}
+
+/* ---- FASI: una clip, sedici fotogrammi ---- */
+function vistaFasi(){
+  const N=16, COL=8, RIG=2;
+  const cw = VW/COL, ch = (VH-26)/RIG;
+  dipingiFondo(g, VW, VH, 30);
+  /* la taglia la detta la CELLA, non la voglia: le pose stese (tuffo,
+     scivolata) sono larghe quanto alte e a taglia piena si accavallano */
+  const h = Math.min(ch*0.50, cw*1.00);
+  for(let i=0;i<N;i++){
+    const cx=(i%COL)*cw+cw/2, cy=((i/COL)|0)*ch+ch*0.80+26;
+    const u=i/N;
+    figura(g, cx, cy, h, {u, senzaGiunti:true, ombra:false});
+    g.save(); g.textAlign='center';
+    g.font='10px ui-monospace,Consolas,monospace';
+    g.fillStyle = Math.abs(u-S.u)<0.5/N ? '#ffb020' : 'rgba(255,255,255,.6)';
+    g.fillText('u '+u.toFixed(3)+'  ('+(i+1)+'/'+N+')', cx, cy+16);
+    g.restore();
+    g.strokeStyle='rgba(255,255,255,.07)';
+    g.strokeRect((i%COL)*cw+0.5, ((i/COL)|0)*ch+26.5, cw-1, ch-1);
+  }
+  g.save();
+  g.font='600 12px ui-monospace,Consolas,monospace'; g.fillStyle='#fff';
+  g.fillText(S.clip.toUpperCase()+' — sedici fotogrammi del ciclo (freq '
+           + R.CLIPS[S.clip].freq+', '+Math.round(60/R.CLIPS[S.clip].freq)+' fotogrammi a 60 Hz)', 12, 20);
+  g.restore();
+}
+
+/* ---- FOGLIO: tutte e 27 le clip, con il nome sotto ---- */
+function vistaFoglio(){
+  /* il foglio ha una taglia SUA: la tela cresce quanto serve e il palco
+     scorre. Un foglio schiacciato nella finestra non e' un foglio a
+     contatto, e' un francobollo. */
+  const N = CLIPS.length, COL = 7, RIG = Math.ceil(N/COL);
+  const cw = 176, ch = 244, TESTA = 34;
+  dimensiona({w:COL*cw, h:RIG*ch+TESTA});
+  g.setTransform(DPR,0,0,DPR,0,0);
+  dipingiFondo(g, VW, VH, 34);
+  const h = 146;
+  for(let i=0;i<N;i++){
+    const nome = CLIPS[i];
+    const x0=(i%COL)*cw, y0=((i/COL)|0)*ch+TESTA;
+    const cx=x0+cw/2, cy=y0+ch*0.68;
+    g.save();
+    g.strokeStyle='rgba(255,255,255,.09)';
+    g.strokeRect(x0+0.5, y0+0.5, cw-1, ch-1);
+    g.restore();
+    figura(g, cx, cy, h, {clip:nome, senzaGiunti:true, ombra:false});
+    g.save(); g.textAlign='center';
+    g.font='700 13px ui-monospace,Consolas,monospace';
+    g.fillStyle = nome===S.clip ? '#ffb020' : '#ffffff';
+    g.fillText(nome, cx, y0+ch-26);
+    g.font='10px ui-monospace,Consolas,monospace';
+    g.fillStyle='rgba(255,255,255,.55)';
+    g.fillText(ETICHETTA[FAMIGLIA[nome]||'campo']+' · freq '+R.CLIPS[nome].freq, cx, y0+ch-11);
+    g.restore();
+  }
+  g.save();
+  g.font='600 13px ui-monospace,Consolas,monospace'; g.fillStyle='#fff';
+  g.fillText('IL FOGLIO A CONTATTO — tutte e '+N+' le clip del rig, fase u '+S.u.toFixed(3)
+           + ', figura alta '+h+' px, dettaglio '+(h>=LOD_DICHIARATA?'ACCESO':'spento')
+           + ' · '+(S.ruolo==='gk' ? 'divisa del PORTIERE (gkKit)'
+                                        : 'divisa '+kitCorrente().nome)
+           + ' · corporatura '+['spilungone','tarchiato','piccoletto','neutro'][S.corp], 12, 18);
+  g.restore();
+}
+
+/* ---- la didascalia e la lettura in fondo ---- */
+function aggiornaDidascalia(){
+  /* la didascalia grande vale per la vista FIGURA: le altre si scrivono
+     il titolo da sole, dentro l'immagine, perche' finiscono in un PNG */
+  const grande = (S.vista==='figura' || S.vista==='scale');
+  document.getElementById('didascalia').style.display = grande ? '' : 'none';
+  const c = R.CLIPS[S.clip];
+  const fpc = Math.max(1, Math.round(60/c.freq));
+  const fot = Math.round(S.u*fpc)%fpc;
+  didaClip.textContent = S.clip.toUpperCase();
+  const hReale = Math.min(S.h, VH*0.90);
+  didaSub.innerHTML = ETICHETTA[FAMIGLIA[S.clip]||'campo']
+    + ' · freq '+c.freq
+    + ' · fotogramma '+(fot+1)+'/'+fpc
+    + ' · u '+S.u.toFixed(3)
+    + ' · imbardata '+S.yawDeg+'°'
+    + ' · alta '+hReale.toFixed(0)+' px';
+
+  const dett = hReale*1 >= LOD_DICHIARATA;
+  const eff = S.lod==='auto' ? dett : (S.lod==='on');
+  const parti = altezzaPartita();
+  const sog = LOD_MISURATA
+    ? (LOD_MISURATA.soglia===LOD_DICHIARATA
+        ? '<span class="v">soglia misurata '+LOD_MISURATA.soglia+' px = dichiarata</span>'
+        : '<span class="k">soglia misurata '+LOD_MISURATA.soglia+' px ≠ dichiarata '+LOD_DICHIARATA+'</span>')
+    : 'soglia in misura…';
+  elLett.innerHTML =
+      '<b>rig</b> Rig3D del gioco (iframe) · <b>clip</b> '+CLIPS.length
+    + ' · <b>corporature</b> '+K.nCorpi
+    + ' · <b>dettaglio</b> '+(eff?'<span class="a">ACCESO</span>':'spento')
+    + (S.lod==='auto' ? ' (automatico, come in partita)'
+                      : ' <span class="k">(FORZATO: al rig si dichiara una scala falsa, '
+                        + 'il tetto del contorno 1,35/pxs cambia con essa)</span>')
+    + ' · '+sog
+    + '\n<b>in partita</b> la figura e\' alta '+parti.toFixed(1)+' px (RIG_H '+K.RIG_H
+    + ' × S2 '+K.S2_BASE+' × P_DIS '+K.P_DIS+'), zoom di gioco da '
+    + (K.RIG_H*K.S2_MIN*K.P_DIS).toFixed(0)+' a '+(K.RIG_H*K.S2_MAX*K.P_DIS).toFixed(0)
+    + ' px, fermo del gol '+(K.RIG_H*K.S2_GOL*K.P_DIS).toFixed(0)
+    + ' px — <b>sempre sotto la soglia di '+LOD_DICHIARATA+'</b>: in una partita vera il dettaglio NON si accende mai.'
+    + '\n<b>cade col dettaglio</b> volto (occhi, sopracciglia, naso) · dita e pollice delle mani '
+    + '· rastrematura dell\'avambraccio · taglio dei capelli (ciuffo, riccio, fascetta) '
+    + '· colletto in seconda tinta · veli di tessuto sulla maglia · secondo filo d\'ombra sugli arti '
+    + '· suola e lampo sulle scarpe · spalle tonde invece che tagliate.';
+}
+
+/* =====================================================================
+   6. I COMANDI
+   ===================================================================== */
+function costruisciComandi(){
+  /* clip, raggruppate */
+  const sel = document.getElementById('selClip');
+  const ordine = ['campo','calcio','portiere','festa'];
+  for(const fam of ordine){
+    const gr = document.createElement('optgroup');
+    gr.label = ETICHETTA[fam];
+    for(const n of CLIPS) if((FAMIGLIA[n]||'campo')===fam){
+      const o=document.createElement('option');
+      o.value=n; o.textContent=n+'   (freq '+R.CLIPS[n].freq+')';
+      gr.appendChild(o);
+    }
+    sel.appendChild(gr);
+  }
+  sel.value = S.clip;
+  sel.addEventListener('change', ()=>{ S.clip=sel.value; notaClip(); });
+
+  /* corporature */
+  const bc = document.getElementById('boxCorpi');
+  const NOMI=['spilungone','tarchiato','piccoletto','neutro'];
+  for(let c=0;c<K.nCorpi;c++){
+    const b=document.createElement('button');
+    b.textContent=NOMI[c]; b.dataset.corp=c;
+    if(c===S.corp) b.className='on';
+    b.addEventListener('click',()=>{
+      S.corp=c; bc.querySelectorAll('button').forEach(q=>q.className='');
+      b.className='on';
+    });
+    bc.appendChild(b);
+  }
+
+  /* divise */
+  const sk = document.getElementById('selKit');
+  elencoKit().forEach((k,i)=>{
+    const o=document.createElement('option'); o.value=i; o.textContent=k.nome; sk.appendChild(o);
+  });
+  sk.value=S.kit;
+  sk.addEventListener('change',()=>{ S.kit=+sk.value; });
+
+  /* pelle, capelli, taglio */
+  const sp=document.getElementById('selPelle');
+  K.SKIN.forEach((c,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent='pelle '+(i+1); sp.appendChild(o); });
+  sp.value=S.pelle; sp.addEventListener('change',()=>{S.pelle=+sp.value;});
+  const sca=document.getElementById('selCapelli');
+  K.HAIR.forEach((c,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent='capelli '+(i+1); sca.appendChild(o); });
+  sca.value=S.capelli; sca.addEventListener('change',()=>{S.capelli=+sca.value;});
+  const st=document.getElementById('selTaglio');
+  ['rasato','ciuffo','riccio','fascetta'].forEach((n,i)=>{
+    const o=document.createElement('option'); o.value=i; o.textContent=n; st.appendChild(o);
+  });
+  st.value=S.taglio; st.addEventListener('change',()=>{S.taglio=+st.value;});
+
+  /* sfondi */
+  const sf=document.getElementById('selFondo');
+  FONDI.forEach((f,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=f.nome; sf.appendChild(o); });
+  K.FIELDS.forEach((f,i)=>{
+    const o=document.createElement('option'); o.value=FONDI.length+i;
+    o.textContent='erba · '+f.nome; sf.appendChild(o);
+  });
+  S.fondo = FONDI.length;                 // si parte sull'ORATORIO: il campo di casa
+  sf.value = S.fondo;
+  sf.addEventListener('change',()=>{S.fondo=+sf.value;});
+
+  /* schede */
+  const sch=document.getElementById('schede');
+  for(const [id,et] of VISTE){
+    const b=document.createElement('button');
+    b.textContent=et; b.dataset.vista=id;
+    if(id===S.vista) b.className='on';
+    b.addEventListener('click',()=>{
+      S.vista=id;
+      sch.querySelectorAll('button').forEach(q=>q.className='');
+      b.className='on';
+    });
+    sch.appendChild(b);
+  }
+
+  /* fase */
+  const rgU=document.getElementById('rgU');
+  rgU.addEventListener('input',()=>{ S.u=+rgU.value; S.via=false; sincronizza(); });
+  document.getElementById('bPlay').addEventListener('click',()=>{ S.via=!S.via; sincronizza(); });
+  document.getElementById('bPrev').addEventListener('click',()=>passo(-1));
+  document.getElementById('bNext').addEventListener('click',()=>passo(+1));
+  const rgVel=document.getElementById('rgVel');
+  rgVel.addEventListener('input',()=>{ S.vel=+rgVel.value; sincronizza(); });
+
+  /* direzione */
+  const rgYaw=document.getElementById('rgYaw');
+  rgYaw.addEventListener('input',()=>{ S.yawDeg=+rgYaw.value; sincronizza(); });
+  document.querySelectorAll('[data-yaw]').forEach(b=>b.addEventListener('click',()=>{
+    S.yawDeg=+b.dataset.yaw; rgYaw.value=S.yawDeg; sincronizza();
+  }));
+
+  /* taglia */
+  const rgH=document.getElementById('rgH');
+  rgH.addEventListener('input',()=>{ S.h=+rgH.value; sincronizza(); });
+  document.querySelectorAll('[data-h]').forEach(b=>b.addEventListener('click',()=>{
+    S.h=+b.dataset.h; rgH.value=S.h; sincronizza();
+  }));
+  document.getElementById('bHpart').addEventListener('click',()=>{
+    S.h=Math.round(altezzaPartita()); rgH.value=S.h; sincronizza();
+  });
+  document.getElementById('bHpieno').addEventListener('click',()=>{
+    S.h=Math.round(palco.clientHeight*0.88); rgH.value=S.h; sincronizza();
+  });
+
+  /* LOD */
+  document.querySelectorAll('[data-lod]').forEach(b=>b.addEventListener('click',()=>{
+    S.lod=b.dataset.lod;
+    document.querySelectorAll('[data-lod]').forEach(q=>q.className='');
+    b.className='on'; sincronizza();
+  }));
+
+  /* ruolo */
+  document.querySelectorAll('[data-ruolo]').forEach(b=>b.addEventListener('click',()=>{
+    S.ruolo=b.dataset.ruolo;
+    document.querySelectorAll('[data-ruolo]').forEach(q=>q.className='');
+    b.className='on';
+    /* il portiere porta la sua divisa: si mostra subito con una sua clip */
+    if(S.ruolo==='gk' && FAMIGLIA[S.clip]!=='portiere'){
+      S.clip='parata'; document.getElementById('selClip').value='parata'; notaClip();
+    }
+  }));
+
+  /* interruttori */
+  const bi=(id,campo)=>{
+    const b=document.getElementById(id);
+    b.addEventListener('click',()=>{ S[campo]=!S[campo]; b.className=S[campo]?'on':''; });
+  };
+  bi('bOmbra','ombra'); bi('bPalla','palla'); bi('bGiunti','giunti');
+
+  document.getElementById('bPng').addEventListener('click',salvaPng);
+
+  /* tastiera: e' uno strumento da guardare, le mani devono restare sui tasti */
+  window.addEventListener('keydown',ev=>{
+    if(ev.target.tagName==='SELECT'||ev.target.tagName==='INPUT') return;
+    if(ev.code==='Space'){ S.via=!S.via; ev.preventDefault(); }
+    else if(ev.code==='ArrowRight'){ passo(+1); ev.preventDefault(); }
+    else if(ev.code==='ArrowLeft'){ passo(-1); ev.preventDefault(); }
+    else if(ev.code==='ArrowUp'||ev.code==='ArrowDown'){
+      const d=(ev.code==='ArrowUp'?1:-1), i=CLIPS.indexOf(S.clip);
+      S.clip=CLIPS[(i+d+CLIPS.length)%CLIPS.length];
+      document.getElementById('selClip').value=S.clip; notaClip(); ev.preventDefault();
+    }
+    sincronizza();
+  });
+  notaClip();
+  sincronizza();
+}
+
+/* un fotogramma a 60 Hz del tempo del gioco: u avanza di freq/60 */
+function passo(d){
+  const f=R.CLIPS[S.clip].freq;
+  S.via=false;
+  S.u=(S.u + d*f/60 + 1)%1;
+  sincronizza();
+}
+
+function notaClip(){
+  const n=S.clip, c=R.CLIPS[n];
+  const extra=[];
+  if(c.palla) extra.push('porta una palla propria');
+  if(c.polvere) extra.push('solleva polvere');
+  if(c.scia) extra.push('lascia una scia');
+  document.getElementById('notaClip').innerHTML =
+    '<b>'+n+'</b> · '+ETICHETTA[FAMIGLIA[n]||'campo']
+    + ' · ciclo '+Math.round(60/c.freq)+' fotogrammi'
+    + (extra.length? ' · '+extra.join(', ') : '');
+}
+
+function sincronizza(){
+  document.getElementById('rgU').value=S.u;
+  document.getElementById('numFase').textContent =
+    'u '+S.u.toFixed(3)+'  ('+(Math.round(S.u*Math.round(60/R.CLIPS[S.clip].freq))+1)
+    +'/'+Math.round(60/R.CLIPS[S.clip].freq)+')';
+  document.getElementById('numVel').textContent=S.vel.toFixed(2).replace('.',',')+'×';
+  document.getElementById('numYaw').textContent=S.yawDeg+'°';
+  document.getElementById('numH').textContent=S.h+' px';
+  document.getElementById('bPlay').textContent = S.via ? '⏸ ferma' : '▶ via';
+  document.getElementById('bPlay').className = S.via ? 'on' : '';
+  const eff = S.lod==='auto'
+    ? (Math.min(S.h, palco.clientHeight*0.9) >= LOD_DICHIARATA)
+    : (S.lod==='on');
+  document.getElementById('notaLod').innerHTML =
+    'Soglia <b>'+LOD_DICHIARATA+' px</b> di altezza a schermo (gioco riga 7755). '
+    + 'Qui: <b>'+(eff?'acceso':'spento')+'</b>. '
+    + (S.lod==='auto'
+        ? 'Su <b>come in partita</b> la soglia e\' l\'altezza stessa: nessuna finzione.'
+        : 'Forzato: al rig si dichiara una scala falsa — e\' l\'unico modo, '
+          + 'perche\' la soglia E\' l\'altezza. Cambia anche il tetto del contorno (1,35/pxs).');
+}
+
+let bloccaGiro = false;
+function salvaPng(){
+  const nome = 'provino-'+S.vista+'-'+S.clip+'-u'+S.u.toFixed(3)+'.png';
+  /* il giro si ferma: toBlob e' asincrono e senza il blocco fotografa il
+     fotogramma DOPO, che non e' quello che si stava guardando */
+  bloccaGiro = true;
+  disegnaTutto();
+  tela.toBlob(b=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(b); a.download=nome; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+    bloccaGiro = false;
+  }, 'image/png');
+}
+
+/* =====================================================================
+   7. IL GIRO
+   ===================================================================== */
+let tPrec = 0;
+function giro(t){
+  if(R && !bloccaGiro){
+    const dt = tPrec ? Math.min(0.1,(t-tPrec)/1000) : 0;
+    if(S.via){
+      S.u = (S.u + dt*S.vel*R.CLIPS[S.clip].freq) % 1;
+      document.getElementById('rgU').value=S.u;
+      document.getElementById('numFase').textContent =
+        'u '+S.u.toFixed(3)+'  ('+(Math.round(S.u*Math.round(60/R.CLIPS[S.clip].freq))+1)
+        +'/'+Math.round(60/R.CLIPS[S.clip].freq)+')';
+    }
+    disegnaTutto();
+  }
+  tPrec = t;
+  requestAnimationFrame(giro);
+}
+
+(async function avvia(){
+  try{
+    await aggancia();
+    costruisciComandi();
+    /* la soglia si MISURA una volta, appena c'e' il rig */
+    try{ LOD_MISURATA = misuraSoglia(); }catch(e){ LOD_MISURATA=null; }
+    window.addEventListener('resize', ()=>dimensiona());
+    /* la porta per i banchi: chi fotografa il provino non deve giocare
+       col mouse. Tutto lo stato, piu' il disegno a comando. */
+    window.__provino = {
+      get stato(){ return JSON.parse(JSON.stringify(S)); },
+      imposta(q){
+        Object.assign(S,q||{});
+        /* i comandi seguono lo stato, se no il banco fotografa una
+           pagina che dice una cosa e ne mostra un'altra */
+        document.getElementById('selClip').value = S.clip;
+        document.getElementById('selKit').value = S.kit;
+        document.getElementById('selFondo').value = S.fondo;
+        document.querySelectorAll('[data-lod]').forEach(b=>b.className = b.dataset.lod===S.lod?'on':'');
+        document.querySelectorAll('[data-vista]').forEach(b=>b.className = b.dataset.vista===S.vista?'on':'');
+        document.querySelectorAll('[data-corp]').forEach(b=>b.className = (+b.dataset.corp)===S.corp?'on':'');
+        document.querySelectorAll('[data-ruolo]').forEach(b=>b.className = b.dataset.ruolo===S.ruolo?'on':'');
+        document.getElementById('rgYaw').value=S.yawDeg;
+        document.getElementById('rgH').value=S.h;
+        notaClip(); sincronizza(); disegnaTutto(); return true;
+      },
+      clip(){ return CLIPS.slice(); },
+      soglia(){ return LOD_MISURATA; },
+      piede(){ return misuraPiede(); },
+      corsa(){ return misuraCorsa(); },
+      statura(h){ const v=[]; for(let c=0;c<K.nCorpi;c++) v.push(scatola(h||360,{corp:c})); return v; },
+      costanti(){ return {RIG_H:K.RIG_H,P_DIS:K.P_DIS,S2_BASE:K.S2_BASE,
+                          S2_MIN:K.S2_MIN,S2_MAX:K.S2_MAX,S2_GOL:K.S2_GOL,
+                          altezzaPartita:altezzaPartita(), LOD:LOD_DICHIARATA}; },
+      disegna(){ disegnaTutto(); return true; },
+      pronto:true,
+    };
+    requestAnimationFrame(giro);
+  }catch(e){
+    elStato.className='ko';
+    elStato.textContent='aggancio FALLITO: '+e.message;
+    elLett.textContent = 'Il rig non e\' raggiungibile. Controlla che il server sia acceso '
+      + '(python -m http.server 8777 --bind 127.0.0.1) e che questa pagina sia aperta da '
+      + 'http://127.0.0.1:8777/strumenti/provino.html e non da file://: da file:// l\'iframe '
+      + 'e\' di origine diversa e contentWindow.eval non si puo\' chiamare. '
+      + 'Dettaglio: '+e.message;
+  }
+})();
+</script>
+</body>
+</html>
