@@ -113,6 +113,51 @@ esatta('il ritaglio del glifo attorno alla testa',
 `        const copre = !conSprite && (gDx*gDx+gDy*gDy < gRag*gRag) &&`);
 
 /* ------------------------------------------------------------------
+   3b. LE SCENE IN CAMERA BASSA (compito 3): il portiere e il tiratore del
+   dischetto, e la ripresa del gol. Stessa forma dell'aggancio in pianta:
+   prima lo sprite, il rig come ripiego; il numero si ancora al torso di
+   chi ha disegnato davvero.
+   ------------------------------------------------------------------ */
+esatta('il portiere del dischetto (camera bassa)',
+`    Rig3D.disegna(ctx, kx, ky, hbK, yawK, 'bassa', clipK,
+                  uK/Rig3D.CLIPS[clipK].freq, rigLook(DUEL_RIG_K), true, DPR);
+    /* il numero 1, ancorato al torso del rig */
+    {
+      const T=Rig3D.torso();`,
+`    const conSpriteK = SPRITE_ON && SAVE.figure!==0 && Sprite3D.disegna(ctx, kx, ky, hbK, yawK, 'bassa', clipK,
+                         uK/Rig3D.CLIPS[clipK].freq, rigLook(DUEL_RIG_K), true, DPR);
+    if(!conSpriteK)
+      Rig3D.disegna(ctx, kx, ky, hbK, yawK, 'bassa', clipK,
+                    uK/Rig3D.CLIPS[clipK].freq, rigLook(DUEL_RIG_K), true, DPR);
+    /* il numero 1, ancorato al torso di chi ha disegnato (voce #158) */
+    {
+      const T=conSpriteK?Sprite3D.torso():Rig3D.torso();`);
+
+esatta('il tiratore del dischetto (camera bassa)',
+`    Rig3D.disegna(ctx, sx2, py2, hbS, 0.5, 'bassa', clipS,
+                  uS/Rig3D.CLIPS[clipS].freq, rigLook(DUEL_RIG_S), true, DPR);
+    /* numero sulla schiena: e' di spalle, il numero e' cio' che si vede */
+    {
+      const T=Rig3D.torso();`,
+`    const conSpriteS = SPRITE_ON && SAVE.figure!==0 && Sprite3D.disegna(ctx, sx2, py2, hbS, 0.5, 'bassa', clipS,
+                         uS/Rig3D.CLIPS[clipS].freq, rigLook(DUEL_RIG_S), true, DPR);
+    if(!conSpriteS)
+      Rig3D.disegna(ctx, sx2, py2, hbS, 0.5, 'bassa', clipS,
+                    uS/Rig3D.CLIPS[clipS].freq, rigLook(DUEL_RIG_S), true, DPR);
+    /* numero sulla schiena: e' di spalle, il numero e' cio' che si vede */
+    {
+      const T=conSpriteS?Sprite3D.torso():Rig3D.torso();`);
+
+esatta('la ripresa del gol (camera bassa)',
+`    Rig3D.disegna(ctx, x, y, hb, o.yaw, 'bassa', o.clip, o.tSec, rigLook(q), false, DPR);
+  }`,
+`    /* LO SPRITE ANCHE IN RIPRESA (voce #158, compito 3): con l'ombra di
+       contatto sua, perche' qui il rig la disegnava da se' */
+    if(!(SPRITE_ON && SAVE.figure!==0 && Sprite3D.disegna(ctx, x, y, hb, o.yaw, 'bassa', o.clip, o.tSec, rigLook(q), false, DPR)))
+      Rig3D.disegna(ctx, x, y, hb, o.yaw, 'bassa', o.clip, o.tSec, rigLook(q), false, DPR);
+  }`);
+
+/* ------------------------------------------------------------------
    4. il rubinetto per i banchi
    ------------------------------------------------------------------ */
 esatta('window.__test: stato e rubinetto degli sprite',

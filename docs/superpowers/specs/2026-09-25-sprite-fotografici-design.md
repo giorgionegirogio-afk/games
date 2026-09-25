@@ -34,8 +34,12 @@ restano distinguibili (`_q-divise` in batteria).
 - **Zero rete, un file solo**: l'atlante entra come data-URI (WebP con
   alfa + PNG delle maschere), +~270 kB sul file con 6 clip (misurato:
   2 948 049 → 3 223 455 byte con 64 fotogrammi).
-- La camera **'bassa'** (rigori, ripresa del gol) resta al rig: lo sprite
-  non ha quell'angolo e non deve fingere.
+- La camera **'bassa'** (rigori, ripresa del gol) restava al rig nel
+  compito 1; dal compito 3 prova prima lo sprite (la bassa è a 16°, i
+  fogli a ~22°): portiere e tiratore del dischetto, figure della ripresa
+  con ombra di contatto propria. In primo piano la cella da 128 px si
+  ingrandisce 1,5-2,5 volte (morbida): un secondo atlante a 192 px
+  (+2 MB) è un seguito, se richiesto.
 
 ## 3. La catena di produzione (tutta in `strumenti/sprite/`)
 

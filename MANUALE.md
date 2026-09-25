@@ -625,13 +625,26 @@ Qui il registro completo, a edizioni.
   accovacciato usciva alto quanto uno in piedi e il tuffo disteso 2,5
   volte l'uomo — trovato al primo foglio disteso (nb23), curato in
   `atlante.py`/`monta.py`. Il rig resta nel file come **ripiego** (atlante non
-  decodificato, camera bassa dei rigori e della ripresa del gol, menu,
-  duello) e come termine di paragone: `window.__test.spriteOn(v)` e il
+  decodificato, menu, duello) e come termine di paragone: `window.__test.spriteOn(v)` e il
   pulsante **FIGURE: FOTOGRAFICHE / DISEGNATE** nelle Impostazioni
   (`SAVE.figure`, additivo; `salvataggio` 11/11). Il **mancino** (#155)
   esiste anche qui: direzione opposta specchiata sulle clip in cui si vede
   il piede che arma. Scatti: `strumenti/_158-prove/partita-sprite.png`
   contro `partita-rig.png` (stesso istante), `confronto-*.png` (provino).
+
+  **Compito 3 — le scene in camera bassa.** Nel compito 1 rigori e ripresa
+  del gol restavano al rig, e a ogni gol il giocatore vedeva le capsule
+  tornare. La bassa sta a 16° e i fogli a ~22°: è la camera a cui lo
+  sprite somiglia di più. Portiere e tiratore del dischetto e le figure
+  della ripresa provano prima lo sprite, il numero si ancora al torso di
+  chi ha disegnato, in ripresa lo sprite porta la sua ombra di contatto
+  (ellisse nella tinta d'ombra di SOLE, mai nero puro). Scatto:
+  `strumenti/_158-prove/ripresa-sprite.png` (`_158-scatto-ripresa.js`).
+  Prezzo dichiarato: in primo piano la figura arriva a 200-300 px e la
+  cella ne ha 128 di statura, si ingrandisce di 1,5-2,5 volte e si vede
+  morbida; un secondo atlante a 192 px costerebbe +2 MB ed è un compito
+  suo, se richiesto. `dischetto`, `volto`, `duello-impronta`, `gesto`
+  verdi dopo l'aggancio.
 
   ### (b) I numeri che hanno deciso
 

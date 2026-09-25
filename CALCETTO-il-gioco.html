@@ -10528,7 +10528,16 @@ const Sprite3D=(function(){
   }
 
   function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs,filo){
-    if(!pronto||nomeCam!=='alto'||!look||!(hPx>0)) return false;
+    /* ANCHE LA CAMERA BASSA (compito 3): i rigori e la ripresa del gol
+       stanno a 16 gradi di elevazione, e i fogli sono fotografati a
+       ~22: e' la camera a cui lo sprite somiglia DI PIU', non di meno.
+       Il rig normalizza l'altezza a hPx in tutte e due le camere
+       (s = hPx/(1,9·ce)), quindi la stessa scala vale qui. Il prezzo
+       dichiarato: in primo piano la figura arriva a 200-300 px e la cella
+       ne ha 128 di statura — si ingrandisce di 1,5-2,5 volte, e si vede
+       morbida. Un secondo atlante a 192 px costerebbe +2 MB: e' un
+       compito suo, se il committente lo chiede. */
+    if(!pronto||(nomeCam!=='alto'&&nomeCam!=='bassa')||!look||!(hPx>0)) return false;
     const vv=voce(nomeClip); if(!vv) return false;
     const v=vv.v;
     let dd=dir(yaw);
@@ -10559,6 +10568,21 @@ const Sprite3D=(function(){
     const k=hPx*statura(look)*SCALA/f[4];
     const cel=TAV.cella;
     let dx=cx-f[2]*k; const dy=cy+hPx*GIU-f[3]*k, dl=cel*k;
+    if(!senzaOmbra){
+      /* L'OMBRA DI CONTATTO, solo dove il chiamante la chiede (la ripresa
+         del gol: in pianta la fa drawOmbreGiocatori e qui arriva
+         senzaOmbra). Un'ellisse morbida ai piedi, nella tinta d'ombra del
+         gioco (14·38·32, «erba col cielo dentro», il contratto di SOLE:
+         mai nero puro), larga poco meno di un uomo e schiacciata dalla
+         camera bassa. */
+      const rw=hPx*0.34, rh=hPx*0.085;
+      ctx.save();
+      const gr=ctx.createRadialGradient(cx,cy+hPx*GIU,rh*0.2,cx,cy+hPx*GIU,rw);
+      gr.addColorStop(0,'rgba(14,38,32,0.55)'); gr.addColorStop(1,'rgba(14,38,32,0)');
+      ctx.fillStyle=gr;
+      ctx.beginPath(); ctx.ellipse(cx,cy+hPx*GIU,rw,rh,0,0,6.2832); ctx.fill();
+      ctx.restore();
+    }
     if(manc){
       /* specchio attorno alla verticale del punto a terra: l'ancora dei
          piedi f[2] va misurata dall'altro lato della cella */
@@ -42749,11 +42773,14 @@ function drawDuelScene(){
     /* stessa taglia di prima: 41 unita' a scala 0,0125 = 0,51 GH */
     const hbK=g.GH*0.51;
     DUEL_RIG_K.team=D.keeper;
-    Rig3D.disegna(ctx, kx, ky, hbK, yawK, 'bassa', clipK,
-                  uK/Rig3D.CLIPS[clipK].freq, rigLook(DUEL_RIG_K), true, DPR);
-    /* il numero 1, ancorato al torso del rig */
+    const conSpriteK = SPRITE_ON && SAVE.figure!==0 && Sprite3D.disegna(ctx, kx, ky, hbK, yawK, 'bassa', clipK,
+                         uK/Rig3D.CLIPS[clipK].freq, rigLook(DUEL_RIG_K), true, DPR);
+    if(!conSpriteK)
+      Rig3D.disegna(ctx, kx, ky, hbK, yawK, 'bassa', clipK,
+                    uK/Rig3D.CLIPS[clipK].freq, rigLook(DUEL_RIG_K), true, DPR);
+    /* il numero 1, ancorato al torso di chi ha disegnato (voce #158) */
     {
-      const T=Rig3D.torso();
+      const T=conSpriteK?Sprite3D.torso():Rig3D.torso();
       const nx=(T.x0+T.x1)*0.5, ny=(T.y0+T.y1)*0.5;
       ctx.font='900 '+Math.max(7,Math.round(hbK*0.16))+'px '+FONT_N;
       ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineJoin='round';
@@ -42945,11 +42972,14 @@ function drawDuelScene(){
     /* di spalle ma di TRE QUARTI (yaw 0,5 ~ 29 gradi): la clip del calcio
        vive nel piano sagittale e a yaw zero carica e frustata spariscono
        dietro la schiena — l'angolo della rincorsa vera le fa leggere */
-    Rig3D.disegna(ctx, sx2, py2, hbS, 0.5, 'bassa', clipS,
-                  uS/Rig3D.CLIPS[clipS].freq, rigLook(DUEL_RIG_S), true, DPR);
+    const conSpriteS = SPRITE_ON && SAVE.figure!==0 && Sprite3D.disegna(ctx, sx2, py2, hbS, 0.5, 'bassa', clipS,
+                         uS/Rig3D.CLIPS[clipS].freq, rigLook(DUEL_RIG_S), true, DPR);
+    if(!conSpriteS)
+      Rig3D.disegna(ctx, sx2, py2, hbS, 0.5, 'bassa', clipS,
+                    uS/Rig3D.CLIPS[clipS].freq, rigLook(DUEL_RIG_S), true, DPR);
     /* numero sulla schiena: e' di spalle, il numero e' cio' che si vede */
     {
-      const T=Rig3D.torso();
+      const T=conSpriteS?Sprite3D.torso():Rig3D.torso();
       const nx=(T.x0+T.x1)*0.5, ny=(T.y0+T.y1)*0.5;
       ctx.font='900 '+Math.max(8,Math.round(hbS*0.17))+'px '+FONT_N;
       ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineJoin='round';
@@ -43596,7 +43626,10 @@ function drawRipresaGol(){
     const hb=g.GH*RIP_KFIG*pp;
     /* DPR come scala: qui hb e' gia' in pixel di schermo, e il primo
        piano della ripresa merita il LOD quanto i rigori (volto, mani) */
-    Rig3D.disegna(ctx, x, y, hb, o.yaw, 'bassa', o.clip, o.tSec, rigLook(q), false, DPR);
+    /* LO SPRITE ANCHE IN RIPRESA (voce #158, compito 3): con l'ombra di
+       contatto sua, perche' qui il rig la disegnava da se' */
+    if(!(SPRITE_ON && SAVE.figure!==0 && Sprite3D.disegna(ctx, x, y, hb, o.yaw, 'bassa', o.clip, o.tSec, rigLook(q), false, DPR)))
+      Rig3D.disegna(ctx, x, y, hb, o.yaw, 'bassa', o.clip, o.tSec, rigLook(q), false, DPR);
   }
 
   /* ---- i coriandoli che piovono DAVANTI alla camera. Il getto in

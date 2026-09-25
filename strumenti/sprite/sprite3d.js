@@ -236,7 +236,16 @@ const Sprite3D=(function(){
   }
 
   function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs,filo){
-    if(!pronto||nomeCam!=='alto'||!look||!(hPx>0)) return false;
+    /* ANCHE LA CAMERA BASSA (compito 3): i rigori e la ripresa del gol
+       stanno a 16 gradi di elevazione, e i fogli sono fotografati a
+       ~22: e' la camera a cui lo sprite somiglia DI PIU', non di meno.
+       Il rig normalizza l'altezza a hPx in tutte e due le camere
+       (s = hPx/(1,9·ce)), quindi la stessa scala vale qui. Il prezzo
+       dichiarato: in primo piano la figura arriva a 200-300 px e la cella
+       ne ha 128 di statura — si ingrandisce di 1,5-2,5 volte, e si vede
+       morbida. Un secondo atlante a 192 px costerebbe +2 MB: e' un
+       compito suo, se il committente lo chiede. */
+    if(!pronto||(nomeCam!=='alto'&&nomeCam!=='bassa')||!look||!(hPx>0)) return false;
     const vv=voce(nomeClip); if(!vv) return false;
     const v=vv.v;
     let dd=dir(yaw);
@@ -267,6 +276,21 @@ const Sprite3D=(function(){
     const k=hPx*statura(look)*SCALA/f[4];
     const cel=TAV.cella;
     let dx=cx-f[2]*k; const dy=cy+hPx*GIU-f[3]*k, dl=cel*k;
+    if(!senzaOmbra){
+      /* L'OMBRA DI CONTATTO, solo dove il chiamante la chiede (la ripresa
+         del gol: in pianta la fa drawOmbreGiocatori e qui arriva
+         senzaOmbra). Un'ellisse morbida ai piedi, nella tinta d'ombra del
+         gioco (14·38·32, «erba col cielo dentro», il contratto di SOLE:
+         mai nero puro), larga poco meno di un uomo e schiacciata dalla
+         camera bassa. */
+      const rw=hPx*0.34, rh=hPx*0.085;
+      ctx.save();
+      const gr=ctx.createRadialGradient(cx,cy+hPx*GIU,rh*0.2,cx,cy+hPx*GIU,rw);
+      gr.addColorStop(0,'rgba(14,38,32,0.55)'); gr.addColorStop(1,'rgba(14,38,32,0)');
+      ctx.fillStyle=gr;
+      ctx.beginPath(); ctx.ellipse(cx,cy+hPx*GIU,rw,rh,0,0,6.2832); ctx.fill();
+      ctx.restore();
+    }
     if(manc){
       /* specchio attorno alla verticale del punto a terra: l'ancora dei
          piedi f[2] va misurata dall'altro lato della cella */
