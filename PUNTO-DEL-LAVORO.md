@@ -1,7 +1,15 @@
 # Dove siamo, e cosa manca
 
-Aggiornato al **24 settembre 2026**. Questo file serve a riprendere senza
+Aggiornato al **25 settembre 2026**. Questo file serve a riprendere senza
 rileggere niente altro.
+
+## La giornata del 25 settembre, in breve
+
+| | cosa |
+|---|---|
+| 0 | **#158 IN CORSO — LE FIGURE FOTOGRAFICHE (sprite da Nano Banana)**, compito 1 sul ramo `figure-giro-4` (merge-base `10e037e`; spec `docs/superpowers/specs/2026-09-25-sprite-fotografici-design.md`; verbale in MANUALE §A). Il committente ha fermato il giro artefice/giuria («stai andando in un loop») e chiesto personaggi realistici da Nano Banana o Pexels via Chrome, con Fable e basta. Fatto: catena `strumenti/sprite/` (prompt → foglio 8 direzioni → `foglio.py`/`ritaglia.py` → `atlante.py` → `monta.py` → `_toppa-158-sprite.js`), modulo `Sprite3D` (tinta per luminanza con maglia bianca/calzoncini magenta, 8 settori, specchio per il ciclo e per il mancino, prestiti per le clip senza foglio, pulsante FIGURE nelle Impostazioni, rubinetto `__test.spriteOn`), **sei clip in campo** (fermo, corsa, camminata, tiro, passaggio, scivolata). **La toppa è applicata solo alla copia `fuori/sprite/CALCETTO-sprite.html`**, non ancora al gioco: sulla copia `collaudo` 36/36, `divise` 4/4, `determinismo` 11/11, `seme`, `salvataggio`, `gesto`, `volti`, `proporzioni`, `accessibile`, `fotosensibile`, `senza-rete` OK; `istantanea` 42/56 (uguale); `silhouette` 6/10 **anche senza toppa** (pre-esistente); `prestazione` medio −21,6%, p95 in rimisura. MOTORE_V resta 6. |
+| 1 | **Quota Gemini esaurita** dopo ~18 immagini (torna alle 19:42): mancano corsa 2ª fase, tiro follow-through, contrasto, attesaGK, tuffo, parata, frenata, testa, esultanza, delusione — prompt e metodo in `strumenti/sprite/PROMPT.md` (le modifiche «same character» duplicano, serve il prompt intero; «mid-air» non esce; il download va fatto via appunti). |
+| 2 | **Il ramo porta 654 righe del gioco NON committate** (#157 giro 4: `_toppa-157-*.js` applicate, verbali #153-#157 assenti dal registro §A): da committare PRIMA della toppa #158, come commit propri, con la batteria a dichiararne lo stato. |
 
 ## La giornata del 24 settembre, in breve
 
@@ -385,6 +393,15 @@ node strumenti/giocata.js --tutte                 # da solo: cronometrico
 node strumenti/_eventi.js                         # il gioco, non l'immagine
 node strumenti/prestazione.js --contro HEAD       # l'unico confronto onesto qui
 python android/costruisci.py && python android/verifica.py
+
+# GLI SPRITE FOTOGRAFICI (voce #158, 25 settembre) — la catena, dai fogli al gioco
+python strumenti/sprite/monta.py                                   # piano.json -> celle -> atlante (fuori/sprite/atlante)
+node strumenti/_toppa-158-sprite.js --out fuori/sprite/CALCETTO-sprite.html   # la copia con la toppa (o --dentro per il gioco)
+node strumenti/_158-fumo.js                                        # si apre, decodifica, zero errori
+node strumenti/_158-scatto-partita.js                              # partita vera: sprite contro rig, stesso istante
+node strumenti/_158-confronto.js                                   # provino: rig a sinistra, sprite a destra
+node strumenti/_154-scatti-provino.js --gioco fuori/sprite/CALCETTO-sprite.html --fuori _158-prove
+# i fogli nuovi si generano con Nano Banana: prompt e metodo in strumenti/sprite/PROMPT.md
 ```
 
 ## Le regole pagate

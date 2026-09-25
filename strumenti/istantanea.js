@@ -1413,7 +1413,15 @@ function misuraInPagina(arg) {
         if (tilt > 0.02 || tilt < -0.02) {
           s2.translate(cxs, cys); s2.rotate(tilt); s2.translate(-cxs, -cys);
         }
-        rig.disegna(s2, cxs, cys, hPx, yaw, 'alto', clip, u / clipDef.freq, NERO, true, 1 / dpr);
+        /* la maschera è di QUESTA figura (corporatura, mano che arma) e,
+           con gli sprite (voce #158), è l'alfa del fotogramma: Sprite3D
+           risponde alla stessa chiamata col look nero, il rig è il
+           ripiego come in partita. Stessa riga di _q-divise.js. */
+        const lkV = (typeof rigLook === 'function') ? rigLook(p) : null;
+        NERO.corp = lkV ? lkV.corp : 3; NERO.manc = lkV ? !!lkV.manc : false;
+        const SP = (typeof Sprite3D !== 'undefined' && window.__test && window.__test.sprite && window.__test.sprite.on) ? Sprite3D : null;
+        if (!(SP && SP.disegna(s2, cxs, cys, hPx, yaw, 'alto', clip, u / clipDef.freq, NERO, true, 1 / dpr)))
+          rig.disegna(s2, cxs, cys, hPx, yaw, 'alto', clip, u / clipDef.freq, NERO, true, 1 / dpr);
         s2.restore();
       } catch (e) { continue; }
       /* il riquadro del nero: è l'altezza VERA della figura a schermo */

@@ -790,7 +790,23 @@ async function calcetto(browser, srv) {
             /* finestra FISSA sullo schermo: il torso del rig sta in piedi
                sopra il centro comunque sia girato il corpo (vedi il conto
                nel commento in testa) */
-            for (const av of [-12.5, -11.5, -10.5]) {
+            /* CON GLI SPRITE (voce #158) LA FINESTRA SALE DI QUATTRO UNITA',
+               per la stessa ragione geometrica, e il conto va fatto DOPO la
+               scala P_DIS, che il gioco applica attorno a (p.x, p.y):
+               lo sprite ha i piedi a p.y + (10 + 0,04·34)·1,18 = +13,4 ed
+               e' alto 1,15·34·1,18 = 46,1 unita' (SCALA e GIU in Sprite3D,
+               misurate). Le righe -12,5/-10,5 cadono a 0,55-0,59
+               dell'altezza, cioe' sulla CINTURA dei calzoncini (misurato:
+               2,4-2,7:1, erano i calzoncini scuri, non la maglia); e la
+               prima stesura a -14/-12 cadeva a 0,57-0,60, cioe' ancora li'
+               (misurato: 2,6:1, +0,1 spostando la tinta del 18% — il
+               segno che la finestra non stava sulla maglia). -16,5/-14,5
+               cadono a 0,60-0,65: sopra l'orlo della maglia (0,55) e
+               sotto il numero, che sta a 0,74 col glifo fino a 0,65. La
+               finestra misura la maglia in tutti e due i casi: e' questo
+               il suo mestiere, non una quota fissa. */
+            const conSprite = !!(t.sprite && t.sprite.on && t.sprite.pronto);
+            for (const av of (conSprite ? [-16.5, -15.5, -14.5] : [-12.5, -11.5, -10.5])) {
               for (const la of [-1.5, -1.0, -0.5, 0, 0.5, 1.0, 1.5]) {
                 const wx = p.x + la, wy = p.y + av;
                 const sx = wx * S2 + Ax, sy = wy * S2 + Ay;

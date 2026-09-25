@@ -585,6 +585,94 @@ Qui il registro completo, a edizioni.
   zero, e la revisione dell'intera postura «zero permessi, zero conti, nessuna
   chiave nell'HTML»). **Nessuna delle due è stata provata.**
 
+- **LE FIGURE FOTOGRAFICHE — #158 GLI SPRITE DA NANO BANANA AL POSTO DEL RIG**
+  (voce #158, 25 settembre 2026, compito 1 dal merge-base `10e037e`, ramo
+  `figure-giro-4` — spec `docs/superpowers/specs/2026-09-25-sprite-fotografici-design.md`;
+  **le voci #153-#157 non hanno ancora il verbale in questo registro**: il
+  loro lavoro sta nel ramo, 654 righe del gioco non ancora committate al
+  momento in cui questo cantiere apre). **`MOTORE_V` resta 6**; il disegno
+  non consuma un sorteggio e non legge lo stato della simulazione
+  (`determinismo` 11/11, `seme` OK sulla copia). Il file cresce di
+  **+440 kB** (2.948.049 → 3.398.942 caratteri con 64 fotogrammi: atlante
+  WebP con alfa 122 kB e maschere 114 kB, in base64, più il modulo; le
+  maschere passano a WebP senza perdita, 79 kB, alla prossima montatura).
+
+  Il committente aveva giudicato il rig («fanno pena») e fermato il giro
+  artefice/giuria («stai andando in un loop»): il mandato è «personaggi di
+  qualità realistica, con Nano Banana o Pexels dal connettore Chrome». Il
+  #151 aveva scritto che gli sprite non convenivano per la TINTA (un solo
+  arco di colore addosso): qui la maglia è **bianca** e i calzoncini
+  **magenta** nello sprite, e il gioco li tinge per luminanza con la prima e
+  la seconda tinta della squadra, con palato e fascia (`Sprite3D.tela`).
+  **`_q-divise` 4/4 istanti, TV 0,74, tinte dominanti a 130°.**
+
+  ### (a) Che cosa c'è in campo
+
+  Sei clip fotografate in otto direzioni (fermo, corsa, camminata, tiro,
+  passaggio, scivolata; la seconda metà del ciclo di corsa e camminata
+  nasce **per specchio** della direzione opposta), le altre ventuno **in
+  prestito** dalla più vicina (`Sprite3D.ALIAS`, letta da
+  `window.__test.sprite.prestiti`): in campo le due grafiche non si
+  mescolano mai. Il rig resta nel file come **ripiego** (atlante non
+  decodificato, camera bassa dei rigori e della ripresa del gol, menu,
+  duello) e come termine di paragone: `window.__test.spriteOn(v)` e il
+  pulsante **FIGURE: FOTOGRAFICHE / DISEGNATE** nelle Impostazioni
+  (`SAVE.figure`, additivo; `salvataggio` 11/11). Il **mancino** (#155)
+  esiste anche qui: direzione opposta specchiata sulle clip in cui si vede
+  il piede che arma. Scatti: `strumenti/_158-prove/partita-sprite.png`
+  contro `partita-rig.png` (stesso istante), `confronto-*.png` (provino).
+
+  ### (b) I numeri che hanno deciso
+
+  - **Scala e ancora** (`_158-misura-scala.js`): a hCss 420 il rig 'fermo'
+    è alto 429/438/449/465 px sulle quattro imbardate, lo sprite 417; il
+    punto più basso del rig sta 60-75 px sotto l'ancora (la punta del piede
+    verso la camera, 0,118 hPx a 42°). Sprite a **1,15 hPx**, piedi a
+    **+0,04 hPx**: l'uomo snello legge come le capsule gonfiate del rig.
+  - **La stoffa è più scura della tinta piatta** (`_158-profilo.js`):
+    sotto il petto L 0,64 su 1. `collaudo` misurava 2,4-2,7:1 su tutte e
+    nove le partite. Tre cause, tre cure misurate: la finestra della sonda
+    cadeva sulla **cintura dei calzoncini** (0,55-0,59 h dopo P_DIS: sale a
+    0,60-0,65 quando gli sprite sono accesi); la stoffa si schiarisce di
+    una **gamma 0,72** e del **18% verso il bianco caldo** (lo stesso
+    bilancio che il rig paga in `rigLook`); la **fascia** della seconda
+    tinta stava a 0,61-0,72 h, cioè sulla sonda (P2 2,11:1): va sul petto,
+    0,67-0,75 h, come nel rig. Esito **36/36**: P1 4,19:1 (0/9 sotto), P2
+    3,02:1 (**5 partite su 9 sotto il minimo: sul filo, dichiarato**).
+  - **Le maschere dei banchi**: `_q-divise` e `istantanea` dipingevano la
+    sagoma con `Rig3D.disegna` in nero; con gli sprite la maschera non
+    coincideva coi pixel e l'istogramma pescava l'erba (dominanti «a 10°»).
+    Ora chiedono la maschera a `Sprite3D` (look nero → alfa del fotogramma)
+    e passano corporatura e mano della figura. Il falso
+    `_crit-158-divise-uguali` (maglie tutte rosse) viene condannato: 0/4.
+  - **`istantanea` 42/56** come prima (ombre 5→4, centro sera 7→8).
+  - **`silhouette` ROSSO 6/10 anche senza la toppa, e NON è degli sprite**:
+    il banco `?banco=silhouette` disegna col rig e non passa da `Sprite3D`.
+    Misurato all'origine, come chiede la regola: su HEAD `10e037e` è
+    **VERDE 8/10**; il 6/10 nasce nelle **654 righe del #157 giro 4 non
+    ancora committate** che il ramo porta con sé.
+  - **Costo** (`_158-costo-tinta.js`, PC): tela tinta **35-49 ms per
+    divisa** (tre a partita, alla prima figura), `disegna()` **7 µs per
+    figura**. `prestazione --contro HEAD`: a tre giri fotogramma medio
+    **−21,6%**, tipico **−21,3%**, p95 +42% «non provato» dal banco (giri a
+    cavallo dello zero); **a dieci giri 3/3**: medio −11,5%, tipico
+    −18,2%, p95 +12,5% (ammesso +25%; medio e p95 restano «non provati»
+    nel segno, ma dentro la tolleranza). Un `drawImage` costa meno di
+    decine di capsule.
+
+  ### (c) Quello che manca, dichiarato
+
+  Fogli mancanti (la quota di Gemini si è esaurita dopo ~18 immagini):
+  corsa 2ª fase, tiro follow-through, contrasto, attesaGK, tuffo, parata,
+  frenata, testa, esultanza, delusione — prompt in
+  `strumenti/sprite/PROMPT.md`. L'angolo degli sprite è ~20-25° (il rig
+  42°): il generatore non ha obbedito ai 45° in quattro formulazioni.
+  L'**ombra portata** resta la sagoma del rig (`drawOmbreGiocatori`). **Un
+  uomo solo** (stesso volto, pelle, capelli): `look.pelle`/`capelli` senza
+  maschera. La tela tinta si prepara al primo fotogramma, dentro la
+  tendina; su Android 10 può valere mezzo secondo (`Sprite3D.prepara` è il
+  seguito). I fogli generati non si committano (`fuori/`): si rigenerano.
+
 - **VOLUME E GESTO — #152 LA PRODUZIONE, E DUE BERSAGLI SU TRE** (voce #152,
   24 settembre 2026, cinque compiti dal merge-base `4ed12a6` — spec
   `docs/superpowers/specs/2026-09-24-volume-e-gesto-design.md`, piano
@@ -1009,6 +1097,20 @@ Qui il registro completo, a edizioni.
   esattamente la cosa che lo rende incomprimibile. **Il costo degli sprite non è
   la CPU** (sul banco sono perfino più veloci del rig): **è la memoria e il
   peso**, e sono i due vincoli che il mandato dichiara non negoziabili.
+
+  > **RETTIFICA (25 settembre 2026, voce #158).** Questa conclusione valeva
+  > per l'atlante *renderizzato da Blender dal rig stesso* (kit cotto nei
+  > pixel, 64 fotogrammi per clip, +90% di peso) e non regge per gli sprite
+  > **fotografici tinti dal gioco**: con la maglia bianca e i calzoncini
+  > magenta nello sprite, la tinta viene dal look di squadra (`_q-divise`
+  > 4/4, TV 0,74, 130° fra le dominanti — contro «1 arco di tinta» qui
+  > sopra), il peso è **+275 kB per 64 fotogrammi** (WebP con alfa, un
+  > fotogramma ogni 45°, la seconda metà del ciclo per specchio), la CPU
+  > scende (fotogramma medio −21,6%), e il numero di maglia e la fusione
+  > restano del gioco. Ciò che resta vero di questa riga: il volume del
+  > rig NON si compra con un atlante del rig. Il committente ha poi
+  > giudicato il rig insufficiente e chiesto figure realistiche: il
+  > verbale è il #158, in cima a questo registro.
 
   ### (g) LA TERZA VIA — Blender che calcola, 279 byte
 

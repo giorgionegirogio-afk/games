@@ -217,6 +217,15 @@ iframe#gioco{
     </fieldset>
 
     <fieldset>
+      <legend>Figura (voce #158)</legend>
+      <div class="fila" id="boxSprite">
+        <button data-sprite="1" class="on">SPRITE fotografico</button>
+        <button data-sprite="0">rig procedurale</button>
+      </div>
+      <p class="nota" id="notaSprite"></p>
+    </fieldset>
+
+    <fieldset>
       <legend>Dettaglio (LOD)</legend>
       <div class="fila">
         <button data-lod="auto" class="on">come in partita</button>
@@ -321,6 +330,7 @@ const elLett = document.getElementById('lettura');
 
 let W = null;          // la finestra del gioco
 let R = null;          // Rig3D, quello vero
+let SP = null;         // Sprite3D (voce #158), se il gioco caricato ce l'ha
 let K = {};            // le costanti lette dal gioco
 let CLIPS = [];        // i nomi delle clip, nell'ordine del gioco
 let rigLook = null;    // la funzione del gioco che assembla la divisa
@@ -394,6 +404,14 @@ async function aggancia(){
     await new Promise(r=>setTimeout(r,60));
   }
   R = W.eval('Rig3D');
+  /* GLI SPRITE (voce #158): stessa porta di Rig3D. Un gioco senza la
+     toppa non li ha, e il provino lo dice invece di fingere. */
+  try{ SP = W.eval('typeof Sprite3D!=="undefined" ? Sprite3D : null'); }catch(e){ SP = null; }
+  const bs = document.getElementById('boxSprite');
+  if(bs){ bs.querySelectorAll('button').forEach(b=>{ b.disabled = !SP; }); }
+  const ns = document.getElementById('notaSprite');
+  if(ns) ns.textContent = SP ? 'Sprite3D presente: clip con fotogrammi ' + (SP.stato().clip.join(', ') || 'nessuna') + '.'
+                            : 'Questo gioco NON ha Sprite3D (serve la toppa 158): si disegna col rig.';
   CLIPS = Object.keys(R.CLIPS);
   rigLook = W.eval('rigLook');
   /* il portiere: gkKit legge GK_UNICA, che senza una partita non e'
@@ -427,6 +445,7 @@ const S = {
   yawDeg:54,
   h:420,
   lod:'auto',
+  sprite:1,          // voce #158: sprite fotografico se il gioco lo ha, altrimenti rig
   corp:3,
   kit:0,
   ruolo:'campo',
@@ -537,8 +556,17 @@ function figura(g, cx, cy, hCss, opt){
   const pxs = scalaDichiarata(hCss, opt.lod || S.lod);
   g.save();
   g.translate(cx, cy); g.scale(sc, sc); g.translate(-cx, -cy);
-  R.disegna(g, cx, cy, K.RIG_H, yaw, 'alto', nome, u/clip.freq, lk,
-            !(opt.ombra===undefined ? S.ombra : opt.ombra), pxs);
+  /* LO SPRITE PRIMA DEL RIG (voce #158), come in partita: se Sprite3D
+     c'e', e' acceso, e ha la clip, disegna lui; altrimenti il rig. Il
+     confronto A/B e' un pulsante, non due giochi. */
+  let conSprite = false;
+  if(S.sprite && SP && !opt.rig){
+    try{ conSprite = !!SP.disegna(g, cx, cy, K.RIG_H, yaw, 'alto', nome, u/clip.freq, lk, true, pxs, 0); }
+    catch(e){ conSprite = false; }
+  }
+  if(!conSprite)
+    R.disegna(g, cx, cy, K.RIG_H, yaw, 'alto', nome, u/clip.freq, lk,
+              !(opt.ombra===undefined ? S.ombra : opt.ombra), pxs);
   g.restore();
   lk.corp = eraCorp;
   if(S.giunti && !opt.senzaGiunti) segnaGiunti(g, cx, cy, sc);
@@ -1854,6 +1882,40 @@ function vistaValore(){
   g.fillStyle = okStretto ? '#3fe6b0' : '#ff7a6a';
   g.fillText((okStretto?'PASSA':'NON PASSA')+': i due estremi del', xT, y); y+=16;
   g.fillText('valore sono capi della divisa', xT, y); y+=20;
+  /* =====================================================================
+     LE ALTRE DUE CLAUSOLE DI C5, STAMPATE (voce #155, giro 4).
+     Il verbale del giro 3: «il pannello non le prova: stampa un verdetto
+     solo, quello degli estremi... Bersaglio: calze ad almeno 40 livelli
+     dalla maglia, pelle ad almeno 40 livelli sotto il capo di divisa
+     piu' chiaro, e una terza riga nel verdetto del provino che stampi
+     questi due scarti accanto a quello degli estremi.»
+     Qui ci sono, con la soglia accanto e il verdetto nel colore. Ce n'e'
+     una terza che il verbale non nomina ma che il criterio implica —
+     calze contro CALZONCINI — perche' «tronco, bacino e gambe come tre
+     masse» cade anche se la terza si riattacca alla seconda.
+     Il pannello guarda UNA divisa: tutte e diciotto le conta
+     strumenti/_157-valore.js, che stampa il PEGGIO delle quarantotto
+     combinazioni divisa x carnagione. ================================== */
+  {
+    const V = n => { const q = vv.find(z=>z.n===n); return q ? q.L : null; };
+    const Lm = V('maglia'), Lc = V('calze'), Lp = V('pelle'), Lz = V('calzoncini');
+    const divise = vv.filter(z=>z.fam==='divisa');
+    const capoChiaro = divise.length ? divise[divise.length-1] : null;
+    const sCM = (Lm!==null && Lc!==null) ? Math.abs(Lc-Lm) : null;
+    const sCZ = (Lz!==null && Lc!==null) ? Math.abs(Lc-Lz) : null;
+    const sPD = (capoChiaro && Lp!==null) ? (capoChiaro.L - Lp) : null;
+    const riga = (et, val, soglia) => {
+      const ok = val!==null && val>=soglia;
+      g.font='700 12px ui-monospace,Consolas,monospace';
+      g.fillStyle = ok ? '#3fe6b0' : '#ff7a6a';
+      g.fillText((ok?'PASSA':'NON PASSA')+'  '+et, xT, y); y+=15;
+      g.font='11px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(255,255,255,.55)';
+      g.fillText('   '+(val===null?'-':val.toFixed(0))+' livelli, ne servono '+soglia, xT, y); y+=19;
+    };
+    riga('calze / maglia', sCM, 40);
+    riga('calze / calzoncini', sCZ, 40);
+    riga('pelle sotto la divisa', sPD, 40);
+  }
   g.font='11px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(255,255,255,.55)';
   g.fillText('piu\' scuro: '+piuScuro.n+' ('+piuScuro.L.toFixed(0)+')', xT, y); y+=16;
   g.fillText('piu\' chiaro: '+piuChiaro.n+' ('+piuChiaro.L.toFixed(0)+')', xT, y);
@@ -2129,6 +2191,13 @@ function costruisciComandi(){
   document.getElementById('bHpieno').addEventListener('click',()=>{
     S.h=Math.round(palco.clientHeight*0.88); rgH.value=S.h; sincronizza();
   });
+
+  /* sprite / rig (voce #158) */
+  document.querySelectorAll('[data-sprite]').forEach(b=>b.addEventListener('click',()=>{
+    S.sprite=+b.dataset.sprite;
+    document.querySelectorAll('[data-sprite]').forEach(q=>q.className='');
+    b.className='on'; sincronizza();
+  }));
 
   /* LOD */
   document.querySelectorAll('[data-lod]').forEach(b=>b.addEventListener('click',()=>{

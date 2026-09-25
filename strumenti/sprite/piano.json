@@ -1,0 +1,11 @@
+{
+  "_nota": "Il PIANO degli sprite (voce #158): quale foglio generato diventa quale clip del rig e quale fotogramma. monta.py lo legge e rifa' tutto da capo: taglio, maschere, atlante. I fogli stanno in fuori/sprite/ingresso/<foglio>.png (non tracciati: si rigenerano con Nano Banana con i prompt in PROMPT.md). f e' il fotogramma nel ciclo; per corsa e camminata la seconda meta' del ciclo nasce per specchio (atlante.py --specchia).",
+  "fogli": [
+    {"foglio": "nb06-giro-topdown", "clip": "fermo",     "f": 0, "nota": "personaggio base, in piedi, 8 rotazioni"},
+    {"foglio": "nb07-corsa-A",      "clip": "corsa",     "f": 0, "nota": "sprint, ginocchio sinistro alto, appoggio destro"},
+    {"foglio": "nb14-camminata-A",  "clip": "camminata", "f": 0, "nota": "passo, tallone destro a terra"},
+    {"foglio": "nb15-tiro-A",       "clip": "tiro",      "f": 0, "nota": "tiro di destro, gamba caricata"},
+    {"foglio": "nb16-passaggio-A",  "clip": "passaggio", "f": 0, "nota": "passaggio d'interno destro"},
+    {"foglio": "nb17-scivolata-A",  "clip": "scivolata", "f": 0, "nota": "scivolata, gamba destra tesa"}
+  ]
+}

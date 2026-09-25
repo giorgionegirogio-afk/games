@@ -206,7 +206,17 @@ function misuraDivise(pixelMin) {
       s2.save();
       const tilt = (typeof SAVE !== 'undefined' && SAVE.moto) ? (p.rollio || 0) * 0.30 : 0;
       if (tilt > 0.02 || tilt < -0.02) { s2.translate(cxs, cys); s2.rotate(tilt); s2.translate(-cxs, -cys); }
-      rig.disegna(s2, cxs, cys, hPx, yaw, 'alto', clip, u / clipDef.freq, NERO, true, 1 / dpr);
+      /* LA MASCHERA E' DI QUESTA FIGURA, non di una figura nominale: la
+         corporatura (statura) e la mano che arma cambiano la sagoma, e
+         una maschera piu' alta dell'uomo pesca l'erba sopra la testa.
+         E con gli SPRITE (voce #158) la sagoma e' l'alfa del fotogramma:
+         Sprite3D risponde alla stessa chiamata col look nero; il rig
+         resta il ripiego, com'e' in partita. */
+      const lkV = (typeof rigLook === 'function') ? rigLook(p) : null;
+      NERO.corp = lkV ? lkV.corp : 3; NERO.manc = lkV ? !!lkV.manc : false;
+      const SP = (typeof Sprite3D !== 'undefined' && window.__test && window.__test.sprite && window.__test.sprite.on) ? Sprite3D : null;
+      if (!(SP && SP.disegna(s2, cxs, cys, hPx, yaw, 'alto', clip, u / clipDef.freq, NERO, true, 1 / dpr)))
+        rig.disegna(s2, cxs, cys, hPx, yaw, 'alto', clip, u / clipDef.freq, NERO, true, 1 / dpr);
       s2.restore();
     } catch (e) { continue; }
     const m = s2.getImageData(0, 0, box, box).data;
