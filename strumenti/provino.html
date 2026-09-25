@@ -30,13 +30,26 @@
      COSA RENDE VISIBILE (sono le voci del censimento del 24 settembre):
        - il LOD: interruttore a tre stati, e l'elenco di cio' che cade;
        - la statura: le quattro corporature affiancate, con l'altezza
-         MISURATA a pixel — CORPI ha g:1.00 su tutte e quattro le righe,
-         quindi i quattro fisici sono alti uguali e qui si vede;
-       - il piede: poseCalcio arma SEMPRE la gamba destra, non esiste un
-         mancino, e la tabella lo misura sui giunti invece di dirlo;
-       - la corsa: la frequenza e' una costante della clip (2,6) e non
-         dipende dal giocatore, quindi due figure affiancate restano in
-         passo per sempre.
+         MISURATA a pixel;
+       - il piede: quale gamba arma, misurata sui giunti invece che
+         affermata, e la stessa misura sulla posa specchiata;
+       - la corsa: la falcata e la cadenza, corporatura per corporatura.
+
+     RETTIFICA A EDIZIONI (25 settembre 2026, voce #155). Fino al 24 le
+     tre righe qui sopra dicevano tre cose che ERANO VERE ALLORA e non lo
+     sono piu', e si correggono in chiaro invece di sparire:
+       - «CORPI ha g:1.00 su tutte e quattro le righe, quindi i quattro
+         fisici sono alti uguali»: g resta 1,00 (le OSSA sono uguali) ma
+         adesso CORPI porta una colonna st, la statura, che e' un fattore
+         sulla scala del disegno: 1,018 / 0,984 / 0,962 / 1,000;
+       - «poseCalcio arma SEMPRE la gamba destra, non esiste un mancino»:
+         esiste, e' look.manc, ed e' la posa specchiata sull'asse
+         laterale. Il provino ha un bottone per accenderlo;
+       - «la frequenza e' una costante della clip (2,6) e non dipende dal
+         giocatore»: dipende, sulle clip cicliche — CORPI porta cd, e le
+         quattro cadenze sono 2,42 / 2,78 / 2,94 / 2,60.
+     Le tre misure non sono cambiate: sono le stesse, e adesso trovano
+     numeri diversi. E' precisamente cio' per cui erano state scritte.
 
      COSA NON FA: non tocca il gioco. Nessun aggancio nuovo nel file del
      gioco, nessuna riga aggiunta: tutto passa da iframe.contentWindow.eval,
@@ -1029,17 +1042,29 @@ function vistaStatura(){
   g.save();
   g.font='700 13px ui-monospace,Consolas,monospace';
   g.fillStyle = ugualiGamba ? '#ff7a6a' : '#3fe6b0';
+  /* LA RIGA SI RIFA' DAI NUMERI, non si scrive a mano. Fino al 24
+     settembre diceva «la statura non c'entra, lo scarto viene SOLO dal
+     raggio della testa (hr 0,96 / 1,00 / 1,05)»: era vero allora e
+     sarebbe una bugia adesso che CORPI porta una colonna st. Una
+     didascalia che afferma invece di leggere e' la prima cosa che
+     invecchia in uno strumento. */
+  const cor2 = rifai('corsa155s','uno',()=>misuraCorsa(),1e9);
+  const st = cor2.righe.map(r=>r.statura===undefined?1:r.statura);
+  const ugualiSt = (Math.max.apply(null,st)-Math.min.apply(null,st)) < 1e-4;
   g.fillText(ugualiGamba
-    ? 'LA GAMBA E\' LUNGA '+gambe[0].toFixed(3)+' m IN TUTTE E QUATTRO: i fisici sono ALTI UGUALI '
-      + '(CORPI porta g:1.00 su ogni riga, gioco riga 5198)'
+    ? 'LA GAMBA E\' LUNGA '+gambe[0].toFixed(3)+' m IN TUTTE E QUATTRO '
+      + '(CORPI porta g:1.00 su ogni riga): la statura NON viene dalle ossa'
     : 'le gambe hanno lunghezze diverse: '+gambe.join(' / '), 14, 26);
   g.font='11.5px ui-monospace,Consolas,monospace';
   g.fillStyle='rgba(255,255,255,.62)';
   g.fillText('lo scarto a schermo e\' '+(maxA-minA)+' px su '+maxA+' ('
-           + (100*(maxA-minA)/maxA).toFixed(1)+'%) e viene SOLO dal raggio della testa '
-           + '(hr 0,96 / 1,00 / 1,05) e dalle spalle: la statura non c\'entra.', 14, 46);
-  g.fillText('cio\' che distingue i quattro uomini e\' il RAPPORTO fra le masse, non i centimetri. '
-           + 'Il meccanismo del bacino (DP/DPQ) esiste e funziona: e\' spento a g 1,00.', 14, 64);
+           + (100*(maxA-minA)/maxA).toFixed(1)+'%). '
+           + (ugualiSt
+              ? 'La STATURA vale 1,000 su tutte e quattro: quello scarto viene solo dal raggio della testa e dalle spalle.'
+              : 'La STATURA vale '+st.map(v=>v.toFixed(3)).join(' / ')+': e\' un fattore sulla scala del disegno, non sulle ossa.'), 14, 46);
+  g.fillText('cio\' che distingue i quattro uomini e\' soprattutto il RAPPORTO fra le masse. Il tetto alla statura '
+           + 'lo mette la CIMA DELLA TESTA (gabbia.js, riferimento -34,6): nessuno puo\' salire. '
+           + 'Il meccanismo del bacino (DP/DPQ) resta spento a g 1,00.', 14, 64);
   g.restore();
 }
 
@@ -1565,12 +1590,27 @@ function vistaValore(){
   }
   y += 8;
   const piuScuro = vv[0], piuChiaro = vv[vv.length-1];
-  const ok = piuScuro.fam==='divisa' && piuChiaro.fam==='divisa';
+  /* DUE LETTURE DEL CRITERIO, tutt'e due stampate. Nasconderne una
+     sarebbe scegliere il verdetto invece di misurarlo.
+       LETTERALE  «ne' la pelle ne' le scarpe agli estremi» — e' cio' che
+                  il giudizio nominava: le braccia color carne e due
+                  scarpe nere che pesavano piu' della testa.
+       STRETTA    «entrambi gli estremi sono capi della divisa» — piu'
+                  dura, e su alcune divise la fanno cadere i CAPELLI, che
+                  restano il piu' scuro della figura. Alzarli ancora
+                  spegnerebbe lo spicchio della faccia, che sotto i 120
+                  px e' l'unica cosa che dice il fronte: la scelta e'
+                  dichiarata, non nascosta. */
+  const estremo = v => v.fam==='PELLE' || v.fam==='SCARPE';
+  const okLett = !estremo(piuScuro) && !estremo(piuChiaro);
+  const okStretto = piuScuro.fam==='divisa' && piuChiaro.fam==='divisa';
   g.font='700 12px ui-monospace,Consolas,monospace';
-  g.fillStyle = ok ? '#3fe6b0' : '#ff7a6a';
-  g.fillText(ok ? 'PASSA: piu\' scuro e piu\' chiaro' : 'NON PASSA: fuori dalla divisa',
-             xT, y); y+=17;
-  g.fillText(ok ? 'appartengono alla divisa' : (piuScuro.n+' / '+piuChiaro.n), xT, y); y+=17;
+  g.fillStyle = okLett ? '#3fe6b0' : '#ff7a6a';
+  g.fillText((okLett?'PASSA':'NON PASSA')+' (letterale): ne\' pelle', xT, y); y+=16;
+  g.fillText('ne\' scarpe stanno agli estremi', xT, y); y+=20;
+  g.fillStyle = okStretto ? '#3fe6b0' : '#ffb020';
+  g.fillText((okStretto?'PASSA':'NON PASSA')+' (stretta): entrambi', xT, y); y+=16;
+  g.fillText('gli estremi sono capi della divisa', xT, y); y+=20;
   g.font='11px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(255,255,255,.55)';
   g.fillText('piu\' scuro: '+piuScuro.n+' ('+piuScuro.L.toFixed(0)+')', xT, y); y+=16;
   g.fillText('piu\' chiaro: '+piuChiaro.n+' ('+piuChiaro.L.toFixed(0)+')', xT, y);

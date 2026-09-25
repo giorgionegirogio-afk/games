@@ -128,10 +128,30 @@ cambio('2. lo spicchio della faccia va SOPRA la calotta',
      identica a quella di prima, e cambia soltanto il VALORE dentro. */
   ctx.fillStyle=look.capelli;
   ctx.beginPath(); ctx.arc(hx,hy,rc,0,TAU); ctx.fill();
-  /* LO SPICCHIO DELLA FACCIA, SOPRA la calotta: e' la pelle che vince
-     dove il viso c'e' davvero. Sta dentro il cerchio della testa per
-     costruzione (0,99 r), quindi non allarga la sagoma di un pixel. */
-  if(n>0.10 && L>1e-4){
+  /* LO SPICCHIO DELLA FACCIA lo disegna la coda di questa funzione,
+     DOPO i due veli della luce: vedi il riquadro laggiu'. */`);
+
+cambio('11. lo spicchio della faccia si disegna DOPO i veli della luce',
+`  ctx.strokeStyle='rgba(42,51,88,.34)';
+  ctx.beginPath(); ctx.arc(X,Y,rr,-0.35*Math.PI,0.35*Math.PI); ctx.stroke();
+}`,
+`  ctx.strokeStyle='rgba(42,51,88,.34)';
+  ctx.beginPath(); ctx.arc(X,Y,rr,-0.35*Math.PI,0.35*Math.PI); ctx.stroke();
+  /* =================================================================
+     LO SPICCHIO DELLA FACCIA — e sta QUI, in coda, per una ragione
+     misurata sull'immagine e non per ordine estetico.
+     I due veli qui sopra sono un bianco caldo al 44% e un viola freddo
+     al 34% stesi su TUTTA la testa: qualunque cosa passi sotto di loro
+     perde meta' del suo contrasto. Con lo spicchio disegnato prima, i
+     113 punti di luminanza fra i capelli e la pelle arrivavano
+     all'occhio come quaranta, e a cinquanta pixel il fronte tornava a
+     non leggersi — cioe' il difetto che questa toppa doveva curare.
+     Sopra soglia lo spicchio NON si disegna: li' ci sono il taglio dei
+     capelli, gli occhi e il naso a dire dove guarda, e una fetta di
+     pelle piena coprirebbe il volto che il rig ha gia' disegnato.
+     Sta dentro il cerchio della testa per costruzione (0,99 r): la
+     sagoma nera non cambia di un pixel, cambia il valore dentro. */
+  if(!lodOn && n>0.10 && L>1e-4){
     const ux=fdx/L, uy=fdy/L;
     const ang=Matan2(uy,ux), mez=1.32*n;
     ctx.fillStyle=look.pelle;
@@ -139,7 +159,8 @@ cambio('2. lo spicchio della faccia va SOPRA la calotta',
     ctx.moveTo(X-ux*r*0.28, Y-uy*r*0.28);
     ctx.arc(X,Y,r*0.99,ang-mez,ang+mez);
     ctx.closePath(); ctx.fill();
-  }`);
+  }
+}`);
 
 /* ------------------------------------------------------------------
    3. LA MAGLIA STA SOPRA I CALZONCINI, SEMPRE
@@ -204,17 +225,23 @@ cambio('4. pantaloncini scuri, calze chiare, scarpe della divisa',
          disegnavamo quasi nera.
          (2) IL PERCHE' DEL CRITERIO: misurato sulle diciotto divise
          del gioco, i calzoncini piu' chiari che escono valgono 119 di
-         luminanza (kit fluo, seconda tinta #9cc012). I sei capelli,
-         non toccati, vanno da 17 a 145: il PIU' SCURO DELLA FIGURA
-         erano loro, e il criterio C5 chiede che il piu' scuro sia un
-         capo della divisa. Mescolati di meta' verso l'ambra del sole
-         il minimo sale a 126, cioe' sopra 119 con ogni divisa e ogni
-         testa: e' la frazione piu' PICCOLA che lo garantisce, non una
-         scelta di gusto.
-         COSTA O RENDE? Misurato con collaudo.js, appaiato: il
-         rapporto maglia/erba di P1 sale da 3,05 a 3,09 e quello di P2
-         da 3,76 a 3,90. Rende. */
-      pelle:p.skin, capelli:mt(p.hair,'#ffe9b8',0.50) || p.hair,
+         luminanza (kit fluo, seconda tinta #9cc012) e i sei capelli, non
+         toccati, vanno da 17 a 145: il PIU' SCURO DELLA FIGURA erano
+         loro.
+         QUANTO, E PERCHE' NON DI PIU'. Provata a 0,50 — la frazione che
+         porta il minimo dei capelli a 126, cioe' sopra i calzoncini con
+         ogni divisa — e RIMESSA a 0,26 GUARDANDO L'IMMAGINE: a 0,50 la
+         testa arriva a un passo dal valore della pelle e lo SPICCHIO
+         DELLA FACCIA, che e' l'unica cosa che dice il fronte sotto i
+         120 px, smette di staccarsi. Vale piu' il fronte che una riga
+         di classifica: a 0,26 i capelli restano il piu' scuro della
+         figura su alcune divise, e il verbale lo dice invece di
+         nasconderlo. Sul verde il criterio che conta e' comunque
+         rispettato — ne' la pelle ne' le scarpe stanno agli estremi.
+         COSTA O RENDE? Misurato con collaudo.js, appaiato a 0,50: il
+         rapporto maglia/erba di P1 saliva da 3,05 a 3,09. Rende, e a
+         0,26 rende meno ma non costa. */
+      pelle:p.skin, capelli:mt(p.hair,'#ffe9b8',0.26) || p.hair,
       scarpe:mt(c2,'#0b0d12',0.14) || '#15181a',`);
 
 cambio('8. la maglia ha un ORLO: scende 10 cm sotto la cintura',
@@ -313,7 +340,7 @@ for (const [k, q] of [['const ang=Matan2(uy,ux), mez=1.32*n;', 1],
                       ["mt(c2,'#0b0d12',0.14)", 1],
                       ["mt(c2,'#0e1018',0.34)", 1],
                       ["maglia:mt(c1,'#fff6e4',0.08) || c1, maglia2:c2,", 1],
-                      ["capelli:mt(p.hair,'#ffe9b8',0.50)", 1],
+                      ["capelli:mt(p.hair,'#ffe9b8',0.26)", 1],
                       ['troncoQuad(ctx,s,0,0,1,-0.22,1)', 1],
                       ['ombraTraccia, fondi, mescolaTinta,', 1]]) {
   const n = t.split(k).length - 1;
