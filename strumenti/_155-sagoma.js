@@ -22,6 +22,18 @@
                  ?banco=silhouette (per confronto)
      inchiostro  frazione piena della scatola
 
+   LA COLONNA IOU STA IN UN ALTRO FILE, E VA DETTO PERCHE'. Il verbale
+   del giro 3 la chiedeva qui: «aggiungi a _155-sagoma.js una colonna
+   che stampi la IoU a coppie fra le quattro maschere nere al fotogramma
+   di contatto». Sta invece in strumenti/_157-misure.js, per una ragione
+   sola: quella misura si fa al FOTOGRAMMA DI CONTATTO, che e' una fase
+   DIVERSA PER CLIP (tImp) e va letta dal gioco (Rig3D.tImp), mentre
+   questo banco misura tutte e ventisette le clip alla STESSA fase
+   0,300. Due fasi in un banco solo sono due banchi travestiti da uno, e
+   la colonna finirebbe per dire un numero misurato altrove. Il conto
+   che il verbale chiede c'e', e c'e' una volta sola:
+       node strumenti/_157-misure.js        (sezione A)
+
    NON E' UN CANCELLO: non ha una soglia che bocci il gioco, stampa i
    numeri e la riga «promosse» perche' il confronto prima/dopo sia un
    conto e non un aggettivo. Uscite: 0 ha misurato, 2 il banco non e'
