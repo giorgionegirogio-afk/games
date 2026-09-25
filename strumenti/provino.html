@@ -1233,7 +1233,15 @@ function vistaFasi(){
   dipingiFondo(g, VW, VH, 30);
   /* la taglia la detta la CELLA, non la voglia: le pose stese (tuffo,
      scivolata) sono larghe quanto alte e a taglia piena si accavallano */
-  const h = Math.min(ch*0.50, cw*1.00);
+  /* 1,00 -> 0,82 (voce #155, giro 3): a taglia piena IL PALLONE DEL
+     FOTOGRAMMA DI CONTATTO CADE FUORI DALLA CELLA. Il conto: al contatto
+     il pallone del tiro sta a 0,50 m di profondita', che a questa camera
+     rende 0,498 di scarto orizzontale per metro di figura, piu' il suo
+     raggio schiacciato — il bordo destro finisce a 73 px su una mezza
+     cella di 75. Il criterio C1 chiede «un fotogramma in cui piede e
+     palla si toccano»: se la cella lo taglia, quel fotogramma non
+     esiste per chi guarda, e non e' colpa della posa. */
+  const h = Math.min(ch*0.50, cw*0.82);
   for(let i=0;i<N;i++){
     const cx=(i%COL)*cw+cw/2, cy=((i/COL)|0)*ch+ch*0.80+26;
     const u=i/N;
