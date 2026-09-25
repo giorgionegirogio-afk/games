@@ -585,7 +585,7 @@ esatta('Q_PASSAGGIO — l\'impatto su un fotogramma del foglio',
 
 esatta('Q_FILTRANTE — la palla avanti e centrale',
 `  guarda:-0.95, aprCar:0.16, appA:0.30,appK:0.38, px:0.10,pz:0.36, gitt:4.0,alza:0,arco:0,dirX:0};`,
-`  guarda:-0.95, aprCar:0.16, appA:0.30,appK:0.38, px:0.02,pz:0.40, gitt:4.0,alza:0,arco:0,dirX:0};`);
+`  guarda:-0.95, aprCar:0.16, appA:0.30,appK:0.38, px:0.02,pz:0.33, gitt:4.0,alza:0,arco:0,dirX:0};`);
 esatta('Q_FILTRANTE — l\'impatto su un fotogramma del foglio',
 `const Q_FILTRANTE={tImp:0.36,swing:0.09,`, `const Q_FILTRANTE={tImp:0.375,swing:0.09,`);
 
@@ -597,7 +597,7 @@ esatta('Q_CROSS — l\'impatto su un fotogramma del foglio',
 
 esatta('Q_TIRO — la palla in uscita',
 `  px:0.10,pz:0.36, gitt:5.5,alza:0.5,arco:0,dirX:0};`,
-`  px:0.05,pz:0.52, gitt:5.5,alza:0.5,arco:0,dirX:0};`);
+`  px:0.09,pz:0.44, gitt:5.5,alza:0.5,arco:0,dirX:0};`);
 esatta('Q_TIRO — l\'impatto su un fotogramma del foglio',
 `const Q_TIRO={tImp:0.46,swing:0.11,`, `const Q_TIRO={tImp:0.4375,swing:0.11,`);
 
@@ -870,12 +870,21 @@ esatta('lumiLook — la manica in ombra',
 esatta('rigLook — i calzoncini e la manica',
 `      pantaloncini:mt(c2,'#0e1018',0.34),
       calze:mt(c1,'#fff6e4',0.22), risvolto:c2,`,
-`      /* I CALZONCINI NON SI TOCCANO, ED E' UN ROSSO PAGATO: la finestra
-         della sonda del contrasto di collaudo.js sta a 0,69-0,83 m da
-         terra, cioe' TUTTA dentro il calzoncino, e scurirlo del 62%
-         porta il cancello da 3,04:1 a 2,95:1. Il conto per esteso sta
-         nel riquadro in cima alla toppa. */
-      pantaloncini:mt(c2,'#0e1018',0.34),
+`      /* I CALZONCINI SI SCHIARISCONO, 0,34 -> 0,26, ED E' L'OPPOSTO DI
+         QUELLO CHE SEMBRAVA SERVIRE. La finestra della sonda del
+         contrasto di collaudo.js sta a 0,693-0,825 m da terra — il
+         conto per esteso e' nel riquadro in cima alla toppa — cioe'
+         TUTTA dentro il calzoncino: quel cancello, su questa geometria,
+         misura il contrasto CALZONCINO/erba. Scurirli del 62% (la
+         prima idea, per il criterio C5) lo portava da 3,04:1 a 2,95:1;
+         lasciarli dov'erano, con le corporature piu' larghe di questo
+         giro, lo lasciava a 3,00:1, cioe' sul filo. A 0,26 escono a 128
+         di luminanza e il cancello torna ad avere margine.
+         E NON COSTA NIENTE AL CRITERIO C5, perche' l'estremo scuro
+         della figura non sono piu' loro: e' la MANICA (74). I
+         calzoncini fanno il mezzo tono fra la maglia (216) e la manica,
+         che e' precisamente il loro mestiere nelle tre masse. */
+      pantaloncini:mt(c2,'#0e1018',0.26),
       /* LA MANICA E' IL PANNELLO SCURO DI SPALLA (criterio C5): la
          seconda tinta della squadra scurita del 62%, cioe' 74 di
          luminanza — l'estremo scuro della figura, e finalmente un capo

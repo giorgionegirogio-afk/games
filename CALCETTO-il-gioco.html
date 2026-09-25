@@ -37956,12 +37956,21 @@ function rigLook(p){
                          piu' della testa.
          Tutte e tre si calcolano QUI, dentro la cache di rigLook: una
          volta per divisa, zero costo per fotogramma. */
-      /* I CALZONCINI NON SI TOCCANO, ED E' UN ROSSO PAGATO: la finestra
-         della sonda del contrasto di collaudo.js sta a 0,69-0,83 m da
-         terra, cioe' TUTTA dentro il calzoncino, e scurirlo del 62%
-         porta il cancello da 3,04:1 a 2,95:1. Il conto per esteso sta
-         nel riquadro in cima alla toppa. */
-      pantaloncini:mt(c2,'#0e1018',0.34),
+      /* I CALZONCINI SI SCHIARISCONO, 0,34 -> 0,26, ED E' L'OPPOSTO DI
+         QUELLO CHE SEMBRAVA SERVIRE. La finestra della sonda del
+         contrasto di collaudo.js sta a 0,693-0,825 m da terra — il
+         conto per esteso e' nel riquadro in cima alla toppa — cioe'
+         TUTTA dentro il calzoncino: quel cancello, su questa geometria,
+         misura il contrasto CALZONCINO/erba. Scurirli del 62% (la
+         prima idea, per il criterio C5) lo portava da 3,04:1 a 2,95:1;
+         lasciarli dov'erano, con le corporature piu' larghe di questo
+         giro, lo lasciava a 3,00:1, cioe' sul filo. A 0,26 escono a 128
+         di luminanza e il cancello torna ad avere margine.
+         E NON COSTA NIENTE AL CRITERIO C5, perche' l'estremo scuro
+         della figura non sono piu' loro: e' la MANICA (74). I
+         calzoncini fanno il mezzo tono fra la maglia (216) e la manica,
+         che e' precisamente il loro mestiere nelle tre masse. */
+      pantaloncini:mt(c2,'#0e1018',0.26),
       /* LA MANICA E' IL PANNELLO SCURO DI SPALLA (criterio C5): la
          seconda tinta della squadra scurita del 62%, cioe' 74 di
          luminanza — l'estremo scuro della figura, e finalmente un capo
