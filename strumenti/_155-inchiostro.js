@@ -45,15 +45,31 @@ function leggiPNG(p){
 }
 const A = leggiPNG(process.argv[2]), B = leggiPNG(process.argv[3]);
 if (A.w!==B.w || A.h!==B.h) { console.error('i due fogli non hanno la stessa taglia'); process.exit(3); }
-let nero=0, neroB=0, cambiati=0, diversi=0;
+/* LA LUMINANZA, NON IL SOLO CANALE ROSSO. La prima stesura guardava il
+   primo canale: su un foglio col fondo VERDE (0,102,0) il rosso vale zero
+   e tutto il manto finiva contato come inchiostro — il conto usciva 1,6%
+   su fasi-frenata, dove meta' dei fotogrammi era cambiata a occhio.
+   E su un foglio A COLORI l'inchiostro non e' comunque la domanda: la
+   sagoma puo' non muoversi di un pixel mentre il VALORE dentro cambia
+   (e' esattamente cio' che fanno la scarpa e la maglia di questo giro).
+   Percio' si dichiara di che foglio si tratta, invece di lasciarlo
+   indovinare a chi legge. */
+const lum = (d,i,bpp) => bpp>=3
+  ? (0.2126*d[i*bpp] + 0.7152*d[i*bpp+1] + 0.0722*d[i*bpp+2])
+  : d[i*bpp];
+let nero=0, neroB=0, cambiati=0, diversi=0, chiari=0;
 for (let i=0;i<A.w*A.h;i++){
-  const a = A.d[i*A.bpp], b = B.d[i*B.bpp];
+  const a = lum(A.d,i,A.bpp), b = lum(B.d,i,B.bpp);
   const na = a<128, nb = b<128;
+  if (a>200) chiari++;
   if (na) nero++;
   if (nb) neroB++;
   if (na!==nb) cambiati++;
   if (Math.abs(a-b)>8) diversi++;
 }
+/* una maschera nera su bianco ha piu' di un terzo di tela quasi bianca;
+   un foglio a contatto sul manto verde no */
+const mascheraNera = chiari > 0.35*A.w*A.h;
 console.log('foglio A: ' + process.argv[2]);
 console.log('foglio B: ' + process.argv[3]);
 console.log('  pixel neri  A ' + nero + '   B ' + neroB + '   (' + ((neroB-nero)/nero*100).toFixed(2) + '%)');
@@ -64,5 +80,5 @@ console.log('  pixel diversi di piu\' di 8 livelli: ' + diversi
           + ' su ' + (A.w*A.h) + ' (' + (diversi/(A.w*A.h)*100).toFixed(2) + '% della tela)');
 console.log(mascheraNera
   ? '  (foglio a MASCHERA NERA: vale il conto dell\'INCHIOSTRO qui sopra)'
-  : '  (foglio A COLORI: l\'inchiostro qui non vuol dire niente; il numero che vale\\n'
+  : '  (foglio A COLORI: l\'inchiostro qui non vuol dire niente; il numero che vale\n'
   + '   e\' quello dei PIXEL DIVERSI: la sagoma puo\' non muoversi e il valore cambiare)');
