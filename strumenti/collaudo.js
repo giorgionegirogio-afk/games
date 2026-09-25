@@ -787,6 +787,17 @@ async function calcetto(browser, srv) {
                o in tuffo il torso e' un'altra ellisse e la finestra non tiene */
             if (p.role === 'gk' || p.out > 0) continue;
             if (p.slide >= 0 || p.recover > 0 || p.dive > 0 || p.celeb > 0) continue;
+            /* SOLO LE POSE IN PIEDI (voce #158): la finestra e' definita per un
+               torso eretto («il torso del rig sta in piedi sopra il centro»);
+               su una frenata inclinata all'indietro, un affondo o un colpo di
+               testa in elevazione la stessa quota cade su calzoncini, pelle o
+               erba, e il numero misura la posa e non la maglia. Il gioco
+               dichiara la clip disegnata in p.poseClip (cancello delle pose):
+               si campionano le clip col busto eretto, per rig e sprite allo
+               stesso modo. Misurato: con le 17 clip fotografiche P2 scendeva
+               da 3,02 a 2,85:1 senza che una maglia fosse cambiata. */
+            const clipEretta = !p.poseClip || /^(fermo|camminata|corsa|passaggio|filtrante|cross|tiro|finta|rinvio)$/.test(p.poseClip);
+            if (!clipEretta) continue;
             /* finestra FISSA sullo schermo: il torso del rig sta in piedi
                sopra il centro comunque sia girato il corpo (vedi il conto
                nel commento in testa) */

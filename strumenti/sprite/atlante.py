@@ -77,11 +77,18 @@ def costruisci(cartella, uscita, cella=144, altezza=128, specchia=()):
         mc = Image.open(pc).convert('L') if os.path.exists(pc) else Image.new('L', im.size, 0)
         if spec:
             im = im.transpose(Image.FLIP_LEFT_RIGHT); mm = mm.transpose(Image.FLIP_LEFT_RIGHT); mc = mc.transpose(Image.FLIP_LEFT_RIGHT)
-        # scala: l'altezza del soggetto diventa `altezza` px di cella
-        k = altezza / float(info['altezza_soggetto_px'])
+        # scala: la STATURA del personaggio (non il bbox della posa) diventa
+        # `altezza` px di cella; senza statura dichiarata si ricade sul bbox,
+        # che e' giusto solo per le pose in piedi. Se la tela non entra nella
+        # cella (una posa distesa), si stringe quanto basta: il gioco scala
+        # sull'altezza h scritta in tavola, quindi la misura a schermo non cambia.
+        ref = float(info.get('statura_px') or info['altezza_soggetto_px'])
+        k = altezza / ref
+        if im.width * k > cella:
+            k = cella / float(im.width)
         lato = int(round(im.width * k))
         if lato > cella:
-            print('  NO  %s: tela %d px > cella %d (abbassa --altezza)' % (base, lato, cella)); return 1
+            print('  NO  %s: tela %d px > cella %d' % (base, lato, cella)); return 1
         im = im.resize((lato, lato), Image.LANCZOS)
         mm = mm.resize((lato, lato), Image.LANCZOS)
         mc = mc.resize((lato, lato), Image.LANCZOS)
@@ -91,7 +98,7 @@ def costruisci(cartella, uscita, cella=144, altezza=128, specchia=()):
         mas.paste(Image.merge('RGB', (mm, mc, Image.new('L', (lato, lato), 0))), (ox, oy))
         piediX = (cella - lato) // 2 + lato / 2.0
         piediY = (cella - lato) // 2 + info['piedi_y'] * k
-        h = info['altezza_soggetto_px'] * k
+        h = ref * k          # l'altezza dell'UOMO in pixel di cella: e' cio' che il gioco porta a hPx
         tavola.setdefault(clip, {}).setdefault(str(d), []).append(
             [col, riga, round(piediX, 1), round(piediY, 1), round(h, 1)])
     os.makedirs(uscita, exist_ok=True)

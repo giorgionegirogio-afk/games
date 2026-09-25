@@ -68,12 +68,15 @@ altezza per cella) → `monta.py` (rifà tutto da `piano.json`) →
 
 ## 5. Che cosa manca, dichiarato
 
-- **Fogli mancanti** (quota Gemini esaurita alle ~18:45, torna alle
-  19:42): corsa 2ª fase, tiro follow-through, contrasto, attesaGK, tuffo,
-  parata, frenata, testa, esultanza, delusione. Finché mancano,
+- **Fogli mancanti**: dopo la seconda quota (compito 2) le clip con foglio
+  proprio sono 17 (176 fotogrammi); restano in prestito filtrante, cross,
+  rinvio, rovesciata, finta, presa, pugni, respinta, sfugge, cielo.
   `Sprite3D.ALIAS` presta la clip più vicina (tabella nel modulo, letta
   da `window.__test.sprite.prestiti`): in campo le due grafiche non si
-  mescolano mai.
+  mescolano mai. **La scala per cella è la statura del personaggio nel
+  foglio** (`statura_px` in `piano.json`), non il bbox della posa: con il
+  bbox le pose accovacciate uscivano alte come quelle in piedi e il tuffo
+  disteso 2,5 volte l'uomo (trovato con nb23, curato in `atlante.py`).
 - **L'angolo**: gli sprite escono a ~20-25° di elevazione, il rig a 42°.
   Il generatore non ha obbedito a nessuna formulazione dei 45° (4 prove,
   in `PROMPT.md`). Effetto: la figura fotografica è un po' più «in

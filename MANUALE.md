@@ -593,9 +593,11 @@ Qui il registro completo, a edizioni.
   momento in cui questo cantiere apre). **`MOTORE_V` resta 6**; il disegno
   non consuma un sorteggio e non legge lo stato della simulazione
   (`determinismo` 11/11, `seme` OK sulla copia). Il file cresce di
-  **+440 kB** (2.948.049 → 3.398.942 caratteri con 64 fotogrammi: atlante
-  WebP con alfa 122 kB e maschere 114 kB, in base64, più il modulo; le
-  maschere passano a WebP senza perdita, 79 kB, alla prossima montatura).
+  **+440 kB** con 64 fotogrammi (compito 1) e di **+1,0 MB** con 176
+  (compito 2: 2.948.049 → 3.948.874 byte; atlante WebP con alfa 446 kB
+  e maschere WebP senza perdita 282 kB, in base64, più il modulo). È il
+  prezzo dichiarato di 17 clip fotografiche: il #151 lo aveva stimato
+  «+90%» per un atlante del rig, qui è +34% per figure di un'altra classe.
 
   Il committente aveva giudicato il rig («fanno pena») e fermato il giro
   artefice/giuria («stai andando in un loop»): il mandato è «personaggi di
@@ -608,12 +610,21 @@ Qui il registro completo, a edizioni.
 
   ### (a) Che cosa c'è in campo
 
-  Sei clip fotografate in otto direzioni (fermo, corsa, camminata, tiro,
-  passaggio, scivolata; la seconda metà del ciclo di corsa e camminata
-  nasce **per specchio** della direzione opposta), le altre ventuno **in
-  prestito** dalla più vicina (`Sprite3D.ALIAS`, letta da
-  `window.__test.sprite.prestiti`): in campo le due grafiche non si
-  mescolano mai. Il rig resta nel file come **ripiego** (atlante non
+  **Diciassette clip** fotografate in otto direzioni (compito 1: fermo,
+  corsa, camminata, tiro, passaggio, scivolata; compito 2, con la seconda
+  quota di Gemini: corsa 2ª fase, tiro follow-through, contrasto,
+  attesaGK, tuffo, parata, esultanza, delusione, frenata, rimessa, testa,
+  ginocchia, pugno — **176 fotogrammi**; la seconda metà del ciclo di
+  corsa e camminata nasce **per specchio** della direzione opposta), le
+  altre dieci **in prestito** dalla più vicina (filtrante, cross, rinvio,
+  rovesciata, finta, presa, pugni, respinta, sfugge, cielo —
+  `Sprite3D.ALIAS`, letta da `window.__test.sprite.prestiti`): in campo
+  le due grafiche non si mescolano mai. **La scala di ogni cella è la
+  STATURA del personaggio nel foglio, non il bbox della posa**
+  (`statura_px` in `piano.json`, per foglio): con il bbox un uomo
+  accovacciato usciva alto quanto uno in piedi e il tuffo disteso 2,5
+  volte l'uomo — trovato al primo foglio disteso (nb23), curato in
+  `atlante.py`/`monta.py`. Il rig resta nel file come **ripiego** (atlante non
   decodificato, camera bassa dei rigori e della ripresa del gol, menu,
   duello) e come termine di paragone: `window.__test.spriteOn(v)` e il
   pulsante **FIGURE: FOTOGRAFICHE / DISEGNATE** nelle Impostazioni
@@ -637,8 +648,21 @@ Qui il registro completo, a edizioni.
     una **gamma 0,72** e del **18% verso il bianco caldo** (lo stesso
     bilancio che il rig paga in `rigLook`); la **fascia** della seconda
     tinta stava a 0,61-0,72 h, cioè sulla sonda (P2 2,11:1): va sul petto,
-    0,67-0,75 h, come nel rig. Esito **36/36**: P1 4,19:1 (0/9 sotto), P2
-    3,02:1 (**5 partite su 9 sotto il minimo: sul filo, dichiarato**).
+    0,67-0,75 h, come nel rig. Esito del compito 1, **36/36**: P1 4,19:1
+    (0/9 sotto), P2 3,02:1 (5 partite su 9 sotto il minimo: sul filo).
+    **Compito 2**, con diciassette clip, P2 era sceso a 2,85:1: la sonda
+    campiona ora **solo le clip col busto eretto** (`p.poseClip`, rig e
+    sprite alla pari — su frenata, affondo e colpo di testa la stessa
+    quota cade su calzoncini o erba); la stoffa della maglia tiene un
+    **pavimento di luminanza** (0,55 + 0,45·L: le pieghe da 0,78 a 1); la
+    schiaritura è **adattiva** (26% su un bianco, fino al 46% su un nero:
+    il blu dell'alto contrasto era il meno leggibile); e la **fascia sale
+    a 0,71-0,78 h**, perché a 0,67-0,75 il suo orlo entrava nella finestra
+    quando la statura stimata per foglio sbagliava del 5% — P2 restava a
+    2,74:1 identico al centesimo con due tinte di maglia diverse, il segno
+    che la sonda leggeva la fascia (#123a80, quasi nera, in alto
+    contrasto). Esito **36/36**: P1 5,30:1, P2 **4,54:1** (1/9 sotto),
+    alto contrasto 5,70 e 5,18:1.
   - **Le maschere dei banchi**: `_q-divise` e `istantanea` dipingevano la
     sagoma con `Rig3D.disegna` in nero; con gli sprite la maschera non
     coincideva coi pixel e l'istogramma pescava l'erba (dominanti «a 10°»).

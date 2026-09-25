@@ -117,10 +117,23 @@ const Sprite3D=(function(){
        gamma qui sotto, ne porta meno della tinta piatta. Misurato il
        25/9 sulla copia: con la sola gamma P1 3,02:1 e P2 (rosa) 2,54:1;
        la stoffa sotto il petto sta a L 0,72 e per arrivare a 3:1 sulla
-       divisa rosa servono altri dodici punti di luminanza. Il 18% e' il
-       minimo che li compra; vale per la sola maglia, i calzoncini restano
-       la seconda tinta scurita che li divide dal tronco. */
-    const A=[A0[0]+(255-A0[0])*0.18, A0[1]+(246-A0[1])*0.18, A0[2]+(228-A0[2])*0.18];
+       divisa rosa servono altri dodici punti di luminanza. Il 18% li
+       comprava con sei clip (P2 3,02:1, sul filo); con diciassette clip e
+       la sonda sulle sole pose erette P2 e' sceso a 2,78:1 (P1 4,66) —
+       le celle dei fogli 4x4 portano piu' ombra sulla stoffa. Al 26% il
+       rosa risale sopra il 3:1 (rimisurato); vale per la sola maglia, i
+       calzoncini restano la seconda tinta scurita che li divide dal
+       tronco. */
+    /* LA SCHIARITURA E' ADATTIVA (compito 2): piu' la tinta e' scura, piu'
+       sale — 26% su un bianco, fino al 46% su un nero. Con la sonda sulle
+       pose erette e il pavimento della stoffa, la maglia ROSA passava
+       (3,01:1) e il BLU dell'alto contrasto (#123a80, la modalita' per chi
+       distingue male i colori) restava a 2,74:1: il modo pensato per la
+       leggibilita' era il meno leggibile. Y e' la luminanza relativa
+       della tinta (BT.709 su sRGB linearizzato). */
+    const Yk=(function(c){ const f=v=>{v/=255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);}; return 0.2126*f(c[0])+0.7152*f(c[1])+0.0722*f(c[2]); })(A0);
+    const mix=0.26+0.20*(1-Math.min(1,Yk/0.6));
+    const A=[A0[0]+(255-A0[0])*mix, A0[1]+(246-A0[1])*mix, A0[2]+(228-A0[2])*mix];
     const out=new ImageData(new Uint8ClampedArray(base.data), W, H);
     const d=out.data, m=mas, cel=TAV.cella;
     const strisce=(dis==='strisce'), fascia=(dis==='fascia');
@@ -145,6 +158,17 @@ const Sprite3D=(function(){
          ombra la stoffa si porta addosso. */
       L=Math.pow(L,0.72);
       if(mm>=8){
+        /* IL PAVIMENTO DELLA MAGLIA (compito 2). Con diciassette clip la
+           sonda di collaudo.js, sulle sole pose erette, dava P1 4,7:1 e
+           P2 (rosa) 2,8:1; portare la tinta dal 18 al 26% verso il bianco
+           ha spostato P2 di 0,02: la sonda misura la STOFFA, non la
+           tinta, e la stoffa fotografica sta in media a L 0,75 dopo la
+           gamma. Qui la maglia tiene un pavimento: le pieghe vanno da
+           0,78 a 1 invece che da 0,5 a 1 — a 50 px la piega si vede
+           ancora, la maglia rosa torna sopra il 3:1. I calzoncini restano
+           con la sola gamma: sono la massa scura che divide il tronco
+           dalle gambe (criterio C5 del #155). */
+        const Lm=0.55+0.45*L;
         let C=A;
         if(strisce){ const x=(px%W)%cel; if(((x/passo)|0)&1) C=B; }
         /* LA FASCIA STA SUL PETTO, come nel rig (una banda al 60% del
@@ -155,9 +179,16 @@ const Sprite3D=(function(){
            collaudo.js misura la maglia (0,60-0,65): P2 a fascia usciva
            2,11:1 contro 4,19:1 di P1 a palato — misurava la fascia, non
            la maglia. */
-        else if(fascia){ const y=((px/W)|0)%cel; if(y>cel*0.28&&y<cel*0.35) C=B; }
+        /* COMPITO 2: la fascia sale ancora, a 0,71-0,78 h (y 0,25-0,31 della
+           cella). A 0,67-0,75 il suo orlo basso entrava nella finestra
+           della sonda (0,60-0,65) quando la statura stimata per foglio
+           sbagliava del 5%: in alto contrasto la seconda tinta e' #123a80,
+           quasi nera, e P2 restava a 2,74:1 identico al centesimo con due
+           tinte di maglia diverse — il segno che la sonda leggeva la
+           fascia. Il numero sta a 0,74 h, sopra la fascia come nel rig. */
+        else if(fascia){ const y=((px/W)|0)%cel; if(y>cel*0.25&&y<cel*0.31) C=B; }
         const w=mm/255;
-        d[i]=r+(C[0]*L-r)*w; d[i+1]=g+(C[1]*L-g)*w; d[i+2]=b+(C[2]*L-b)*w;
+        d[i]=r+(C[0]*Lm-r)*w; d[i+1]=g+(C[1]*Lm-g)*w; d[i+2]=b+(C[2]*Lm-b)*w;
       }
       if(mc>=8){
         const w=mc/255;

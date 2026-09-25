@@ -36,16 +36,41 @@ def main():
                 print('  NO  manca il foglio', src); rossi += 1; continue
             tmp = os.path.join('fuori', 'sprite', 'celle', r['foglio'])
             if os.path.isdir(tmp): shutil.rmtree(tmp)
+            # un foglio puo' avere piu' di 8 celle (il generatore a volte ne fa
+            # 16, due set con camere diverse): "attese" le dichiara e si tengono
+            # le PRIME otto, in ordine di lettura, come d0..d7; le altre x0..
+            attese = int(r.get('attese', 8))
+            # "da": da quale cella (in ordine di lettura) cominciano le otto
+            # direzioni; le altre celle si chiamano x0.. e non entrano nell'atlante
+            da = int(r.get('da', 0))
+            nomi = []
+            for k in range(attese):
+                nomi.append('d%d' % (k - da) if da <= k < da + 8 else 'x%d' % k)
             esito = subprocess.run([sys.executable, os.path.join(QUI, 'foglio.py'), src, '--uscita', tmp,
-                                    '--altezza', '256', '--attese', '8', '--nomi', 'd0,d1,d2,d3,d4,d5,d6,d7'],
+                                    '--altezza', '256', '--attese', str(attese), '--nomi', ','.join(nomi)],
                                    capture_output=True, text=True)
             if esito.returncode != 0:
                 print('  NO  foglio.py boccia', r['foglio'], '\n' + esito.stdout.strip()); rossi += 1; continue
+            # LA STATURA DEL PERSONAGGIO NEL FOGLIO, in pixel: e' il riferimento
+            # con cui l'atlante scala OGNI cella, non il bbox della posa. Con il
+            # bbox un uomo accovacciato (contrasto, portiere) usciva alto quanto
+            # uno in piedi e il tuffo disteso 2,5 volte l'uomo (trovato il 25/9
+            # con nb23: tela 255 px in una cella da 144). Misurato in piedi:
+            # 472-481 px nei fogli 4x2 (nb06), la meta' nei fogli 4x4 (celle
+            # da 256 invece di 512). Si puo' dichiarare per foglio.
+            statura = float(r.get('statura_px', 476 if attese <= 8 else 238))
             for k in range(8):
                 base = '%s-d%d' % (r['foglio'], k)
                 nuovo = '%s-d%d-f%d' % (r['clip'], k, r.get('f', 0))
-                for suff in ('.png', '-maglia.png', '-calzoni.png', '.json'):
+                for suff in ('.png', '-maglia.png', '-calzoni.png'):
                     shutil.copyfile(os.path.join(tmp, base + suff), os.path.join(a.pronti, nuovo + suff))
+                info = json.load(open(os.path.join(tmp, base + '.json'), encoding='utf-8'))
+                # la statura va riportata nella scala della CELLA ritagliata: ritaglia
+                # ha ridimensionato il soggetto a 256 px di bbox, quindi la statura
+                # in quella scala e' statura_foglio x (256 / bbox_foglio)
+                bbox_foglio = float(info['bbox_orig'][3] - info['bbox_orig'][1])
+                info['statura_px'] = round(statura * info['altezza_soggetto_px'] / max(1.0, bbox_foglio), 1)
+                json.dump(info, open(os.path.join(a.pronti, nuovo + '.json'), 'w', encoding='utf-8'), indent=1, ensure_ascii=False)
             print('  ok  %-22s -> %s f%d' % (r['foglio'], r['clip'], r.get('f', 0)))
         if rossi: sys.exit(1)
         esito = subprocess.run([sys.executable, os.path.join(QUI, 'atlante.py'), a.pronti, '--uscita', a.uscita,

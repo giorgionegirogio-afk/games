@@ -1,11 +1,148 @@
 {
   "_nota": "Il PIANO degli sprite (voce #158): quale foglio generato diventa quale clip del rig e quale fotogramma. monta.py lo legge e rifa' tutto da capo: taglio, maschere, atlante. I fogli stanno in fuori/sprite/ingresso/<foglio>.png (non tracciati: si rigenerano con Nano Banana con i prompt in PROMPT.md). f e' il fotogramma nel ciclo; per corsa e camminata la seconda meta' del ciclo nasce per specchio (atlante.py --specchia).",
   "fogli": [
-    {"foglio": "nb06-giro-topdown", "clip": "fermo",     "f": 0, "nota": "personaggio base, in piedi, 8 rotazioni"},
-    {"foglio": "nb07-corsa-A",      "clip": "corsa",     "f": 0, "nota": "sprint, ginocchio sinistro alto, appoggio destro"},
-    {"foglio": "nb14-camminata-A",  "clip": "camminata", "f": 0, "nota": "passo, tallone destro a terra"},
-    {"foglio": "nb15-tiro-A",       "clip": "tiro",      "f": 0, "nota": "tiro di destro, gamba caricata"},
-    {"foglio": "nb16-passaggio-A",  "clip": "passaggio", "f": 0, "nota": "passaggio d'interno destro"},
-    {"foglio": "nb17-scivolata-A",  "clip": "scivolata", "f": 0, "nota": "scivolata, gamba destra tesa"}
-  ]
+    {
+      "foglio": "nb06-giro-topdown",
+      "clip": "fermo",
+      "f": 0,
+      "nota": "personaggio base, in piedi, 8 rotazioni"
+    },
+    {
+      "foglio": "nb07-corsa-A",
+      "clip": "corsa",
+      "f": 0,
+      "nota": "sprint, ginocchio sinistro alto, appoggio destro"
+    },
+    {
+      "foglio": "nb19-corsa-B",
+      "clip": "corsa",
+      "f": 1,
+      "attese": 16,
+      "nota": "falcata lunga, gamba destra avanti; foglio 4x4, si tengono le prime 8",
+      "statura_px": 245
+    },
+    {
+      "foglio": "nb14-camminata-A",
+      "clip": "camminata",
+      "f": 0,
+      "nota": "passo, tallone destro a terra"
+    },
+    {
+      "foglio": "nb15-tiro-A",
+      "clip": "tiro",
+      "f": 0,
+      "nota": "tiro di destro, gamba caricata",
+      "statura_px": 462
+    },
+    {
+      "foglio": "nb20-tiro-B",
+      "clip": "tiro",
+      "f": 1,
+      "attese": 16,
+      "nota": "tiro di destro, follow-through gamba alta; foglio 4x4, prime 8",
+      "statura_px": 240
+    },
+    {
+      "foglio": "nb16-passaggio-A",
+      "clip": "passaggio",
+      "f": 0,
+      "nota": "passaggio d'interno destro",
+      "statura_px": 345
+    },
+    {
+      "foglio": "nb17-scivolata-A",
+      "clip": "scivolata",
+      "f": 0,
+      "nota": "scivolata, gamba destra tesa",
+      "statura_px": 476
+    },
+    {
+      "foglio": "nb21-contrasto-B",
+      "clip": "contrasto",
+      "f": 0,
+      "attese": 16,
+      "nota": "affondo difensivo basso, gamba destra avanti; foglio 4x4, prime 8",
+      "statura_px": 255
+    },
+    {
+      "foglio": "nb22-attesaGK",
+      "clip": "attesaGK",
+      "f": 0,
+      "attese": 16,
+      "nota": "portiere in attesa, guanti neri, mani avanti; foglio 4x4, prime 8",
+      "statura_px": 250
+    },
+    {
+      "foglio": "nb23-tuffo",
+      "clip": "tuffo",
+      "f": 0,
+      "attese": 16,
+      "nota": "tuffo disteso a destra, guanti; foglio 4x4, prime 8 (ordine delle direzioni da verificare nel provino)",
+      "statura_px": 240
+    },
+    {
+      "foglio": "nb24-frenata",
+      "clip": "parata",
+      "f": 0,
+      "attese": 16,
+      "nota": "chiesta la FRENATA, uscita una parata bassa coi guanti (il contesto della chat ha tenuto i guanti): usata come parata del portiere",
+      "statura_px": 250
+    },
+    {
+      "foglio": "nb26-esultanza",
+      "clip": "esultanza",
+      "f": 0,
+      "attese": 16,
+      "nota": "esultanza a braccia alzate, mani nude; foglio 4x4, prime 8 (il bbox supera la statura per le braccia: statura dal set 4x4)",
+      "statura_px": 245
+    },
+    {
+      "foglio": "nb27-delusione",
+      "clip": "delusione",
+      "f": 0,
+      "nota": "delusione, mani sulla testa, mani nude; foglio 4x2 largo (1024x559)",
+      "statura_px": 224
+    },
+    {
+      "foglio": "nb28-frenata",
+      "clip": "frenata",
+      "f": 0,
+      "attese": 12,
+      "da": 4,
+      "nota": "frenata: foglio 4x3, la prima riga ha 4 figure grandi, le otto direzioni stanno nelle righe 2-3 (celle 4..11)",
+      "statura_px": 215
+    },
+    {
+      "foglio": "nb29-rimessa",
+      "clip": "rimessa",
+      "f": 0,
+      "attese": 16,
+      "nota": "rimessa laterale, mani dietro la testa, senza pallone; foglio 4x4, prime 8",
+      "statura_px": 245
+    },
+    {
+      "foglio": "nb30-testa",
+      "clip": "testa",
+      "f": 0,
+      "attese": 16,
+      "nota": "colpo di testa in elevazione, senza pallone (secondo tentativo, «hands are EMPTY»); foglio 4x4, prime 8",
+      "statura_px": 245
+    },
+    {
+      "foglio": "nb31-ginocchia",
+      "clip": "ginocchia",
+      "f": 0,
+      "attese": 16,
+      "nota": "esultanza in ginocchio a braccia aperte; foglio 4x4, prime 8",
+      "statura_px": 245
+    },
+    {
+      "foglio": "nb32-pugno",
+      "clip": "pugno",
+      "f": 0,
+      "nota": "pugno di esultanza, in piedi; foglio 4x2 largo (1024x559)",
+      "statura_px": 250
+    }
+  ],
+  "_nota_statura": "statura_px = altezza in piedi del personaggio nel foglio, in pixel del foglio; stimata il 25/9 dal bbox massimo delle 8 celle diviso la quota di statura della posa (in piedi 1,00, corsa 0,96, tiro 0,97, passaggio 0,97, affondo 0,86, portiere 0,85, parata 0,90). Senza, monta.py usa 476 (4x2) o 238 (4x4)."
 }

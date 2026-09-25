@@ -40,6 +40,14 @@ rifà taglio, maschere e atlante.
   («Limit resets 7:42 PM»). Flash-Lite non crea immagini: se il chip
   «Images» sparisce dal compositore, il prompt viene trattato come ricerca
   (il portiere è uscito come foto di repertorio, il tuffo come cartone).
+- **Nella pagina `/images` (chat nuova) il tool si STACCA dopo ogni
+  risposta**: il chip «Images» sparisce e il prompt seguente viene
+  trattato come testo («I cannot generate or edit images directly»).
+  Prima di ogni invio: «+» → «Create image» (voce di menu con spunta; se la
+  spunta c'è già NON cliccare, la toglierebbe) → verificare che nel
+  compositore ci sia il pulsante «Deselect Images» → cliccare nella
+  casella sul segnaposto «Describe your image» → scrivere → Invio.
+  «I encountered an error» è transitorio: si rimanda lo stesso prompt.
 - **Download**: Chrome blocca i download multipli dalla pagina; il pulsante
   «Download» cambia riferimento; `fetch` del blob e POST a localhost sono
   bloccati dalla CSP. La via che funziona: un pulsante iniettato nella
@@ -76,8 +84,34 @@ rifà taglio, maschere e atlante.
 | nb17 | scivolata f0 | a SLIDING TACKLE on the floor: the body low and sliding on the left hip and thigh, the right leg fully extended forward along the floor with the toe pointed, the left leg tucked under and bent, the left hand on the floor for support, the right arm raised for balance, torso leaning back, eyes forward | OK |
 | nb18 | contrasto | a STANDING TACKLE, a deep lunge: … / a deep defensive LUNGE to block: … | griglia 4×4 in stile CG: scartato, da rifare |
 | — | corsa f1 (volo) | full sprint caught IN MID-AIR, both feet off the floor, … | 2 volte in piedi, 1 errore: da riformulare con un piede a terra |
+| nb19 | corsa f1 | RUNNING fast with a LONG STRIDE: the right leg stretched far forward with the heel about to land, the left leg stretched far back behind him with only the toe touching the floor, the legs wide apart like scissors, left arm forward and right arm back, torso leaning forward, eyes ahead | OK come griglia **4×4** (16 figure, due set con camere diverse): le prime 8 in ordine di lettura sono le 8 direzioni; `piano.json` le dichiara con `"attese": 16` |
 | — | attesaGK | goalkeeper's READY STANCE … black gloves | trattato come ricerca web (modalità Images spenta) |
 | — | tuffo | full-stretch DIVE to his right … | uscito come cartone (modalità Images spenta) |
+
+| nb20 | tiro f1 | the FOLLOW-THROUGH of a powerful right-foot shot: the right leg swung high forward and up after striking, the left foot planted, the body leaning back slightly, left arm raised out for balance, right arm back | OK, 4×4, prime 8 |
+| nb21 | contrasto f0 | a deep defensive LUNGE to block a pass: the right leg stretched far forward and low with the foot flat on the floor, the left leg bent behind, the body crouched with the torso leaning over the front knee, both arms out to the sides | OK, 4×4, prime 8 |
+| nb22 | attesaGK f0 | *(«black gloves» nel kit)* a crouched READY STANCE, waiting for a shot like a goalkeeper: feet wider than the shoulders, knees bent, weight on the toes, torso leaning forward, both hands held out in front at hip height with the palms open | OK, 4×4, prime 8 |
+| nb23 | tuffo f0 | a full-stretch DIVE to his right, the body horizontal just above the floor, both arms stretched out together toward the upper right with open hands, legs extended behind, head turned toward the hands | OK, 4×4 (direzioni approssimative) |
+| nb24 | parata f0 | *(chiesta la FRENATA)* BRAKING hard after a sprint … | uscita una parata bassa **coi guanti** (il contesto della chat tiene i guanti dei prompt precedenti): usata come `parata`; la frenata resta in prestito |
+| nb25 | testa | HEADING the ball, jumping with both feet just off the floor, the neck and upper body snapped forward … | **scartato**: pallone cotto sulla testa nonostante «NO ball», guanti dal contesto, griglia 4×3 |
+
+| nb26 | esultanza f0 | *(«BARE HANDS with no gloves»)* CELEBRATING a goal, running with both arms raised straight up in the air, fists clenched, chest out, head tilted back, mouth open shouting with joy, one foot forward | OK, 4×4, prime 8 |
+| nb27 | delusione f0 | DEJECTED after missing a chance, standing with both hands on top of his head, elbows out, head bowed, shoulders slumped, feet apart | OK, 4×2 (immagine 1024×559) |
+| nb28 | frenata f0 | skidding to a sudden STOP after a sprint: the right foot planted far ahead with the leg straight, the left leg bent behind, the upper body leaning back against the momentum, both arms flung slightly back and out, chin up | OK, 4×3: prima riga 4 figure grandi, le otto direzioni nelle celle 4..11 (`"da": 4`) |
+| nb29 | rimessa f0 | *(«There is NO ball anywhere in the image»)* the THROW-IN gesture, both arms raised together behind the head with the empty hands close together as if about to throw, back arched, one foot slightly ahead of the other | OK, 4×4, prime 8 |
+| nb30 | testa f0 | *(«There is NO ball … and the hands are EMPTY»)* JUMPING to head an imaginary ball, both feet just off the floor, the neck and upper body snapped forward, chin tucked, eyes ahead, both arms out and slightly back for balance | OK al secondo tentativo, 4×4, prime 8 |
+| nb31 | ginocchia f0 | a KNEE-SLIDE celebration, sliding on both knees with the shins flat on the floor, torso upright, both arms spread wide open, chest out, face lifted and shouting with joy | OK, 4×4, prime 8 |
+| nb32 | pugno f0 | a FIST PUMP celebration, standing, the right arm bent with the fist clenched and pulled down hard to the hip, the left arm slightly out, knees slightly bent, jaw clenched with a fierce grin | OK, 4×2 (1024×559) |
+
+**Seconda quota esaurita** dopo altre 14 immagini (19:45-20:35): «Create
+image» torna grigia e il modello ricade su Flash-Lite. Restano in prestito:
+filtrante, cross, rinvio, rovesciata, finta (→ passaggio/tiro/corsa),
+presa, pugni, respinta, sfugge (→ attesaGK/parata), cielo (→ esultanza).
+
+**Il contesto della chat CONTAMINA**: dopo un prompt coi guanti, i prompt
+seguenti li tengono anche se non li nominano; «NO ball» non basta per il
+colpo di testa. Dire esplicitamente «BARE HANDS with no gloves» e, per le
+pose col pallone, aprire una chat nuova.
 
 ## Da fare quando la quota torna
 
