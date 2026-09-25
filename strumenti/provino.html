@@ -216,8 +216,18 @@ iframe#gioco{
     <fieldset>
       <legend>Corporatura</legend>
       <div class="griglia4" id="boxCorpi"></div>
-      <p class="nota">In partita rigLook usa <b>corp % 3</b>: la quarta
-      (neutro) non esce mai in campo. Qui si possono vedere tutte.</p>
+      <p class="nota">RETTIFICA (25 set 2026, voce #155): rigLook prende
+      adesso la corporatura da una fetta del seme <b>% 4</b>, quindi anche
+      la quarta scende in campo. La riga di prima diceva <b>corp % 3</b>
+      ed era vera fino al 24 settembre.</p>
+      <label class="r">mano che arma</label>
+      <div class="fila" id="boxManc">
+        <button data-manc="0">destro</button>
+        <button data-manc="1">MANCINO</button>
+      </div>
+      <p class="nota">Il mancino e' la posa SPECCHIATA sull'asse laterale
+      (look.manc): conserva per costruzione ogni lunghezza d'osso. In
+      partita tocca a un uomo su quattro, dal seme del nome.</p>
     </fieldset>
 
     <fieldset>
@@ -281,7 +291,17 @@ iframe#gioco{
    restituisce l'oggetto vero. E' la sola via che non chiede al gioco di
    esportare niente: zero righe aggiunte al file del gioco.
    ===================================================================== */
-const URL_GIOCO = '../CALCETTO-il-gioco.html';
+/* IL FILE DA GUARDARE SI PUO' DICHIARARE: ?gioco=fuori/155-base.html.
+   Serve al confronto PRIMA/DOPO che la giuria chiede APPAIATO — la
+   stessa pagina, gli stessi parametri, la stessa fase, due file
+   diversi. Il percorso e' relativo alla radice del progetto, come
+   --gioco in tutti.js e come GIOCO_PROVA. Senza il parametro si
+   guarda il gioco, che e' l'unico caso in cui il provino non deve
+   chiedere niente a nessuno. */
+const URL_GIOCO = (function(){
+  var q = new URLSearchParams(location.search).get('gioco');
+  return q ? ('../' + String(q).replace(/^[\/]+/,'')) : '../CALCETTO-il-gioco.html';
+})();
 const ifr = document.getElementById('gioco');
 const elStato = document.getElementById('stato');
 const elLett = document.getElementById('lettura');
@@ -370,6 +390,7 @@ async function aggancia(){
   K = W.eval('({RIG_H:RIG_H, RIG_PIEDI:RIG_PIEDI, P_DIS:P_DIS, RIG_YAW_K:RIG_YAW_K,'
            + ' S2_BASE:S2_BASE, S2_MIN:S2_MIN, S2_MAX:S2_MAX, S2_GOL:S2_GOL,'
            + ' nCorpi:Rig3D.banco.nCorpi, dpr:devicePixelRatio,'
+           + ' CAM_SE:Rig3D.CAMERE.alto.se, CAM_CE:Rig3D.CAMERE.alto.ce,'
            + ' KITS:KITS.map(k=>({nome:k.nome,c1:k.c1,c2:k.c2,pat:k.pat})),'
            + ' POOL:TOUR_POOL.map(k=>({nome:k.n,c1:k.c1,c2:k.c2,pat:k.pat})),'
            + ' GK:GK_SCELTE.map(g=>[g[0],g[1]]),'
@@ -377,7 +398,7 @@ async function aggancia(){
            + ' FIELDS:FIELDS.map(f=>({id:f.id,nome:f.nome,g1:f.th.g1,g2:f.th.g2})),'
            + ' PALLA:Rig3D.lookPredefinito.palla})');
   elStato.className='ok';
-  elStato.textContent = 'rig agganciato · '+CLIPS.length+' clip · '
+  elStato.textContent = 'rig agganciato ('+URL_GIOCO.replace('../','')+') · '+CLIPS.length+' clip · '
                       + K.nCorpi+' corporature · sw rimossi '+p.sw+', cache '+p.cache;
   return true;
 }
@@ -397,6 +418,12 @@ const S = {
   kit:0,
   ruolo:'campo',
   pelle:0, capelli:0, taglio:1,
+  /* LA MANO CHE ARMA e' un comando del provino (voce #155). Prima
+     arrivava dal seme 0 di rigLook, e con quel seme il giocatore di
+     prova era mancino per caso: tutte le misure sarebbero state prese su
+     una posa specchiata senza che nessuno l'avesse chiesto. Un provino
+     che eredita di nascosto non e' un provino. */
+  manc:false,
   fondo:0,
   ombra:true, palla:true, giunti:false,
   vista:'figura',
@@ -411,6 +438,13 @@ const VISTE = [
   ['corsa',   'CORSA'],
   ['fasi',    'FASI'],
   ['foglio',  'FOGLIO (27)'],
+  /* LE SEI DEL FASCICOLO DELLA VOCE #155 */
+  ['foglio50','FOGLIO 50 px'],
+  ['sagoma40','SAGOMA 40 px'],
+  ['muso',    'MUSO (8 imbardate)'],
+  ['ombra',   'OMBRA (3 stati)'],
+  ['valore',  'VALORE'],
+  ['corpi50', 'CORPI a 50 px'],
 ];
 
 /* =====================================================================
@@ -431,7 +465,7 @@ const VISTE = [
 const LOOKS = new Map();
 function look(){
   const kit = kitCorrente();
-  const chiave = [kit.c1,kit.c2,kit.pat,S.ruolo,S.corp,S.pelle,S.capelli,S.taglio,S.palla].join('|');
+  const chiave = [kit.c1,kit.c2,kit.pat,S.ruolo,S.corp,S.pelle,S.capelli,S.taglio,S.palla,S.manc].join('|');
   let lk = LOOKS.get(chiave);
   if(lk) return lk;
   impostaTinte(kit.c1, kit.c2, kit.pat);
@@ -448,6 +482,7 @@ function look(){
   lk = Object.assign({}, rigLook(p));
   lk.corp = S.corp;
   lk.varb = 0;
+  lk.manc = !!S.manc;                    // la decide il provino, non il seme
   lk.palla = S.palla ? K.PALLA : null;
   delete lk._lume; delete lk._ombra; delete lk._ombS;
   if(LOOKS.size>48) LOOKS.clear();
@@ -620,9 +655,48 @@ function misuraPiede(){
       if(yr>yR) yR=yr;
       if(yl>yL) yL=yl;
     }
+    /* LA STESSA MISURA SULLA POSA SPECCHIATA (voce #155). Il mancino,
+       nel rig, e' la posa riflessa sull'asse laterale: si chiede al banco
+       di specchiarla — B.specchia, la STESSA funzione che disegna() chiama
+       per il mancino, non una seconda copia — e si rimisura. Se le due
+       colonne dicono la stessa mano il mancino non esiste; se dicono mani
+       opposte esiste, e questo banco lo sa dire invece di crederlo. */
+    /* LA MANO SI LEGGE DAL LATO, NON DALL'INDICE DEL GIUNTO. Lo
+       specchio nega la x e NON tocca la z: dopo lo specchio il giunto TOR
+       va ancora avanti come prima, solo che sta dall'ALTRA PARTE del
+       corpo. Chiedere «quale indice va piu' avanti» darebbe sempre la
+       stessa risposta, e il banco attesterebbe invece di misurare.
+       La domanda giusta e': la punta che arma sta a destra o a sinistra
+       dell'asse del corpo? Si guarda il segno della sua x. */
+    /* SI MISURA LA MEDIA DELLA PUNTA LUNGO IL CICLO, non la sua x
+       all'istante di massimo z: nel cross il seguito TAGLIA ATTRAVERSA il
+       corpo (q.attraversa) e in quell'unico fotogramma la punta e' dalla
+       parte sbagliata. La media dice da che parte sta la gamba, che e' la
+       domanda. */
+    let mxR=0, mxL=0, mmR=0, mmL=0, zRm=-1e9, zLm=-1e9;
+    for(let f=0; f<FASI; f++){
+      c.pose(f/FASI);
+      mxR+=B.P[J.TOR*3]; mxL+=B.P[J.TOL*3];
+    }
+    mxR/=FASI; mxL/=FASI;
+    if(B.specchia){
+      for(let f=0; f<FASI; f++){
+        c.pose(f/FASI); B.specchia();
+        mmR+=B.P[J.TOR*3]; mmL+=B.P[J.TOL*3];
+        const zr=B.P[J.TOR*3+2], zl=B.P[J.TOL*3+2];
+        if(zr>zRm) zRm=zr;
+        if(zl>zLm) zLm=zl;
+      }
+      mmR/=FASI; mmL/=FASI;
+    }
+    const lato  = (zR>zL)   ? mxR : mxL;
+    const latoM = (zRm>zLm) ? mmR : mmL;
     fuori.push({clip:nome, zR:+zR.toFixed(3), zL:+zL.toFixed(3),
                 yR:+yR.toFixed(3), yL:+yL.toFixed(3),
-                arma:(zR>zL?'destro':'sinistro'), uArma:+uR.toFixed(2)});
+                arma:(zR>zL?'destro':'sinistro'), uArma:+uR.toFixed(2),
+                lato:+lato.toFixed(3), latoM:+latoM.toFixed(3),
+                armaLato:(lato>=0?'destro':'sinistro'),
+                armaM:(B.specchia ? (latoM>=0?'destro':'sinistro') : '-')});
   }
   B.corpora(3,0);
   return fuori;
@@ -671,8 +745,18 @@ function misuraCorsa(){
       if(z<z0)z0=z; if(z>z1)z1=z; if(y>y1)y1=y;
       const t=B.P[J.HEAD*3+1]+B.testa(); if(t>cima)cima=t;
     }
+    /* LA STATURA E LA CADENZA ARRIVANO DAL BANCO (voce #155): prima
+       questa misura dava UNA falcata e UNA frequenza per tutte e quattro
+       le corporature, perche' erano davvero una sola. Adesso il rig le
+       dichiara per corpo e il provino le RILEGGE invece di ripeterle:
+       statura(), falcata() e cadenza() stanno in Rig3D.banco e valgono
+       per il corpo appena scelto con corpora(). */
+    const st = B.statura ? B.statura() : 1;
+    const cd = B.cadenza ? B.cadenza() : 1;
+    const pa = B.falcata ? B.falcata() : 1;
     righe.push({corp:c, falcata:+(z1-z0).toFixed(4), alzata:+y1.toFixed(4),
-                cima:+cima.toFixed(4)});
+                cima:+cima.toFixed(4), statura:+st.toFixed(4),
+                passo:+pa.toFixed(3), freq:+(R.CLIPS.corsa.freq*cd).toFixed(3)});
   }
   B.corpora(3,0);
   return {freq:R.CLIPS.corsa.freq, righe};
@@ -733,6 +817,12 @@ function disegnaTutto(){
   else if(V==='corsa')  vistaCorsa();
   else if(V==='fasi')   vistaFasi();
   else if(V==='foglio') vistaFoglio();
+  else if(V==='foglio50') vistaFoglio50();
+  else if(V==='sagoma40') vistaSagoma40();
+  else if(V==='muso')   vistaMuso();
+  else if(V==='ombra')  vistaOmbra();
+  else if(V==='valore') vistaValore();
+  else if(V==='corpi50')vistaCorpi50();
   aggiornaDidascalia();
 }
 
@@ -977,6 +1067,13 @@ function vistaPiede(){
     g.fillText('punta destra  avanti z '+t.zR.toFixed(3)+' m', cx, base+104);
     g.fillText('punta sinistra avanti z '+t.zL.toFixed(3)+' m', cx, base+122);
     g.fillText('fase dell\'armo u '+t.uArma.toFixed(2), cx, base+140);
+    /* LA COLONNA DEL MANCINO (voce #155): la stessa misura sulla posa
+       SPECCHIATA, letta dal LATO della punta che arma. Se le due righe
+       dicono mani opposte il mancino esiste; se dicono la stessa, no. */
+    g.fillStyle = (t.armaM && t.armaM!=='-' && t.armaM!==t.armaLato) ? '#3fe6b0' : '#ff7a6a';
+    g.fillText('specchiata: arma il '+(t.armaM||'-'), cx, base+162);
+    g.fillStyle='rgba(255,255,255,.55)';
+    g.fillText('lato della punta x '+t.lato.toFixed(2)+' -> '+t.latoM.toFixed(2)+' m', cx, base+180);
     g.restore();
     if(i<tab.length-1){
       g.strokeStyle='rgba(255,255,255,.08)';
@@ -984,12 +1081,15 @@ function vistaPiede(){
     }
   }
   const tuttiDx = tab.every(t=>t.arma==='destro');
+  const specchio = tab.every(t=>t.armaM && t.armaM!=='-' && t.armaM!==t.armaLato);
   g.save();
   g.font='600 12px ui-monospace,Consolas,monospace';
-  g.fillStyle = tuttiDx ? '#ff7a6a' : '#3fe6b0';
-  g.fillText(tuttiDx
-    ? 'tutte e '+tab.length+' le clip armano la gamba DESTRA: NON ESISTE UN MANCINO (poseCalcio, gioco riga 5887)'
-    : 'le clip non armano tutte lo stesso lato', 12, 22);
+  g.fillStyle = specchio ? '#3fe6b0' : '#ff7a6a';
+  g.fillText(specchio
+    ? 'IL MANCINO ESISTE: le stesse '+tab.length+' clip, specchiate, armano il piede OPPOSTO (look.manc, voce #155)'
+    : (tuttiDx
+      ? 'tutte e '+tab.length+' le clip armano la gamba DESTRA: NON ESISTE UN MANCINO (poseCalcio, gioco riga 5887)'
+      : 'le clip non armano tutte lo stesso lato'), 12, 22);
   g.font='11px ui-monospace,Consolas,monospace';
   g.fillStyle='rgba(255,255,255,.55)';
   g.fillText('misurato sui giunti TOR/TOL su 120 fasi, con lo stesso scratch del banco ?gabbia: '
@@ -1102,6 +1202,481 @@ function vistaFoglio(){
   g.restore();
 }
 
+/* =====================================================================
+   LE SEI VISTE DELLA VOCE #155 — il fascicolo che la giuria ha chiesto.
+
+   Il verbale del 25 settembre 2026 elenca nove immagini e dice che sei
+   NON ESISTONO, e che «la loro assenza e' oggi la ragione per cui questi
+   difetti sono sopravvissuti tanto a lungo». Sono queste.
+
+   TUTTE E SEI GUARDANO LA FIGURA DOVE VIVE: cinquanta pixel (quaranta
+   per la prova in nero), dettaglio SPENTO, ingrandite a pixel netti
+   invece che disegnate grandi. Ingrandire a pixel netti e ridisegnare
+   grande NON sono la stessa cosa: la prima mostra i pixel che il
+   telefono manda davvero, la seconda mostra un disegno che in partita
+   non esiste. Il provino resta agganciato al rig del gioco: qui non si
+   disegna niente per conto proprio.
+   ===================================================================== */
+
+/* la tela d'appoggio: si disegna a 1x qui e si BLITTA ingrandita, con
+   l'interpolazione spenta. Una sola, riusata: mai una tela per cella. */
+const cvI = document.createElement('canvas');
+const gI  = cvI.getContext('2d', {willReadFrequently:true});
+const cvJ = document.createElement('canvas');
+const gJ  = cvJ.getContext('2d', {willReadFrequently:true});
+
+/* il look TUTTO NERO, con _lume/_ombra/_ombS scritti a mano: se li
+   trovasse vuoti, lumiLook mescolerebbe il nero con l'ambra del sole e
+   col viola del cielo e la maschera non sarebbe piu' una maschera.
+   E' LO STESSO look del banco ?banco=silhouette del gioco. */
+const NR = '#000';
+const LK_NERO = {maglia:NR,maglia2:NR,pantaloncini:NR,calze:NR,risvolto:NR,
+  pelle:NR,capelli:NR,scarpe:NR,palla:null,taglio:0,corp:3,varb:0,manc:false,
+  disegno:'tinta', _lume:NR,_ombra:NR,
+  _ombS:{maglia:NR,maglia2:NR,calze:NR,pantaloncini:NR,pelle:NR}};
+
+/* NERO PURO: ogni pixel con un filo di alfa diventa nero pieno.
+   Serve perche' la testa porta DUE VELI in alfa scritti a mano nel rig
+   (il filo di luce da ovest e quello d'ombra da est) che non vengono dal
+   look: con un look tutto nero la maschera usciva lo stesso con un
+   anello caldo e uno freddo attorno al cranio, e non era piu' una
+   maschera. Il criterio della giuria dice «riempita di NERO PIENO»: qui
+   si riempie davvero. La soglia e' l'alfa, come nel banco del gioco. */
+function neroPuro(gx, w, h){
+  const d = gx.getImageData(0,0,w,h), a = d.data;
+  for(let k=0;k<a.length;k+=4){
+    if(a[k+3]>16){ a[k]=0; a[k+1]=0; a[k+2]=0; a[k+3]=255; }
+    else { a[k+3]=0; }
+  }
+  gx.putImageData(d,0,0);
+}
+function blitNetto(gDest, cv, dx, dy, q){
+  gDest.save();
+  gDest.imageSmoothingEnabled = false;
+  gDest.drawImage(cv, 0, 0, cv.width, cv.height, dx, dy, cv.width*q, cv.height*q);
+  gDest.restore();
+}
+function preparaI(w, h){
+  cvI.width = Math.max(1, Math.round(w)); cvI.height = Math.max(1, Math.round(h));
+  gI.setTransform(1,0,0,1,0,0);
+  gI.clearRect(0,0,cvI.width,cvI.height);
+}
+function titolo(testo, sotto){
+  g.save();
+  g.font='600 13px ui-monospace,Consolas,monospace'; g.fillStyle='#fff';
+  g.fillText(testo, 12, 18);
+  if(sotto){ g.font='11px ui-monospace,Consolas,monospace';
+             g.fillStyle='rgba(255,255,255,.62)'; g.fillText(sotto, 12, 33); }
+  g.restore();
+}
+
+/* la luminanza percepita di una tinta esadecimale (Rec.709), 0..255.
+   Serve al criterio C5: «la cosa piu' scura e la cosa piu' chiara della
+   figura appartengono alla divisa». Si MISURA, non si guarda. */
+function lumaHex(h){
+  const m=/^#?([0-9a-f]{6})$/i.exec(String(h||''));
+  if(!m) return null;
+  const v=parseInt(m[1],16);
+  return 0.2126*((v>>16)&255) + 0.7152*((v>>8)&255) + 0.0722*(v&255);
+}
+
+/* =====================================================================
+   1. FOGLIO 50 — le 27 clip a CINQUANTA pixel, dettaglio spento (C1, C5)
+   La taglia della partita, non i 146 px del foglio a contatto: quello
+   e' tre volte la realta' col dettaglio acceso, cioe' l'immagine piu'
+   gentile che esista.
+   ===================================================================== */
+function vistaFoglio50(){
+  const N = CLIPS.length, COL = 7, RIG = Math.ceil(N/COL);
+  /* LA CELLA CONTIENE LA FIGURA INTERA, e non e' un dettaglio: a
+     CH1 = 62 con i piedi a 0,80 la cima della testa cadeva FUORI e il
+     foglio mostrava figure decapitate di un paio di pixel. 70 x 0,76
+     lascia tre pixel d'aria sopra la clip piu' alta. */
+  const Q = 3, CW1 = 58, CH1 = 70, ET = 30, TESTA = 40;
+  const CW = CW1*Q, CH = CH1*Q;
+  dimensiona({w:COL*CW, h:RIG*(CH+ET)+TESTA});
+  g.setTransform(DPR,0,0,DPR,0,0);
+  g.fillStyle='#0b0d0a'; g.fillRect(0,0,VW,VH);
+  for(let i=0;i<N;i++){
+    const nome = CLIPS[i];
+    preparaI(CW1, CH1);
+    dipingiFondo(gI, CW1, CH1, 12);
+    figura(gI, CW1*0.5, CH1*0.76, 50, {clip:nome, lod:'off', senzaGiunti:true, ombra:false});
+    const x0=(i%COL)*CW, y0=((i/COL)|0)*(CH+ET)+TESTA;
+    blitNetto(g, cvI, x0, y0, Q);
+    g.save();
+    g.strokeStyle='rgba(255,255,255,.14)'; g.strokeRect(x0+0.5,y0+0.5,CW-1,CH-1);
+    g.textAlign='center';
+    g.font='700 13px ui-monospace,Consolas,monospace';
+    g.fillStyle = nome===S.clip ? '#ffb020' : '#ffffff';
+    g.fillText(nome, x0+CW/2, y0+CH+19);
+    g.restore();
+  }
+  titolo('FOGLIO A 50 PIXEL — le '+N+' clip alla taglia della PARTITA, dettaglio SPENTO, x'+Q+' a pixel netti',
+    'la figura in partita e\' alta '+altezzaPartita().toFixed(1)+' px e la soglia del dettaglio e\' '
+    + LOD_DICHIARATA + ' px: questo e\' cio\' che il giocatore vede, sempre. Coperto il nome: che cosa sta facendo?');
+}
+
+/* =====================================================================
+   2. FOGLIO SAGOMA 40 — le 27 clip in NERO PIENO su bianco (C3)
+   «Se la posa vive solo grazie al colore, non e' una posa.»
+   ===================================================================== */
+function vistaSagoma40(){
+  const N = CLIPS.length, COL = 7, RIG = Math.ceil(N/COL);
+  const Q = 6, CW1 = 42, CH1 = 56, ET = 28, TESTA = 40;   // la cella contiene la figura intera
+  const CW = CW1*Q, CH = CH1*Q;
+  dimensiona({w:COL*CW, h:RIG*(CH+ET)+TESTA});
+  g.setTransform(DPR,0,0,DPR,0,0);
+  g.fillStyle='#ffffff'; g.fillRect(0,0,VW,VH);
+  for(let i=0;i<N;i++){
+    const nome = CLIPS[i];
+    /* si disegna sul TRASPARENTE: neroPuro guarda l'alfa, e un bianco
+       steso prima verrebbe annerito insieme alla figura. Il fondo si
+       mette dopo, in destination-over. */
+    preparaI(CW1, CH1);
+    figura(gI, CW1*0.5, CH1*0.78, 40, {clip:nome, lod:'off', lk:LK_NERO,
+                                       senzaGiunti:true, ombra:false});
+    neroPuro(gI, CW1, CH1);
+    gI.globalCompositeOperation='destination-over';
+    gI.fillStyle='#ffffff'; gI.fillRect(0,0,CW1,CH1);
+    gI.globalCompositeOperation='source-over';
+    const x0=(i%COL)*CW, y0=((i/COL)|0)*(CH+ET)+TESTA;
+    blitNetto(g, cvI, x0, y0, Q);
+    g.save();
+    g.strokeStyle='rgba(0,0,0,.18)'; g.strokeRect(x0+0.5,y0+0.5,CW-1,CH-1);
+    g.textAlign='center';
+    g.font='700 13px ui-monospace,Consolas,monospace';
+    g.fillStyle='#111'; g.fillText(nome, x0+CW/2, y0+CH+19);
+    g.restore();
+  }
+  g.save();
+  g.font='600 13px ui-monospace,Consolas,monospace'; g.fillStyle='#111';
+  g.fillText('LA SAGOMA IN NERO — le '+N+' clip a QUARANTA pixel, nero pieno su bianco, x'+Q+' a pixel netti', 12, 18);
+  g.font='11px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(0,0,0,.55)';
+  g.fillText('si guarda una cosa sola: il verbo si legge senza il colore? e le braccia restano staccate dal tronco?', 12, 33);
+  g.restore();
+}
+
+/* =====================================================================
+   3. MUSO — otto imbardate a 50 px, dettaglio spento (C2)
+   ===================================================================== */
+function vistaMuso(){
+  const N = 8, COL = 4, RIG = 2;
+  const Q = 4, CW1 = 56, CH1 = 70, ET = 34, TESTA = 44;   // la cella contiene la figura intera
+  const CW = CW1*Q, CH = CH1*Q;
+  dimensiona({w:COL*CW, h:RIG*(CH+ET)+TESTA});
+  g.setTransform(DPR,0,0,DPR,0,0);
+  g.fillStyle='#0b0d0a'; g.fillRect(0,0,VW,VH);
+  for(let i=0;i<N;i++){
+    const yd = i*45;
+    preparaI(CW1, CH1);
+    dipingiFondo(gI, CW1, CH1, 12);
+    figura(gI, CW1*0.5, CH1*0.76, 50, {clip:S.clip, yawDeg:yd, lod:'off',
+                                       senzaGiunti:true, ombra:false});
+    const x0=(i%COL)*CW, y0=((i/COL)|0)*(CH+ET)+TESTA;
+    blitNetto(g, cvI, x0, y0, Q);
+    g.save();
+    g.strokeStyle='rgba(255,255,255,.14)'; g.strokeRect(x0+0.5,y0+0.5,CW-1,CH-1);
+    g.textAlign='center';
+    g.font='700 14px ui-monospace,Consolas,monospace'; g.fillStyle='#ffb020';
+    g.fillText(yd+'°', x0+CW/2, y0+CH+18);
+    /* LA FRECCIA DEL VERO: dove il corpo guarda DAVVERO, calcolata con
+       la stessa proiezione del rig (avanti = (sin yaw, -cos yaw x sin E)).
+       Non serve a giudicare: serve a poter dire se si e' indovinato. */
+    const a = yd*Math.PI/180;
+    const fx = Math.sin(a), fy = -Math.cos(a)*K.CAM_SE;
+    const L = Math.hypot(fx,fy)||1;
+    const px = x0+CW/2, py = y0+CH+30, R = 13;
+    g.strokeStyle='rgba(63,230,176,.85)'; g.lineWidth=2;
+    g.beginPath(); g.moveTo(px-fx/L*R, py-fy/L*R*0.5);
+    g.lineTo(px+fx/L*R, py+fy/L*R*0.5); g.stroke();
+    g.fillStyle='rgba(63,230,176,.95)';
+    g.beginPath(); g.arc(px+fx/L*R, py+fy/L*R*0.5, 3.2, 0, 6.283); g.fill();
+    g.restore();
+  }
+  titolo('IL MUSO — una figura, otto imbardate, 50 px, dettaglio SPENTO, x'+Q+' a pixel netti  ('+S.clip+', u '+S.u.toFixed(3)+')',
+    'in 8 casi su 8 si indovina il davanti entro +-45 gradi? il pallino verde dice dov\'e\' il davanti VERO: si copre, si indovina, si scopre.');
+}
+
+/* =====================================================================
+   4. OMBRA — appoggio / mezz'aria / atterraggio, e l'ombra DA SOLA (C4)
+
+   LA MISURA: ogni stato si disegna DUE VOLTE, con e senza ombra, e la
+   terza colonna e' la DIFFERENZA dei due — cioe' l'ombra isolata al
+   pixel, senza il corpo sopra. Cosi' «l'ombra cambia» non e'
+   un'impressione: e' una scatola e un conto di pixel.
+   ===================================================================== */
+const OMBRA_STATI = [
+  {clip:'tuffo', u:0.10, et:'APPOGGIO',    su:'il portiere carica a terra'},
+  {clip:'tuffo', u:0.36, et:'MEZZ\'ARIA',  su:'orizzontale, in volo'},
+  {clip:'tuffo', u:0.66, et:'ATTERRAGGIO', su:'la botta sul fianco'},
+];
+function vistaOmbra(){
+  const N = OMBRA_STATI.length;
+  const Q = 2, CW1 = 210, CH1 = 190, ET = 92, TESTA = 46;
+  const CW = CW1*Q, CH = CH1*Q;
+  dimensiona({w:N*CW, h:2*CH+ET+TESTA});
+  g.setTransform(DPR,0,0,DPR,0,0);
+  g.fillStyle='#0b0d0a'; g.fillRect(0,0,VW,VH);
+  const H = 140;
+  for(let i=0;i<N;i++){
+    const st = OMBRA_STATI[i];
+    /* A: senza ombra. B: con ombra. La DIFFERENZA e' l'ombra, isolata al
+       pixel: cosi' «l'ombra cambia» non e' un'impressione ma un conto. */
+    cvJ.width=CW1; cvJ.height=CH1;
+    gJ.setTransform(1,0,0,1,0,0); gJ.clearRect(0,0,CW1,CH1);
+    figura(gJ, CW1*0.5, CH1*0.70, H, {clip:st.clip, u:st.u, senzaGiunti:true, ombra:false});
+    const A = gJ.getImageData(0,0,CW1,CH1).data;
+    preparaI(CW1, CH1);
+    dipingiFondo(gI, CW1, CH1, 26);
+    figura(gI, CW1*0.5, CH1*0.70, H, {clip:st.clip, u:st.u, senzaGiunti:true, ombra:true});
+    const xC=i*CW;
+    blitNetto(g, cvI, xC, TESTA, Q);
+    /* la seconda passata, sul TRASPARENTE, per la differenza */
+    preparaI(CW1, CH1);
+    figura(gI, CW1*0.5, CH1*0.70, H, {clip:st.clip, u:st.u, senzaGiunti:true, ombra:true});
+    const B = gI.getImageData(0,0,CW1,CH1).data;
+    let n=0, x0=1e9,x1=-1,y0=1e9,y1=-1;
+    const D = gI.createImageData(CW1,CH1);
+    for(let y=0;y<CH1;y++)for(let x=0;x<CW1;x++){
+      const o=(y*CW1+x)*4;
+      const d=Math.abs(A[o]-B[o])+Math.abs(A[o+1]-B[o+1])+Math.abs(A[o+2]-B[o+2])
+             +Math.abs(A[o+3]-B[o+3]);
+      if(d>8){ n++; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y;
+               D.data[o]=255; D.data[o+1]=176; D.data[o+2]=32; D.data[o+3]=255; }
+    }
+    cvJ.width=CW1; cvJ.height=CH1;
+    gJ.setTransform(1,0,0,1,0,0); gJ.clearRect(0,0,CW1,CH1);
+    gJ.putImageData(D,0,0);
+    g.save();
+    g.fillStyle='#14171a'; g.fillRect(xC, TESTA+CH, CW, CH);
+    g.imageSmoothingEnabled=false;
+    g.drawImage(cvJ,0,0,CW1,CH1, xC, TESTA+CH, CW, CH);
+    g.strokeStyle='rgba(255,255,255,.16)';
+    g.strokeRect(xC+0.5, TESTA+0.5, CW-1, CH-1);
+    g.strokeRect(xC+0.5, TESTA+CH+0.5, CW-1, CH-1);
+    g.textAlign='center';
+    g.font='700 15px ui-monospace,Consolas,monospace'; g.fillStyle='#ffb020';
+    g.fillText(st.et, xC+CW/2, TESTA+2*CH+22);
+    g.font='11.5px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(255,255,255,.66)';
+    g.fillText(st.su+'   (u '+st.u.toFixed(2)+')', xC+CW/2, TESTA+2*CH+40);
+    g.font='12px ui-monospace,Consolas,monospace'; g.fillStyle='#3fe6b0';
+    /* «VISIBILE» e non «totale», e la differenza conta: la parte
+       d'ombra che il corpo copre non compare nella differenza, quindi
+       non si conta. E' cio' che l'occhio vede, ed e' anche il motivo per
+       cui l'appoggio — dove il corpo sta sopra la sua ombra — segna meno
+       pixel dell'atterraggio, dove l'ombra si allarga fuori. */
+    g.fillText(n>0 ? ('ombra VISIBILE: '+n+' px, scatola '+(x1-x0+1)+'x'+(y1-y0+1))
+                   : 'NESSUNA ombra misurata', xC+CW/2, TESTA+2*CH+60);
+    g.font='11px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(255,255,255,.45)';
+    g.fillText('sopra: la figura sul manto · sotto: la sola ombra', xC+CW/2, TESTA+2*CH+78);
+    g.restore();
+  }
+  titolo('IL PESO — l\'ombra nei tre stati, e L\'OMBRA DA SOLA (in ambra, la differenza con/senza)',
+    'la stessa clip, tre fasi: se i tre conti di pixel e le tre scatole sono uguali, l\'ombra non cambia e il criterio e\' bocciato.');
+}
+
+/* la divisa AVVERSARIA, assemblata DAL GIOCO: rigLook con team 1 legge
+   TEAMCOL[1]/TEAMCOL2[1]/TEAMPAT[1], che il provino non tocca mai. */
+function look2(){
+  const p = {role:'fw', team:1, skin:K.SKIN[S.pelle], hair:K.HAIR[S.capelli],
+             taglio:S.taglio, corp:0, seme:0};
+  const lk = Object.assign({}, rigLook(p));
+  lk.corp = S.corp; lk.varb = 0; lk.manc = false; lk.palla = null;
+  delete lk._lume; delete lk._ombra; delete lk._ombS;
+  return lk;
+}
+
+/* =====================================================================
+   5. VALORE — 50 px sui manti, la stessa desaturata, e la SCALA DEI
+      VALORI della divisa misurata a numero (C5)
+   ===================================================================== */
+function vistaValore(){
+  const MANTI = [];
+  for(let i=0;i<K.FIELDS.length && MANTI.length<3;i++) MANTI.push(FONDI.length+i);
+  const Q = 4, CW1 = 56, CH1 = 70, ET = 30, TESTA = 44, RIGHE = 2;   // la cella contiene la figura intera
+  const CW = CW1*Q, CH = CH1*Q;
+  const COL = MANTI.length*2;   // ogni manto: le due squadre
+  dimensiona({w:COL*CW + 300, h:RIGHE*(CH+ET)+TESTA});
+  g.setTransform(DPR,0,0,DPR,0,0);
+  g.fillStyle='#0b0d0a'; g.fillRect(0,0,VW,VH);
+  const fondoEra = S.fondo, kitEra = S.kit;
+  let col = 0;
+  for(const f of MANTI){
+    for(let sq=0; sq<2; sq++){
+      S.fondo = f; S.kit = kitEra;
+      /* la seconda colonna e' la divisa AVVERSARIA (team 1), assemblata
+         dal gioco: cosi' «due divise separabili a 50 px» si guarda
+         davvero, invece di guardare due volte la stessa. */
+      const lk = (sq===0) ? Object.assign({}, look()) : look2();
+      for(let r=0;r<RIGHE;r++){
+        preparaI(CW1, CH1);
+        dipingiFondo(gI, CW1, CH1, 12);
+        figura(gI, CW1*0.5, CH1*0.76, 50, {clip:S.clip, lod:'off', lk, senzaGiunti:true, ombra:false});
+        if(r===1){
+          /* LA DESATURATA: solo valore, niente tinta. Non e' un filtro
+             di gusto: e' la Rec.709, la stessa con cui si misura il
+             contrasto in tutto questo progetto. */
+          const d = gI.getImageData(0,0,CW1,CH1);
+          const a = d.data;
+          for(let k=0;k<a.length;k+=4){
+            const v = 0.2126*a[k]+0.7152*a[k+1]+0.0722*a[k+2];
+            a[k]=a[k+1]=a[k+2]=v;
+          }
+          gI.putImageData(d,0,0);
+        }
+        blitNetto(g, cvI, col*CW, r*(CH+ET)+TESTA, Q);
+        g.save();
+        g.strokeStyle='rgba(255,255,255,.14)';
+        g.strokeRect(col*CW+0.5, r*(CH+ET)+TESTA+0.5, CW-1, CH-1);
+        g.textAlign='center';
+        g.font='11.5px ui-monospace,Consolas,monospace';
+        g.fillStyle= r? '#ffb020' : 'rgba(255,255,255,.80)';
+        g.fillText(r? 'solo VALORE' : (fondoNome(f)+' · '+(sq?'P2':'P1')),
+                   col*CW+CW/2, r*(CH+ET)+TESTA+CH+19);
+        g.restore();
+      }
+      col++;
+    }
+  }
+  S.fondo = fondoEra; S.kit = kitEra;
+  /* LA SCALA DEI VALORI, misurata: il criterio chiede che il piu' scuro
+     e il piu' chiaro appartengano alla DIVISA, non alla pelle ne' alle
+     scarpe. Qui si legge, non si opina. */
+  const lk = look();
+  const VOCI = [['maglia',lk.maglia,'divisa'],['2a tinta',lk.maglia2,'divisa'],
+                ['calzoncini',lk.pantaloncini,'divisa'],['calze',lk.calze,'divisa'],
+                ['scarpe',lk.scarpe,'SCARPE'],['pelle',lk.pelle,'PELLE'],
+                ['capelli',lk.capelli,'capelli']];
+  const vv = VOCI.map(v=>({n:v[0], c:v[1], L:lumaHex(v[1]), fam:v[2]}))
+                 .filter(v=>v.L!==null).sort((a,b)=>a.L-b.L);
+  g.save();
+  const xT = COL*CW + 16;
+  g.font='700 12.5px ui-monospace,Consolas,monospace'; g.fillStyle='#fff';
+  g.fillText('LA SCALA DEI VALORI (Rec.709)', xT, TESTA+10);
+  g.font='11.5px ui-monospace,Consolas,monospace';
+  let y = TESTA+32;
+  for(const v of vv){
+    g.fillStyle=v.c; g.fillRect(xT, y-9, 16, 12);
+    g.strokeStyle='rgba(255,255,255,.25)'; g.strokeRect(xT+0.5, y-8.5, 15, 11);
+    g.fillStyle = (v.fam==='divisa') ? 'rgba(255,255,255,.88)' : '#ff7a6a';
+    g.fillText(v.n.padEnd(11)+' '+v.L.toFixed(0).padStart(3), xT+24, y);
+    y += 20;
+  }
+  y += 8;
+  const piuScuro = vv[0], piuChiaro = vv[vv.length-1];
+  const ok = piuScuro.fam==='divisa' && piuChiaro.fam==='divisa';
+  g.font='700 12px ui-monospace,Consolas,monospace';
+  g.fillStyle = ok ? '#3fe6b0' : '#ff7a6a';
+  g.fillText(ok ? 'PASSA: piu\' scuro e piu\' chiaro' : 'NON PASSA: fuori dalla divisa',
+             xT, y); y+=17;
+  g.fillText(ok ? 'appartengono alla divisa' : (piuScuro.n+' / '+piuChiaro.n), xT, y); y+=17;
+  g.font='11px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(255,255,255,.55)';
+  g.fillText('piu\' scuro: '+piuScuro.n+' ('+piuScuro.L.toFixed(0)+')', xT, y); y+=16;
+  g.fillText('piu\' chiaro: '+piuChiaro.n+' ('+piuChiaro.L.toFixed(0)+')', xT, y);
+  g.restore();
+  titolo('IL VALORE SUL VERDE — 50 px sui manti del gioco, e la stessa immagine SOLO VALORE',
+    'in bianco e nero si distinguono ancora tronco, bacino e gambe come tre masse? e le due divise restano separabili?');
+}
+function fondoNome(i){
+  const f = K.FIELDS[i - FONDI.length];
+  return f ? f.nome : '';
+}
+
+/* =====================================================================
+   6. CORPI 50 — le quattro corporature a 50 px, in nero (C6)
+   ===================================================================== */
+function vistaCorpi50(){
+  const NOMI = ['spilungone','tarchiato','piccoletto','neutro'];
+  const N = K.nCorpi;
+  /* LA CELLA CONTIENE LA FIGURA INTERA. A CH1 = 56 con i piedi a 0,84
+     la cima cadeva fuori e tutte e quattro le sagome misuravano 55-56
+     px: il numero era la CELLA, non l'uomo. E' il difetto peggiore che
+     uno strumento possa avere — attestare invece di misurare — ed e'
+     stato colto perche' i quattro numeri erano tutti uguali al bordo. */
+  const Q = 5, CW1 = 48, CH1 = 68, ET = 120, TESTA = 46;
+  const CW = CW1*Q, CH = CH1*Q;
+  dimensiona({w:N*CW, h:CH+ET+TESTA});
+  g.setTransform(DPR,0,0,DPR,0,0);
+  g.fillStyle='#ffffff'; g.fillRect(0,0,VW,VH);
+  const ossa = rifai('ossa','uno',()=>misuraOssa(),1e9);
+  const cor  = rifai('corsa155','uno',()=>misuraCorsa(),1e9);
+  const alte = [], larghe = [], teste = [], inchio = [];
+  for(let c=0;c<N;c++){
+    /* sul TRASPARENTE, come nella vista della sagoma: il fondo bianco
+       si mette DOPO (vedi neroPuro) */
+    preparaI(CW1, CH1);
+    figura(gI, CW1*0.5, CH1*0.78, 50, {clip:S.clip, lod:'off', lk:LK_NERO, corp:c,
+                                       senzaGiunti:true, ombra:false});
+    neroPuro(gI, CW1, CH1);
+    /* l'altezza MISURATA della maschera, a pixel (dopo il nero puro:
+       prima i due veli della testa mandavano la cima fuori dal conto) */
+    const d = gI.getImageData(0,0,CW1,CH1).data;
+    let y0=1e9,y1=-1,x0=1e9,x1=-1,ink=0,tx0=1e9,tx1=-1;
+    for(let y=0;y<CH1;y++)for(let x=0;x<CW1;x++){
+      const o=(y*CW1+x)*4;
+      if(d[o+3]>16){ ink++;
+        if(y<y0)y0=y; if(y>y1)y1=y; if(x<x0)x0=x; if(x>x1)x1=x; }
+    }
+    /* LA TESTA, misurata: la riga piu' larga del quinto ALTO della
+       scatola. A cinquanta pixel l'ALTEZZA da sola cambia di tre punti e
+       non puo' cambiare di piu' (il tetto della cima), ma la testa
+       cambia del 22% e l'inchiostro del 40%: e' li' che l'occhio legge
+       «lo spilungone» e «il piccoletto», ed e' li' che il numero va
+       preso. Un banco che misurasse la sola altezza direbbe che i
+       quattro sono uguali mentre l'occhio li distingue. */
+    const yq = y0 + Math.max(1, Math.round((y1-y0+1)*0.22));
+    for(let y=y0;y<=yq && y<CH1;y++){
+      let a=1e9,b2=-1;
+      for(let x=0;x<CW1;x++){ const o=(y*CW1+x)*4;
+        if(d[o+3]>16){ if(x<a)a=x; if(x>b2)b2=x; } }
+      if(b2>=a && (b2-a) > (tx1-tx0)){ tx0=a; tx1=b2; }
+    }
+    gI.globalCompositeOperation='destination-over';
+    gI.fillStyle='#ffffff'; gI.fillRect(0,0,CW1,CH1);
+    gI.globalCompositeOperation='source-over';
+    alte.push(y1>=y0 ? y1-y0+1 : 0);
+    larghe.push(x1>=x0 ? x1-x0+1 : 0);
+    teste.push(tx1>=tx0 ? tx1-tx0+1 : 0);
+    inchio.push(ink);
+    blitNetto(g, cvI, c*CW, TESTA, Q);
+    g.save();
+    g.strokeStyle='rgba(0,0,0,.18)'; g.strokeRect(c*CW+0.5, TESTA+0.5, CW-1, CH-1);
+    g.textAlign='center';
+    g.font='700 14px ui-monospace,Consolas,monospace'; g.fillStyle='#111';
+    g.fillText(NOMI[c], c*CW+CW/2, TESTA+CH+22);
+    g.font='11.5px ui-monospace,Consolas,monospace';
+    const r = cor.righe[c] || {};
+    const righe = [
+      'sagoma '+alte[c]+' x '+larghe[c]+' px',
+      'TESTA '+teste[c]+' px - inchiostro '+inchio[c],
+      'statura x'+(r.statura!==undefined?r.statura.toFixed(3):'?'),
+      'falcata '+(r.falcata!==undefined?r.falcata.toFixed(3):'?')+' m',
+      'cadenza '+(r.freq!==undefined?r.freq.toFixed(2):'?')+' Hz',
+      'gamba '+ossa[c].gamba.toFixed(3)+' m',
+    ];
+    let y = TESTA+CH+42;
+    for(const t of righe){ g.fillStyle='rgba(0,0,0,.72)'; g.fillText(t, c*CW+CW/2, y); y+=17; }
+    g.restore();
+  }
+  const sc = v => { const a=Math.min.apply(null,v), b=Math.max.apply(null,v);
+                    return b>0 ? {a:a, b:b, p:(b-a)/b*100} : {a:0,b:0,p:0}; };
+  const sA=sc(alte), sT=sc(teste), sI=sc(inchio), sL=sc(larghe);
+  titolo('LE QUATTRO CORPORATURE A 50 PIXEL, IN NERO — x'+Q+' a pixel netti  ('+S.clip+', u '+S.u.toFixed(3)+')', null);
+  g.save();
+  g.font='700 12px ui-monospace,Consolas,monospace';
+  g.fillStyle = (sT.p>=10 || sI.p>=10) ? '#0a7a55' : '#b03020';
+  g.fillText('scarti MISURATI sulla maschera nera:  altezza '+sA.a+'..'+sA.b+' px ('+sA.p.toFixed(1)+'%)'
+    + '  ·  testa '+sT.a+'..'+sT.b+' px ('+sT.p.toFixed(1)+'%)'
+    + '  ·  larghezza '+sL.a+'..'+sL.b+' px ('+sL.p.toFixed(1)+'%)'
+    + '  ·  inchiostro '+sI.a+'..'+sI.b+' ('+sI.p.toFixed(1)+'%)', 12, 33);
+  g.font='11px ui-monospace,Consolas,monospace'; g.fillStyle='rgba(0,0,0,.55)';
+  g.fillText('prima del 25 settembre l\'unico scarto era 2,1% di ALTEZZA, e veniva tutto dal raggio della testa. '
+    + 'L\'altezza resta piccola per forza: la cima della testa e\' l\'invariante che protegge la sonda dell\'erba '
+    + '(gabbia.js, riferimento -34,6) e nessuno puo\' salire oltre.', 12, 49);
+  g.restore();
+}
+
 /* ---- la didascalia e la lettura in fondo ---- */
 function aggiornaDidascalia(){
   /* la didascalia grande vale per la vista FIGURA: le altre si scrivono
@@ -1180,6 +1755,17 @@ function costruisciComandi(){
     });
     bc.appendChild(b);
   }
+
+  /* la mano che arma */
+  const bm = document.getElementById('boxManc');
+  bm.querySelectorAll('button').forEach(b2=>{
+    if((+b2.dataset.manc?true:false)===!!S.manc) b2.className='on';
+    b2.addEventListener('click',()=>{
+      S.manc = !!(+b2.dataset.manc);
+      bm.querySelectorAll('button').forEach(q=>q.className='');
+      b2.className='on';
+    });
+  });
 
   /* divise */
   const sk = document.getElementById('selKit');
@@ -1398,6 +1984,7 @@ function giro(t){
         document.querySelectorAll('[data-lod]').forEach(b=>b.className = b.dataset.lod===S.lod?'on':'');
         document.querySelectorAll('[data-vista]').forEach(b=>b.className = b.dataset.vista===S.vista?'on':'');
         document.querySelectorAll('[data-corp]').forEach(b=>b.className = (+b.dataset.corp)===S.corp?'on':'');
+        document.querySelectorAll('[data-manc]').forEach(b=>b.className = (!!(+b.dataset.manc))===!!S.manc?'on':'');
         document.querySelectorAll('[data-ruolo]').forEach(b=>b.className = b.dataset.ruolo===S.ruolo?'on':'');
         document.getElementById('rgYaw').value=S.yawDeg;
         document.getElementById('rgH').value=S.h;
@@ -1407,7 +1994,13 @@ function giro(t){
       soglia(){ return LOD_MISURATA; },
       piede(){ return misuraPiede(); },
       corsa(){ return misuraCorsa(); },
-      statura(h){ const v=[]; for(let c=0;c<K.nCorpi;c++) v.push(scatola(h||360,{corp:c})); return v; },
+      /* LA STATURA SI MISURA IN PIEDI, e la clip si dichiara (voce
+         #155): su 'corsa' la scatola dell'inchiostro contiene la falcata
+         e le braccia, quindi misura l'apertura del passo e non l'altezza
+         dell'uomo — con le falcate ora diverse per corporatura, quel
+         numero direbbe il contrario del vero. */
+      statura(h, clip){ const v=[]; for(let c=0;c<K.nCorpi;c++)
+        v.push(scatola(h||360,{corp:c, clip:clip||'fermo', u:0.20})); return v; },
       costanti(){ return {RIG_H:K.RIG_H,P_DIS:K.P_DIS,S2_BASE:K.S2_BASE,
                           S2_MIN:K.S2_MIN,S2_MAX:K.S2_MAX,S2_GOL:K.S2_GOL,
                           altezzaPartita:altezzaPartita(), LOD:LOD_DICHIARATA}; },

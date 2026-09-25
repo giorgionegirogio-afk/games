@@ -5195,14 +5195,53 @@ const HIPW=0.105;                    // i fianchi NON cambiano: vedi CORPI
    a 1,00: serve com'e' il giorno che qualcuno voglia riprovarci, e la
    prima cosa che quel qualcuno deve fare e' rilanciare la sonda.
    ===================================================================== */
+/* =====================================================================
+   LE TRE COLONNE NUOVE (voce #155) — st, pa, cd.
+   st  LA STATURA: un fattore sulla scala di disegno, cioe' l'uomo
+       INTERO piu' alto o piu' basso, senza toccare una lunghezza
+       d'osso (la gabbia misura metri e non si accorge di niente).
+       NESSUNO SALE SOPRA 1,000, ed e' un vincolo non un gusto: la cima
+       della testa sta gia' oltre il bordo della scatola che la sonda
+       dell'erba di collaudo.js usa per escludere i corpi, e alzare le
+       figure metterebbe capelli fra i campioni d'erba. La differenza
+       si compra scendendo.
+   pa  LA FALCATA: moltiplica l'ampiezza di gamba e braccio dentro
+       poseLoco. Prima era 1,0308 m per tutti e quattro.
+   cd  LA CADENZA: moltiplica la fase delle sole clip cicliche. Prima
+       era 2,6 per tutti e quattro, cioe' due figure affiancate
+       restavano in passo per sempre.
+   pa e cd vanno in direzioni OPPOSTE — passo lungo e cadenza lenta,
+   passo corto e cadenza svelta — perche' cosi' cammina la gente e
+   perche' cosi' la differenza fra due figure vicine raddoppia.
+
+   LE QUATTRO COLONNE VECCHIE SI ALLARGANO, e il perche' e' che a
+   cinquanta pixel la statura da sola non basta (vedi il tetto qui
+   sopra: nessuno puo' salire). Quello che a quella taglia si legge
+   davvero e' il RAPPORTO — testa grossa o piccola, spalle larghe o
+   strette, arti grossi o sottili:
+       hr  0,96 -> 0,88  /  1,05 -> 1,18   (testa: 9% -> 34% di scarto)
+       sp  0,88 -> 0,80  /  1,14 -> 1,26   (spessore degli arti)
+       sh  0,96 -> 0,94  /  1,06 -> 1,10   (semilarghezza delle spalle)
+   Nessuna delle tre tocca la finestra della sonda del contrasto — il
+   trapezio del busto ha larghezze COSTANTI (W_PETTO/W_VITA), non
+   scalate dalla corporatura — e nessuna alza la cima della testa oltre
+   il riferimento: il piccoletto, con la testa piu' grossa del 18%, sta
+   comunque sotto perche' la sua statura e' 0,962 (verificato da
+   gabbia.js, non dedotto).
+   b RESTA >= 0,95 e non e' un dettaglio: braccio() converte armOut in
+   un seno di abduzione dividendolo per UA = 0,27*b, e Q_FERMO chiede
+   armOut 0,220. A b = 0,95 il tetto sin(1,05) si sfonda oltre 0,2225; a
+   b = 0,94 sarebbe 0,2201, cioe' SOTTO quello che il fermo chiede, e la
+   scatola degli angoli comincerebbe a tagliare invece di aprire.
+   ===================================================================== */
 const CORPI=[
-  /* 0 spilungone */ {g:1.00, b:1.04, sp:0.88, sh:0.96, hr:0.96},
-  /* 1 tarchiato  */ {g:1.00, b:0.97, sp:1.14, sh:1.06, hr:1.00},
-  /* 2 piccoletto */ {g:1.00, b:0.95, sp:1.00, sh:0.98, hr:1.05},
+  /* 0 spilungone */ {g:1.00, b:1.06, sp:0.80, sh:0.94, hr:0.88, st:1.018, pa:1.10, cd:0.93},
+  /* 1 tarchiato  */ {g:1.00, b:0.96, sp:1.26, sh:1.10, hr:1.00, st:0.984, pa:0.94, cd:1.07},
+  /* 2 piccoletto */ {g:1.00, b:0.95, sp:1.04, sh:0.97, hr:1.18, st:0.962, pa:0.88, cd:1.13},
   /* 3 neutro: la taglia nominale. E' quella del banco e delle scene
      fuori partita (duello, ripresa del gol), dove la figura e' una sola
      e non c'e' nessuno da cui distinguerla. */
-                     {g:1.00, b:1.00, sp:1.00, sh:1.00, hr:1.00},
+                     {g:1.00, b:1.00, sp:1.00, sh:1.00, hr:1.00, st:1.000, pa:1.00, cd:1.00},
 ];
 let DP=0;        // scarto di quota del bacino dovuto alla lunghezza delle gambe
 /* DPQ — lo stesso scarto, SPENTO QUANDO IL CORPO E' A TERRA.
@@ -5218,6 +5257,13 @@ let DP=0;        // scarto di quota del bacino dovuto alla lunghezza delle gambe
    anche a meta' rampa i fianchi restano attaccati al bacino. */
 let DPQ=0;
 let MSP=1;       // moltiplicatore di SPESSORE degli arti (solo disegno)
+let STAT=1;      // LA STATURA: fattore sulla scala di disegno (mai sopra 1)
+let PASSO=1;     // l'ampiezza della falcata, dentro poseLoco
+let CAD=1;       // la cadenza delle clip cicliche (clip.ciclo)
+/* IL MANCINO: stato di modulo, riscritto a ogni disegna() dal look.
+   Non sta in CORPI perche' la mano che arma non e' una corporatura. */
+let MANC=false;
+function specchia(){ for(let j=0;j<NJ;j++) P[j*3]=-P[j*3]; }
 let VARB=0;      // micro-variazione delle braccia, per seme (rad, antisimmetrica)
 let CORP_ORA=3;
 function corpora(c,vb){
@@ -5232,6 +5278,9 @@ function corpora(c,vb){
   GAMBA_L=THIGH+SHIN;
   DP=GAMBA_L-(N_THIGH+N_SHIN);
   MSP=q.sp;
+  STAT=q.st===undefined?1:q.st;
+  PASSO=q.pa===undefined?1:q.pa;
+  CAD=q.cd===undefined?1:q.cd;
 }
 
 /* --- scratch riusati: MAI allocati nel frame --- */
@@ -5576,14 +5625,18 @@ function poseLoco(u,q){
      vicino, perche' dal lato lontano lo stesso movimento porta l'arto
      SOPRA la testa (l'antenna). Un unico armOfs non sa distinguere i due
      casi; due, si'. */
-  const aAR=-q.arm*sw+q.armOfs+(q.armOfsR||0), aAL=q.arm*sw+q.armOfs+(q.armOfsL||0);
+  /* LA FALCATA E' DEL GIOCATORE, non della clip (voce #155): PASSO
+     moltiplica l'AMPIEZZA di braccio e gamba, non gli scarti fissi —
+     un uomo dal passo corto non tiene le braccia in un altro posto,
+     le muove di meno. */
+  const aAR=-q.arm*PASSO*sw+q.armOfs+(q.armOfsR||0), aAL=q.arm*PASSO*sw+q.armOfs+(q.armOfsL||0);
   const eR=q.elb0+q.elbA*(0.5-0.5*sw), eL=q.elb0+q.elbA*(0.5+0.5*sw);
   braccio(SHR,ELR,HAR,  SHW*cs, shY, shZ+SHW*ss, aAR,eR, q.armOut, 1);
   braccio(SHL,ELL,HAL, -SHW*cs, shY, shZ-SHW*ss, aAL,eL, q.armOut,-1);
   // gambe: anticipo (ginocchio raccolto in recupero), peso (bacino che
   // scende sull'appoggio), seguito (punta che spinge dietro)
   const ch=Mcos(ht), sh=Msin(ht);
-  const aR=q.leg*sw+q.legOfs, aL=-q.leg*sw+q.legOfs;
+  const aR=q.leg*PASSO*sw+q.legOfs, aL=-q.leg*PASSO*sw+q.legOfs;
   const s5=Msin(w-q.kneeLag);
   const kR=q.knee0+q.kneeA*(0.5+0.5*s5), kL=q.knee0+q.kneeA*(0.5-0.5*s5);
   gamba(HIPR,KNR,FTR,TOR,  HIPW*ch, pelvY,  HIPW*sh, aR,kR,  q.stanceW);
@@ -5968,17 +6021,36 @@ function pallaCalcio(u,q,out){
   out[3]=dw<0.05?0.40*(1-dw/0.05):0;     // schiacciata sul collo del piede
 }
 
+/* IL PASSAGGIO E' IL TERMINE DI PARAGONE (voce #155): il piu' RACCOLTO
+   dei quattro. Si siede (crouch 0,06 -> 0,11), il busto quasi non segue
+   (leanFwd 0,10 -> 0,06) e le braccia restano basse e chiuse (armApri
+   0,12 -> 0,09). Le gambe pero' si aprono un poco anche in carica
+   (aprCar 0,12): in maschera nera due gambe che partono dallo stesso
+   punto sono una gamba sola. */
 const Q_PASSAGGIO={tImp:0.44,swing:0.13,segue:0.22, back:0.55,fwd:0.55,follow:1.00,
-  kneeBack:0.85,kneeImp:0.18,kneeSegue:0.45, crouch:0.06,dip:0.05,
-  leanBack:0.05,leanFwd:0.10, apriSp:0.12,apriAn:0.06, arm:0.45,armOut:0.05,armApri:0.12,
-  appA:0.28,appK:0.30, px:0.10,pz:0.34, gitt:2.8,alza:0,arco:0,dirX:0};
+  kneeBack:0.85,kneeImp:0.18,kneeSegue:0.45, crouch:0.11,dip:0.05,
+  leanBack:0.05,leanFwd:0.06, apriSp:0.12,apriAn:0.06, arm:0.45,armOut:0.05,armApri:0.09,
+  aprCar:0.12, appA:0.28,appK:0.30, px:0.10,pz:0.34, gitt:2.8,alza:0,arco:0,dirX:0};
+/* IL FILTRANTE SI CARICA SOPRA LA PALLA (voce #155): il busto segue il
+   colpo il doppio (leanFwd 0,17 -> 0,34) e il bilanciere sale a mezza
+   altezza (armSu 0,55, che prima dichiarava solo il tiro). E' la clip
+   che «guarda in avanti» della famiglia. */
 const Q_FILTRANTE={tImp:0.36,swing:0.09,segue:0.18, back:0.75,fwd:0.65,follow:1.20,
   kneeBack:1.05,kneeImp:0.12,kneeSegue:0.40, crouch:0.10,dip:0.06,
-  leanBack:0.08,leanFwd:0.17, apriSp:0.16,apriAn:0.08, arm:0.65,armOut:0.06,armApri:0.13,
-  appA:0.30,appK:0.38, px:0.10,pz:0.36, gitt:4.0,alza:0,arco:0,dirX:0};
+  leanBack:0.08,leanFwd:0.34, apriSp:0.16,apriAn:0.08, arm:0.65,armOut:0.06,armApri:0.13,
+  armSu:0.55, aprCar:0.16, appA:0.30,appK:0.38, px:0.10,pz:0.36, gitt:4.0,alza:0,arco:0,dirX:0};
+/* IL CROSS SI SDRAIA INDIETRO (voce #155). Chi mette un pallone in
+   mezzo si porta il peso sul tallone e apre: leanBack 0,12 -> 0,30 e
+   armSu 0,95 sul bilanciere, che a questa camera e' l'unica leva che fa
+   CRESCERE una figura verso l'alto (tutto cio' che va indietro, in
+   pianta a 42 gradi, scende sullo schermo — vedi il riquadro di armSu
+   in poseCalcio). Con la base aperta in carica (aprCar 0,24) e il
+   seguito che taglia attraverso il corpo (attraversa, che c'era gia')
+   la sagoma e' una X inclinata, non lo slancio di un tiro. */
 const Q_CROSS={tImp:0.44,swing:0.12,segue:0.26, back:0.70,fwd:0.60,follow:1.15,
   kneeBack:1.00,kneeImp:0.15,kneeSegue:0.55, crouch:0.08,dip:0.05,
-  leanBack:0.12,leanFwd:0.02, apriSp:0.55,apriAn:0.28, arm:0.55,armOut:0.11,armApri:0.08,
+  leanBack:0.30,leanFwd:0.02, apriSp:0.55,apriAn:0.28, arm:0.55,armOut:0.11,armApri:0.08,
+  armSu:0.95, aprCar:0.24,
   attraversa:0.30, appA:0.26,appK:0.34, px:0.14,pz:0.34, gitt:3.6,alza:0.95,arco:1,dirX:-0.35};
 /* IL TIRO E' LA CLIP CHE IL BANCO PROVA DUE VOLTE — «carica il tiro» a
    u 0,30 e «ha appena tirato» a u 0,62 — quindi e' l'unica in cui due
@@ -6354,9 +6426,26 @@ function poseContrasto(u){
   /* la testa guarda il pallone, cioe' avanti e in basso.
      somma: 0,030-0,018-0,012 = 0 */
   const cenno = 0.030*all - 0.018*seg - 0.012*rit;
-  corpo(pelvY,0,lean,cenno);
+  /* IL CONTRASTO E' UNA SPALLA CHE ENTRA (voce #155). Era un affondo
+     VERTICALE e simmetrico, e il provino a cinquanta pixel lo
+     confondeva con «sta fermo» e con «para di pugno». Qui la colonna
+     PENDE di lato: e' la stessa inclinazione con cui poseFinta fa
+     sporgere il busto oltre il bacino (dLat/0,71 e' lo scarto laterale
+     voluto diviso l'altezza bacino-testa, cioe' l'angolo che lo da'),
+     non un secondo meccanismo.
+     LA COLONNA NON SCIVOLA — sway resta 0 — e non e' pigrizia: la sonda
+     del contrasto di collaudo.js campiona una colonna FISSA di +-1,5
+     unita' sopra il centro del giocatore. Con la sola inclinazione il
+     busto, alla quota di quella finestra, si sposta di 0,76 unita' e
+     resta dentro; aggiungendoci uno scivolamento del bacino uscirebbe,
+     e il rapporto maglia/erba cambierebbe senza che la maglia sia stata
+     toccata. Somma: 0,16-0,10-0,06 = 0.
+     Le spalle seguono il collo (shX), se no si staccherebbero dal
+     tronco di dieci centimetri. */
+  const dLat = 0.16*all - 0.10*seg - 0.06*rit;
+  corpo(pelvY,0,lean,cenno,dLat/0.71);
   const sl=Msin(lean), cl=Mcos(lean);
-  const shY=pelvY+0.44*cl, shZ=0.44*sl;
+  const shY=pelvY+0.44*cl, shZ=0.44*sl, shX=dLat*0.6;
   /* braccia in opposizione, aperte per l'equilibrio.
      somme: 0,55-0,35-0,20 = 0   e   -0,30+0,18+0,12 = 0 */
   const aR = 0.55*all - 0.35*seg - 0.20*rit;
@@ -6369,8 +6458,8 @@ function poseContrasto(u){
   const eL = 0.55 - 0.10*all + 0.25*seg - 0.15*rit;
   /* out massimo 0,20, la gabbia e' 0,222.  somma: 0,06 +0,14-0,08-0,06 = 0,06 */
   const out = 0.06 + 0.14*all - 0.08*seg - 0.06*rit;
-  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aR,eR, out, 1);
-  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aL,eL, out,-1);
+  braccio(SHR,ELR,HAR,  shX+SHW, shY, shZ, aR,eR, out, 1);
+  braccio(SHL,ELL,HAL,  shX-SHW, shY, shZ, aL,eL, out,-1);
   const hz=0.06*sl;
   /* LA GAMBA DESTRA E' IL GESTO: anca 0,10 -> 0,95, ginocchio 0,55 ->
      0,25 (quasi teso al contatto). La sinistra fa il contrario — si
@@ -6382,7 +6471,12 @@ function poseContrasto(u){
   const kGd =  0.55 - 0.30*all + 1.05*seg - 0.75*rit;
   const aGs = -0.05 - 0.30*all + 0.20*seg + 0.10*rit;
   const kGs =  0.40 + 0.55*all - 0.35*seg - 0.20*rit;
-  const apr =  0.03*all - 0.02*seg - 0.01*rit;
+  /* LA BASE SI ALLARGA (voce #155): 0,03 m di apertura fra i piedi non
+     e' una base, e' un birillo. A 0,19 la V bassa si legge in nero e la
+     posa smette di essere una colonna. L'abduzione d'anca arriva a
+     sin = (0,105+0,19)/0,91 = 0,324, contro il tetto 0,751 della
+     scatola: zero tagli.  Somma: 0,19-0,12-0,07 = 0 */
+  const apr =  0.19*all - 0.12*seg - 0.07*rit;
   gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, hz, aGd,kGd,  HIPW+apr);
   gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, hz, aGs,kGs, -HIPW-apr);
 }
@@ -6505,17 +6599,32 @@ function pallaParata(u,o){
    l'ATTERRAGGIO sul fianco con la botta (PESO), lo SCIVOLAMENTO in
    avanti con la polvere, e la rialzata col piede raccolto sotto. */
 function poseTuffo(u){
-  const ca=sm(u,0.02,0.13);              // caricamento sulle gambe
-  const sp=sm(u,0.13,0.21);              // SPINTA: il bacino sale
-  const est=sm(u,0.13,0.30);             // le gambe si staccano da terra
-  const vol=sm(u,0.15,0.31);             // volo: il busto si stende
-  const cad=sm(u,0.44,0.58);             // discesa fino al fianco
-  const ri=sm(u,0.74,0.96);              // rialzata
-  const rac=sm(u,0.72,0.84)*(1-sm(u,0.86,0.98));   // il piede sotto
-  const dd=(u-0.40)/0.05, imp=Mexp(-dd*dd);    // deviazione all'apice
-  const db=(u-0.58)/0.05, botta=Mexp(-db*db);  // la botta a terra
-  const p=u-0.58, osc=p>0?Msin(p*9)*Mexp(-5*p):0;  // assestamento
-  const slitta=sm(u,0.56,0.72)*(1-sm(u,0.80,0.97));        // scivolamento
+  /* =================================================================
+     DOVE IL TUFFO SPENDE I SUOI FOTOGRAMMI (voce #155, criterio C7).
+     Misurato sul foglio a sedici: il corpo passava da accovacciato a
+     completamente disteso fra il 4/16 e il 5/16 (vol durava 0,16 di
+     ciclo, cioe' due fotogrammi e mezzo) e dal 9/16 al 16/16 era lo
+     stesso corpo disteso che scivola.
+     Adesso la distensione dura 0,24 e ARRIVA AL CONTATTO — 0,036 /
+     0,32 / 0,70 / 0,97 sui quattro fotogrammi fra 0,19 e 0,38, dove
+     prima ce n'erano due — e la caduta, la botta e la strisciata
+     riempiono il vuoto fra il 9/16 e il 13/16.
+     L'ISTANTE DEL CONTATTO NON SI MUOVE: imp resta a 0,40 e pallaTuffo
+     ha ancora ti = 0,40. La simulazione manda qui una fase, e la
+     parata deve cadere dove cadeva: spostarla sarebbe un tocco alla
+     partita travestito da grafica.
+     ================================================================= */
+  const ca=sm(u,0.02,0.15);              // caricamento sulle gambe (ANTICIPO)
+  const sp=sm(u,0.15,0.23);              // SPINTA: il bacino sale
+  const est=sm(u,0.15,0.36);             // le gambe si staccano da terra
+  const vol=sm(u,0.16,0.40);             // volo: il busto si stende, FINO AL CONTATTO
+  const cad=sm(u,0.46,0.64);             // discesa fino al fianco
+  const ri=sm(u,0.74,0.97);              // rialzata
+  const rac=sm(u,0.72,0.85)*(1-sm(u,0.88,0.99));   // il piede sotto
+  const dd=(u-0.40)/0.05, imp=Mexp(-dd*dd);    // deviazione all'apice (NON si muove)
+  const db=(u-0.645)/0.045, botta=Mexp(-db*db);  // la botta a terra
+  const p=u-0.645, osc=p>0?Msin(p*9)*Mexp(-5.6*p):0;  // assestamento
+  const slitta=sm(u,0.62,0.74)*(1-sm(u,0.80,0.97));        // scivolamento
   /* IL TUFFO SALE DA TERRA: la spinta porta il bacino a 1,20 m invece
      che a 1,05 (0,47 -> 0,62), e il termine di caduta cresce di
      altrettanto (0,78 -> 0,93) cosi' l'atterraggio sul fianco resta
@@ -6523,7 +6632,10 @@ function poseTuffo(u){
      saliva a -37,8 unita' di schermo contro il riferimento -34,6 di
      gabbia.js, e la sonda dell'erba di collaudo.js avrebbe cominciato a
      misurare capelli. */
-  const pelvY=0.88-0.30*ca+0.62*sp-0.93*cad+0.61*ri-0.04*botta+0.02*osc;
+  /* -0,10 e non -0,04: la COMPRESSIONE dell'atterraggio. E' una
+     gaussiana, torna a zero da sola — la chiusura del ciclo, risolta
+     per ca=vol=cad=ri=1, non si tocca. */
+  const pelvY=0.88-0.30*ca+0.62*sp-0.93*cad+0.61*ri-0.10*botta+0.02*osc;
   const lean=0.12+0.18*ca+1.36*vol+0.05*imp-1.54*ri+0.10*osc;
   corpo(pelvY,0,lean,0);
   const sl=Msin(lean), cl=Mcos(lean);
@@ -6863,12 +6975,25 @@ function posePugni(u){
      sopra eMin = 0,12+0,29*|out/UA|: con out a 0,05 il minimo e' 0,177
      e il gomito destro non scende sotto 0,22.
      somme: 0,90-1,05+0,06+0,09 = 0   e   0,78-0,87+0,05+0,04 = 0 */
-  const eR = 0.45 + 0.90*car - 1.05*sca + 0.06*seg + 0.09*rit - 0.08*imp;
-  const eL = 0.45 + 0.78*car - 0.87*sca + 0.05*seg + 0.04*rit - 0.08*imp;
-  /* i pugni si STRINGONO: out cala a 0,05 nel colpo.  somma: 0,04-0,05+0,02-0,01 = 0 */
-  const out = 0.06 + 0.04*car - 0.05*sca + 0.02*seg - 0.01*rit;
-  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aR,eR, out, 1);
-  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aL,eL, out,-1);
+  /* -0,05 e non piu' -0,08 sulla gaussiana: con i gomiti FUORI (qui
+     sotto) il minimo di flessione della scatola sale a 0,217 e a -0,08
+     il gomito finiva a 0,220 — dentro per tre millesimi, cioe' fuori il
+     giorno che qualcuno tocchi un altro numero. */
+  const eR = 0.45 + 0.90*car - 1.05*sca + 0.06*seg + 0.09*rit - 0.05*imp;
+  const eL = 0.45 + 0.78*car - 0.87*sca + 0.05*seg + 0.04*rit - 0.05*imp;
+  /* I GOMITI ESCONO DAL BUSTO (voce #155). out valeva 0,075: le braccia
+     stavano incollate al tronco e in maschera nera sparivano dentro la
+     massa — la seconda regola della silhouette («nessun arto appoggiato
+     alla massa centrale») violata proprio nella clip che avrebbe dovuto
+     gridare, e in nero «para di pugno» era «sta fermo». La guardia di
+     chi para e' larga: gomiti fuori a 0,18 in carica, mani vicine, e
+     nel colpo out si STRINGE a 0,09 perche' quello e' il gesto.
+     I due bracci non hanno lo stesso out, se no sono un disegno solo.
+     Somme: 0,12-0,09-0,02-0,01 = 0  e  0,09-0,06-0,02-0,01 = 0 */
+  const outR = 0.06 + 0.12*car - 0.09*sca - 0.02*seg - 0.01*rit;
+  const outL = 0.06 + 0.09*car - 0.06*sca - 0.02*seg - 0.01*rit;
+  braccio(SHR,ELR,HAR,  SHW, shY, shZ, aR,eR, outR, 1);
+  braccio(SHL,ELL,HAL, -SHW, shY, shZ, aL,eL, outL,-1);
   const hz=0.06*sl;
   /* somme: 0,16-0,26+0,06+0,04 = 0  |  0,62-0,60+0,05-0,07 = 0
            -0,10+0,34-0,16-0,08 = 0  |  0,72-0,66+0,02-0,08 = 0  |  0,06-0,03-0,02-0,01 = 0 */
@@ -6876,7 +7001,10 @@ function posePugni(u){
   const kGd =  0.24 + 0.62*car - 0.60*sca + 0.05*seg - 0.07*rit;
   const aGs = -0.06 - 0.10*car + 0.34*sca - 0.16*seg - 0.08*rit;
   const kGs =  0.30 + 0.72*car - 0.66*sca + 0.02*seg - 0.08*rit;
-  const apr =  0.05 + 0.06*car - 0.03*sca - 0.02*seg - 0.01*rit;
+  /* LA BASE: 0,05 non e' una base. A 0,22 in carica il portiere si
+     pianta, e la V delle gambe si legge in nero.
+     somma: 0,08-0,04-0,03-0,01 = 0 */
+  const apr =  0.14 + 0.08*car - 0.04*sca - 0.03*seg - 0.01*rit;
   gamba(HIPR,KNR,FTR,TOR,  HIPW, pelvY, hz, aGd,kGd,  HIPW+apr);
   gamba(HIPL,KNL,FTL,TOL, -HIPW, pelvY, hz, aGs,kGs, -HIPW-apr);
 }
@@ -7469,10 +7597,16 @@ function poseCielo(u){
 }
 
 const CLIPS={
-  fermo:     {freq:0.5, pose:poseFermo},
-  attesaGK:  {freq:0.42,pose:poseAttesaGK},   // la sagoma del ruolo (vedi poseAttesaGK)
-  camminata: {freq:1.5, pose:poseCamminata},
-  corsa:     {freq:2.6, pose:poseCorsa},
+  /* ciclo:1 — LE SOLE CLIP A CUI LA CADENZA DEL GIOCATORE SI APPLICA
+     (voce #155). Sono cicli continui: spostarne la fase non sposta
+     niente. In tutte le altre la fase la calcola rigStato dalla
+     simulazione e l'istante del contatto col pallone deve restare dov'e':
+     una cadenza sul tiro sarebbe un tocco alla partita travestito da
+     grafica. */
+  fermo:     {freq:0.5, pose:poseFermo, ciclo:1},
+  attesaGK:  {freq:0.42,pose:poseAttesaGK, ciclo:1},   // la sagoma del ruolo (vedi poseAttesaGK)
+  camminata: {freq:1.5, pose:poseCamminata, ciclo:1},
+  corsa:     {freq:2.6, pose:poseCorsa, ciclo:1},
   frenata:   {freq:0.9, pose:poseFrenata, polvere:{t:0.02,d:0.34,solchi:1}},
   passaggio: {freq:1.0, pose:posePassaggio, palla:function(u,o){pallaCalcio(u,Q_PASSAGGIO,o);}},
   filtrante: {freq:1.5, pose:poseFiltrante, palla:function(u,o){pallaCalcio(u,Q_FILTRANTE,o);}},
@@ -7483,14 +7617,17 @@ const CLIPS={
      conversione da rifare a mente quando si legge poseTesta. */
   testa:     {freq:1.0, pose:poseTesta,     palla:pallaTesta},
   finta:     {freq:1.0, pose:poseFinta,     palla:pallaFinta},
-  scivolata: {freq:0.8, pose:poseScivolata},
+  /* LA SCIVOLATA LASCIA IL SEGNO (voce #155): era l'unica clip che ara
+     il manto senza dirlo. Stessa tabella e stesso disegno dei solchi
+     dell'arresto (#152) — non un secondo sistema. */
+  scivolata: {freq:0.8, pose:poseScivolata, polvere:{t:0.08,d:0.38,solchi:1}},
   /* freq 1,0: in partita la fase e' st.u/freq, e con 1,0 la fase
      disegnata E' quella che rigStato calcola. */
   contrasto: {freq:1.0, pose:poseContrasto},
   rovesciata:{freq:0.5, pose:poseRovesciata,palla:pallaRovesciata,polvere:{t:0.555,d:0.22},
               scia:{j:TOR,t0:0.31,t1:0.47}},
   parata:    {freq:0.65,pose:poseParata,    palla:pallaParata},
-  tuffo:     {freq:0.45,pose:poseTuffo,     palla:pallaTuffo, polvere:{t:0.56,d:0.20}},
+  tuffo:     {freq:0.45,pose:poseTuffo,     palla:pallaTuffo, polvere:{t:0.645,d:0.20}},
   presa:     {freq:0.55,pose:posePresa,     palla:pallaPresa},
   rinvio:    {freq:0.55,pose:poseRinvio,    palla:pallaRinvio},
   rimessa:   {freq:0.8, pose:poseRimessa,   palla:pallaRimessa},
@@ -7582,7 +7719,21 @@ const SEGS=[
      risale una massa, e il bacino era largo 12,5 unita' contro le 15,7
      della vita — cioe' scendeva invece di risalire. A 0,30 il bacino
      legge 13,9 e la scansione ha finalmente una V. */
-  {a:HIPL,  b:HIPR, w:0.30, c:'pantaloncini', bias:-0.006, kind:0},
+  /* LA BARRA DEI FIANCHI VA DIETRO IL BUSTO, e il numero e' risolto non
+     scelto (voce #155). L'ordine di profondita' e' (SD[a]+SD[b])/2+bias,
+     e fra busto e barra il bias differiva di 0,006 mentre l'inclinazione
+     del tronco sposta la profondita' media del busto di 0,17*sin(lean),
+     cioe' fino a 0,074: su OGNI posa col peso indietro la barra dei
+     fianchi finiva DAVANTI al torace. Fino a ieri non si vedeva perche'
+     la barra portava la seconda tinta pura; da quando i calzoncini sono
+     scuri (la gerarchia del valore, qui sopra) quella macchia entrava
+     nella finestra della sonda del contrasto di collaudo.js e il
+     rapporto maglia/erba di P1 scendeva da 3,17 a 3,01 — MISURATO,
+     appaiato, stesso seme.
+     0,100 e' 0,074 arrotondato in su piu' un margine: da qui la barra e'
+     sempre la prima a disegnarsi, cioe' sempre la piu' lontana. Che e'
+     anche il vero: una maglia cade SOPRA i calzoncini. */
+  {a:HIPL,  b:HIPR, w:0.30, c:'pantaloncini', bias: 0.100, kind:0},
   {a:NECK,  b:HEAD, w:0.085,c:'pelle',        bias:-0.002, kind:0},  // il COLLO: la strozzatura fra le due masse alte
   {a:HEAD,  b:HEAD, w:0,    c:'pelle',        bias: 0.010, kind:2},
   /* arti:1 = lo SPESSORE segue la corporatura (MSP). Solo gli arti: il
@@ -7872,11 +8023,20 @@ function motivo(ctx,s,look){
    resta la mezzaluna del viso: e' questo che dice DOVE guarda. */
 function testa(ctx,s,cyw,syw,cam,look){
   const r=HEADR*s, X=SX[HEAD], Y=SY[HEAD];
-  ctx.fillStyle=look.pelle;
-  ctx.beginPath(); ctx.arc(X,Y,r,0,TAU); ctx.fill();
   const fdx=syw, fdy=-cyw*cam.se;
   const L=Math.sqrt(fdx*fdx+fdy*fdy);
   const dot=-cyw*cam.ce;                 // >0 se la faccia punta alla camera
+  /* n: 0 = di spalle, 1 = in faccia. E' -cos(yaw) normalizzato, quindi
+     non dipende dalla camera — l'imbardata e' un fatto del corpo. */
+  const n=0.5+0.5*(dot/cam.ce);
+  /* IL CRANIO E' TUTTO CAPELLI. Prima sotto stava un cerchio di PELLE e
+     la calotta gli lasciava attorno un anello di carne: la «ciambella»
+     del giudizio. Dall'alto, di un uomo, si vede la nuca. */
+  ctx.fillStyle=look.capelli;
+  ctx.beginPath(); ctx.arc(X,Y,r,0,TAU); ctx.fill();
+  /* LA FACCIA E' UNO SPICCHIO CHE PUNTA DOVE GUARDA, e lo disegna la
+     riga subito dopo la calotta (qui sotto): e' la sola cosa della
+     figura che dica il fronte sotto i 120 px. */
   let o=r*0.60*(dot+1)*0.5; if(o>0.5*r)o=0.5*r;
   let hx=X, hy=Y-r*0.10;
   if(L>1e-4){ hx=X-fdx/L*o; hy=Y-fdy/L*o-r*0.10; }
@@ -7893,8 +8053,31 @@ function testa(ctx,s,cyw,syw,cam,look){
      scuro che sta a r+bd = 1,22·r. */
   const taglio = (look.taglio|0)%4;
   const rc = taglio===0 ? r*0.82 : taglio===2 ? r*1.00 : taglio===3 ? r*0.90 : r*0.94;
+  /* LA CALOTTA RESTA, E RESTA ANCHE SOTTO SOGLIA. Il primo tentativo di
+     questo giro la spegneva sotto i 120 px («era lei la ciambella»), ed
+     era sbagliato: la ciambella era il CERCHIO DI PELLE che le stava
+     sotto, non lei. Misurato con strumenti/silhouette.js: senza la
+     calotta la maschera nera della testa si riduce al cerchio del
+     contorno, e «ha appena tirato» perde una strozzatura — masse da 2 a
+     1, il cancello da 8/10 a 7/10. La calotta sporge all'indietro oltre
+     il contorno ed e' LEI a dare all'occipite la sua gobba: in nero
+     quella gobba e' anche un indizio di direzione, cioe' esattamente
+     quello che serve a questo giro. Percio' la sagoma nera resta
+     identica a quella di prima, e cambia soltanto il VALORE dentro. */
   ctx.fillStyle=look.capelli;
   ctx.beginPath(); ctx.arc(hx,hy,rc,0,TAU); ctx.fill();
+  /* LO SPICCHIO DELLA FACCIA, SOPRA la calotta: e' la pelle che vince
+     dove il viso c'e' davvero. Sta dentro il cerchio della testa per
+     costruzione (0,99 r), quindi non allarga la sagoma di un pixel. */
+  if(n>0.10 && L>1e-4){
+    const ux=fdx/L, uy=fdy/L;
+    const ang=Matan2(uy,ux), mez=1.32*n;
+    ctx.fillStyle=look.pelle;
+    ctx.beginPath();
+    ctx.moveTo(X-ux*r*0.28, Y-uy*r*0.28);
+    ctx.arc(X,Y,r*0.99,ang-mez,ang+mez);
+    ctx.closePath(); ctx.fill();
+  }
   if(lodOn){
     if(taglio===1){                       // il CIUFFO in cima
       ctx.beginPath(); ctx.arc(hx,hy-r*0.70,r*0.32,0,TAU); ctx.fill();
@@ -8171,7 +8354,12 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs,fil
      il caso del banco, del duello e della ripresa del gol, dove la
      figura e' una sola e non c'e' nessuno da cui distinguerla. */
   corpora(look.corp===undefined?3:look.corp, look.varb||0);
-  let u=(tSec*clip.freq)%1; if(u<0)u+=1;
+  /* LA MANO CHE ARMA (voce #155): stato di modulo, riscritto QUI e solo
+     qui, cosi' nessun chiamante distratto puo' lasciarlo acceso. */
+  MANC=!!look.manc;
+  const mg=MANC?-1:1;
+  /* LA CADENZA del giocatore, sulle sole clip cicliche (clip.ciclo) */
+  let u=(tSec*clip.freq*(clip.ciclo?CAD:1))%1; if(u<0)u+=1;
   const cyw=Mcos(yaw), syw=Msin(yaw);
   const ce=cam.ce<0.58?0.58:cam.ce;   // non gonfiare troppo le falcate in pianta
   /* LA DIFESA DI CLASSE, non solo di questo difetto. Da qui in giu' s
@@ -8180,19 +8368,27 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs,fil
      La causa e' stata riparata alla radice (SQUASH_MIN), ma un solo
      chiamante distratto la rifarebbe: una figura di altezza non positiva
      non si disegna, e non porta giu' il gioco con se'. */
-  const s=Math.max(0, hPx/(1.9*ce));
+  /* LA STATURA (voce #155) moltiplica la scala, cioe' l'uomo INTERO:
+     nessuna lunghezza d'osso cambia e la gabbia, che misura metri, non
+     se ne accorge. Nessuna corporatura sta sopra 1,000 — vedi il
+     riquadro di CORPI: la cima della testa e' un invariante. */
+  const s=Math.max(0, hPx*STAT/(1.9*ce));
   // arco di scia del giunto che frusta (rovesciata): le due posizioni
   // passate, valutate PRIMA della posa vera (P e' scratch riusato)
   let nsc=0;
   if(clip.scia && u>clip.scia.t0 && u<clip.scia.t1){
     for(let g=2;g>=1;g--){
       clip.pose(u-0.022*g);
-      const j=clip.scia.j, x=P[j*3], y=P[j*3+1], z=P[j*3+2];
+      const j=clip.scia.j, x=P[j*3]*mg, y=P[j*3+1], z=P[j*3+2];
       const xw=x*cyw+z*syw, zw=z*cyw-x*syw;
       SCX[nsc]=cx+xw*s; SCY[nsc]=cy-(y*cam.ce+zw*cam.se)*s; nsc++;
     }
   }
   posaFusa(clip,u);   /* la posa, eventualmente fusa con la precedente (vedi fondi) */
+  /* IL MANCINO: la posa si SPECCHIA sull'asse laterale. E' la
+     definizione anatomica, conserva per costruzione ogni lunghezza
+     d'osso e ogni angolo della scatola, e costa diciotto negazioni. */
+  if(MANC) specchia();
   for(let j=0;j<NJ;j++){
     const x=P[j*3], y=P[j*3+1], z=P[j*3+2];
     const xw=x*cyw+z*syw, zw=z*cyw-x*syw;
@@ -8205,7 +8401,9 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs,fil
   let pallaQui=false, pxw=0,pzw=0,pby=0, nGh=0;
   if(clip.palla && look.palla!==null){   /* ADATTAMENTO (a): in pianta la palla e' quella VERA di drawBall */
     clip.palla(u,PALLA); pallaQui=true;
-    let bx=PALLA[0]; pby=PALLA[1]; const bz=PALLA[2];
+    /* la palla della clip segue la mano che arma: se no il piede va da
+       una parte e il pallone dall'altra */
+    let bx=PALLA[0]*mg; pby=PALLA[1]; const bz=PALLA[2];
     // palla bassa vicino ai piedi: scarto laterale in funzione dello yaw,
     // verso la camera, cosi' a 225°/270° non finisce dentro la tibia
     let wq=(0.56-(pby-RPALLA))*2.2;
@@ -8231,14 +8429,45 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs,fil
   // ombra a terra (niente shadowBlur: una semplice ellisse); in volo
   // si STACCA: la quota del giunto piu' basso la rimpicciolisce e sbiadisce
   {
-    const x=P[PELVIS*3], z=P[PELVIS*3+2];
-    const xw=x*cyw+z*syw, zw=z*cyw-x*syw;
-    let mn=P[1]; for(let j=1;j<NJ;j++){ const yy=P[j*3+1]; if(yy<mn)mn=yy; }
-    let quota=mn-0.05; if(quota<0)quota=0;
+    /* =================================================================
+       L'OMBRA HA LA FORMA DEL CORPO E LA QUOTA DEL CORPO (voce #155).
+       Prima era un dischetto di raggio fisso sotto il bacino, scalato
+       dalla quota del giunto PIU' BASSO: nel tuffo il portiere e'
+       orizzontale a mezz'aria ma ha un piede penzoloni vicino al manto,
+       quindi la macchia restava quella di un uomo in piedi.
+       Qui lo stesso ciclo che cercava il minimo misura anche
+       L'INGOMBRO A TERRA dei giunti bassi e LA QUOTA MEDIA del corpo.
+       ================================================================= */
+    let mn=1e9, som=0, jb=PELVIS;
+    let ax0=1e9, ax1=-1e9, az0=1e9, az1=-1e9;
+    for(let j=0;j<NJ;j++){
+      const yy=P[j*3+1];
+      som+=yy;
+      if(yy<mn){ mn=yy; jb=j; }
+      /* solo i giunti BASSI fanno ingombro: in piedi sono gambe e
+         bacino (un braccio alzato non allarga l'ombra), disteso sono
+         quasi tutti — ed e' proprio allora che l'ombra deve allungarsi */
+      if(yy<0.95){
+        const xx=P[j*3], zz=P[j*3+2];
+        const xa=xx*cyw+zz*syw, za=zz*cyw-xx*syw;
+        if(xa<ax0)ax0=xa; if(xa>ax1)ax1=xa;
+        if(za<az0)az0=za; if(za>az1)az1=za;
+      }
+    }
+    if(ax1<ax0){ const xx=P[PELVIS*3], zz=P[PELVIS*3+2];
+                 ax0=ax1=xx*cyw+zz*syw; az0=az1=zz*cyw-xx*syw; }
+    /* la quota che conta e' quella del CORPO: la media, non il minimo */
+    let quota=som/NJ-0.72; if(quota<0)quota=0;
     // il termine quadratico stacca NETTAMENTE l'ombra alle quote alte
     // (rovesciata, tuffo): e' l'indizio d'aria che la pianta capisce
-    const fo=1/(1+2.6*quota+3.2*quota*quota);
-    const gx=cx+xw*s, gy=cy-zw*cam.se*s;
+    const fo=1/(1+1.9*quota+2.6*quota*quota);
+    const gx=cx+(ax0+ax1)*0.5*s, gy=cy-(az0+az1)*0.5*cam.se*s;
+    /* i semiassi: 0,09 + 0,40 dell'escursione, tagliata a 1,60 m.
+       In piedi l'escursione vale ~0,45 m e il semiasse torna 0,27·s,
+       cioe' ESATTAMENTE il raggio di prima. */
+    let exX=ax1-ax0; if(exX>1.60)exX=1.60;
+    let exZ=az1-az0; if(exZ>1.60)exZ=1.60;
+    const raO=(0.09+0.40*exX)*s, rbO=(0.09+0.40*exZ)*s*cam.se+0.5;
     // l'alfa cala meno del raggio: l'ombra piccola resta VISIBILE anche
     // a 30px — e' il distacco che dice "in aria", non la sparizione
     if(!senzaOmbra){   /* ADATTAMENTO (b): in pianta l'ombra portata la fa drawOmbreGiocatori */
@@ -8260,8 +8489,23 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs,fil
          OMBRA_CONTATTO, cosi' le due scene raccontano lo stesso buio. */
       ctx.globalAlpha=0.22*(0.40+0.60*fo); ctx.fillStyle='rgb('+OMBRA_CONTATTO+')';
       ctx.beginPath();
-      ctx.ellipse(gx, gy, 0.27*s*fo, (0.27*s*cam.se+0.5)*fo, 0,0,TAU);
+      ctx.ellipse(gx, gy, raO*fo, rbO*fo, 0,0,TAU);
       ctx.fill();
+      /* IL NUCLEO DEL CONTATTO — l'indizio che mancava del tutto. Sotto
+         il giunto che PREME (il piu' basso) una macchia piccola e piu'
+         scura, che si spegne appena quel giunto si stacca: e' quella che
+         dice «ha pesato LI'» invece di «e' appoggiato a un'ellisse».
+         A mezz'aria non c'e', perche' non c'e' niente da premere. */
+      const pr=1-mn*10;
+      if(pr>0){
+        const bx=P[jb*3], bz=P[jb*3+2];
+        const bxw=bx*cyw+bz*syw, bzw=bz*cyw-bx*syw;
+        ctx.globalAlpha=0.20*pr*fo;
+        ctx.beginPath();
+        ctx.ellipse(cx+bxw*s, cy-bzw*cam.se*s,
+                    0.115*s, 0.115*s*cam.se+0.4, 0,0,TAU);
+        ctx.fill();
+      }
     }
     if(clip.polvere){                 // la polvere dell'impatto
       const pv=(u-clip.polvere.t)/clip.polvere.d;
@@ -8402,7 +8646,7 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs,fil
       ctx.stroke();
     }
     ctx.fillStyle=STACCO_FILO;
-    troncoQuad(ctx,s,bd+fl,0,1,0,1);
+    troncoQuad(ctx,s,bd+fl,0,1,-0.22,1);
     ctx.beginPath(); ctx.arc(SX[HEAD],SY[HEAD],HEADR*s+bd+fl,0,TAU); ctx.fill();
     ctx.lineCap=capV;
   }
@@ -8423,7 +8667,12 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs,fil
        essere un tubo unico. Vale anche per il contorno, che deve seguire
        la stessa sagoma. Sotto soglia niente: le pedine a 30px non lo
        leggerebbero. */
-    if(g.kind===1){ ctx.fillStyle=tb; troncoQuad(ctx,s,bp,0,1,0,1); continue; }
+    /* L'ORLO (voce #155): il trapezio del busto parte da t = -0,22,
+       cioe' DIECI CENTIMETRI SOTTO il bacino. Vedi il riquadro nella
+       passata a colori: e' la riga che rimette la maglia dove la sonda
+       del contrasto la cerca. Il contorno deve avere la stessa sagoma
+       del colore, altrimenti l'orlo esce senza bordo. */
+    if(g.kind===1){ ctx.fillStyle=tb; troncoQuad(ctx,s,bp,0,1,-0.22,1); continue; }
     const w=g.w*(g.arti?MSP:1)*s*((lodOn&&(g.b===HAR||g.b===HAL))?0.80:1);
     ctx.lineWidth=(w<1.1?1.1:w)+2*bp;
     /* IL BUSTO NON HA LA CALOTTA IN CIMA — e' la riga che stacca la
@@ -8476,7 +8725,25 @@ function disegna(ctx,cx,cy,hPx,yaw,nomeCam,nomeClip,tSec,look,senzaOmbra,pxs,fil
     }
     ctx.strokeStyle=tinta;
     ctx.lineWidth=W;
-    if(g.kind===1){ ctx.fillStyle=tinta; troncoQuad(ctx,s,0,0,1,0,1); }
+    /* =================================================================
+       LA MAGLIA HA UN ORLO, E LO DEVE ALLA SONDA DEL CONTRASTO.
+       Il trapezio del busto partiva ESATTO dal giunto del bacino: sopra
+       la cintura il tessuto, sotto il calzoncino, senza un millimetro di
+       sovrapposizione. Un uomo vestito non e' fatto cosi' — una maglia
+       CADE sopra i calzoncini — e la finestra della sonda di collaudo.js
+       ha reso visibile il prezzo di quella semplificazione: e' una
+       finestra FISSA sullo schermo (tre file a -12,5/-11,5/-10,5 unita'
+       sopra il centro) e su ogni posa col busto inclinato la proiezione
+       la porta SOTTO il bacino, dove trovava i calzoncini invece della
+       maglia. Con i calzoncini scuriti (la gerarchia del valore) quella
+       differenza e' passata da invisibile a 0,16 di rapporto: MISURATO,
+       nove partite per numero, stesso seme.
+       t0 = -0,22 vale 0,22 x 0,46 m = dieci centimetri di orlo. Il
+       trapezio li' e' larghezza 0,081 di semilato contro i 0,15 della
+       barra dei fianchi: l'orlo sta DENTRO il calzoncino, quindi la
+       sagoma nera non cambia di un pixel e cambia solo cio' che la
+       finestra trova. */
+    if(g.kind===1){ ctx.fillStyle=tinta; troncoQuad(ctx,s,0,0,1,-0.22,1); }
     /* =================================================================
        LA CALOTTA DEL BUSTO E' QUELLA CHE SALDAVA LA TESTA AL TRONCO.
        Misurato sul banco ?banco=silhouette: la maschera nera a 40 px non
@@ -8864,14 +9131,17 @@ const OSX=new Float32Array(NJ), OSY=new Float32Array(NJ);
 /* ox, oy      il piede dell'ombra, GIA' nel riferimento ruotato
    perMetro    unita' di manto per metro di quota (da ombraGeometria)
    scala       il rimpicciolimento della figura in volo (r del chiamante) */
-function ombraTraccia(g, ox, oy, hPx, yaw, nomeClip, tSec, corp, varb, C, S, perMetro, scala){
+function ombraTraccia(g, ox, oy, hPx, yaw, nomeClip, tSec, corp, varb, C, S, perMetro, scala, manc){
   const clip=CLIPS[nomeClip]; if(!clip) return false;
   corpora(corp===undefined?3:corp, varb||0);
-  let u=(tSec*clip.freq)%1; if(u<0)u+=1;
+  /* LE STESSE TRE COSE DEL CORPO (voce #155): cadenza, specchio,
+     statura. Se qui ne mancasse una, l'ombra getterebbe un altro uomo. */
+  let u=(tSec*clip.freq*(clip.ciclo?CAD:1))%1; if(u<0)u+=1;
   posaFusa(clip,u);   /* stessa fusione del corpo: l'ombra getta la posa che si disegnera' */
+  if(manc) specchia();
   const cam=CAMERE.alto;
   const ce=cam.ce<0.58?0.58:cam.ce;
-  const s=Math.max(0, hPx/(1.9*ce))*scala;
+  const s=Math.max(0, hPx*STAT/(1.9*ce))*scala;
   const pm=perMetro*scala;
   const cyw=Mcos(yaw), syw=Msin(yaw);
   for(let j=0;j<NJ;j++){
@@ -8893,9 +9163,15 @@ function ombraTraccia(g, ox, oy, hPx, yaw, nomeClip, tSec, corp, varb, C, S, per
 }
 
 return {disegna, CAMERE, CLIPS, lookPredefinito, torso:()=>TORSO,
-        giunti:()=>GIUNTI, ombraTraccia, fondi,
+        giunti:()=>GIUNTI, ombraTraccia, fondi, mescolaTinta,
         banco:{posa:bancoPosa, OSSA, P, NJ, esito:ESITO,
                corpora, testa:()=>HEADR, nCorpi:CORPI.length,
+               /* LE TRE GRANDEZZE DELLA VOCE #155, lette dal banco dopo
+                  corpora(c): senza di loro ?gabbia misurerebbe la cima
+                  della testa di un uomo che non esiste, e il provino
+                  direbbe che quattro fisici camminano ancora uguali. */
+               statura:()=>STAT, falcata:()=>PASSO, cadenza:()=>CAD,
+               mancino:v=>{ MANC=!!v; }, specchia,
                /* quante volte la scatola degli angoli ha dovuto
                   correggere una posa: azzerabile, cosi' il banco lo
                   conta per clip e non in blocco */
@@ -8952,7 +9228,11 @@ if(/[?&]gabbia/.test(location.search)){
                conto e' il suo — piedi a RIG_PIEDI, quota moltiplicata per
                RIG_H/1,9 (che non dipende dall'elevazione), raggio della
                testa e contorno in scala orizzontale, tutto per P_DIS. */
-            const ct=(RIG_PIEDI - B.P[3*3+1]*RIG_H/1.9 - (B.testa()*SCA+BORDOPX))*P_DIS;
+            /* LA STATURA ENTRA NEL CONTO (voce #155): la scala di
+               disegno la porta, quindi la cima della testa la porta.
+               Senza, questo banco attesterebbe invece di misurare. */
+            const ST=B.statura();
+            const ct=(RIG_PIEDI - B.P[3*3+1]*RIG_H*ST/1.9 - (B.testa()*SCA*ST+BORDOPX))*P_DIS;
             if(ct<cima){ cima=ct; chiCima=CORPI[c]; }
           }
         }
@@ -36556,7 +36836,7 @@ function drawOmbreGiocatori(lista){
       fatta=Rig3D.ombraTraccia(ctx, X, Y,
               RIG_H/(p.squash||1), rigAngolo(p)+RIG_YAW_K,
               st.clip, st.u/Rig3D.CLIPS[st.clip].freq,
-              lk.corp, lk.varb, C, S, GEO.perMetro, r);
+              lk.corp, lk.varb, C, S, GEO.perMetro, r, lk.manc);
     }
     if(!fatta){
       /* la tessitura ha la testa tonda a 32/256 e la punta a 252/256: si
@@ -36958,15 +37238,54 @@ function rigLook(p){
      oltre le quali si svuota (uno svuotamento per fotogramma sarebbe un
      crollo silenzioso: e' contato, non sperato). */
   const taglio = (p.taglio|0)%4;         // rasato / ciuffo / riccio / fascetta
-  const corp = (p.corp|0)%3;
+  /* LA QUARTA CORPORATURA SCENDE IN CAMPO (voce #155). Prima era
+     (p.corp|0)%3 e la quarta riga di CORPI non usciva mai.
+     p.corp NON SI TOCCA: quel numero entra nel giro che sposta il seme
+     quando due compagni si somigliano (vestiDalNome e i due rientri in
+     rosa), e cambiarlo cambierebbe i semi, cioe' la partita. La
+     corporatura del DISEGNO si prende da un'altra fetta dello stesso
+     seme e resta nel disegno. */
+  const corp = ((p.seme|0)>>>11)%4;
+  /* IL MANCINO — uno su quattro (voce #155). Prima passaggio,
+     filtrante, cross, tiro e testa armavano TUTTI il destro: in campo
+     non esisteva un solo sinistro. */
+  const manc = ((((p.seme|0)>>>7)&3)===0);
   const varb = (((p.seme|0)>>>23)%5-2)*0.032;
   const chiave = c1+'|'+c2+'|'+pat+'|'+p.skin+'|'+p.hair+'|'+taglio
-               +'|'+corp+'|'+((p.seme|0)>>>23)%5+(gk?'|G':'');
+               +'|'+corp+(manc?'|M':'')+'|'+((p.seme|0)>>>23)%5+(gk?'|G':'');
   let lk = RIG_LOOKS.get(chiave);
   if(!lk){
     if(RIG_LOOKS.size>64) RIG_LOOKS.clear();
+    /* c1/c2 possono arrivare INDEFINITI dai chiamanti fuori partita: il
+       menu idle disegna una rosa che non ha ancora una squadra, e prima
+       quelle tinte finivano nel look cosi' com'erano (undefined) e il
+       canvas teneva l'ultima. Si mescola solo cio' che c'e' — la stessa
+       guardia che lumiLook usa gia' riga per riga. La chiusura nasce a
+       ogni MANCATA della cache, cioe' al massimo sessantaquattro volte
+       per partita: mai dentro un fotogramma. */
+    const mt=(h,v,f)=>h?Rig3D.mescolaTinta(h,v,f):h;
     lk = {
-      maglia:c1, maglia2:c2,
+      /* LA MAGLIA SALE DI UN FILO — 8% verso il bianco caldo del sole
+         delle sette. Non e' un gusto, e' il BILANCIO di questo giro, e
+         il numero che lo governa e' misurato.
+         I calzoncini scuri (qui sotto) e la statura per corporatura
+         (_toppa-155-persone.js) COSTANO rapporto maglia/erba, perche' la
+         sonda di collaudo.js campiona una finestra FISSA sullo schermo e
+         quella finestra, sulle pose col busto inclinato, scivola sotto
+         il tronco e pesca cio' che c'e' sotto. Misurato appaiato, stesso
+         seme, nove partite per misura, P1 in vista normale:
+             base ................................ 3,15
+             tutto tranne calzoncini e statura ... 3,17
+             + calzoncini scuri al 42% ........... 3,01
+             + statura ........................... 2,90  ROSSO (minimo 3)
+         La maglia e' il NUMERATORE di quel rapporto: schiarirla alza il
+         numero DOVE IL CANCELLO GUARDA, e insieme schiarisce la cosa che
+         il criterio C5 della giuria vuole piu' chiara di tutte — un
+         pezzo di DIVISA, non la pelle. Le due divise restano lontane fra
+         loro perche' si schiariscono entrambe della stessa frazione.
+         Se il numero di collaudo.js non torna verde, questa riga non ha
+         pagato il suo prezzo e va rifatta, non spiegata. */
+      maglia:mt(c1,'#fff6e4',0.08) || c1, maglia2:c2,
       /* TEAMPAT: 0 maniche -> tinta (le maniche del rig sono capsule
          strette: un motivo li' non si legge), 1 palato -> strisce,
          2 fascia -> fascia. Il portiere veste tinta unita: la sua
@@ -36977,11 +37296,48 @@ function rigLook(p){
          col risvolto in c2 — tre blocchi di colore come le pedine vere.
          Le calze in c1 non toccano il cancello 3:1: la sonda del collaudo
          misura la finestra del torso, e c1 e' la stessa tinta della maglia. */
-      pantaloncini:c2, calze:c1, risvolto:c2,
-      pelle:p.skin, capelli:p.hair, scarpe:'#15181a',
+      /* LA GERARCHIA DEL VALORE (voce #155, criterio C5). Prima maglia e
+         calzoncini avevano quasi lo stesso valore — desaturata, la
+         figura era UNA macchia — e le due cose piu' contrastate erano la
+         pelle delle braccia e due scarpe quasi nere: l'occhio andava ai
+         piedi, non al gesto. Adesso il nero e il bianco della figura
+         appartengono alla DIVISA:
+           pantaloncini  c2 scurita del 42% verso il blu della notte —
+                         la massa che divide il tronco dalle gambe;
+           calze         c1 schiarita del 16% — la gamba bassa torna
+                         chiara sotto i calzoncini scuri;
+           scarpe        c2 scurita del 62% invece di un nero fuori
+                         scala: restano l'appoggio, smettono di pesare
+                         piu' della testa.
+         Tutte e tre si calcolano QUI, dentro la cache di rigLook: una
+         volta per divisa, zero costo per fotogramma. */
+      pantaloncini:mt(c2,'#0e1018',0.34),
+      calze:mt(c1,'#fff6e4',0.22), risvolto:c2,
+      /* I CAPELLI PRENDONO IL CIELO, e il numero e' misurato due volte.
+         (1) IL PERCHE' FISICO sta gia' in questo file: L151_AO, la
+         tabella che Blender ha calcolato con ventiquattro raggi per
+         vertice, da' alla TESTA 0,80 di volta celeste contro 0,24
+         della pelle e 0,156 delle cosce. La calotta del cranio e' la
+         superficie piu' esposta al cielo di tutta la figura, e la
+         disegnavamo quasi nera.
+         (2) IL PERCHE' DEL CRITERIO: misurato sulle diciotto divise
+         del gioco, i calzoncini piu' chiari che escono valgono 119 di
+         luminanza (kit fluo, seconda tinta #9cc012). I sei capelli,
+         non toccati, vanno da 17 a 145: il PIU' SCURO DELLA FIGURA
+         erano loro, e il criterio C5 chiede che il piu' scuro sia un
+         capo della divisa. Mescolati di meta' verso l'ambra del sole
+         il minimo sale a 126, cioe' sopra 119 con ogni divisa e ogni
+         testa: e' la frazione piu' PICCOLA che lo garantisce, non una
+         scelta di gusto.
+         COSTA O RENDE? Misurato con collaudo.js, appaiato: il
+         rapporto maglia/erba di P1 sale da 3,05 a 3,09 e quello di P2
+         da 3,76 a 3,90. Rende. */
+      pelle:p.skin, capelli:mt(p.hair,'#ffe9b8',0.50) || p.hair,
+      scarpe:mt(c2,'#0b0d12',0.14) || '#15181a',
       palla:null,                          // adattamento (a): mai la palla della clip
       taglio,                              // rasato/ciuffo/riccio/fascetta (dal seme)
       corp, varb,                          // corporatura e micro-variazione (dal seme)
+      manc,                                // la mano che arma (dal seme)
     };
     RIG_LOOKS.set(chiave, lk);
   }
