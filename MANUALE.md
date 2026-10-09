@@ -753,6 +753,11 @@ Qui il registro completo, a edizioni.
   zero). Gli attrezzi della via degli appunti e i dieci prompt con gli
   esiti stanno in `strumenti/sprite/` (`PROMPT.md`, `copia-gemini.js`,
   `salva-appunti.ps1`). Il `NOTICE` §1d porta i byte nuovi.
+  **La batteria intera del compito 5 non è stata completata**: il sistema
+  l'ha fermata per memoria bassa a dodici cancelli avviati, senza
+  scrivere un esito (la seconda volta nella giornata). Resta un debito
+  dichiarato: va rilanciata a macchina scarica, e finché non lo è, i
+  verdi del compito 5 sono i diciassette mirati e `prestazione`.
 
   ### (b) I numeri che hanno deciso
 
