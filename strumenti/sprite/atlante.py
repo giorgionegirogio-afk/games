@@ -69,14 +69,18 @@ def costruisci(cartella, uscita, cella=144, altezza=128, specchia=()):
     righe = int(math.ceil(n / colonne))
     atl = Image.new('RGBA', (colonne * cella, righe * cella), (0, 0, 0, 0))
     mas = Image.new('RGB', (colonne * cella, righe * cella), (0, 0, 0))
+    cap = Image.new('RGB', (colonne * cella, righe * cella), (0, 0, 0))
     tavola = {}
     for i, (clip, d, f, base, info, spec) in enumerate(voci):
         im = Image.open(os.path.join(cartella, base + '.png')).convert('RGBA')
         mm = Image.open(os.path.join(cartella, base + '-maglia.png')).convert('L')
-        pc = os.path.join(cartella, base + '-calzoni.png')
-        mc = Image.open(pc).convert('L') if os.path.exists(pc) else Image.new('L', im.size, 0)
+        def canale(suff):
+            p = os.path.join(cartella, base + suff)
+            return Image.open(p).convert('L') if os.path.exists(p) else Image.new('L', im.size, 0)
+        mc, mp, mk = canale('-calzoni.png'), canale('-pelle.png'), canale('-capelli.png')
         if spec:
-            im = im.transpose(Image.FLIP_LEFT_RIGHT); mm = mm.transpose(Image.FLIP_LEFT_RIGHT); mc = mc.transpose(Image.FLIP_LEFT_RIGHT)
+            im = im.transpose(Image.FLIP_LEFT_RIGHT); mm = mm.transpose(Image.FLIP_LEFT_RIGHT)
+            mc = mc.transpose(Image.FLIP_LEFT_RIGHT); mp = mp.transpose(Image.FLIP_LEFT_RIGHT); mk = mk.transpose(Image.FLIP_LEFT_RIGHT)
         # scala: la STATURA del personaggio (non il bbox della posa) diventa
         # `altezza` px di cella; senza statura dichiarata si ricade sul bbox,
         # che e' giusto solo per le pose in piedi. Se la tela non entra nella
@@ -92,10 +96,27 @@ def costruisci(cartella, uscita, cella=144, altezza=128, specchia=()):
         im = im.resize((lato, lato), Image.LANCZOS)
         mm = mm.resize((lato, lato), Image.LANCZOS)
         mc = mc.resize((lato, lato), Image.LANCZOS)
+        mp = mp.resize((lato, lato), Image.LANCZOS)
+        mk = mk.resize((lato, lato), Image.LANCZOS)
         col, riga = i % colonne, i // colonne
         ox, oy = col * cella + (cella - lato) // 2, riga * cella + (cella - lato) // 2
         atl.paste(im, (ox, oy), im)
+        # QUATTRO MASCHERE IN DUE IMMAGINI OPACHE: R maglia, G calzoncini, B
+        # pelle nella prima; i capelli in una seconda (tre canali uguali:
+        # comprime come una sola). NON nell'alfa: il browser decodifica le
+        # immagini con alfa PREMOLTIPLICATO e dove alfa e' 0 i canali RGB
+        # tornano 0 — la prima stesura (capelli nell'alfa) spegneva maglia,
+        # calzoncini e pelle ovunque non ci fossero capelli: maglie bianche in
+        # campo, volti a chiazze (persone.png del 25 settembre 2026, tre
+        # stesure prima di trovare la causa). E non a nibble interlacciati nel
+        # canale B: il WebP senza perdita li comprimeva a 406 kB contro 74.
+        # maglia e calzoncini SENZA perdita (sono il colore della squadra: un
+        # artefatto si vedrebbe sull'orlo); pelle e capelli nella seconda
+        # immagine, CON perdita (q 85): la pelle a 8 bit portava il WebP senza
+        # perdita da 74 a 524 kB, a sei livelli a 352 (misurato il 9 ottobre
+        # 2026); un'imprecisione di bordo sulla pelle, a 50 px, non si vede.
         mas.paste(Image.merge('RGB', (mm, mc, Image.new('L', (lato, lato), 0))), (ox, oy))
+        cap.paste(Image.merge('RGB', (mp, mk, Image.new('L', (lato, lato), 0))), (ox, oy))
         piediX = (cella - lato) // 2 + lato / 2.0
         piediY = (cella - lato) // 2 + info['piedi_y'] * k
         h = ref * k          # l'altezza dell'UOMO in pixel di cella: e' cio' che il gioco porta a hPx
@@ -104,13 +125,23 @@ def costruisci(cartella, uscita, cella=144, altezza=128, specchia=()):
     os.makedirs(uscita, exist_ok=True)
     atl.save(os.path.join(uscita, 'atlante.png'), optimize=True)
     mas.save(os.path.join(uscita, 'atlante-m.png'), optimize=True)
+    cap.save(os.path.join(uscita, 'atlante-k.png'), optimize=True)
     # anche in WebP (con alfa): e' quello che entra nel gioco se pesa meno
     try:
         atl.save(os.path.join(uscita, 'atlante.webp'), quality=82, method=6)
         mas.save(os.path.join(uscita, 'atlante-m.webp'), lossless=True, method=6)
+        cap.save(os.path.join(uscita, 'atlante-k.webp'), quality=85, method=6)
     except Exception as e:
         print('  (webp non disponibile: %r)' % (e,))
-    tav = {'cella': cella, 'altezza': altezza, 'colonne': colonne, 'righe': righe, 'voci': tavola}
+    # IL COLORE SORGENTE DELLA PELLE ILLUMINATA (compito 4): l'80° percentile
+    # per canale dei pixel sotto la maschera della pelle. Non la media, che
+    # include le ombre del volto: il gioco porta la pelle al colore voluto
+    # moltiplicando per bersaglio/sorgente, e con la media come sorgente le
+    # carnagioni chiare della tavolozza non si potrebbero mai raggiungere.
+    A = np.asarray(atl).astype(np.float32); M = np.asarray(cap).astype(np.float32)
+    sel = (M[..., 0] > 128) & (A[..., 3] > 200)     # pelle: il canale R della seconda immagine
+    sorg = [int(np.percentile(A[..., c][sel], 80)) for c in range(3)] if sel.sum() > 100 else None
+    tav = {'cella': cella, 'altezza': altezza, 'colonne': colonne, 'righe': righe, 'voci': tavola, 'sorg_pelle': sorg}
     json.dump(tav, open(os.path.join(uscita, 'atlante.json'), 'w', encoding='utf-8'), separators=(',', ':'))
     pesi = {f: os.path.getsize(os.path.join(uscita, f)) for f in os.listdir(uscita) if f.startswith('atlante')}
     print('  OK  %d fotogrammi, %d clip, griglia %dx%d celle da %d px' % (n, len(tavola), colonne, righe, cella))

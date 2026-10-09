@@ -41,8 +41,19 @@ const Sprite3D=(function(){
   const TAV=__SPRITE_TAV__;
   const SRC='__SPRITE_SRC__';
   const SRCM='__SPRITE_SRCM__';
-  let img=null, imgM=null, pronto=false, W=0, H=0, base=null, mas=null, fallito=false;
+  const SRCK='__SPRITE_SRCK__';     // i capelli, in una terza immagine (vedi atlante.py)
+  let img=null, imgM=null, imgK=null, pronto=false, W=0, H=0, base=null, mas=null, fallito=false;
+  let PELLE=null, CAPELLI=null, SCR=null;
   const TINTE=new Map();
+  /* IL COLORE SORGENTE della pelle e dei capelli nei fogli, misurato
+     sull'atlante (media dei pixel sotto le maschere, 25 settembre 2026):
+     la pelle si porta al colore dell'uomo (look.pelle, la tavolozza SKIN
+     del gioco) MOLTIPLICANDO per il rapporto fra bersaglio e sorgente,
+     cosi' l'ombreggiatura del volto resta; i capelli si COPRONO
+     all'85% col colore (look.capelli): sono scuri in origine e una
+     moltiplicazione non li schiarirebbe mai (il biondo e il grigio della
+     tavolozza HAIR esistono). */
+  const SORG_PELLE=__SPRITE_SORG_PELLE__;
   /* l'ultima figura disegnata: serve a torso(), che il chiamante legge
      subito dopo per ancorare il numero di maglia (come Rig3D.torso) */
   const ULT={x:0,y:0,h:0,d:0};
@@ -61,7 +72,7 @@ const Sprite3D=(function(){
     if(img||typeof document==='undefined') return;
     let n=0;
     const fine=function(){
-      if(++n<2) return;
+      if(++n<3) return;
       try{
         W=img.naturalWidth; H=img.naturalHeight;
         const c=document.createElement('canvas'); c.width=W; c.height=H;
@@ -70,12 +81,33 @@ const Sprite3D=(function(){
         const cm=document.createElement('canvas'); cm.width=W; cm.height=H;
         const gm=cm.getContext('2d',{willReadFrequently:true}); gm.drawImage(imgM,0,0);
         mas=gm.getImageData(0,0,W,H).data;
+        const ck=document.createElement('canvas'); ck.width=W; ck.height=H;
+        const gk=ck.getContext('2d',{willReadFrequently:true}); gk.drawImage(imgK,0,0);
+        const cap=gk.getImageData(0,0,W,H).data;
+        /* LE DUE MASCHERE DELLA PERSONA (compito 4): pelle nel canale R e
+           capelli nel canale G della seconda immagine, che e' con perdita
+           (q 85) perche' una maschera di tinta regge un bordo impreciso e
+           senza perdita pesava 352-524 kB. Immagini OPACHE: l'alfa
+           premoltiplicato del decodificatore azzererebbe gli altri canali
+           dove l'alfa e' zero — successo, e costato tre stesure. Diventano
+           due tele bianche con l'alfa della maschera: nel fotogramma si
+           usano con destination-in per ritagliare la zona da tingere. Sotto
+           24 la maschera vale zero: e' il rumore della compressione. */
+        const pd=new ImageData(W,H), kd=new ImageData(W,H);
+        for(let i=0;i<mas.length;i+=4){
+          const p=cap[i], kk=cap[i+1];
+          pd.data[i]=pd.data[i+1]=pd.data[i+2]=255; pd.data[i+3]=p<24?0:p;
+          kd.data[i]=kd.data[i+1]=kd.data[i+2]=255; kd.data[i+3]=kk<24?0:kk;
+        }
+        PELLE=document.createElement('canvas'); PELLE.width=W; PELLE.height=H; PELLE.getContext('2d').putImageData(pd,0,0);
+        CAPELLI=document.createElement('canvas'); CAPELLI.width=W; CAPELLI.height=H; CAPELLI.getContext('2d').putImageData(kd,0,0);
         pronto=true;
       }catch(e){ fallito=true; pronto=false; }
     };
     const male=function(){ fallito=true; pronto=false; };
     img=new Image(); img.onload=fine; img.onerror=male; img.src=SRC;
     imgM=new Image(); imgM.onload=fine; imgM.onerror=male; imgM.src=SRCM;
+    imgK=new Image(); imgK.onload=fine; imgK.onerror=male; imgK.src=SRCK;
   }
 
   function rgb(h){
@@ -195,6 +227,12 @@ const Sprite3D=(function(){
         d[i]=d[i]+(P[0]*L-d[i])*w; d[i+1]=d[i+1]+(P[1]*L-d[i+1])*w; d[i+2]=d[i+2]+(P[2]*L-d[i+2])*w;
       }
     }
+    /* LA TELA DELLA SQUADRA E' IN SOLA LETTURA. Il compito 4 aveva provato
+       a comporre le figure con pelle e capelli in slot in coda a questa
+       tela: ogni scrittura la invalidava e le ventidue figure che la
+       rileggono a ogni fotogramma la ricaricavano intera (15 MB) —
+       prestazione --contro HEAD: fotogramma medio +225%, tipico +343%,
+       p95 +637% (26 settembre 2026). Qui si scrive una volta sola. */
     t=document.createElement('canvas'); t.width=W; t.height=H;
     t.getContext('2d').putImageData(out,0,0);
     TINTE.set(k,t); return t;
@@ -303,10 +341,127 @@ const Sprite3D=(function(){
       ctx.drawImage(t,f[0]*cel,f[1]*cel,cel,cel,dx,dy,dl,dl);
       ctx.restore();
     }
-    ctx.drawImage(t,f[0]*cel,f[1]*cel,cel,cel,dx,dy,dl,dl);
+    /* LA PERSONA SOPRA LA DIVISA (compito 4): pelle e capelli di QUESTO
+       uomo, dallo slot in cache che tiene la figura intera; senza pelle
+       ne' capelli (banchi, look nero della maschera) si disegna la divisa
+       dall'atlante tinto. Tutto dentro lo stesso specchio del mancino. */
+    let pc=null;
+    if((look.pelle||look.capelli) && !look._nero && !eNero(look.maglia)) pc=persona(t,f,look);
+    if(pc) ctx.drawImage(pc,0,0,cel,cel,dx,dy,dl,dl);
+    else ctx.drawImage(t,f[0]*cel,f[1]*cel,cel,cel,dx,dy,dl,dl);
     if(manc) ctx.restore();
     ULT.x=cx; ULT.y=cy+hPx*GIU; ULT.h=f[4]*k; ULT.d=dd;
     return true;
+  }
+
+  /* la tela di lavoro grande come una cella, una sola per tutto il gioco */
+  function scratch(){
+    if(!SCR){ SCR=document.createElement('canvas'); SCR.width=TAV.cella; SCR.height=TAV.cella; }
+    return SCR;
+  }
+  /* il colore che, MOLTIPLICATO alla pelle sorgente, da' la pelle voluta:
+     ogni canale al piu' 1 (una moltiplicazione non schiarisce; la
+     sorgente e' gia' una pelle chiara, quindi la tavolozza ci sta) */
+  function rapporto(hex){
+    const c=rgb(hex); if(!c) return null;
+    const r=Math.min(255,Math.round(255*c[0]/SORG_PELLE[0]));
+    const g=Math.min(255,Math.round(255*c[1]/SORG_PELLE[1]));
+    const b=Math.min(255,Math.round(255*c[2]/SORG_PELLE[2]));
+    return 'rgb('+r+','+g+','+b+')';
+  }
+  /* tinge UNA zona del fotogramma DENTRO la tela `dst`: copia il fotogramma
+     tinto della squadra sulla tela di lavoro, applica il colore col modo
+     chiesto, ritaglia con la maschera della zona e somma il ritaglio a
+     dst. Otto operazioni su 144x144 pixel. */
+  function zona(dst,ox,oy,t,maschera,f,modo,colore,alfa){
+    if(!colore||!maschera) return;
+    const cel=TAV.cella, sx=f[0]*cel, sy=f[1]*cel;
+    const s=scratch(), g=s.getContext('2d');
+    g.globalCompositeOperation='source-over'; g.globalAlpha=1; g.clearRect(0,0,cel,cel);
+    g.drawImage(t,sx,sy,cel,cel,0,0,cel,cel);
+    if(modo==='multiply'){
+      /* PRIMA SI APPIATTISCE, POI SI TINGE. La pelle fotografata ha
+         riflessi a 240 e ombre a 120: moltiplicati per il rapporto di una
+         carnagione scura restano a 144 e 72, e a 50 px il volto legge a
+         chiazze (persone.png del 25/9, tono 3 e 6). Una velatura del
+         colore sorgente al 45% comprime il contrasto della pelle verso il
+         suo medio senza toccare l'ombra grande del volto; poi la
+         moltiplicazione porta il medio al colore voluto. */
+      g.globalCompositeOperation='source-atop'; g.globalAlpha=0.45;
+      g.fillStyle='rgb('+SORG_PELLE[0]+','+SORG_PELLE[1]+','+SORG_PELLE[2]+')'; g.fillRect(0,0,cel,cel);
+      g.globalAlpha=1;
+      g.globalCompositeOperation='multiply'; g.fillStyle=colore; g.fillRect(0,0,cel,cel);
+      g.globalCompositeOperation='destination-in'; g.drawImage(maschera,sx,sy,cel,cel,0,0,cel,cel);
+    }else{
+      g.globalCompositeOperation='destination-in'; g.drawImage(maschera,sx,sy,cel,cel,0,0,cel,cel);
+      g.globalCompositeOperation='source-atop'; g.globalAlpha=alfa; g.fillStyle=colore; g.fillRect(0,0,cel,cel);
+      g.globalAlpha=1;
+    }
+    dst.getContext('2d').drawImage(s,ox,oy);
+  }
+
+  /* LO STRATO PERSONA, IN CACHE (compito 4). Senza cache pelle e capelli
+     costavano 930 µs a figura in Chromium senza GPU (misurato,
+     _158-costo-tinta.js: da 7 a 930): ventidue figure sono 20 ms, piu'
+     del fotogramma. Lo strato (pelle tinta + capelli tinti, gia' composti
+     e ritagliati) si costruisce alla prima richiesta di una terna
+     fotogramma|pelle|capelli e resta in una LRU di 400 tele da 144 px
+     (33 MB al massimo): un giocatore che corre in una direzione usa 4
+     fotogrammi, e dopo il primo ciclo sono tutti colpi. Le tele sfrattate
+     tornano in un mucchio e si riusano: niente allocazioni a regime. */
+  /* UNA TELA SOLA A SLOT, non quattrocento tele piccole: Chrome tiene in
+     CPU le tele sotto 256x256 e ogni drawImage verso la tela di gioco (in
+     GPU) le ricarica — misurato 207 µs a figura anche a cache piena,
+     contro 7 della sola divisa. Con gli strati dentro una tela da
+     2304x2304 (16x16 slot da 144) il disegno torna una copia GPU->GPU. */
+  /* LA PERSONA, UNA PICCOLA TELA PER GIOCATORE (compito 4). Il look di un
+     uomo e' un oggetto stabile (la cache di rigLook ne tiene uno per
+     divisa+pelle+capelli+taglio+corporatura): gli si lega una tela da una
+     cella, dove sta la sua figura intera — divisa, pelle portata al suo
+     colore, capelli — RICOMPOSTA SOLO quando cambia il fotogramma (ogni
+     ~100 ms per chi corre), e disegnata com'e' negli altri fotogrammi.
+     Le scritture toccano solo questa tela piccola; la tela di squadra
+     resta in sola lettura (vedi tela()): e' la differenza fra +225% e
+     un costo che prestazione puo' assorbire. Due uomini con lo STESSO look
+     e fotogrammi diversi si contendono la tela e si ricompongono a turno:
+     e' una degradazione, non un errore, e rigLook li rende rari (la chiave
+     porta anche il seme del braccio). */
+  const PERSONE=new WeakMap(); let PERSONE_N=0, RICOMP=0;
+  const P_TELE=6;     // tele per look: un ciclo di corsa ha 4 fotogrammi, e cambiando direzione se ne tengono due di scorta
+  /* CHE COSA VALE LA PENA RITINGERE. La pelle sorgente e' chiara (SORG_PELLE):
+     le due carnagioni chiare della tavolozza le somigliano e la
+     moltiplicazione non le sposterebbe (rapporto ~1): si salta. I capelli
+     sorgente sono castano scuro (55,48,37): i quattro colori scuri della
+     tavolozza HAIR a 50 px non si distinguono da loro: si salta. Restano
+     da comporre le carnagioni medie e scure e i capelli rossi e grigi —
+     circa un uomo su due, e per gli altri la figura e' la divisa com'e'. */
+  function pelleDaFare(hex){
+    const c=rgb(hex); if(!c) return false;
+    return (c[0]/SORG_PELLE[0]+c[1]/SORG_PELLE[1]+c[2]/SORG_PELLE[2])/3 < 0.93;
+  }
+  function capelliDaFare(hex){
+    const c=rgb(hex); if(!c) return false;
+    return (c[0]+c[1]+c[2]) > 3*70 || Math.abs(c[0]-c[2]) > 70;
+  }
+  function persona(t,f,look){
+    if(!PELLE||!CAPELLI) return null;
+    const pelle=look.pelle && !eNero(look.pelle) && pelleDaFare(look.pelle);
+    const capelli=look.capelli && !eNero(look.capelli) && capelliDaFare(look.capelli);
+    if(!pelle && !capelli) return null;
+    const cel=TAV.cella;
+    let e=PERSONE.get(look);
+    if(!e){ e={tele:new Map()}; PERSONE.set(look,e); PERSONE_N++; }
+    const k=f[0]+','+f[1]+'|'+(look.maglia||'')+'|'+(look.maglia2||'')+'|'+(look.pantaloncini||'')+'|'+(look.disegno||'');
+    let c=e.tele.get(k);
+    if(c){ e.tele.delete(k); e.tele.set(k,c); return c; }
+    if(e.tele.size>=P_TELE){ const v=e.tele.keys().next().value; c=e.tele.get(v); e.tele.delete(v); }
+    else { c=document.createElement('canvas'); c.width=c.height=cel; }
+    const g=c.getContext('2d'); g.globalCompositeOperation='source-over'; g.globalAlpha=1; g.clearRect(0,0,cel,cel);
+    g.drawImage(t,f[0]*cel,f[1]*cel,cel,cel,0,0,cel,cel);
+    if(pelle) zona(c,0,0,t,PELLE,f,'multiply',rapporto(look.pelle),1);
+    if(capelli) zona(c,0,0,t,CAPELLI,f,'source-atop',look.capelli,0.85);
+    e.tele.set(k,c); RICOMP++;
+    return c;
   }
 
   /* lo stesso contratto di Rig3D.torso(): il segmento pelvi -> collo
@@ -322,8 +477,9 @@ const Sprite3D=(function(){
 
   function stato(){
     const prestiti={}; for(const k in ALIAS){ const vv=voce(k); if(!TAV.voci[k] && vv) prestiti[k]=vv.nome; }
-    return {pronto:pronto, fallito:fallito, tinte:TINTE.size, clip:Object.keys(TAV.voci), prestiti:prestiti, cella:TAV.cella};
+    return {pronto:pronto, fallito:fallito, tinte:TINTE.size, persone:PERSONE_N, ricomposizioni:RICOMP, clip:Object.keys(TAV.voci), prestiti:prestiti, cella:TAV.cella};
   }
 
-  return {carica:carica, disegna:disegna, torso:torso, tela:tela, dir:dir, voce:voce, stato:stato, TAV:TAV};
+  return {carica:carica, disegna:disegna, torso:torso, tela:tela, dir:dir, voce:voce, stato:stato, TAV:TAV,
+          persona:persona};
 })();

@@ -50,15 +50,25 @@ const src = fs.existsSync(webp) ? uri(webp, 'image/webp') : uri(png, 'image/png'
    con 64 celle): una maschera con artefatti tingerebbe la pelle */
 const webpM = path.join(ATL, 'atlante-m.webp');
 const srcM = fs.existsSync(webpM) ? uri(webpM, 'image/webp') : uri(path.join(ATL, 'atlante-m.png'), 'image/png');
+/* i capelli, terza immagine (compito 4) */
+const webpK = path.join(ATL, 'atlante-k.webp');
+const srcK = fs.existsSync(webpK) ? uri(webpK, 'image/webp') : uri(path.join(ATL, 'atlante-k.png'), 'image/png');
 let modulo = fs.readFileSync(path.join(QUI, 'sprite', 'sprite3d.js'), 'utf8');
-if (!/__SPRITE_TAV__/.test(modulo) || !/__SPRITE_SRC__/.test(modulo) || !/__SPRITE_SRCM__/.test(modulo) || !/__SPRITE_STATURE__/.test(modulo)) {
-  console.error('FALLITO: sprite3d.js senza i quattro segnaposto.'); process.exit(1);
+if (!/__SPRITE_TAV__/.test(modulo) || !/__SPRITE_SRC__/.test(modulo) || !/__SPRITE_SRCM__/.test(modulo) || !/__SPRITE_STATURE__/.test(modulo) || !/__SPRITE_SORG_PELLE__/.test(modulo)) {
+  console.error('FALLITO: sprite3d.js senza i cinque segnaposto.'); process.exit(1);
 }
+/* il colore sorgente della pelle: se atlante.json lo dichiara (atlante.py
+   lo misura sotto la maschera) si usa quello, altrimenti la misura del
+   25 settembre 2026 sui primi 176 fotogrammi */
+let sorgPelle = '[203,158,133]';
+try { const tj = JSON.parse(tav); if (tj.sorg_pelle) sorgPelle = JSON.stringify(tj.sorg_pelle); } catch (e) {}
+modulo = modulo.replace('__SPRITE_SORG_PELLE__', () => sorgPelle);
 /* le quattro stature del rig (CORPI, voce #155): spilungone, tarchiato,
    piccoletto, neutro — copiate a mano, e _q-sprite le confronta col rig */
 modulo = modulo.replace('__SPRITE_TAV__', () => tav)
                .replace('__SPRITE_SRC__', () => src)
                .replace('__SPRITE_SRCM__', () => srcM)
+               .replace('__SPRITE_SRCK__', () => srcK)
                .replace('__SPRITE_STATURE__', () => '[1.040,0.925,0.855,1.000]');
 
 esatta('il modulo Sprite3D, subito dopo Rig3D',

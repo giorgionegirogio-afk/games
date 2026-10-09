@@ -89,8 +89,17 @@ altezza per cella) → `monta.py` (rifà tutto da `piano.json`) →
   del rig: con lo sprite la sagoma dell'ombra e quella dell'uomo possono
   non coincidere (visibile nello scatto: ombra con le braccia alzate,
   sprite in corsa). Cura in un compito suo.
-- **Un uomo solo**: stesso volto, stessa pelle, stessi capelli per tutti.
-  `look.pelle`/`look.capelli` non hanno ancora una maschera nello sprite.
+- **Un uomo solo** → dal compito 4 pelle e capelli sono per figura
+  (`look.pelle`/`look.capelli`, le tavolozze SKIN e HAIR del gioco):
+  maschere in `ritaglia.py` (pelle per colore + viso per geometria,
+  capelli per luminanza nel quarto alto) in una seconda immagine con
+  perdita (R pelle, G capelli; MAI nell'alfa: l'alfa premoltiplicato del
+  decodificatore azzera gli altri canali dove è zero), figura composta in
+  una piccola tela per look (sei, LRU per fotogramma) ricomposta solo al
+  cambio di fotogramma — la tela di squadra resta in sola lettura
+  (scriverci dentro la invalidava per tutte le figure: +225% a
+  `prestazione`). Resta un solo VOLTO (stessi lineamenti): la varietà è
+  di carnagione e capelli, non di fisionomia.
 - **Il mancino** (voce #155) non esiste nello sprite: specchiare il tiro
   darebbe il sinistro gratis, ma va cablato a `look.manc`.
 - **Prestazione**: la tela tinta si prepara alla prima figura di ogni
@@ -114,6 +123,10 @@ altezza per cella) → `monta.py` (rifà tutto da `piano.json`) →
   accesi, e la stoffa fotografica, più scura della tinta piatta, viene
   schiarita (gamma 0,72 + 18% verso il bianco caldo, lo stesso bilancio
   del rig) fino a ripassare il 3:1 — numeri nei riquadri di `Sprite3D.tela`.
+  **Edizione del 9 ottobre 2026 (compito 4):** con la pelle per figura la
+  «tinta dominante» di `_q-divise` era la pelle per entrambe le squadre
+  (0°): la dominante è ora il picco di (p_A − p_B)⁺, la tinta che
+  distingue, non la più frequente; il falso si costruisce dal gioco vero.
 - **`silhouette` è ROSSO (6/10) anche senza la toppa, e non è degli
   sprite**: il banco `?banco=silhouette` disegna col rig. Su HEAD
   `10e037e` è VERDE 8/10: il 6/10 nasce nelle 654 righe del #157 giro 4

@@ -16,8 +16,8 @@ const GIOCO = (pren('--gioco') || 'fuori/sprite/CALCETTO-sprite.html').split(Str
   const r = await pg.evaluate(() => {
     const SP = Sprite3D; const out = { atlante: SP.TAV.colonne * SP.TAV.cella + 'x' + SP.TAV.righe * SP.TAV.cella, tele: [], draw: 0 };
     const looks = [
-      { maglia: '#d62828', maglia2: '#ffffff', pantaloncini: '#1b1b3a', disegno: 'tinta' },
-      { maglia: '#1d4ed8', maglia2: '#f5f5f5', pantaloncini: '#0b0f2a', disegno: 'strisce' },
+      { maglia: '#d62828', maglia2: '#ffffff', pantaloncini: '#1b1b3a', disegno: 'tinta', pelle: '#8d5a3b', capelli: '#4a3220' },
+      { maglia: '#1d4ed8', maglia2: '#f5f5f5', pantaloncini: '#0b0f2a', disegno: 'strisce', pelle: '#f2cfa5', capelli: '#8e867c' },
       { maglia: '#f2c400', maglia2: '#111111', pantaloncini: '#202020', disegno: 'fascia' },
     ];
     for (const lk of looks) { const t0 = performance.now(); SP.tela(lk); out.tele.push(+(performance.now() - t0).toFixed(1)); }

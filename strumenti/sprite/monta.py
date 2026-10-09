@@ -62,8 +62,9 @@ def main():
             for k in range(8):
                 base = '%s-d%d' % (r['foglio'], k)
                 nuovo = '%s-d%d-f%d' % (r['clip'], k, r.get('f', 0))
-                for suff in ('.png', '-maglia.png', '-calzoni.png'):
-                    shutil.copyfile(os.path.join(tmp, base + suff), os.path.join(a.pronti, nuovo + suff))
+                for suff in ('.png', '-maglia.png', '-calzoni.png', '-pelle.png', '-capelli.png'):
+                    if os.path.exists(os.path.join(tmp, base + suff)):
+                        shutil.copyfile(os.path.join(tmp, base + suff), os.path.join(a.pronti, nuovo + suff))
                 info = json.load(open(os.path.join(tmp, base + '.json'), encoding='utf-8'))
                 # la statura va riportata nella scala della CELLA ritagliata: ritaglia
                 # ha ridimensionato il soggetto a 256 px di bbox, quindi la statura

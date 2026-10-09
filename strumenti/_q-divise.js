@@ -264,10 +264,26 @@ function misuraDivise(pixelMin) {
   for (let c = 0; c < 18; c++) tv += Math.abs(isto[0][c] / sat[0] - isto[1][c] / sat[1]);
   tv *= 0.5;
 
-  /* la tinta dominante di ogni squadra, e la loro distanza circolare */
+  /* LA TINTA DOMINANTE E' QUELLA CHE DISTINGUE, non la piu' frequente
+     (voce #158, compito 4). Prima era il picco dell'istogramma di ogni
+     squadra: con le capsule del rig e con gli sprite a pelle unica
+     coincideva con la maglia, perche' la pelle chiara e' poco satura ed
+     entrava appena nel conto. Con le carnagioni vere per figura la pelle
+     e' satura, e il picco di ENTRAMBE le squadre e' diventato la pelle:
+     «tinte dominanti a 0°» su due divise rosa e celeste che la TV dava a
+     0,47 — un tratto condiviso accusava le maglie. La TV sottrae le due
+     distribuzioni e la pelle le si cancella da se' (sta scritto in testa
+     a questo file); la dominante deve fare lo stesso: e' il picco di
+     (p_A - p_B)+ per A e di (p_B - p_A)+ per B, la tinta piu' specifica
+     di ciascuna. Sul rig e sugli sprite a pelle unica da' gli stessi
+     numeri di prima (la maglia era gia' il picco della differenza). */
   const dom = [0, 1].map(k => {
+    const o = 1 - k;
     let mi = 0, mv = -1;
-    for (let c = 0; c < 18; c++) if (isto[k][c] > mv) { mv = isto[k][c]; mi = c; }
+    for (let c = 0; c < 18; c++) {
+      const d = isto[k][c] / sat[k] - isto[o][c] / sat[o];
+      if (d > mv) { mv = d; mi = c; }
+    }
     return mi * 20 + 10;
   });
   let dd = Math.abs(dom[0] - dom[1]); if (dd > 180) dd = 360 - dd;

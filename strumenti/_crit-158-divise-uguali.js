@@ -11,7 +11,10 @@
    USO: node strumenti/_crit-158-divise-uguali.js   (poi)
         node strumenti/_q-divise.js --gioco fuori/sprite/CALCETTO-crit-divise.html   -> atteso ROSSO */
 const fs = require('fs');
-const DA = 'fuori/sprite/CALCETTO-sprite.html', A = 'fuori/sprite/CALCETTO-crit-divise.html';
+/* --da <file> per costruirlo da un altro gioco; senza, dal gioco vero */
+const argv = process.argv.slice(2);
+const pren = (n) => { const i = argv.indexOf(n); return i >= 0 && argv[i+1] ? argv[i+1] : null; };
+const DA = pren('--da') || 'CALCETTO-il-gioco.html', A = 'fuori/sprite/CALCETTO-crit-divise.html';
 let s = fs.readFileSync(DA, 'utf8');
 const anc = "const c1=look.maglia||'#ffffff', c2=look.maglia2||c1, cp=look.pantaloncini||c2, dis=look.disegno||'tinta';";
 const n = s.split(anc).length - 1;

@@ -646,6 +646,62 @@ Qui il registro completo, a edizioni.
   suo, se richiesto. `dischetto`, `volto`, `duello-impronta`, `gesto`
   verdi dopo l'aggancio.
 
+  **Compito 4 — ventidue uomini, non un clone.** I fogli hanno un uomo
+  solo; il gioco ha sei carnagioni (`SKIN`) e sei capelli (`HAIR`) per
+  giocatore. `ritaglia.py` produce due maschere in più — **pelle** (tono
+  caldo e saturo per braccia e gambe; nel quarto alto del soggetto **tutto
+  ciò che non è capelli è viso**, per geometria: fronte e naso hanno
+  riflessi quasi bianchi che nessuna soglia di colore prende, e una
+  carnagione scura usciva con la fronte a rettangoli chiari) e **capelli**
+  (pixel scuri nel quarto alto). La pelle sta nel canale B dell'immagine
+  delle maschere, i capelli in una **seconda immagine** opaca: **mai
+  nell'alfa**, perché il browser decodifica le immagini con alfa
+  premoltiplicato e dove l'alfa è 0 azzera gli altri canali — la prima
+  stesura spegneva maglia, calzoncini e pelle ovunque non ci fossero
+  capelli (maglie bianche in campo, volti a chiazze; tre stesure prima di
+  trovare la causa); e non a nibble interlacciati in un canale, che il
+  WebP senza perdita comprimeva a 406 kB contro ~80: la seconda immagine
+  è **con perdita** (q 85, 163 kB), perché una maschera di tinta regge un
+  bordo impreciso. `Sprite3D` compone per ogni uomo la figura intera —
+  divisa, pelle portata al suo colore moltiplicando per bersaglio/sorgente
+  dopo una velatura al 45% che comprime il contrasto della foto, capelli
+  coperti all'85% — in una **piccola tela per look** (sei per look, LRU
+  per fotogramma), ricomposta solo al cambio di fotogramma: **la tela della
+  squadra resta in sola lettura**. La prima stesura componeva in slot in
+  coda alla tela di squadra e ogni scrittura la invalidava per le ventidue
+  figure che la rileggono: `prestazione --contro HEAD` **+225% / +343% /
+  +637%**; con la tela per look e un'unica tela per giocatore +39% / +29%
+  / +42%; con la LRU e due filtri a costo zero (si salta la pelle quando è
+  la carnagione chiara di partenza e i capelli quando sono scuri come la
+  sorgente: circa un uomo su due) **63 ricomposizioni al secondo** in
+  partita (`_158-ricomposizioni.js`, 9 look con persona), ~0,45 ms l'una,
+  e `prestazione --contro HEAD` a sei giri **3/3: medio +25,0% (sul filo,
+  è il limite), tipico +16,3%, p95 +23,8%** — il prezzo di ventidue
+  persone diverse, dichiarato. Scatto: `strumenti/_158-prove/persone.png`
+  (`_158-persone.js`).
+
+  **E il cancello delle divise si è dovuto correggere, non allentare.**
+  Con le carnagioni vere `_q-divise` dava **TV 0,467 ma «tinte dominanti a
+  0°»** su due divise celeste e rossa: la pelle, adesso satura e diversa per
+  uomo, era diventata la colonna più piena dell'istogramma di **entrambe**
+  le squadre, e la seconda campana leggeva un tratto condiviso come se
+  fosse la maglia (il #152 l'aveva già intravisto nei falsi: «la colonna
+  più piena è la pelle»). La distanza in variazione totale sottrae le due
+  distribuzioni e la pelle le si cancella da sé; la dominante ora fa lo
+  stesso: è il picco di **(p_A − p_B)⁺** per una squadra e di (p_B − p_A)⁺
+  per l'altra, cioè la tinta più specifica di ciascuna. Sul rig e sugli
+  sprite a pelle unica dà i numeri di prima (la maglia era già il picco
+  della differenza). Esito: gioco **OK 3/4, TV 0,467, dominanti 210°/10° =
+  160°**; il falso `_crit-158-divise-uguali` (ricostruito dal gioco vero,
+  non più dalla copia) **ROSSO 0/4, TV 0,157, 40°** — il banco discrimina
+  ancora.
+  **Cancelli del compito 4:** `collaudo`, `divise`, `determinismo`, `seme`,
+  `gesto`, `volti`, `proporzioni`, `salvataggio`, `senza-rete`,
+  `fotosensibile`, `accessibile` e `prestazione --contro HEAD` verdi; la
+  **batteria intera NON è stata completata**: lanciata prima del commit,
+  il sistema l'ha fermata per memoria bassa (9 ottobre) senza scrivere un
+  esito. Va rilanciata, e il verbale lo dice invece di sottintenderlo.
+
   ### (b) I numeri che hanno deciso
 
   - **Scala e ancora** (`_158-misura-scala.js`): a hCss 420 il rig 'fermo'

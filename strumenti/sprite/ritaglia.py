@@ -100,6 +100,60 @@ def maschera_calzoni(arr, alfa):
     return np.asarray(m8).astype(np.float32) / 255.0
 
 
+def maschera_pelle(arr, alfa, testa=None, capelli=None):
+    """LA PELLE (voce #158, compito 4): tono caldo (rosso > verde > blu),
+    saturazione media, luminanza media-alta, dentro il soggetto. Serve al
+    gioco per dare a ogni uomo la SUA carnagione (look.pelle) senza
+    rifotografare nulla: la maschera e' morbida come le altre. Fuori
+    restano la maglia (poco satura), i calzoncini (magenta: blu > verde),
+    le scarpe e i capelli (scuri)."""
+    f = arr.astype(np.float32)
+    r, g, b = f[..., 0], f[..., 1], f[..., 2]
+    mx = f.max(axis=2); mn = f.min(axis=2)
+    lum = (mx + mn) / 2.0
+    sat = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1.0), 0.0)
+    # Soglie LARGHE e poi una CHIUSURA morfologica: la prima stesura
+    # (saturazione > 0,16, luminanza < 230) lasciava fuori i riflessi del
+    # volto, e una carnagione scura usciva a chiazze (persone.png del 25/9:
+    # fronte e zigomi chiari su guance scure). Il bianco della maglia resta
+    # fuori per la condizione «calda» (rosso sopra verde e blu), le scarpe
+    # per la luminanza, i calzoncini perche' gia' grigi.
+    calda = (r > g + 6) & (b < r - 12)
+    m = calda * np.clip((sat - 0.06) / 0.10, 0, 1) * np.clip((lum - 60) / 30.0, 0, 1) * np.clip((252 - lum) / 20.0, 0, 1) * (alfa > 0.3)
+    # IL VOLTO E' TUTTO PELLE, per geometria e non per colore: nel quarto
+    # alto del soggetto (dove sta la testa) ogni pixel opaco che non e'
+    # capelli e non e' nero e' viso — fronte e naso hanno riflessi quasi
+    # bianchi che nessuna soglia di colore prende, e una carnagione scura
+    # usciva con la fronte chiara a rettangoli (persone.png del 25/9, due
+    # stesure a soglie). Le braccia e le gambe restano al colore.
+    if testa is not None and capelli is not None:
+        y0, y1 = testa
+        banda = np.zeros(arr.shape[:2], np.float32)
+        lim = int(y0 + (y1 - y0) * 0.24)
+        banda[:max(lim, 1), :] = 1.0
+        viso = banda * (alfa > 0.3) * (1.0 - np.clip(capelli * 1.5, 0, 1)) * np.clip((lum - 45) / 25.0, 0, 1)
+        m = np.maximum(m, viso)
+    m8 = Image.fromarray((m * 255).astype(np.uint8))
+    m8 = m8.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.MinFilter(5))   # chiude i buchi fino a 5 px
+    m8 = m8.filter(ImageFilter.MedianFilter(5))
+    return np.asarray(m8).astype(np.float32) / 255.0
+
+
+def maschera_capelli(arr, alfa, y0, y1):
+    """I CAPELLI: pixel scuri nel quarto alto del soggetto. Le scarpe sono
+    scure uguali ma stanno in basso; la barba e le sopracciglia entrano,
+    ed e' giusto cosi' (si tingono coi capelli)."""
+    f = arr.astype(np.float32)
+    lum = (f.max(axis=2) + f.min(axis=2)) / 2.0
+    h = arr.shape[0]
+    alto = np.zeros(arr.shape[:2], np.float32)
+    lim = int(y0 + (y1 - y0) * 0.22)
+    alto[:max(lim, 1), :] = 1.0
+    m = np.clip((95.0 - lum) / 35.0, 0, 1) * alto * (alfa > 0.3)
+    m8 = Image.fromarray((m * 255).astype(np.uint8)).filter(ImageFilter.MedianFilter(3))
+    return np.asarray(m8).astype(np.float32) / 255.0
+
+
 def ritaglia(percorso, cartella, altezza=256, margine=0.06):
     img = Image.open(percorso).convert('RGB')
     arr = np.asarray(img)
@@ -131,6 +185,8 @@ def ritaglia(percorso, cartella, altezza=256, margine=0.06):
     rgba = np.dstack([np.clip(f, 0, 255), alfa * 255.0]).astype(np.uint8)
     magl = maschera_maglia(arr, alfa)
     calz = maschera_calzoni(arr, alfa)
+    cape = maschera_capelli(arr, alfa, y0, y1)
+    pell = maschera_pelle(arr, alfa, (y0, y1), cape)
     # i calzoncini magenta vanno tolti dalla maschera della maglia (sono
     # saturi, quindi gia' fuori) e il loro colore va NEUTRALIZZATO nello
     # sprite: il gioco li tinge per luminanza, e un residuo magenta sotto
@@ -155,8 +211,11 @@ def ritaglia(percorso, cartella, altezza=256, margine=0.06):
     tela = np.zeros((lato, lato, 4), np.uint8)
     tmag = np.zeros((lato, lato), np.uint8)
     tcal = np.zeros((lato, lato), np.uint8)
+    tpel = np.zeros((lato, lato), np.uint8)
+    tcap = np.zeros((lato, lato), np.uint8)
     sx0, sy0 = cx - lato // 2, cy - lato // 2
-    for (dst, src) in ((tela, rgba), (tmag, (magl * 255).astype(np.uint8)), (tcal, (calz * 255).astype(np.uint8))):
+    for (dst, src) in ((tela, rgba), (tmag, (magl * 255).astype(np.uint8)), (tcal, (calz * 255).astype(np.uint8)),
+                       (tpel, (pell * 255).astype(np.uint8)), (tcap, (cape * 255).astype(np.uint8))):
         ax0, ay0 = max(0, sx0), max(0, sy0)
         ax1, ay1 = min(arr.shape[1], sx0 + lato), min(arr.shape[0], sy0 + lato)
         dst[ay0 - sy0:ay1 - sy0, ax0 - sx0:ax1 - sx0] = src[ay0:ay1, ax0:ax1]
@@ -165,11 +224,15 @@ def ritaglia(percorso, cartella, altezza=256, margine=0.06):
     out = Image.fromarray(tela).resize((fin, fin), Image.LANCZOS)
     outm = Image.fromarray(tmag).resize((fin, fin), Image.LANCZOS)
     outc = Image.fromarray(tcal).resize((fin, fin), Image.LANCZOS)
+    outp = Image.fromarray(tpel).resize((fin, fin), Image.LANCZOS)
+    outk = Image.fromarray(tcap).resize((fin, fin), Image.LANCZOS)
     nome = os.path.splitext(os.path.basename(percorso))[0]
     os.makedirs(cartella, exist_ok=True)
     out.save(os.path.join(cartella, nome + '.png'))
     outm.save(os.path.join(cartella, nome + '-maglia.png'))
     outc.save(os.path.join(cartella, nome + '-calzoni.png'))
+    outp.save(os.path.join(cartella, nome + '-pelle.png'))
+    outk.save(os.path.join(cartella, nome + '-capelli.png'))
     # i piedi: la riga piu' bassa del soggetto (alfa>0.5), in coordinate
     # della tela finale -- il gioco ancora la figura a cyTerra
     piedi = float((y1 - 1 - sy0) * scala)
@@ -180,6 +243,8 @@ def ritaglia(percorso, cartella, altezza=256, margine=0.06):
         'piedi_y': round(piedi, 1), 'maglia_pixel': int((magl > 0.5).sum()),
         'maglia_quota': round(float((magl > 0.5).sum()) / max(1, int((alfa > 0.5).sum())), 3),
         'calzoni_quota': round(float((calz > 0.5).sum()) / max(1, int((alfa > 0.5).sum())), 3),
+        'pelle_quota': round(float((pell > 0.5).sum()) / max(1, int((alfa > 0.5).sum())), 3),
+        'capelli_quota': round(float((cape > 0.5).sum()) / max(1, int((alfa > 0.5).sum())), 3),
     }
     with open(os.path.join(cartella, nome + '.json'), 'w', encoding='utf-8') as fh:
         json.dump(info, fh, indent=1, ensure_ascii=False)
