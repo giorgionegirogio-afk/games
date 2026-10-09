@@ -75,6 +75,9 @@ altezza per cella) → `monta.py` (rifà tutto da `piano.json`) →
 - **Fogli mancanti**: dopo la seconda quota (compito 2) le clip con foglio
   proprio sono 17 (176 fotogrammi); restano in prestito filtrante, cross,
   rinvio, rovesciata, finta, presa, pugni, respinta, sfugge, cielo.
+  **Edizione del 9 ottobre 2026 (compito 5):** terza quota, dieci fogli,
+  **27 clip su 27 con foglio proprio, 256 fotogrammi, prestiti `{}`**; la
+  rovesciata in volo è uscita con un prompt che non nomina il pavimento.
   `Sprite3D.ALIAS` presta la clip più vicina (tabella nel modulo, letta
   da `window.__test.sprite.prestiti`): in campo le due grafiche non si
   mescolano mai. **La scala per cella è la statura del personaggio nel

@@ -722,6 +722,38 @@ Qui il registro completo, a edizioni.
   4 a 3 è dei compiti 2-3 e sta nel difetto aperto «ombra portata dal
   rig», che è il compito suo.
 
+  **Compito 5 — ventisette clip, zero prestiti.** La terza quota di
+  Nano Banana (9 ottobre, sera: undici immagini in mezz'ora) ha dato i
+  dieci fogli che mancavano — filtrante, cross, rinvio, rovesciata,
+  finta, presa, pugni, respinta, sfugge, cielo — e `Sprite3D.ALIAS` non
+  presta più niente: `window.__test.sprite.prestiti` stampa `{}`. **La
+  rovesciata in volo è uscita al primo colpo** dopo tre fallimenti del
+  25 settembre: la differenza è un prompt che non nomina mai il
+  pavimento né i piedi staccati («seen from above: the body horizontal
+  and tilted back toward the floor, the right leg kicking straight up
+  over the head»); come il tuffo, le sue otto direzioni sono
+  approssimative. Una risposta è uscita come il testo `object:image{}`
+  senza immagine: non è un rifiuto, lo stesso prompt al secondo invio
+  passa. Le pose del portiere in piedi (presa, pugni) escono 4×2 in
+  1024×1024 con figure alte ~340 px; rinvio, respinta e sfugge 4×4
+  (prime otto). La statura di ogni foglio è misurata (bbox massimo delle
+  celle, script nel registro di `piano.json`) e divisa per la quota della
+  posa; per presa e pugni le braccia sopra la testa aggiungono ~0,3 di
+  statura al bbox e la statura è letta testa-piedi. L'atlante passa a
+  **256 fotogrammi in una griglia 16×16** (680 + 403 + 233 kB nelle tre
+  immagini, il gioco a **4,75 MB**: +580 kB). Il foglio che si guarda:
+  `strumenti/_158-prove/clip-nuove.png` (`_158-clip-nuove.js`: otto
+  imbardate di ogni clip nuova e, nell'ultima colonna, il rig alla stessa
+  fase). Cancelli: diciassette mirati (collaudo, divise, determinismo,
+  seme, gesto, volti, proporzioni, salvataggio, senza-rete,
+  fotosensibile, accessibile, diritti, disposizione, dischetto, volto,
+  duello-impronta) **verdi**, `silhouette` 6/10 è ancora il giro 4;
+  `prestazione --contro HEAD` a sei giri **3/3: medio +5,7%, tipico
+  +6,3%, p95 +7,7%** (gli ultimi due «non provati»: i giri scavalcano lo
+  zero). Gli attrezzi della via degli appunti e i dieci prompt con gli
+  esiti stanno in `strumenti/sprite/` (`PROMPT.md`, `copia-gemini.js`,
+  `salva-appunti.ps1`). Il `NOTICE` §1d porta i byte nuovi.
+
   ### (b) I numeri che hanno deciso
 
   - **Scala e ancora** (`_158-misura-scala.js`): a hCss 420 il rig 'fermo'

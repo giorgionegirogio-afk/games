@@ -76,6 +76,10 @@ due famiglie, la stessa licenza:
        - atlante delle figure (con perdita, q82):         445.527 byte
        - maschere di maglia e calzoncini (senza perdita): 282.060 byte
        - maschere di pelle e capelli (con perdita, q85):  163.263 byte
+       EDIZIONE DEL 9 OTTOBRE 2026, sera (compito 5, terza quota: 27
+       clip, 256 fotogrammi, griglia 16x16): 680.626 / 402.694 / 232.820
+       byte (base64 907.504 / 536.928 / 310.428); il gioco e' 4.750.071
+       byte.
      Provenienza: fogli (8 rotazioni per posa) generati dal committente
      con Gemini Images «Nano Banana» col proprio account Google il
      25-26 settembre 2026, dai prompt scritti in strumenti/sprite/
@@ -87,7 +91,8 @@ due famiglie, la stessa licenza:
      rivendicati da Google. I fogli sorgente (fuori/sprite/ingresso/)
      non sono distribuiti col gioco ne' tracciati nel repo.
      Verifica: python, regex data:image/webp;base64 sul file, lunghezze
-     base64 594.036 / 376.080 / 217.684 -> byte binari come sopra.
+     base64 594.036 / 376.080 / 217.684 -> byte binari come sopra (prima
+     edizione; i numeri della sera sono nel riquadro sopra).
 
 TUTTO IL RESTO E' FATTO IN CASA — verificato cosi':
   - Immagini: le `data:image` erano 2 SVG scritti a mano nel sorgente

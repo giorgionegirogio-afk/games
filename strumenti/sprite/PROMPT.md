@@ -120,6 +120,33 @@ contrasto, attesaGK, tuffo, parata, frenata, testa, esultanza, delusione.
 Finché mancano, `Sprite3D.ALIAS` presta la clip più vicina: la tabella è
 nel modulo e `window.__test.sprite.prestiti` la stampa.
 
+> **RETTIFICA (9 ottobre 2026).** Le dieci qui sopra sono entrate col
+> compito 2 (seconda quota); le dieci rimaste in prestito sono entrate
+> col compito 5 (terza quota, tabella qui sotto): **ventisette clip, zero
+> prestiti** (`window.__test.sprite.prestiti` stampa `{}`).
+
+## Lezioni della terza quota (9 ottobre 2026, 18:30-19:00, 11 immagini)
+
+- Una risposta può uscire come il testo **`object:image{}`** senza
+  immagine: non è un rifiuto, si rimanda lo stesso prompt (filtrante, al
+  secondo invio).
+- **La posa in volo esce** se il prompt non nomina mai il pavimento né i
+  piedi staccati: «seen from above: the body horizontal and tilted back
+  toward the floor, the right leg kicking straight up over the head» ha
+  dato la rovesciata al primo colpo (nb42), dove «mid-air / both feet off
+  the floor» aveva fallito tre volte.
+- Nella pagina `/images` **il chip Images è rimasto attaccato** per tutta
+  la chat (cinque invii di fila), diversamente dal 25 settembre: si
+  verifica a vista e basta.
+- Le pose del portiere in piedi (presa, pugni) escono **4×2 in
+  1024×1024** con figure alte ~340 px e camera più bassa; respinta,
+  sfugge e rinvio escono **4×4** (prime 8 = le direzioni).
+- La via degli appunti è ora in `copia-gemini.js` + `salva-appunti.ps1`:
+  iniezione, click VERO sul pulsante alla coordinata che il pannello
+  restituisce (57, 90 + 25·n), PowerShell che salva. Dieci fogli in
+  trenta minuti, nessun download bloccato.
+
+
 ## Compito 5 — i dieci fogli in prestito (9 ottobre 2026)
 
 Stesso preambolo di nb06 (camera 3/4 top-down, griglia 4×2 o 4×4, maglia
@@ -133,14 +160,13 @@ perché i guanti contaminano. La colonna «esito» si compila foglio per foglio.
 
 | foglio | clip | frase della posa | esito |
 |---|---|---|---|
-| nb33 | filtrante f0 | a firm THROUGH-BALL pass with the RIGHT foot at the instant of contact: left foot planted beside the imaginary ball, right leg driven forward with the inside of the boot facing forward and the toe up, torso leaning forward over the ball, right arm back and left arm out for balance, eyes up looking far ahead | |
-| nb34 | cross f0 | whipping a CROSS with the RIGHT foot at the instant of contact: left foot planted and pointing away from the kick, body leaning back and away to the left, right leg swung across the body with the ankle locked and the foot wrapping around the imaginary ball, left arm raised high for balance, right arm back, head down | |
-| nb35 | rinvio f0 | *(«black goalkeeper gloves»)* a goalkeeper's PUNT, kicking an imaginary ball dropped from the hands: the right leg swung high in front with the laces pointing up, the left foot planted, the body leaning back, both arms open wide at shoulder height for balance, chin up — the hands are EMPTY, there is NO ball | |
-| nb36 | presa f0 | *(«black goalkeeper gloves»)* a goalkeeper CATCHING high: standing fully stretched on his toes, both arms straight up above the head with the gloved hands together making a W with spread fingers, elbows almost locked, head tilted back looking up at the hands, body slightly arched — the hands are EMPTY, there is NO ball | |
-| nb37 | pugni f0 | *(«black goalkeeper gloves»)* a goalkeeper PUNCHING clear with both fists: both arms fully extended up and forward together above the head, the two fists touching, standing on tiptoes with the body stretched and arched slightly forward, chin up — there is NO ball | |
-| nb38 | respinta f0 | *(«black goalkeeper gloves»)* a goalkeeper PARRYING a shot to his right: a long low lunge sideways with the right leg bent and the left leg stretched out straight, the right arm fully extended out to the right at shoulder height with the palm open facing right, the left arm out to the left for balance, torso leaning right, eyes to the right — there is NO ball | |
-| nb39 | sfugge f0 | *(«black goalkeeper gloves»)* a goalkeeper FUMBLING a ball that slips through his hands: bending forward from the waist with the knees bent, both arms down in front of him with the palms open and turned up, fingers spread, head bowed looking down between his hands, shoulders hunched — there is NO ball | |
-| nb40 | cielo f0 | *(«BARE HANDS with no gloves»)* the AIRPLANE celebration: standing in a half lunge with the right foot forward, both arms stretched straight out horizontally to the sides like wings, chest pushed out, back arched, head thrown back with the face to the sky, mouth open shouting | |
-| nb41 | finta f0 | *(«BARE HANDS with no gloves»)* a dribbling FEINT, the double inside touch: pushing an imaginary ball across his body with the inside of the right foot, the right leg swung across in front of the left shin, the weight dropped onto the bent left leg, hips and shoulders turned to the left, arms out low for balance, eyes down — there is NO ball | |
-| nb42 | rovesciata f0 | *(«BARE HANDS with no gloves»; già fallita in volo: ultimo tentativo)* an acrobatic OVERHEAD BICYCLE KICK seen from above: the body horizontal and tilted back toward the floor, the right leg kicking straight up over the head, the left leg lower and bent, both arms spread wide and down, head back | |
-
+| nb33 | filtrante f0 | a firm THROUGH-BALL pass with the RIGHT foot at the instant of contact: left foot planted beside the imaginary ball, right leg driven forward with the inside of the boot facing forward and the toe up, torso leaning forward over the ball, right arm back and left arm out for balance, eyes up looking far ahead | OK al secondo invio (il primo ha reso «object:image{}», vuoto: si rimanda), 4×2 1024×559 |
+| nb34 | cross f0 | whipping a CROSS with the RIGHT foot at the instant of contact: left foot planted and pointing away from the kick, body leaning back and away to the left, right leg swung across the body with the ankle locked and the foot wrapping around the imaginary ball, left arm raised high for balance, right arm back, head down | OK, 4×2 1024×559, gamba che avvolge e braccio sinistro alto |
+| nb35 | rinvio f0 | *(«black goalkeeper gloves»)* a goalkeeper's PUNT, kicking an imaginary ball dropped from the hands: the right leg swung high in front with the laces pointing up, the left foot planted, the body leaning back, both arms open wide at shoulder height for balance, chin up — the hands are EMPTY, there is NO ball | *(vedi riga sotto)* |
+| nb36 | presa f0 | *(«black goalkeeper gloves»)* a goalkeeper CATCHING high: standing fully stretched on his toes, both arms straight up above the head with the gloved hands together making a W with spread fingers, elbows almost locked, head tilted back looking up at the hands, body slightly arched — the hands are EMPTY, there is NO ball | OK, 4×2 in 1024×1024 (figure alte ~340 px), guanti, mani a W sopra la testa; camera meno alta delle altre |
+| nb37 | pugni f0 | *(«black goalkeeper gloves»)* a goalkeeper PUNCHING clear with both fists: both arms fully extended up and forward together above the head, the two fists touching, standing on tiptoes with the body stretched and arched slightly forward, chin up — there is NO ball | OK, 4×2 in 1024×1024, pugni uniti sopra la testa |
+| nb38 | respinta f0 | *(«black goalkeeper gloves»)* a goalkeeper PARRYING a shot to his right: a long low lunge sideways with the right leg bent and the left leg stretched out straight, the right arm fully extended out to the right at shoulder height with the palm open facing right, the left arm out to the left for balance, torso leaning right, eyes to the right — there is NO ball | OK, **4×4** (`attese 16`, prime 8), affondo laterale braccio destro teso |
+| nb39 | sfugge f0 | *(«black goalkeeper gloves»)* a goalkeeper FUMBLING a ball that slips through his hands: bending forward from the waist with the knees bent, both arms down in front of him with the palms open and turned up, fingers spread, head bowed looking down between his hands, shoulders hunched — there is NO ball | OK, **4×4** (`attese 16`, prime 8), piegato in avanti mani in basso |
+| nb40 | cielo f0 | *(«BARE HANDS with no gloves»)* the AIRPLANE celebration: standing in a half lunge with the right foot forward, both arms stretched straight out horizontally to the sides like wings, chest pushed out, back arched, head thrown back with the face to the sky, mouth open shouting | OK, 4×2 1024×559, PRIMO foglio della terza quota (9/10, 18:35): braccia ad aliante, volto al cielo; sfondo erba e non verde piatto (il chroma lo prende) |
+| nb41 | finta f0 | *(«BARE HANDS with no gloves»)* a dribbling FEINT, the double inside touch: pushing an imaginary ball across his body with the inside of the right foot, the right leg swung across in front of the left shin, the weight dropped onto the bent left leg, hips and shoulders turned to the left, arms out low for balance, eyes down — there is NO ball | OK, 4×2 1024×572, tocco d'interno incrociato; resa un po' da rendering |
+| nb42 | rovesciata f0 | *(«BARE HANDS with no gloves»; già fallita in volo: ultimo tentativo)* an acrobatic OVERHEAD BICYCLE KICK seen from above: the body horizontal and tilted back toward the floor, the right leg kicking straight up over the head, the left leg lower and bent, both arms spread wide and down, head back | **OK, finalmente in volo**: corpo orizzontale e gamba destra in alto, 4×2 1024×559 — la posa è uscita togliendo ogni parola sul pavimento («seen from above», niente «off the floor»); direzioni approssimative come nel tuffo |

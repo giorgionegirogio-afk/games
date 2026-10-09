@@ -142,7 +142,80 @@
       "f": 0,
       "nota": "pugno di esultanza, in piedi; foglio 4x2 largo (1024x559)",
       "statura_px": 250
+    },
+    {
+      "foglio": "nb33-filtrante",
+      "clip": "filtrante",
+      "f": 0,
+      "nota": "filtrante d'interno destro, busto avanti; 4x2 1024x559 (terza quota, 9/10)",
+      "statura_px": 245
+    },
+    {
+      "foglio": "nb34-cross",
+      "clip": "cross",
+      "f": 0,
+      "nota": "cross di destro, gamba che avvolge, braccio sinistro alto; 4x2 1024x559",
+      "statura_px": 248
+    },
+    {
+      "foglio": "nb35-rinvio",
+      "clip": "rinvio",
+      "f": 0,
+      "attese": 16,
+      "nota": "rinvio al volo del portiere, gamba destra alta, braccia aperte, guanti; foglio 4x4, prime 8",
+      "statura_px": 240
+    },
+    {
+      "foglio": "nb36-presa",
+      "clip": "presa",
+      "f": 0,
+      "nota": "presa alta, mani a W sopra la testa, guanti; 4x2 in 1024x1024 (figure alte ~340 px, bbox 451 con le braccia)",
+      "statura_px": 345
+    },
+    {
+      "foglio": "nb37-pugni",
+      "clip": "pugni",
+      "f": 0,
+      "nota": "pugni uniti sopra la testa, guanti; 4x2 in 1024x1024 (bbox 437 con le braccia)",
+      "statura_px": 340
+    },
+    {
+      "foglio": "nb38-respinta",
+      "clip": "respinta",
+      "f": 0,
+      "attese": 16,
+      "nota": "respinta: affondo laterale, braccio destro teso, guanti; foglio 4x4, prime 8",
+      "statura_px": 250
+    },
+    {
+      "foglio": "nb39-sfugge",
+      "clip": "sfugge",
+      "f": 0,
+      "attese": 16,
+      "nota": "sfugge: piegato in avanti, mani in basso aperte, guanti; foglio 4x4, prime 8",
+      "statura_px": 248
+    },
+    {
+      "foglio": "nb40-cielo",
+      "clip": "cielo",
+      "f": 0,
+      "nota": "esultanza ad aliante, braccia orizzontali, volto al cielo, mani nude; 4x2 1024x559, sfondo erba",
+      "statura_px": 250
+    },
+    {
+      "foglio": "nb41-finta",
+      "clip": "finta",
+      "f": 0,
+      "nota": "finta: tocco d'interno incrociato, peso sulla sinistra, mani nude; 4x2 1024x572",
+      "statura_px": 250
+    },
+    {
+      "foglio": "nb42-rovesciata",
+      "clip": "rovesciata",
+      "f": 0,
+      "nota": "rovesciata in volo, corpo orizzontale e gamba destra in alto; 4x2 1024x559 (statura = valore di famiglia dei fogli 1024x559, come il tuffo nei 4x4; direzioni approssimative)",
+      "statura_px": 248
     }
   ],
-  "_nota_statura": "statura_px = altezza in piedi del personaggio nel foglio, in pixel del foglio; stimata il 25/9 dal bbox massimo delle 8 celle diviso la quota di statura della posa (in piedi 1,00, corsa 0,96, tiro 0,97, passaggio 0,97, affondo 0,86, portiere 0,85, parata 0,90). Senza, monta.py usa 476 (4x2) o 238 (4x4)."
+  "_nota_statura": "statura_px = altezza in piedi del personaggio nel foglio, in pixel del foglio; stimata il 25/9 dal bbox massimo delle 8 celle diviso la quota di statura della posa (in piedi 1,00, corsa 0,96, tiro 0,97, passaggio 0,97, affondo 0,86, portiere 0,85, parata 0,90). Senza, monta.py usa 476 (4x2) o 238 (4x4). EDIZIONE 9/10/2026 (terza quota, dieci fogli): statura dal bbox massimo delle celle misurato con lo script del verbale (filtrante 232, cross 240, rinvio 216, presa 451, pugni 437, respinta 218, sfugge 208, cielo 246, finta 234, rovesciata 212; riferimenti nb06 476, nb27 231, nb22 225) diviso la quota della posa; per presa e pugni le braccia sopra la testa aggiungono ~0,3 di statura al bbox."
 }
