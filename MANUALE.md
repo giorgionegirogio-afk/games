@@ -702,6 +702,26 @@ Qui il registro completo, a edizioni.
   il sistema l'ha fermata per memoria bassa (9 ottobre) senza scrivere un
   esito. Va rilanciata, e il verbale lo dice invece di sottintenderlo.
 
+  **Rilanciata il 9 ottobre, 52 cancelli: tre rossi, e due erano del
+  compito 1, non del 4.** `silhouette` 6/10 è il rosso dichiarato del
+  #157 giro 4. `diritti` era rosso dal commit `c485d5d`: i tre atlanti
+  webp sono i primi raster incorporati nel gioco e la regola R3 li
+  conta uno per uno — giusto così; sono iscritti nel `NOTICE` (§1d, con
+  provenienza e byte) e nel censimento, che resta inchiodato a sei.
+  `disposizione` era rosso dallo stesso commit: il pulsante FIGURE,
+  messo davanti a MOVIMENTO, in orizzontale spaiava ALTO CONTRASTO da
+  solo sulla riga dopo («1 ORFANO, 1 BUCATA» su 7 formati; VERDE su
+  `19a88d9`, prima della toppa): ora sta in fondo ad Accessibilità a
+  tutta riga, come SOTTOTITOLI. La lezione è quella della regola 22,
+  pagata un'altra volta: **la batteria mirata di quattro compiti non
+  comprendeva i due cancelli che la toppa rompeva dal primo giorno.**
+  `istantanea` (informativo) 41/56 contro i 42 del compito 1: colonna
+  per colonna **identico alla versione precedente** (`e60b557`, misurato:
+  erba 1/8 · palla 8/8 · figura 8/8 · ombre 3/8 · prato 8/8 · sera 8/8 ·
+  abitato 5/8) — il compito 4 non lo muove; la quota di ombre scesa da
+  4 a 3 è dei compiti 2-3 e sta nel difetto aperto «ombra portata dal
+  rig», che è il compito suo.
+
   ### (b) I numeri che hanno deciso
 
   - **Scala e ancora** (`_158-misura-scala.js`): a hCss 420 il rig 'fermo'

@@ -185,10 +185,17 @@ esatta('window.__test: stato e rubinetto degli sprite',
    (SAVE.figure, additivo come SAVE.amici al #136: un salvataggio vecchio
    non ha la chiave e vale «fotografiche»)
    ------------------------------------------------------------------ */
+/* IN FONDO ad Accessibilita' e A TUTTA RIGA (`sola`), non davanti a
+   MOVIMENTO: la prima stesura lo metteva per primo nella coppia, e in
+   orizzontale (griglia a due colonne) spostava ALTO CONTRASTO da solo
+   sulla riga dopo — `disposizione` ROSSO, «1 ORFANO, 1 BUCATA», su 7
+   formati, dal commit c485d5d fino al 8aeca73 (la batteria mirata dei
+   quattro compiti non lo comprendeva; la batteria intera si'). Una voce
+   a tutta riga, come SOTTOTITOLI subito sopra, non puo' spaiare nessuno. */
 esatta('il pulsante FIGURE nelle impostazioni (markup)',
-`      <button class="voce sw" id="btnSetMoto">MOVIMENTO: COMPLETO <small>scossa, coriandoli, transizioni</small></button>`,
-`      <button class="voce sw" id="btnSetFigure">FIGURE: FOTOGRAFICHE <small>giocatori fotografici o disegnati</small></button>
-      <button class="voce sw" id="btnSetMoto">MOVIMENTO: COMPLETO <small>scossa, coriandoli, transizioni</small></button>`);
+`      <button class="voce sw sola" id="btnSetSott">SOTTOTITOLI: S&Igrave; <small>fischio — a video</small></button>`,
+`      <button class="voce sw sola" id="btnSetSott">SOTTOTITOLI: S&Igrave; <small>fischio — a video</small></button>
+      <button class="voce sw sola" id="btnSetFigure">FIGURE: FOTOGRAFICHE <small>giocatori fotografici o disegnati</small></button>`);
 
 esatta('il pulsante FIGURE nelle impostazioni (etichetta)',
 `  $('btnSetMoto').innerHTML='MOVIMENTO: '+(SAVE.moto?'COMPLETO':'RIDOTTO')+

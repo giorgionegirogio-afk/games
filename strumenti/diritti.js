@@ -25,8 +25,10 @@
          censite, e hanno una toppa dedicata (_t-menzioni.js) — un rosso
          perpetuo su un fatto gia' deciso insegnerebbe a non guardare.
      R3  censimento dei base64: ogni data:*;base64 deve essere
-         font/woff2 e devono essere ESATTAMENTE 2. Un asset incorporato
-         nuovo deve passare di qui e dal NOTICE, ed e' giusto che costi.
+         font/woff2 e devono essere ESATTAMENTE 2 [dal 28/8/2026 TRE;
+         dal 9/10/2026 tre woff2 + tre image/webp, gli atlanti degli
+         sprite della voce #158]. Un asset incorporato nuovo deve
+         passare di qui e dal NOTICE, ed e' giusto che costi.
      R4  censimento degli URL: solo la lista bianca (namespace SVG del
          W3C, i rimandi OFL, i due depositi upstream dei font che la
          schermata CREDITI cita). Un URL nuovo e' o rete o attribuzione
@@ -408,8 +410,21 @@ function controlla(src, opz) {
      uno qualcuno deve andare a iscriverlo nel NOTICE. Un cancello che
      contasse da solo lascerebbe passare in silenzio il quarto — che
      magari non ha nemmeno una licenza compatibile. */
-  if (b64.length !== 3 || b64.some(m => m !== 'font/woff2'))
-    rossi.push('R3 base64: attesi ESATTAMENTE 3 font/woff2, trovati [' + b64.join(', ') + ']. Un asset incorporato nuovo va iscritto nel NOTICE e qui.');
+  /* SEI, dal 9 ottobre 2026 (voce #158): ai tre woff2 si aggiungono i
+     TRE atlanti degli sprite fotografici — image/webp, nell'ordine in
+     cui stanno nel file: le figure (con perdita), le maschere di maglia
+     e calzoncini (senza perdita), le maschere di pelle e capelli (con
+     perdita). NON sono materiale di terzi: fogli generati dal
+     committente con Gemini (Nano Banana) col suo account il 25-26
+     settembre 2026 e lavorati dalla catena strumenti/sprite/ — ma un
+     asset incorporato e' un asset incorporato, e il NOTICE §1d li
+     censisce byte per byte. Il numero resta inchiodato: il settimo
+     dovra' passare di qui come questi tre. (Il cancello era rosso dal
+     commit c485d5d al 8aeca73: la toppa degli sprite non era passata di
+     qui, e la batteria mirata di quei compiti non lo comprendeva.) */
+  const ATTESI = ['font/woff2', 'font/woff2', 'font/woff2', 'image/webp', 'image/webp', 'image/webp'];
+  if (b64.length !== ATTESI.length || b64.some((m, i) => m !== ATTESI[i]))
+    rossi.push('R3 base64: attesi ESATTAMENTE 3 font/woff2 + 3 image/webp (gli atlanti degli sprite, NOTICE §1d), trovati [' + b64.join(', ') + ']. Un asset incorporato nuovo va iscritto nel NOTICE e qui.');
   /* R4 — censimento URL */
   const urlRe = /https?:\/\/[^\s"'<>()\\]+/g; let m2;
   while ((m2 = urlRe.exec(mascherato))) {
@@ -438,7 +453,7 @@ function controlla(src, opz) {
   }
   /* informativo: le due sole data:image devono restare svg scritte a mano */
   const nImg = (mascherato.match(/data:image\//g) || []).length;
-  note.push('data:image nel file: ' + nImg + ' (attese 2, entrambe svg+xml scritte a mano)');
+  note.push('data:image nel file: ' + nImg + ' (attese 5: 2 svg+xml scritte a mano + 3 webp degli atlanti degli sprite, NOTICE §1d)');
   return { rossi, note };
 }
 function estratto(s, i) {

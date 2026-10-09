@@ -68,10 +68,33 @@ due famiglie, la stessa licenza:
   COSTO: 62.212 byte di woff2 contro 21.968, cioe' circa 53 kB in piu'
   nel file HTML. Sull'APK, compresso, molto meno.
 
+  d) GLI ATLANTI DEGLI SPRITE FOTOGRAFICI — entrati il 25 settembre 2026
+     (voce #158, commit c485d5d), censiti qui il 9 ottobre 2026.
+     NON sono materiale di terzi, ma sono i primi raster incorporati e
+     il cancello diritti.js (R3) li conta uno per uno. Tre immagini
+     image/webp in base64, nell'ordine in cui stanno nel file:
+       - atlante delle figure (con perdita, q82):         445.527 byte
+       - maschere di maglia e calzoncini (senza perdita): 282.060 byte
+       - maschere di pelle e capelli (con perdita, q85):  163.263 byte
+     Provenienza: fogli (8 rotazioni per posa) generati dal committente
+     con Gemini Images «Nano Banana» col proprio account Google il
+     25-26 settembre 2026, dai prompt scritti in strumenti/sprite/
+     PROMPT.md; poi ritaglio, maschere e montaggio con la catena
+     strumenti/sprite/ (foglio.py, ritaglia.py, atlante.py, monta.py).
+     Il personaggio e' inventato (nessuna persona reale, nessuna divisa
+     reale: maglia bianca e calzoncini magenta che il gioco ritinge);
+     secondo le condizioni d'uso di Gemini i contenuti generati non sono
+     rivendicati da Google. I fogli sorgente (fuori/sprite/ingresso/)
+     non sono distribuiti col gioco ne' tracciati nel repo.
+     Verifica: python, regex data:image/webp;base64 sul file, lunghezze
+     base64 594.036 / 376.080 / 217.684 -> byte binari come sopra.
+
 TUTTO IL RESTO E' FATTO IN CASA — verificato cosi':
-  - Immagini: le uniche `data:image` sono 2 SVG scritti a mano nel
-    sorgente (favicon con l'emoji del pallone; un'icona di percorso).
-    Zero raster incorporati. (grep "data:image" -> 2, entrambe svg+xml)
+  - Immagini: le `data:image` erano 2 SVG scritti a mano nel sorgente
+    (favicon con l'emoji del pallone; un'icona di percorso), zero raster
+    incorporati (grep "data:image" -> 2, entrambe svg+xml).
+    EDIZIONE DEL 9 OTTOBRE 2026: sono 5 — i 2 SVG piu' i 3 webp degli
+    atlanti degli sprite, censiti in 1d qui sopra.
   - Audio: interamente sintetizzato a runtime — 11 createOscillator,
     zero campioni (grep data:audio|.mp3|.ogg|.wav -> 0).
   - Librerie: zero. Nessun <script src>, nessun require(), nessun
