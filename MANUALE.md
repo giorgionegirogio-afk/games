@@ -824,6 +824,9 @@ Qui il registro completo, a edizioni.
   cresce a **7,23 MB** (+2,47 MB: tre webp da 981 + 572 + 308 kB), censiti
   nel `NOTICE` §1d e nel censimento R3 (nove asset). Cancelli:
   diciotto mirati (collaudo, senza-rete, seme, diritti, disposizione, salvataggio, proporzioni, accessibile, fotosensibile, determinismo, duello-impronta, dischetto, volto, divise, gesto, volti, istantanea) verdi, `istantanea` 42/56 invariata, `silhouette` 6/10 è ancora il giro 4. `prestazione --contro HEAD`: 3/3 a sei giri, medio −3,4%, tipico −4,8%, p95 −3,7%, tutti «non provati» (rumore): la partita in pianta non tocca l'atlante da vicino.
+  **Batteria intera dopo il commit** (10 ottobre): 52 cancelli, un solo
+  rosso, `silhouette` 6/10 del giro 4; `istantanea` 42/56; `giocata` 7/7;
+  `prestazione` 3/3.
 
   ### (b) I numeri che hanno deciso
 
@@ -1114,6 +1117,37 @@ Qui il registro completo, a edizioni.
   priorità **2** e **3** del committente. Il **contrasto** e le clip del
   portiere restano senza un contatto dichiarato, quindi senza un cancello che
   ne giudichi i tempi.
+
+  ### (c) Che cosa resta aperto, al 10 ottobre 2026
+
+  - **`silhouette` 6/10** non è di questo cantiere: su `19a88d9` puro era
+    8/10, il 6/10 nasce nelle 654 righe del #157 giro 4 (toppe peso,
+    quadro, valore, verbi) committate il 25 settembre «come lasciate». Va
+    riaperto il giro 4, non gli sprite.
+  - **L'angolo**: i fogli escono a ~22° di elevazione, il rig a 42°; il
+    generatore non ha obbedito a nessuna formulazione dei 45° (quattro
+    prove in `PROMPT.md`). La figura fotografica è un po' più «in piedi»
+    sul campo in pianta di quanto fosse il rig.
+  - **Un uomo solo nei fogli**: ventidue uomini si distinguono per
+    carnagione, capelli e statura (compito 4), ma hanno lo stesso volto e
+    la stessa corporatura fotografica. Un secondo e un terzo personaggio
+    (fogli nuovi, stessa catena) sono la via; costano una quota di Nano
+    Banana per posa ciascuno.
+  - **`istantanea` 42/56** resta informativo: erba 1/8 e terzo centrale
+    5/8 dicono dove la camera mette le figure, non come sono disegnate
+    (le stesse quote del #152); il centro-sera 7/8 è un istante sul filo
+    della saturazione con più ombra sul manto.
+  - **Il prezzo del da-vicino**: +2,47 MB nel file (7,23 MB) e, durante
+    rigori e ripresa, tre bitmap da 3072² decodificate (~113 MB) che lo
+    sfratto rilascia dopo otto secondi di camera alta. Su un telefono da
+    2 GB va **misurato dal vivo** (`avvio-telefono`, un telefono
+    collegato): nessun banco qui lo ha fatto.
+  - **La camera bassa usa la cella da 144 per un centinaio di
+    millisecondi** alla prima ripresa, finché le immagini grandi non sono
+    decodificate: si vede come un fotogramma più morbido, poi netto.
+  - Tutto il resto dell'iper-realismo chiesto il 24 settembre sta in
+    `_analisi/ELENCO-REALISMO-24set.md` (118 voci, 71 mai considerate): è
+    il brief dei cantieri che verranno, non di questo.
 
 - **LE FIGURE DA BLENDER — #151 PROTOTIPO MISURATO, VERDETTO: GLI SPRITE NON
   CONVENGONO** (voce #151, 24 settembre 2026, cinque compiti dal merge-base
