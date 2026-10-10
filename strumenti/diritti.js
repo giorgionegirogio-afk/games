@@ -27,7 +27,8 @@
      R3  censimento dei base64: ogni data:*;base64 deve essere
          font/woff2 e devono essere ESATTAMENTE 2 [dal 28/8/2026 TRE;
          dal 9/10/2026 tre woff2 + tre image/webp, gli atlanti degli
-         sprite della voce #158]. Un asset incorporato nuovo deve
+         sprite della voce #158; dal 10/10/2026 tre woff2 + SEI webp, con
+         l'atlante da vicino]. Un asset incorporato nuovo deve
          passare di qui e dal NOTICE, ed e' giusto che costi.
      R4  censimento degli URL: solo la lista bianca (namespace SVG del
          W3C, i rimandi OFL, i due depositi upstream dei font che la
@@ -422,9 +423,13 @@ function controlla(src, opz) {
      dovra' passare di qui come questi tre. (Il cancello era rosso dal
      commit c485d5d al 8aeca73: la toppa degli sprite non era passata di
      qui, e la batteria mirata di quei compiti non lo comprendeva.) */
-  const ATTESI = ['font/woff2', 'font/woff2', 'font/woff2', 'image/webp', 'image/webp', 'image/webp'];
+  /* NOVE, dal 10 ottobre 2026 (compito 7): l'atlante DA VICINO — celle da
+     192 per i rigori e la ripresa del gol — porta altre tre image/webp
+     (figure, maschere di maglia/calzoncini, maschere di pelle/capelli),
+     stessa provenienza e stesso NOTICE §1d. Il numero resta inchiodato. */
+  const ATTESI = ['font/woff2', 'font/woff2', 'font/woff2', 'image/webp', 'image/webp', 'image/webp', 'image/webp', 'image/webp', 'image/webp'];
   if (b64.length !== ATTESI.length || b64.some((m, i) => m !== ATTESI[i]))
-    rossi.push('R3 base64: attesi ESATTAMENTE 3 font/woff2 + 3 image/webp (gli atlanti degli sprite, NOTICE §1d), trovati [' + b64.join(', ') + ']. Un asset incorporato nuovo va iscritto nel NOTICE e qui.');
+    rossi.push('R3 base64: attesi ESATTAMENTE 3 font/woff2 + 6 image/webp (i due atlanti degli sprite, NOTICE §1d), trovati [' + b64.join(', ') + ']. Un asset incorporato nuovo va iscritto nel NOTICE e qui.');
   /* R4 — censimento URL */
   const urlRe = /https?:\/\/[^\s"'<>()\\]+/g; let m2;
   while ((m2 = urlRe.exec(mascherato))) {
@@ -453,7 +458,7 @@ function controlla(src, opz) {
   }
   /* informativo: le due sole data:image devono restare svg scritte a mano */
   const nImg = (mascherato.match(/data:image\//g) || []).length;
-  note.push('data:image nel file: ' + nImg + ' (attese 5: 2 svg+xml scritte a mano + 3 webp degli atlanti degli sprite, NOTICE §1d)');
+  note.push('data:image nel file: ' + nImg + ' (attese 8: 2 svg+xml scritte a mano + 6 webp dei due atlanti degli sprite, NOTICE §1d)');
   return { rossi, note };
 }
 function estratto(s, i) {

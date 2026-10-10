@@ -795,6 +795,36 @@ Qui il registro completo, a edizioni.
   rosso, `silhouette` 6/10 del giro 4; `istantanea` 42/56 identica alla
   misura sulla copia; `giocata` 7/7; `prestazione` 3/3.
 
+  **Compito 7 — l'atlante da vicino.** In pianta la figura è alta 40-90
+  px e la cella da 144 (statura 128) basta; a camera bassa — rigori,
+  ripresa del gol — arriva a 200-300 px e si vedeva morbida (prezzo
+  dichiarato al compito 3). Ora c'è un **secondo atlante a celle di 192**
+  (statura 170, stesse 27 clip e 256 fotogrammi, `monta.py --cella 192
+  --altezza 170`), che la toppa incorpora con `--vicino` e che
+  `Sprite3D.disegna` usa **solo a camera bassa**. La memoria si tiene
+  corta per costruzione: le tre immagini si decodificano alla **prima
+  richiesta** a camera bassa (finché non sono pronte disegna la cella da
+  144), **nessuna tela di squadra a 3072²** (37 MB per divisa, 113 per
+  tre: non su un Android 10 da 2 GB) ma **tinta per cella** con la
+  stessa `tingi()` della tela grande sui 37.000 pixel del fotogramma che
+  serve, figura intera (divisa, pelle, capelli di quest'uomo) in una tela
+  da 192 in una LRU di 96 (14 MB al massimo), e **sfratto** di immagini e
+  celle dopo otto secondi di camera alta senza richieste. Un rubinetto
+  (`__test.vicinoOn`) chiude il da-vicino per i confronti A/B. **Due
+  difetti trovati guardando il confronto** (`_158-sonda-vicino.js` →
+  `vicino-confronto.png`, stesso istante, 192 a sinistra e 144 a destra):
+  la cella grande usciva **senza pelle né capelli** — un ordine di
+  argomenti sbagliato nella chiamata alla zona generica, invisibile a
+  ogni cancello perché il colore della pelle non ha un cancello — e la
+  carnagione scura stendeva una **lavata bruna sulle spalle** anche a
+  144: la maschera di pelle prende il viso per geometria (il quarto alto
+  del soggetto) e in certe pose quel quarto comprende il colletto. Ora
+  `atlante.py` toglie la stoffa dalla pelle per costruzione: le tre
+  maschere sono disgiunte, e la cura vale anche in pianta. Il gioco
+  cresce a **7,23 MB** (+2,47 MB: tre webp da 981 + 572 + 308 kB), censiti
+  nel `NOTICE` §1d e nel censimento R3 (nove asset). Cancelli:
+  diciotto mirati (collaudo, senza-rete, seme, diritti, disposizione, salvataggio, proporzioni, accessibile, fotosensibile, determinismo, duello-impronta, dischetto, volto, divise, gesto, volti, istantanea) verdi, `istantanea` 42/56 invariata, `silhouette` 6/10 è ancora il giro 4. `prestazione --contro HEAD`: 3/3 a sei giri, medio −3,4%, tipico −4,8%, p95 −3,7%, tutti «non provati» (rumore): la partita in pianta non tocca l'atlante da vicino.
+
   ### (b) I numeri che hanno deciso
 
   - **Scala e ancora** (`_158-misura-scala.js`): a hCss 420 il rig 'fermo'

@@ -80,6 +80,14 @@ due famiglie, la stessa licenza:
        clip, 256 fotogrammi, griglia 16x16): 680.626 / 402.694 / 232.820
        byte (base64 907.504 / 536.928 / 310.428); il gioco e' 4.750.071
        byte.
+       EDIZIONE DEL 10 OTTOBRE 2026 (compito 7): si aggiunge L'ATLANTE DA
+       VICINO, celle da 192 px (statura 170) per la camera bassa (rigori,
+       ripresa del gol): altre tre image/webp con la stessa provenienza e
+       la stessa catena (monta.py --cella 192 --altezza 170), nell'ordine
+       figure / maschere maglia-calzoncini / maschere pelle-capelli:
+       980.700 / 571.566 / 307.864 byte (base64 1.307.600 / 762.088 / 410.486). In piu', da questa edizione la maschera di pelle
+       esclude per costruzione la stoffa (atlante.py), quindi anche i tre
+       webp della pianta cambiano di qualche kB: 680.626 / 402.694 / 216.524 byte; il gioco e' 7.231.514 byte.
      Provenienza: fogli (8 rotazioni per posa) generati dal committente
      con Gemini Images «Nano Banana» col proprio account Google il
      25-26 settembre 2026, dai prompt scritti in strumenti/sprite/
@@ -100,6 +108,8 @@ TUTTO IL RESTO E' FATTO IN CASA — verificato cosi':
     incorporati (grep "data:image" -> 2, entrambe svg+xml).
     EDIZIONE DEL 9 OTTOBRE 2026: sono 5 — i 2 SVG piu' i 3 webp degli
     atlanti degli sprite, censiti in 1d qui sopra.
+    EDIZIONE DEL 10 OTTOBRE 2026: sono 8 — i 2 SVG piu' i 6 webp dei due
+    atlanti (pianta e da vicino), censiti in 1d.
   - Audio: interamente sintetizzato a runtime — 11 createOscillator,
     zero campioni (grep data:audio|.mp3|.ogg|.wav -> 0).
   - Librerie: zero. Nessun <script src>, nessun require(), nessun

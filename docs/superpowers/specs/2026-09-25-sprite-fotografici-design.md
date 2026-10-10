@@ -40,6 +40,11 @@ restano distinguibili (`_q-divise` in batteria).
   con ombra di contatto propria. In primo piano la cella da 128 px si
   ingrandisce 1,5-2,5 volte (morbida): un secondo atlante a 192 px
   (+2 MB) è un seguito, se richiesto.
+  **Edizione del 10 ottobre 2026 (compito 7):** fatto. L'atlante da
+  vicino (celle 192, statura 170, `--vicino` nella toppa) serve la sola
+  camera bassa; tinta PER CELLA (`tingi()` condivisa, LRU di 96 tele),
+  decodifica pigra e sfratto dopo 8 s di camera alta; costo nel file
+  +2,47 MB (7,23 MB in tutto), memoria viva solo durante ripresa e rigori.
 
 ## 3. La catena di produzione (tutta in `strumenti/sprite/`)
 

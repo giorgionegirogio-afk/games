@@ -30,7 +30,7 @@ sprite piu' grande della cella), 2 esploso.
 """
 import sys, os, re, json, argparse, math
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageChops
 
 NOME = re.compile(r'^(?P<clip>[a-zA-Z]+)-d(?P<d>[0-7])(?:-f(?P<f>\d+))?\.png$')
 
@@ -78,6 +78,15 @@ def costruisci(cartella, uscita, cella=144, altezza=128, specchia=()):
             p = os.path.join(cartella, base + suff)
             return Image.open(p).convert('L') if os.path.exists(p) else Image.new('L', im.size, 0)
         mc, mp, mk = canale('-calzoni.png'), canale('-pelle.png'), canale('-capelli.png')
+        # LA PELLE NON STA SULLA STOFFA (voce #158, compito 7). La maschera di
+        # pelle di ritaglia.py prende il viso PER GEOMETRIA (il quarto alto del
+        # soggetto, tolti i capelli) e in certe pose quel quarto comprende le
+        # spalle e il colletto: a 50 px non si vedeva, da vicino (celle da 192,
+        # ripresa del gol) la carnagione scura stendeva una lavata bruna sulla
+        # maglia. Dove la maglia o i calzoncini sono forti, la pelle vale zero:
+        # le tre maschere sono per costruzione disgiunte.
+        stoffa = ImageChops.lighter(mm, mc)
+        mp = ImageChops.multiply(mp, ImageChops.invert(stoffa))
         if spec:
             im = im.transpose(Image.FLIP_LEFT_RIGHT); mm = mm.transpose(Image.FLIP_LEFT_RIGHT)
             mc = mc.transpose(Image.FLIP_LEFT_RIGHT); mp = mp.transpose(Image.FLIP_LEFT_RIGHT); mk = mk.transpose(Image.FLIP_LEFT_RIGHT)

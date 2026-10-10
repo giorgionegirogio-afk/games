@@ -412,13 +412,18 @@ const Sprite3D=(function(){
        stessa voce, stesso fotogramma, ancora e statura della tavola a 192.
        La prima richiesta avvia la decodifica e disegna la cella da 144. */
     let f=f0, T=TAV, c2=null;
-    if(nomeCam==='bassa' && TAV2){
+    if(nomeCam==='bassa' && TAV2 && VICINO_ON){
+      ULT2=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
       if(!pronto2){ if(!fallito2) carica2(); }
       else{
         const v2=TAV2.voci[vv.nome], fr2=v2&&v2[dd];
         const f2=fr2&&fr2[Math.min(fr2.length-1,(u*fr2.length)|0)];
         if(f2){ c2=cella2(f2,look); if(c2){ f=f2; T=TAV2; } }
       }
+    }
+    else if(nomeCam==='alto' && (pronto2||chiesto2) && !fallito2){
+      const ora=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+      if(ora-ULT2>VICINO_RIPOSO) sfratta2();
     }
     const t=c2?null:tela(look);
     /* LA SCALA RISPETTO AL RIG, MISURATA (strumenti/_158-misura-scala.js,
@@ -626,6 +631,23 @@ const Sprite3D=(function(){
   const SRC2='__SPRITE_SRC2__', SRCM2='__SPRITE_SRCM2__', SRCK2='__SPRITE_SRCK2__';
   let img2=null, imgM2=null, imgK2=null, pronto2=false, fallito2=false, chiesto2=false, SCR2=null;
   const CELLE2=new Map(); const C2_MAX=96; let COMP2=0;
+  /* il rubinetto del da-vicino: chiuso, la camera bassa disegna la cella
+     da 144 — per i confronti A/B e per i banchi che vogliono misurare la
+     sola cella grande */
+  let VICINO_ON=true;
+  function vicinoOn(v){ VICINO_ON=!!v; return VICINO_ON; }
+  /* LO SFRATTO. Le tre immagini decodificate a 3072x3072 pesano ~113 MB
+     di bitmap, e un telefono Android 10 da 2 GB non deve tenerle per tutta
+     la partita per una ripresa di quattro secondi. Quando la camera alta
+     torna a disegnare e il da-vicino non viene toccato da VICINO_RIPOSO
+     millisecondi, immagini e celle si lasciano al garbage collector; alla
+     ripresa dopo si ridecodificano (un centinaio di millisecondi, coperti
+     dalla cella da 144 che intanto disegna). I data-URI restano nel
+     sorgente: e' il prezzo fisso del file, non della memoria. */
+  const VICINO_RIPOSO=8000; let ULT2=0;
+  function sfratta2(){
+    img2=null; imgM2=null; imgK2=null; pronto2=false; chiesto2=false; CELLE2.clear(); SCR2=null;
+  }
   function carica2(){
     if(chiesto2||!TAV2||typeof document==='undefined') return; chiesto2=true;
     let n=0;
@@ -681,8 +703,8 @@ const Sprite3D=(function(){
         /* la figura tinta e' la sorgente di se' stessa: zonaG la legge da
            una copia e risomma la zona tinta sulla tela c */
         const copia=document.createElement('canvas'); copia.width=copia.height=cel; copia.getContext('2d').drawImage(c,0,0);
-        if(pelle) zonaG(c, copia,0,0, mascheraCella(kk,0,cel),0,0, cel, 'multiply', rapporto(look.pelle), 1, s);
-        if(capelli) zonaG(c, copia,0,0, mascheraCella(kk,1,cel),0,0, cel, 'source-atop', look.capelli, 0.85, s);
+        if(pelle) zonaG(c,0,0, copia,0,0, mascheraCella(kk,0,cel),0,0, cel, 'multiply', rapporto(look.pelle), 1, s);
+        if(capelli) zonaG(c,0,0, copia,0,0, mascheraCella(kk,1,cel),0,0, cel, 'source-atop', look.capelli, 0.85, s);
       }
     }
     if(CELLE2.size>=C2_MAX){ const v=CELLE2.keys().next().value; CELLE2.delete(v); }
@@ -704,9 +726,9 @@ const Sprite3D=(function(){
   function stato(){
     const prestiti={}; for(const k in ALIAS){ const vv=voce(k); if(!TAV.voci[k] && vv) prestiti[k]=vv.nome; }
     return {pronto:pronto, fallito:fallito, tinte:TINTE.size, persone:PERSONE_N, ricomposizioni:RICOMP, clip:Object.keys(TAV.voci), prestiti:prestiti, cella:TAV.cella,
-            vicino:{tavola:!!TAV2, chiesto:chiesto2, pronto:pronto2, fallito:fallito2, celle:CELLE2.size, composte:COMP2, cella:TAV2?TAV2.cella:0}};
+            vicino:{tavola:!!TAV2, on:VICINO_ON, chiesto:chiesto2, pronto:pronto2, fallito:fallito2, celle:CELLE2.size, composte:COMP2, cella:TAV2?TAV2.cella:0}};
   }
 
-  return {carica:carica, disegna:disegna, ombra:ombra, torso:torso, tela:tela, dir:dir, voce:voce, stato:stato, TAV:TAV,
+  return {carica:carica, disegna:disegna, ombra:ombra, vicinoOn:vicinoOn, torso:torso, tela:tela, dir:dir, voce:voce, stato:stato, TAV:TAV,
           persona:persona};
 })();

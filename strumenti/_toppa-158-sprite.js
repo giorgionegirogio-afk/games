@@ -224,7 +224,8 @@ esatta('window.__test: stato e rubinetto degli sprite',
   /* GLI SPRITE (voce #158): lo stato dell'atlante e il rubinetto per i
      confronti A/B — spento, il gioco disegna col rig come prima. */
   get sprite(){ return Object.assign({on:SPRITE_ON && SAVE.figure!==0, rubinetto:SPRITE_ON, figure:SAVE.figure}, Sprite3D.stato()); },
-  spriteOn(v){ SPRITE_ON = !!v; return SPRITE_ON; },`);
+  spriteOn(v){ SPRITE_ON = !!v; return SPRITE_ON; },
+  vicinoOn(v){ return Sprite3D.vicinoOn(v); },`);
 
 /* ------------------------------------------------------------------
    5. l'interruttore nelle Impostazioni: FIGURE fotografiche / disegnate
