@@ -762,6 +762,36 @@ Qui il registro completo, a edizioni.
   rosso, `silhouette` 6/10 del giro 4; `istantanea` 41/56 colonna per
   colonna identico; `giocata` 7/7; `prestazione` 3/3.** Debito saldato.
 
+  **Compito 6 — l'ombra è dello sprite quando il corpo è lo sprite.**
+  `drawOmbreGiocatori` gettava a terra lo scheletro del rig anche sotto
+  la figura fotografica: nello scatto di partita l'ombra alzava le
+  braccia e l'uomo correva. Ora, con gli sprite accesi, l'ombra è la
+  **sagoma del fotogramma** che il corpo disegnerà, stesa lungo il sole
+  con la stessa geometria di `ombraGeometria`: una trasformazione affine
+  manda l'asse verticale della cella (la quota) lungo il sole, a
+  `perMetro` unità per metro su una statura di 1,83 m (come lo
+  scheletro: il riquadro d'esclusione di `collaudo` copre 2,34 m e le
+  mani alzate ci stanno), e l'asse orizzontale sulla trasversale del
+  manto. La sagoma viene da una tela a metà risoluzione nella tinta
+  d'ombra del gioco (mai nero puro), ingrassata di tre pixel e larga 1,7
+  volte la figura: lo sprite non ha profondità, e con il sole quasi lungo
+  x la prima stesura gettava **un filo** accanto ai blocchi dello
+  scheletro (6,6 unità di tratto per arto). Un `drawImage` per figura; lo
+  scheletro resta il ripiego (atlante non pronto, sole lungo x). **Tre
+  trappole pagate**, scritte nel modulo: `setTransform` butterebbe via la
+  camera (si lavora relativi); tre copie ad alfa ridotta uscivano slavate
+  (97 pixel scuri nella prova isolata contro 330); e il sipario `#wipe`
+  — un elemento del DOM animato col tempo vero — copre lo scatto per un
+  secondo quando l'orologio è preso in mano: due sonde hanno «visto»
+  lastre scure che erano la transizione, non l'ombra. La prova che si
+  guarda: `strumenti/_158-prove/ombra-confronto.png` (`_158-sonda-ombra.js`,
+  stesso istante, sprite a sinistra e rig a destra). Misure sulla copia:
+  `collaudo` 36/36, `divise` OK, `istantanea` **42/56**: la colonna delle
+  ombre sale da **3 a 5 su 8** e «il centro è sera» scende da 8 a 7 (un
+  istante, sul filo della saturazione, con più ombra di prima sul
+  manto); `silhouette` 6/10 resta il giro 4. `prestazione --contro HEAD`:
+  3/3 a sei giri, medio +0,9%, tipico −0,0%, p95 −0,0%, tutti e tre «non provati» (i giri scavalcano lo zero): il costo sta sotto il rumore dello strumento.
+
   ### (b) I numeri che hanno deciso
 
   - **Scala e ancora** (`_158-misura-scala.js`): a hCss 420 il rig 'fermo'

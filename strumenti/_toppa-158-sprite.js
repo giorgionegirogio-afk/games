@@ -65,6 +65,24 @@ try { const tj = JSON.parse(tav); if (tj.sorg_pelle) sorgPelle = JSON.stringify(
 modulo = modulo.replace('__SPRITE_SORG_PELLE__', () => sorgPelle);
 /* le quattro stature del rig (CORPI, voce #155): spilungone, tarchiato,
    piccoletto, neutro — copiate a mano, e _q-sprite le confronta col rig */
+/* L'ATLANTE DA VICINO (compito 7) entra solo con --vicino: tre immagini in
+   piu' (fuori/sprite/atlante192, celle da 192) e la sua tavola. Senza il
+   flag la tavola e' null e il modulo disegna la cella da 144 anche a
+   camera bassa, come al compito 3. */
+const VICINO = argv.includes('--vicino');
+const ATL2 = path.join('fuori', 'sprite', 'atlante192');
+let tav2 = 'null', src2 = '', srcM2 = '', srcK2 = '';
+if (VICINO) {
+  if (!fs.existsSync(path.join(ATL2, 'atlante.json'))) { console.error('FALLITO: --vicino ma manca ' + ATL2 + ' (python strumenti/sprite/monta.py --cella 192 --altezza 170 --uscita ' + ATL2 + ' --pronti fuori/sprite/pronti192)'); process.exit(1); }
+  tav2 = fs.readFileSync(path.join(ATL2, 'atlante.json'), 'utf8');
+  src2 = uri(path.join(ATL2, 'atlante.webp'), 'image/webp');
+  srcM2 = uri(path.join(ATL2, 'atlante-m.webp'), 'image/webp');
+  srcK2 = uri(path.join(ATL2, 'atlante-k.webp'), 'image/webp');
+}
+modulo = modulo.replace('__SPRITE_TAV2__', () => tav2)
+               .replace('__SPRITE_SRC2__', () => src2)
+               .replace('__SPRITE_SRCM2__', () => srcM2)
+               .replace('__SPRITE_SRCK2__', () => srcK2);
 modulo = modulo.replace('__SPRITE_TAV__', () => tav)
                .replace('__SPRITE_SRC__', () => src)
                .replace('__SPRITE_SRCM__', () => srcM)
@@ -105,6 +123,34 @@ esatta('la chiamata di disegno in partita',
                     (G.view.S2||1)*P_DIS, p.filo?1.7:0);
     }
 `);
+
+/* ------------------------------------------------------------------
+   1b. L'OMBRA PORTATA (compito 6): la sagoma del fotogramma proiettata
+   lungo il sole, al posto dello scheletro del rig; lo scheletro resta il
+   ripiego (atlante non pronto, sole lungo x).
+   ------------------------------------------------------------------ */
+esatta("l'ombra portata in partita",
+`      rigFusione(p, st);
+      fatta=Rig3D.ombraTraccia(ctx, X, Y,
+              RIG_H/(p.squash||1), rigAngolo(p)+RIG_YAW_K,
+              st.clip, st.u/Rig3D.CLIPS[st.clip].freq,
+              lk.corp, lk.varb, C, S, GEO.perMetro, r, lk.manc);`,
+`      rigFusione(p, st);
+      /* L'OMBRA E' DELLO SPRITE QUANDO IL CORPO E' LO SPRITE (voce #158,
+         compito 6): la sagoma del fotogramma che drawPlayer disegnera'
+         fra poche righe, stesa lungo il sole con la geometria di
+         ombraGeometria (C, S, perMetro, r). Prima qui si gettava sempre
+         lo scheletro del rig, e sullo scatto di partita l'ombra alzava
+         le braccia mentre l'uomo correva. Lo scheletro resta il ripiego
+         onesto, come il rig per il corpo. */
+      if(SPRITE_ON && SAVE.figure!==0)
+        fatta=Sprite3D.ombra(ctx, X, Y, RIG_H/(p.squash||1), rigAngolo(p)+RIG_YAW_K,
+                st.clip, st.u/Rig3D.CLIPS[st.clip].freq, lk, C, S, GEO.perMetro, r, sc, OMBRA_TINTA);
+      if(!fatta)
+      fatta=Rig3D.ombraTraccia(ctx, X, Y,
+              RIG_H/(p.squash||1), rigAngolo(p)+RIG_YAW_K,
+              st.clip, st.u/Rig3D.CLIPS[st.clip].freq,
+              lk.corp, lk.varb, C, S, GEO.perMetro, r, lk.manc);`);
 
 /* ------------------------------------------------------------------
    2. l'ancora del numero, e 3. il ritaglio attorno alla testa

@@ -92,6 +92,11 @@ altezza per cella) → `monta.py` (rifà tutto da `piano.json`) →
   del rig: con lo sprite la sagoma dell'ombra e quella dell'uomo possono
   non coincidere (visibile nello scatto: ombra con le braccia alzate,
   sprite in corsa). Cura in un compito suo.
+  **Edizione del 10 ottobre 2026 (compito 6):** curato. `Sprite3D.ombra`
+  getta la sagoma del fotogramma lungo il sole (geometria di
+  `ombraGeometria`, statura 1,83 m, trasversale ×1,7, ingrasso 3 px, tela
+  a metà risoluzione nella tinta d'ombra); `drawOmbreGiocatori` la
+  chiede prima dello scheletro quando gli sprite sono accesi.
 - **Un uomo solo** → dal compito 4 pelle e capelli sono per figura
   (`look.pelle`/`look.capelli`, le tavolozze SKIN e HAIR del gioco):
   maschere in `ritaglia.py` (pelle per colore + viso per geometria,

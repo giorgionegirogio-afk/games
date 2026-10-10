@@ -134,41 +134,14 @@ const Sprite3D=(function(){
   }
   function eNero(c){ return c==='#000'||c==='#000000'||c==='black'; }
 
-  /* la tela tinta per un look: chiave = le tre tinte + il disegno */
-  function tela(look){
-    if(look._nero || (eNero(look.maglia) && eNero(look.pelle))) return nera();
-    const c1=look.maglia||'#ffffff', c2=look.maglia2||c1, cp=look.pantaloncini||c2, dis=look.disegno||'tinta';
-    const k=c1+'|'+c2+'|'+cp+'|'+dis;
-    let t=TINTE.get(k); if(t) return t;
-    if(TINTE.size>24) TINTE.clear();
-    const A0=rgb(c1)||[255,255,255], B=rgb(c2)||A0, P=rgb(cp)||B;
-    /* LA MAGLIA SALE DI UN ALTRO 18% VERSO IL BIANCO CALDO, ed e' lo
-       stesso bilancio che il rig paga in rigLook (mt(c1,'#fff6e4',0.30)):
-       il cancello del contrasto maglia/erba (collaudo.js, 3:1) e' una
-       proprieta' della LUMINANZA, e la stoffa fotografica, anche con la
-       gamma qui sotto, ne porta meno della tinta piatta. Misurato il
-       25/9 sulla copia: con la sola gamma P1 3,02:1 e P2 (rosa) 2,54:1;
-       la stoffa sotto il petto sta a L 0,72 e per arrivare a 3:1 sulla
-       divisa rosa servono altri dodici punti di luminanza. Il 18% li
-       comprava con sei clip (P2 3,02:1, sul filo); con diciassette clip e
-       la sonda sulle sole pose erette P2 e' sceso a 2,78:1 (P1 4,66) —
-       le celle dei fogli 4x4 portano piu' ombra sulla stoffa. Al 26% il
-       rosa risale sopra il 3:1 (rimisurato); vale per la sola maglia, i
-       calzoncini restano la seconda tinta scurita che li divide dal
-       tronco. */
-    /* LA SCHIARITURA E' ADATTIVA (compito 2): piu' la tinta e' scura, piu'
-       sale — 26% su un bianco, fino al 46% su un nero. Con la sonda sulle
-       pose erette e il pavimento della stoffa, la maglia ROSA passava
-       (3,01:1) e il BLU dell'alto contrasto (#123a80, la modalita' per chi
-       distingue male i colori) restava a 2,74:1: il modo pensato per la
-       leggibilita' era il meno leggibile. Y e' la luminanza relativa
-       della tinta (BT.709 su sRGB linearizzato). */
-    const Yk=(function(c){ const f=v=>{v/=255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);}; return 0.2126*f(c[0])+0.7152*f(c[1])+0.0722*f(c[2]); })(A0);
-    const mix=0.26+0.20*(1-Math.min(1,Yk/0.6));
-    const A=[A0[0]+(255-A0[0])*mix, A0[1]+(246-A0[1])*mix, A0[2]+(228-A0[2])*mix];
-    const out=new ImageData(new Uint8ClampedArray(base.data), W, H);
-    const d=out.data, m=mas, cel=TAV.cella;
+  /* LA TINTA DELLA DIVISA, PIXEL PER PIXEL — una funzione sola per la tela
+     di squadra (compito 1) e per la cella da vicino (compito 7): d e' il
+     buffer RGBA da tingere, mm_ le maschere (R maglia, G calzoncini) con
+     lo stesso passo di riga W; cel e' il lato della cella, che serve a
+     strisce e fascia per sapere dove sta il pixel DENTRO la cella. */
+  function tingi(dd, mm_, W, cel, A, B, P, dis){
     const strisce=(dis==='strisce'), fascia=(dis==='fascia');
+    const d=dd, m=mm_;
     const passo=cel/9;
     for(let i=0,px=0;i<d.length;i+=4,px++){
       if(d[i+3]===0) continue;
@@ -227,6 +200,43 @@ const Sprite3D=(function(){
         d[i]=d[i]+(P[0]*L-d[i])*w; d[i+1]=d[i+1]+(P[1]*L-d[i+1])*w; d[i+2]=d[i+2]+(P[2]*L-d[i+2])*w;
       }
     }
+
+  }
+
+  /* la tela tinta per un look: chiave = le tre tinte + il disegno */
+  function tela(look){
+    if(look._nero || (eNero(look.maglia) && eNero(look.pelle))) return nera();
+    const c1=look.maglia||'#ffffff', c2=look.maglia2||c1, cp=look.pantaloncini||c2, dis=look.disegno||'tinta';
+    const k=c1+'|'+c2+'|'+cp+'|'+dis;
+    let t=TINTE.get(k); if(t) return t;
+    if(TINTE.size>24) TINTE.clear();
+    const A0=rgb(c1)||[255,255,255], B=rgb(c2)||A0, P=rgb(cp)||B;
+    /* LA MAGLIA SALE DI UN ALTRO 18% VERSO IL BIANCO CALDO, ed e' lo
+       stesso bilancio che il rig paga in rigLook (mt(c1,'#fff6e4',0.30)):
+       il cancello del contrasto maglia/erba (collaudo.js, 3:1) e' una
+       proprieta' della LUMINANZA, e la stoffa fotografica, anche con la
+       gamma qui sotto, ne porta meno della tinta piatta. Misurato il
+       25/9 sulla copia: con la sola gamma P1 3,02:1 e P2 (rosa) 2,54:1;
+       la stoffa sotto il petto sta a L 0,72 e per arrivare a 3:1 sulla
+       divisa rosa servono altri dodici punti di luminanza. Il 18% li
+       comprava con sei clip (P2 3,02:1, sul filo); con diciassette clip e
+       la sonda sulle sole pose erette P2 e' sceso a 2,78:1 (P1 4,66) —
+       le celle dei fogli 4x4 portano piu' ombra sulla stoffa. Al 26% il
+       rosa risale sopra il 3:1 (rimisurato); vale per la sola maglia, i
+       calzoncini restano la seconda tinta scurita che li divide dal
+       tronco. */
+    /* LA SCHIARITURA E' ADATTIVA (compito 2): piu' la tinta e' scura, piu'
+       sale — 26% su un bianco, fino al 46% su un nero. Con la sonda sulle
+       pose erette e il pavimento della stoffa, la maglia ROSA passava
+       (3,01:1) e il BLU dell'alto contrasto (#123a80, la modalita' per chi
+       distingue male i colori) restava a 2,74:1: il modo pensato per la
+       leggibilita' era il meno leggibile. Y e' la luminanza relativa
+       della tinta (BT.709 su sRGB linearizzato). */
+    const Yk=(function(c){ const f=v=>{v/=255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);}; return 0.2126*f(c[0])+0.7152*f(c[1])+0.0722*f(c[2]); })(A0);
+    const mix=0.26+0.20*(1-Math.min(1,Yk/0.6));
+    const A=[A0[0]+(255-A0[0])*mix, A0[1]+(246-A0[1])*mix, A0[2]+(228-A0[2])*mix];
+    const out=new ImageData(new Uint8ClampedArray(base.data), W, H);
+    tingi(out.data, mas, W, TAV.cella, A, B, P, dis);
     /* LA TELA DELLA SQUADRA E' IN SOLA LETTURA. Il compito 4 aveva provato
        a comporre le figure con pelle e capelli in slot in coda a questa
        tela: ogni scrittura la invalidava e le ventidue figure che la
@@ -236,6 +246,105 @@ const Sprite3D=(function(){
     t=document.createElement('canvas'); t.width=W; t.height=H;
     t.getContext('2d').putImageData(out,0,0);
     TINTE.set(k,t); return t;
+  }
+
+  /* =====================================================================
+     L'OMBRA PORTATA DELLO SPRITE (voce #158, compito 6).
+
+     IL DIFETTO: drawOmbreGiocatori gettava a terra lo SCHELETRO del rig
+     (Rig3D.ombraTraccia) anche quando il corpo in piedi era lo sprite —
+     nello scatto di partita l'ombra aveva le braccia alzate e l'uomo
+     correva. Qui l'ombra e' la SAGOMA DEL FOTOGRAMMA che il corpo
+     disegnera', proiettata sul manto lungo il sole con la stessa
+     geometria del rig: il chiamante ha gia' ruotato la tela perche' il
+     sole corra lungo +X (ombraGeometria), e passa C e S di quella
+     rotazione, perMetro (unita' di manto per metro di quota) e r (la
+     riduzione in quota). La trasformazione affine manda ogni pixel della
+     cella (px,py) in
+        (X,Y) + (px-f2)·k·(C,-S)  +  (f3-py)·m·(1,0)
+     cioe' l'asse orizzontale dello sprite resta l'asse x del manto (nel
+     riferimento ruotato e' (C,-S)) e l'asse verticale — la QUOTA — si
+     stende lungo il sole: una figura alta 1,83 m getta esattamente
+     `lung` unita', come la capsula e come lo scheletro (perMetro =
+     lung/1,83). La statura del rig, non la SCALA 1,15 di leggibilita':
+     il riquadro d'esclusione di collaudo.js copre 2,34 m di quota e le
+     mani alzate della presa arrivano a 1,83·1,31 = 2,4 m, come quelle
+     del rig.
+
+     LO SPESSORE. Lo sprite non ha profondita': quel che nel rig e' il
+     passo delle gambe lungo y qui e' letto come quota. Per non gettare
+     una lama la sagoma viene INGRASSATA una volta per tutte nella tela
+     dell'ombra (vedi telaOmbra), e per figura resta un drawImage con
+     l'alfa del chiamante (a·OMA, il valore che tiene l'erba in ombra
+     sopra lo 0,18 con cui istantanea.js la riconosce ancora come prato).
+
+     LA TELA DELL'OMBRA e' l'atlante a META' risoluzione riempito con la
+     tinta d'ombra del gioco (OMBRA_TINTA, «erba col cielo dentro»: mai
+     nero puro, il contratto di SOLE), costruita una volta: 5 MB invece
+     di 21, e l'ombra e' comunque schiacciata e sfumata. Il mancino
+     specchia come in disegna(). Risponde false — e il chiamante getta lo
+     scheletro — se l'atlante non e' pronto, se la clip non c'e', o se il
+     sole corre quasi esattamente lungo x dello schermo (|S|<0,03): li'
+     la matrice degenera e drawImage non disegnerebbe niente.
+     ===================================================================== */
+  let OMBRA=null, OMBRA_TINTA_K='', OMBRA_Q=0.5;
+  function telaOmbra(tinta){
+    if(OMBRA && OMBRA_TINTA_K===tinta) return OMBRA;
+    if(!img) return null;
+    const w=Math.max(1,Math.round(W*OMBRA_Q)), h=Math.max(1,Math.round(H*OMBRA_Q));
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    const g=c.getContext('2d');
+    /* LA SAGOMA SI INGRASSA DI TRE PIXEL (sei dell'atlante, ~0,13 m)
+       in tutte le direzioni: lo sprite e' una lama senza profondita', e
+       un braccio largo otto pixel gettava un filo. Con l'ingrasso un arto
+       porta a terra ~5 unita' di manto, vicino alle 6,6 della capsula del
+       rig (OMBRA_LARG); i vuoti fra le gambe si chiudono e il bordo esce
+       morbido, che per un'ombra e' un pregio. Nove disegni UNA volta,
+       poi un drawImage per figura: la prima stesura faceva tre copie per
+       figura ad alfa ridotta e usciva slavata — misurato con la prova
+       isolata: 97 pixel scuri, contro migliaia. */
+    for(let dy=-3;dy<=3;dy+=3) for(let dx=-3;dx<=3;dx+=3) g.drawImage(img,dx,dy,w,h);
+    g.globalCompositeOperation='source-in'; g.fillStyle=tinta||'rgb(14,38,32)'; g.fillRect(0,0,w,h);
+    OMBRA=c; OMBRA_TINTA_K=tinta; return c;
+  }
+  function ombra(ctx,X,Y,hPx,yaw,nomeClip,tSec,look,C,S,perMetro,r,semi,tinta){ /* semi: riservato (larghezza della capsula del chiamante) */
+    if(!pronto||!look||!(hPx>0)||!(perMetro>0)) return false;
+    if(Math.abs(S)<0.03) return false;
+    const vv=voce(nomeClip); if(!vv) return false;
+    const v=vv.v;
+    let dd=dir(yaw);
+    const manc=!!look.manc && MANCINE[vv.nome]===1;
+    if(manc){ dd=(8-dd)%8; }
+    const fr=v[dd]; if(!fr||!fr.length) return false;
+    const clip=Rig3D.CLIPS[nomeClip];
+    let u=(tSec*(clip?clip.freq:1))%1; if(u<0) u+=1;
+    const f=fr[Math.min(fr.length-1,(u*fr.length)|0)];
+    const t=telaOmbra(tinta); if(!t) return false;
+    const st=statura(look), cel=TAV.cella, q=OMBRA_Q;
+    const rr=(r>0?r:1);
+    /* LA LARGHEZZA E' 1,7 VOLTE QUELLA DISEGNATA: il billboard non ha
+       profondita' — il passo delle gambe lungo y, le spalle di traverso —
+       e col sole quasi lungo x la sagoma si stendeva in un filo
+       (ombra-confronto.png, prima stesura: un'asta accanto ai blocchi
+       dello scheletro, che porta 6,6 unita' di tratto per arto). Il
+       fattore e' tarato a occhio su quel confronto, con l'ingrasso di
+       telaOmbra: non muove ne' la lunghezza ne' la direzione, che sono
+       le due cose che istantanea.js misura. */
+    const k=hPx*st*SCALA/f[4]*rr*1.7;             // unita' di manto per px di cella, sulla trasversale
+    const m=1.83*st*perMetro*rr/f[4];             // unita' lungo il sole per px di quota
+    const sx=manc?-1:1;
+    const A=k*sx*C, B=-k*sx*S, Cc=-m, Dd=0;
+    const E0=-f[2]*k*sx*C+f[3]*m, F0=f[2]*k*sx*S;
+    /* sempre RELATIVO alla trasformazione del chiamante (camera, DPR e la
+       rotazione del sole): mai setTransform, che la butterebbe via.
+       L'alfa e' quella del chiamante (a·OMA), la stessa dello scheletro:
+       una copia sola, niente sovrapposizioni che scuriscano il nucleo
+       sotto lo 0,18 del prato. */
+    ctx.save();
+    ctx.transform(A,B,Cc,Dd,X+E0,Y+F0);
+    ctx.drawImage(t,f[0]*cel*q,f[1]*cel*q,cel*q,cel*q,0,0,cel,cel);
+    ctx.restore();
+    return true;
   }
 
   function dir(yaw){
@@ -298,8 +407,20 @@ const Sprite3D=(function(){
     const fr=v[dd]; if(!fr||!fr.length) return false;
     const clip=Rig3D.CLIPS[nomeClip];
     let u=(tSec*(clip?clip.freq:1))%1; if(u<0) u+=1;
-    const f=fr[Math.min(fr.length-1,(u*fr.length)|0)];
-    const t=tela(look);
+    const f0=fr[Math.min(fr.length-1,(u*fr.length)|0)];
+    /* A CAMERA BASSA LA CELLA DA VICINO, se c'e' ed e' pronta (compito 7):
+       stessa voce, stesso fotogramma, ancora e statura della tavola a 192.
+       La prima richiesta avvia la decodifica e disegna la cella da 144. */
+    let f=f0, T=TAV, c2=null;
+    if(nomeCam==='bassa' && TAV2){
+      if(!pronto2){ if(!fallito2) carica2(); }
+      else{
+        const v2=TAV2.voci[vv.nome], fr2=v2&&v2[dd];
+        const f2=fr2&&fr2[Math.min(fr2.length-1,(u*fr2.length)|0)];
+        if(f2){ c2=cella2(f2,look); if(c2){ f=f2; T=TAV2; } }
+      }
+    }
+    const t=c2?null:tela(look);
     /* LA SCALA RISPETTO AL RIG, MISURATA (strumenti/_158-misura-scala.js,
        25 settembre 2026, provino a hCss 420, clip fermo, quattro
        imbardate): il rig e' alto 429/438/449/465 px contro 417 dello
@@ -312,7 +433,7 @@ const Sprite3D=(function(){
        della differenza di baricentro, perche' i piedi devono restare
        sull'ombra portata che il gioco disegna a cy. */
     const k=hPx*statura(look)*SCALA/f[4];
-    const cel=TAV.cella;
+    const cel=T.cella;
     let dx=cx-f[2]*k; const dy=cy+hPx*GIU-f[3]*k, dl=cel*k;
     if(!senzaOmbra){
       /* L'OMBRA DI CONTATTO, solo dove il chiamante la chiede (la ripresa
@@ -338,7 +459,8 @@ const Sprite3D=(function(){
       /* il filo del comandato: un alone chiaro attorno alla sagoma, la
          stessa funzione del contorno che il rig ingrossa */
       ctx.save(); ctx.shadowColor='rgba(255,255,255,0.95)'; ctx.shadowBlur=filo*2.2*(pxs>0?pxs:1);
-      ctx.drawImage(t,f[0]*cel,f[1]*cel,cel,cel,dx,dy,dl,dl);
+      if(c2) ctx.drawImage(c2,0,0,cel,cel,dx,dy,dl,dl);
+      else ctx.drawImage(t,f[0]*cel,f[1]*cel,cel,cel,dx,dy,dl,dl);
       ctx.restore();
     }
     /* LA PERSONA SOPRA LA DIVISA (compito 4): pelle e capelli di QUESTO
@@ -346,7 +468,8 @@ const Sprite3D=(function(){
        ne' capelli (banchi, look nero della maschera) si disegna la divisa
        dall'atlante tinto. Tutto dentro lo stesso specchio del mancino. */
     let pc=null;
-    if((look.pelle||look.capelli) && !look._nero && !eNero(look.maglia)) pc=persona(t,f,look);
+    if(c2) pc=c2;     // da vicino la persona e' gia' dentro la cella
+    else if((look.pelle||look.capelli) && !look._nero && !eNero(look.maglia)) pc=persona(t,f,look);
     if(pc) ctx.drawImage(pc,0,0,cel,cel,dx,dy,dl,dl);
     else ctx.drawImage(t,f[0]*cel,f[1]*cel,cel,cel,dx,dy,dl,dl);
     if(manc) ctx.restore();
@@ -375,10 +498,17 @@ const Sprite3D=(function(){
      dst. Otto operazioni su 144x144 pixel. */
   function zona(dst,ox,oy,t,maschera,f,modo,colore,alfa){
     if(!colore||!maschera) return;
-    const cel=TAV.cella, sx=f[0]*cel, sy=f[1]*cel;
-    const s=scratch(), g=s.getContext('2d');
+    const cel=TAV.cella;
+    zonaG(dst,ox,oy, t,f[0]*cel,f[1]*cel, maschera,f[0]*cel,f[1]*cel, cel, modo,colore,alfa, scratch());
+  }
+  /* la stessa cosa, con sorgente, maschera, lato e tela di lavoro
+     dichiarati: la usa anche la cella da vicino (compito 7), che non ha
+     una tela grande da cui ritagliare */
+  function zonaG(dst,ox,oy, src,sx,sy, maschera,mx,my, cel, modo,colore,alfa, s){
+    if(!colore||!maschera) return;
+    const g=s.getContext('2d');
     g.globalCompositeOperation='source-over'; g.globalAlpha=1; g.clearRect(0,0,cel,cel);
-    g.drawImage(t,sx,sy,cel,cel,0,0,cel,cel);
+    g.drawImage(src,sx,sy,cel,cel,0,0,cel,cel);
     if(modo==='multiply'){
       /* PRIMA SI APPIATTISCE, POI SI TINGE. La pelle fotografata ha
          riflessi a 240 e ombre a 120: moltiplicati per il rapporto di una
@@ -391,12 +521,13 @@ const Sprite3D=(function(){
       g.fillStyle='rgb('+SORG_PELLE[0]+','+SORG_PELLE[1]+','+SORG_PELLE[2]+')'; g.fillRect(0,0,cel,cel);
       g.globalAlpha=1;
       g.globalCompositeOperation='multiply'; g.fillStyle=colore; g.fillRect(0,0,cel,cel);
-      g.globalCompositeOperation='destination-in'; g.drawImage(maschera,sx,sy,cel,cel,0,0,cel,cel);
+      g.globalCompositeOperation='destination-in'; g.drawImage(maschera,mx,my,cel,cel,0,0,cel,cel);
     }else{
-      g.globalCompositeOperation='destination-in'; g.drawImage(maschera,sx,sy,cel,cel,0,0,cel,cel);
+      g.globalCompositeOperation='destination-in'; g.drawImage(maschera,mx,my,cel,cel,0,0,cel,cel);
       g.globalCompositeOperation='source-atop'; g.globalAlpha=alfa; g.fillStyle=colore; g.fillRect(0,0,cel,cel);
       g.globalAlpha=1;
     }
+    g.globalCompositeOperation='source-over';
     dst.getContext('2d').drawImage(s,ox,oy);
   }
 
@@ -464,6 +595,101 @@ const Sprite3D=(function(){
     return c;
   }
 
+  /* =====================================================================
+     L'ATLANTE DA VICINO (voce #158, compito 7).
+
+     In pianta la figura e' alta 40-90 px e la cella da 144 (statura 128)
+     basta. A camera bassa — i rigori, la ripresa del gol — arriva a
+     200-300 px: la stessa cella si ingrandisce di 1,5-2,5 volte e si
+     vede morbida (prezzo dichiarato al compito 3). Qui c'e' un SECONDO
+     atlante, celle da 192 (statura 170), con le stesse voci e gli stessi
+     fotogrammi (TAV2 ha ancore e stature sue: la toppa lo porta da
+     fuori/sprite/atlante192 con --vicino), usato SOLO dalla camera bassa.
+
+     COSTA MEMORIA, e la memoria si tiene corta per costruzione:
+       - le tre immagini si decodificano alla PRIMA richiesta a camera
+         bassa (carica2), non all'avvio: una partita senza gol ne' rigori
+         non le tocca; finche' non sono pronte disegna la cella da 144;
+       - NESSUNA tela di squadra a 192: a 3072x3072 sarebbero 37 MB per
+         divisa, tre divise 113 MB, su un telefono Android 10. La tinta si
+         fa PER CELLA, con la stessa funzione tingi() della tela grande,
+         sui 37.000 pixel del fotogramma che serve, e la figura intera
+         (divisa + pelle + capelli di QUEST'uomo) finisce in una tela da
+         192 px in una LRU di 96 (14 MB al massimo). Una ripresa mostra
+         sei-otto uomini per una decina di fotogrammi l'uno: dopo il primo
+         passaggio sono tutti colpi.
+     Il resto del disegno (scala, ancora, specchio del mancino, torso per
+     il numero) e' lo stesso di disegna(): cambia solo da quale tavola
+     vengono cella, ancora e statura.
+     ===================================================================== */
+  const TAV2=__SPRITE_TAV2__;
+  const SRC2='__SPRITE_SRC2__', SRCM2='__SPRITE_SRCM2__', SRCK2='__SPRITE_SRCK2__';
+  let img2=null, imgM2=null, imgK2=null, pronto2=false, fallito2=false, chiesto2=false, SCR2=null;
+  const CELLE2=new Map(); const C2_MAX=96; let COMP2=0;
+  function carica2(){
+    if(chiesto2||!TAV2||typeof document==='undefined') return; chiesto2=true;
+    let n=0;
+    const fine=function(){ if(++n<3) return; pronto2=true; };
+    const male=function(){ fallito2=true; };
+    img2=new Image(); img2.onload=fine; img2.onerror=male; img2.src=SRC2;
+    imgM2=new Image(); imgM2.onload=fine; imgM2.onerror=male; imgM2.src=SRCM2;
+    imgK2=new Image(); imgK2.onload=fine; imgK2.onerror=male; imgK2.src=SRCK2;
+  }
+  function scratch2(){
+    if(!SCR2){ SCR2=document.createElement('canvas'); SCR2.width=SCR2.height=TAV2.cella; }
+    return SCR2;
+  }
+  /* una tela con l'alfa di UN canale della cella delle maschere (R pelle,
+     G capelli): la stessa cosa che carica() prepara per l'atlante intero */
+  function mascheraCella(kk, canale, cel){
+    const im=new ImageData(cel,cel), d=im.data;
+    for(let i=0;i<d.length;i+=4){ const v=kk[i+canale]; d[i]=d[i+1]=d[i+2]=255; d[i+3]=v<24?0:v; }
+    const c=document.createElement('canvas'); c.width=c.height=cel; c.getContext('2d').putImageData(im,0,0);
+    return c;
+  }
+  function cella2(f,look){
+    if(!pronto2) return null;
+    const nero=!!look._nero || (eNero(look.maglia) && eNero(look.pelle));
+    const k=f[0]+','+f[1]+'|'+(nero?'NERA':(look.maglia||'')+'|'+(look.maglia2||'')+'|'+(look.pantaloncini||'')+'|'+(look.disegno||'')+'|'+(look.pelle||'')+'|'+(look.capelli||''));
+    let c=CELLE2.get(k);
+    if(c){ CELLE2.delete(k); CELLE2.set(k,c); return c; }
+    const cel=TAV2.cella, sx=f[0]*cel, sy=f[1]*cel;
+    const s=scratch2(), g=s.getContext('2d',{willReadFrequently:true});
+    g.globalCompositeOperation='source-over'; g.globalAlpha=1;
+    g.clearRect(0,0,cel,cel); g.drawImage(img2,sx,sy,cel,cel,0,0,cel,cel);
+    const im=g.getImageData(0,0,cel,cel), d=im.data;
+    if(nero){
+      for(let i=0;i<d.length;i+=4){ d[i]=0; d[i+1]=0; d[i+2]=0; }
+    }else{
+      g.clearRect(0,0,cel,cel); g.drawImage(imgM2,sx,sy,cel,cel,0,0,cel,cel);
+      const m=g.getImageData(0,0,cel,cel).data;
+      const c1=look.maglia||'#ffffff', c2=look.maglia2||c1, cp=look.pantaloncini||c2, dis=look.disegno||'tinta';
+      const A0=rgb(c1)||[255,255,255], B=rgb(c2)||A0, P=rgb(cp)||B;
+      const Yk=(function(c){ const fn=v=>{v/=255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);}; return 0.2126*fn(c[0])+0.7152*fn(c[1])+0.0722*fn(c[2]); })(A0);
+      const mix=0.26+0.20*(1-Math.min(1,Yk/0.6));
+      const A=[A0[0]+(255-A0[0])*mix, A0[1]+(246-A0[1])*mix, A0[2]+(228-A0[2])*mix];
+      tingi(d, m, cel, cel, A, B, P, dis);
+    }
+    c=document.createElement('canvas'); c.width=c.height=cel;
+    c.getContext('2d').putImageData(im,0,0);
+    if(!nero){
+      const pelle=look.pelle && !eNero(look.pelle) && pelleDaFare(look.pelle);
+      const capelli=look.capelli && !eNero(look.capelli) && capelliDaFare(look.capelli);
+      if(pelle||capelli){
+        g.clearRect(0,0,cel,cel); g.drawImage(imgK2,sx,sy,cel,cel,0,0,cel,cel);
+        const kk=g.getImageData(0,0,cel,cel).data;
+        /* la figura tinta e' la sorgente di se' stessa: zonaG la legge da
+           una copia e risomma la zona tinta sulla tela c */
+        const copia=document.createElement('canvas'); copia.width=copia.height=cel; copia.getContext('2d').drawImage(c,0,0);
+        if(pelle) zonaG(c, copia,0,0, mascheraCella(kk,0,cel),0,0, cel, 'multiply', rapporto(look.pelle), 1, s);
+        if(capelli) zonaG(c, copia,0,0, mascheraCella(kk,1,cel),0,0, cel, 'source-atop', look.capelli, 0.85, s);
+      }
+    }
+    if(CELLE2.size>=C2_MAX){ const v=CELLE2.keys().next().value; CELLE2.delete(v); }
+    CELLE2.set(k,c); COMP2++;
+    return c;
+  }
+
   /* lo stesso contratto di Rig3D.torso(): il segmento pelvi -> collo
      dell'ultima figura, in coordinate del contesto. Sul corpo in piedi
      la pelvi sta a 0,53 dell'altezza e il collo a 0,84 (misurato sui
@@ -477,9 +703,10 @@ const Sprite3D=(function(){
 
   function stato(){
     const prestiti={}; for(const k in ALIAS){ const vv=voce(k); if(!TAV.voci[k] && vv) prestiti[k]=vv.nome; }
-    return {pronto:pronto, fallito:fallito, tinte:TINTE.size, persone:PERSONE_N, ricomposizioni:RICOMP, clip:Object.keys(TAV.voci), prestiti:prestiti, cella:TAV.cella};
+    return {pronto:pronto, fallito:fallito, tinte:TINTE.size, persone:PERSONE_N, ricomposizioni:RICOMP, clip:Object.keys(TAV.voci), prestiti:prestiti, cella:TAV.cella,
+            vicino:{tavola:!!TAV2, chiesto:chiesto2, pronto:pronto2, fallito:fallito2, celle:CELLE2.size, composte:COMP2, cella:TAV2?TAV2.cella:0}};
   }
 
-  return {carica:carica, disegna:disegna, torso:torso, tela:tela, dir:dir, voce:voce, stato:stato, TAV:TAV,
+  return {carica:carica, disegna:disegna, ombra:ombra, torso:torso, tela:tela, dir:dir, voce:voce, stato:stato, TAV:TAV,
           persona:persona};
 })();
