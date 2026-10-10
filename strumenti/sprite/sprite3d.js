@@ -39,9 +39,26 @@
 const Sprite3D=(function(){
   'use strict';
   const TAV=__SPRITE_TAV__;
-  const SRC='__SPRITE_SRC__';
-  const SRCM='__SPRITE_SRCM__';
-  const SRCK='__SPRITE_SRCK__';     // i capelli, in una terza immagine (vedi atlante.py)
+  /* =====================================================================
+     DOVE STANNO I BYTE DELL'ATLANTE (compito 8). Due modi, scelti dalla
+     toppa:
+       - DENTRO IL PROGRAMMA: i data-URI sono stringhe di questo script.
+         Semplice, ma il motore deve leggere e analizzare SEI MEGABYTE di
+         base64 prima di eseguire la prima riga del gioco: sul telefono
+         (OnePlus 6) l'avvio a freddo passava da 1,86 a 3,45 s, misurato
+         con avvio-telefono.js a 0,34 ms per kB di file.
+       - IN BLOCCHI DI TESTO (--blocchi): gli stessi data-URI stanno in
+         <script type="text/plain" id="sprite-..."> IN FONDO al documento,
+         dopo lo script del gioco. L'analizzatore HTML li attraversa come
+         testo grezzo, il gioco parte prima di arrivarci, e carica() li
+         legge a DOMContentLoaded. Il file resta uno, senza rete.
+     BLOCCHI dice quale dei due; blocco(id) legge un blocco, vuoto se non
+     e' ancora stato analizzato. */
+  const BLOCCHI=__SPRITE_BLOCCHI__;
+  const INLINE={src:'__SPRITE_SRC__', m:'__SPRITE_SRCM__', k:'__SPRITE_SRCK__', src2:'__SPRITE_SRC2__', m2:'__SPRITE_SRCM2__', k2:'__SPRITE_SRCK2__'};
+  function blocco(id){ const e=(typeof document!=='undefined')?document.getElementById(id):null; return e?e.textContent:''; }
+  function sorgente(k){ return BLOCCHI ? blocco('sprite-'+k) : INLINE[k]; }
+  let DIFFERITA=false;
   let img=null, imgM=null, imgK=null, pronto=false, W=0, H=0, base=null, mas=null, fallito=false;
   let PELLE=null, CAPELLI=null, SCR=null;
   const TINTE=new Map();
@@ -70,6 +87,12 @@ const Sprite3D=(function(){
 
   function carica(){
     if(img||typeof document==='undefined') return;
+    /* nei blocchi di testo i byte arrivano DOPO questo script: si aspetta
+       che il documento sia tutto analizzato, una volta sola */
+    if(BLOCCHI && !sorgente('src')){
+      if(!DIFFERITA){ DIFFERITA=true; document.addEventListener('DOMContentLoaded', function(){ carica(); }, {once:true}); }
+      return;
+    }
     let n=0;
     const fine=function(){
       if(++n<3) return;
@@ -105,9 +128,9 @@ const Sprite3D=(function(){
       }catch(e){ fallito=true; pronto=false; }
     };
     const male=function(){ fallito=true; pronto=false; };
-    img=new Image(); img.onload=fine; img.onerror=male; img.src=SRC;
-    imgM=new Image(); imgM.onload=fine; imgM.onerror=male; imgM.src=SRCM;
-    imgK=new Image(); imgK.onload=fine; imgK.onerror=male; imgK.src=SRCK;
+    img=new Image(); img.onload=fine; img.onerror=male; img.src=sorgente('src');
+    imgM=new Image(); imgM.onload=fine; imgM.onerror=male; imgM.src=sorgente('m');
+    imgK=new Image(); imgK.onload=fine; imgK.onerror=male; imgK.src=sorgente('k');
   }
 
   function rgb(h){
@@ -628,7 +651,6 @@ const Sprite3D=(function(){
      vengono cella, ancora e statura.
      ===================================================================== */
   const TAV2=__SPRITE_TAV2__;
-  const SRC2='__SPRITE_SRC2__', SRCM2='__SPRITE_SRCM2__', SRCK2='__SPRITE_SRCK2__';
   let img2=null, imgM2=null, imgK2=null, pronto2=false, fallito2=false, chiesto2=false, SCR2=null;
   const CELLE2=new Map(); const C2_MAX=96; let COMP2=0;
   /* il rubinetto del da-vicino: chiuso, la camera bassa disegna la cella
@@ -645,17 +667,32 @@ const Sprite3D=(function(){
      dalla cella da 144 che intanto disegna). I data-URI restano nel
      sorgente: e' il prezzo fisso del file, non della memoria. */
   const VICINO_RIPOSO=8000; let ULT2=0;
+  /* LA PRECARICA. Sul telefono (OnePlus 6, Android 11) le tre immagini da
+     3072x3072 si decodificano in 1,8 s dalla prima richiesta: la ripresa
+     del gol dura quattro secondi e meta' passava con la cella da 144, poi
+     lo scatto a quella netta. Il gioco sa PRIMA quando serviranno: al gol
+     (la festa dura 2,3 s prima della ripresa) e all'inizio del dischetto.
+     prepara() avvia la decodifica da li', e segna il momento perche' lo
+     sfratto non la butti via prima che la ripresa cominci. */
+  function prepara(){
+    if(!TAV2||!VICINO_ON||fallito2) return false;
+    ULT2=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+    if(!pronto2) carica2();
+    return true;
+  }
   function sfratta2(){
     img2=null; imgM2=null; imgK2=null; pronto2=false; chiesto2=false; CELLE2.clear(); SCR2=null;
   }
   function carica2(){
-    if(chiesto2||!TAV2||typeof document==='undefined') return; chiesto2=true;
+    if(chiesto2||!TAV2||typeof document==='undefined') return;
+    if(!sorgente('src2')) return;          // blocchi non ancora analizzati: si riprova alla prossima richiesta
+    chiesto2=true;
     let n=0;
     const fine=function(){ if(++n<3) return; pronto2=true; };
     const male=function(){ fallito2=true; };
-    img2=new Image(); img2.onload=fine; img2.onerror=male; img2.src=SRC2;
-    imgM2=new Image(); imgM2.onload=fine; imgM2.onerror=male; imgM2.src=SRCM2;
-    imgK2=new Image(); imgK2.onload=fine; imgK2.onerror=male; imgK2.src=SRCK2;
+    img2=new Image(); img2.onload=fine; img2.onerror=male; img2.src=sorgente('src2');
+    imgM2=new Image(); imgM2.onload=fine; imgM2.onerror=male; imgM2.src=sorgente('m2');
+    imgK2=new Image(); imgK2.onload=fine; imgK2.onerror=male; imgK2.src=sorgente('k2');
   }
   function scratch2(){
     if(!SCR2){ SCR2=document.createElement('canvas'); SCR2.width=SCR2.height=TAV2.cella; }
@@ -726,9 +763,9 @@ const Sprite3D=(function(){
   function stato(){
     const prestiti={}; for(const k in ALIAS){ const vv=voce(k); if(!TAV.voci[k] && vv) prestiti[k]=vv.nome; }
     return {pronto:pronto, fallito:fallito, tinte:TINTE.size, persone:PERSONE_N, ricomposizioni:RICOMP, clip:Object.keys(TAV.voci), prestiti:prestiti, cella:TAV.cella,
-            vicino:{tavola:!!TAV2, on:VICINO_ON, chiesto:chiesto2, pronto:pronto2, fallito:fallito2, celle:CELLE2.size, composte:COMP2, cella:TAV2?TAV2.cella:0}};
+            blocchi:BLOCCHI, vicino:{tavola:!!TAV2, on:VICINO_ON, chiesto:chiesto2, pronto:pronto2, fallito:fallito2, celle:CELLE2.size, composte:COMP2, cella:TAV2?TAV2.cella:0}};
   }
 
-  return {carica:carica, disegna:disegna, ombra:ombra, vicinoOn:vicinoOn, torso:torso, tela:tela, dir:dir, voce:voce, stato:stato, TAV:TAV,
+  return {carica:carica, disegna:disegna, ombra:ombra, vicinoOn:vicinoOn, prepara:prepara, torso:torso, tela:tela, dir:dir, voce:voce, stato:stato, TAV:TAV,
           persona:persona};
 })();

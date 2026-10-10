@@ -1118,7 +1118,40 @@ Qui il registro completo, a edizioni.
   portiere restano senza un contatto dichiarato, quindi senza un cancello che
   ne giudichi i tempi.
 
+  **Compito 8 — sul telefono vero (OnePlus 6, Android 11, 7,5 GB).** Il
+  committente ha collegato il telefono e l'APK col gioco a 7,2 MB è
+  stato costruito, verificato (48 controlli) e installato. **Il
+  da-vicino** (`_158-sonda-telefono.js`, che si attacca alla WebView via
+  DevTools con la catena di `avvio-telefono.js`, forza un gol e misura
+  dentro la ripresa): in pianta 60 fps, PSS 186 MB, grafica 77; nella
+  ripresa **37 fps con la cella da 192 e 38 con quella da 144** — è la
+  moviola a costare, non l'atlante — PSS 345 contro 342, grafica 209
+  contro 199; dopo lo sfratto 60 fps, PSS 303, grafica 160. **La
+  decodifica delle tre immagini da 3072² prendeva 1,8 s dalla prima
+  richiesta**: metà ripresa passava con la cella piccola e poi lo scatto
+  a quella netta. Cura: `Sprite3D.prepara()` al gol (la festa dura 2,3 s
+  prima della ripresa) e all'inizio del dischetto — rimisurato **19 ms**
+  e, sull'APK finale a blocchi, 283 ms (il telefono era più carico: 52
+  fps in pianta invece di 60): in ogni caso dentro il primo decimo della
+  ripresa, non a metà.
+  **L'avvio a freddo** (`avvio-telefono`, il cancello della casa): **2871
+  ms** su 7 avvii, dispersione 1,4%, contro i **1861 ms del 26 agosto**
+  sullo stesso telefono con il gioco a 2,9 MB — **ROSSO sulla soglia di
+  2000**, e il costo è proporzionale ai byte del file (0,26 ms per kB:
+  «leggere, analizzare ed eseguire»). Le due versioni intermedie,
+  misurate con gli stessi sette avvii: il gioco di prima degli sprite (`19a88d9`, 2,9 MB) **2148 ms** oggi sullo stesso telefono (6 avvii su 7, dispersione 19,5%; il 26 agosto erano 1861: il telefono di oggi è più lento del 15%), il compito 6 (4,8 MB, inline) 3462 ms — misurato mentre il PC costruiva due APK, quindi un numero sporco che non si trascrive come confronto. **La cura
+  provata**: i sei data-URI escono dallo script del gioco e vanno in
+  blocchi `<script type="text/plain">` in fondo al documento
+  (`--blocchi` nella toppa; il file resta uno, senza rete): il gioco
+  parte prima che l'analizzatore li attraversi e `carica()` li legge a
+  `DOMContentLoaded`. Misurato: **2121 ms, 7 avvii su 7, dispersione 10,2%** — alla pari col gioco di prima degli sprite (2148) e 750 ms sotto il file inline (2871); resta rosso di 121 ms sulla soglia di 2000, come il file di prima degli sprite misurato oggi. I blocchi sono da oggi il modo normale della toppa (`--inline` per il confronto).
   ### (c) Che cosa resta aperto, al 10 ottobre 2026
+  Sul gioco a blocchi: diciotto cancelli mirati verdi (`silhouette` 6/10
+  resta il giro 4), `istantanea` 42/56 invariata, `prestazione --contro
+  HEAD` 3/3 (+4,5% / +3,5% / +4,0%, non provati), APK 48 controlli su 48.
+  Gli attrezzi del telefono: `_158-sonda-telefono.js` (esce 3, prova
+  nulla, senza adb o telefono: un 3 non accusa il gioco) e, per l'avvio,
+  il cancello `avvio-telefono` che esisteva già.
 
   - **`silhouette` 6/10** non è di questo cantiere: su `19a88d9` puro era
     8/10, il 6/10 nasce nelle 654 righe del #157 giro 4 (toppe peso,

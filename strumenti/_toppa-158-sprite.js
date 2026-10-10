@@ -79,6 +79,18 @@ if (VICINO) {
   srcM2 = uri(path.join(ATL2, 'atlante-m.webp'), 'image/webp');
   srcK2 = uri(path.join(ATL2, 'atlante-k.webp'), 'image/webp');
 }
+/* --blocchi: i data-URI escono dallo script e vanno in blocchi di testo in
+   fondo al documento (vedi il riquadro «DOVE STANNO I BYTE» nel modulo). */
+/* DAL 10 OTTOBRE 2026 I BLOCCHI SONO IL MODO NORMALE: misurato sul OnePlus 6
+   (avvio-telefono, 7 avvii), il file da 7,2 MB coi data-URI dentro lo
+   script partiva in 2871 ms, in blocchi in 2121 — come il gioco di prima
+   degli sprite (2148 lo stesso giorno). --inline rimette i byte nello
+   script, per i confronti. */
+const BLOCCHI = !argv.includes('--inline');
+modulo = modulo.replace('__SPRITE_BLOCCHI__', () => BLOCCHI ? 'true' : 'false');
+if (BLOCCHI) {
+  for (const k of ['__SPRITE_SRC__', '__SPRITE_SRCM__', '__SPRITE_SRCK__', '__SPRITE_SRC2__', '__SPRITE_SRCM2__', '__SPRITE_SRCK2__']) modulo = modulo.replace(k, () => '');
+}
 modulo = modulo.replace('__SPRITE_TAV2__', () => tav2)
                .replace('__SPRITE_SRC2__', () => src2)
                .replace('__SPRITE_SRCM2__', () => srcM2)
@@ -151,6 +163,29 @@ esatta("l'ombra portata in partita",
               RIG_H/(p.squash||1), rigAngolo(p)+RIG_YAW_K,
               st.clip, st.u/Rig3D.CLIPS[st.clip].freq,
               lk.corp, lk.varb, C, S, GEO.perMetro, r, lk.manc);`);
+
+/* ------------------------------------------------------------------
+   1c. LA PRECARICA DELL'ATLANTE DA VICINO (compito 8): al gol e all'inizio
+   del dischetto, cioe' due secondi prima che la camera bassa lo chieda.
+   ------------------------------------------------------------------ */
+esatta('la precarica al gol',
+`  for(const p of G.players){ if(p.team===team) p.celeb=2.4; }
+`,
+`  for(const p of G.players){ if(p.team===team) p.celeb=2.4; }
+  /* L'ATLANTE DA VICINO SI DECODIFICA ADESSO (voce #158, compito 8): la
+     ripresa del gol arriva fra 2,3 s e sul telefono la decodifica ne
+     prende 1,8 — chiesta alla prima figura della ripresa, meta' moviola
+     usciva con la cella piccola. Un data-URI gia' nel file: niente rete. */
+  if(SPRITE_ON && SAVE.figure!==0) Sprite3D.prepara();
+`);
+esatta('la precarica al dischetto',
+`  Duel.start(shooterTeam);
+  /* =====================================================================
+     IL DUELLO NON STA NEL NASTRO`,
+`  if(SPRITE_ON && SAVE.figure!==0) Sprite3D.prepara();   // l'atlante da vicino, prima della camera bassa (voce #158, compito 8)
+  Duel.start(shooterTeam);
+  /* =====================================================================
+     IL DUELLO NON STA NEL NASTRO`);
 
 /* ------------------------------------------------------------------
    2. l'ancora del numero, e 3. il ritaglio attorno alla testa
@@ -291,6 +326,19 @@ for (const e of E) {
     process.exit(1);
   }
   testo = testo.replace(e.da, () => e.a);
+}
+/* I BLOCCHI DI TESTO (--blocchi): i sei data-URI in fondo al documento,
+   dopo lo script del gioco, in <script type="text/plain">: l'analizzatore
+   HTML li attraversa come testo e il gioco e' gia' partito quando ci
+   arriva; Sprite3D.carica() li legge a DOMContentLoaded. Vedi il riquadro
+   «DOVE STANNO I BYTE» nel modulo. */
+if (BLOCCHI) {
+  const n = testo.split('</body>').length - 1;
+  if (n !== 1) { console.error('FALLITO: </body> compare ' + n + ' volte'); process.exit(1); }
+  const bl = (id, dati) => dati ? '<script type="text/plain" id="sprite-' + id + '">' + dati + '</scr' + 'ipt>\n' : '';
+  const blocchi = '<!-- GLI ATLANTI DEGLI SPRITE (voce #158): byte, non programma. Li legge Sprite3D.carica(). -->\n' +
+    bl('src', src) + bl('m', srcM) + bl('k', srcK) + bl('src2', src2) + bl('m2', srcM2) + bl('k2', srcK2);
+  testo = testo.replace('</body>', () => blocchi + '</body>');
 }
 const dest = path.resolve(A);
 fs.mkdirSync(path.dirname(dest), { recursive: true });

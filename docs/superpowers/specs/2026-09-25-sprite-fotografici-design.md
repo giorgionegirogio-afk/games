@@ -45,6 +45,14 @@ restano distinguibili (`_q-divise` in batteria).
   camera bassa; tinta PER CELLA (`tingi()` condivisa, LRU di 96 tele),
   decodifica pigra e sfratto dopo 8 s di camera alta; costo nel file
   +2,47 MB (7,23 MB in tutto), memoria viva solo durante ripresa e rigori.
+  **Edizione del 10 ottobre 2026, sera (compito 8, sul telefono):** la
+  ripresa costa 37 fps con la cella grande e 38 con la piccola (è la
+  moviola), memoria +3 MB; la decodifica (1,8 s) si anticipa al gol e al
+  dischetto con `Sprite3D.prepara()` (19 ms alla ripresa). **L'avvio a
+  freddo** paga i byte dentro lo script (2871 ms contro 2148 del file
+  senza sprite): i sei data-URI vanno in blocchi `<script
+  type="text/plain">` in fondo al documento, letti a `DOMContentLoaded`
+  — 2121 ms, pari a prima. Il file resta uno, senza rete.
 
 ## 3. La catena di produzione (tutta in `strumenti/sprite/`)
 
