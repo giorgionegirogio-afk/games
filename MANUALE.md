@@ -758,6 +758,9 @@ Qui il registro completo, a edizioni.
   scrivere un esito (la seconda volta nella giornata). Resta un debito
   dichiarato: va rilanciata a macchina scarica, e finché non lo è, i
   verdi del compito 5 sono i diciassette mirati e `prestazione`.
+  **Rilanciata il 10 ottobre a macchina scarica: 52 cancelli, un solo
+  rosso, `silhouette` 6/10 del giro 4; `istantanea` 41/56 colonna per
+  colonna identico; `giocata` 7/7; `prestazione` 3/3.** Debito saldato.
 
   ### (b) I numeri che hanno deciso
 
