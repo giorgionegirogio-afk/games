@@ -791,6 +791,9 @@ Qui il registro completo, a edizioni.
   istante, sul filo della saturazione, con più ombra di prima sul
   manto); `silhouette` 6/10 resta il giro 4. `prestazione --contro HEAD`:
   3/3 a sei giri, medio +0,9%, tipico −0,0%, p95 −0,0%, tutti e tre «non provati» (i giri scavalcano lo zero): il costo sta sotto il rumore dello strumento.
+  **Batteria intera dopo il commit** (10 ottobre): 52 cancelli, un solo
+  rosso, `silhouette` 6/10 del giro 4; `istantanea` 42/56 identica alla
+  misura sulla copia; `giocata` 7/7; `prestazione` 3/3.
 
   ### (b) I numeri che hanno deciso
 
