@@ -1151,7 +1151,12 @@ Qui il registro completo, a edizioni.
   HEAD` 3/3 (+4,5% / +3,5% / +4,0%, non provati), APK 48 controlli su 48.
   Gli attrezzi del telefono: `_158-sonda-telefono.js` (esce 3, prova
   nulla, senza adb o telefono: un 3 non accusa il gioco) e, per l'avvio,
-  il cancello `avvio-telefono` che esisteva già.
+  il cancello `avvio-telefono` che esisteva già. L'APK finale porta il timbro
+  del commit (`1.1 (2026-10-10, 34a5b3f)`) ed è installato sul telefono.
+  **La batteria intera del compito 8 non è stata completata**: il sistema
+  l'ha fermata per memoria bassa a 44 cancelli avviati, senza scrivere un
+  esito (la terza volta in due giorni, sempre con l'adb e due browser
+  attaccati). Resta un debito dichiarato, da saldare a macchina scarica.
 
   - **`silhouette` 6/10** non è di questo cantiere: su `19a88d9` puro era
     8/10, il 6/10 nasce nelle 654 righe del #157 giro 4 (toppe peso,
