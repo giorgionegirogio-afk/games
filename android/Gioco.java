@@ -23,8 +23,9 @@ import java.util.List;
 /**
  * Un guscio minimo attorno al gioco.
  *
- * Il gioco è un unico file HTML dentro gli asset: niente rete, niente
- * permessi, niente librerie. Questa classe fa quattro cose e basta:
+ * Il gioco è un unico file HTML dentro gli asset: niente permessi, niente
+ * librerie, niente rete (la SFIDA in rete del file web qui non può
+ * aprirsi: senza INTERNET dice «serve la rete», per scelta). Questa classe fa quattro cose e basta:
  *   1. apre una WebView a schermo intero sul file del gioco;
  *   2. tiene lo schermo acceso SOLO mentre si sta giocando (voce A2.3);
  *   3. fa funzionare il tasto Indietro come ci si aspetta;
@@ -103,7 +104,7 @@ public class Gioco extends Activity {
     requestWindowFeature(Window.FEATURE_NO_TITLE);
 
     /* Si parte con lo schermo tenuto acceso perche' il caricamento del
-       gioco (un file HTML da 1,8 MB) non e' istantaneo e non si puo'
+       gioco (un file HTML da 7,2 MB dal #158) non e' istantaneo e non si puo'
        ancora chiedere niente alla pagina. Da qui in poi decide la sonda
        qui sopra: al primo giro utile, se si e' nel menu, questo flag
        viene tolto. */

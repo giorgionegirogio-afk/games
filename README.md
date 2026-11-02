@@ -14,8 +14,8 @@ scaricare. Font, carte, suoni e grafica stanno tutti dentro il file. Solo la
 
 ## Come si provano
 
-- **Sul telefono, come app vera:** scarica `apk/CIRCOLO.apk` (177 kB) e
-  `apk/CALCETTO.apk` (4,3 MB). **Non chiedono nessun permesso** — nemmeno
+- **Sul telefono, come app vera:** scarica `apk/CIRCOLO.apk` (173 kB) e
+  `apk/CALCETTO.apk` (4,2 MB). **Non chiedono nessun permesso** — nemmeno
   internet: per questo, nell'app, la SFIDA in rete di CALCETTO dice «serve la
   rete» e basta.
 - **Senza installare niente:** apri il file `.html` con Chrome. Funziona lo stesso.

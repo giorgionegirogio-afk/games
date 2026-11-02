@@ -1,0 +1,147 @@
+{
+ "telefono": {
+  "modello": "ONEPLUS A6003",
+  "android": "11",
+  "ramGB": 7.5
+ },
+ "sprite": {
+  "on": true,
+  "rubinetto": true,
+  "figure": 1,
+  "pronto": true,
+  "fallito": false,
+  "tinte": 0,
+  "persone": 0,
+  "ricomposizioni": 0,
+  "clip": [
+   "attesaGK",
+   "camminata",
+   "cielo",
+   "contrasto",
+   "corsa",
+   "cross",
+   "delusione",
+   "esultanza",
+   "fermo",
+   "filtrante",
+   "finta",
+   "frenata",
+   "ginocchia",
+   "parata",
+   "passaggio",
+   "presa",
+   "pugni",
+   "pugno",
+   "respinta",
+   "rimessa",
+   "rinvio",
+   "rovesciata",
+   "scivolata",
+   "sfugge",
+   "testa",
+   "tiro",
+   "tuffo"
+  ],
+  "prestiti": {},
+  "cella": 144,
+  "blocchi": true,
+  "vicino": {
+   "tavola": true,
+   "on": true,
+   "chiesto": false,
+   "pronto": false,
+   "fallito": false,
+   "celle": 0,
+   "composte": 0,
+   "cella": 192
+  }
+ },
+ "passi": [
+  {
+   "fase": "pianta",
+   "fps": 52.1,
+   "mem": {
+    "nome": "pianta",
+    "pss": 207,
+    "grafica": 95,
+    "gl": 29,
+    "egl": 29,
+    "nativo": 23
+   }
+  },
+  {
+   "fase": "ripresa-192",
+   "golForzato": true,
+   "msAllaRipresa": 4472,
+   "msDecodifica": 283,
+   "fps": 33,
+   "mem": {
+    "nome": "ripresa-192",
+    "pss": 345,
+    "grafica": 206,
+    "gl": 29,
+    "egl": 29,
+    "nativo": 25
+   },
+   "vicino": {
+    "tavola": true,
+    "on": true,
+    "chiesto": true,
+    "pronto": true,
+    "fallito": false,
+    "celle": 4,
+    "composte": 4,
+    "cella": 192
+   },
+   "foto": "C:\\Users\\Utenteee\\Desktop\\GitHub\\games\\strumenti\\_158-prove\\telefono-ripresa-192.png"
+  },
+  {
+   "fase": "dopo-sfratto",
+   "fps": 60,
+   "mem": {
+    "nome": "dopo",
+    "pss": 304,
+    "grafica": 159,
+    "gl": 29,
+    "egl": 29,
+    "nativo": 25
+   },
+   "vicino": {
+    "tavola": true,
+    "on": true,
+    "chiesto": false,
+    "pronto": false,
+    "fallito": false,
+    "celle": 0,
+    "composte": 4,
+    "cella": 192
+   }
+  },
+  {
+   "fase": "ripresa-144",
+   "golForzato": false,
+   "msAllaRipresa": 4,
+   "msDecodifica": null,
+   "fps": 37,
+   "mem": {
+    "nome": "ripresa-144",
+    "pss": 353,
+    "grafica": 209,
+    "gl": 29,
+    "egl": 29,
+    "nativo": 25
+   },
+   "vicino": {
+    "tavola": true,
+    "on": false,
+    "chiesto": true,
+    "pronto": true,
+    "fallito": false,
+    "celle": 4,
+    "composte": 8,
+    "cella": 192
+   },
+   "foto": "C:\\Users\\Utenteee\\Desktop\\GitHub\\games\\strumenti\\_158-prove\\telefono-ripresa-144.png"
+  }
+ ]
+}

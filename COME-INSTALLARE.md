@@ -23,8 +23,8 @@ Nella cartella `apk/` ci sono già i due file pronti:
 
 | File | Dimensione |
 |---|---|
-| `apk/CIRCOLO.apk` | 177 kB |
-| `apk/CALCETTO.apk` | 4,3 MB |
+| `apk/CIRCOLO.apk` | 173 kB |
+| `apk/CALCETTO.apk` | 4,2 MB |
 
 Dentro non c'è nessun motore di gioco e nessuna libreria: solo il gioco, che è
 un file di testo, e un guscio Java di circa 450 righe che gli apre una

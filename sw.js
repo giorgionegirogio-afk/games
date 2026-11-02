@@ -59,7 +59,7 @@ self.addEventListener('fetch', e => {
   if (url.origin !== location.origin) return;
 
   /* gli APK sono scaricamenti, non pezzi dell'app: si lasciano al browser,
-     altrimenti finirebbero in cache circa 4,5 MB (177 kB + 4,3 MB) che non
+     altrimenti finirebbero in cache circa 4,5 MB (173 kB + 4,2 MB) che non
      servono mai offline */
   if (url.pathname.endsWith('.apk')) return;
 

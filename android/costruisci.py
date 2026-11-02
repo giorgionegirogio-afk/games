@@ -92,7 +92,8 @@ def esegui(cmd, **kw):
 # l'orologio mente, e la seconda resta vera al minuto. Il file non e'
 # necessario per costruire: se manca, si riparte dal tempo.
 EPOCA = datetime.datetime(2024, 1, 1, tzinfo=datetime.timezone.utc)
-SERIE = '1.1'                 # la parte che decide un umano, quando decide che e' cambiato qualcosa
+SERIE = '1.2'                 # la parte che decide un umano, quando decide che e' cambiato qualcosa
+                              # (1.2 dal 2/11/2026, voce #159: figure fotografiche, portiere, disciplina)
 STORICO = QUI + '/versione.json'
 
 
@@ -160,14 +161,25 @@ MANIFEST = u'''<?xml version="1.0" encoding="utf-8"?>
   <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="36" />
 
   <!-- Nessun permesso. Il gioco non usa la rete, non legge contatti,
-       non accede a file, non manda niente da nessuna parte. -->
+       non accede a file, non manda niente da nessuna parte. (La SFIDA in
+       rete di CALCETTO esiste nel file web e chiede un server: qui dentro,
+       senza INTERNET, dice «serve la rete» e basta. Scelta dichiarata,
+       voce #159: zero permessi resta la postura dell'app.) -->
 
+  <!-- enableOnBackInvokedCallback="false" (voce #159, 2/11/2026): con
+       targetSdk 33+ Android 13+ puo' smettere di chiamare onBackPressed()
+       e consegnare il tasto Indietro al nuovo OnBackInvokedCallback, che
+       Gioco.java non registra: il tasto uscirebbe dall'app invece di
+       tornare al menu (COME-INSTALLARE.md promette il contrario). Con il
+       flag a false il sistema torna al percorso vecchio. NON PROVATO su un
+       telefono 13+ (qui c'e' un Android 11): cura preventiva, dichiarata. -->
   <application
       android:label="{etichetta}"
       android:icon="@mipmap/icona"
       android:roundIcon="@mipmap/icona"
       android:hardwareAccelerated="true"
       android:allowBackup="true"
+      android:enableOnBackInvokedCallback="false"
       android:supportsRtl="false">
 
     <meta-data android:name="gioco" android:value="{file}" />

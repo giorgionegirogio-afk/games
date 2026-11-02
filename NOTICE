@@ -19,7 +19,9 @@ progetto: la fonte di ogni numero e' il comando che l'ha prodotto.
      descrive piu' il file; anche i byte dell'edizione del 10 ottobre
      (7.231.514) sono superati. Il gioco e' CALCETTO-il-gioco.html, circa
      7,2 MB. Il file pubblicato fa:
-         (da aggiornare al commit finale: md5 e byte)
+         md5 0598786f83ca5b8415859c89f415ba76, 7.275.754 byte, al commit 296f295
+         (2/11/2026, voce #159, compiti 0-7: git show 296f295:CALCETTO-il-gioco.html
+         | md5sum, e | wc -c). E' il file che entra nell'APK 1.2.
      Per riferimento, il file al commit af70143 (2/11/2026, prima delle
      cure del #159) faceva md5 9b99eab67e3514d1c17f23a70da4e64b e 7.235.041
      byte (git show af70143:CALCETTO-il-gioco.html | md5sum, e | wc -c).
