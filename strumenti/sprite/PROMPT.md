@@ -170,3 +170,29 @@ perché i guanti contaminano. La colonna «esito» si compila foglio per foglio.
 | nb40 | cielo f0 | *(«BARE HANDS with no gloves»)* the AIRPLANE celebration: standing in a half lunge with the right foot forward, both arms stretched straight out horizontally to the sides like wings, chest pushed out, back arched, head thrown back with the face to the sky, mouth open shouting | OK, 4×2 1024×559, PRIMO foglio della terza quota (9/10, 18:35): braccia ad aliante, volto al cielo; sfondo erba e non verde piatto (il chroma lo prende) |
 | nb41 | finta f0 | *(«BARE HANDS with no gloves»)* a dribbling FEINT, the double inside touch: pushing an imaginary ball across his body with the inside of the right foot, the right leg swung across in front of the left shin, the weight dropped onto the bent left leg, hips and shoulders turned to the left, arms out low for balance, eyes down — there is NO ball | OK, 4×2 1024×572, tocco d'interno incrociato; resa un po' da rendering |
 | nb42 | rovesciata f0 | *(«BARE HANDS with no gloves»; già fallita in volo: ultimo tentativo)* an acrobatic OVERHEAD BICYCLE KICK seen from above: the body horizontal and tilted back toward the floor, the right leg kicking straight up over the head, the left leg lower and bent, both arms spread wide and down, head back | **OK, finalmente in volo**: corpo orizzontale e gamba destra in alto, 4×2 1024×559 — la posa è uscita togliendo ogni parola sul pavimento («seen from above», niente «off the floor»); direzioni approssimative come nel tuffo |
+
+## I tre fogli della sagoma (voce #160, 2 novembre 2026, quarta quota)
+
+Il cancello `silhouette` sugli sprite dava 2 azioni su 10, e le cause stavano
+nei fogli: scivolata seduta (forma 0,5-0,7 contro l'1,15 di «steso»),
+camminata al contatto quasi un fermo, fermo a colonna piena. Tre fogli nuovi,
+stesso preambolo di nb06, nella pagina Images (chat nuova per ogni posa):
+
+| foglio | frase della posa | esito |
+|---|---|---|
+| nb43-scivolata-B | a SLIDING TACKLE stretched out FLAT and LOW on the floor, like a baseball player sliding feet first … the body forms one long low line | 8 celle ruotate, ma ancora SEDUTO (forma 0,99-1,25): scartato |
+| nb43-scivolata-C | … it is LYING DOWN, not sitting: the player lies on his LEFT SIDE flat on the floor … like a plank … Seen from above each figure is a long thin horizontal shape, about three times longer than it is tall; no part of the body is upright | corpo davvero disteso (forma 2,8-3,3) ma **otto profili quasi uguali**: il generatore non ruota una posa a terra |
+| nb43-scivolata-R | *(non e' un prompt)* la cella 1 di nb43-scivolata-C ruotata nelle 8 direzioni da `ruota-cella.py` (modello a cilindro steso: l'asse si proietta con k = sin 22° = 0,37, lo spessore no) | 8 celle, forma 0,85 (di punta) → 2,8 (di profilo); statura_px 374 |
+| nb44-camminata-B | WALKING with a LONG confident stride … legs clearly apart like an open pair of scissors, the left arm swung far forward and the right arm swung far back, both arms clearly away from the torso with daylight visible between each arm and the body | OK 4×2: forma 0,52-0,56 (nb14: 0,35-0,42), inchiostro 0,29-0,32 (nb14: 0,46-0,58) |
+| nb45-fermo-B | STANDING STILL and alert with the feet planted WIDE apart, wider than the shoulders, knees slightly bent, both hands resting on the hips with the elbows pointing OUT to the sides, so there is a clear gap of green floor visible between each arm and the body and between the two legs | **4 figure per immagine** (il modello ha scritto «first two rows»): la seconda riga chiesta nella STESSA chat («Now the second row … the remaining four rotations»), coerente; le due righe composte in un foglio solo (verde della seconda riportato a quello della prima). Forma 0,41-0,61 (nb06: 0,19-0,40), inchiostro 0,37-0,42 (nb06: 0,53-0,65) |
+| nb46-fermo-C | … both ARMS FOLDED ACROSS THE CHEST high up, the elbows pointing out to the sides, so the waist below the folded arms is bare and narrow | sul banco: masse 4 (le mani sui fianchi davano 1: riempiono la vita), inchiostro 0,51, scavo 0,37 ma **forma 0,33** (< 0,35): il modello non ha allargato i piedi |
+| nb47-fermo-D | STANDING in a very WIDE STANCE, the feet planted far apart, much wider than the shoulders, the legs straight and spread like an inverted V with a large triangle of green floor visible between them, and both ARMS FOLDED ACROSS THE CHEST … | **nominabile**: inchiostro 0,366, forma 0,47, masse 4, scavo 0,44. E' il fermo del gioco dal #160 (due righe di 4, stessa chat) |
+
+Lezioni: **una posa a terra non si ruota col prompt** (otto profili su otto in
+due formulazioni): si chiede UNA cella buona e si ruota in casa con
+`ruota-cella.py`; il modello puo' dare **quattro rotazioni per immagine** e
+le altre quattro si chiedono nella stessa chat, che tiene il personaggio; il
+pulsante iniettato (`copia-gemini.js`) si clicca alla posizione fissa
+(89,90) e il secondo, se ci sono due risposte, a (89,119); `salva-appunti.ps1
+-Attesa 12` lanciato in parallelo al click salva senza un secondo giro.
+

@@ -746,6 +746,94 @@ Qui il registro completo, a edizioni.
   zero, e la revisione dell'intera postura «zero permessi, zero conti, nessuna
   chiave nell'HTML»). **Nessuna delle due è stata provata.**
 
+- **I TRE FOGLI PER LA SAGOMA — #160 LA SCIVOLATA DISTESA, LA FALCATA, IL FERMO LARGO**
+  (voce #160, 2 novembre 2026, sera, ramo `voce-160-fogli-sagoma` dal merge-base
+  `171dc4d`; spec `docs/superpowers/specs/2026-11-02-fogli-sagoma-design.md`).
+
+  **Il mandato:** «adesso dovresti avere tutti gli strumenti necessari,
+  procedi» — il primo seguito in ordine di resa dichiarato dal #159: il
+  cancello `silhouette` sugli sprite dava **2 azioni su 10**, e le cause
+  stavano nei fogli, non nel metro. Nano Banana via Chrome (account del
+  committente, pagina Images, metodo di `strumenti/sprite/PROMPT.md`), sette
+  immagini in tutto.
+
+  ### (a) Che cosa è entrato, foglio per foglio
+
+  - **La scivolata, distesa** (`nb43-scivolata-R`). Il foglio di settembre
+    era seduto (forma 0,5-0,7 contro l'1,15 di «steso»): unica posa MORTA.
+    Primo prompt («stretched out FLAT and LOW … like a baseball player
+    sliding»): ancora seduto, forma 0,99-1,25, scartato. Secondo («LYING
+    DOWN, not sitting … like a plank … three times longer than it is tall»):
+    corpo davvero disteso, forma 2,8-3,3, ma **otto profili quasi uguali**:
+    **una posa a terra non si ruota col prompt**. La via: UNA cella buona e
+    le otto direzioni fatte in casa da **`strumenti/sprite/ruota-cella.py`**,
+    col modello a **cilindro steso** — l'asse del corpo giace sul campo e si
+    proietta con `k = sin 22° = 0,37` (la camera dei fogli), lo spessore
+    (spalle, bacino: altezza più che profondità) no. Il primo modello «a
+    lastra» stirava lo spessore di 1/k e dava 692 px di larghezza a una
+    figura vista di punta: misurato, scartato. La cella si prende dal foglio
+    ORIGINALE (col magenta dei calzoncini), non dall'uscita di `ritaglia.py`:
+    altrimenti la maschera dei calzoncini sparisce. Cella 1 (scavo del
+    banco 0,328) contro cella 0 (0,294): entra la 1. `statura_px` 374: un
+    corpo disteso è lungo quanto è alto.
+  - **La camminata, a falcata larga** (`nb44-camminata-B`): «legs clearly
+    apart like an open pair of scissors … daylight visible between each arm
+    and the body». Forma 0,52-0,56 contro 0,35-0,42, inchiostro 0,29-0,32
+    contro 0,46-0,58: il fotogramma di contatto non è più un fermo. Sul
+    banco **cammina è nominabile** e il vocabolario fermo/cammina è salvo
+    (la coppia più vicina ora è 0,200, era 0,028).
+  - **Il fermo, a gambe larghe e braccia conserte** (`nb47-fermo-D`), al
+    terzo tentativo: mani sui fianchi (`nb45`) riempivano la vita → masse 1;
+    braccia conserte (`nb46`) → masse 4 ma il modello non allargava i piedi
+    → forma 0,33; braccia conserte e «very WIDE STANCE … like an inverted V
+    with a large triangle of green floor visible between them» → inchiostro
+    0,366, forma 0,47, masse 4, scavo 0,44: **nominabile**. Il generatore dà
+    **quattro rotazioni per immagine** su questa posa: le altre quattro si
+    chiedono nella STESSA chat («the remaining four rotations»), che tiene
+    il personaggio, e le due righe si compongono in un foglio solo.
+
+  ### (b) La catena, e il perché di una toppa nuova
+
+  La toppa del #158 innesta il modulo sostituendo ancore che un gioco già
+  con gli sprite non ha più («l'ancora compare 0 volte: non scrivo niente»),
+  e rilanciarla dalla base del 25/9 butterebbe via il #159. Quando cambiano
+  SOLO i fogli bastano quattro sostituzioni: `const TAV={…}`, `TAV2={…}`,
+  `SORG_PELLE=[…]` e i sei blocchi `<script type="text/plain">` in fondo:
+  **`strumenti/_toppa-160-atlanti.js`** fa solo quelle (`--out` su una copia,
+  `--dentro` sul file). Il gioco **cala** di 155 kB (gli atlanti nuovi
+  comprimono meglio): 7.117.503 byte, md5 `8ebe091ec0af4b03f03a55e851924660`.
+  `monta.py` due volte (144 e 192): in sottofondo il sistema lo uccide per
+  memoria con Chrome aperto (1,7 GB liberi); in primo piano, uno alla
+  volta, passa.
+
+  ### (c) La misura
+
+  | | prima (#159) | dopo |
+  |---|---|---|
+  | `silhouette` sugli sprite | **2/10** (sta fermo ✗, cammina ✗, scivolata MORTA) | **3/10** (sta fermo ✓, cammina ✓, portiere aspetta ✓) |
+  | scivolata | forma 0,69, masse ~, nessuna combinazione «stesa» | forma 2,21 ✓, viva; **scavo 0,328 contro 0,33** |
+  | sta fermo | inchiostro 0,570 ✗, forma 0,31 ✗, scavo 0,244 | 0,366 ✓, 0,47 ✓, masse 4 ✓, scavo 0,44 ✓ |
+  | cammina | vocabolario fermo/cammina 0,028 (la stessa sagoma) | nominabile, identità 0,200 ✓ |
+
+  Resta rosso (ne servono 8): corre 0,278 e ha appena tirato 0,277 di
+  inchiostro (banda 0,28: due e tre millesimi), esulta 0,275 + masse 1,
+  carica il tiro e deluso masse 1, il tuffo 0,201 di inchiostro e forma 1,03.
+  **Nessuna banda toccata.** Sul gioco vero: `collaudo` 36/36, `seme`,
+  `determinismo` 11/11 (il disegno non tocca la partita), `divise`, `gesto`,
+  `volti`, `diritti` verdi; `istantanea` 37/56 come il #159; **`prestazione
+  --contro HEAD` 3/3**. Il provino cieco umano sugli sprite resta il giudice
+  vero e non è mai stato fatto.
+
+  ### (d) Che cosa resta, dichiarato
+
+  Sette azioni su dieci sotto le bande del rig gonfiato: le tre a due-cinque
+  millesimi (corre, tirato, esulta: inchiostro) sono fogli da rigenerare con
+  arti più aperti, le tre «masse 1» (carica il tiro, esulta, deluso) sono
+  pose con le braccia che riempiono la vita, il tuffo è una posa in volo che
+  il metro non sa leggere (E2 del banco). La scivolata a 0,328 di scavo:
+  una cella con un ginocchio piegato e un braccio staccato la porterebbe
+  sopra 0,33. L'APK col gioco di stasera e la release vanno rifatti.
+
 - **LA RIFINITURA PER LA PUBBLICAZIONE — #159 DIECI ORE PER FINIRE, E L'APK**
   (voce #159, 2 novembre 2026, ramo `voce-159-rifinitura` dal merge-base
   `4063c2a`; spec `docs/superpowers/specs/2026-11-02-rifinitura-pubblicazione-design.md`,

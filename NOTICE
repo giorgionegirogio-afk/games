@@ -131,6 +131,16 @@ due famiglie, la stessa licenza:
        980.700 / 571.566 / 307.864 byte (base64 1.307.600 / 762.088 / 410.486). In piu', da questa edizione la maschera di pelle
        esclude per costruzione la stoffa (atlante.py), quindi anche i tre
        webp della pianta cambiano di qualche kB: 680.626 / 402.694 / 216.524 byte; il gioco e' 7.231.514 byte.
+       EDIZIONE DEL 2 NOVEMBRE 2026, SERA (voce #160): tre fogli rigenerati
+       (scivolata distesa, camminata a falcata larga, fermo a gambe larghe e
+       braccia conserte: nb43-scivolata-R, nb44-camminata-B, nb47-fermo-D in
+       strumenti/sprite/piano.json; prompt in PROMPT.md) e i sei webp
+       rimontati: pianta 659.980 / 384.296 / 206.588 byte, da vicino 952.050 / 543.830 / 295.324 byte;
+       il gioco e' 7.117.503 byte, md5 8ebe091ec0af4b03f03a55e851924660
+       (git show voce-160-fogli-sagoma:CALCETTO-il-gioco.html). Stessa
+       provenienza (Gemini «Nano Banana», account del committente), stessa
+       lavorazione in casa; la scivolata e' UNA cella ruotata in casa nelle
+       otto direzioni (ruota-cella.py), non otto immagini generate.
         [SUPERATO sui byte del gioco: vedi l'EDIZIONE DEL 2 NOVEMBRE 2026 in
         testa a questa sezione.]
      Provenienza: fogli (8 rotazioni per posa) generati dal committente
