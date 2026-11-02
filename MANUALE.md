@@ -1027,7 +1027,77 @@ Qui il registro completo, a edizioni.
   3834). Il verdetto dell'attrezzo è «deve salire» (stampa ancora «a 3», il
   numero del suo cantiere: la logica è quella che conta).
 
-  ### (j) La batteria intera, l'APK e la release — in corso al momento di questa scrittura
+  ### (j) Compito 8 — la batteria intera sul gioco finito
+
+  Il primo lancio in sottofondo (`--tutto --insieme 2`) è stato **ucciso
+  dal sistema per memoria** insieme alla costruzione dell'APK (quarta
+  volta nella storia di questa macchina: 8 GB, Chrome aperto): la batteria
+  è stata rifatta **in quindici lotti in primo piano**, due alla volta i
+  deterministici, **da soli** i cronometrici (verbi-ritardo, motori, casa,
+  perimetro, casa-falsi, motore-nastro, motore-falsi, giocata,
+  prestazione, avvio), tutti sul file `fdf6eef260cb` (commit `dec966c`).
+  **80 cancelli: 75 verdi**, e questi cinque, nessuno taciuto:
+  - **`silhouette` ROSSO 2/10** — il numero vero sugli sprite (h); il rig
+    resta 6/10 con `--rig`.
+  - **`mira` ROSSO 4/5** — PIENO-IDENTICO contro il motore pre-#113 (g):
+    dichiarato, da rifondare.
+  - **`umore` era ROSSO 29/30, ora 30/30** — due cose a metà: il banco
+    leggeva l'umore nello stesso fotogramma in cui nasce il fatto «gol»,
+    ma il lettore dei fatti in coda a `step()` non gira finché la scena
+    non torna a «play» (l'impatto arriva al calcio d'inizio); passava solo
+    perché i marcatori erano già contenti, e col motore 7 la partita del
+    seme ha mostrato un marcatore ammonito poco prima (umore −0,68). Il
+    banco ora tiene il gol in attesa finché `G.fattiVisti` non lo
+    raggiunge; e il gioco, con la sola somma +0,5·molt, lasciava quell'uomo
+    a −0,18 anche dopo l'impatto, contro la regola scritta: da oggi il gol
+    porta chi segna **almeno a un quarto della sua gioia** (`dec966c`).
+  - **`duello-impronta` ROSSO → rifissata** (`--salva`, come al #143):
+    l'impronta tiene i punteggi delle partite intere, e il motore 7 le ha
+    cambiate per costruzione; 44 duelli firmati, verde alla rilettura.
+  - **`avvio-telefono` NULLO**: il telefono non è tornato in tutta la
+    giornata (adb riprovato decine di volte).
+
+  Informativi: `istantanea` **37/56** (il 10/10 era 42/56: erba senza
+  soggetti 1→0, ombre 5→4, terzo centrale 5→2 su 8 — gli istanti sono
+  ri-campionati da partite che ora finiscono diversamente, e la regola di
+  casa dice che le colonne non si confrontano riga per riga; va detto
+  comunque, non nascosto); `avvio` a 4× 5873 ms (era 6431: non è un
+  cancello). `prestazione` 3/3, `giocata` 7/7 al primo colpo, `tocco`
+  786/786, `collaudo` 36/36, `determinismo` 11/11 e 11/11 a taglia 11,
+  `equita` 4/4, `eventi` 4/4, `motore-falsi` 14/14, `dischetto-falsi`,
+  `staffetta`, `carta`, `sfida` 56/56.
+
+  ### (k) Compiti 9 e 10 — l'APK 1.2, main e la release
+
+  `costruisci.py` con `SERIE` 1.2 e `android:enableOnBackInvokedCallback="false"`
+  nel manifest (con `targetSdk 36` un Android 13+ potrebbe non chiamare più
+  `onBackPressed()` e il tasto Indietro uscirebbe dall'app: **non provato
+  su un 13+**, cura preventiva dichiarata). `CALCETTO.apk` 4,2 MB,
+  `CIRCOLO.apk` 173 kB, versionCode 1493009, nome «1.2 (2026-11-02,
+  dec966c)», il gioco dentro byte per byte (md5 in NOTICE);
+  `verifica.py` **48 su 48**. Costruito due volte: la prima col gioco a
+  `296f295`, poi la cura dell'umore ha mosso 597 byte e l'APK è stato
+  rifatto (`9f332a0`). **Non installato sul telefono**: adb non lo ha mai
+  rivisto; chi lo ricollega lancia `adb install -r apk/CALCETTO.apk` e
+  `node strumenti/avvio-telefono.js` (soglia 2000 ms; il 10/10 era 2121).
+  Il ramo è su **`main` in avanti veloce (`9f332a0`), spinto**: l'APK è
+  scaricabile da `apk/` e dalla pagina. **La release GitHub NON è stata
+  creata**: il permesso di aprire una superficie pubblica nuova è stato
+  negato alla sessione automatica; il comando pronto è
+  `gh release create v2026.11.02 apk/CALCETTO.apk apk/CIRCOLO.apk --target main --notes-file fuori/159/release.md`
+  (le note stanno in `fuori/159/release.md`, non tracciato).
+
+  ### (l) Che cosa resta, dichiarato
+
+  A 11 contro 11 il portiere non legge il pallone lento (P2 spenta: prima
+  l'attacco dell'11); la CPU può ancora stendere il passatore senza
+  fischio (R1 è del solo pollice); la volée legge ancora la finestra fissa;
+  `mira` da rifondare sul motore 7; `silhouette` 2/10 e i tre fogli da
+  rigenerare (scivolata distesa, camminata larga, fermo a braccia staccate)
+  più il provino cieco umano sugli sprite; la scala di difficoltà a due
+  manopole e il portiere con reazione per lato (manopole morte `gkT`,
+  `mateSave`); il server della SFIDA in pausa; il peso del repo per Pages;
+  il tasto Indietro su un Android 13+ vero; il telefono; la release.
 
 - **LE FIGURE FOTOGRAFICHE — #158 GLI SPRITE DA NANO BANANA AL POSTO DEL RIG**
   (voce #158, 25 settembre 2026, compito 1 dal merge-base `10e037e`, ramo
