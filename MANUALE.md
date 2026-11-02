@@ -832,7 +832,23 @@ Qui il registro completo, a edizioni.
   pose con le braccia che riempiono la vita, il tuffo è una posa in volo che
   il metro non sa leggere (E2 del banco). La scivolata a 0,328 di scavo:
   una cella con un ginocchio piegato e un braccio staccato la porterebbe
-  sopra 0,33. L'APK col gioco di stasera e la release vanno rifatti.
+  sopra 0,33.
+
+  ### (e) L'APK della sera, e il telefono che rallenta
+
+  APK ricostruito col gioco del #160 (4081 kB, versionCode 1493164, «1.2
+  (2026-11-02, 29b7db1)»), `verifica.py` 48/48, installato. **`avvio-telefono`
+  ROSSO: 2252 ms** (7/7, dispersione 10,3%) contro i 1729 di un'ora prima
+  con l'APK del #159. Misurato sull'ultimo commit prima di chiamarla
+  regressione (regola di casa): **l'APK precedente (`dec966c`), rimesso sul
+  telefono con `adb install -d` e rimisurato subito dopo, dà 2224 ms** (7/7,
+  7,1%): lo stesso file che un'ora prima faceva 1729. Il telefono è il 29%
+  più lento di un'ora prima (dopo una decina di installazioni e cinquanta
+  avvii a freddo: calore o lavoro in sottofondo, non misurato quale); il
+  gioco del #160 sta a +1% sul predecessore, schiena contro schiena, con
+  155 kB in meno. Il rosso è del telefono di stasera, non del gioco; si
+  rimisura a telefono freddo. Release: l'allegato va aggiornato dal
+  committente (`gh release upload v2026.11.02 apk/CALCETTO.apk --clobber`).
 
 - **LA RIFINITURA PER LA PUBBLICAZIONE — #159 DIECI ORE PER FINIRE, E L'APK**
   (voce #159, 2 novembre 2026, ramo `voce-159-rifinitura` dal merge-base
