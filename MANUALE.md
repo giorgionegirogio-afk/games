@@ -1081,11 +1081,10 @@ Qui il registro completo, a edizioni.
   rivisto; chi lo ricollega lancia `adb install -r apk/CALCETTO.apk` e
   `node strumenti/avvio-telefono.js` (soglia 2000 ms; il 10/10 era 2121).
   Il ramo è su **`main` in avanti veloce (`9f332a0`), spinto**: l'APK è
-  scaricabile da `apk/` e dalla pagina. **La release GitHub NON è stata
-  creata**: il permesso di aprire una superficie pubblica nuova è stato
-  negato alla sessione automatica; il comando pronto è
-  `gh release create v2026.11.02 apk/CALCETTO.apk apk/CIRCOLO.apk --target main --notes-file fuori/159/release.md`
-  (le note stanno in `fuori/159/release.md`, non tracciato).
+  scaricabile da `apk/` e dalla pagina. **La release GitHub `v2026.11.02`** con i due APK allegati
+  l'ha creata il committente la sera stessa (alla sessione automatica il
+  permesso di aprire una superficie pubblica nuova era stato negato):
+  https://github.com/giorgionegirogio-afk/games/releases/tag/v2026.11.02
 
   **Rettifica della sera (2 novembre, 22:40): il telefono è tornato.** Il
   committente ha ricollegato il OnePlus 6 e adb lo ha rivisto subito.
@@ -1100,8 +1099,8 @@ Qui il registro completo, a edizioni.
   PSS 182 MB in pianta e 345 MB in ripresa, decodifica dell'atlante grande
   200 ms dalla ripresa — gli stessi numeri del compito 8 del #158. L'app
   avviata da `am start` (Status ok) con lo scatto del menu in
-  `fuori/159/telefono-menu.png`. Restano al committente la release
-  GitHub e `/design-login`.
+  `fuori/159/telefono-menu.png`. Il committente ha poi fatto `/design-login`
+  (Claude Design collegato) e creato la release.
 
   ### (l) Che cosa resta, dichiarato
 
