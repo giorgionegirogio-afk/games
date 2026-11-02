@@ -227,11 +227,49 @@
    le dieci sagome, piu' la CHIAVE DI RISPOSTA separata su stdout: al
    provino umano si mostra il foglio, non la chiave.
 
+   =====================================================================
+   LA FIGURA MISURATA, dal 2 novembre 2026 (voce #159, spec §2.5).
+
+   Dal #158 in campo si vedono gli SPRITE fotografici (Sprite3D.disegna) e
+   il rig e' il ripiego per l'atlante non ancora decodificato. Il banco
+   della pagina pero' disegnava ancora il rig: il 6/10 «dal giro 4 del
+   #157» misurava da settimane una figura che il giocatore non guarda.
+   Da oggi la pagina, con le FIGURE accese, disegna le dieci celle con
+   Sprite3D.disegna — la stessa chiamata di drawPlayers, look nero — dopo
+   aver aspettato l'atlante fino a 10 s, e DICHIARA che cosa ha disegnato:
+   nel JSON (`figura`: 'sprite' | 'rig' | 'mista', `motivo`) e nel titolo
+   della pagina («silhouette: sprite», «silhouette: rig — ATLANTE NON
+   PRONTO»). Qui dentro cambia questo, e solo questo:
+     - la riga [silhouette] non si aspetta piu' con un sonno fisso di 3 s
+       ma con un sondaggio fino a 30 s: l'atlante si decodifica dopo
+       DOMContentLoaded e la pagina lo aspetta prima di disegnare;
+     - --rig apre la pagina con &figure=0 e misura il RIG come prima: la
+       misura vecchia resta disponibile e confrontabile con le sue;
+     - se la pagina dichiara «ATLANTE NON PRONTO» o 'mista' il banco NON
+       stampa un verdetto: uscita 2, il cancello non puo' fidarsi di se'.
+       Un numero del rig letto come numero dello sprite e' peggio di
+       nessun numero (e tutti.js lo trascriverebbe nel registro). Se
+       invece dichiara FIGURE spente nel gioco, il rig E' cio' che si vede:
+       si misura quello e lo si dice;
+     - un gioco che non dichiara niente (una copia di prima della #159)
+       viene misurato e DETTO come «rig, non dichiarato dalla pagina»;
+     - la prova di rottura (--rompi) storpia il RIG (le braccia di
+       Rig3D.esultanza, le ancore qui sotto): con le figure accese non
+       toccherebbe lo sprite e «fallirebbe» senza dire niente del metro.
+       Corre quindi su DUE passate a rig (com'e' / storpiata), mentre la
+       (a) resta sugli sprite; il rapporto lo dice.
+   NESSUNA banda, soglia o criterio cambia: se le sagome fotografiche non
+   reggono il metro tarato sul rig, il numero si scrive com'e', con la
+   causa per posa. La spazzata (b) e lo scavo si misurano come prima,
+   sulla figura che la pagina ha disegnato.
+   Il test nato rosso su tutto questo: strumenti/_t-159-silhouette-sprite.js.
+
    USO:  node strumenti/silhouette.js
          node strumenti/silhouette.js --dir foto-figure2-dopo
          node strumenti/silhouette.js --profilo
          node strumenti/silhouette.js --file ALTRO.html
          node strumenti/silhouette.js --rompi     (la prova di rottura, (c))
+         node strumenti/silhouette.js --rig       (il rig, come prima della #159)
    ===================================================================== */
 const fs = require('fs');
 const path = require('path');
@@ -244,6 +282,12 @@ function arg(n, d) {
   return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : d;
 }
 const ROMPI = process.argv.includes('--rompi');
+/* --rig: la pagina disegna il rig (&figure=0) e si misura la figura di
+   prima della #159; senza, si misura quella che il giocatore vede */
+const RIG = process.argv.includes('--rig');
+/* quanto si aspetta la riga [silhouette]: la pagina aspetta l'atlante
+   fino a 10 s e poi misura; 30 s coprono anche il ripiego dichiarato */
+const ATTESA_MS = 30000;
 /* IL FOGLIO DELLA PROVA DI ROTTURA NON VA NELLA CARTELLA DEL PROVINO.
    Il PNG di foto-figure2-dopo e' il foglio che si mette davanti a un
    estraneo: sovrascriverlo con una figura storpiata apposta vuol dire
@@ -569,26 +613,49 @@ const valore = (k, m) => k === 'inchiostro' ? m.inchiostro.toFixed(3)
    quattro numeri per cella e ci aggiunge lo scavo letto sul foglio.
    `scriviPng` e' falso per la passata di rottura: quel foglio non e' il
    foglio del provino e non deve prenderne il posto. */
-async function raccogli(rompi, scriviPng) {
+async function raccogli(rompi, scriviPng, rig) {
   const srv = await servi(rompi);
   const br = await chromium.launch();
   const pg = await br.newPage();
   const righe = [];
   pg.on('console', m => righe.push(m.text()));
   pg.on('pageerror', e => righe.push('ERRORE ' + e.message));
-  /* cache-busting: senza, il browser rilegge il file di ieri */
-  await pg.goto(`http://127.0.0.1:${srv.porta}/${FILE}?banco=silhouette&t=${Date.now()}`);
-  await pg.waitForTimeout(3000);
+  /* cache-busting: senza, il browser rilegge il file di ieri.
+     &figure=0 chiede alla pagina il rig (--rig, e le passate di rottura) */
+  await pg.goto(`http://127.0.0.1:${srv.porta}/${FILE}?banco=silhouette${rig ? '&figure=0' : ''}&t=${Date.now()}`);
+  /* la pagina aspetta l'atlante (fino a 10 s) prima di disegnare: si
+     sonda la riga invece di dormire tre secondi fissi */
+  const t0 = Date.now();
+  let riga = null;
+  while (!(riga = righe.find(r => r.startsWith('[silhouette] '))) && Date.now() - t0 < ATTESA_MS) await pg.waitForTimeout(100);
 
-  const riga = righe.find(r => r.startsWith('[silhouette] '));
   if (!riga) {
-    console.log('BANCO MUTO — la pagina non ha stampato niente.');
+    console.log('BANCO MUTO — la pagina non ha stampato niente in ' + ATTESA_MS + ' ms.');
     for (const r of righe.slice(0, 12)) console.log('   ' + r);
     await br.close(); srv.chiudi();
     process.exit(1);
   }
   if (riga.includes('fallito')) { console.log(riga); await br.close(); srv.chiudi(); process.exit(1); }
   const d = JSON.parse(riga.slice(13));
+  /* CHE COSA HA DISEGNATO LA PAGINA. La figura dichiarata e' quella
+     DISEGNATA, non quella chiesta; il titolo porta la stessa parola e
+     «ATLANTE NON PRONTO» quando il ripiego viene dall'attesa scaduta.
+     Senza dichiarazione (gioco di prima della #159) si sa che e' il rig,
+     perche' quella pagina non sapeva disegnare altro. */
+  const titolo = await pg.title().catch(() => '');
+  const dichiarata = typeof d.figura === 'string';
+  const figura = dichiarata ? d.figura : 'rig';
+  const motivo = d.motivo || '';
+  if (!rig && dichiarata && figura !== 'sprite') {
+    const nonPronto = /ATLANTE NON PRONTO/.test(motivo) || /ATLANTE NON PRONTO/.test(titolo);
+    if (nonPronto || figura === 'mista') {
+      console.log('BANCO NON AFFIDABILE — la pagina ha disegnato «' + figura + '», non lo sprite della partita: ' + (motivo || titolo));
+      console.log('Nessun verdetto: un numero del rig letto come numero dello sprite e\' peggio di nessun numero.');
+      console.log('(per misurare il rig apposta c\'e\' --rig)');
+      await br.close(); srv.chiudi();
+      process.exit(2);
+    }
+  }
 
   const png = righe.find(r => r.startsWith('[silhouette-png] '));
   let dove = null, dataUrl = null;
@@ -644,7 +711,13 @@ async function raccogli(rompi, scriviPng) {
     console.log('Il cancello non stampa un verdetto senza il criterio che decide.');
     process.exit(1);
   }
-  return { d, dove };
+  return { d, dove, figura, dichiarata, motivo, titolo };
+}
+/* la figura misurata, in parole, per il rapporto */
+function descriviFigura(figura, dichiarata, motivo) {
+  if (!dichiarata) return 'RIG, non dichiarato dalla pagina (gioco di prima della #159: quel banco disegnava solo il rig)';
+  if (figura === 'sprite') return 'SPRITE — Sprite3D.disegna, l\'uomo fotografico che si vede in campo (' + motivo + ')';
+  return 'RIG — Rig3D.disegna, le capsule (' + motivo + ')';
 }
 /* quante azioni passano tutti i veti, su una raccolta */
 function quanti(d) {
@@ -652,7 +725,7 @@ function quanti(d) {
 }
 
 (async () => {
-  const { d, dove } = await raccogli(false, true);
+  const { d, dove, figura, dichiarata, motivo } = await raccogli(false, true, RIG);
 
   const TOT_SPAZZATA = 3 * 4 * d.fig.length;   // 3 corporature x 4 direzioni x 10 azioni
 
@@ -660,6 +733,7 @@ function quanti(d) {
      (a) IL REQUISITO DELLA GIURIA — l'unico numero che decide
      ================================================================= */
   console.log('\n=== SILHOUETTE — dieci azioni, nero pieno, quaranta pixel ===');
+  console.log('    FIGURA MISURATA: ' + descriviFigura(figura, dichiarata, motivo));
   console.log('\n(a) IL REQUISITO DELLA GIURIA — questo, e solo questo, decide verde o rosso.');
   console.log('    Angolo di presentazione, corporatura media. Nominabili richiesti: ' +
     `${NOMINABILI_MIN} su ${d.fig.length}.\n`);
@@ -853,11 +927,17 @@ function quanti(d) {
      ================================================================= */
   let rotturaOK = true;
   if (ROMPI) {
-    const r = await raccogli(true, false);
-    const iE = d.fig.findIndex(f => f.clip === 'esultanza');
-    const a = d.fig[iE], b2 = r.d.fig[iE];
-    const nRotto = quanti(r.d);
+    /* la storpiatura e' nel codice del RIG: se la (a) ha misurato lo
+       sprite, la base del confronto e' una passata a rig fatta apposta */
+    const aRig = !(dichiarata && figura === 'sprite');
+    const base = aRig ? d : (await raccogli(false, false, true)).d;
+    const r = await raccogli(true, false, true);
+    const iE = base.fig.findIndex(f => f.clip === 'esultanza');
+    const a = base.fig[iE], b2 = r.d.fig[iE];
+    const nBase = quanti(base), nRotto = quanti(r.d);
     console.log('\n(c) LA PROVA DI ROTTURA — l\'esultanza servita con le braccia richiuse.');
+    if (!aRig) console.log('    (la storpiatura tocca Rig3D: la prova corre su DUE passate a rig, figure=0;\n' +
+                           '     la (a) qui sopra resta sugli sprite e non si confronta con queste righe)');
     console.log('    posa                     inchiostro   forma   masse   SCAVO   esito');
     const stampa = (et, f) => {
       const c = criteri(f, false, 90);
@@ -866,10 +946,10 @@ function quanti(d) {
     };
     stampa('esulta, com\'e\'', a);
     stampa('esulta, storpiata', b2);
-    console.log(`    nominabili: ${nominabili} -> ${nRotto}   ·   distinzione: ` +
-      `${d.distanza.toFixed(3)} -> ${r.d.distanza.toFixed(3)}`);
+    console.log(`    nominabili (a rig): ${nBase} -> ${nRotto}   ·   distinzione: ` +
+      `${base.distanza.toFixed(3)} -> ${r.d.distanza.toFixed(3)}`);
     const bocciata = !passa(criteri(b2, false, 90));
-    const scesa = nRotto < nominabili;
+    const scesa = nRotto < nBase;
     rotturaOK = bocciata && scesa;
     console.log(rotturaOK
       ? '    PROVA SUPERATA: la posa storpiata viene bocciata e il conto scende.'
@@ -883,7 +963,8 @@ function quanti(d) {
      ================================================================= */
   if (giuriaOK && distOK && rotturaOK && morte.length === 0) {
     console.log(`\nVERDE: ${nominabili} azioni su ${d.fig.length} nominabili all'angolo di ` +
-      `presentazione (ne servono ${NOMINABILI_MIN}), distinzione ${d.distanza.toFixed(3)}.`);
+      `presentazione (ne servono ${NOMINABILI_MIN}), distinzione ${d.distanza.toFixed(3)}. ` +
+      `Figura misurata: ${figura}${dichiarata ? '' : ' (non dichiarata)'}.`);
     console.log('Resta il PROVINO CIECO, che e\' il giudice vero, e VERDE qui non vuol dire');
     console.log('verde li\': al secondo provino, con nove celle dichiarate nominabili da');
     console.log('questo banco, l\'uomo ne ha nominata UNA correttamente e con sicurezza.');
@@ -897,7 +978,8 @@ function quanti(d) {
     console.log(`\nROSSO: ${nominabili} azioni su ${d.fig.length} nominabili (ne servono ` +
       `${NOMINABILI_MIN}), distinzione ${distOK ? 'ok' : 'INSUFFICIENTE'}` +
       (poseMorte.length ? `, ${poseMorte.length} pos${poseMorte.length > 1 ? 'e' : 'a'} MORT${poseMorte.length > 1 ? 'E' : 'A'} (${poseMorte.join(', ')})` : '') +
-      (ROMPI ? `, prova di rottura ${rotturaOK ? 'superata' : 'FALLITA'}` : '') + '.');
+      (ROMPI ? `, prova di rottura ${rotturaOK ? 'superata' : 'FALLITA'}` : '') + '. ' +
+      `Figura misurata: ${figura}${dichiarata ? '' : ' (non dichiarata)'}.`);
     if (morte.length) {
       console.log('POSE MORTE — bocciate, e con il criterio irraggiungibile in TUTTE le');
       console.log('combinazioni della spazzata. La tolleranza degli 8 su 10 copre le pose a');

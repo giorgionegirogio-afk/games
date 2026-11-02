@@ -3390,8 +3390,10 @@ button:active{transform:scale(.96)}
       <h3>Il gioco</h3>
       <p>CALCETTO e' un'opera originale: codice, disegno, animazioni,
       suoni (interamente sintetizzati), nomi di squadre, giocatori,
-      campi e sponsor sono inventati e fatti in casa. Nessuna immagine,
-      registrazione o libreria di terzi.</p>
+      campi e sponsor sono inventati e fatti in casa. Nessuna
+      registrazione o libreria di terzi. Le figure fotografiche dei
+      giocatori sono generate con Gemini e lavorate in casa (tagli,
+      maschere, atlanti): nessun'altra immagine di terzi.</p>
       <h3>Caratteri tipografici di terzi</h3>
       <p>Gli unici componenti di terzi sono due caratteri, incorporati
       nel gioco come sottoinsiemi woff2:</p>
@@ -4034,7 +4036,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
           <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><circle class="avv" cx="86" cy="32" r="8"/><path d="M50 20l12 24m0-24L50 44"/><circle class="palla" cx="34" cy="32" r="3.6"/><path class="lieve" d="M62 18l8 4-8 4m0 12l8 4-8 4"/></svg>
             <b class="gn">Scudo</b><span class="gt">tieni <b>SCUDO</b> col pallone al piede e la levetta ferma<span class="soloKb"> &middot; <kbd>Shift</kbd> senza direzione</span> &mdash; giri le spalle e il pallone ti va dietro: per rubarlo devono passare dal tuo corpo</span></div>
           <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path d="M14 40l10 12m0-12L14 52"/><circle class="avv" cx="70" cy="40" r="8"/><path class="trat" d="M28 46 Q62 4 98 32"/><path d="M98 32l-2-9m2 9l-8-3"/><path d="M104 10h11v46h-11"/></svg>
-            <b class="gn">Pallonetto</b><span class="gt">levetta indietro al rilascio, dalla loro met&agrave; campo &mdash; scavalca il portiere in uscita</span></div>
+            <b class="gn">Pallonetto</b><span class="gt">tieni <b>TIRA</b> e trascina il dito in su<span class="soloKb"> &middot; da tastiera: levetta indietro al rilascio</span>, dalla loro met&agrave; campo &mdash; scavalca il portiere in uscita</span></div>
           <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path class="trat" d="M8 20 Q30 32 46 40"/><circle class="palla" cx="50" cy="42" r="3.8"/><path d="M56 30l12 14m0-14L56 44"/><path d="M72 36 98 24"/><path d="M98 24l-9-1m9 1l-5 8"/><path d="M104 4h11v44h-11"/></svg>
             <b class="gn">Tiro al volo</b><span class="gt">tieni il tiro prima che la palla arrivi &mdash; le potenze si sommano</span></div>
           <div class="ges"><svg class="gsvg" viewBox="0 0 120 64" aria-hidden="true"><path d="M16 30l12 14m0-14L16 44"/><circle class="palla" cx="30" cy="40" r="3.6"/><circle class="avv" cx="58" cy="26" r="8"/><path d="M84 14l12 14m0-14L84 28"/><path d="M34 40 88 34"/><path d="M88 34l-9-3m9 3l-8 5"/></svg>
@@ -11172,15 +11174,53 @@ if(/[?&]gabbia/.test(location.search)){
                  «le azioni si distinguono fra loro» e «mai due
                  giocatori nella stessa posa».
 
-   IL BANCO NON DISEGNA A MODO SUO. Stessa Rig3D.disegna della partita,
+   IL BANCO NON DISEGNA A MODO SUO. Stessa `disegna` della partita,
    stessa camera 'alto', stessa scala (RIG_H x P_DIS = 40 px), stesso
    contorno: un banco che si costruisse un disegno tutto suo direbbe
    verde su una figura che in campo non esiste. L'unica differenza e' il
    look, con OGNI campo a nero — ed e' il punto dell'esercizio.
    Lo legge strumenti/silhouette.js.
+
+   QUALE `disegna`, dal 2 novembre 2026 (voce #159, spec §2.5). Dal #158
+   in campo si vedono gli SPRITE fotografici (Sprite3D.disegna) e il rig
+   e' il ripiego per l'atlante non ancora decodificato; questo banco
+   pero' disegnava ancora il rig, e il cancello misurava da settimane
+   (6/10 dal giro 4 del #157) una figura che il giocatore non guarda.
+   Da oggi:
+     - con le FIGURE accese (SPRITE_ON && SAVE.figure!==0, cioe' quello
+       che vede chi gioca) ogni cella si disegna con Sprite3D.disegna,
+       stessa firma e stessi argomenti che drawPlayers le passa (camera
+       'alto', RIG_H nel contesto gia' scalato di P_DIS, la fase u
+       tradotta nel tSec = u/freq che la partita passa, senzaOmbra,
+       pxs = P_DIS, filo 0): e' la maschera dell'uomo fotografico, non
+       quella delle capsule;
+     - con ?figure=0 nella query il banco disegna il rig come prima: la
+       misura vecchia resta disponibile (strumenti/silhouette.js --rig);
+     - l'atlante arriva in blocchi di testo in fondo al documento e si
+       decodifica dopo DOMContentLoaded: il banco ASPETTA
+       Sprite3D.stato().pronto con un sondaggio ogni 100 ms, fino a
+       10 s. Se allo scadere non e' pronto (o la decodifica e' fallita)
+       disegna il rig e lo DICHIARA — nel titolo della pagina, nella
+       riga [silhouette-atlante] della console e nei campi `figura` e
+       `motivo` del JSON — cosi' lo strumento se ne accorge e non
+       spaccia il ripiego per la figura di partita. Niente scritte sul
+       canvas: ogni pixel con alfa > 128 li' dentro e' «figura» per la
+       misura.
+   Il JSON porta `figura` ('sprite' | 'rig' | 'mista', se anche una sola
+   cella e' ricaduta sul rig) e `motivo`, e ogni voce di `fig` porta la
+   sua. Le bande e i criteri NON cambiano: se le sagome fotografiche non
+   reggono il metro tarato sul rig, il numero si scrive com'e'.
+   Il test che e' nato rosso su questo: strumenti/_t-159-silhouette-sprite.js.
    ===================================================================== */
 if(/[?&]banco=silhouette/.test(location.search)){
-  setTimeout(function(){
+  /* ?figure=0 chiede esplicitamente il rig; tutto il resto vuole la
+     figura che il giocatore vede */
+  const SIL_VUOLE_SPRITE = !/[?&]figure=0(?:&|$)/.test(location.search);
+  const SIL_LIMITE_MS = 10000;   // quanto si aspetta l'atlante prima di dichiarare il ripiego
+
+  /* `figura` e' quella CHIESTA ('sprite' o 'rig'); quella DISEGNATA la
+     dice ogni cella, e il JSON dichiara la seconda */
+  function bancoSilhouette(figura, motivo){
    try{
     /* le dieci azioni del provino, con la fase scelta a mano nel punto
        piu' significativo del gesto (non a caso: un provino a fase
@@ -11213,15 +11253,31 @@ if(/[?&]banco=silhouette/.test(location.search)){
     const nero={maglia:NERO,maglia2:NERO,pantaloncini:NERO,calze:NERO,risvolto:NERO,
       pelle:NERO,capelli:NERO,scarpe:NERO,palla:null,taglio:0,corp:3,varb:0,
       _lume:NERO,_ombra:NERO,
+      /* _nero: la richiesta ESPLICITA della maschera a Sprite3D (tela
+         nera, niente pelle ne' capelli sopra la divisa); il rig non lo
+         legge. Senza, Sprite3D la ricaverebbe comunque da maglia e pelle
+         a nero, ma un banco dice quello che vuole invece di farlo
+         indovinare. */
+      _nero:true,
       _ombS:{maglia:NERO,maglia2:NERO,calze:NERO,pantaloncini:NERO,pelle:NERO}};
 
+    /* LA CELLA DICE CON CHE COSA E' STATA DISEGNATA. Con `figura` a
+       'sprite' si chiama Sprite3D.disegna come drawPlayers: stesso
+       contesto scalato di P_DIS, stesso RIG_H, stesso tSec = u/freq,
+       senzaOmbra, pxs = P_DIS, filo 0. Se risponde false (clip senza
+       fotogrammi, atlante sfrattato) il rig ripiega come in partita —
+       ma il banco lo SCRIVE invece di tacerlo. */
     function disegnaCella(i,clip,u,yaw,corp){
       const cx=(i%COL)*CW+CW/2, cy=((i/COL)|0)*CH+CH-14;
       nero.corp=corp;
+      const tSec=u/Rig3D.CLIPS[clip].freq;
       g.save();
       g.translate(cx,cy); g.scale(P_DIS,P_DIS); g.translate(-cx,-cy);
-      Rig3D.disegna(g,cx,cy,RIG_H,yaw,'alto',clip,u/Rig3D.CLIPS[clip].freq,nero,true,P_DIS);
+      let conSprite=false;
+      if(figura==='sprite') conSprite=!!Sprite3D.disegna(g,cx,cy,RIG_H,yaw,'alto',clip,tSec,nero,true,P_DIS,0);
+      if(!conSprite) Rig3D.disegna(g,cx,cy,RIG_H,yaw,'alto',clip,tSec,nero,true,P_DIS);
       g.restore();
+      return conSprite?'sprite':'rig';
     }
 
     /* ---- le misure sulla maschera ---- */
@@ -11280,13 +11336,14 @@ if(/[?&]banco=silhouette/.test(location.search)){
 
     /* ---- il provino principale: dieci azioni, tre quarti, taglia media ---- */
     g.clearRect(0,0,cv.width,cv.height);
-    for(let i=0;i<N;i++) disegnaCella(i,PROVA[i].clip,PROVA[i].u,0.95,3);
+    const conChe=[];
+    for(let i=0;i<N;i++) conChe.push(disegnaCella(i,PROVA[i].clip,PROVA[i].u,0.95,3));
     const fig=[];
     for(let i=0;i<N;i++){
       const q=misura(i);
       const ok_inch = q.inchiostro>=0.28 && q.inchiostro<=0.52;
       const ok_forma = PROVA[i].steso ? q.forma>1.15 : (q.forma>=0.35 && q.forma<=0.75);
-      fig.push({nome:PROVA[i].nome, clip:PROVA[i].clip, u:PROVA[i].u,
+      fig.push({nome:PROVA[i].nome, clip:PROVA[i].clip, u:PROVA[i].u, figura:conChe[i],
         inchiostro:+q.inchiostro.toFixed(3), forma:+q.forma.toFixed(3),
         masse:q.masse, arti:q.righeDue, bw:q.bw, bh:q.bh, prof:q.prof,
         ok:{inchiostro:ok_inch, forma:ok_forma, masse:q.masse>=2, arti:q.righeDue>=3}});
@@ -11327,14 +11384,58 @@ if(/[?&]banco=silhouette/.test(location.search)){
     /* il foglio a contatto: si ridisegna il provino principale, perche'
        il PNG deve mostrare esattamente quello che i numeri hanno letto */
     g.clearRect(0,0,cv.width,cv.height);
-    for(let i=0;i<N;i++) disegnaCella(i,PROVA[i].clip,PROVA[i].u,0.95,3);
-    console.log('[silhouette] '+JSON.stringify({fig, distanza:+dMin.toFixed(3), coppia:dChi,
+    const conChe2=[];
+    for(let i=0;i<N;i++) conChe2.push(disegnaCella(i,PROVA[i].clip,PROVA[i].u,0.95,3));
+    /* LA FIGURA DICHIARATA E' QUELLA DISEGNATA, non quella chiesta: se
+       anche una sola cella del provino o del foglio e' ricaduta sul rig
+       il JSON dice 'mista' e lo strumento non si fida (uscita 2). Il
+       titolo della pagina porta la stessa parola, e «ATLANTE NON PRONTO»
+       quando il ripiego viene dall'attesa scaduta: e' da li' che
+       silhouette.js se ne accorge anche senza leggere il JSON. */
+    const tutte=conChe.concat(conChe2);
+    const figuraVera = tutte.every(c=>c==='sprite') ? 'sprite' : (tutte.every(c=>c==='rig') ? 'rig' : 'mista');
+    if(figura==='sprite' && figuraVera!=='sprite') motivo+=' ; '+tutte.filter(c=>c!=='sprite').length+' celle su '+tutte.length+' ricadute sul rig';
+    document.title='silhouette: '+figuraVera+(/ATLANTE NON PRONTO/.test(motivo)?' — ATLANTE NON PRONTO':'');
+    console.log('[silhouette] '+JSON.stringify({figura:figuraVera, motivo, fig, distanza:+dMin.toFixed(3), coppia:dChi,
       /* TUTTE le righe, non le prime quaranta: senza di esse lo
          strumento non puo' NOMINARE le combinazioni geometricamente
          impossibili, e finirebbe per contarle come bocciature. */
       giri, nGiri:giri.length}));
     console.log('[silhouette-png] '+cv.toDataURL('image/png'));
    }catch(e){ console.log('[silhouette] fallito: '+(e&&e.message)); }
+  }
+
+  /* L'ATTESA DELL'ATLANTE. I byte stanno nei blocchi di testo in fondo
+     al documento e Sprite3D.carica() li legge a DOMContentLoaded, poi
+     tre immagini da 2304x2304 si decodificano: su questo PC l'atlante e'
+     pronto dopo uno-tre secondi dall'apertura, e il banco a 700 ms fissi
+     lo troverebbe spesso ancora chiuso. Si sonda Sprite3D.stato() ogni
+     100 ms fino a SIL_LIMITE_MS; scaduto il tempo, o fallita la
+     decodifica, si disegna il rig e si DICHIARA il ripiego: una misura
+     del rig spacciata per misura dello sprite sarebbe peggio di nessuna
+     misura. Con le FIGURE spente nel gioco il rig E' quello che si vede,
+     e la pagina lo dice senza chiamarlo ripiego. */
+  setTimeout(function(){
+    const figureAccese = SPRITE_ON && SAVE.figure!==0;
+    if(!SIL_VUOLE_SPRITE){ bancoSilhouette('rig', 'figure=0 nella query: il rig a richiesta'); return; }
+    if(!figureAccese){
+      bancoSilhouette('rig', 'FIGURE spente nel gioco (SPRITE_ON='+SPRITE_ON+', SAVE.figure='+SAVE.figure+'): il rig e\' quello che si vede');
+      return;
+    }
+    const t0=Date.now();
+    (function attendi(){
+      const st=Sprite3D.stato();
+      if(st.pronto){ bancoSilhouette('sprite', 'atlante pronto dopo '+(Date.now()-t0)+' ms di attesa'); return; }
+      const scaduto=(Date.now()-t0)>=SIL_LIMITE_MS;
+      if(st.fallito || scaduto){
+        const m='ATLANTE NON PRONTO'+(st.fallito?' (decodifica fallita)':' dopo '+SIL_LIMITE_MS+' ms')+
+                ': disegnato il rig, che NON e\' la figura di partita';
+        console.log('[silhouette-atlante] '+m);
+        bancoSilhouette('rig', m);
+        return;
+      }
+      setTimeout(attendi, 100);
+    })();
   }, 700);
 }
 
@@ -16647,7 +16748,33 @@ function touchBtnLayout(t){
    dire ALTRO MOTORE. Il prezzo — i nastri v5 diventano ingiudicabili —
    dura poco: v5 e' di stanotte.
    ===================================================================== */
-const MOTORE_V = 6;
+/* =====================================================================
+   RETTIFICA A EDIZIONI (2 novembre 2026, voce #159). IL NUMERO QUI SOTTO
+   NON E' PIU' 6, E' 7 — e stavolta per la ragione SCRITTA del criterio di
+   casa, non per quella allargata: le cure del #159 cambiano l'esito di
+   sequenze di comandi identiche.
+
+   Quali, una per una: il portiere che riprende le mani dopo il rinvio e
+   dopo il rimpallo (prima restava senza presa fino al fischio: strisce di
+   98-2489 fotogrammi), la lettura morbida del pallone lento in area (a 5
+   e 7; a 11 e' spenta da GK_MORBIDA_CORPO), il margine laterale del tuffo,
+   il duello aereo che vince il piu' vicino e non l'indice piu' basso, la
+   scivolata del pollice su chi non ha la palla che e' fallo, il contrasto
+   in piedi fallito che costa 0,45 s e puo' essere fallo da dietro, il
+   secondo giallo allo stesso uomo che espelle, la finestra del tiro che si
+   stringe sotto pressione e il passaggio umano piu' lento e corto sotto
+   pressione. Nessuna aggiunge un'estrazione di dado(): e' il MOMENTO in cui
+   le estrazioni si consumano che cambia, e con esso ogni nastro.
+
+   MISURATO prima di scrivere il 7 (strumenti/_t-132-motorev.js, dodici
+   nastri registrati sul merge-base 4063c2a e rigiocati sul gioco curato):
+   la misura sta nel verbale #159 del registro §A. Il prezzo e' quello di
+   sempre, e dura poco: i nastri v6 diventano ingiudicabili, e un telefono
+   rimasto indietro dice ALTRO MOTORE invece di accusare due innocenti.
+   La fixture del duello congelato e' rigenerata con
+   strumenti/_gen-nastro-duello-congelato.js, come al #143.
+   ===================================================================== */
+const MOTORE_V = 7;
 
 /* =====================================================================
    L'IMPRONTA DEL MOTORE JAVASCRIPT (voce #142, compito 2).
@@ -19140,11 +19267,36 @@ function eseguiPassUmano(p){
      linea di mira, e promessa ed esecuzione non possono divergere. */
   const best=scegliSmarcato(p);
   if(!best) return;
-  /* sulla corsa: anticipa la posizione del compagno */
-  const lead=0.32;
+  /* =================================================================
+     L'UOMO ADDOSSO SI SENTE NEL PIEDE (voce #159, H2; spec §2.2).
+     Fino al 2 novembre 2026 questo passaggio aveva lead 0,32 e velocita'
+     clamp(300+l*0.9,320,520) e basta: con un avversario a sei unita'
+     l'appoggio usciva identico a quello a campo libero. La CPU paga gia'
+     (eseguiAiPass: il botch col suo dado); l'umano no, ed era lo
+     sfruttamento H2 della ricognizione del 2/11.
+     LA CURA E' DETERMINISTICA, SENZA DADO: la stessa pressione della
+     finestra del tiro (pressioneSu, il ricettario del tocco sporco),
+     letta sul PASSATORE. Sotto pressione cala l'ANTICIPO — il piede non
+     ha il tempo di leggere la corsa del compagno: lead 0,32 a campo
+     libero, 0,128 con un uomo addosso — e cala la VELOCITA', fino al
+     22%: un appoggio strozzato arriva, ma arriva piu' lento e piu' sui
+     piedi che sulla corsa. NIENTE RUMORE ANGOLARE: il confutatore l'ha
+     respinto come «cura d'ufficio» (si tocca il lead e la velocita',
+     non l'esito), e la linea del passaggio di segniGuida promette un
+     pallone che arriva sul compagno. A campo libero (pressione 0) non
+     cambia un bit: e' cio' che `giocata` misura, con gli avversari a
+     230 unita' dalla palla per costruzione della sua quiete.
+     Misurato al banco (strumenti/_t-159-passaggio-pressione.js):
+     ricevente a 170 u che corre di lato a 120 u/s, uomo a 6 u addosso
+     -> pressione 0,870, velocita' da 456,9 a 367,1, angolo del lead da
+     0,222 a 0,108 rad.
+     ================================================================= */
+  const press=pressioneSu(p);
+  /* sulla corsa: anticipa la posizione del compagno — meno, se pressato */
+  const lead=0.32*(1-0.6*press);
   const tx=best.x+best.vx*lead, ty=best.y+best.vy*lead;
   const dx=tx-p.x, dy=ty-p.y, l=Math.max(1,len(dx,dy));
-  const speed=clamp(300+l*0.9, 320, 520);
+  const speed=clamp(300+l*0.9, 320, 520)*(1-0.22*press);
   if(kickBall(p, dx/l, dy/l, speed, 0)){
     Audio5.kick(0.35);
     b.passTo=G.players.indexOf(best);
@@ -19379,6 +19531,79 @@ function bersaglioTiroMirato(p,finestra,f,my){
   else gy=goalY+(my||0)*260;
   return [gx,gy];
 }
+/* =====================================================================
+   LA PRESSIONE ADDOSSO A UN UOMO (voce #159, H1/H2) — una scrittura, tre
+   letture. E' il ricettario che il tocco sporco di updateBall usa gia'
+   per chi RICEVE («3. PRESSIONE — l'avversario piu' vicino», TOCCO_PRESS
+   = 46): un avversario in piedi, in campo, entro 46 unita', e la
+   pressione cresce lineare da 0 sul bordo a 1 addosso. Qui la stessa
+   legge si legge su chi HA il pallone: il tiratore (finestraTiro) e il
+   passatore (eseguiPassUmano, eseguiPassaggioL14). Il ciclo di
+   updateBall non viene dirottato qui per scelta: vive dentro la
+   raccolta, con la sua guardia di costo e il suo commento, e si lascia
+   dov'e'; questa e' la stessa riga, per chi gia' possiede.
+   DETERMINISTICA: nessun dado() e nessun rnd() — e' una distanza. Chi e'
+   in scivolata non pressa (e' a terra), chi e' espulso nemmeno; il
+   portiere SI', perche' un portiere in uscita addosso e' la pressione
+   piu' vera che esista su un tiro. Non legge team===0: l'avversario e'
+   «non della mia squadra», e basta (equita' al bit).
+   ===================================================================== */
+function pressioneSu(p){
+  let dAvv=1e9;
+  for(const q of G.players){
+    if(q.team===p.team || q.out>0 || q.slide>=0) continue;
+    const dq=len(q.x-p.x, q.y-p.y);
+    if(dq<dAvv) dAvv=dq;
+  }
+  return clamp((TOCCO_PRESS-dAvv)/TOCCO_PRESS, 0, 1);
+}
+/* =====================================================================
+   LA FINESTRA DEL TIRO, IN UN POSTO SOLO (voce #159, H1; spec §2.2).
+   Fino al 2 novembre 2026 la larghezza della finestra del tempismo —
+   la «grazia» attorno a SHOT_MIN..SHOT_MAX — stava scritta DUE volte,
+   identica: nella PROMESSA (segniGuida, la linea del tiro che dice
+   «dentro») e nell'ESECUZIONE (releaseCharge, che la passa a
+   fireShotMirato). E in nessuna delle due entrava l'avversario addosso:
+   con un uomo a quattro unita' il tiro perfetto costava esattamente
+   quanto a campo libero — lo sfruttamento H1 della ricognizione del
+   2/11: contro la CPU si tirava perfetto nella mischia.
+   DA OGGI la larghezza la dice questa funzione, e la leggono tutte e
+   due: e' la legge di L3.1 («la promessa esce dalle STESSE funzioni
+   dell'esecuzione») applicata alla finestra, cosi' la linea non puo'
+   promettere un «dentro» che il rilascio non mantiene.
+   LA LEGGE: la tecnica allarga come ieri (fino a +-45 ms sui 300 di
+   partenza, `(tecnica-62)/38*0.045`, non un numero cambiato); la
+   pressione STRINGE, fino a 70 ms per lato a pressione piena
+   (FINESTRA_PRESS = 0,07 di tenuta); e c'e' un PAVIMENTO: la finestra
+   intera non scende mai sotto FINESTRA_MIN = 0,12 di tenuta, cioe' 120
+   ms, che e' larg >= -0,09. Senza il pavimento un mediano a tecnica 40
+   con un uomo addosso avrebbe una finestra di 108 ms, e uno a tecnica
+   24 di 70: quattro fotogrammi. Una finestra che non si puo' prendere
+   non e' una difficolta', e' una bugia del tutorial.
+   DENTRO LA FINESTRA IL TIRO RESTA PERFETTO: si tocca QUANTO e' larga,
+   mai che cosa succede dentro. La promessa del tutorial («tieni, e
+   rilascia nella finestra») non si tradisce; si tradirebbe se qui
+   comparisse un dado, e non compare.
+   A CAMPO LIBERO NON CAMBIA UN BIT: pressione 0 da' esattamente il
+   larg di ieri, ed e' cio' che il cancello `mira` (la rampa monotona
+   del tiro) continua a misurare. I conti, misurati al banco
+   (strumenti/_t-159-finestra-pressione.js): tecnica 62 e un uomo a 4
+   unita' -> pressione 0,913, larg -0,064, tetto della finestra 0,736
+   (la tenuta 0,78 che ieri era perfetta oggi e' fuori); tecnica 100 e
+   pressione 1 -> larg -0,025, finestra 0,25; tecnica 30 e pressione 1
+   -> il pavimento, finestra 0,12 esatta.
+   Torna larg: i due chiamanti ne fanno `SHOT_MIN-larg .. SHOT_MAX+larg`,
+   e releaseCharge lo usa anche per il verdetto a tre valori del
+   pallonetto, che resta com'era.
+   ===================================================================== */
+const FINESTRA_PRESS = 0.07;     // di tenuta: quanto stringe per lato una pressione piena
+const FINESTRA_MIN   = 0.12;     // di tenuta: la finestra intera non scende mai sotto (120 ms)
+function finestraTiro(p){
+  const largTecnica = (p.tecnica-62)/38*0.045;
+  const larg = largTecnica - pressioneSu(p)*FINESTRA_PRESS;
+  /* il pavimento: (SHOT_MAX-SHOT_MIN) + 2*larg >= FINESTRA_MIN */
+  return Math.max(larg, (FINESTRA_MIN-(SHOT_MAX-SHOT_MIN))/2);
+}
 /* IL RIFIUTO VISIBILE — quattro campi di SOLA RESA su G: la simulazione
    non li legge mai (equita' al bit), li scrive l'ingresso quando un
    verbo dice no, li spegne l'orologio del disegno. */
@@ -19407,7 +19632,12 @@ function segniGuida(t){
       const lt=letturaTiroViva(t,p);
       const f=miraTiroF(lt);
       const c=p.charge;
-      const larg=(p.tecnica-62)/38*0.045;
+      /* la larghezza della finestra la dice finestraTiro — la STESSA
+         funzione che releaseCharge leggera' al rilascio (L3.1): la
+         grazia della tecnica MENO la pressione dell'avversario addosso
+         (voce #159, H1). Prima qui c'era la formula della sola tecnica,
+         copiata uguale nei due posti. */
+      const larg=finestraTiro(p);
       const finestra=(c>=SHOT_MIN-larg && c<=SHOT_MAX+larg);
       const mv=humanMove(t);
       /* ===============================================================
@@ -19957,7 +20187,20 @@ function eseguiPassaggioL14(p, tr, bersaglio){
   const vt=verboTrascinato('through', tr);
   const alto=!!(vt && vt.act==='passoAlto');
   const T=alto ? voloL14(vt.su, l) : 0;
-  const speed=alto ? l/T : spdP+(spdF-spdP)*fat;
+  /* L'UOMO ADDOSSO, ANCHE QUI (voce #159, H2): la filtrante rasoterra
+     perde fino al 15% di velocita' sotto pressione — meno del passaggio
+     semplice (22%), perche' e' un gesto teso che si tira anche di
+     prima; e SOLO la velocita': l'anticipo resta quello della corsa del
+     ricevente, perche' qui e' una scelta del dito (la mira), non una
+     lettura del piede. Il pallone ALTO non paga: la sua velocita' e'
+     distanza/T e serve a RICADERE sul ricevente — toglierne il 15% lo
+     farebbe cadere corto, cioe' fra i corpi, che e' proprio il difetto
+     che la famiglia balistica cura. Stessa pressioneSu di
+     eseguiPassUmano, nessun dado. A pressione 0 il numero e' quello di
+     ieri al bit (misurato: 544,5 u/s nella scena del banco
+     strumenti/_t-159-passaggio-pressione.js, con e senza la cura). */
+  const press=alto ? 0 : pressioneSu(p);
+  const speed=alto ? l/T : (spdP+(spdF-spdP)*fat)*(1-0.15*press);
   if(kickBall(p, dx/l, dy/l, speed, 0)){
     b.vz=alto ? 280*T : 0;             // rasoterra: kickBall sopra 500 metterebbe quota
     b.passTo=bi;
@@ -20220,8 +20463,14 @@ function releaseCharge(t, lettura){
   /* la TECNICA allarga la finestra: fino a +-45 ms sui 300 di partenza.
      L1.3 — la finestra NON decide piu' la potenza: decide la PRECISIONE
      (vedi fireShotMirato). I suoi numeri non si toccano: SHOT_MIN 0,50,
-     SHOT_MAX 0,80, la grazia della tecnica. E' l'anello di sempre. */
-  const larg = (p.tecnica-62)/38*0.045;
+     SHOT_MAX 0,80, la grazia della tecnica. E' l'anello di sempre.
+     DAL 2 NOVEMBRE 2026 (voce #159, H1) la larghezza la dice
+     finestraTiro: la stessa grazia della tecnica, MENO la pressione
+     dell'avversario addosso, con un pavimento di 120 ms. E' la stessa
+     funzione che segniGuida legge per la linea del tiro, quindi la
+     promessa e questo rilascio non possono divergere (L3.1). A campo
+     libero il numero e' quello di ieri al bit. */
+  const larg = finestraTiro(p);
   const finestra = (c>=SHOT_MIN-larg && c<=SHOT_MAX+larg);
   /* il verdetto a tre valori resta SOLO per il pallonetto qui sotto,
      che questa voce lascia com'era ieri, quota e potenza comprese */
@@ -40399,11 +40648,23 @@ function drawPlayer(p){
   if(p.charge>=0 && !p.chargeGo && p.chargeKind==='tiro' && isCtrl && !G.cpu[p.team]){
     const c=p.charge;
     const frac=clamp(c/SHOT_HARDCAP,0,1);
-    const inWin = c>=SHOT_MIN && c<=SHOT_MAX;
+    /* L'ARCO DICE LA FINESTRA VERA (voce #159, H1). Fino al 2 novembre
+       2026 l'arco ambra era SHOT_MIN..SHOT_MAX fissi: ignorava gia' la
+       grazia della tecnica (+-45 ms) e, da oggi che la pressione
+       dell'avversario la stringe fino a 120 ms, avrebbe promesso un
+       «dentro» di 300 ms che il rilascio non mantiene — la bugia che
+       L3.1 vieta. La finestra la dice finestraTiro, la STESSA funzione
+       del rilascio e della linea di mira: l'arco si restringe sotto
+       gli occhi di chi tiene premuto, ed e' cosi' che si impara a
+       tirare prima di avere l'uomo addosso. Solo disegno: nessuna riga
+       di fisica legge questo arco. */
+    const larg=finestraTiro(p);
+    const fLo=SHOT_MIN-larg, fHi=SHOT_MAX+larg;
+    const inWin = c>=fLo && c<=fHi;
     const R=P_R+10;
     /* finestra dolce come arco evidenziato */
     ctx.strokeStyle='rgba(255,176,32,.35)'; ctx.lineWidth=5;
-    ctx.beginPath(); ctx.arc(p.x,p.y,R,-Math.PI/2+6.2832*(SHOT_MIN/SHOT_HARDCAP),-Math.PI/2+6.2832*(SHOT_MAX/SHOT_HARDCAP)); ctx.stroke();
+    ctx.beginPath(); ctx.arc(p.x,p.y,R,-Math.PI/2+6.2832*(fLo/SHOT_HARDCAP),-Math.PI/2+6.2832*(fHi/SHOT_HARDCAP)); ctx.stroke();
     /* progressione */
     ctx.strokeStyle= inWin?COL.ambra:COL.gesso; ctx.lineWidth=3;
     ctx.beginPath(); ctx.arc(p.x,p.y,R,-Math.PI/2,-Math.PI/2+6.2832*frac); ctx.stroke();
@@ -42638,7 +42899,11 @@ function drawTouchButtons(){
         const p=ctrlPlayer(t);
         if(p && p.charge>=0 && !p.chargeGo && p.chargeKind==='tiro'){
           const frac=clamp(p.charge/SHOT_HARDCAP,0,1);
-          const inWin=p.charge>=SHOT_MIN&&p.charge<=SHOT_MAX;
+          /* la stessa finestra del rilascio e dell'anello (finestraTiro,
+             voce #159 H1): il disco diventa ambra quando il rilascio
+             sarebbe perfetto ADESSO, uomo addosso compreso */
+          const largB=finestraTiro(p);
+          const inWin=p.charge>=SHOT_MIN-largB&&p.charge<=SHOT_MAX+largB;
           ctx.strokeStyle=inWin?'rgba(255,176,32,.95)':'rgba(242,245,239,.8)';
           ctx.lineWidth=4;
           ctx.beginPath(); ctx.arc(bt.x,bt.y,bt.r+5,-Math.PI/2,-Math.PI/2+6.2832*frac); ctx.stroke();

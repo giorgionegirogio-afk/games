@@ -746,6 +746,289 @@ Qui il registro completo, a edizioni.
   zero, e la revisione dell'intera postura «zero permessi, zero conti, nessuna
   chiave nell'HTML»). **Nessuna delle due è stata provata.**
 
+- **LA RIFINITURA PER LA PUBBLICAZIONE — #159 DIECI ORE PER FINIRE, E L'APK**
+  (voce #159, 2 novembre 2026, ramo `voce-159-rifinitura` dal merge-base
+  `4063c2a`; spec `docs/superpowers/specs/2026-11-02-rifinitura-pubblicazione-design.md`,
+  piano `docs/superpowers/plans/2026-11-02-rifinitura-pubblicazione.md`).
+
+  **Il mandato, in una riga del committente:** «finisci il gioco del calcetto
+  e appena finito rendi disponibile l'APK … funzionante, coerente, divertente
+  da giocare, competitivo … entro 10 ore». Nessuna voce aperta nominata.
+  Chi scrive ha scelto, e la scelta sta nello spec con le ragioni: non il
+  live 1v1 (la dichiarazione in cima a questo registro resta vera), non i
+  fogli nuovi, ma i **difetti che si sentono con il pollice** — il portiere
+  che non prende, gli sfruttamenti dell'umano, le regole che lo schermo
+  promette e il codice non applica — e i documenti messi in coerenza con il
+  gioco di oggi prima di pubblicarlo.
+
+  ### (a) Lo stato misurato prima di toccare
+
+  La batteria intera con `--tutto` (la prima dal 10 ottobre: quella del
+  10/10 aveva 52 cancelli, cioè senza i lenti), 80 cancelli 2 alla volta su
+  una macchina con 2,2 GB liberi e Chrome aperto, 65 minuti: **ROSSO
+  `silhouette` 6/10** (il giro 4 del #157, dichiarato dal 25/9) e
+  **`dischetto`** (E1: punta 75 invii/min contro un tetto di 60) — rifatto
+  da solo è **VERDE**: il banco era occupato 5,2 volte il suo minimo, e il
+  cancello lo scrive da sé che in quelle condizioni boccia per contesa.
+  `perimetro` e `casa-falsi` a **uscita 2**: `sguaina()` del banco della
+  matematica (#143) contava 48 «Mexp» nel file e 47 come chiamata — la 48ª
+  stava **dentro il base64 dell'atlante** (blocco `sprite-m`), dove ogni
+  sequenza di lettere capita per caso. `audio` nullo in parallelo e 28/28
+  da solo. **`avvio-telefono` nullo: il telefono (OnePlus A6003) è sparito
+  da adb** dopo la prima ora della sessione — era `device` all'inizio;
+  `kill-server`/`start-server` e `adb usb` non lo riportano, nessun
+  dispositivo PnP risponde al nome. `istantanea` 42/56 identica al 10/10,
+  `giocata` 7/7, `prestazione` 3/3.
+
+  ### (b) Compito 0 — il banco cieco e le sei native (`af70143`)
+
+  Il banco ora stacca la coda `<script type="text/plain" id="sprite-*">`
+  prima di contare e sostituire, e la riattacca identica (`INIZIO_CODA` in
+  `_toppa-143-matematica.js`, con la nota del perché). Dietro il difetto del
+  banco ce n'era uno del gioco, del #157 giro 4: **sei chiamate native
+  `Math.cos/sin/atan2` nel blocco APQ e in `l151Indice`**, fuori dal blocco
+  protetto di `improntaMotore`, contro l'invariante della matematica in
+  casa. Dirottate alle funzioni di casa: `innesta(sguaina(gioco))` torna il
+  gioco parola per parola, `perimetro` 5/5, `casa-falsi` 9/9. La lezione:
+  **tre settimane di batteria senza `--tutto` lasciano dormire i lenti**, e
+  il primo `--tutto` ne trova due.
+
+  ### (c) La ricognizione a cinque, e il confutatore
+
+  Quattro lettori indipendenti in sola lettura (difetti di gioco, superficie
+  di collaudo, coerenza dei documenti, competitività; 69 minuti, 1,4 M di
+  token) più un **confutatore** che ha riletto ogni conferma per smentirla.
+  Dodici voci dell'elenco del realismo del 24/9 rilette sul codice di oggi
+  (le righe erano slittate di ~2.170): **dodici su dodici ancora vere**, ma
+  il confutatore ha separato i **difetti** dalle **scelte di casa
+  documentate**, e le seconde non si «curano d'ufficio»: la morte improvvisa
+  a coppie dai rigori (regola di ritmo dichiarata in testa al blocco), le
+  respinte che non concedono mai l'angolo (scelta scritta), il tiro perfetto
+  senza rumore (la promessa L3.1 e il tutorial). Di quelle si rende onesto
+  lo schermo, non si cambia la regola. Rapporti in `fuori/159/` (non
+  tracciati), sintesi e decisioni nello spec §2.
+
+  ### (d) Compito 1 — il portiere (agente P, sul file vero)
+
+  - **P1, le mani che si spengono (#6 dell'elenco).** `updatePlayerFisica`
+    esce al ramo del portiere PRIMA del decremento di `kickCd`, e dentro
+    `updateKeeper` l'unico decremento vive nel ramo «il pallone è mio»: dopo
+    il rinvio (`kickCd=0,4`, `owner=-1`) e dopo il rimpallo sul corpo
+    (`0,18`) il portiere restava **senza mani e senza piedi** finché un
+    fischio non lo azzerava. Misurato dal test nuovo
+    `_t-159-portiere-mani.js`: strisce di **98 / 970 / 2489 / 2288
+    fotogrammi** congelato, fino al **69,3%** dei fotogrammi vivi di una
+    partita. Cura: una riga di `dt` puro prima della guardia della presa in
+    piedi, l'orologio del rinvio intatto al bit. Dopo: strisce di 11-31
+    fotogrammi (0,2-0,9%).
+  - **P2, la lettura morbida (#7/#9).** Il tuffo si arma solo sopra 300 u/s:
+    filtranti lente, rimpalli e palloni morti in area lasciavano il portiere
+    sulla retta palla-centro. Ramo NUOVO, aggiunto e non riscritto: pallone
+    libero, sotto la quota del pallonetto, nell'area allargata → bersaglio
+    `predY`; se è lento (sotto la soglia della presa), entro il tetto della
+    vecchia legge d'uscita e nessun avversario è più vicino al pallone, esce
+    a prenderlo e le mani guardano il pallone. **Due restrizioni misurate**,
+    scritte nel codice: l'uscita è confinata al tetto `GK_AREA_X·0,62` (con
+    1,4× le reti a 11 cadevano a 1,33, −50%), e **a taglia 11 il ramo è
+    SPENTO** (`GK_MORBIDA_CORPO=10`: vale solo se `P_R+B_R ≥ 10`, cioè a 5 e
+    7 con 21 u, non a 11 con 7,5): isolate le due componenti su due copie
+    (solo `predY` 1,63 gol, solo uscita 1,37, contro 2,67), **a 11 non c'è
+    margine per nessuna lettura morbida** finché l'attacco dell'11 non viene
+    rinforzato — seguito dichiarato nel commento della costante. Test
+    `_t-159-portiere-anticipo.js`, sei scene specchiate: prima
+    `niente/niente/niente/respinta`, dopo `presa` a 0,07 / 0,28 / 1,28 /
+    0,40 s; a 11 il banco pretende che il portiere NON esca, e lo verifica.
+  - **P3, il margine laterale (#8):** `clamp(p.y, GY0−46, GY1+46)`, il margine
+    che il tuffo già si concedeva; prima il portiere faceva 16 unità in un
+    fotogramma al salto dopo il tuffo (scena F), dopo 2,5. Neutra al bit sul
+    conto dei gol.
+  - **P4, il duello aereo (#5):** niente `break` sul primo a portata: vince il
+    minimo di distanza/portata (il designato del cross resta avvantaggiato),
+    a parità il designato poi l'indice minore. Prima l'uomo di squadra 0 a
+    22 u incornava davanti a quello di squadra 1 a 10 u (ordine dell'array,
+    cioè **un bias d'equità**). Test `_t-159-testa-vicino.js`, quattro
+    coppie specchiate. Neutra al bit sulle 90 partite misurate.
+  - **Il conto dei gol, 30 partite per taglia con gli stessi semi
+    (`_eventi.js`, autodiagnosi verde):**
+
+    | | gol nei 90 s | 0-0 | parate / prese / respinte | falli |
+    |---|---|---|---|---|
+    | taglia 5, prima | 2,53 | 3% | 1,7 / 0,6 / 0,7 | 1,1 |
+    | taglia 5, dopo | **2,13 (−16%)** | 17% | **3,7 / 2,8 / 0,7** | 1,0 |
+    | taglia 7, prima | 2,67 | 7% | 3,4 / 0,9 / 1,8 | 0,6 |
+    | taglia 7, dopo | **2,70 (+1%)** | 3% | 5,0 / 3,1 / 1,5 | 0,7 |
+    | taglia 11, prima | 2,67 | 7% | 3,4 / 0,8 / 1,6 | 0,9 |
+    | taglia 11, dopo (solo P1) | **2,10 (−21%)** | 10% | 4,2 / 1,4 / 1,5 | 0,6 |
+
+    Dentro la soglia dello spec (±25%) e sotto quelle del cancello
+    `eventi`; **le parate raddoppiano a 5** e il portiere torna un
+    personaggio. Da sapere: lo 0-0 a 5 sale dal 3% al 17% (1 → 5 partite
+    su 30) e il −21% a 11 ha un errore standard di circa 0,24 gol (0-5 gol
+    per partita): il rapporto è incerto di una decina di punti. Zero
+    `dado()` nuovi. Cancelli mirati `collaudo` 36/36, `determinismo` 11/11,
+    `equita` 4/4, `seme`, `regole`, `cpu-ordine`, `eventi` 4/4: verdi.
+
+  ### (e) Compito 2 — disciplina e regole (agente R, su una copia fusa a tre vie)
+
+  - **R1, la scivolata su chi non ha la palla (#12).** Il fallo viveva solo
+    dentro `if(carrier && carrier.team!==p.team)`: con il pallone di nessuno
+    si entrava «sul passaggio» a 560 u/s stendendo il passatore senza
+    fischio. Il corpo del fallo è estratto in **`falloDaScivolata(p, vittima,
+    cattivo)`** (vantaggio compreso) e chiamato anche dal ramo nuovo dopo la
+    spazzata, quando la scivolata non ha giocato il pallone e stende
+    l'avversario più vicino. **Aperto a tutti i falli crescevano del 60%**
+    (1,1 → 1,8 a partita; 0,4 → 1,6 a 7: la CPU scivola sul passaggio
+    dell'ultimo istante): ristretto **al solo uomo comandato dal pollice**
+    (`G.ctrl`, non `!G.cpu`), perché lo sfruttamento è dell'umano — le 30
+    partite CPU contro CPU tornano identiche a prima. Dichiarato: la CPU può
+    ancora stendere il passatore senza fischio (scivola ~3 volte a partita in
+    tutto). Test `_t-159-scivolata-senza-palla.js`, 10 prove specchiate.
+  - **R2, il contrasto in piedi si paga (#13, lo sfruttamento più grave
+    contro la CPU).** `contrastoPasso` è un verbo solo umano: il fallito
+    costava 0,22 s di piede freddo e si poteva **spammare fino al furto**
+    (riuscita 75,6% frontale). Ora, con lo **stesso unico sorteggio**: sul
+    fallito da dietro una quota `CONTRASTO_FALLO=0,35` diventa fallo (via
+    `falloDaScivolata`), e ogni fallito costa `CONTRASTO_CD` 0,22 → **0,45**
+    (il numero del furto col corpo fallito, rettifica a edizioni nel
+    commento) e **`CONTRASTO_FIATO`** = un quarto di `SCUDO_FIATO` (5 punti).
+    Test `_t-159-contrasto-fallo.js` su 300 semi: quota di fallo da dietro
+    **33,5%**, da davanti mai, conteggio delle estrazioni della decisione
+    invariato, **20 partite CPU contro CPU con punteggio e sorteggi
+    identici** prima e dopo (il verbo non esce mai in automatico).
+  - **R3, il doppio giallo allo stesso uomo (#33).** `p.gialli` era mostrato
+    negli eventi e **mai letto da una decisione**: espelleva il secondo giallo
+    di squadra, non il secondo dello stesso uomo. OR dei due inneschi, la
+    regola di squadra (documentata al §8, presidiata da banco) **resta**.
+    Test `_t-159-doppio-giallo.js`: A, B, A → B esce al secondo di squadra
+    come oggi, A esce al suo secondo personale anche con conto di squadra
+    dispari.
+  - **R4, i rigori detti onesti (#31, la sola parte onesta).** Il pannello
+    prometteva cinque pallini e dipingeva verdi i PRIMI `seg` qualunque fosse
+    l'ordine reale; al tetto dei nove tiri a parità **vinceva la squadra 0
+    per decreto**. Ora `R.esiti` tiene gli esiti nell'ordine vero, un
+    pallino per tiro battuto più uno per la battuta in corso, e al tetto a
+    parità **la spunta chi ha tirato per secondo** (`1−R.turno`: il primo
+    tiratore nasce da `kickTeam`, cioè dal dado o dal dischetto — regola a
+    zero estrazioni e simmetrica negli indici). **La morte improvvisa a
+    coppie resta**: è la regola di casa scritta in testa al blocco, e da oggi
+    anche al §7 del manuale. Test `_t-159-rigori-pannello.js`.
+  - **R5, i falli di squadra nell'HUD (#46).** I tre pallini erano stati
+    tolti apposta (commento difeso: «cinque elementi persistenti»); l'elenco
+    contestava la tesi «i falli non cambiano nessuna decisione mentre
+    giochi»: dal terzo scatta la punizione, e chi gioca non sa quanto manca.
+    Etichetta **condizionale** sotto il nome squadra: a due falli «2 FALLI»
+    in ambra, da tre «PUNIZIONE», niente altrimenti — i cinque elementi
+    restano cinque quando non serve; il commento è rettificato, non
+    cancellato. Test `_t-159-hud-falli.js` con una spia su `fillText`;
+    `testo-fuori`, `disposizione`, `schermi` verdi.
+  - **Misura d'insieme:** 54 partite CPU contro CPU a tre taglie **identiche
+    a prima nel vettore degli eventi** (R1 ristretta, R2 solo umano, R3/R4 mai
+    innescate in automatico): il compito non muove l'equilibrio della CPU di
+    un bit. Cancelli mirati 7/7 verdi sulla copia; fusione nel file vero con
+    `git merge-file` contro `af70143`: **zero conflitti**, due script che
+    compilano.
+
+  ### (f) Compito 3 — i documenti (agente D)
+
+  README, COME-INSTALLARE, index.html, CLAUDE.md dicevano il gioco di
+  luglio (APK da 117 kB «senza immagini», tre contro tre, un mercato,
+  32 controlli): riscritti coi numeri letti da `ls`, `wc` e `grep`.
+  **La SFIDA in rete detta per quello che è**: esiste nel file web, chiede il
+  server `calcetto-rete` che risponde **404 alla radice e 503
+  `DEPLOYMENT_PAUSED` all'API** (misurato oggi con `curl`), e nell'APK — che
+  resta a zero permessi per scelta, verificata da `verifica.py` — dice
+  «serve la rete» e basta. Informativa sulla privacy linkata. MANUALE §1,
+  §6-§8, §11, §14, §15 rettificati a edizioni; NOTICE a nuova edizione;
+  `sw.js` v3 perché l'avviso di aggiornamento compaia; `.gitignore` per gli
+  scatti dei cantieri #153-#158 (76 MB che si rigenerano).
+
+  ### (g) Compito 5 — le leve deterministiche dell'umano, e due testi (agente H)
+
+  - **H1, la finestra del tiro si stringe con la pressione.** La larghezza
+    della finestra del tempismo (`larg`, dalla sola tecnica) era copiata in
+    DUE posti — la promessa della linea del tiro e il rilascio — e gli
+    archi disegnati (l'anello del comandato e il disco TIRA) ne avevano una
+    terza e quarta versione a 300 ms fissi, che ignoravano già la tecnica.
+    Ora **una funzione sola, `finestraTiro(p)`** (L3.1: la promessa esce
+    dalle stesse funzioni dell'esecuzione), con `pressioneSu(p)` dal
+    ricettario del tocco sporco (`TOCCO_PRESS`): `larg −= pressione·0,07`,
+    e la finestra intera non scende mai sotto **0,12 di carica** (120 ms).
+    Dentro la finestra il tiro resta perfetto: la promessa del tutorial non
+    si tradisce. Zero `dado()`. Test `_t-159-finestra-pressione.js`, 11
+    prove specchiate: libero `promessa=true, perfetto=true`; avversario a
+    4 u `promessa=false, perfetto=false`; promessa = esecuzione in
+    entrambe; tecnica 30 e pressione 1 → larghezza 0,12, mai meno.
+  - **H2, il passaggio con un uomo addosso.** `eseguiPassUmano` non aveva
+    nessun termine di pressione: `lead = 0,32·(1−0,6·press)`,
+    `speed ·= (1−0,22·press)`; la filtrante rasoterra `·(1−0,15·press)`, il
+    pallone alto (famiglia del cross, velocità = distanza/T) no. Niente
+    rumore angolare, come ha chiesto il confutatore. Test
+    `_t-159-passaggio-pressione.js`: libero 456,9 u/s, sotto pressione
+    367,1 u/s con l'anticipo ridotto (angolo 0,222 → 0,108 rad), `passTo`
+    scritto in entrambi i casi, due semi identici.
+  - **H3, i testi.** L'aiuto sul pallonetto diceva «levetta indietro al
+    rilascio»: su telefono il pallonetto lo chiede il dito che tiene TIRA
+    trascinando in su; riscritto, con la levetta solo per la tastiera. I
+    crediti dicono ora che le figure fotografiche sono generate con Gemini
+    e lavorate in casa.
+  - Cancelli: `tocco` 786 bersagli / 140 schermate, `giocata` 7/7 al primo
+    colpo (la giocata del passaggio non è sotto pressione per costruzione:
+    `preparaQuiete` tiene gli avversari a 230 u), `collaudo`, `determinismo`,
+    `equita`, `seme`, `testo-fuori`, `carattere`, `disposizione` verdi.
+    **`mira` ROSSO 4/5**: la prova PIENO-IDENTICO pretende l'identità
+    fotogramma per fotogramma con il motore PRE-#113 (`fuori/base113.html`)
+    a peso «pieno», e nella sua scena del passaggio il compagno sta davanti
+    alla porta: **il portiere curato stamattina intercetta** (campo `b.vx`
+    al fotogramma 59: 8,96 contro 140,61). Misurato all'origine da H prima
+    di chiamarla regressione: verde sul merge-base, rosso da `b9ab235`.
+    **Dichiarato**, non curato: la prova va rifondata su una base del
+    motore 7 a peso pieno, e un banco cambiato di fretta attesterebbe
+    invece di misurare.
+
+  ### (h) Compito 6 — il cancello `silhouette` misura la figura che si vede (agente S)
+
+  Il banco `?banco=silhouette` disegnava il rig, che dal #158 è solo il
+  ripiego. Ora, con le FIGURE accese, aspetta l'atlante (fino a 10 s) e
+  disegna ogni cella con `Sprite3D.disegna` nello stesso contesto scalato
+  della partita; dichiara la figura nel titolo e nel JSON (`?figure=0` e
+  `--rig` per il rig); `silhouette.js` legge la dichiarazione ed esce 2 se
+  l'atlante non arriva. **Nessuna banda toccata.** Test
+  `_t-159-silhouette-sprite.js`: ogni cella identica pixel per pixel a
+  `Sprite3D.disegna` con gli argomenti della partita; con `figure=0` è il
+  rig; con l'atlante svuotato aspetta 10 s e lo dichiara.
+
+  **Il numero vero: 2 azioni su 10 nominabili sugli sprite**, contro 6/10
+  del rig (identico a prima, numero per numero). Le cause, per azione: tre
+  bocciature (corre, ha appena tirato, esulta) stanno **sotto la banda
+  dell'inchiostro di 2-5 millesimi** e il tuffo a 0,201 — gli arti
+  fotografici a 40 px sono sottili dove la banda era stata tarata sul rig
+  «con testa e arti gonfiati apposta»; la **scivolata fotografica non legge
+  orizzontale** (posa seduta, forma 0,69 contro 1,15 a ogni yaw) ed è
+  l'unica posa MORTA; fermo e cammina si confondono (vocabolario 0,028: il
+  fotogramma di contatto della camminata è quasi un uomo in piedi). Il
+  numero si scrive com'è. **I seguiti stanno negli sprite, non nel metro**:
+  rigenerare la scivolata distesa, la camminata a falcata larga, il fermo a
+  braccia staccate — e il giudizio finale resta il provino cieco con un
+  umano, che sugli sprite non è mai stato fatto.
+
+  ### (i) Compito 7 — MOTORE_V 7
+
+  Nove cure cambiano l'esito di sequenze di comandi identiche senza
+  aggiungere un'estrazione: cambia il momento in cui le estrazioni si
+  consumano. `MOTORE_V` 6 → 7 con la rettifica a edizioni accanto alla
+  costante; fixture del duello congelato rigenerata con
+  `_gen-nastro-duello-congelato.js` (seme 20260802, 2-3, dopo 2 sfide).
+  **Misurato con i nastri** (`_t-132-motorev.js --prima fuori/159/159-prima.html
+  --n 12`: dodici nastri registrati sul merge-base `4063c2a`, taglia 5,
+  3600 passi, semi da 20260801, controllo del controllo verde su tutti e
+  dodici): **12 su 12 danno una partita diversa** rigiocati sul curato — la
+  prima divergenza fra il passo 180 e il 2880, punteggi e conto dei
+  sorteggi diversi (es. seme 20260801: 0-2 contro 1-0, 4406 sorteggi contro
+  3834). Il verdetto dell'attrezzo è «deve salire» (stampa ancora «a 3», il
+  numero del suo cantiere: la logica è quella che conta).
+
+  ### (j) La batteria intera, l'APK e la release — in corso al momento di questa scrittura
+
 - **LE FIGURE FOTOGRAFICHE — #158 GLI SPRITE DA NANO BANANA AL POSTO DEL RIG**
   (voce #158, 25 settembre 2026, compito 1 dal merge-base `10e037e`, ramo
   `figure-giro-4` — spec `docs/superpowers/specs/2026-09-25-sprite-fotografici-design.md`;

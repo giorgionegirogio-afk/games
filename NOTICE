@@ -29,10 +29,10 @@ progetto: la fonte di ogni numero e' il comando che l'ha prodotto.
      image/webp, cioe' i sei atlanti censiti in 1d (pianta e da vicino, tre
      ciascuno). Le sei webp sono figure fotografiche generate con Gemini
      Images «Nano Banana» (provenienza in 1d): non sono materiale di terzi,
-     ma sono immagini generate da IA. La schermata CREDITI del gioco dice
-     «Nessuna immagine, registrazione o libreria di terzi» (riga 3393 al
-     commit af70143): resta vero, ma non nomina l'IA; la riga che la nomina
-     e' nel cantiere #159 (da riverificare al commit finale).
+     ma sono immagini generate da IA. La schermata CREDITI del gioco, dal compito 5 del #159, dice: «Nessuna
+     registrazione o libreria di terzi. Le figure fotografiche dei giocatori
+     sono generate con Gemini e lavorate in casa (tagli, maschere, atlanti):
+     nessun'altra immagine di terzi» (grep «opera originale» nel gioco).
 
   3. LA RETE. La riga «Rete» piu' sotto («Nessuna richiesta a runtime») vale
      per la PARTITA, non piu' per tutto il file. Il gioco contiene la SFIDA
