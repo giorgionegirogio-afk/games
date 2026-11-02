@@ -2,7 +2,7 @@
   "id": "/calcetto/",
   "name": "CALCETTO — il gioco",
   "short_name": "CALCETTO",
-  "description": "La partita di calcetto del dopolavoro, compressa in 90 secondi. Un pollice. Chi legge il tempo dell'altro, segna.",
+  "description": "La partita di calcetto del dopolavoro, compressa in 90 secondi. Levetta e dischi: calcio a 5, 7 e 11 in un file solo, senza rete. Chi legge il tempo dell'altro, segna.",
   "lang": "it",
   "dir": "ltr",
   "start_url": "../CALCETTO-il-gioco.html",

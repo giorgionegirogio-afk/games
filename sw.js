@@ -1,14 +1,20 @@
 /* =====================================================================
    SERVICE WORKER — i due giochi girano offline, sempre.
-   Non ci sono chiamate di rete nel gioco (nessun font remoto, nessuna
-   immagine esterna, nessuna API): una volta scaricato, il telefono non ha
-   piu' bisogno di connessione.
+   La partita non ha bisogno di rete (nessun font remoto, nessuna immagine
+   esterna): una volta scaricato, il telefono non ha piu' bisogno di
+   connessione. L'unica eccezione e' la SFIDA in rete di CALCETTO, che chiama
+   un server a parte: e' un'altra origine, e questo service worker la lascia
+   passare (vedi sotto, il controllo su url.origin).
    Strategia: le PAGINE si servono dalla cache ma si ricontrollano in
    sottofondo, cosi' un aggiornamento pubblicato arriva da solo alla
    riapertura successiva; icone e manifest, che non cambiano, vengono
    sempre dalla cache. Cambiare VERSIONE butta via tutto e riparte pulito.
    ===================================================================== */
-const VERSIONE = 'circolo-calcetto-v2';
+/* v3 (2 novembre 2026, voce #159): il gioco e' cambiato molto dalla v2 (figure
+   fotografiche, divisioni, rigori...). L'avviso «C'e' una versione nuova» della
+   pagina scatta solo se cambiano i byte di questo file: portare avanti questo
+   numero e' il modo di farlo comparire, e butta via la cache vecchia. */
+const VERSIONE = 'circolo-calcetto-v3';
 
 /* i percorsi sono relativi alla radice in cui vive il service worker,
    cosi' funziona sia in una sottocartella di GitHub Pages sia altrove */
@@ -53,7 +59,8 @@ self.addEventListener('fetch', e => {
   if (url.origin !== location.origin) return;
 
   /* gli APK sono scaricamenti, non pezzi dell'app: si lasciano al browser,
-     altrimenti finirebbero in cache 220 kB che non servono mai offline */
+     altrimenti finirebbero in cache circa 4,5 MB (177 kB + 4,3 MB) che non
+     servono mai offline */
   if (url.pathname.endsWith('.apk')) return;
 
   /* Le PAGINE (i giochi e il lanciatore) usano "servi dalla cache, ma nel

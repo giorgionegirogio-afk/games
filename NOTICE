@@ -10,6 +10,47 @@ progetto: la fonte di ogni numero e' il comando che l'ha prodotto.
 1. COSA CONTIENE IL GIOCO (CALCETTO-il-gioco.html, md5 30279089de83249e44e66d2247294f5f)
 -----------------------------------------------------------------------
 
+  -------------------------------------------------------------------
+  EDIZIONE DEL 2 NOVEMBRE 2026 (voce #159, la rifinitura per la
+  pubblicazione). Quattro cose di questa sezione sono superate; si
+  rettificano qui, in chiaro, e accanto alle righe vecchie ci sono i rimandi.
+
+  1. IL FILE. L'md5 dell'intestazione qui sopra e' quello di agosto e non
+     descrive piu' il file; anche i byte dell'edizione del 10 ottobre
+     (7.231.514) sono superati. Il gioco e' CALCETTO-il-gioco.html, circa
+     7,2 MB. Il file pubblicato fa:
+         (da aggiornare al commit finale: md5 e byte)
+     Per riferimento, il file al commit af70143 (2/11/2026, prima delle
+     cure del #159) faceva md5 9b99eab67e3514d1c17f23a70da4e64b e 7.235.041
+     byte (git show af70143:CALCETTO-il-gioco.html | md5sum, e | wc -c).
+
+  2. LE IMMAGINI. Riconteggiate il 2/11/2026 (grep -o "data:image/[a-z+]*"
+     sul file al commit af70143): 8 in tutto, 2 svg+xml scritte a mano e 6
+     image/webp, cioe' i sei atlanti censiti in 1d (pianta e da vicino, tre
+     ciascuno). Le sei webp sono figure fotografiche generate con Gemini
+     Images «Nano Banana» (provenienza in 1d): non sono materiale di terzi,
+     ma sono immagini generate da IA. La schermata CREDITI del gioco dice
+     «Nessuna immagine, registrazione o libreria di terzi» (riga 3393 al
+     commit af70143): resta vero, ma non nomina l'IA; la riga che la nomina
+     e' nel cantiere #159 (da riverificare al commit finale).
+
+  3. LA RETE. La riga «Rete» piu' sotto («Nessuna richiesta a runtime») vale
+     per la PARTITA, non piu' per tutto il file. Il gioco contiene la SFIDA
+     in rete (e la SFIDA DAL DISCHETTO): UN solo fetch( e UN solo indirizzo,
+     https://calcetto-rete.vercel.app, usato soltanto quando il giocatore
+     apre la SFIDA; il server e' oggi in pausa. Zero XMLHttpRequest,
+     WebSocket, EventSource. Gli altri URL restano quelli di sempre (il
+     namespace SVG del W3C, i rimandi OFL, i due depositi dei caratteri).
+     L'APK non chiede il permesso INTERNET (android/verifica.py lo controlla
+     su ciascun APK, 48 controlli in tutto): nell'app la SFIDA non puo'
+     partire e dice «serve la rete».
+
+  4. I CARATTERI sono TRE FILE in DUE FAMIGLIE (Archivo Black; Barlow
+     Condensed Regular e Bold). Il manuale (§15) li chiamava «tre caratteri
+     tipografici», la schermata CREDITI dice «due caratteri» (riga 3396):
+     non si contraddicono, cambia l'unita'.
+  -------------------------------------------------------------------
+
 MATERIALE DI TERZI — tre soli componenti, tutti caratteri tipografici,
 due famiglie, la stessa licenza:
 
@@ -88,6 +129,8 @@ due famiglie, la stessa licenza:
        980.700 / 571.566 / 307.864 byte (base64 1.307.600 / 762.088 / 410.486). In piu', da questa edizione la maschera di pelle
        esclude per costruzione la stoffa (atlante.py), quindi anche i tre
        webp della pianta cambiano di qualche kB: 680.626 / 402.694 / 216.524 byte; il gioco e' 7.231.514 byte.
+        [SUPERATO sui byte del gioco: vedi l'EDIZIONE DEL 2 NOVEMBRE 2026 in
+        testa a questa sezione.]
      Provenienza: fogli (8 rotazioni per posa) generati dal committente
      con Gemini Images «Nano Banana» col proprio account Google il
      25-26 settembre 2026, dai prompt scritti in strumenti/sprite/
@@ -110,6 +153,8 @@ TUTTO IL RESTO E' FATTO IN CASA — verificato cosi':
     atlanti degli sprite, censiti in 1d qui sopra.
     EDIZIONE DEL 10 OTTOBRE 2026: sono 8 — i 2 SVG piu' i 6 webp dei due
     atlanti (pianta e da vicino), censiti in 1d.
+    EDIZIONE DEL 2 NOVEMBRE 2026: riconteggiate, sono ancora 8 (2 SVG + 6
+    webp); vedi il punto 2 dell'edizione in testa a questa sezione.
   - Audio: interamente sintetizzato a runtime — 11 createOscillator,
     zero campioni (grep data:audio|.mp3|.ogg|.wav -> 0).
   - Librerie: zero. Nessun <script src>, nessun require(), nessun
@@ -117,6 +162,8 @@ TUTTO IL RESTO E' FATTO IN CASA — verificato cosi':
   - Rete: gli unici URL nel testo sono il namespace SVG del W3C (2) e
     il rimando alla OFL nel commento dei font (1). Nessuna richiesta a
     runtime (cancello senza-rete).
+    EDIZIONE DEL 2 NOVEMBRE 2026: SUPERATA per la SFIDA in rete -- vedi il
+    punto 3 dell'edizione in testa a questa sezione.
   - Nomi: squadre, giocatori, campi, sponsor, trofei e divise sono
     inventati (nomi di quartiere e mestiere). Il cancello ripetibile e'
     strumenti/diritti.js; l'inventario completo e' _z-legale-nomi.js.

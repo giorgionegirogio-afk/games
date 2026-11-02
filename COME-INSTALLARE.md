@@ -1,12 +1,19 @@
 # Provare i due giochi su Android
 
-I giochi funzionano **completamente offline**: non c'è un solo file da scaricare
-da internet mentre giochi. Font, carte, suoni, tutto è dentro il file HTML.
-Il multigiocatore online non c'è ancora — si gioca contro il telefono, in due
-sullo stesso apparecchio, oppure a distanza con il **link di sfida**.
+I giochi funzionano **senza rete**: non c'è un solo file da scaricare da
+internet mentre giochi. Font, carte, suoni e grafica, tutto è dentro il file
+HTML. Si gioca contro il telefono, in due sullo stesso apparecchio, oppure a
+distanza con il **link di sfida** di CIRCOLO e con la **SFIDA DI CARTA** di
+CALCETTO (un codice da incollare in un messaggio).
 
-Ci sono tre modi per averli sul telefono. Il primo — l'APK — è quello che serve
-per il collaudo vero.
+C'è una sola eccezione: la **SFIDA in rete** di CALCETTO (contro la squadra di
+un'altra persona, più la SFIDA DAL DISCHETTO) esiste nel file web e chiede un
+server, `calcetto-rete`, che oggi è in pausa. Nell'app Android, che non ha il
+permesso internet, dice «serve la rete» e basta; il resto del gioco non ne ha
+bisogno.
+
+Ci sono tre modi per averli sul telefono. Il primo — l'APK — dà due app vere,
+con la loro icona.
 
 ---
 
@@ -16,12 +23,14 @@ Nella cartella `apk/` ci sono già i due file pronti:
 
 | File | Dimensione |
 |---|---|
-| `apk/CIRCOLO.apk` | 97 kB |
-| `apk/CALCETTO.apk` | 117 kB |
+| `apk/CIRCOLO.apk` | 177 kB |
+| `apk/CALCETTO.apk` | 4,3 MB |
 
-Sì, sono davvero così piccoli: dentro non c'è nessun motore di gioco, nessuna
-libreria e nessuna immagine — solo il gioco, che è un file di testo, e un
-guscio di trenta righe che gli apre una finestra.
+Dentro non c'è nessun motore di gioco e nessuna libreria: solo il gioco, che è
+un file di testo, e un guscio Java di circa 450 righe che gli apre una
+finestra. CIRCOLO è piccolo per questo; CALCETTO pesa di più perché il gioco
+porta con sé la grafica dei giocatori: sei immagini WebP incorporate (le figure
+fotografiche, generate con Gemini «Nano Banana»).
 
 ### Come si installano
 
@@ -45,9 +54,12 @@ mostra la lista vuota. Un'app senza il permesso `INTERNET` **non può** mandare
 niente da nessuna parte, nemmeno volendo — non è una promessa, è il sistema che
 lo impedisce.
 
+Per lo stesso motivo, nell'app CALCETTO la SFIDA in rete non può partire: dice
+«serve la rete» e basta. È una scelta dichiarata: l'app resta a zero permessi.
+
 ### Il certificato
 
-Gli APK sono firmati con una chiave di collaudo creata per questo prototipo. Va
+Gli APK sono firmati con una chiave di collaudo creata per queste app. Va
 benissimo per provare, **non** per il Play Store: quando sarà il momento servirà
 una chiave vera, custodita, e la firma non si potrà più cambiare. Se ricostruisci
 gli APK con la stessa chiave, l'aggiornamento si installa sopra il vecchio senza
@@ -66,7 +78,7 @@ Serve l'SDK Android (build-tools 34, platform 34) e un JDK. Poi:
 ```bash
 cd android
 python costruisci.py     # rigenera i due APK in ../apk/
-python verifica.py       # 32 controlli sui file finiti
+python verifica.py       # 48 controlli sui file finiti
 ```
 
 Non c'è gradle e non c'è niente da scaricare al volo: la catena è
@@ -86,7 +98,8 @@ Il modo più veloce per far provare un gioco a qualcuno in due minuti.
 1. Mandagli `CIRCOLO-il-gioco.html` (o `CALCETTO-il-gioco.html`) su WhatsApp.
 2. Lui lo apre e sceglie **Apri con → Chrome**.
 
-Funziona tutto: partite, salvataggio, tornei, sfida via link. Anche in aereo.
+Funziona tutto: partite, salvataggio, tornei, sfida via link. Anche in aereo,
+tranne la SFIDA in rete di CALCETTO, che chiede un server.
 Restano fuori l'icona nel cassetto e lo schermo intero — c'è la barra del
 browser — e Chrome ogni tanto "dimentica" il percorso del file.
 
@@ -99,12 +112,12 @@ decida se installarla. Serve un indirizzo `https`, che GitHub Pages dà gratis.
 
 ### ⚠️ Prima, una cosa da decidere
 
-Questa cartella contiene anche `STUDIO-02` e `STUDIO 03`, cioè **il piano con i
-costi, le stime di ricavo e la strategia**. Su un repo **pubblico** diventano
-leggibili da chiunque abbia il link.
+Alcuni appunti di lavoro restano fuori dal repo. Su un repo **pubblico** tutto
+ciò che committi diventa leggibile da chiunque abbia il link.
 
-- **Pubblica solo i giochi** (consigliato): il `.gitignore` già pronto esclude i
-  due studi, e il lanciatore se ne accorge da solo e non li mostra.
+- **Pubblica solo i giochi** (consigliato): il `.gitignore` già pronto tiene
+  fuori gli appunti di lavoro, e il lanciatore se ne accorge da solo e non li
+  mostra.
 - **Repo privato**: Pages su repo privati richiede un piano a pagamento.
 - **Pubblica tutto**, se non ti importa.
 
@@ -113,13 +126,15 @@ leggibili da chiunque abbia il link.
 ```bash
 git init
 git add .
-git commit -m "Prototipi giocabili: CALCETTO e CIRCOLO, offline"
+git commit -m "I due giochi: CALCETTO e CIRCOLO, senza rete"
 gh repo create games --public --source=. --push
 gh api -X POST repos/:owner/games/pages -f source[branch]=main -f source[path]=/
 ```
 
 Dopo un paio di minuti l'indirizzo è `https://TUONOME.github.io/games/`.
-Sul telefono si apre con Chrome e si tocca **INSTALLA SUL TELEFONO**.
+Sul telefono si apre con Chrome e si tocca **INSTALLA SUL TELEFONO**. Se il
+bottone non compare (non tutti i Chrome lo mostrano), dal menu di Chrome scegli
+«Aggiungi a schermata Home».
 
 ### Quando cambi qualcosa
 
@@ -135,7 +150,10 @@ vedere davvero la modifica, in DevTools: *Application → Service Workers →
 Unregister*, e *Storage → Clear site data*.
 
 Per forzare tutti a ripartire da zero — per esempio dopo aver cambiato le icone
-— cambia `const VERSIONE = 'circolo-calcetto-v2'` in `sw.js`.
+— cambia `const VERSIONE = 'circolo-calcetto-v3'` in `sw.js` (portala a `v4`,
+poi `v5`…). Il numero serve anche a far comparire nella pagina l'avviso «C'è una
+versione nuova»: l'avviso scatta solo se cambia `sw.js`, non quando cambia
+soltanto un gioco.
 
 ---
 
@@ -150,14 +168,14 @@ Per forzare tutti a ripartire da zero — per esempio dopo aver cambiato le icon
 | `index.html` | Il lanciatore per la versione web |
 | `sw.js` | Il service worker: rende la versione web disponibile offline |
 | `app/*.webmanifest`, `app/icona-*.png` | Le schede d'app e le icone per il web |
-| `.gitignore` | Tiene fuori i due studi dalla pubblicazione |
+| `.gitignore` | Tiene fuori dal repo gli appunti di lavoro e la chiave di firma |
 
 I due giochi restano **autosufficienti**: il file HTML da solo funziona. Tutto
 il resto serve solo a impacchettarlo.
 
 ---
 
-## Cosa aspettarsi al collaudo
+## Cosa aspettarsi
 
 - **CALCETTO si mette in orizzontale da solo**, CIRCOLO resta verticale.
 - **Lo schermo non si spegne** mentre giochi: durante la partita il gioco tiene
@@ -174,9 +192,13 @@ il resto serve solo a impacchettarlo.
   o dal tasto recenti, invece, è tutto salvato.
 - **Il link di sfida si manda su WhatsApp.** A fine partita, in CIRCOLO:
   *«Sfida un amico con questa mano»*. Chi lo apre riceve le tue identiche carte
-  e lo stesso avversario.
-- **Tutto quello che salvi resta sul telefono.** Nessun account, nessun server,
-  niente che esca dal dispositivo.
+  e lo stesso avversario. In CALCETTO la sfida senza rete è la **SFIDA DI
+  CARTA**: un codice da incollare in un messaggio.
+- **Tutto quello che salvi resta sul telefono.** Nessun account, nessuna
+  pubblicità. Dall'app Android non esce niente (non ha il permesso internet);
+  dal file web esce qualcosa solo se apri la SFIDA in rete di CALCETTO: il nome
+  della squadra, i colori e i numeri dei giocatori (vedi
+  `rete/public/privacy.html`). Oggi il server è in pausa.
 
 Per riportare un gioco a zero: Impostazioni del gioco → *Azzera statistiche e
 trofei* (CIRCOLO) o *Azzera tutti i dati* (CALCETTO).

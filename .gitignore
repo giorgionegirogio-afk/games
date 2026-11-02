@@ -67,6 +67,17 @@ strumenti/_151-accanto/
 # il ritaglio prima/dopo della voce #152: si rigenera con
 # strumenti/_152-accanto.js dalle due corse di istantanea.js
 strumenti/_152-accanto/
+# gli scatti e le sonde dei cantieri #153-#158: si rigenerano con gli
+# strumenti/_15x-*.js che li hanno prodotti, quindi non viaggiano
+strumenti/_153-prima/
+strumenti/_153-sonda-*.png
+strumenti/_154-prove/
+strumenti/_155-giro*/
+strumenti/_155-prima/
+strumenti/_156-prima/
+strumenti/_157-a/
+strumenti/_157-prima/
+strumenti/_158-prove/
 _v26-prima/
 foto-v26-prima-gol.png
 

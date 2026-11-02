@@ -5,9 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Che cos'è
 
 Due giochi per telefono, ognuno in **un solo file HTML autosufficiente** (font,
-grafica, suoni e logica tutti inline, zero rete, zero dipendenze a runtime):
+grafica, suoni e logica tutti inline, zero dipendenze a runtime; si gioca senza
+rete, solo la SFIDA di CALCETTO chiama un server, e solo se la apri tu):
 
-- `CALCETTO-il-gioco.html` (~2,5 MB) — calcio 3v3/5v5/7v7/11v11. È qui che si
+- `CALCETTO-il-gioco.html` (~7,2 MB) — calcio 5v5/7v7/11v11. È qui che si
   concentra quasi tutto il lavoro corrente.
 - `CIRCOLO-il-gioco.html` (~470 kB) — Scopa, Scopone, Briscola.
 
@@ -33,7 +34,7 @@ node strumenti/collaudo.js [circolo]         # un cancello singolo, stessa forma
 node strumenti/_q-invarianti.js              # idem per ogni _q-*.js
 
 python android/costruisci.py                 # gli APK (aapt2→javac→d8→zipalign→apksigner)
-python android/verifica.py                   # 32 controlli sugli APK finiti
+python android/verifica.py                   # 48 controlli sugli APK finiti
 ```
 
 **Codici di uscita di casa, per la batteria e per ogni cancello:** 0 verde ·

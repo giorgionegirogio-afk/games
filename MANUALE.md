@@ -23,6 +23,21 @@ riesce o dopo tre secondi l'uno. Si salta con **SALTA**, e finisce da solo al
 primo gol di chiunque. Attenzione: una volta chiuso non è rigiocabile — l'unica
 via per rivederlo è AZZERA TUTTI I DATI (che cancella tutto).
 
+> **RETTIFICA A EDIZIONI (2 novembre 2026, voce #159).** L'ultima frase di
+> questo paragrafo non è più vera: «una volta chiuso non è rigiocabile» e
+> «l'unica via per rivederlo è AZZERA TUTTI I DATI». In IMPOSTAZIONI c'è
+> **RIVEDI IL TUTORIAL** («lo rivedi alla prossima amichevole a un
+> giocatore»): azzera i due segnalibri del salvataggio (`tutorialDone` e
+> `tutorialVisto`) e il tutorial riparte alla prossima amichevole a un
+> giocatore, senza toccare monete, trofei e statistiche. Inoltre il tutorial
+> si considera visto — e non riparte più — in quattro casi: quando si arriva
+> in fondo ai tre passi, quando si tocca SALTA, al primo gol di chiunque, e
+> **alla terza apertura** anche se non lo si è mai finito (`TUT_APERTURE =
+> 3`); chiuderlo o abbandonare la partita non lo «consuma». Fonti
+> (`CALCETTO-il-gioco.html` al commit `af70143`): la voce `btnRivediTut` a
+> riga 3367, il suo gestore 45571-45576, `TUT_APERTURE` 45746, la conta in
+> `Tut.start` 45773-45774, la fine al primo gol 14779.
+
 ## 2. Il menu principale
 
 Sette voci, più tre oggetti fissi:
@@ -168,6 +183,31 @@ Si entra in tre modi: fallo da scivolata in zona calda, terzo fallo di
 squadra («TERZO FALLO: SI TIRA!»), o la serie di **rigori** quando il golden
 goal non basta.
 
+> **RETTIFICA A EDIZIONI (2 novembre 2026, voce #159).** Tre cose, dal codice
+> (`CALCETTO-il-gioco.html` al commit `af70143`).
+>
+> **(1) «Zona calda» non c'è.** Il fallo da scivolata dà il duello quando è
+> commesso **dentro l'area di rigore vera** (`dentroArea`, riga 22967,
+> definita a 25629), non in una fascia: `zonaCalda` esisteva solo in un
+> commento.
+>
+> **(2) Il terzo fallo è «dal terzo in poi, senza azzeramento».** Il conto di
+> squadra (`G.stats.falli`, incrementato a riga 22912) parte da zero a inizio
+> partita, non si azzera mai e conta anche i falli perdonati col vantaggio; la
+> soglia è `>= 3` (righe 22815 e 22968). Quindi, fuori area, anche il quarto
+> e il quinto fallo ripetono «TERZO FALLO: SI TIRA!».
+>
+> **(3) Il vantaggio**, che il manuale non nominava. Dopo un fallo — anche in
+> area — il fischio non è sempre immediato: si apre una finestra
+> (`VANT_VALUTA = 0.5` s e `VANT_T = 2.5` s, righe 23991-23992). Se la
+> squadra offesa ha ancora il pallone ed è più avanti del punto del fallo, si
+> lascia correre (banner «VANTAGGIO», il fallo è perdonato e il cartellino
+> dovuto resta in differita fino alla prossima palla ferma); se lo perde, il
+> fallo viene fischiato. La finestra parte da quando chi ha subito il fallo si
+> rialza, quindi il fischio — anche un rigore — può arrivare con **0,85-2,85 s
+> di ritardo** se l'azione prosegue (valutazione a riga 21475-21500, apertura
+> e commento a 23005-23018).
+
 - **Tiratore col dito**: appoggia il dito sulla porta e compare il mirino;
   trascinalo nell'angolo e **alza il dito** per confermare. Più miri
   all'incrocio, più il mirino diventa rosso: la banda del tempismo si
@@ -187,6 +227,27 @@ goal non basta.
 Sul pareggio ai 90″ scatta il **golden goal** (il prossimo gol vince); dopo
 40 secondi senza reti, **si decide dal dischetto**. Una partita giocata non
 finisce mai in pareggio.
+
+> **RETTIFICA A EDIZIONI (2 novembre 2026, voce #159).** Due cose, dal codice
+> (`CALCETTO-il-gioco.html` al commit `af70143`).
+>
+> **(1) In STAGIONE il pareggio esiste.** «Non finisce mai in pareggio» vale
+> per amichevole, TORNEO e SFIDA: la giornata di campionato finisce come
+> finisce il calcio (`G.matchCtx!=='season'`, riga 21514), senza golden goal e
+> senza rigori, e il pareggio paga «PAREGGIO +15» (`SEA_DRAW`, riga 12731).
+>
+> **(2) La serie di rigori è «a oltranza a coppie»**: si tira uno per parte e,
+> alla prima differenza dopo una coppia completa, la partita è decisa (righe
+> 22659-22660 e 22672-22673). Non ci sono «cinque tiri» fissi, e la serie può
+> chiudersi già dopo un tiro a testa. È la regola di casa, dichiarata nel
+> codice, e resta. Dal cantiere #159 il pannello della serie dice il vero:
+> **un pallino per ogni tiro battuto, nell'ordine in cui è stato tirato**, con
+> al massimo un pallino vuoto per la battuta in corso (prima ne dipingeva
+> cinque e colorava di verde i primi «segnati», qualunque fosse l'ordine:
+> righe 26760-26766). E il limite di sicurezza dei nove tiri a testa (riga
+> 22677), che a parità assegnava la partita alla squadra 0 per decreto (riga
+> 22678), diventa simmetrico: a parità la spunta chi ha tirato per secondo,
+> senza estrarre niente.
 
 Il tabellino: il momento della partita (gol decisivo con volto e minuto, o
 la serie di rigori, o le parate a reti inviolate), il possesso, i marcatori
@@ -220,6 +281,21 @@ in stagione CLASSIFICA, dopo una sfida ALTRA SFIDA. **MENU** torna alla home.
   contatto, e i suoi esiti si vedono (PRESA!, PUGNI!, RESPINTA!, SFUGGE!).
 - **Cartellini**: fallo da dietro o in ritardo = giallo; al secondo della
   stessa squadra un uomo esce per **12 secondi** (come nel futsal).
+  > **RETTIFICA A EDIZIONI (2 novembre 2026, voce #159).** Fino a oggi la
+  > regola scritta qui era **la sola**, e il codice la confermava: esce chi
+  > prende il giallo che porta il conto di squadra a un numero pari (2°, 4°…;
+  > `infliggiCartellino`, riga 22716, con `CARTELLINI_PER_ESPULSIONE = 2` e
+  > `ESPULSIONE_SEC = 12` a riga 5079), mai il portiere e mai sotto i due
+  > uomini di movimento in campo. I gialli del singolo giocatore (`p.gialli`,
+  > riga 22711) si registravano negli eventi ma non si leggevano mai: un
+  > secondo giallo allo **stesso** uomo non lo mandava fuori se il conto di
+  > squadra era dispari. **Dal cantiere #159 le regole sono due, e ne basta
+  > una:** resta quella di squadra (secondo giallo di squadra = 12 secondi
+  > fuori) **e** il secondo giallo allo STESSO giocatore lo manda fuori 12
+  > secondi, con le stesse guardie (non il portiere, non sotto i due uomini di
+  > movimento). Il cartellino rosso non esiste: l'unico che manda fuori è
+  > questo, e l'uomo rientra dopo i 12 secondi. Se c'è un vantaggio in corso,
+  > il cartellino resta in differita fino alla prossima palla ferma.
 - **Acciacchi e cambi**: chi si fa male rallenta e la panchina lo cambia.
 - La squadra **pensa**: ultimo uomo prudente, contropiede, e negli ultimi 15
   secondi chi perde manda tutti su.
@@ -298,6 +374,14 @@ nome).
   dei due versi — quello della sfida comincia per `CARTA` e non ha punti
   dentro — e se incolli il codice del cambio telefono nel campo della
   sfida, il gioco te lo dice con quelle parole.
+- **SFIDA DAL DISCHETTO** — *edizione del 2 novembre 2026, voce #159* (la
+  voce c'è dal #147 e il manuale non la nominava). «Rigori con un amico,
+  adesso»: una serie di rigori fra due telefoni, un tiratore e un portiere
+  per volta, con un codice da mandare all'amico. È l'unica voce di questa
+  schermata che pretende **un'altra persona nello stesso momento** e, come
+  CERCA AVVERSARIO, passa dal server (`calcetto-rete`, `/api/dischetto`):
+  finché il server è in pausa — e nell'APK, che non ha il permesso internet —
+  non si può giocare. Il verbale sta nelle voci #146 e #147 del registro §A.
 - **CLASSIFICA** — *edizione del 22 settembre 2026, voce #136*. Adesso le
   classifiche in questa schermata sono **due**, e la prima non ha bisogno
   di nessuno.
@@ -390,17 +474,83 @@ abilità: lo verifica un banco di prova dedicato.
 | AL VOLO | tenta un tiro al volo e segna nella stessa partita | 70 |
 | MAI UN FALLO | vinci una partita senza commettere falli | 60 |
 
+> **RETTIFICA A EDIZIONI (2 novembre 2026, voce #159).** Tre cose, dal codice
+> (`CALCETTO-il-gioco.html` al commit `af70143`).
+>
+> **(1) I trofei sono 24, non 15** (`const ACH=[`, righe 12764-12801; anche le
+> STATISTICHE leggono `ACH.length`, riga 46910). I nove in più sono la
+> «seconda mensola» del 1° settembre 2026 — contatori veri o la scala delle
+> divisioni — con premi modesti, 360 monete in tutto:
+>
+> | trofeo | condizione | premio |
+> |---|---|---|
+> | VECCHIA GUARDIA | gioca 50 partite | 30 |
+> | CENTO RETI | segna 100 gol in carriera | 50 |
+> | CINQUE DI FILA | vinci 5 partite di fila | 40 |
+> | MURAGLIA | 10 vittorie senza subire gol | 40 |
+> | GOLEADA | segna 5 gol in una sola partita | 30 |
+> | GUANTONE | 50 parate dei tuoi portieri | 30 |
+> | SCALATORE | prima promozione nelle divisioni | 20 |
+> | RE DELLA CITTÀ | raggiungi la divisione CITTÀ | 50 |
+> | LEGGENDA DEL CAMPETTO | la vetta della scala, l'ultimo trofeo del gioco | 70 |
+>
+> **(2) MORTE IMPROVVISA** vale solo se vinci **al golden goal**
+> (`if(G.golden && !G.rigori)`, riga 15318): una partita pari ai 90″ decisa
+> **ai rigori non lo sblocca**. La riga della tabella qui sopra dice più del
+> vero.
+>
+> **(3) FREDDO DAL DISCHETTO** vale per la **punizione-duello** (fallo in area
+> o terzo fallo) e non per il rigore della serie (`!G.rigori`, riga 26679);
+> inoltre solo se a tirare è il giocatore umano della squadra 0, e non in un
+> replay. La riga della tabella dice «segna un duello dal dischetto»: più del
+> vero.
+
 La **mensola** in alto mostra le sette coppe d'oro (velate finché non
 vinte). L'**albo d'oro** ricorda ogni torneo vinto (numero, squadra, campo,
 data) e ogni campionato. Le **STATISTICHE**: partite, vittorie con la
 percentuale, gol fatti/subiti, differenza reti, tiri perfetti, rubate,
 monete, trofei sbloccati su 15, tornei vinti.
 
+> **RETTIFICA A EDIZIONI (2 novembre 2026, voce #159).** Le STATISTICHE
+> mostrano i trofei **su 24** (non su 15) e anche le **stagioni vinte**, oltre
+> ai tornei. E la BACHECA ha **tre** voci, non due: TROFEI, **DIVISIONI** e
+> STATISTICHE (righe 3153-3155 del gioco al commit `af70143`).
+>
+> - **DIVISIONI — la scala del quartiere** (dal 1° settembre 2026): nove
+>   gradini in tre fasce da tre — CORTILE, VICOLO, VIA · PIAZZA, RIONE,
+>   BORGO · QUARTIERE, CITTÀ, LEGGENDA DEL CAMPETTO (`DIV_NOMI`, riga 12751).
+>   Ogni partita a un giocatore contro la CPU (amichevole, TORNEO, STAGIONE;
+>   non la SFIDA, riga 15290) muove le stelle del gradino: una vittoria ne dà
+>   una, una sconfitta ne toglie una, il pareggio niente. La stella vale solo
+>   se la CPU è all'altezza del gradino (`stellaValida`, riga 12756): nella
+>   fascia bassa qualunque difficoltà, in quella di mezzo da NORMALE in su, in
+>   quella alta solo DURO. Per salire servono 3 stelle (4 dal BORGO in su,
+>   `DIV_SOGLIA`, riga 12752) e ogni promozione paga una sola volta un premio
+>   in monete (12, 15, 26, 33, 41, 72, 90, 112: 401 in tutto, `DIV_PREMIO`,
+>   riga 12753). Si scende solo dentro la fascia: la fascia conquistata è per
+>   sempre, la scala non scade e non si azzera. Danno i trofei SCALATORE, RE
+>   DELLA CITTÀ e LEGGENDA DEL CAMPETTO.
+> - **Record personali** (in STATISTICHE, sotto la barra dei trofei, righe
+>   3867-3868 e 46928-46931): quattro tessere col migliore di sempre e la data
+>   piccola sotto — **Gol in una partita**, **Scarto massimo**, **Tiri
+>   perfetti in gara**, **Vittorie di fila**; a zero, un trattino. Si
+>   scrivono solo quando il numero è migliore (`aggiornaRecord`, riga 15227).
+
 ## 15. IMPOSTAZIONI
 
 Dall'ingranaggio: **PREFERENZE**, **COME SI GIOCA** (la lavagna del mister:
 regole e comandi, sempre consultabile), **CREDITI E LICENZE** (i tre
 caratteri tipografici con licenza SIL OFL 1.1).
+
+> **RETTIFICA A EDIZIONI (2 novembre 2026, voce #159).** (a) La pagina
+> dell'ingranaggio ha **quattro** voci, non tre: PREFERENZE, COME SI GIOCA,
+> **RIVEDI IL TUTORIAL** e CREDITI E LICENZE (righe 3359-3374 del gioco al
+> commit `af70143`). (b) I caratteri di terzi sono **due famiglie in tre
+> file** — Archivo Black (Regular) e Barlow Condensed (Regular e Bold), tutti
+> SIL OFL 1.1: il NOTICE §1a-c li conta come tre file, la schermata CREDITI
+> dice «due caratteri» (riga 3396). Non si contraddicono: cambia l'unità.
+> (c) Le sei immagini WebP delle figure fotografiche non sono di terzi: sono
+> generate con Gemini «Nano Banana» (NOTICE §1d).
 
 Le PREFERENZE:
 
@@ -415,6 +565,17 @@ Le PREFERENZE:
 | DURATA PARTITA | 90″ / 120″ / 180″ | a 7 e a 11 il campo è più grande e la durata scala |
 | MOVIOLA DOPO IL GOL | SÌ / NO | il replay si salta con un tocco |
 | AZZERA TUTTI I DATI | due tocchi entro 4 s | cancella TUTTO, identità di rete compresa: irreversibile |
+
+> **RETTIFICA A EDIZIONI (2 novembre 2026, voce #159).** La tabella non
+> elencava quattro righe che le PREFERENZE hanno (`CALCETTO-il-gioco.html` al
+> commit `af70143`, righe 3889-3941):
+>
+> | voce | stati | note |
+> |---|---|---|
+> | VIBRAZIONE, intensità | Leggera / Normale / Forte | tre bottoni sotto la riga VIBRAZIONE; di serie Normale; toccandone uno vibra, per farlo sentire (riga 3889) |
+> | SOTTOTITOLI | SÌ / NO | «fischio — a video»: il fischio e il fischio finale compaiono anche scritti; di serie SÌ (riga 3920) |
+> | FIGURE | FOTOGRAFICHE / DISEGNATE | «giocatori fotografici o disegnati»: le figure fotografiche o il rig disegnato; è solo disegno, la partita non cambia di un bit e si cambia anche a partita in corso; di serie FOTOGRAFICHE (riga 3921) |
+> | MIRA GUIDATA | PIENO / ESSENZIALE | **non** aiuta il tiro: decide su quali passaggi il controllo salta al compagno che riceve — PIENO su ogni passaggio e cross, ESSENZIALE solo su cross e palloni alti; di serie PIENO (righe 3937-3941) |
 
 **COMANDI (sul vetro)** — raggiungibile anche dalla pausa col link «cambia»:
 - **MANO**: destra o sinistra (specchia dischi, levetta e bussola).

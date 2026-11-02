@@ -1,8 +1,21 @@
 # Dove siamo, e cosa manca
 
-Aggiornato al **25 settembre 2026**. Questo file serve a riprendere senza
+Aggiornato al **2 novembre 2026**. Questo file serve a riprendere senza
 rileggere niente altro.
 
+## La giornata del 2 novembre, in breve
+
+Il committente ha chiesto, in una riga: «finisci il gioco del calcetto e
+appena finito rendi disponibile l'APK … funzionante, coerente, divertente,
+competitivo … entro 10 ore». Nessuna voce aperta nominata: la scelta è
+scritta nello spec `docs/superpowers/specs/2026-11-02-rifinitura-pubblicazione-design.md`
+(voce **#159**, ramo `voce-159-rifinitura`, merge-base `4063c2a`).
+
+| | cosa |
+|---|---|
+| 0 | **La batteria intera con `--tutto`, la prima dal 10 ottobre** (quella del 10/10 era senza i lenti: 52 cancelli, oggi 80), 2 alla volta per 2,2 GB liberi, 65 minuti. ROSSO `silhouette` 6/10 (giro 4, noto) e `dischetto` (E1, punta 75/min contro 60: **verde rifatto da solo** — contesa del banco, occupato 5,2× il minimo). `perimetro` e `casa-falsi` a uscita 2 per un difetto del banco (sotto). `audio` nullo in parallelo e 28/28 da solo. `avvio-telefono` nullo: **il telefono è sparito da adb** dopo la prima ora della sessione (era `device` all'inizio; `kill-server`/`start-server` non lo riportano; nessun dispositivo PnP). `istantanea` 42/56, `giocata` 7/7, `prestazione` 3/3. |
+| 1 | **Compito 0 (`af70143`)**: `sguaina()` del banco della matematica contava 48 «Mexp» e 47 chiamate — la 48ª era **dentro il base64 dell'atlante** (blocco `sprite-m`): il banco ora stacca la coda `<script type="text/plain">` prima di contare. Dietro c'era un rosso vero del #157 giro 4: **sei native `Math.cos/sin/atan2` nel blocco APQ e in `l151Indice`**, fuori dal blocco protetto, contro l'invariante #143. Dirottate: `innesta(sguaina(g))===g` torna vero, `perimetro` 5/5, `casa-falsi` 9/9. Lezione: una batteria senza `--tutto` per tre settimane lascia dormire i lenti. |
+| 2 | **Ricognizione a cinque agenti** (quattro lettori + un confutatore, 69 minuti, sola lettura): dodici voci dell'elenco del realismo rilette sul codice di oggi; il confutatore ha separato i **difetti** (portiere che perde le mani, portiere che non si prepara, duello aereo per indice, scivolata senza palla, contrasto gratis, doppio giallo personale, pannello dei rigori bugiardo, falli invisibili) dalle **scelte di casa** (morte improvvisa a coppie, respinte mai in angolo, tiro perfetto senza rumore): le seconde si rendono oneste, non si curano d'ufficio. Rapporti in `fuori/159/` non tracciati; sintesi nello spec. |
 ## La giornata del 25 settembre, in breve
 
 | | cosa |
