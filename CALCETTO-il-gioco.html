@@ -5707,15 +5707,16 @@ const APQ_LC=new Float32Array(APQ_N), APQ_LS=new Float32Array(APQ_N);
   v.sort((a,b)=>a[2]-b[2]);
   for(let i=0;i<APQ_N;i++){
     const f=v[i][0], t=v[i][1];
-    APQ_FC[i]=Math.cos(f); APQ_FS[i]=Math.sin(f);
-    APQ_TC[i]=Math.cos(t); APQ_TS[i]=Math.sin(t);
-    APQ_RC[i]=Math.cos(f+t); APQ_RS[i]=Math.sin(f+t);
-    APQ_LC[i]=Math.cos(f-t); APQ_LS[i]=Math.sin(f-t);
+  /* Le funzioni di casa (M piu' il nome) e non le native di Math: fuori dal blocco protetto di improntaMotore NON resta nessuna nativa (voce #143, la matematica in casa); queste sei righe del #157 giro 4 erano sfuggite e tenevano `perimetro` e `casa-falsi` a uscita 2 (voce #159, 2/11/2026). */
+    APQ_FC[i]=Mcos(f); APQ_FS[i]=Msin(f);
+    APQ_TC[i]=Mcos(t); APQ_TS[i]=Msin(t);
+    APQ_RC[i]=Mcos(f+t); APQ_RS[i]=Msin(f+t);
+    APQ_LC[i]=Mcos(f-t); APQ_LS[i]=Msin(f-t);
   } }
 /* le quattro aperture delle sole BRACCIA (una leva sola: vedi laggiu') */
 const APQ_C=new Float32Array(4), APQ_S=new Float32Array(4);
 { const A4=[0.16,0.32,0.48,0.62];
-  for(let i=0;i<4;i++){ APQ_C[i]=Math.cos(A4[i]); APQ_S[i]=Math.sin(A4[i]); } }
+  for(let i=0;i<4;i++){ APQ_C[i]=Mcos(A4[i]); APQ_S[i]=Msin(A4[i]); } }
 /* I DUE MINIMI, in metri di mondo, e da dove vengono — MISURATI, non
    scelti. strumenti/_157-diag-quadro.js ha stampato, per tutte e 27 le
    clip e quattro imbardate, la separazione in quadro accanto alle righe
@@ -8708,7 +8709,7 @@ const L151_AO={maglia:0.503,pelle:0.244,pantaloncini:0.156,calze:0.389,scarpe:0.
    verso il basso, quindi si rovescia per avere l'angolo con l'alto in
    positivo -- lo stesso verso con cui Blender ha riempito la tabella. */
 function l151Indice(ax,ay,bx,by){
-  const a=Math.atan2(-(by-ay), bx-ax);
+  const a=Matan2(-(by-ay), bx-ax);
   let k=((a+Math.PI)/(2*Math.PI)*16)|0;
   if(k<0)k=0; if(k>15)k=15;
   return k;

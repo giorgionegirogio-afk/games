@@ -95,6 +95,19 @@ const PROTETTO = `  for(let i = 1; i <= 64; i++){
   }`;
 const SEGNAPOSTO = '/*__143_IMPRONTA_MOTORE_NATIVA__*/';
 
+/* LA CODA DI TESTO IN FONDO AL FILE (voce #158 compito 8, dal 10/10/2026):
+   i data-URI degli atlanti degli sprite stanno in blocchi
+   <script type="text/plain" id="sprite-*"> DOPO lo script del gioco. Sono
+   base64, e il base64 contiene per caso qualunque sequenza di lettere --
+   «Mexp» compresa: misurato il 2/11/2026 (voce #159), 48 «Mexp» nel file
+   contro 47 chiamate, la 48a dentro il blocco sprite-m. La coda non e'
+   codice: innesta e sguaina la staccano prima di contare e sostituire, e
+   la riattaccano identica. L'ancora e' il PRIMO blocco (sprite-src), a
+   inizio riga: il commento del gioco che spiega i blocchi (riga ~10343)
+   nomina il tag con «sprite-...» e non puo' essere scambiato per la coda. */
+const INIZIO_CODA = '\n<script type="text/plain" id="sprite-src">';
+function spezza(t){ const i = t.indexOf(INIZIO_CODA); return i < 0 ? [t, ''] : [t.slice(0, i), t.slice(i)]; }
+
 /* dove va la libreria: in cima allo script principale, prima di
    qualunque uso. Il primo Math.sin eseguibile del gioco sta a riga
    4935; la libreria entra a riga 4029. */
@@ -120,6 +133,7 @@ const ANCORA = `<script>
    motivo: gli ancoraggi non si forzano mai.
    ===================================================================== */
 function innesta(t, opz){
+  const coda_ = spezza(t); t = coda_[0];       // la coda base64 non si tocca (vedi INIZIO_CODA)
   opz = opz || {};
   const quali = {};
   for(const n in DIROTTATE) if(!opz.solo || opz.solo.indexOf(n) >= 0) quali[n] = DIROTTATE[n];
@@ -171,7 +185,7 @@ ${sorgente}
                       dopo.slice(0, 5).map(s => s.nome + '@' + s.indice).join(', '));
     }
   }
-  return { testo: t, conto, siti: siti.length };
+  return { testo: t + coda_[1], conto, siti: siti.length };
 }
 
 /* =====================================================================
@@ -197,6 +211,7 @@ ${sorgente}
    sostituisce e si lamenta se il totale non e' quello.
    ===================================================================== */
 function sguaina(t, sorgente){
+  const coda_ = spezza(t); t = coda_[0];       // idem: la coda base64 resta fuori dal conto
   sorgente = sorgente || SORGENTE;
   if (t.split(sorgente).length - 1 !== 1) throw new Error("la libreria non c'e' (o c'e' piu' di una volta) in questo file");
   t = t.replace(sorgente + String.fromCharCode(10), '');
@@ -209,7 +224,7 @@ function sguaina(t, sorgente){
     tot += q;
     t = t.split(m + '(').join('Math.' + n + '(');
   }
-  return { testo: t, tolte: tot };
+  return { testo: t + coda_[1], tolte: tot };
 }
 
 module.exports = { innesta, sguaina, DIROTTATE, PROTETTO, ANCORA, SEGNAPOSTO };
