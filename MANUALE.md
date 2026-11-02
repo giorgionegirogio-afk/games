@@ -847,8 +847,9 @@ Qui il registro completo, a edizioni.
   avvii a freddo: calore o lavoro in sottofondo, non misurato quale); il
   gioco del #160 sta a +1% sul predecessore, schiena contro schiena, con
   155 kB in meno. Il rosso è del telefono di stasera, non del gioco; si
-  rimisura a telefono freddo. Release: l'allegato va aggiornato dal
-  committente (`gh release upload v2026.11.02 apk/CALCETTO.apk --clobber`).
+  rimisura a telefono freddo. Release: l'allegato `CALCETTO.apk` di
+  `v2026.11.02` aggiornato dal committente alle 22:40 (4.178.774 byte).
+  Stesso gioco su `main`, nella release e sul telefono.
 
 - **LA RIFINITURA PER LA PUBBLICAZIONE — #159 DIECI ORE PER FINIRE, E L'APK**
   (voce #159, 2 novembre 2026, ramo `voce-159-rifinitura` dal merge-base
