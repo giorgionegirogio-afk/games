@@ -1087,6 +1087,22 @@ Qui il registro completo, a edizioni.
   `gh release create v2026.11.02 apk/CALCETTO.apk apk/CIRCOLO.apk --target main --notes-file fuori/159/release.md`
   (le note stanno in `fuori/159/release.md`, non tracciato).
 
+  **Rettifica della sera (2 novembre, 22:40): il telefono è tornato.** Il
+  committente ha ricollegato il OnePlus 6 e adb lo ha rivisto subito.
+  `adb install -r` di CALCETTO 1.2 (versionCode 1493009, nome «1.2
+  (2026-11-02, dec966c)», letto da `dumpsys package`) e di CIRCOLO.
+  **`avvio-telefono` VERDE: 1729 ms da icona premuta a pallone toccabile,
+  7 avvii buoni su 7, dispersione 9,7%** (soglia 2000; il 10 ottobre
+  erano 2121 con il file a blocchi, 2871 con i data-URI nello script):
+  lettura, analisi ed esecuzione di 7106 kB in 1243 ms, 0,175 ms per kB.
+  La sonda delle figure (`_158-sonda-telefono.js`): **pianta 60,5 fps**,
+  ripresa del gol con l'atlante da vicino **34,1 fps** (192) e 36,5 (144),
+  PSS 182 MB in pianta e 345 MB in ripresa, decodifica dell'atlante grande
+  200 ms dalla ripresa — gli stessi numeri del compito 8 del #158. L'app
+  avviata da `am start` (Status ok) con lo scatto del menu in
+  `fuori/159/telefono-menu.png`. Restano al committente la release
+  GitHub e `/design-login`.
+
   ### (l) Che cosa resta, dichiarato
 
   A 11 contro 11 il portiere non legge il pallone lento (P2 spenta: prima
