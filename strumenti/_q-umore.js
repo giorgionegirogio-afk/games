@@ -387,6 +387,7 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
       const CARTELLINO_FRAME = 120;
       let cartellinoForzato = null;
       const eventiStati = [];
+        const golInAttesa = [];   // gol/autorete emessi, letti dal gioco solo al rientro in 'play' (vedi rettifica)
       /* =================================================================
          PROVA TESTIMONE (compito 4): tracciamento INDIPENDENTE, sulla
          STESSA partita. compito4Esiste guarda una superficie che nasce
@@ -435,6 +436,20 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
         }
         if (t.G.bannerT > 0 && (t.G.banner === 'CI CREDONO' || t.G.banner === 'TESTA ALTA'))
           bannerVisti.push({ testo: t.G.banner, fotogramma: fotogrammi });
+        if (statiEsistono && fattiEsisteva && golInAttesa.length) {
+          /* i gol in attesa si leggono quando il gioco li ha LETTI (vedi la
+             rettifica qui sotto): G.fattiVisti ha raggiunto il loro totale */
+          const letti = typeof t.G.fattiVisti === 'number' ? t.G.fattiVisti : Infinity;
+          for (let k = golInAttesa.length - 1; k >= 0; k--) {
+            const e = golInAttesa[k];
+            if (letti >= e.totAlMomento) {
+              const p = t.G.players[e.chi];
+              eventiStati.push({ che: e.che, chi: e.chi, umoreDopo: p ? p.umore : NaN,
+                                 spintaBeneficiaria: e.team !== null ? t.G.spinta[e.team] : null });
+              golInAttesa.splice(k, 1);
+            }
+          }
+        }
         if (statiEsistono && fattiEsisteva) {
           const dopoLen = t.G.fatti.length;
           if (dopoLen > primaLen) {
@@ -444,12 +459,22 @@ const di = (ok, nome, det) => { esiti.push(ok); console.log('  ' + (ok ? 'OK  ' 
             for (let i = dopoLen - nNuovi; i < dopoLen; i++) {
               const f = t.G.fatti[i];
               if ((f.che === 'gol' || f.che === 'autorete') && f.chi >= 0 && f.chi < t.G.players.length) {
-                const p = t.G.players[f.chi];
-                eventiStati.push({
-                  che: f.che, chi: f.chi,
-                  umoreDopo: p.umore,
-                  spintaBeneficiaria: (f.esito && typeof f.esito.team === 'number') ? t.G.spinta[f.esito.team] : null,
-                });
+                /* RETTIFICA (2 novembre 2026, voce #159): il gol NON e' letto
+                   nella stessa passata di step() che lo emette. Il fatto nasce
+                   nella scena del gol (emettiFatto in segnaGol), e il lettore
+                   dei fatti in coda a step() non gira finche' la scena non
+                   torna 'play': l'impatto sull'umore arriva al calcio
+                   d'inizio successivo. Fino a oggi il banco leggeva p.umore
+                   nello STESSO fotogramma dell'emissione, cioe' l'umore di
+                   PRIMA del gol, e passava solo perche' i marcatori erano gia'
+                   contenti; col motore 7 la partita del seme ha avuto un
+                   marcatore ammonito poco prima (umore -0,68) e il banco ha
+                   accusato il gioco di una cosa che il gioco non aveva ancora
+                   fatto. Ora l'evento resta IN ATTESA finche' G.fattiVisti non
+                   ha raggiunto il fatto, e si legge DOPO l'impatto: e' quello
+                   che la prova b-stati dice di misurare. */
+                golInAttesa.push({ che: f.che, chi: f.chi, team: (f.esito && typeof f.esito.team === 'number') ? f.esito.team : null,
+                                   totAlMomento: t.G.fattiTot });
               } else if (f.che === 'fallo' || f.che === 'giallo' || f.che === 'espulsione' || f.che === 'legno') {
                 /* PROVA TESTIMONE (compito 4): i fatti idonei al canale
                    d'occhio (a), con la STESSA regola di bersaglio

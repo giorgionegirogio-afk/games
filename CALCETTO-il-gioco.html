@@ -41043,7 +41043,15 @@ function applicaImpattoFatto(f){
   const p = (f.chi>=0 && f.chi<G.players.length) ? G.players[f.chi] : null;
   switch(f.che){
     case 'gol':
-      if(p) p.umore = clampStato(p.umore + 0.50*molt, -1, 1);
+      /* Il gol RIALZA chi segna, sempre: il pavimento a un quarto della
+         spinta e' della voce #159 (2/11/2026). La regola del banco del MIND
+         (_q-umore.js, prova b-stati) dice «dopo ogni gol lo scorer ha
+         umore>0», e con la sola somma non era garantita: col motore 7 la
+         partita del banco ha mostrato un marcatore ammonito poco prima
+         (umore -0,68) che dopo il gol stava ancora a -0,18. Un uomo che ha
+         appena segnato non e' triste: al minimo e' a un quarto della
+         gioia del gol. Zero dado(); molt e' sempre >= 1. */
+      if(p) p.umore = clampStato(Math.max(p.umore + 0.50*molt, 0.25*molt), -1, 1);
       applicaGolSquadra(f.esito.team, molt);
       break;
     case 'autorete':
