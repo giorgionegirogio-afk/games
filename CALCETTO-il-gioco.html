@@ -13835,6 +13835,7 @@ function makePlayer(team, idx, x, y, role){
     homeX:x, homeY:y,
     slide:-1,                          // -1 = no; >=0 tempo trascorso in scivolata
     slideDX:0, slideDY:0,
+    slideGioco:false,                  // la scivolata in corso ha gia' giocato il pallone? (voce #159, R1)
     /* L1.2 — la direzione della scivolata l'ha scelta un DITO, quindi
        lanciaScivolata non la deve rifare sul pallone. Vale per una
        scivolata sola e si spegne da se': la scrive startSlide, la legge
@@ -20763,7 +20764,29 @@ function quotaAnticipo(p){
    ===================================================================== */
 const CONTRASTO_FIN = 0.18;   // s: quanto resta teso il piede dopo la pressione
 const CONTRASTO_K   = 1.8;    // stealP moltiplicato, quando si e' faccia a faccia
-const CONTRASTO_CD  = 0.22;   // s di pausa quando il contrasto fallisce
+/* IL FALLITO SI PAGA (voce #159, cura R2, difetto #13 della ricognizione
+   del 2 novembre 2026). Il contrasto in piedi e' un verbo SOLO UMANO
+   (p.contrasto nasce dal disco premuto, mai dall'IA) e fallito costava
+   0,22 s di piede freddo e nient'altro: contro la CPU si poteva premere
+   ogni 0,22 s finche' il dado diceva si', senza mai un fallo nemmeno da
+   dietro. Era lo sfruttamento piu' grave dell'elenco. Da oggi:
+     CONTRASTO_CD    0,45 -- RETTIFICA A EDIZIONI: era 0,22; e' il numero
+                     del furto col corpo FALLITO in updateBall
+                     (q.kickCd=0.45, «tentativo fallito: pausa prima di
+                     riprovare»), perche' due modi di sbagliare lo stesso
+                     furto non possono costare due pause diverse.
+     CONTRASTO_FALLO la quota dei falliti DA DIETRO (faccia>0,5) che
+                     diventa FALLO, decisa dallo STESSO sorteggio del
+                     contrasto (vedi contrastoPasso: una estrazione, il
+                     conteggio non cambia di un bit).
+     CONTRASTO_FIATO il morso di fiato di ogni fallito: un quarto di
+                     secondo di scudo (SCUDO_FIATO e' il fiato al secondo
+                     speso a reggere un uomo), cioe' 5 punti su 100. Non e'
+                     un numero nuovo: e' lo stesso prezzo del corpo a corpo,
+                     letto per un gesto che dura un quarto di secondo. */
+const CONTRASTO_CD  = 0.45;   // s di pausa quando il contrasto fallisce (era 0,22: vedi sopra)
+const CONTRASTO_FALLO = 0.35; // quota dei falliti da dietro che e' fallo
+const CONTRASTO_FIATO = SCUDO_FIATO*0.25;   // fiato speso da un contrasto fallito (5 punti)
 const JOCKEY_V      = 0.62;   // fattore di velocita' di chi contiene
 /* la spazzata parte alla stessa velocita' con cui la scivolata gia'
    spazza un pallone libero (checkSlideContact): e' lo stesso gesto,
@@ -20839,7 +20862,30 @@ function contrastoPasso(p){
   const faccia=p.fx*o.fx + p.fy*o.fy;
   if(faccia>0.5) sp*=0.55;
   else if(faccia<0) sp*=CONTRASTO_K;
-  if(dado()>=sp){ p.kickCd=CONTRASTO_CD; return 'fallito'; }
+  /* UN SORTEGGIO, TRE ESITI (voce #159, R2). Lo stesso r decide se il
+     pallone e' preso (r<sp, come sempre) e, se non lo e', se il fallito
+     da dietro e' anche FALLO: la fetta alta dell'intervallo [sp,1) --
+     larga (1-sp)*CONTRASTO_FALLO -- e' il piede che arriva sull'uomo
+     invece che sulla palla. Da davanti (faccia<=0,5) un fallito resta un
+     fallito: di fronte si sbaglia il tempo, non si stende nessuno.
+     Il conteggio delle estrazioni e' INVARIATO (una): i banchi CPU contro
+     CPU non si sfasano di un bit, perche' questo verbo li' non esce mai.
+     Il prezzo del fallito e' per tutti: CONTRASTO_CD di piede freddo e
+     CONTRASTO_FIATO di fiato, prima di qualunque altro esito. Il fallo
+     passa da falloDaScivolata (la stessa funzione della scivolata, col
+     verso del corpo come verso dell'entrata, per la scossa e le zolle):
+     e' SEMPRE cattivo, perche' e' per definizione da dietro. */
+  const r=dado();
+  if(r>=sp){
+    p.kickCd=CONTRASTO_CD;
+    p.fiato=Math.max(0, p.fiato-CONTRASTO_FIATO);
+    if(faccia>0.5 && r>=1-(1-sp)*CONTRASTO_FALLO){
+      p.slideDX=p.fx; p.slideDY=p.fy;
+      falloDaScivolata(p, o, true);
+      return 'fallo';
+    }
+    return 'fallito';
+  }
   b.owner=G.players.indexOf(p); b.passTo=-1;
   p.kickCd=0.35; o.kickCd=0.5;         // gli stessi due numeri del furto col corpo
   /* IL PIEDE TESO E' UN PIEDE (voce #107, compito 2): il contrasto in
@@ -20973,6 +21019,7 @@ function lanciaScivolata(p){
   if(!p.slideMirata && bl>1 && bl<200){ nx=bx/bl; ny=by/bl; }
   p.slideMirata=false;
   p.slide=0; p.slideDX=nx; p.slideDY=ny;
+  p.slideGioco=false;   // nasce senza aver toccato niente: lo accende la spazzata (voce #159, R1)
   Audio5.slideS(); Audio5.beep(240);
 }
 
@@ -22660,7 +22707,10 @@ function clampPlayer(p){
    e alla prima differenza dopo un giro completo la partita e' decisa.
    ===================================================================== */
 function avviaRigori(){
-  G.rigori = { seg:[0,0], tiri:[0,0], turno: G.kickTeam };
+  /* esiti: la sequenza VERA dei tiri di ogni squadra ('seg'/'sba'), nel
+     loro ordine, per il pannello di startFreeKick (voce #159, R4): seg e
+     tiri sono conti, e un conto non sa dire quale tiro e' andato dentro. */
+  G.rigori = { seg:[0,0], tiri:[0,0], esiti:[[],[]], turno: G.kickTeam };
   showBanner('SI DECIDE DAL DISCHETTO','#ffb020',2.0);
   Audio5.whistle(true);
   programmaRigore();
@@ -22675,7 +22725,21 @@ function programmaRigore(){
     return;
   }
   if(R.tiri[0]>=9 && R.tiri[1]>=9){        // limite di sicurezza
-    G.score[R.seg[0]>=R.seg[1]?0:1]++;
+    /* AL TETTO, A PARITA', LA SPUNTA CHI HA TIRATO PER SECONDO (voce #159,
+       cura R4, difetto #31). Era G.score[R.seg[0]>=R.seg[1]?0:1]++: a
+       parita' -- e qui si arriva SOLO a parita', perche' una differenza
+       dopo una coppia completa chiude la serie al controllo qui sopra --
+       vinceva la squadra 0 per indice, un decreto che leggeva team===0.
+       Adesso vince la squadra che in ogni coppia ha tirato per seconda:
+       per nove volte ha battuto sapendo di dover segnare per restare in
+       vita, ed e' il peso che la regola riconosce. R.turno al momento
+       del controllo e' chi batterebbe per PRIMO la coppia successiva
+       (esitoRigore lo gira prima di chiamare qui), quindi la seconda e'
+       1-R.turno. Chi tira per primo lo decide G.kickTeam, che nasce da
+       un dado a startMatch o dal dischetto della sfida: nessun favore
+       all'indice. ZERO estrazioni, zero letture di team. */
+    const seconda = 1-R.turno;
+    G.score[R.seg[0]!==R.seg[1] ? (R.seg[0]>R.seg[1]?0:1) : seconda]++;
     endMatch();
     return;
   }
@@ -22686,6 +22750,8 @@ function esitoRigore(segnato){
   if(!R) return false;
   R.tiri[R.turno]++;
   if(segnato) R.seg[R.turno]++;
+  if(!R.esiti) R.esiti=[[],[]];              // una serie nata prima di R4 non deve rompere il pannello
+  R.esiti[R.turno].push(segnato?'seg':'sba'); // l'ordine vero dei tiri (voce #159, R4)
   showBanner('RIGORI  '+R.seg[0]+' - '+R.seg[1], '#ffb020', 1.2);
   /* REGISTRO DEI FATTI (voce #117, compito 1): chi=-1 DICHIARATO -- il
      duello dei rigori vive a livello di SQUADRA (R.turno), il gioco di
@@ -22699,7 +22765,14 @@ function esitoRigore(segnato){
 /* ---------- disciplina: cartellini ed espulsione temporanea ----------
    Regola da calcetto/futsal: il secondo giallo di squadra manda un uomo fuori
    per 12 secondi. In una partita da 90 secondi l'inferiorita' numerica pesa
-   davvero: e' quello che rende la scivolata una decisione, non un riflesso. */
+   davvero: e' quello che rende la scivolata una decisione, non un riflesso.
+   RETTIFICA A EDIZIONI (voce #159, cura R3, 2 novembre 2026): la regola di
+   squadra qui sopra e' una SCELTA DI CASA e resta (il futsal vero non ce
+   l'ha: ha i falli cumulativi, che il gioco fa gia' con falli>=3). Ma
+   p.gialli -- i cartellini PERSONALI, scritti qui e mostrati negli eventi
+   -- non era letto da nessuna decisione: due gialli allo stesso uomo, se
+   il conto di squadra era dispari, lo lasciavano in campo. Da oggi i due
+   inneschi stanno in OR, con le stesse guardie. */
 function giocatoriInCampo(team){
   return G.players.filter(q=>q.team===team && q.out<=0);
 }
@@ -22713,7 +22786,14 @@ function infliggiCartellino(p){
   /* mai sotto i due uomini di movimento: sotto quella soglia il gioco si rompe.
      E il portiere non si espelle mai. */
   const inCampo = diMovimentoInCampo(p.team).length;
-  const daEspellere = (G.stats.gialli[p.team] % CARTELLINI_PER_ESPULSIONE)===0 && inCampo>2 && p.role!=='gk';
+  /* DUE INNESCHI IN OR (voce #159, R3): il secondo giallo DI SQUADRA (la
+     regola di casa, invariata, presidiata da _q-dischi/AVVISO) OPPURE il
+     secondo giallo PERSONALE (il modulo resta: l'espulsione e' temporanea,
+     e il quarto giallo dello stesso uomo lo rimanda fuori). Le guardie
+     sono le stesse per tutt'e due: mai sotto i due uomini di movimento,
+     mai il portiere. Zero dado(), nessuna lettura di team. */
+  const daEspellere = ((G.stats.gialli[p.team] % CARTELLINI_PER_ESPULSIONE)===0 || (p.gialli % CARTELLINI_PER_ESPULSIONE)===0)
+                      && inCampo>2 && p.role!=='gk';
   if(!daEspellere){
     emettiFatto('giallo', G.players.indexOf(p), [p.x,p.y], {gialliTot:p.gialli});
     showBanner('CARTELLINO GIALLO', '#ffb020', 1.4);
@@ -22866,6 +22946,152 @@ function eseguiSfumato(vTeam, vx, vy){
   }
 }
 
+/* =====================================================================
+   IL FALLO DA SCIVOLATA (voce #159, cura R1, difetto #12 della ricognizione
+   del 2 novembre 2026). ESTRATTO da checkSlideContact -- era il ramo
+   "else" del contatto col portatore, carattere per carattere salvo il
+   nome (vittima al posto di carrier) e le due righe che portano la palla
+   al punto del fallo (segnate sotto) -- perche' adesso lo chiamano in TRE:
+     1. checkSlideContact, sul PORTATORE preso invece della palla (il ramo
+        storico, invariato);
+     2. checkSlideContact, su chi NON HA LA PALLA: la scivolata che non ha
+        giocato il pallone e stende l'avversario piu' vicino. Prima non
+        produceva niente -- ne' fallo, ne' caduta -- ed era lo sfruttamento
+        piu' comodo dell'umano contro la CPU: entrare "sul passaggio"
+        senza rischio;
+     3. contrastoPasso (R2), sul contrasto in piedi fallito da dietro.
+   Dentro c'e' tutto quello che un fallo comporta: il conto di squadra, il
+   fatto 'fallo' per il registro, scossa/zolle/polvere, i due corpi a terra,
+   il prezzo in condizione, e IL VANTAGGIO (voce #107) con il fischio
+   immediato quando una finestra e' gia' viva. ZERO dado(): chi chiama
+   decide `cattivo` con la geometria (da dietro o in ritardo), e il resto
+   e' deterministico. Nessuna riga legge team===0: le due squadre restano
+   simmetriche.
+   ===================================================================== */
+function falloDaScivolata(p, vittima, cattivo){
+  const b=G.ball;
+  /* hai preso l'uomo: FALLO. Da dietro o in ritardo e' anche cattivo. */
+  G.stats.falli[p.team]++;
+  emettiFatto('fallo', G.players.indexOf(p), [p.x,p.y], {cattivo, vittima:G.players.indexOf(vittima)});
+  /* IL FALLO. Stessa scossa della rubata ma piu' sorda e piu' lunga:
+     qui non e' saltata la palla, e' saltato un uomo. Il gelo non c'e'
+     — il fischio arriva subito dopo e due stacchi di fila si
+     annullano a vicenda. */
+  scossa(cattivo?7.4:5.0, 0.30, p.slideDX, p.slideDY);
+  zolle(vittima.x, vittima.y+3, p.slideDX, p.slideDY, cattivo?13:9);
+  polvere(vittima.x, vittima.y+4, 6, 1.0);
+  p.slide=-1; p.recover=SLIDE_REC;
+  vittima.recover=Math.max(vittima.recover,0.35);
+  /* IL COLPO SI PAGA IN GAMBE, e il fallo pesa oltre il fischio.
+     Non e' un secondo sistema di infortuni: e' lo stesso conto,
+     anticipato. Chi viene preso a spallate per tutta la partita
+     arriva al limite prima di chi non lo e' stato, ed e' cosi'
+     che si prendono gli acciacchi veri. Anche chi entra paga, la
+     meta': una scivolata costa a tutt'e due. */
+  vittima.cond=Math.max(0, vittima.cond - (cattivo?COND_URTO*2:COND_URTO));
+  p.cond=Math.max(0, p.cond - COND_URTO*0.5);
+  buzz(cattivo?[30,40,60]:40);
+  /* IL VANTAGGIO (voce #107, compito 3, mandato SS6.7): il fischio
+     non scatta piu' subito qui -- si apre una finestra di
+     valutazione (G.vantaggio = {team, x, y, t, card}, team la
+     squadra OFFESA -- vittima.team, mai l'autore --, x/y il
+     punto DI QUESTO fallo, quello di p: e' li' che il fischio
+     ritardato deve tornare). La valutazione vive nel passo fisso
+     del gioco vivo, dentro step(), subito dopo l'hit-stop -- come
+     la finestra di battuta della voce #87. card e' l'indice del
+     giocatore da ammonire SE il fallo lo meritava (null
+     altrimenti): il cartellino stesso resta pendente, non si
+     infligge mai qui.
+     UN FALLO MENTRE UN VANTAGGIO E' GIA' PENDENTE (scelta
+     dichiarata, la piu' semplice delle due offerte dal piano):
+     niente doppio vantaggio. Quello vecchio chiude SUBITO
+     (scaricaCardVantaggio -- il suo cartellino, se dovuto, si
+     infligge adesso) e il fallo nuovo fischia SUBITO, con la
+     STESSA decisione area/cumulo di sempre -- il ramo qui sotto
+     e' carattere per carattere quello che checkSlideContact
+     faceva PRIMA di questo compito (RETTIFICA voce #107, compito
+     1, per l'area vera al posto di zonaCalda: invariata).
+     W1 (chiusura arbitrale, voce #107 compito 3, 18 settembre
+     2026): la guardia qui sotto vuole ANCHE G.vantaggio.team>=0,
+     come il blocco di valutazione in step() (riga 16980) gia'
+     chiede. Senza quella guardia, il sentinel {team:-1,...} che
+     VANT_T lascia dietro di se' (riga 17057, cartellino ancora
+     da scaricare dopo un vantaggio CONCESSO per intero) e' un
+     G.vantaggio troncato ma non nullo: il fallo successivo lo
+     leggeva come "vantaggio gia' pendente" e fischiava SUBITO
+     invece di aprire la propria finestra. Misurato dall'arbitro:
+     un fallo su venti (5,0% in base, 4,7% su questa correzione)
+     riguadagna cosi' la grazia che gli spettava. */
+  if(G.vantaggio && G.vantaggio.team>=0){
+    scaricaCardVantaggio();
+    Audio5.whistle(false);
+    if(cattivo) infliggiCartellino(p);
+    const inArea = dentroArea(vittima.team, p.x, p.y);
+    const cumulo = G.stats.falli[p.team] >= 3;
+    if(inArea || cumulo){
+      showBanner(cumulo && !inArea ? 'TERZO FALLO: SI TIRA!' : (cattivo?'FALLO CATTIVO!':'PUNIZIONE!'), '#ffb020', 1.2);
+      startFreeKick(vittima.team, p.team);
+    }else{
+      showBanner(cattivo?'FALLO CATTIVO!':'FALLO!', '#ffb020', 1.0);
+      /* LA PALLA AL PUNTO DEL FALLO (voce #159, R1). Quando la vittima e'
+         il portatore la palla e' gia' ai suoi piedi e queste righe non
+         fanno niente: il ramo storico resta bit per bit. Quando la
+         vittima NON aveva la palla -- il ramo nuovo di checkSlideContact
+         -- la palla puo' stare ovunque, e punizioneRapida non sposta mai
+         b.x/b.y (lo dice eseguiSfumato, che per questo co-loca il
+         sostituto sul punto salvato): la molla del dribbling la
+         trascinerebbe per il campo fino al fallito. La si porta qui, ai
+         suoi piedi, ferma e a terra, come fa gia' eseguiSfumato. */
+      if(b.owner!==G.players.indexOf(vittima)){
+        b.x=vittima.x; b.y=vittima.y; b.z=0; b.vz=0; b.vx=0; b.vy=0; b.passTo=-1; b.crossTo=-1;
+      }
+      punizioneRapida(vittima, p);
+    }
+    return;
+  }
+  /* F1 (correzione di revisione, voce #107 compito 3, 18 settembre
+     2026): la finestra parte quando il fallito SI RIALZA, non dal
+     fischio del fallo. vittima.recover e' appena stato scritto
+     (Math.max(vittima.recover,0.35) qui sopra, invariato) -- finche'
+     e' positivo il fallito e' incollato a terra (updatePlayerFisica,
+     "if(p.recover>0){...return;}"), e un t che partisse da zero
+     misurerebbe quello stordimento, non l'azione. Misura del
+     revisore (150 partite, taglia 5): con t da zero il 93% dei
+     vantaggi SFUMATI moriva al PRIMO controllo (t<0,6 s), pieno mai
+     una volta su 260 finestre. t negativo e' solo un differimento
+     dell'orologio: l'accumulo (t+=dt, sotto in step()) e i due
+     controlli (VANT_VALUTA/VANT_T) restano invariati carattere per
+     carattere -- la finestra adesso misura MOTO LIBERO dal momento
+     in cui il fallito torna in piedi, non dal momento del fallo. */
+  /* MICRO-CODA (voce #107, micro-coda del compito 3, 18 settembre
+     2026): il ramo qui sopra si arriva quando G.vantaggio e' null
+     OPPURE il sentinel {team:-1,...,card} lasciato da VANT_T (riga
+     17057) -- W1 (chiusura arbitrale 3b) gli fa aprire la propria
+     finestra invece di fischiare subito, ma l'assegnazione qui
+     sotto SOVRASCRIVE G.vantaggio senza mai controllare se portava
+     un cartellino dovuto: quel cartellino spariva in silenzio,
+     mai inflitto. card!=null, non la verita' di card: l'indice di
+     un giocatore puo' essere zero, e zero e' falso in JavaScript
+     -- la stessa guardia che scaricaCardVantaggio() usa gia' su
+     se stessa (riga 18242), un'unica convenzione per "un
+     cartellino e' dovuto". */
+  if(G.vantaggio && G.vantaggio.card!=null) scaricaCardVantaggio();
+  /* I5 (onda di correzione della revisione finale, voce #107, 18
+     settembre 2026): la finestra si apre ANCHE per un fallo
+     DENTRO l'area -- questa riga non guarda mai dentroArea(), a
+     differenza del ramo del fischio immediato qui sopra. Un
+     rigore sfumato arriva quindi con un ritardo di 0,85-2,85 s
+     (VANT_VALUTA/VANT_T meno lo stordimento), mai un fischio
+     subito: e' voluto, lo stesso vantaggio che vale ovunque nel
+     campo. Misurato (sonda dedicata, 21 finestre aperte da un
+     fallo in area): ~0 casi su 21 restano PIENI -- la geometria
+     di "restare piu' avanti mentre si resta ancora dentro l'area"
+     e' una striscia stretta, non una regola nuova che favorisce
+     l'area. Vedi VANTAGGIO-IN-AREA in strumenti/_q-regole.js, e
+     la frase gemella in MANUALE.md. */
+  G.vantaggio = { team:vittima.team, x:p.x, y:p.y, t:-(vittima.recover>0?vittima.recover:0), card: cattivo?G.players.indexOf(p):null };
+}
+
 /* ---------- contatto della scivolata ---------- */
 function checkSlideContact(p){
   const b=G.ball;
@@ -22907,115 +23133,12 @@ function checkSlideContact(p){
         Audio5.clack(true); Audio5.beep(880);
         return;
       }else{
-        /* hai preso l'uomo: FALLO. Da dietro o in ritardo e' anche cattivo. */
-        const cattivo = daDietro || !inTempo;
-        G.stats.falli[p.team]++;
-        emettiFatto('fallo', G.players.indexOf(p), [p.x,p.y], {cattivo, vittima:G.players.indexOf(carrier)});
-        /* IL FALLO. Stessa scossa della rubata ma piu' sorda e piu' lunga:
-           qui non e' saltata la palla, e' saltato un uomo. Il gelo non c'e'
-           — il fischio arriva subito dopo e due stacchi di fila si
-           annullano a vicenda. */
-        scossa(cattivo?7.4:5.0, 0.30, p.slideDX, p.slideDY);
-        zolle(carrier.x, carrier.y+3, p.slideDX, p.slideDY, cattivo?13:9);
-        polvere(carrier.x, carrier.y+4, 6, 1.0);
-        p.slide=-1; p.recover=SLIDE_REC;
-        carrier.recover=Math.max(carrier.recover,0.35);
-        /* IL COLPO SI PAGA IN GAMBE, e il fallo pesa oltre il fischio.
-           Non e' un secondo sistema di infortuni: e' lo stesso conto,
-           anticipato. Chi viene preso a spallate per tutta la partita
-           arriva al limite prima di chi non lo e' stato, ed e' cosi'
-           che si prendono gli acciacchi veri. Anche chi entra paga, la
-           meta': una scivolata costa a tutt'e due. */
-        carrier.cond=Math.max(0, carrier.cond - (cattivo?COND_URTO*2:COND_URTO));
-        p.cond=Math.max(0, p.cond - COND_URTO*0.5);
-        buzz(cattivo?[30,40,60]:40);
-        /* IL VANTAGGIO (voce #107, compito 3, mandato SS6.7): il fischio
-           non scatta piu' subito qui -- si apre una finestra di
-           valutazione (G.vantaggio = {team, x, y, t, card}, team la
-           squadra OFFESA -- carrier.team, mai l'autore --, x/y il
-           punto DI QUESTO fallo, quello di p: e' li' che il fischio
-           ritardato deve tornare). La valutazione vive nel passo fisso
-           del gioco vivo, dentro step(), subito dopo l'hit-stop -- come
-           la finestra di battuta della voce #87. card e' l'indice del
-           giocatore da ammonire SE il fallo lo meritava (null
-           altrimenti): il cartellino stesso resta pendente, non si
-           infligge mai qui.
-           UN FALLO MENTRE UN VANTAGGIO E' GIA' PENDENTE (scelta
-           dichiarata, la piu' semplice delle due offerte dal piano):
-           niente doppio vantaggio. Quello vecchio chiude SUBITO
-           (scaricaCardVantaggio -- il suo cartellino, se dovuto, si
-           infligge adesso) e il fallo nuovo fischia SUBITO, con la
-           STESSA decisione area/cumulo di sempre -- il ramo qui sotto
-           e' carattere per carattere quello che checkSlideContact
-           faceva PRIMA di questo compito (RETTIFICA voce #107, compito
-           1, per l'area vera al posto di zonaCalda: invariata).
-           W1 (chiusura arbitrale, voce #107 compito 3, 18 settembre
-           2026): la guardia qui sotto vuole ANCHE G.vantaggio.team>=0,
-           come il blocco di valutazione in step() (riga 16980) gia'
-           chiede. Senza quella guardia, il sentinel {team:-1,...} che
-           VANT_T lascia dietro di se' (riga 17057, cartellino ancora
-           da scaricare dopo un vantaggio CONCESSO per intero) e' un
-           G.vantaggio troncato ma non nullo: il fallo successivo lo
-           leggeva come "vantaggio gia' pendente" e fischiava SUBITO
-           invece di aprire la propria finestra. Misurato dall'arbitro:
-           un fallo su venti (5,0% in base, 4,7% su questa correzione)
-           riguadagna cosi' la grazia che gli spettava. */
-        if(G.vantaggio && G.vantaggio.team>=0){
-          scaricaCardVantaggio();
-          Audio5.whistle(false);
-          if(cattivo) infliggiCartellino(p);
-          const inArea = dentroArea(carrier.team, p.x, p.y);
-          const cumulo = G.stats.falli[p.team] >= 3;
-          if(inArea || cumulo){
-            showBanner(cumulo && !inArea ? 'TERZO FALLO: SI TIRA!' : (cattivo?'FALLO CATTIVO!':'PUNIZIONE!'), '#ffb020', 1.2);
-            startFreeKick(carrier.team, p.team);
-          }else{
-            showBanner(cattivo?'FALLO CATTIVO!':'FALLO!', '#ffb020', 1.0);
-            punizioneRapida(carrier, p);
-          }
-          return;
-        }
-        /* F1 (correzione di revisione, voce #107 compito 3, 18 settembre
-           2026): la finestra parte quando il fallito SI RIALZA, non dal
-           fischio del fallo. carrier.recover e' appena stato scritto
-           (Math.max(carrier.recover,0.35) qui sopra, invariato) -- finche'
-           e' positivo il fallito e' incollato a terra (updatePlayerFisica,
-           "if(p.recover>0){...return;}"), e un t che partisse da zero
-           misurerebbe quello stordimento, non l'azione. Misura del
-           revisore (150 partite, taglia 5): con t da zero il 93% dei
-           vantaggi SFUMATI moriva al PRIMO controllo (t<0,6 s), pieno mai
-           una volta su 260 finestre. t negativo e' solo un differimento
-           dell'orologio: l'accumulo (t+=dt, sotto in step()) e i due
-           controlli (VANT_VALUTA/VANT_T) restano invariati carattere per
-           carattere -- la finestra adesso misura MOTO LIBERO dal momento
-           in cui il fallito torna in piedi, non dal momento del fallo. */
-        /* MICRO-CODA (voce #107, micro-coda del compito 3, 18 settembre
-           2026): il ramo qui sopra si arriva quando G.vantaggio e' null
-           OPPURE il sentinel {team:-1,...,card} lasciato da VANT_T (riga
-           17057) -- W1 (chiusura arbitrale 3b) gli fa aprire la propria
-           finestra invece di fischiare subito, ma l'assegnazione qui
-           sotto SOVRASCRIVE G.vantaggio senza mai controllare se portava
-           un cartellino dovuto: quel cartellino spariva in silenzio,
-           mai inflitto. card!=null, non la verita' di card: l'indice di
-           un giocatore puo' essere zero, e zero e' falso in JavaScript
-           -- la stessa guardia che scaricaCardVantaggio() usa gia' su
-           se stessa (riga 18242), un'unica convenzione per "un
-           cartellino e' dovuto". */
-        if(G.vantaggio && G.vantaggio.card!=null) scaricaCardVantaggio();
-        /* I5 (onda di correzione della revisione finale, voce #107, 18
-           settembre 2026): la finestra si apre ANCHE per un fallo
-           DENTRO l'area -- questa riga non guarda mai dentroArea(), a
-           differenza del ramo del fischio immediato qui sopra. Un
-           rigore sfumato arriva quindi con un ritardo di 0,85-2,85 s
-           (VANT_VALUTA/VANT_T meno lo stordimento), mai un fischio
-           subito: e' voluto, lo stesso vantaggio che vale ovunque nel
-           campo. Misurato (sonda dedicata, 21 finestre aperte da un
-           fallo in area): ~0 casi su 21 restano PIENI -- la geometria
-           di "restare piu' avanti mentre si resta ancora dentro l'area"
-           e' una striscia stretta, non una regola nuova che favorisce
-           l'area. Vedi VANTAGGIO-IN-AREA in strumenti/_q-regole.js, e
-           la frase gemella in MANUALE.md. */
-        G.vantaggio = { team:carrier.team, x:p.x, y:p.y, t:-(carrier.recover>0?carrier.recover:0), card: cattivo?G.players.indexOf(p):null };
+        /* hai preso l'uomo: FALLO. Da dietro o in ritardo e' anche cattivo.
+           Il corpo vive in falloDaScivolata (voce #159, R1), qui sopra:
+           lo stesso fallo lo commette anche chi stende un uomo SENZA
+           palla (il ramo in fondo a questa funzione) e chi sbaglia un
+           contrasto in piedi da dietro (contrastoPasso). */
+        falloDaScivolata(p, carrier, daDietro || !inTempo);
         return;
       }
     }
@@ -23024,13 +23147,78 @@ function checkSlideContact(p){
      Prima chiedeva solo la distanza in pianta, e uno steso spazzava un
      pallone che gli volava sopra la testa: il cancello aereo (banchi B
      e D) pretende zero, ed e' la fisica a pretenderlo prima di lui. */
-  if(!carrier && d<KICK_R && p.kickCd<=0 && b.z<=Z_SOPRA_TESTA){
+  const suPallone = d<KICK_R && b.z<=Z_SOPRA_TESTA;   // la gamba tesa arriva sul pallone, a terra
+  if(!carrier && suPallone && p.kickCd<=0){
     b.vx=p.slideDX*380; b.vy=p.slideDY*380;
     segnaTocco(G.players.indexOf(p), true);   // la scivolata spazza con la gamba: un piede (voce #107, compito 2)
     b.saveRolled=false;
     p.kickCd=0.3;
+    p.slideGioco=true;   // questa scivolata HA giocato il pallone: da qui alla fine non e' piu' fallo su nessuno (voce #159, R1)
     Audio5.kick(0.5);
+    return;
   }
+  /* =================================================================
+     LA SCIVOLATA SU CHI NON HA LA PALLA (voce #159, cura R1, difetto
+     #12 della ricognizione del 2 novembre 2026).
+
+     Fin qui questa funzione conosceva due soli esiti: il contatto col
+     PORTATORE avversario (rubata o fallo, sopra) e la spazzata del
+     pallone libero (appena sopra). Un uomo steso mentre NON ha la
+     palla -- l'ha appena passata, e' di un compagno, e' solo in corsa
+     -- non produceva niente: ne' fallo, ne' caduta, ne' fatto. Era lo
+     sfruttamento piu' comodo dell'umano contro la CPU (si entrava
+     "sul passaggio" a costo zero), e la CPU ci cadeva solo quando il
+     passaggio partiva un istante prima del contatto.
+
+     LA REGOLA, in una riga: se la scivolata NON ha giocato il pallone
+     e l'avversario piu' vicino (non il portatore, in campo) sta entro
+     P_R*2+4 -- la stessa portata del contatto col portatore -- e' fallo
+     su di lui. "Non ha giocato il pallone" vuol dire DUE cose:
+       - il pallone non e' a portata della gamba tesa ADESSO (suPallone
+         falso: se c'e', la scivolata e' sulla palla e si gioca quella);
+       - e questa scivolata non l'ha gia' spazzato (p.slideGioco, acceso
+         dalla spazzata, spento da lanciaScivolata): chi ha preso prima
+         la palla e poi, nel seguito della stessa entrata, incontra un
+         uomo, non ha fatto fallo. E' la lettura di campo, non un
+         favore.
+     IL PIU' VICINO E' DETERMINISTICO: minimo stretto sulla distanza
+     nell'ordine dell'array; a pari distanza vince l'indice piu' basso,
+     ma i candidati sono tutti della STESSA squadra (gli avversari di
+     p), quindi nessun favore fra le due squadre. ZERO dado(). Il
+     "cattivo" e' la stessa geometria del ramo storico: da dietro
+     (DIETRO_DOT sul verso della vittima) o fuori tempo (SLIDE_CLEAN).
+     Misura (strumenti/_eventi.js, CPU contro CPU, 30 partite a taglia
+     5 e 12 a 7/11, 2/11/2026): falli a partita prima/dopo nel verbale
+     della voce #159; la soglia dichiarata era +20%.
+     ================================================================= */
+  if(suPallone || p.slideGioco) return;
+  /* RESTRIZIONE DICHIARATA: SOLO IL POLLICE PAGA (voce #159, R1, misura
+     del 2 novembre 2026). Col ramo aperto a tutti, i falli CPU contro CPU
+     (strumenti/_eventi.js, stessi semi) salivano da 1,1 a 1,8 a partita
+     a taglia 5 (30 partite), da 0,4 a 1,6 a taglia 7 e da 0,5 a 1,1 a 11
+     (12 partite): ben oltre il +20% che lo spec §3.4 ammetteva. La causa
+     e' nota e non e' un bug: la CPU scivola solo sul portatore (aiDecide),
+     e sotto pressione il portatore CPU passa un istante prima del
+     contatto -- la scivolata arriva sul passatore. E' un fallo vero, ma
+     cambierebbe il ritmo della partita automatica che tutti i banchi
+     misurano. Il ramo si restringe quindi al GIOCATORE SOTTO IL POLLICE
+     (la stessa espressione di `umano` in startSlide: squadra non CPU E
+     uomo controllato), che e' chi aveva lo sfruttamento in mano; i
+     compagni IA dell'umano scivolano con la stessa logica della CPU e
+     per la stessa ragione non pagano. In CPU contro CPU il ramo non gira
+     mai: i banchi a seme non si muovono di un bit. In due giocatori
+     paga chi preme, da una parte e dall'altra. Non legge team. */
+  if(G.cpu[p.team] || G.ctrl[p.team]!==G.players.indexOf(p)) return;
+  let vittima=null, dv=P_R*2+4;
+  for(const q of G.players){
+    if(q.team===p.team || q===carrier || q.out>0) continue;
+    const dq=len(q.x-p.x, q.y-p.y);
+    if(dq<dv){ dv=dq; vittima=q; }
+  }
+  if(!vittima) return;
+  const daDietro = (p.slideDX*vittima.fx + p.slideDY*vittima.fy) > DIETRO_DOT;
+  const inTempo  = p.slide <= SLIDE_CLEAN;
+  falloDaScivolata(p, vittima, daDietro || !inTempo);
 }
 
 /* =====================================================================
@@ -23172,11 +23360,30 @@ function updateBall(dt){
     }
   }
   /* IL PALLONE ALTO TROVA UNA TESTA (voce 7): finestra [26, 46],
-     portata del corpo, primo che c'e'. Gli stesi, i freddi e i portieri
+     portata del corpo. Gli stesi, i freddi e i portieri
      no — il portiere ha gia' il suo mestiere sotto quota 34
      (tentaPresa), e dargli anche la testa farebbe due mestieri in un
-     fotogramma. Nessun sorteggio: il banco a seme fisso non si sfasa. */
+     fotogramma. Nessun sorteggio: il banco a seme fisso non si sfasa.
+     VINCE IL PIU' VICINO, NON IL PRIMO DELL'ARRAY (voce #159, P4 --
+     voce #5 dell'elenco del realismo del 24/9). Qui c'era «primo che
+     c'e'»: il ciclo incornava col primo uomo a portata e usciva con un
+     break. Ma G.players e' costruito squadra 0 prima e squadra 1 dopo,
+     quindi ogni testa contesa a pari portata la vinceva la squadra 0
+     -- l'umano -- per costruzione dell'array, non per posizione.
+     Misurato (strumenti/_t-159-testa-vicino.js): un uomo di squadra 1
+     a 10 unita' dal pallone perdeva la testa contro uno di squadra 0 a
+     22; la stessa scena specchiata la vinceva la squadra 0. Una ferita
+     di EQUITA' prima che di realismo.
+     Adesso il ciclo guarda tutti e tiene il migliore: la distanza IN
+     RAPPORTO alla portata, cosi' chi e' chiamato sul cross (portata 34
+     contro 24) resta avvantaggiato come prima -- a 30 unita' il
+     designato vale 0,88, un uomo qualunque a 22 vale 0,92: incorna il
+     designato. A parita' esatta il designato, poi l'indice minore (la
+     regola vecchia, ridotta al solo caso in cui la geometria tace).
+     Zero numeri nuovi, zero sorteggi: il commento qui sopra resta
+     vero. Il portiere resta fuori come prima. */
   if(b.owner<0 && b.z>Z_SOPRA_TESTA && b.z<=Z_TESTA_MAX){
+    let best=-1, bestR=0;
     for(let qi=0;qi<G.players.length;qi++){
       const q=G.players[qi];
       if(q.out>0 || q.slide>=0 || q.recover>0 || q.rove>=0 || q.role==='gk') continue;
@@ -23187,10 +23394,11 @@ function updateBall(dt){
          solo dentro la finestra di quota, e solo per l'uomo scritto
          sul pallone. */
       const portata = (b.crossTo===qi) ? 34 : (P_R+B_R+3);
-      if(len(q.x-b.x,q.y-b.y)>portata) continue;
-      colpoDiTesta(q, qi, b);
-      break;
+      const r = len(q.x-b.x,q.y-b.y)/portata;
+      if(r>1) continue;
+      if(best<0 || r<bestR || (r===bestR && b.crossTo===qi && b.crossTo!==best)){ best=qi; bestR=r; }
     }
+    if(best>=0) colpoDiTesta(G.players[best], best, b);
   }
   /* effetto a giro del tiro perfetto */
   if(b.perfectT>0){
@@ -23460,6 +23668,26 @@ const GK_DIVE_T = 0.58;
    ===================================================================== */
 const GK_PUGNO_Z = 16;       // sopra questa quota la palla forte si smanaccia
 const GK_SFUGGE  = 1.60;     // fin dove ci prova con le mani, in multipli della soglia
+/* LA LETTURA MORBIDA HA BISOGNO DI UN CORPO (voce #159, P2). La lettura
+   del pallone lento in updateKeeper (bersaglio predY e uscita sul
+   pallone libero) vale solo se il corpo in piedi del portiere, P_R+B_R,
+   raggiunge questa soglia: 21 a 5 e a 7 (CORPI), 7,5 a 11. Non e' una
+   soglia fisica, ed e' detto chiaro: e' il conto dei gol, misurato.
+   A 11 il corpo e' cosi' piccolo (zonaMani 5,6 unita') che la retta
+   palla-centro di oggi lascia passare quasi ogni pallone lento non
+   centrale, e META' delle reti dell'11 sono proprio quelle; letto il
+   punto di passaggio, diventano prese. Misurato con _eventi.js, 30
+   partite, semi 20260803..832: reti nei 90 s a 11 da 2,67 (oggi) a
+   2,10 con la sola cura P1 (-21%), a 1,63 col solo bersaglio predY
+   (-39%), a 1,37 con la sola uscita (-49%), a 1,33 con tutte e due
+   (-50%, 0-0 dal 7% al 23%). Lo spec della voce #159 (SS3.4) tiene il
+   conto dei gol entro il 25% di oggi, e a 11 il margine dopo P1 non
+   c'e' piu': la lettura morbida resta SPENTA sui corpi piccoli finche'
+   l'attacco dell'11 non produce abbastanza tiri che arrivano (seguito
+   dichiarato nel verbale). A 5 e a 7, misurato con lo stesso banco:
+   reti 2,53 -> 2,13 a 5 (-16%), 2,67 -> 2,70 a 7, parate 1,7 -> 3,7 e
+   3,4 -> 5,0. */
+const GK_MORBIDA_CORPO = 10;
 /* IL RINVIO A PUGNO SI ALLUNGA IN PROPORZIONE ALL'AREA (voce #100,
    decisione del committente del 7 settembre 2026: "allungare il rinvio
    in proporzione cosi' da renderlo piu' realistico al calcio vero").
@@ -23635,8 +23863,81 @@ function updateKeeper(p, dt){
   /* posizionamento: sulla retta palla-centro porta, uscita proporzionata */
   const dx=b.x-goalX, dy=b.y-FH/2, dl=Math.max(1,len(dx,dy));
   const uscita = clamp(dl*0.10, 16, GK_AREA_X*0.62);
-  const tx = goalX + dx/dl*uscita*dir*dir;      // sempre verso il campo
-  const ty = clamp(FH/2 + dy*0.55, GY0+6, GY1-6);
+  let tx = goalX + dx/dl*uscita*dir*dir;        // sempre verso il campo
+  let ty = clamp(FH/2 + dy*0.55, GY0+6, GY1-6);
+  /* LA LETTURA MORBIDA (voce #159, P2 -- voci #7/#9 dell'elenco del
+     realismo del 24/9, piu' l'uscita della #8). Il ramo del tuffo qui
+     sopra si arma SOLO sopra le 300 unita' al secondo: una filtrante
+     lenta, un rimpallo, una respinta che ricade in area, un pallone che
+     si spegne a sessanta unita' dalla linea arrivavano tutti QUI, e qui
+     il portiere teneva la retta palla-centro (dy*0,55) con l'uscita
+     dl*0,10 -- 16 unita' dalla linea quando il pallone e' vicino, cioe'
+     l'uscita INVERSA al pericolo. Misurato con
+     strumenti/_t-159-portiere-anticipo.js (taglia 5, seme 20261102):
+     pallone fermo a 60 u al centro della bocca, nessun uomo di movimento
+     entro quattro quinti di campo -> il portiere resta a 16 u per tutta
+     la scena (distanza minima 44, mai una presa); pallone fermo a 40 u e
+     20 u fuori dal palo -> idem; pallone a 280 u/s verso l'angolo basso
+     del primo palo -> la retta lo lascia a 18 u dal punto di passaggio:
+     dentro il corpo (respinta), fuori dalle mani (zonaMani = 15,75): una
+     ribattuta regalata dove un portiere che LEGGE la traiettoria fa una
+     presa.
+     IL RAMO E' UN'AGGIUNTA, NON UNA RISCRITTURA: scatta solo con il
+     pallone LIBERO (owner<0: l'uno contro uno col pallone al piede
+     resta alla legge di oggi, bit per bit), sotto la quota del
+     pallonetto, dentro l'area allargata (1,4 volte GK_AREA_X), e solo
+     se il pallone VIENE verso la porta (componente lungo la propria
+     porta sopra 30 u/s) oppure e' quasi fermo (sotto 60 u/s): un
+     pallone che si allontana non lo muove. Due cose cambiano:
+       1. IL BERSAGLIO LATERALE e' predY -- il punto in cui la
+          traiettoria taglia la linea, la stessa aritmetica del ramo del
+          tuffo (la traiettoria e' rettilinea: dy/dx non dipende
+          dall'attrito) -- stretto nella bocca come prima (GY0+6..GY1-6).
+       2. L'USCITA: se il pallone e' PRENDIBILE (velocita' sotto la
+          sogliaPresa di tentaPresa, 330, e dentro la fascia che il
+          corpo puo' coprire di lato: il margine del tuffo meno sei) e
+          NESSUN AVVERSARIO in campo e' piu' vicino al pallone di lui,
+          va a prenderlo: il bersaglio diventa il pallone stesso, la
+          velocita' resta GK_SPEED e la presa e' quella di sempre
+          (tentaPresa in piedi, l'ellisse delle mani). Con un avversario
+          piu' vicino resta sulla linea di passaggio: uscire sarebbe
+          regalare la porta vuota.
+          E NON ESCE MAI OLTRE DOVE GIA' USCIVA: l'uscita vale solo con
+          il pallone entro GK_AREA_X*0,62 dalla linea, il tetto della
+          legge dl*0,10 qui sopra. RESTRIZIONE MISURATA, non scelta a
+          gusto (voce #159, 2 novembre 2026, _eventi.js a 30 partite per
+          taglia, semi 20260803..832): con l'uscita estesa a tutta
+          l'area allargata (1,4 volte GK_AREA_X) le reti nei 90 s
+          passavano da 2,53 a 2,00 a 5 (-21%), da 2,67 a 2,43 a 7 e da
+          2,67 a 1,33 a 11 (-50%, con gli 0-0 dal 7% al 27%): a 11
+          l'area e' profonda 361 unita', e un portiere che va a
+          raccogliere ogni pallone libero e lento fino a 505 unita'
+          dalla linea diventa un libero che spegne le ripartenze. Lo
+          spec (SS3.4) fissa il conto dei gol entro il 25%: la cura si
+          restringe, non si somma al buio.
+     ZERO dado(): tutto deterministico, letto dallo stato. Simmetrico
+     per costruzione: dir e goalX, mai team===0. Le due scene ferme e
+     quella al palo sono le condanne del banco, le altre due i controlli
+     discriminanti (presa gia' oggi, presa anche dopo). */
+  let esce=false;                                 // sta andando a prendere il pallone
+  if(b.owner<0 && b.z<=Z_SOPRA_PORTIERE && (P_R+B_R)>=GK_MORBIDA_CORPO){
+    const distX = Math.abs(b.x-goalX);
+    const vIn = -dir*b.vx;                        // >0: il pallone viene verso questa porta
+    const spL = len(b.vx,b.vy);
+    if(distX < GK_AREA_X*1.4 && (vIn>30 || spL<60)){
+      const tta = distX/Math.max(60,Math.abs(b.vx));
+      ty = clamp(b.y + b.vy*tta, GY0+6, GY1-6);
+      if(spL<330 && distX < GK_AREA_X*0.62 && b.y>GY0-40 && b.y<GY1+40){
+        const dk = len(b.x-p.x, b.y-p.y);
+        let avversarioPiuVicino=false;
+        for(const q of G.players){
+          if(q.team===p.team || q.out>0) continue;
+          if(len(b.x-q.x, b.y-q.y) < dk){ avversarioPiuVicino=true; break; }
+        }
+        if(!avversarioPiuVicino){ tx = b.x; ty = clamp(b.y, GY0-40, GY1+40); esce=true; }
+      }
+    }
+  }
   const mx=(goalX===0?Math.max(14,tx):Math.min(FW-14,tx))-p.x, my=ty-p.y;
   const ml=len(mx,my);
   if(ml>3){
@@ -23645,7 +23946,17 @@ function updateKeeper(p, dt){
   }else{ p.vx*=0.6; p.vy*=0.6; }
   p.x+=p.vx*dt; p.y+=p.vy*dt;
   p.x=clamp(p.x, goalX===0?4:FW-GK_AREA_X, goalX===0?GK_AREA_X:FW-4);
-  p.y=clamp(p.y, GY0-30, GY1+30);
+  /* IL MARGINE LATERALE E' QUELLO DEL TUFFO (voce #159, P3 -- voce #8
+     dell'elenco del realismo del 24/9). Qui il corpo in piedi era
+     stretto a GY0-30..GY1+30, mentre il tuffo e la raccolta, poche
+     righe sopra, si concedono 46. Un tuffo largo lasciava il portiere a
+     46 unita' dal palo, e al primo fotogramma in piedi questa riga lo
+     riportava a 30: SEDICI unita' in un sessantesimo di secondo, un
+     teletrasporto, contro le 2,5 che GK_SPEED concede a una gamba
+     (misurato: scena F di strumenti/_t-159-portiere-anticipo.js, passi
+     per fotogramma «0 16 2,5 2,5 ...»). Lo stesso margine dei tre rami,
+     e il rientro e' una camminata. Zero dado(), simmetrico. */
+  p.y=clamp(p.y, GY0-46, GY1+46);
   /* IL PORTIERE GUARDA IL CAMPO MA APRE LE SPALLE dove si sposta.
      Prima puntava dritto e basta: spostandosi di lato restava una figura
      che scivola di traverso senza accorgersene, ed era anche l'unico
@@ -23661,8 +23972,51 @@ function updateKeeper(p, dt){
   }
   p.gkTors = (p.gkTors||0) + (tors-(p.gkTors||0))*Math.min(1, dt/0.10);
   p.fx=dir*Mcos(p.gkTors); p.fy=dir*Msin(p.gkTors);
-  /* anche in piedi il portiere e' un corpo: chi gli tira addosso trova le mani */
-  if(p.kickCd<=0){ p.diveDX=dir; p.diveDY=0; tentaPresa(p,b); }
+  /* LE MANI TORNANO (voce #159, P1 -- voce #6 dell'elenco del realismo
+     del 24/9). updatePlayerFisica esce PRIMA del decremento generale di
+     kickCd quando il giocatore e' il portiere, e dentro questa funzione
+     l'unico decremento stava nel ramo del rinvio qui sotto, che gira
+     solo con il pallone FRA LE MANI (owner === lui). Ma rinvioPortiere
+     scrive owner=-1 e POI kickCd=0,4, e il rimpallo sul corpo di
+     updateBall scrive max(kickCd,0,18) anche su di lui: da quel
+     fotogramma nessuno toccava piu' il numero, e il portiere in piedi
+     restava senza mani (la guardia qui sotto) e senza piedi (la
+     raccolta di updateBall salta chi ha kickCd>0) fino al primo
+     resetKickoff -- un gol o un fischio. Misurato su due partite CPU
+     contro CPU a taglia 5 (strumenti/_t-159-portiere-mani.js, semi
+     20261103-104): strisce di 970, 2288 e 2489 fotogrammi consecutivi
+     senza mani, fino al 69% dei fotogrammi vivi. Il tuffo e il corpo a
+     terra, che chiamano tentaPresa senza guardia, mascheravano il
+     difetto: il portiere tuffato parava ancora, quello in piedi no.
+     LA CURA E' UNA RIGA, e sta QUI e non in cima alla funzione per due
+     ragioni. (1) L'orologio del rinvio (il ramo sotto, 0,9 s dalla
+     presa) resta bit per bit com'era: scorre solo con il pallone in
+     mano e solo in piedi, come prima. (2) Durante la raccolta, il tuffo
+     e il recupero il numero resta fermo come prima: quei rami non lo
+     leggono, e la finestra senza mani riparte da dove si era fermata
+     quando il portiere si rialza -- mai piu' di 0,4 s in piedi.
+     Zero dado(): e' dt puro, e vale per i due portieri allo stesso
+     modo (indexOf(p), nessun team===0). */
+  if(b.owner!==G.players.indexOf(p)) p.kickCd=Math.max(0,p.kickCd-dt);
+  /* anche in piedi il portiere e' un corpo: chi gli tira addosso trova le mani.
+     QUANDO ESCE, LE MANI GUARDANO IL PALLONE (voce #159, P2). L'ellisse
+     di tentaPresa e' orientata lungo diveDX/diveDY: in attesa punta al
+     campo (dir, 0), 34 unita' avanti e 21 di lato, ed e' giusto cosi'
+     per un tiro che arriva. Ma un portiere che va a RACCOGLIERE un
+     pallone fermo di fianco al palo lo raggiungeva di lato, con il
+     pallone a venti unita' sull'asse corto: dentro il corpo, fuori da
+     zonaMani (15,75) -- e tentaPresa lo classificava RESPINTA, cioe' una
+     smanacciata verso l'esterno su un pallone fermo (misurato: scena B
+     di _t-159-portiere-anticipo.js, respinta a 0,37 s). Chi esce guarda
+     il pallone: l'asse lungo delle mani e' la congiungente, il pallone
+     sta per costruzione sull'asse, e la presa e' una presa. Vale SOLO
+     nel ramo dell'uscita; il disegno legge diveDX/diveDY solo in tuffo
+     o a terra (rigAngolo), quindi nessun fotogramma cambia. Zero dado(). */
+  if(p.kickCd<=0){
+    if(esce){ const ex=b.x-p.x, ey=b.y-p.y, el=Math.max(1,len(ex,ey)); p.diveDX=ex/el; p.diveDY=ey/el; }
+    else { p.diveDX=dir; p.diveDY=0; }
+    tentaPresa(p,b);
+  }
   /* rinvio: se ha la palla tra le mani, la rilancia entro un attimo */
   if(b.owner===G.players.indexOf(p)){
     p.kickCd-=dt;
@@ -26757,12 +27111,19 @@ function startFreeKick(shooterTeam, foulTeam){
   if(ser){
     ser.classList.toggle('hidden', !R);
     if(R){
+      /* I PALLINI SONO I TIRI BATTUTI, NELL'ORDINE VERO (voce #159, cura
+         R4, difetto #31). Prima si disegnavano max(5, tiri+1) pallini e
+         si dipingevano verdi i PRIMI seg[t], qualunque fosse l'ordine
+         degli esiti: dopo [sbagliato, segnato] si vedeva verde-rosso, e
+         cinque pallini promettevano una serie da cinque che questa serie
+         non fa (e' a oltranza a coppie dal primo tiro: regola di casa,
+         dichiarata in testa a avviaRigori). Adesso ogni pallino e' un
+         tiro di R.esiti, col suo esito, piu' al massimo UN pallino vuoto
+         'ora' per la battuta in corso. Niente promesso, niente mentito. */
       const pall=(t)=>{
         let h='';
-        for(let i=0;i<Math.max(5,R.tiri[t]+1);i++){
-          const st = i<R.tiri[t] ? (i<R.seg[t]?'seg':'sba') : (i===R.tiri[t] && t===R.turno ? 'ora' : '');
-          h+='<i class="'+st+'"></i>';
-        }
+        for(const e of (R.esiti ? R.esiti[t] : [])) h+='<i class="'+e+'"></i>';
+        if(t===R.turno) h+='<i class="ora"></i>';
         return h;
       };
       ser.innerHTML =
@@ -41219,7 +41580,18 @@ function drawHUD(){
      punizione, e quella la vedi succedere. Il conto sta nel tabellino di
      fine partita, dov'e' sempre stato, e lo dice per intero invece di
      riassumerlo in tre puntini rossi. In piu' erano l'unico rosso rimasto
-     nell'interfaccia fuori dal cartellino. */
+     nell'interfaccia fuori dal cartellino.
+     RETTIFICA A EDIZIONI (voce #159, cura R5, difetto #46, 2 novembre
+     2026). «I falli non cambiano nessuna decisione mentre giochi» era
+     vero a meta': dal TERZO fallo di squadra OGNI fallo e' una punizione
+     (il cumulo di checkSlideContact/eseguiSfumato, falli>=3), e chi
+     difende a due falli decide se entrare o no sapendolo -- se glielo si
+     dice. I pallini persistenti non tornano: sotto il nome squadra
+     compare un'etichetta CONDIZIONALE, solo quando il conto pesa -- a
+     due falli «2 FALLI», da tre in su «PUNIZIONE» -- in ambra (non
+     rosso), corpo 11, il gradino basso della scala qui sotto. A zero e
+     a un fallo non si disegna niente: i cinque elementi persistenti
+     restano cinque. Solo disegno: zero dado(), zero simulazione. */
   /* LA SCALA TIPOGRAFICA E' DICHIARATA, E HA QUATTRO GRADINI: 26 (il
      punteggio), 20 (il cronometro), 15 (i nomi e le etichette dei
      comandi), 11 (tutto il minuto). Il Tema 3 chiede «massimo quattro
@@ -41241,6 +41613,17 @@ function drawHUD(){
     ctx.fillStyle=TEAMCOL[t];
     ctx.textAlign = t===0 ? 'left' : 'right';
     ctx.fillText(nome, t===0?x0:x0+nw, cyT);
+    /* il conto dei falli, solo quando conta (voce #159, R5: vedi la
+       rettifica qui sopra). Stessa sponda del nome, un gradino sotto
+       (cyT+13: il nome a 15 px finisce a cyT+7,5, l'etichetta a 11 px
+       parte a cyT+7,5 e finisce a cyT+18,5, sopra il listello di legno
+       anche alla barra minima di 44 px). Per t, mai per indice. */
+    const nf=S.falli[t]|0;
+    if(nf>=2){
+      ctx.font='700 11px '+FONT_C;
+      ctx.fillStyle=COL.ambra;
+      ctx.fillText(nf>=3 ? 'PUNIZIONE' : '2 FALLI', t===0?x0:x0+nw, cyT+13);
+    }
   }
 
   /* PUNTEGGI E CRONOMETRO: ALFA PIENA, SEMPRE. Sono le due cifre che il
