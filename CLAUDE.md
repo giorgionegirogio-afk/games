@@ -35,6 +35,9 @@ node strumenti/_q-invarianti.js              # idem per ogni _q-*.js
 
 python android/costruisci.py                 # gli APK (aapt2→javac→d8→zipalign→apksigner)
 python android/verifica.py                   # 48 controlli sugli APK finiti
+
+python strumenti/blender/mcp-blender.py --prova   # il ponte Blender di casa (zero dipendenze): avvia, interroga, spegne
+claude mcp add blender -s project -- python strumenti/blender/mcp-blender.py   # lo registra (.mcp.json): dalla sessione dopo, mcp__blender__*
 ```
 
 **Codici di uscita di casa, per la batteria e per ogni cancello:** 0 verde ·
